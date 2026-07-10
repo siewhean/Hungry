@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Pressable, StyleSheet, ActivityIndicator } from "react-native";
+import { View, StyleSheet, ActivityIndicator } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
@@ -7,7 +7,7 @@ import type { NavigationProp } from "@react-navigation/native";
 import { LayoutDashboard, UtensilsCrossed, BarChart3, Store } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AppText, Button, Screen } from "@/components/ui";
+import { AppBottomTabItem, AppText, Button, Screen } from "@/components/ui";
 import { resolveMerchantAccess, VERIFIED_ONLY_SCREENS } from "@/features/merchant/merchantGuards";
 import { prefetchMerchantTab, preloadRoute } from "@/features/navigation/prefetch";
 import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
@@ -163,6 +163,13 @@ const loadCustomerInboxScreen = () =>
       require("@/app/screens/merchant/CustomerInboxScreen") as typeof import("@/app/screens/merchant/CustomerInboxScreen")
     ).CustomerInboxScreen,
   );
+const loadFeaturedVisitorsScreen = () =>
+  createGuardedScreen(
+    "FeaturedVisitors",
+    (
+      require("@/app/screens/merchant/FeaturedVisitorsScreen") as typeof import("@/app/screens/merchant/FeaturedVisitorsScreen")
+    ).FeaturedVisitorsScreen,
+  );
 const loadBusinessProfileEditorScreen = () =>
   createGuardedScreen(
     "BusinessProfileEditor",
@@ -220,7 +227,7 @@ const loadMerchantSettingsScreen = () =>
     ).MerchantSettingsScreen,
   );
 
-function MerchantTabBar({ state, descriptors, navigation }: any) {
+function MerchantTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const { componentSizes, palette, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const account = useMerchantStore((storeState) => storeState.account);
@@ -232,17 +239,22 @@ function MerchantTabBar({ state, descriptors, navigation }: any) {
         styles.tabBarContainer,
         {
           backgroundColor: palette.bg,
-          height: componentSizes.merchantTabBar + Math.max(insets.bottom, spacing[2]),
+          height: componentSizes.bottomTabBar + Math.max(insets.bottom, spacing[2]),
           paddingBottom: Math.max(insets.bottom, spacing[2]),
-          paddingTop: spacing[4],
+          paddingTop: spacing[2],
         },
       ]}
     >
-      {state.routes.map((route: any, index: number) => {
+      {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
+        const tabBarStyle = StyleSheet.flatten(options.tabBarStyle);
+        const tabBarDisplay =
+          tabBarStyle && typeof tabBarStyle === "object" && "display" in tabBarStyle
+            ? tabBarStyle.display
+            : undefined;
 
         // Hide routes that shouldn't be in the tab bar
-        if (options.tabBarStyle?.display === "none") {
+        if (tabBarDisplay === "none") {
           return null;
         }
 
@@ -260,31 +272,32 @@ function MerchantTabBar({ state, descriptors, navigation }: any) {
           }
         };
 
-        const Icon =
+        const tabConfig =
           route.name === "Dashboard"
-            ? LayoutDashboard
+            ? { icon: LayoutDashboard, label: "Home" }
             : route.name === "Menu"
-              ? UtensilsCrossed
+              ? { icon: UtensilsCrossed, label: "Menu" }
               : route.name === "Analytics"
-                ? BarChart3
-                : Store;
+                ? { icon: BarChart3, label: "Performance" }
+                : { icon: Store, label: "Profile" };
+        const Icon = tabConfig.icon;
 
         const color = isFocused ? palette.orange : palette.textMuted;
 
         return (
-          <Pressable
+          <AppBottomTabItem
             key={route.key}
+            accessibilityLabel={`Merchant ${tabConfig.label}`}
+            color={color}
+            focused={isFocused}
+            icon={Icon}
+            label={tabConfig.label}
+            onPress={onPress}
             onPressIn={() => {
               prefetchMerchantTab(route.name, activeOutlet?.id, account?.id);
               preloadRoute(navigation, route.name);
             }}
-            onPress={onPress}
-            style={styles.tabItem}
-            accessibilityRole="button"
-            accessibilityState={isFocused ? { selected: true } : {}}
-          >
-            <Icon color={color} size={componentSizes.merchantTabIcon} />
-          </Pressable>
+          />
         );
       })}
     </View>
@@ -447,6 +460,11 @@ export function MerchantTabs() {
         options={{ tabBarStyle: { display: "none" } }}
       />
       <Tab.Screen
+        name="FeaturedVisitors"
+        getComponent={loadFeaturedVisitorsScreen}
+        options={{ tabBarStyle: { display: "none" } }}
+      />
+      <Tab.Screen
         name="BusinessProfileEditor"
         getComponent={loadBusinessProfileEditorScreen}
         options={{ tabBarStyle: { display: "none" } }}
@@ -499,11 +517,6 @@ const styles = StyleSheet.create({
     width: "100%",
     justifyContent: "space-around",
     alignItems: "center",
-  },
-  tabItem: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
   },
   accessGate: {
     flex: 1,

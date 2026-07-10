@@ -5,6 +5,7 @@ import * as Haptics from "expo-haptics";
 
 import { AppText, Badge, Button, Card } from "@/components/ui";
 import { useUIStore } from "@/store/useUIStore";
+import { useMerchantStore } from "@/store/useMerchantStore";
 import { useHungryTheme } from "@/theme";
 
 interface ReviewSuccessModalProps {
@@ -12,9 +13,12 @@ interface ReviewSuccessModalProps {
 }
 
 export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const payload = useUIStore((state) => state.reviewSuccess);
   const hideReviewSuccess = useUIStore((state) => state.hideReviewSuccess);
+  const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
+  const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
+  const shouldShowComposerTags = isMerchantMode || isDeveloperMode;
 
   useEffect(() => {
     if (payload) {
@@ -28,11 +32,13 @@ export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
       transparent
       visible={Boolean(payload)}
       onRequestClose={hideReviewSuccess}
+      accessibilityViewIsModal
     >
       <View
+        accessibilityViewIsModal
         style={{
           flex: 1,
-          backgroundColor: "rgba(17, 24, 39, 0.45)",
+          backgroundColor: palette.overlay,
           alignItems: "center",
           justifyContent: "center",
           padding: spacing[5],
@@ -62,11 +68,13 @@ export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
             </View>
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel="Close review success"
+              accessibilityHint="Dismisses the review confirmation"
               onPress={hideReviewSuccess}
               style={{
                 width: 44,
                 height: 44,
-                borderRadius: radii.pill,
+                borderRadius: componentRadii.iconButton,
                 alignItems: "center",
                 justifyContent: "center",
                 backgroundColor: palette.bgMuted,
@@ -78,7 +86,9 @@ export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
 
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
             <Badge label={`${payload?.rating ?? 0}/5 rating`} tone="orange" />
-            <Badge label={`${payload?.tagCount ?? 0} taste tags`} tone="amber" />
+            {shouldShowComposerTags && (
+              <Badge label={`${payload?.tagCount ?? 0} taste tags`} tone="amber" />
+            )}
             <Badge label={`+${payload?.pointsEarned ?? 0} points`} tone="success" />
           </View>
 

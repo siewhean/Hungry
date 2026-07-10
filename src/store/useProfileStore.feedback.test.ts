@@ -1,8 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { dataRepositoryMock } from "@/lib/services/mock/repositories";
+import {
+  getDataRepository,
+  resetServiceProvider,
+  setServiceProvider,
+} from "@/lib/services/serviceProvider";
+import type { HungryService } from "@/lib/services/types";
 import { useProfileStore } from "./useProfileStore";
+import { useSessionStore } from "./useSessionStore";
 
 test("toggleFavourite updates taste vector and recommendation signals", () => {
   const repository = getDataRepository();
@@ -16,6 +23,7 @@ test("toggleFavourite updates taste vector and recommendation signals", () => {
 
   useProfileStore.getState().clearProfile();
   useProfileStore.getState().syncProfile(true);
+  useSessionStore.setState((state) => ({ ...state, isAuthenticated: true }));
 
   const before = useProfileStore.getState().profile;
   useProfileStore.getState().toggleFavourite(dish);
@@ -122,4 +130,57 @@ test("recordTasteInteraction caps repeated low-value clicks", () => {
     after.recommendationSignals?.signalCount,
     (before.recommendationSignals?.signalCount ?? 0) + 3,
   );
+});
+
+test("signed-out Supabase onboarding taste and dietary choices stay local until auth", async () => {
+  let profileSyncCalls = 0;
+  const supabaseProfileService = {
+    profile: {
+      updateProfile: async () => {
+        profileSyncCalls += 1;
+        throw new Error("signed-out profile update should not sync");
+      },
+      updateTasteVector: async () => {
+        profileSyncCalls += 1;
+        throw new Error("signed-out taste vector should not sync");
+      },
+      updateTasteProfile: async () => {
+        profileSyncCalls += 1;
+        throw new Error("signed-out taste profile should not sync");
+      },
+      updateDietaryPreferences: async () => {
+        profileSyncCalls += 1;
+        throw new Error("signed-out dietary preferences should not sync");
+      },
+    },
+  } as unknown as HungryService;
+
+  setServiceProvider({
+    mode: "supabase",
+    repository: dataRepositoryMock,
+    service: supabaseProfileService,
+    similarityScore: () => 1,
+  });
+
+  try {
+    useSessionStore.setState((state) => ({
+      ...state,
+      isAuthenticated: false,
+      authenticatedUserId: null,
+    }));
+    useProfileStore.getState().clearProfile();
+    const tasteVector = { sweet: 7, spicy: 6, sour: 4, salty: 6, rich: 8, aromatic: 7 };
+
+    useProfileStore.getState().setTasteVector(tasteVector);
+    useProfileStore.getState().setDietaryPreferences(["halal"]);
+    await Promise.resolve();
+
+    const profile = useProfileStore.getState().profile;
+    assert.equal(profileSyncCalls, 0);
+    assert.deepEqual(profile.tasteVector, tasteVector);
+    assert.deepEqual(profile.dietaryPreferences, ["halal"]);
+    assert.equal(profile.recommendationSignals?.signalCount, 1);
+  } finally {
+    resetServiceProvider();
+  }
 });

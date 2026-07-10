@@ -48,3 +48,93 @@ test("Home social feed treats relative fixture timestamps as recent posts", asyn
     resetServiceProvider();
   }
 });
+
+test("Home social feed ranks followed authors before unfollowed authors", async () => {
+  usePublishedPostStore.getState().clearPostsForTest();
+  setServiceProvider({
+    mode: "mock",
+    repository: dataRepositoryMock,
+    service: {} as HungryService,
+    similarityScore: () => 1,
+  });
+
+  try {
+    const feed = await getHomeSocialFeed(userProfile, {
+      followedAuthors: {
+        "Emma Watson": true,
+        "Alicia Tan": true,
+      },
+    });
+    const followedIds = new Set(["post-3", "post-8"]);
+    const firstUnfollowedIndex = feed.findIndex((post) => !followedIds.has(post.id));
+    const lastFollowedIndex = Math.max(
+      ...feed.map((post, index) => (followedIds.has(post.id) ? index : -1)),
+    );
+
+    assert.equal(feed[0]?.id, "post-3");
+    assert.equal(feed[1]?.id, "post-8");
+    assert.ok(firstUnfollowedIndex > lastFollowedIndex);
+  } finally {
+    usePublishedPostStore.getState().clearPostsForTest();
+    resetServiceProvider();
+  }
+});
+
+test("Home social feed refresh seed changes order without duplicating posts", async () => {
+  usePublishedPostStore.getState().clearPostsForTest();
+  setServiceProvider({
+    mode: "mock",
+    repository: dataRepositoryMock,
+    service: {} as HungryService,
+    similarityScore: () => 1,
+  });
+
+  try {
+    const initialFeed = await getHomeSocialFeed(userProfile, { refreshSeed: 0 });
+    const refreshedFeed = await getHomeSocialFeed(userProfile, { refreshSeed: 1 });
+
+    assert.notDeepEqual(
+      refreshedFeed.map((post) => post.id),
+      initialFeed.map((post) => post.id),
+    );
+    assert.deepEqual(
+      [...new Set(refreshedFeed.map((post) => post.id))].sort(),
+      initialFeed.map((post) => post.id).sort(),
+    );
+  } finally {
+    usePublishedPostStore.getState().clearPostsForTest();
+    resetServiceProvider();
+  }
+});
+
+test("Home social feed refresh keeps followed posts above non-followed posts", async () => {
+  usePublishedPostStore.getState().clearPostsForTest();
+  setServiceProvider({
+    mode: "mock",
+    repository: dataRepositoryMock,
+    service: {} as HungryService,
+    similarityScore: () => 1,
+  });
+
+  try {
+    const feed = await getHomeSocialFeed(userProfile, {
+      followedAuthors: {
+        "Emma Watson": true,
+        "Alicia Tan": true,
+      },
+      refreshSeed: 1,
+    });
+    const followedIds = new Set(["post-3", "post-8"]);
+    const firstUnfollowedIndex = feed.findIndex((post) => !followedIds.has(post.id));
+    const lastFollowedIndex = Math.max(
+      ...feed.map((post, index) => (followedIds.has(post.id) ? index : -1)),
+    );
+
+    assert.equal(feed[0]?.id, "post-8");
+    assert.equal(feed[1]?.id, "post-3");
+    assert.ok(firstUnfollowedIndex > lastFollowedIndex);
+  } finally {
+    usePublishedPostStore.getState().clearPostsForTest();
+    resetServiceProvider();
+  }
+});

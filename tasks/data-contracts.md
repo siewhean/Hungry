@@ -149,6 +149,30 @@ interface Review {
 }
 ```
 
+### PopularVisitorPin
+```ts
+interface PopularVisitorPin {
+  id: string
+  outletId: string
+  venueId: string
+  reviewId: string
+  sourceId: string
+  authorProfileId?: string
+  authorName: string
+  authorAvatarUrl?: string
+  authorLocation?: string
+  reviewText: string
+  rating: number
+  dishName?: string
+  visitedAt: string
+  pinnedAt: string
+  sortOrder: number
+  isActive: boolean
+}
+```
+
+`PopularVisitorCandidate` is the merchant-side candidate shape for review-backed pins. Pins are capped to 6 active records per outlet in the service layer and sorted by `sortOrder` then newest `pinnedAt`. Source: `src/types/domain.ts`
+
 ### BlogPost
 ```ts
 interface BlogPost {
@@ -239,38 +263,51 @@ interface AppSession {
 
 Source: `src/lib/services/mock/data.ts`
 
-### Buildings (3 fixtures)
+### Buildings (4 fixtures)
 
 | ID | Name | Type | Open? |
 |----|------|------|-------|
 | `building-maxwell` | Maxwell Food Centre | `hawker_centre` | Yes |
-| `building-lau-pa-sat` | Lau Pa Sat | `food_court` | Yes |
-| `building-amoy` | Amoy Street Food Centre | `hawker_centre` | **No** |
+| `building-amoy` | Amoy Street Food Centre | `hawker_centre` | Yes |
+| `building-lau-pa-sat` | Lau Pa Sat | `hawker_centre` | Yes |
+| `building-313` | 313@Somerset | `restaurant` | Yes |
 
-### Venues (5 fixtures)
+### Venues (8 fixtures)
 
 | ID | Building | Name | Grade | Open? |
 |----|----------|------|-------|-------|
-| `venue-tian-tian` | Maxwell | Tian Tian Chicken Rice | A | Yes |
-| `venue-maxwell-laksa` | Maxwell | Old School Laksa | B | Yes |
-| `venue-satay-street` | Lau Pa Sat | Satay Street Classics | A | Yes |
-| `venue-kopi-club` | Lau Pa Sat | Kopi Club | B | **No** |
-| `venue-fish-soup` | Amoy | Ah Seng Fish Soup | A | **No** |
+| `venue-tian-tian` | Maxwell | Tian Tian Chicken Rice | - | Yes |
+| `venue-ban-mian` | Amoy | Han Kee Fish Soup | - | Yes |
+| `venue-satay-street` | Lau Pa Sat | Satay Street Classics | - | Yes |
+| `venue-japanese-curry` | 313@Somerset | Monster Curry | - | Yes |
+| `venue-maxwell-porridge` | Maxwell | Night Owl Teochew Porridge | - | **No** |
+| `venue-fish-soup` | Amoy | Ah Seng Fish Soup | - | Yes |
+| `venue-pasta-express` | Maxwell | Pasta Express Maxwell | - | Yes |
+| `venue-napoli-pizza` | Lau Pa Sat | Napoli Pizza LPS | - | Yes |
 
-### Dishes (5 fixtures)
+### Dishes (13 fixtures)
 
 | ID | Venue | Name | Price | Must Order |
 |----|-------|------|-------|-----------|
 | `dish-chicken-rice` | Tian Tian | Chicken Rice | S$5.50 | **Yes** |
-| `dish-laksa` | Old School Laksa | Laksa | S$6.00 | No |
-| `dish-satay` | Satay Street | Satay Set | S$12.00 | **Yes** |
-| `dish-kaya-toast` | Kopi Club | Kaya Toast | S$4.80 | No |
-| `dish-fish-soup` | Ah Seng | Sliced Fish Soup | S$7.20 | No |
+| `dish-ban-mian` | Han Kee Fish Soup | Sliced Fish Ban Mian | S$6.50 | **Yes** |
+| `dish-satay` | Satay Street | Chicken Satay (10 sticks) | S$8.00 | No |
+| `dish-japanese-curry` | Monster Curry | Monster Combo Curry | S$28.00 | No |
+| `dish-laksa` | Tian Tian | Signature Laksa | S$6.00 | No |
+| `dish-fish-soup` | Ah Seng Fish Soup | Sliced Fish Soup | S$6.80 | **Yes** |
+| `dish-kaya-toast` | Ah Seng Fish Soup | Kaya Toast Set | S$4.50 | **Yes** |
+| `dish-pandan-cake` | Tian Tian | Pandan Cake | S$2.80 | No |
+| `dish-wagyu-burger` | Monster Curry | Wagyu Burger | S$14.80 | No |
+| `dish-salmon-don` | Pasta Express Maxwell | Salmon Don | S$12.80 | No |
+| `dish-mala-xiang-guo` | Monster Curry | Mala Xiang Guo | S$9.80 | No |
+| `dish-truffle-tagliatelle` | Pasta Express Maxwell | Wild Truffle Tagliatelle | S$28.00 | **Yes** |
+| `dish-burrata-pizza` | Napoli Pizza LPS | Burrata & Prosciutto Pizza | S$24.00 | No |
 
 ### Other Fixtures
 
 | Export | Count | Notes |
 |--------|-------|-------|
+| `stallPosts` | 8 | Home/social feed fixtures |
 | `blogPosts` | 2 | EatBook, SethLui |
 | `userProfile` | 1 | Demo authenticated user (Wei Ming) |
 | `guestProfile` | 1 | Signed-out fallback fixture — neutral taste vector, no favourites |

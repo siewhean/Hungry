@@ -1,6 +1,7 @@
 import PostHog from "posthog-react-native";
 
 import type { AnalyticsEventRecord, AnalyticsSink } from "./types";
+import { sanitizeAnalyticsProperties } from "./privacy";
 
 const DEFAULT_POSTHOG_HOST = "https://us.i.posthog.com";
 const POSTHOG_DISABLED = process.env.EXPO_PUBLIC_DISABLE_POSTHOG === "1";
@@ -69,7 +70,7 @@ function toPostHogProperties(properties: Record<string, unknown>): PostHogProper
 
 function mapEventProperties(event: AnalyticsEventRecord): PostHogProperties {
   return toPostHogProperties({
-    ...event.properties,
+    ...sanitizeAnalyticsProperties(event.properties),
     session_id: event.session_id,
     source_timestamp: event.timestamp,
     ...(event.user_id ? { user_id: event.user_id } : {}),
@@ -91,7 +92,7 @@ export function identifyPostHogUser(userId: string, properties: Record<string, u
     return;
   }
 
-  client.identify(userId, toPostHogProperties(properties));
+  client.identify(userId, toPostHogProperties(sanitizeAnalyticsProperties(properties)));
 }
 
 export function resetPostHogUser(): void {

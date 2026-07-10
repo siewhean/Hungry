@@ -5,10 +5,8 @@
  * This store manages the user's Food Cred total, level tier, and
  * the last earned amount (used to drive reward animations).
  *
- * Production swap plan:
- *   1. Replace `loadCredProfile()` body with Supabase query on `user_food_cred`.
- *   2. Replace `_awardPoints()` body with RPC call to `award_food_cred`.
- *   3. Call `loadCredProfile()` inside `useAppBootstrap` after session hydration.
+ * Repository-backed: mock mode keeps local demo state, while Supabase mode
+ * hydrates `user_food_cred` and writes awards through `award_food_cred`.
  */
 
 import { create } from "zustand";
@@ -40,10 +38,18 @@ interface FoodCredState {
   loadCredProfile: (userId: string) => Promise<void>;
   /**
    * Award Food Cred for a qualifying action.
-   * Mock: updates in-memory total.
-   * Production: replace with RPC call to award_food_cred.
+   * Uses the active repository first; falls back to local demo math in mock/offline mode.
    */
   awardPoints: (action: FoodCredAction, relatedEntityId?: string) => Promise<number>;
+  /**
+   * Adjust Food Cred by an explicit signed delta.
+   * Used for reversals such as unmarking a tried action.
+   */
+  adjustPoints: (
+    delta: number,
+    relatedEntityId?: string,
+    action?: FoodCredAction,
+  ) => Promise<number>;
   /** Reset — dev/test only */
   _reset: () => void;
 }
@@ -51,6 +57,25 @@ interface FoodCredState {
 // ─── Store ────────────────────────────────────────────────────────────────────
 
 const MOCK_INITIAL_POINTS = 150; // starts demo user at "Regular" tier
+
+function relatedEntityTypeForAction(
+  action: FoodCredAction,
+): "stall" | "review" | "post" | "collection" | "mission" | undefined {
+  if (
+    action === "stall_saved" ||
+    action === "stall_marked_tried" ||
+    action === "stall_submitted" ||
+    action === "stall_info_corrected"
+  ) {
+    return "stall";
+  }
+  if (action === "review_created" || action === "helpful_vote_received") return "review";
+  if (action === "post_created" || action === "photo_uploaded" || action === "tag_added")
+    return "post";
+  if (action === "collection_created") return "collection";
+  if (action === "mission_completed") return "mission";
+  return undefined;
+}
 
 export const useFoodCredStore = create<FoodCredState>()((set, get) => ({
   totalPoints: MOCK_INITIAL_POINTS,
@@ -64,8 +89,7 @@ export const useFoodCredStore = create<FoodCredState>()((set, get) => ({
   loadCredProfile: async (userId) => {
     if (get().isLoaded) return;
 
-    // Mock phase: load from mock repository
-    // Production swap: replace with Supabase query on user_food_cred
+    // Active repository handles mock or Supabase `user_food_cred` hydration.
     const repo = getDataRepository();
     const cred = (await repo.getUserFoodCred?.(userId)) ?? null;
 
@@ -81,6 +105,30 @@ export const useFoodCredStore = create<FoodCredState>()((set, get) => ({
   },
 
   awardPoints: async (action, relatedEntityId) => {
+    const repo = getDataRepository();
+    const remoteCred = await repo.awardFoodCred?.(
+      action,
+      relatedEntityId,
+      relatedEntityTypeForAction(action),
+    );
+    if (remoteCred) {
+      set({
+        totalPoints: remoteCred.totalPoints,
+        levelIndex: remoteCred.levelIndex,
+        lastEarnedPoints: remoteCred.pointsAwarded,
+      });
+
+      trackAnalyticsEvent("food_cred_earned", {
+        amount: remoteCred.pointsAwarded,
+        source_action: action,
+        new_total: remoteCred.totalPoints,
+        new_level: resolveFoodCredLevel(remoteCred.totalPoints).name,
+        related_entity_id: relatedEntityId,
+      });
+
+      return remoteCred.totalPoints;
+    }
+
     const earned = FOOD_CRED_POINTS[action] ?? 0;
     if (earned === 0) return get().totalPoints;
 
@@ -112,7 +160,40 @@ export const useFoodCredStore = create<FoodCredState>()((set, get) => ({
       });
     }
 
-    // TODO (production): call supabase.rpc('award_food_cred', { p_source_action: action, p_points: earned })
+    return newTotal;
+  },
+
+  adjustPoints: async (delta, relatedEntityId, action) => {
+    if (delta === 0) return get().totalPoints;
+
+    const prevTotal = get().totalPoints;
+    const newTotal = Math.max(0, prevTotal + delta);
+    const newLevel = resolveFoodCredLevel(newTotal);
+    const prevLevel = resolveFoodCredLevel(prevTotal);
+
+    set({
+      totalPoints: newTotal,
+      levelIndex: newLevel.index,
+      lastEarnedPoints: Math.max(0, delta),
+    });
+
+    trackAnalyticsEvent("food_cred_adjusted", {
+      action: action ?? "stall_marked_tried",
+      delta,
+      source_action: action,
+      new_total: newTotal,
+      new_level: newLevel.name,
+      related_entity_id: relatedEntityId,
+      previous_level: prevLevel.name,
+    });
+
+    if (newLevel.index !== prevLevel.index) {
+      trackAnalyticsEvent("food_cred_level_changed", {
+        old_level: prevLevel.name,
+        new_level: newLevel.name,
+        total_points: newTotal,
+      });
+    }
 
     return newTotal;
   },

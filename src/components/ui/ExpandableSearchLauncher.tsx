@@ -14,6 +14,7 @@ import {
 import { Search, X } from "lucide-react-native";
 
 import { useHungryTheme } from "@/theme";
+import { useMovingSearchPlaceholder } from "@/features/search/useMovingSearchPlaceholder";
 
 export type SearchLauncherAlign = "left" | "right";
 
@@ -36,6 +37,9 @@ type ExpandableSearchLauncherProps = {
   inputStyle?: StyleProp<TextStyle>;
   dismissOnTapAway?: boolean;
   accessibilityLabel?: string;
+  enableMovingPlaceholder?: boolean;
+  movingPlaceholderPhrases?: string[];
+  showExpandedBacking?: boolean;
 };
 
 export function ExpandableSearchLauncher({
@@ -57,8 +61,20 @@ export function ExpandableSearchLauncher({
   onBlur,
   dismissOnTapAway = true,
   accessibilityLabel,
+  enableMovingPlaceholder,
+  movingPlaceholderPhrases,
+  showExpandedBacking = true,
 }: ExpandableSearchLauncherProps) {
-  const { componentSizes, motion, palette, shadows, spacing, typography } = useHungryTheme();
+  const {
+    componentCornerCurve,
+    componentRadii,
+    componentSizes,
+    motion,
+    palette,
+    shadows,
+    spacing,
+    typography,
+  } = useHungryTheme();
   const iconColor = palette.textMuted;
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const searchInputRef = useRef<TextInput | null>(null);
@@ -66,6 +82,16 @@ export function ExpandableSearchLauncher({
   const resolvedIconSize = iconSize ?? componentSizes.searchIconSlot;
   const resolvedBarHeight = barHeight ?? componentSizes.searchBarHeight;
   const searchIconSlotWidth = resolvedIconSize;
+  const shouldAnimatePlaceholder = enableMovingPlaceholder === true;
+  const animatedPlaceholder = useMovingSearchPlaceholder({
+    phrases: movingPlaceholderPhrases ?? [placeholder || "Search..."],
+    enabled: shouldAnimatePlaceholder,
+    tickMs: 2,
+    revealStepMs: 2,
+    deleteStepMs: 2,
+    pauseMs: 280,
+  });
+  const placeholderText = shouldAnimatePlaceholder ? animatedPlaceholder : placeholder;
   const searchInputOpacity = searchRevealProgress.interpolate({
     inputRange: [0, 1],
     outputRange: [0, 1],
@@ -168,26 +194,30 @@ export function ExpandableSearchLauncher({
             height: resolvedBarHeight,
             alignItems: "center",
             justifyContent: "center",
+            borderRadius: componentRadii.iconButton,
+            borderCurve: componentCornerCurve.borderCurve,
           }}
         >
           <Search color={iconColor} size={20} />
         </Pressable>
       </Animated.View>
 
-      <Animated.View
-        pointerEvents="none"
-        style={[
-          styles.expandedBacking,
-          {
-            right: 0,
-            top: backingVerticalOffset,
-            width: expandedWidth,
-            height: backingHeight,
-            opacity: searchInputOpacity,
-            backgroundColor: palette.white,
-          },
-        ]}
-      />
+      {showExpandedBacking ? (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.expandedBacking,
+            {
+              right: 0,
+              top: backingVerticalOffset,
+              width: expandedWidth,
+              height: backingHeight,
+              opacity: searchInputOpacity,
+              backgroundColor: palette.white,
+            },
+          ]}
+        />
+      ) : null}
       <Animated.View
         pointerEvents={isSearchExpanded ? "auto" : "none"}
         style={[
@@ -201,7 +231,8 @@ export function ExpandableSearchLauncher({
             borderColor: borderColor ?? palette.textMuted,
             backgroundColor: backgroundColor ?? palette.surface,
             borderWidth: 1,
-            borderRadius: resolvedBarHeight / 2,
+            borderRadius: componentRadii.search,
+            borderCurve: componentCornerCurve.borderCurve,
             paddingHorizontal: spacing[4],
           },
           iconAlignment === "right" ? styles.inputFromRight : null,
@@ -224,10 +255,11 @@ export function ExpandableSearchLauncher({
             ref={searchInputRef}
             value={query}
             onChangeText={onQueryChange}
-            placeholder={placeholder}
+            placeholder={placeholderText}
             placeholderTextColor={placeholderColor ?? palette.textSecondary}
+            accessibilityLabel={accessibilityLabel ?? placeholder}
             returnKeyType="search"
-            clearButtonMode="while-editing"
+            clearButtonMode="never"
             style={[
               styles.textInput,
               {
@@ -244,7 +276,12 @@ export function ExpandableSearchLauncher({
         </Animated.View>
         <Animated.View style={{ opacity: searchInputOpacity }}>
           {query.length > 0 ? (
-            <Pressable accessibilityRole="button" onPress={handleClear}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Clear search"
+              accessibilityHint="Clears the current search query"
+              onPress={handleClear}
+            >
               <X color={palette.textMuted} size={18} />
             </Pressable>
           ) : null}
@@ -285,7 +322,6 @@ const styles = StyleSheet.create({
     zIndex: 20,
   },
   inputFromRight: {
-    flexDirection: "row-reverse",
     justifyContent: "flex-start",
   },
   textInput: {

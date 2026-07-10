@@ -12,7 +12,7 @@ test("orange tone is distinct from neutral tone", () => {
   assert.notDeepEqual(orange, neutral);
   assert.equal(orange.bg, palette.orangeLight);
   assert.equal(orange.border, palette.orange);
-  assert.equal(orange.text, palette.orange);
+  assert.equal(orange.text, palette.orangeText);
 });
 
 test("neutral tone stays tied to neutral surface tokens", () => {

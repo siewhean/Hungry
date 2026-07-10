@@ -17,14 +17,20 @@ import { ChevronDown, ChevronRight, Wifi, WifiOff, Zap } from "lucide-react-nati
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Badge, Button, Card, Screen } from "@/components/ui";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import {
   prefetchDishDetail,
   prefetchStallDetail,
   preloadRoute,
 } from "@/features/navigation/prefetch";
-import { setMockServiceProvider, setSupabaseServiceProvider } from "@/lib/services/serviceProvider";
+import {
+  getHungryService,
+  setMockServiceProvider,
+  setSupabaseServiceProvider,
+} from "@/lib/services/serviceProvider";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useMerchantStore } from "@/store/useMerchantStore";
+import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore, type PendingRoute } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -100,6 +106,12 @@ const DEFAULT_FLAGS = {
 
 type FeatureFlags = typeof DEFAULT_FLAGS;
 type FlagKey = keyof FeatureFlags;
+
+function isUuidLikeUserId(value?: string | null): value is string {
+  return Boolean(
+    value?.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i),
+  );
+}
 
 const FLAG_LABELS: Record<FlagKey, string> = {
   floorPlanViewer: "Floor Plan Viewer (SVG)",
@@ -349,8 +361,24 @@ function PostComposerSettingsContent({
   const { palette } = useHungryTheme();
   const { useComposerStore } =
     require("@/features/post/useComposerStore") as typeof import("@/features/post/useComposerStore");
+  const media = useComposerStore((state) => state.media);
+  const addMedia = useComposerStore((state) => state.addMedia);
   const isBusinessMode = useComposerStore((state) => state.isBusinessMode);
   const setIsBusinessMode = useComposerStore((state) => state.setIsBusinessMode);
+  const seedSampleMedia = () => {
+    const dish = getSampleDish();
+    if (!dish?.imageUrl) {
+      return;
+    }
+
+    addMedia([
+      {
+        id: `dev-sample-media-${Date.now()}`,
+        uri: dish.imageUrl,
+        type: "image",
+      },
+    ]);
+  };
 
   return (
     <>
@@ -369,6 +397,7 @@ function PostComposerSettingsContent({
           </AppText>
         </View>
         <Switch
+          accessibilityLabel="Enable business mode in composer"
           value={isBusinessMode}
           onValueChange={setIsBusinessMode}
           trackColor={{
@@ -378,6 +407,12 @@ function PostComposerSettingsContent({
           thumbColor={isBusinessMode ? palette.orange : palette.textMuted}
         />
       </View>
+      <DevButton
+        label={media.length > 0 ? "Sample media added" : "Seed sample media"}
+        onPress={seedSampleMedia}
+        variant="secondary"
+        style={{ marginTop: 8 }}
+      />
       <DevButton
         label="Launch V2 Composer"
         onPressIn={() => preloadRoute(navigation, "PostComposerV2", getSampleComposerParams())}
@@ -396,10 +431,12 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
 
   // Session
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const authenticatedUserId = useSessionStore((state) => state.authenticatedUserId);
   const completeAuth = useSessionStore((state) => state.completeAuth);
   const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
   const clearSession = useSessionStore((state) => state.clearSession);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
+  const applyProfile = useProfileStore((state) => state.applyProfile);
   const setMerchantAccount = useMerchantStore((state) => state.setAccount);
   const setDeveloperMerchantMode = useMerchantStore((state) => state.setDeveloperMerchantMode);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
@@ -429,24 +466,74 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     setReturnRoute(undefined);
     hideReviewSuccess();
     showToast({ message: "Session reset to signed out.", tone: "info" });
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+    });
   };
-  const resetToAuthIncomplete = () => {
+  const seedMockAuthProfile = async (profile?: { email: string; displayName: string }) => {
+    const session = profile
+      ? await getHungryService().auth.signUp(profile.email, "dev-password", profile.displayName)
+      : await getHungryService().auth.signIn("weiming@example.sg", "dev-password");
+    if (!session) {
+      throw new Error("Unable to seed mock auth profile.");
+    }
+    applyProfile(session.profile);
+  };
+
+  const resetToNamedAuthComplete = (profile: { email: string; displayName: string }) => {
+    setMockServiceProvider();
     clearSession();
-    completeAuth();
-    setReturnRoute(undefined);
-    hideReviewSuccess();
-    showToast({
-      message: "Session → Authenticated (onboarding pending)",
-      tone: "info",
+    setDeveloperMerchantMode(true);
+    setMerchantAccount(null);
+    void seedMockAuthProfile(profile).then(() => {
+      completeAuth();
+      completeOnboarding(false);
+      setReturnRoute(undefined);
+      hideReviewSuccess();
+      showToast({ message: `Session → ${profile.displayName}`, tone: "success" });
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "DeveloperLauncher" }],
+      });
+    });
+  };
+
+  const resetToAuthIncomplete = () => {
+    setMockServiceProvider();
+    clearSession();
+    setDeveloperMerchantMode(true);
+    setMerchantAccount(null);
+    void seedMockAuthProfile().then(() => {
+      completeAuth();
+      setReturnRoute(undefined);
+      hideReviewSuccess();
+      showToast({
+        message: "Session → Authenticated (onboarding pending)",
+        tone: "info",
+      });
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "DeveloperLauncher" }],
+      });
     });
   };
   const resetToAuthComplete = () => {
+    setMockServiceProvider();
     clearSession();
-    completeAuth();
-    completeOnboarding(false);
-    setReturnRoute(undefined);
-    hideReviewSuccess();
-    showToast({ message: "Session → Fully authenticated", tone: "success" });
+    setDeveloperMerchantMode(true);
+    setMerchantAccount(null);
+    void seedMockAuthProfile().then(() => {
+      completeAuth();
+      completeOnboarding(false);
+      setReturnRoute(undefined);
+      hideReviewSuccess();
+      showToast({ message: "Session → Fully authenticated", tone: "success" });
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "DeveloperLauncher" }],
+      });
+    });
   };
 
   const enterMerchantMode = () => {
@@ -479,13 +566,45 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     setDeveloperMerchantMode(false);
     setSupabaseServiceProvider();
     setMerchantAccount(null);
-    clearSession();
-    completeAuth();
-    completeOnboarding(false);
     setReturnRoute(undefined);
     hideReviewSuccess();
-    showToast({ message: "Mode → User", tone: "info" });
-    navigation.navigate("MainTabs", { screen: "Home" });
+
+    if (isAuthenticated && isUuidLikeUserId(authenticatedUserId)) {
+      showToast({ message: "Mode → User", tone: "info" });
+      navigation.navigate("MainTabs", { screen: "Home" });
+      return;
+    }
+
+    void getHungryService()
+      .auth.getCurrentSession()
+      .then((session) => {
+        if (!session) {
+          clearSession();
+          showToast({ message: "Please sign in to enter User mode.", tone: "info" });
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+          });
+          return;
+        }
+
+        applyProfile(session.profile);
+        completeAuth({
+          completedOnboarding: true,
+          skippedTasteQuiz: true,
+          trackSignInEvent: false,
+        });
+        showToast({ message: "Mode → User", tone: "info" });
+        navigation.navigate("MainTabs", { screen: "Home" });
+      })
+      .catch(() => {
+        clearSession();
+        showToast({ message: "Please sign in to enter User mode.", tone: "info" });
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+        });
+      });
   };
 
   const openActivityInboxSmoke = () => {
@@ -497,10 +616,15 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     completeOnboarding(false);
     setReturnRoute(undefined);
     hideReviewSuccess();
-    navigation.navigate("ActivityInbox", { initialTab: "updates" });
+    navigation.navigate("ActivityInbox", { initialTab: "messages" });
   };
 
   const openBuilding = (buildingId: string) => {
+    if (!FEATURE_FLAGS.floorplansEnabled) {
+      showToast({ message: "Floorplan routes are disabled for this build.", tone: "info" });
+      return;
+    }
+
     const building = getSingaporeBuildings().find((b) => b.id === buildingId);
     if (!building) return;
     const summary = {
@@ -598,7 +722,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
         />
         <DevButton
           label="Activity"
-          onPressIn={() => preloadRoute(navigation, "ActivityInbox", { initialTab: "updates" })}
+          onPressIn={() => preloadRoute(navigation, "ActivityInbox", { initialTab: "messages" })}
           onPress={openActivityInboxSmoke}
         />
 
@@ -647,20 +771,6 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           defaultExpanded
         >
           <VersionPair
-            label="Discover"
-            onV1PressIn={() => preloadRoute(navigation, "MainTabs", { screen: "Discover" })}
-            onV2PressIn={() => preloadRoute(navigation, "DiscoverV2")}
-            onV1={() => navigation.navigate("MainTabs", { screen: "Discover" })}
-            onV2={() => navigation.navigate("DiscoverV2")}
-          />
-          <VersionPair
-            label="Search"
-            onV1PressIn={() => preloadRoute(navigation, "SearchHome")}
-            onV2PressIn={() => preloadRoute(navigation, "SearchHomeV2")}
-            onV1={() => navigation.navigate("SearchHome")}
-            onV2={() => navigation.navigate("SearchHomeV2")}
-          />
-          <VersionPair
             label="Stall Detail"
             onV1PressIn={() => prefetchSampleStallDetail("v1")}
             onV2PressIn={() => prefetchSampleStallDetail("v2")}
@@ -674,31 +784,19 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
             onV1={() => openSampleDishDetail("v1")}
             onV2={() => openSampleDishDetail("v2")}
           />
-          <VersionPair
-            label="Building"
-            onV1PressIn={() =>
-              preloadRoute(navigation, "BuildingDrillDown", { buildingId: "hc-maxwell" })
-            }
-            onV2PressIn={() =>
-              preloadRoute(navigation, "BuildingDrillDownV2", { buildingId: "hc-maxwell" })
-            }
-            onV1={() => openBuilding("hc-maxwell")}
-            onV2={() => navigation.navigate("BuildingDrillDownV2", { buildingId: "hc-maxwell" })}
-          />
-          <VersionPair
-            label="QuickReview"
-            onV1PressIn={() => preloadRoute(navigation, "ReviewStack", { screen: "ReviewMain" })}
-            onV2PressIn={() => preloadRoute(navigation, "QuickReviewV2")}
-            onV1={() => navigation.navigate("ReviewStack", { screen: "ReviewMain" })}
-            onV2={() => navigation.navigate("QuickReviewV2")}
-          />
-          <VersionPair
-            label="Review Feed"
-            onV1PressIn={() => preloadRoute(navigation, "MainTabs", { screen: "Review" })}
-            onV2PressIn={() => preloadRoute(navigation, "ReviewFeedV2")}
-            onV1={() => navigation.navigate("MainTabs", { screen: "Review" })}
-            onV2={() => navigation.navigate("ReviewFeedV2" as any)}
-          />
+          {FEATURE_FLAGS.floorplansEnabled ? (
+            <VersionPair
+              label="Building"
+              onV1PressIn={() =>
+                preloadRoute(navigation, "BuildingDrillDown", { buildingId: "hc-maxwell" })
+              }
+              onV2PressIn={() =>
+                preloadRoute(navigation, "BuildingDrillDownV2", { buildingId: "hc-maxwell" })
+              }
+              onV1={() => openBuilding("hc-maxwell")}
+              onV2={() => navigation.navigate("BuildingDrillDownV2", { buildingId: "hc-maxwell" })}
+            />
+          ) : null}
           <VersionPair
             label="Post Composer"
             onV1PressIn={() =>
@@ -754,6 +852,24 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
             <DevButton label="Signed out" onPress={resetToSignedOut} />
             <DevButton label="Auth only" onPress={resetToAuthIncomplete} />
             <DevButton label="Auth + Onboard" onPress={resetToAuthComplete} variant="primary" />
+            <DevButton
+              label="Auth + Onboard User A"
+              onPress={() =>
+                resetToNamedAuthComplete({
+                  email: "e2e-user-a@example.sg",
+                  displayName: "User A",
+                })
+              }
+            />
+            <DevButton
+              label="Auth + Onboard User B"
+              onPress={() =>
+                resetToNamedAuthComplete({
+                  email: "e2e-user-b@example.sg",
+                  displayName: "User B",
+                })
+              }
+            />
           </View>
         </CollapsibleSection>
 
@@ -994,11 +1110,20 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
             {NETWORK_PRESETS.map((preset) => {
               const icon =
                 preset.id === "live" ? (
-                  <Zap size={14} color={network === preset.id ? "#fff" : palette.textMuted} />
+                  <Zap
+                    size={14}
+                    color={network === preset.id ? palette.white : palette.textMuted}
+                  />
                 ) : preset.id === "slow" ? (
-                  <Wifi size={14} color={network === preset.id ? "#fff" : palette.textMuted} />
+                  <Wifi
+                    size={14}
+                    color={network === preset.id ? palette.white : palette.textMuted}
+                  />
                 ) : (
-                  <WifiOff size={14} color={network === preset.id ? "#fff" : palette.textMuted} />
+                  <WifiOff
+                    size={14}
+                    color={network === preset.id ? palette.white : palette.textMuted}
+                  />
                 );
 
               return (
@@ -1035,9 +1160,11 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
         </CollapsibleSection>
 
         {/* ── SG Building Picker ─────────────────────────── */}
-        <CollapsibleSection title="SG Building Picker" subtitle="Jump to floor plan">
-          <SGBuildingPickerContent onOpenBuilding={openBuilding} />
-        </CollapsibleSection>
+        {FEATURE_FLAGS.floorplansEnabled ? (
+          <CollapsibleSection title="SG Building Picker" subtitle="Jump to floor plan">
+            <SGBuildingPickerContent onOpenBuilding={openBuilding} />
+          </CollapsibleSection>
+        ) : null}
 
         {/* ── Data Inspector ─────────────────────────────── */}
         <CollapsibleSection title="Data inspector" badge="Mock">

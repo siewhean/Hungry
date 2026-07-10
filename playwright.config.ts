@@ -50,16 +50,21 @@ export default defineConfig({
   ],
   webServer: shouldStartWebServer
     ? {
-        command: `node ./scripts/run-expo.cjs start --web --localhost --port ${port} --clear`,
+        command: `node ./scripts/run-expo.cjs start --localhost --port=${port} --clear`,
         url: baseURL,
         timeout: 120_000,
         reuseExistingServer: !process.env.CI,
         env: {
           ...process.env,
           CI: "1",
+          HUNGRY_EXPO_E2E_WEBSERVER: "1",
           HUNGRY_DATA_SOURCE: "mock",
           EXPO_PUBLIC_HUNGRY_DATA_SOURCE: "mock",
+          EXPO_PUBLIC_HUNGRY_E2E_DATA_SOURCE: "mock",
+          EXPO_PUBLIC_MOCK_MAPBOX_ENABLED: "1",
+          EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN: "",
           EXPO_PUBLIC_DISABLE_POSTHOG: "1",
+          EXPO_NO_DOTENV: "1",
           EXPO_NO_TELEMETRY: "1",
         },
       }

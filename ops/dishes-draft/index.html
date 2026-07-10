@@ -23,7 +23,7 @@
     <div class="controls">
       <input id="supabaseUrl" placeholder="SUPABASE_URL (https://...supabase.co)" />
       <input id="anonKey" placeholder="EXPO_PUBLIC_SUPABASE_ANON_KEY" />
-      <input id="opsKey" placeholder="OPS_DISHES_DRAFT_API_KEY" />
+      <input id="accessToken" placeholder="Supabase access token for app_ops_admins operator" />
       <input id="venueId" placeholder="Optional venue_id filter" />
       <button id="loadBtn">Load Queue</button>
     </div>
@@ -38,14 +38,13 @@
       async function invoke(payload) {
         const supabaseUrl = document.getElementById('supabaseUrl').value.trim();
         const anonKey = document.getElementById('anonKey').value.trim();
-        const opsKey = document.getElementById('opsKey').value.trim();
+        const accessToken = document.getElementById('accessToken').value.trim();
         const response = await fetch(`${supabaseUrl}/functions/v1/ops-dishes-draft`, {
           method: 'POST',
           headers: {
             'content-type': 'application/json',
             'apikey': anonKey,
-            'authorization': `Bearer ${anonKey}`,
-            'x-ops-api-key': opsKey,
+            'authorization': `Bearer ${accessToken}`,
           },
           body: JSON.stringify(payload),
         });

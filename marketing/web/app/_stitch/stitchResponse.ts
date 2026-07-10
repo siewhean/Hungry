@@ -19,6 +19,64 @@ const DIRECT_LINKS: [RegExp, string][] = [
   [/href="#">Terms of Service/g, 'href="/privacy">Terms of Service'],
 ];
 
+function normalizeLinkLabel(value: string | null) {
+  return (value ?? "").replace(/\s+/g, " ").replace(/\s*\n\s*/g, " ").trim().toLowerCase();
+}
+
+function resolveRouteFromLabel(rawLabel: string) {
+  const value = normalizeLinkLabel(rawLabel);
+
+  if (!value) {
+    return null;
+  }
+
+  if (value.includes("for foodies")) {
+    return "/for-foodies";
+  }
+
+  if (value.includes("for merchant") || value.includes("for hawker") || value === "for hawkers") {
+    return "/for-merchants";
+  }
+
+  if (value === "about" || value.includes("about hungry")) {
+    return "/about";
+  }
+
+  if (value.includes("merchant portal") || value.includes("merchant login") || value.includes("login")) {
+    return "/merchant/login";
+  }
+
+  if (value.includes("register merchant interest") || value.includes("register interest")) {
+    return "/join-waitlist?joining_as=hawker";
+  }
+
+  if (value.includes("join") && value.includes("waitlist")) {
+    return "/join-waitlist";
+  }
+
+  if (value.includes("privacy policy") || value.includes("terms of service")) {
+    return "/privacy";
+  }
+
+  if (value.includes("hawker centre") || value.includes("hawker centers")) {
+    return "/for-foodies#hawker-centres";
+  }
+
+  if (value.includes("nearby makan")) {
+    return "/for-foodies#nearby-makan";
+  }
+
+  if (value.includes("merchant support")) {
+    return "/for-merchants";
+  }
+
+  if (value.includes("contact us")) {
+    return "mailto:hello@hungry.sg";
+  }
+
+  return null;
+}
+
 const VISUAL_MENU_IMAGE =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuCdYDrvxyqyFaICeK_UZgc8NBJqXP7OFu83U011VW8FrhTgPYpVQV-GeRGw0q_KhcRTsthuWmEn_0-Fk46Kc18tP3ysd4Sgr1Gvnb7edHDnfkFjitVSwnuXT3FdmA6Hnb08FP_UHHiz1rioxVOq8CWrY82bj3Z5w0g__l3S41N92cBx3kZRTt19sZeg-d5ltcRrqmKN6T3pJEuPmQQjUENWA5VNjZhm0l88hVNIPqn6inLLrYszUUdlCwiutFMsdQses9MMBl_cZas";
 
@@ -88,7 +146,9 @@ function enhanceWaitlistPage(html: string): string {
     .replace(
       /<header class="w-full py-lg px-screen-edge flex justify-center items-center">[\s\S]*?<\/header>/,
       `<header class="w-full py-lg px-screen-edge flex justify-between items-center max-w-7xl mx-auto sticky top-0 z-[90] bg-paper-warm">
-<a class="text-hungry-orange font-h1 text-h1 tracking-tight" href="/for-foodies">Hungry</a>
+<a class="inline-flex items-center" href="/for-foodies">
+  <img alt="Hungry" class="h-[40px] w-[140px] object-contain" src="/images/Logo/hungry_logo_text_transparent.png" />
+</a>
 <div class="hidden md:flex items-center gap-8 font-['Plus_Jakarta_Sans']">
 <a class="text-stone-600 font-medium hover:text-[#E8531E] transition-colors" href="/for-foodies">For Foodies</a>
 <a class="text-stone-600 font-medium hover:text-[#E8531E] transition-colors" href="/for-merchants">For Merchants</a>
@@ -134,7 +194,7 @@ function enhanceMerchantLoginPage(html: string): string {
   return html
     .replace(
       '<div class="font-h1 text-h1 text-hungry-orange tracking-tight">Hungry</div>',
-      '<a class="font-h1 text-h1 text-hungry-orange tracking-tight" href="/for-foodies">Hungry</a>',
+      '<a class="inline-flex items-center" href="/for-foodies"><img alt="Hungry" class="h-[40px] w-[140px] object-contain" src="/images/Logo/hungry_logo_text_transparent.png" /></a>',
     )
     .replace(
       /<main class="flex-grow flex items-center justify-center px-screen-edge py-region-gap">[\s\S]*?<\/main>/,
@@ -198,20 +258,34 @@ function enhanceMerchantLoginPage(html: string): string {
 }
 
 function rewriteLinks(html: string): string {
-  return DIRECT_LINKS.reduce((current, [pattern, replacement]) => {
+  const withDirectReplacements = DIRECT_LINKS.reduce((current, [pattern, replacement]) => {
     return current.replace(pattern, replacement);
   }, html);
+
+  return withDirectReplacements.replace(
+    /<a([^>]*?)href="#"\s*>([\s\S]*?)<\/a>/g,
+    (match, attrs, innerText) => {
+      const plainLabel = innerText.replace(/<[^>]*>/g, "").replace(/\u00a0/g, " ");
+      const destination = resolveRouteFromLabel(plainLabel);
+
+      if (!destination) {
+        return match;
+      }
+
+      return `<a${attrs}href="${destination}">${innerText}</a>`;
+    },
+  );
 }
 
 function standardizeNavigation(html: string): string {
   return html
     .replace(
       /<div class="text-2xl font-extrabold tracking-tight text-\[#E8531E\] dark:text-\[#FF6B35\]">Hungry<\/div>/g,
-      '<a class="text-2xl font-extrabold tracking-tight text-[#E8531E] dark:text-[#FF6B35]" href="/for-foodies" aria-label="Hungry home">Hungry</a>',
+      '<a class="inline-flex items-center" href="/for-foodies" aria-label="Hungry home"><img alt="Hungry" class="h-[40px] w-[140px] object-contain" src="/images/Logo/hungry_logo_text_transparent.png" /></a>',
     )
     .replace(
       /<a class="text-2xl font-extrabold tracking-tight text-\[#E8531E\] dark:text-\[#FF6B35\]" href="#">\s*Hungry\s*<\/a>/g,
-      '<a class="text-2xl font-extrabold tracking-tight text-[#E8531E] dark:text-[#FF6B35]" href="/for-foodies" aria-label="Hungry home">Hungry</a>',
+      '<a class="inline-flex items-center" href="/for-foodies" aria-label="Hungry home"><img alt="Hungry" class="h-[40px] w-[140px] object-contain" src="/images/Logo/hungry_logo_text_transparent.png" /></a>',
     );
 }
 
@@ -221,7 +295,7 @@ function injectNavigationScript(html: string): string {
   const routeFor = (text) => {
     const value = (text || "").replace(/\\s+/g, " ").trim().toLowerCase();
     if (value.includes("for foodies")) return "/for-foodies";
-    if (value.includes("for merchants")) return "/for-merchants";
+    if (value.includes("for merchant") || value.includes("for hawker") || value === "for hawkers") return "/for-merchants";
     if (value === "about" || value.includes("about hungry")) return "/about";
     if (value.includes("merchant portal") || value.includes("login")) return "/merchant/login";
     if (value.includes("register merchant interest") || value.includes("merchant interest")) return "/join-waitlist?joining_as=hawker";
@@ -233,8 +307,32 @@ function injectNavigationScript(html: string): string {
     if (value.includes("showcase") || value.includes("app mockup")) return "/showcase";
     if (value.includes("trust")) return "/trust";
     if (value.includes("visual feast")) return "/foodie-hero";
-    if (value.includes("join") || value.includes("waitlist") || value.includes("early access") || value.includes("register merchant interest")) return "/join-waitlist";
+    if (value.includes("hawker centre") || value.includes("hawker centres")) return "/for-foodies#hawker-centres";
+    if (value.includes("nearby makan")) return "/for-foodies#nearby-makan";
+    if (value.includes("merchant support")) return "/for-merchants";
+    if (value.includes("contact us")) return "mailto:hello@hungry.sg";
+    if (value.includes("register interest")) return "/join-waitlist?joining_as=hawker";
+    if (value.includes("join") || value.includes("waitlist") || value.includes("early access")) return "/join-waitlist";
+    if (value.includes("terms of service") || value.includes("privacy policy")) return "/privacy";
     return null;
+  };
+
+  const normalizePath = (value) => (value || "").replace(/\/+$/, "") || "/";
+
+  const isSamePage = (url) => {
+    try {
+      const destination = new URL(url, window.location.href);
+      const current = window.location;
+
+      return (
+        destination.origin === current.origin &&
+        normalizePath(destination.pathname) === normalizePath(current.pathname) &&
+        !destination.hash &&
+        !destination.search
+      );
+    } catch {
+      return false;
+    }
   };
 
   const toggleMobileMenu = (button) => {
@@ -311,6 +409,19 @@ function injectNavigationScript(html: string): string {
     }
     const href = control.getAttribute("href");
     const target = routeFor(label);
+    const resolvedTarget = href || target;
+
+    if (!resolvedTarget) {
+      return;
+    }
+
+    const isNavigationHeaderLink = control.closest("header") || control.closest("nav");
+    if (isNavigationHeaderLink && isSamePage(resolvedTarget)) {
+      event.preventDefault();
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+      return;
+    }
+
     if (target && (control.tagName === "BUTTON" || !href || href === "#")) {
       event.preventDefault();
       window.location.href = target;

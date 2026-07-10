@@ -1,10 +1,13 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Image } from "expo-image";
-import { ArrowLeft, Clock3, Compass, MapPin, UtensilsCrossed } from "lucide-react-native";
+import { ArrowLeft, Clock3, Compass, UtensilsCrossed } from "lucide-react-native";
+import { useState } from "react";
 
 import { AppText, Button, Card } from "@/components/ui";
+import { WordmarkLogoV2 } from "@/components/icons/brand/WordmarkLogoV2";
+import { AccessibleImage } from "@/components/ui/AccessibleImage";
+import { HUNGRY_LOGO_STANDARD_WORDMARK_SIZE } from "@/constants/brandAssets";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
@@ -17,8 +20,7 @@ import {
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "LocationPermission">;
 
-const HERO_ILLUSTRATION =
-  "https://www.figma.com/api/mcp/asset/c29e48d7-30d6-42f9-a46e-9d8c5419d602";
+const locationPermissionsGraphic = require("../../../../assets/images/location-permissions-graphic.png");
 
 const FEATURE_ROWS = [
   {
@@ -31,16 +33,16 @@ const FEATURE_ROWS = [
   },
   {
     key: "navigation",
-    title: "Hawker Navigation",
-    description: "Get precise directions to that specific stall in complex centers.",
+    title: "Food Navigation",
+    description: "Get precise directions to the exact stall in busy food streets.",
     icon: Compass,
     iconTone: "warning",
     iconBgTone: "amberLight",
   },
   {
     key: "wait",
-    title: "Stall Wait Times",
-    description: "Check real-time queues before you head out for lunch.",
+    title: "Local Favorites",
+    description: "Use timing cues to plan around busier nearby stalls and dishes.",
     icon: Clock3,
     iconTone: "error",
     iconBgTone: "errorSoft",
@@ -50,20 +52,55 @@ const FEATURE_ROWS = [
 export function LocationPermissionScreen({ navigation }: Props) {
   const { palette, radii, shadows, spacing } = useHungryTheme();
   const grantLocation = useLocationStore((state) => state.grantLocation);
+  const manualLocation = useLocationStore((state) => state.manualLocation);
   const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
   const hasSkippedTasteQuiz = useSessionStore((state) => state.hasSkippedTasteQuiz);
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const [isContinuing, setIsContinuing] = useState(false);
 
   const finish = () => {
     completeOnboarding(hasSkippedTasteQuiz);
+    if (isAuthenticated) {
+      const rootNav = navigation.getParent();
+      if (rootNav && typeof (rootNav as { reset?: (state: object) => void }).reset === "function") {
+        (rootNav as { reset: (state: object) => void }).reset({
+          index: 0,
+          routes: [{ name: "MainTabs", params: { screen: "Home" } }],
+        });
+      }
+      return;
+    }
+
+    navigation.navigate("OnboardingAuth");
   };
 
   const allowDeviceLocation = async () => {
-    const granted = await grantLocation();
-    if (!granted) {
+    try {
+      const granted = await grantLocation();
+      if (!granted) {
+        navigation.navigate("ManualLocationPicker");
+        return;
+      }
+      finish();
+    } catch {
       navigation.navigate("ManualLocationPicker");
+    }
+  };
+
+  const onContinue = async () => {
+    if (isContinuing) {
       return;
     }
-    finish();
+
+    setIsContinuing(true);
+    if (manualLocation) {
+      finish();
+      setIsContinuing(false);
+      return;
+    }
+
+    await allowDeviceLocation();
+    setIsContinuing(false);
   };
 
   return (
@@ -71,120 +108,109 @@ export function LocationPermissionScreen({ navigation }: Props) {
       style={{ flex: 1, backgroundColor: palette.bg }}
       edges={["top", "left", "right", "bottom"]}
     >
-      <View
-        style={{
-          alignItems: "center",
-          backgroundColor: palette.bg,
-          flexDirection: "row",
-          justifyContent: "space-between",
-          minHeight: 64,
-          paddingHorizontal: spacing[3],
-          paddingVertical: spacing[3],
-        }}
-      >
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => navigation.navigate("TasteQuiz")}
+      <View style={{ flex: 1 }}>
+        <View
           style={{
             alignItems: "center",
-            borderRadius: radii.pill,
-            height: 40,
-            justifyContent: "center",
-            width: 40,
+            backgroundColor: palette.bg,
+            flexDirection: "row",
+            justifyContent: "space-between",
+            minHeight: 64,
+            paddingHorizontal: spacing[3],
+            paddingVertical: spacing[3],
           }}
         >
-          <ArrowLeft color={palette.orange} size={22} />
-        </Pressable>
-        <AppText variant="h2" style={{ color: palette.orange, fontWeight: "700" }}>
-          Hungry
-        </AppText>
-        <View style={{ width: 40 }} />
-      </View>
-
-      <View
-        style={{
-          flex: 1,
-          gap: spacing[3],
-          paddingHorizontal: spacing[3],
-          paddingTop: spacing[3],
-        }}
-      >
-        <View style={{ alignItems: "center" }}>
-          <View
-            style={[
-              shadows.floating,
-              {
-                backgroundColor: palette.navy,
-                borderRadius: radii.lg,
-                height: 152,
-                maxWidth: 188,
-                overflow: "hidden",
-                width: "100%",
-              },
-            ]}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Back to taste quiz"
+            accessibilityHint="Returns to the taste preference questions"
+            onPress={() => {
+              if (navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate("TasteQuiz");
+              }
+            }}
+            style={{
+              alignItems: "center",
+              borderRadius: radii.pill,
+              height: 40,
+              justifyContent: "center",
+              width: 40,
+            }}
           >
-            <Image
-              source={{ uri: HERO_ILLUSTRATION }}
-              contentFit="cover"
-              style={{ height: "100%", width: "100%" }}
-            />
-            <View
+            <ArrowLeft color={palette.text} size={22} />
+          </Pressable>
+          <WordmarkLogoV2 size={HUNGRY_LOGO_STANDARD_WORDMARK_SIZE} />
+          <View style={{ width: 40 }} />
+        </View>
+
+        <View
+          style={{
+            flex: 1,
+            gap: spacing[3],
+            paddingHorizontal: spacing[3],
+            paddingTop: spacing[3],
+            paddingBottom: 16,
+          }}
+        >
+          <View style={{ gap: spacing[2] }}>
+            <AccessibleImage
+              source={locationPermissionsGraphic}
+              contentFit="contain"
+              accessibilityLabel="Location permission illustration"
               style={{
-                alignItems: "center",
-                backgroundColor: palette.surfaceTranslucent,
-                borderRadius: radii.pill,
-                bottom: spacing[4],
-                flexDirection: "row",
-                gap: spacing[2],
-                left: spacing[4],
-                paddingHorizontal: spacing[3],
-                paddingVertical: spacing[1],
-                position: "absolute",
-                right: spacing[4],
+                alignSelf: "center",
+                height: 96,
+                width: "100%",
+                maxWidth: 230,
               }}
-            >
-              <MapPin color={palette.orangeDark} size={14} />
-              <AppText variant="micro" style={{ fontWeight: "700", textAlign: "center" }}>
-                Singapore Food Trail
-              </AppText>
-            </View>
+            />
+            <AppText variant="h2" style={{ textAlign: "center" }}>
+              Discover the best bites{"\n"}around you.
+            </AppText>
+            <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
+              Allowing location helps Hungry curate{"\n"}the perfect experience for your palate.
+            </AppText>
+          </View>
+
+          <View style={{ gap: spacing[2] }}>
+            {FEATURE_ROWS.map(({ key, ...row }) => (
+              <FeatureCard key={key} {...row} />
+            ))}
           </View>
         </View>
 
-        <View style={{ gap: spacing[2] }}>
-          <AppText variant="h2" style={{ textAlign: "center" }}>
-            Discover the best bites{"\n"}around you.
-          </AppText>
-          <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
-            Allowing location helps Hungry curate{"\n"}the perfect experience for your palate.
-          </AppText>
+        <View
+          style={{
+            backgroundColor: palette.bg,
+            gap: ONBOARDING_ACTIONS_GAP,
+            paddingTop: spacing[3],
+            paddingBottom: ONBOARDING_ACTIONS_BOTTOM_PADDING,
+            paddingHorizontal: ONBOARDING_ACTIONS_HORIZONTAL_PADDING,
+          }}
+        >
+          <Button
+            label="Continue"
+            onPress={onContinue}
+            loading={isContinuing}
+            style={shadows.floating}
+          />
+          {manualLocation ? (
+            <Button
+              label={`Selected Location: ${manualLocation}`}
+              variant="secondary"
+              onPress={() => navigation.navigate("ManualLocationPicker")}
+              accessibilityLabel={`Edit selected location, currently ${manualLocation}`}
+            />
+          ) : (
+            <Button
+              label="Enter Manually"
+              variant="secondary"
+              onPress={() => navigation.navigate("ManualLocationPicker")}
+            />
+          )}
         </View>
-
-        <View style={{ gap: spacing[2] }}>
-          {FEATURE_ROWS.map(({ key, ...row }) => (
-            <FeatureCard key={key} {...row} />
-          ))}
-        </View>
-      </View>
-
-      <View
-        style={{
-          backgroundColor: palette.bg,
-          gap: ONBOARDING_ACTIONS_GAP,
-          paddingBottom: ONBOARDING_ACTIONS_BOTTOM_PADDING,
-          paddingHorizontal: ONBOARDING_ACTIONS_HORIZONTAL_PADDING,
-        }}
-      >
-        <AppText variant="micro" tone="muted" style={{ textAlign: "center" }}>
-          Hungry collects your approximate device location only while you use the app to rank nearby
-          dishes and map results. You can skip this and enter an area manually.
-        </AppText>
-        <Button label="Continue" onPress={allowDeviceLocation} style={shadows.floating} />
-        <Button
-          label="Enter Manually"
-          variant="secondary"
-          onPress={() => navigation.navigate("ManualLocationPicker")}
-        />
       </View>
     </SafeAreaView>
   );
@@ -203,15 +229,16 @@ function FeatureCard({
   title: string;
   description: string;
 }) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
 
   return (
     <Card
       style={{
         backgroundColor: palette.surface,
         borderColor: "transparent",
-        borderRadius: radii.lg,
+        borderRadius: componentRadii.card,
         flexDirection: "row",
+        alignItems: "center",
         gap: spacing[3],
         minHeight: 78,
         padding: spacing[3],

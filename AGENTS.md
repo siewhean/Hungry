@@ -97,11 +97,20 @@ Level 4 — Current Sprint Goal
 
 ## 5. Feature Flag Registry
 
-| Flag                   | Default | Meaning                                    |
-| ---------------------- | ------- | ------------------------------------------ |
-| `readsEnabled`         | `true`  | Reads tab is visible                       |
-| `notificationsEnabled` | `false` | Push notifications disabled                |
-| `mockMapboxEnabled`    | `false` | Use real Mapbox SDK; `true` = mock surface |
+| Flag | Full Audit V1 production default | Meaning |
+| --- | --- | --- |
+| `directMessagesEnabled` | `true` | Direct Messages tab and chat surfaces |
+| `commentsEnabled` | `true` | Community comments on posts/reviews |
+| `storiesEnabled` | `true` | Story viewer and story creation |
+| `collectionsEnabled` | `true` | Collection list/detail routes |
+| `gamificationEnabled` | `true` | Passport, Missions, and FoodCred surfaces |
+| `merchantCentreEnabled` | `true` | Merchant beta routes behind auth/role/verification checks |
+| `oauthProvidersEnabled` | `false` | Google/Apple OAuth provider buttons stay disabled until live credentials are verified |
+| `prototypeRoutesEnabled` | `false` | Prototype-only routes stay hidden in production |
+| `floorplansEnabled` | `false` | Indoor floorplan routes and entry points stay hidden in production |
+| `readsEnabled` | `true` | Reads tab is visible |
+| `notificationsEnabled` | `false` | Push notifications disabled |
+| `mockMapboxEnabled` | `false` | Use real Mapbox SDK; `true` = mock surface |
 
 Source: `src/constants/featureFlags.ts`
 
@@ -234,7 +243,7 @@ Rules:
 <claude-mem-context>
 # Memory Context
 
-# [Hungry] recent context, 2026-05-06 6:27pm GMT+8
+# [Hungry] recent context, 2026-05-25 2:20am GMT+8
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE

@@ -32,7 +32,6 @@ test("workflow schedules review only and requires explicit manual apply confirma
   assert.equal(workflowSource.match(/node-version: 22/g)?.length, 2);
 });
 
-
 test("review command is dry-run, bounded, known-sources-only, and no-inserts", () => {
   const args = buildEnrichmentArgs({ mode: "review", limit: 10, workers: 2, outputDir: "/tmp/review" });
   assert.ok(args.includes("--dry-run"));

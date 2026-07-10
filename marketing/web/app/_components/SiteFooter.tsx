@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { footerBrand, footerSections, isExternalFooterHref, siteLayout } from "./footerData";
+import { HungryWordmark } from "../../components/HungryWordmark";
 
 type SiteFooterProps = {
   className?: string;
@@ -16,10 +17,10 @@ export function SiteFooter({ className = "" }: SiteFooterProps) {
       >
         <div className="space-y-3">
           <Link
-            className={`font-display ${siteLayout.footerBrandText} font-extrabold tracking-tight text-hungry-orange`}
+            className={`inline-flex items-center ${siteLayout.footerBrandText}`}
             href={footerBrand.href}
           >
-            {footerBrand.label}
+            <HungryWordmark />
           </Link>
           <p className={`max-w-xs ${siteLayout.footerBodyText} text-stone-500`}>
             {footerBrand.copy}

@@ -1,6 +1,13 @@
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
+import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import type { Bite, DataRepository } from "@/lib/services/types";
-import type { DishDetail, StallPost } from "@/types/domain";
+import type {
+  DietaryFlag,
+  DishDetail,
+  SearchCategory,
+  StallPost,
+  TasteVector,
+} from "@/types/domain";
 
 export type DiscoverCollection =
   | "quickBites"
@@ -22,6 +29,127 @@ export const DISCOVER_CUISINE_FILTERS = [
   "Spicy",
   "Dessert",
 ];
+
+const COLLECTION_SEARCH_CATEGORIES: Record<DiscoverCollection, SearchCategory[]> = {
+  quickBites: ["local favourites"],
+  trending: ["local favourites"],
+  editorChoice: ["local favourites"],
+  budget: ["local favourites"],
+  lateNight: ["late night"],
+};
+
+const COLLECTION_SEARCH_QUERY: Record<DiscoverCollection, string> = {
+  quickBites: "",
+  trending: "",
+  editorChoice: "",
+  budget: "",
+  lateNight: "late night",
+};
+
+const HUNGRY_LOGO_IMAGE_URL =
+  "https://raw.githubusercontent.com/siewhean/Hungry/main/assets/images/Logo/hungry_logo_icon_transparent.png";
+
+const DISCOVER_BLOCKED_IMAGE_HOSTS = [
+  "images.unsplash.com",
+  "source.unsplash.com",
+  "picsum.photos",
+  "upload.wikimedia.org",
+] as const;
+
+export type DiscoverCardImageSourceType =
+  | "dish"
+  | "dish_image"
+  | "venue"
+  | "building"
+  | "representative_dish"
+  | "local_fallback";
+
+export type DiscoverCardImageCandidate = {
+  imageUrl?: string | null;
+  imageSourceType: Exclude<DiscoverCardImageSourceType, "local_fallback">;
+};
+
+export type DiscoverCardImage = {
+  imageUrl: string;
+  imageSourceType: DiscoverCardImageSourceType;
+  candidateUrls: string[];
+};
+
+export function isUsableDiscoverImageUrl(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  if (!trimmed || trimmed.includes(",") || trimmed === HUNGRY_LOGO_IMAGE_URL) {
+    return false;
+  }
+
+  let host = "";
+  try {
+    const parsed = new URL(trimmed);
+    if (!["http:", "https:"].includes(parsed.protocol)) {
+      return false;
+    }
+    host = parsed.hostname.toLowerCase();
+  } catch {
+    return false;
+  }
+
+  return !DISCOVER_BLOCKED_IMAGE_HOSTS.some(
+    (blockedHost) => host === blockedHost || host.endsWith(`.${blockedHost}`),
+  );
+}
+
+function uniqueUsableImageUrls(candidates: readonly DiscoverCardImageCandidate[]) {
+  const urls: string[] = [];
+  candidates.forEach(({ imageUrl }) => {
+    const trimmed = imageUrl?.trim();
+    if (!trimmed || !isUsableDiscoverImageUrl(trimmed) || urls.includes(trimmed)) {
+      return;
+    }
+    urls.push(trimmed);
+  });
+  return urls;
+}
+
+export function getDiscoverCardImage(
+  candidates: readonly DiscoverCardImageCandidate[],
+): DiscoverCardImage {
+  const candidateUrls = uniqueUsableImageUrls(candidates);
+  const selected = candidates.find(({ imageUrl }) => {
+    const trimmed = imageUrl?.trim();
+    return Boolean(trimmed && trimmed === candidateUrls[0]);
+  });
+
+  return {
+    imageUrl: candidateUrls[0] ?? "",
+    imageSourceType: selected?.imageSourceType ?? "local_fallback",
+    candidateUrls,
+  };
+}
+
+export function getDishImageCandidates(
+  dish: Pick<DishDetail, "gallery" | "imageUrl">,
+  imageSourceType: Exclude<DiscoverCardImageSourceType, "local_fallback"> = "dish",
+): DiscoverCardImageCandidate[] {
+  return [
+    ...(dish.gallery ?? []).map((imageUrl) => ({
+      imageUrl,
+      imageSourceType: "dish_image" as const,
+    })),
+    { imageUrl: dish.imageUrl, imageSourceType },
+  ];
+}
+
+function hasRealDiscoverBiteImage(bite: Bite) {
+  return bite.imageSourceType !== "local_fallback" && isUsableDiscoverImageUrl(bite.photoUrl);
+}
+
+function sortBitesByImagePriority<T extends Bite>(bites: readonly T[]) {
+  return [...bites].sort((left, right) => {
+    const imagePriority =
+      Number(hasRealDiscoverBiteImage(right)) - Number(hasRealDiscoverBiteImage(left));
+    if (imagePriority !== 0) return imagePriority;
+    return 0;
+  });
+}
 
 function slugifyId(value: string) {
   return value
@@ -60,11 +188,12 @@ function findPostForDish(posts: StallPost[], dish: DishDetail) {
 
 function dishToBite(dish: DishDetail, post: StallPost | undefined, index: number): Bite {
   const createdAt = parseRelativeCreatedAt(post?.createdAt, index);
+  const image = getDiscoverCardImage(getDishImageCandidates(dish));
   return {
     id: post ? `bite-${post.id}-${dish.id}` : `bite-${dish.id}`,
     authorId: post ? `author-${slugifyId(post.authorName)}` : `venue-${slugifyId(dish.venueName)}`,
     authorName: post?.authorName ?? dish.venueName,
-    authorAvatar: post?.authorAvatarUrl ?? post?.mediaUrl ?? dish.imageUrl,
+    authorAvatar: post?.authorAvatarUrl ?? image.imageUrl,
     dishId: dish.id,
     dishName: dish.name,
     venueId: dish.venueId,
@@ -72,7 +201,9 @@ function dishToBite(dish: DishDetail, post: StallPost | undefined, index: number
     unitNumber: dish.unitNumber,
     buildingId: dish.buildingId,
     buildingName: post?.authorLocation ?? dish.venueName,
-    photoUrl: post?.mediaUrls?.[0] ?? post?.mediaUrl ?? dish.imageUrl,
+    photoUrl: image.imageUrl,
+    mediaUrls: image.candidateUrls,
+    imageSourceType: image.imageSourceType,
     caption: post?.caption ?? dish.description ?? dish.name,
     tasteStamp: dish.tasteVector,
     cravingCount: dish.reviewCount,
@@ -101,19 +232,55 @@ export function getDiscoverBites(repository: DataRepository = getDataRepository(
   );
 }
 
+export async function getDiscoverBitesFromSearch(
+  collection: DiscoverCollection,
+  options: {
+    latitude?: number;
+    longitude?: number;
+    radiusMeters?: number;
+    tasteVector?: TasteVector;
+    dietaryFlags?: DietaryFlag[];
+  } = {},
+): Promise<Bite[]> {
+  const tasteVector = options.tasteVector ?? NEUTRAL_TASTE_VECTOR;
+  const maxPrice = collection === "budget" ? 8 : undefined;
+  const results = await getHungryService().discovery.searchDishes(
+    {
+      query: COLLECTION_SEARCH_QUERY[collection],
+      categories: COLLECTION_SEARCH_CATEGORIES[collection],
+      dietaryFlags: options.dietaryFlags ?? [],
+      tasteValues: tasteVector,
+      radius: options.radiusMeters ?? 3000,
+      latitude: options.latitude,
+      longitude: options.longitude,
+      maxPrice,
+      openOnly: collection === "lateNight" ? false : undefined,
+    },
+    tasteVector,
+  );
+
+  return results
+    .map((result) => result.dish)
+    .filter((dish) => (maxPrice ? dish.price <= maxPrice : true))
+    .map((dish, index) => dishToBite(dish, undefined, index));
+}
+
 export function syncBiteWithDish(
   bite: Bite,
   repository: DataRepository = getDataRepository(),
 ): Bite {
   const dish = repository.getDishById(bite.dishId);
   if (!dish) return bite;
+  const image = getDiscoverCardImage(getDishImageCandidates(dish));
 
   return {
     ...bite,
     buildingId: dish.buildingId,
     dishId: dish.id,
     dishName: dish.name,
-    photoUrl: dish.imageUrl,
+    photoUrl: image.imageUrl,
+    mediaUrls: image.candidateUrls,
+    imageSourceType: image.imageSourceType,
     price: dish.price,
     rating: dish.rating,
     unitNumber: dish.unitNumber,
@@ -144,16 +311,34 @@ export function getDiscoverBiteCollections(
   const syncedBites = bites.map((bite) => {
     const dish = repository.getDishById(bite.dishId);
     if (!dish) {
-      return { bite, dish: undefined };
+      const image = getDiscoverCardImage([
+        { imageUrl: bite.photoUrl, imageSourceType: "dish" },
+        ...(bite.mediaUrls ?? []).map((imageUrl) => ({
+          imageUrl,
+          imageSourceType: "dish_image" as const,
+        })),
+      ]);
+      return {
+        bite: {
+          ...bite,
+          photoUrl: image.imageUrl,
+          mediaUrls: image.candidateUrls,
+          imageSourceType: image.imageSourceType,
+        },
+        dish: undefined,
+      };
     }
 
+    const image = getDiscoverCardImage(getDishImageCandidates(dish));
     return {
       bite: {
         ...bite,
         buildingId: dish.buildingId,
         dishId: dish.id,
         dishName: dish.name,
-        photoUrl: dish.imageUrl,
+        photoUrl: image.imageUrl,
+        mediaUrls: image.candidateUrls,
+        imageSourceType: image.imageSourceType,
         price: dish.price,
         rating: dish.rating,
         unitNumber: dish.unitNumber,
@@ -164,6 +349,7 @@ export function getDiscoverBiteCollections(
     };
   });
   const bitesWithImages = syncedBites.map(({ bite }) => bite);
+  const imagePriorityBites = sortBitesByImagePriority(bitesWithImages);
 
   const lateNight = syncedBites
     .filter(({ bite, dish }) => {
@@ -177,10 +363,15 @@ export function getDiscoverBiteCollections(
     .map(({ bite }) => bite);
 
   return {
-    quickBites: bitesWithImages,
-    budget: bitesWithImages.filter((bite) => bite.price < 8),
-    editorChoice: bitesWithImages.filter((bite) => bite.rating >= 4.4),
-    trending: [...bitesWithImages].sort((a, b) => b.cravingCount - a.cravingCount),
-    lateNight,
+    quickBites: imagePriorityBites,
+    budget: sortBitesByImagePriority(bitesWithImages.filter((bite) => bite.price < 8)),
+    editorChoice: sortBitesByImagePriority(bitesWithImages.filter((bite) => bite.rating >= 4.4)),
+    trending: [...bitesWithImages].sort((a, b) => {
+      const imagePriority =
+        Number(hasRealDiscoverBiteImage(b)) - Number(hasRealDiscoverBiteImage(a));
+      if (imagePriority !== 0) return imagePriority;
+      return b.cravingCount - a.cravingCount;
+    }),
+    lateNight: sortBitesByImagePriority(lateNight),
   };
 }

@@ -15,7 +15,7 @@ import { WheelEntryAddSheet } from "./WheelEntryAddSheet";
 type Props = NativeStackScreenProps<WheelStackParamList, "WheelLobby">;
 
 export function WheelLobbyScreen({ navigation }: Props) {
-  const { palette, spacing, radii, shadows } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii, shadows } = useHungryTheme();
   const party = useWheelStore((s) => s.party);
   const members = useWheelStore((s) => s.members);
   const entries = useWheelStore((s) => s.entries);
@@ -111,7 +111,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={{
-              borderRadius: radii.xl,
+              borderRadius: componentRadii.card,
               padding: spacing[4],
               flexDirection: "row",
               alignItems: "center",
@@ -122,7 +122,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
               <AppText
                 variant="micro"
                 style={{
-                  color: "rgba(255,255,255,0.8)",
+                  color: palette.inverseTextSecondary,
                   fontWeight: "800",
                   textTransform: "uppercase",
                 }}
@@ -143,10 +143,10 @@ export function WheelLobbyScreen({ navigation }: Props) {
             <Pressable
               onPress={copyCode}
               style={({ pressed }) => ({
-                backgroundColor: "rgba(255,255,255,0.2)",
+                backgroundColor: palette.inverseSurfaceSubtle,
                 paddingHorizontal: spacing[4],
                 paddingVertical: spacing[3],
-                borderRadius: radii.lg,
+                borderRadius: componentRadii.button,
                 alignItems: "center",
                 justifyContent: "center",
                 opacity: pressed ? 0.8 : 1,

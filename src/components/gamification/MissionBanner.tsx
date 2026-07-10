@@ -12,15 +12,17 @@ import { ChevronRight, Target } from "lucide-react-native";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "@/components/ui/AppText";
 import { useMissionStore } from "@/store/useMissionStore";
+import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
 
 interface MissionBannerProps {
   onPress?: () => void;
 }
 
 export function MissionBanner({ onPress }: MissionBannerProps) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const missions = useMissionStore((s) => s.missions);
   const progressMap = useMissionStore((s) => s.progressMap);
+  const disclosure = getDataTrustDisclosure("missions");
   const activeMissions = useMemo(() => {
     return missions.filter((mission) => !progressMap[mission.id]?.completedAt);
   }, [missions, progressMap]);
@@ -54,7 +56,7 @@ export function MissionBanner({ onPress }: MissionBannerProps) {
           {
             backgroundColor: pressed ? palette.successSoft : palette.successSoft,
             borderColor: palette.success,
-            borderRadius: radii.xl,
+            borderRadius: componentRadii.card,
             borderWidth: 1,
             paddingHorizontal: spacing[4],
             paddingVertical: spacing[3],
@@ -63,12 +65,14 @@ export function MissionBanner({ onPress }: MissionBannerProps) {
       >
         <View style={styles.row}>
           <Target size={16} color={palette.success} style={{ marginRight: spacing[2] }} />
-          <AppText
-            variant="bodySmall"
-            style={{ color: palette.success, fontWeight: "700", flex: 1 }}
-          >
-            All missions complete this week!
-          </AppText>
+          <View style={{ flex: 1 }}>
+            <AppText variant="bodySmall" style={{ color: palette.success, fontWeight: "700" }}>
+              All missions complete this week!
+            </AppText>
+            <AppText tone="muted" variant="micro">
+              {disclosure}
+            </AppText>
+          </View>
           <ChevronRight size={16} color={palette.success} />
         </View>
       </Pressable>
@@ -89,7 +93,7 @@ export function MissionBanner({ onPress }: MissionBannerProps) {
         {
           backgroundColor: pressed ? palette.bgSoft : palette.surface,
           borderColor: palette.border,
-          borderRadius: radii.xl,
+          borderRadius: componentRadii.card,
           borderWidth: 1,
           paddingHorizontal: spacing[4],
           paddingVertical: spacing[3],
@@ -103,6 +107,9 @@ export function MissionBanner({ onPress }: MissionBannerProps) {
           <Target size={16} color={palette.orange} style={{ marginRight: spacing[2] }} />
           <AppText variant="bodySmall" style={{ color: palette.orange, fontWeight: "700" }}>
             This week
+          </AppText>
+          <AppText tone="muted" variant="micro" style={{ marginLeft: spacing[2] }}>
+            {disclosure}
           </AppText>
         </View>
         <ChevronRight size={16} color={palette.textMuted} />

@@ -39,6 +39,9 @@ test("Supabase social publish writes posts and post_media instead of legacy bite
   assert.match(buildPostMediaRows, /uploadPostMediaFromUri/);
   assert.match(buildPostMediaRows, /bucket: "post-media"/);
   assert.match(buildPostMediaRows, /mediaTypes\?\.\[index\]/);
+  assert.match(buildPostMediaRows, /Post media must be uploaded from local device files/);
+  assert.doesNotMatch(buildPostMediaRows, /storage_bucket: "external"/);
+  assert.doesNotMatch(buildPostMediaRows, /image\/external|video\/external/);
   assert.match(postBite, /from\("post_media"\)\.insert/);
   assert.match(postBite, /from\("posts"\)[\s\S]*\.update/);
   assert.match(postBite, /status: "published"/);
@@ -75,7 +78,9 @@ test("Supabase social feed reads published posts and post_media", () => {
 
 test("Supabase social reactions use post engagement tables", () => {
   const service = read("src/lib/services/supabase/supabaseService.ts");
+  const serviceTypes = read("src/lib/services/types.ts");
   const reactToBite = methodSegment(service, "reactToBite", "async getStories");
+  const shareBite = methodSegment(service, "shareBite", "async getStories");
   const getSavedBites = methodSegment(service, "getSavedBites", "async getLikedBites");
   const getLikedBites = methodSegment(service, "getLikedBites", "},\n  },\n\n  communitySafety");
 
@@ -83,6 +88,10 @@ test("Supabase social reactions use post engagement tables", () => {
   assert.match(reactToBite, /post_saves/);
   assert.match(reactToBite, /\.eq\("post_id", biteId\)/);
   assert.doesNotMatch(reactToBite, /bite_reactions/);
+  assert.match(serviceTypes, /shareBite\(/);
+  assert.match(shareBite, /from\("post_shares"\)\.insert/);
+  assert.match(shareBite, /post_id: biteId/);
+  assert.match(shareBite, /share_channel: options\?\.channel \?\? "in_app"/);
   assert.match(getSavedBites, /from\("post_saves"\)/);
   assert.match(getLikedBites, /from\("post_likes"\)/);
   assert.match(getSavedBites, /fetchPublishedPostBites\(client\)/);

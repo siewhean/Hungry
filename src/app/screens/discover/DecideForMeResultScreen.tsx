@@ -10,7 +10,6 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Image } from "expo-image";
 import { Sparkles, ChevronLeft, Shuffle, MapPin, Star } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -18,7 +17,7 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { trackAnalyticsEvent } from "@/lib/analytics";
-import { AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
+import { AccessibleImage, AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
 import { findBuildingById } from "@/features/discovery/discovery";
 import { blendedMatchScore, TASTE_LABELS } from "@/lib/ai/tasteEngine";
 import { getDataRepository } from "@/lib/services/serviceProvider";
@@ -349,7 +348,10 @@ export function DecideForMeResultScreen() {
     <View style={{ flex: 1, backgroundColor: palette.bg }}>
       {/* Navigation Overlay */}
       <View style={[styles.navOverlay, { top: insets.top, zIndex: 10 }]}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.navBtn}>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          style={[styles.navBtn, { backgroundColor: palette.surfaceTranslucent }]}
+        >
           <ChevronLeft color={palette.text} size={24} />
         </Pressable>
         <AppText variant="h3" style={{ flex: 1, textAlign: "center", marginRight: 40 }}>
@@ -367,13 +369,14 @@ export function DecideForMeResultScreen() {
       >
         {/* Parallax Hero */}
         <Animated.View style={[styles.heroContainer, { height: HERO_HEIGHT }, heroStyle]}>
-          <Image
+          <AccessibleImage
             source={{ uri: dish.imageUrl }}
             style={StyleSheet.absoluteFill}
             contentFit="cover"
+            accessibilityLabel={`${dish.name} photo`}
           />
           <LinearGradient
-            colors={["transparent", "rgba(0,0,0,0.2)", palette.bg]}
+            colors={["transparent", palette.mediaScrimSubtle, palette.bg]}
             style={StyleSheet.absoluteFill}
           />
         </Animated.View>
@@ -465,7 +468,16 @@ export function DecideForMeResultScreen() {
       </Animated.ScrollView>
 
       {/* Action Dock */}
-      <View style={[styles.actionDock, { paddingBottom: Math.max(insets.bottom, spacing[4]) }]}>
+      <View
+        style={[
+          styles.actionDock,
+          {
+            backgroundColor: palette.surfaceTranslucent,
+            borderTopColor: palette.inverseSurfaceBarely,
+            paddingBottom: Math.max(insets.bottom, spacing[4]),
+          },
+        ]}
+      >
         <Button label="Add to cart" style={{ flex: 1 }} onPress={handleAddToCart} />
       </View>
     </View>
@@ -485,8 +497,7 @@ const styles = StyleSheet.create({
   navBtn: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.9)",
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -500,8 +511,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: 16,
-    backgroundColor: "rgba(255,255,255,0.95)",
     borderTopWidth: 1,
-    borderTopColor: "rgba(0,0,0,0.05)",
   },
 });

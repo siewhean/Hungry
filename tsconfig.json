@@ -10,5 +10,5 @@
       ]
     }
   },
-  "exclude": ["node_modules", "store-layout-editor", ".claude", "marketing"]
+  "exclude": ["node_modules", "store-layout-editor", ".claude", "claude-mem", "marketing"]
 }

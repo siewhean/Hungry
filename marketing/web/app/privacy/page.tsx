@@ -4,20 +4,24 @@ import { MarketingStaticPage, PageSection } from "../_components/MarketingStatic
 
 const COLLECTED_DATA = [
   {
-    title: "Waitlist details",
-    body: "If you use the waitlist form, Hungry collects your email address, your optional first name, and whether you joined as a diner, hawker, or both.",
+    title: "Account and profile details",
+    body: "Hungry may collect your name, email address, authentication identifiers, profile settings, location preferences, and account deletion requests when you use the app.",
   },
   {
-    title: "Direct contact messages",
-    body: "If you email Hungry directly, we receive whatever information you include in that message so we can reply or continue the conversation.",
+    title: "Discovery and community activity",
+    body: "Hungry may process searches, likes, saves, reviews, posts, comments, follows, reports, messages, taste-preference signals, and uploaded photos or videos to operate the app.",
+  },
+  {
+    title: "Merchant and support details",
+    body: "Merchant claim, verification, menu, promotion, team, OCR, support, analytics, crash, and diagnostic information may be processed when those features are used.",
   },
 ];
 
 const DATA_USES = [
-  "Operate the waitlist and prevent duplicate entries.",
-  "Send launch updates, early-access notes, or relevant follow-up for the category you selected.",
-  "Respond to inbound questions or merchant-interest messages.",
-  "Maintain and secure the marketing site.",
+  "Operate sign-in, onboarding, discovery, reviews, social features, recommendations, and merchant tools.",
+  "Personalize Home, Discover, Search, and Decide For Me using taste and interaction signals.",
+  "Process account deletion, privacy, access, correction, and support requests.",
+  "Detect abuse, enforce moderation, secure the service, and diagnose crashes or reliability issues.",
 ];
 
 const DATA_PRACTICES = [
@@ -46,10 +50,10 @@ export default function PrivacyPage() {
     <MarketingStaticPage
       pageName="Privacy"
       eyebrow="Privacy"
-      title="A short privacy notice for the Hungry marketing site."
-      intro="This page covers the Hungry marketing website and the waitlist flow that exists today. It is meant to explain, in plain language, what information the site collects, what it is used for, and how to contact us if you want it updated or removed."
+      title="Privacy policy for Hungry."
+      intro="This page covers Hungry's public website, mobile app, and merchant tools. It explains what information Hungry collects, how it is used, and how to request deletion, access, or correction."
       summaryTitle="Scope"
-      summary="This notice applies to the current marketing site and waitlist only. If the consumer app launches with additional data features later, that product experience may require a separate notice."
+      summary="This notice applies to Hungry surfaces that link to this policy, including app accounts, discovery, reviews, posts, comments, messages, merchant tools, OCR/AI-assisted workflows, analytics, and support requests."
       heroLinks={[
         {
           href: "/about",
@@ -64,31 +68,31 @@ export default function PrivacyPage() {
         {
           href: "mailto:hello@hungry.sg",
           label: "Contact",
-          description: "Email hello@hungry.sg for privacy, waitlist, or removal requests.",
+          description: "Email hello@hungry.sg for privacy, deletion, access, correction, or safety requests.",
         },
       ]}
       cta={{
         title: "Need something updated or removed?",
-        body: "Email Hungry if you want to review, correct, or delete waitlist information associated with you, or if you have a question about this notice.",
+        body: "Use the in-app Delete account flow from Settings, visit the account deletion page, or email Hungry if you need help with privacy, access, correction, or deletion.",
         primaryHref: "mailto:hello@hungry.sg",
         primaryLabel: "Email hello@hungry.sg",
-        secondaryHref: "/about",
-        secondaryLabel: "Read about Hungry",
-        note: "Last updated: April 23, 2026.",
+        secondaryHref: "/account/delete",
+        secondaryLabel: "Delete account help",
+        note: "Last updated: May 18, 2026.",
       }}
     >
       <PageSection
         eyebrow="Coverage"
         title="What this notice covers right now."
-        description="The current marketing site is a simple public surface for the Hungry story and waitlist. It is not the full consumer app, merchant portal, or ordering product."
+            description="Hungry processes data for the public website, app accounts, discovery, reviews, community features, merchant tools, and store-compliance support."
         tone="soft"
       >
         <div className="grid gap-5 md:grid-cols-2">
           <article className="rounded-[28px] border border-hungry-border bg-white p-6">
             <h3 className="font-display text-2xl font-bold text-hungry-navy">Included in scope</h3>
             <p className="mt-3 text-sm leading-7 text-hungry-text-secondary">
-              Public marketing pages, the waitlist form, and direct email contact related to the
-              launch site.
+              Account, profile, discovery, recommendation, community, merchant, analytics,
+              diagnostics, support, deletion, and safety workflows.
             </p>
           </article>
           <article className="rounded-[28px] border border-hungry-border bg-white p-6">
@@ -96,8 +100,8 @@ export default function PrivacyPage() {
               Outside current scope
             </h3>
             <p className="mt-3 text-sm leading-7 text-hungry-text-secondary">
-              Future app accounts, ordering, merchant dashboards, or other product features that are
-              not live on this marketing site today.
+              Data that belongs entirely to third-party services outside Hungry, except where those
+              providers process data for Hungry features.
             </p>
           </article>
         </div>

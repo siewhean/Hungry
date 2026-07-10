@@ -3,10 +3,12 @@
  * Shows cover image, title, stall count, and save state.
  */
 
-import { View, Pressable, StyleSheet, Image } from "react-native";
+import { View, Pressable, StyleSheet } from "react-native";
 import { Bookmark, BookmarkCheck } from "lucide-react-native";
+import { useMemo } from "react";
 
 import { useHungryTheme } from "@/theme";
+import { AccessibleImage } from "@/components/ui/AccessibleImage";
 import { AppText } from "@/components/ui/AppText";
 import { useCollectionStore } from "@/store/useCollectionStore";
 import type { FoodCollection } from "@/types/domain";
@@ -21,8 +23,12 @@ const CARD_WIDTH = 220;
 const CARD_IMAGE_HEIGHT = 120;
 
 export function CollectionCard({ collection, userId, onPress }: CollectionCardProps) {
-  const { palette, radii, spacing, shadows } = useHungryTheme();
-  const isSaved = useCollectionStore((s) => s.isSaved(collection.id));
+  const { componentRadii, palette, spacing, shadows } = useHungryTheme();
+  const savedCollectionIds = useCollectionStore((state) => state.savedCollectionIds);
+  const isSaved = useMemo(
+    () => savedCollectionIds.has(collection.id),
+    [collection.id, savedCollectionIds],
+  );
   const toggleSave = useCollectionStore((s) => s.toggleSaveCollection);
 
   function handleSave() {
@@ -42,7 +48,7 @@ export function CollectionCard({ collection, userId, onPress }: CollectionCardPr
         {
           backgroundColor: pressed ? palette.bgSoft : palette.surface,
           borderColor: palette.border,
-          borderRadius: radii.xl,
+          borderRadius: componentRadii.card,
           borderWidth: 1,
           overflow: "hidden",
           width: CARD_WIDTH,
@@ -51,11 +57,11 @@ export function CollectionCard({ collection, userId, onPress }: CollectionCardPr
     >
       {/* Cover image */}
       {collection.coverImageUrl ? (
-        <Image
+        <AccessibleImage
           source={{ uri: collection.coverImageUrl }}
           style={[styles.image, { height: CARD_IMAGE_HEIGHT }]}
-          resizeMode="cover"
-          accessibilityLabel={`Cover photo for ${collection.title}`}
+          contentFit="cover"
+          decorative
         />
       ) : (
         <View

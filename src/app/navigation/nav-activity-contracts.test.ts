@@ -11,6 +11,7 @@ function read(relativePath: string): string {
 
 test("bottom navigation puts create post in the center and review fourth", () => {
   const tabs = read("src/app/navigation/SwipeableTabNavigator.tsx");
+  const tabItem = read("src/components/ui/AppBottomTabItem.tsx");
   const types = read("src/app/navigation/navigationTypes.ts");
 
   assert.match(tabs, /import \{ House, Compass, BookOpenText, Plus, User \}/);
@@ -28,28 +29,28 @@ test("bottom navigation puts create post in the center and review fourth", () =>
     /height: componentSizes\.bottomTabBar \+ Math\.max\(insets\.bottom, spacing\[2\]\)/,
   );
   assert.match(tabs, /paddingTop: spacing\[2\]/);
-  assert.match(tabs, /backgroundColor: palette\.orange[\s\S]*borderRadius: radii\.pill/);
+  assert.match(tabItem, /backgroundColor: palette\.orange[\s\S]*borderRadius: radii\.pill/);
   assert.match(
-    tabs,
-    /<Icon[\s\S]*color=\{isCreateAction \? palette\.white : currentColor\}[\s\S]*size=\{componentSizes\.bottomTabIcon\}[\s\S]*\/>/,
+    tabItem,
+    /<Icon[\s\S]*color=\{createAction \? palette\.white : resolvedColor\}[\s\S]*size=\{componentSizes\.bottomTabIcon\}[\s\S]*\/>/,
   );
   assert.match(
-    tabs,
-    /\{isCreateAction \? null : \(\s*<AppText[\s\S]*\{item\.label\}[\s\S]*<\/AppText>\s*\)\}/,
+    tabItem,
+    /\{showLabel && !createAction \? \(\s*<AppText[\s\S]*\{label\}[\s\S]*<\/AppText>\s*\) : null\}/,
   );
   assert.match(
-    tabs,
-    /iconSlot: \{[\s\S]*height: componentSizes\.bottomTabIconSlotHeight[\s\S]*width: componentSizes\.bottomTabIconSlotWidth/,
+    tabItem,
+    /height: componentSizes\.bottomTabIconSlotHeight[\s\S]*width: componentSizes\.bottomTabIconSlotWidth/,
   );
   assert.match(
-    tabs,
-    /createButton: \{[\s\S]*height: componentSizes\.bottomTabCreateButton[\s\S]*width: componentSizes\.bottomTabCreateButton/,
+    tabItem,
+    /height: componentSizes\.bottomTabCreateButton[\s\S]*width: componentSizes\.bottomTabCreateButton/,
   );
   assert.doesNotMatch(tabs, /createTabItem/);
   assert.doesNotMatch(tabs, /borderWidth: 4/);
   assert.doesNotMatch(tabs, /<Tab\.Screen name="Create"/);
   assert.doesNotMatch(types, /Rate: undefined/);
-  assert.doesNotMatch(types, /Create: undefined/);
+  assert.doesNotMatch(types, /^\s+Create: undefined;/m);
 });
 
 test("home bell opens activity inbox and gates messages by feature flag", () => {
@@ -58,10 +59,32 @@ test("home bell opens activity inbox and gates messages by feature flag", () => 
   const activity = read("src/app/screens/home/ActivityInboxScreen.tsx");
   const activityData = read("src/features/home/activity.ts");
   const activityStore = read("src/store/useActivityStore.ts");
+  const supabaseService = read("src/lib/services/supabase/supabaseService.ts");
 
   assert.match(home, /<Bell color=\{palette\.text\} size=\{22\}/);
-  assert.match(home, /navigation\.navigate\("ActivityInbox", \{ initialTab: "updates" \}\)/);
-  assert.match(home, /useActivityStore\(\(state\) => state\.getUnreadCount\(\)\)/);
+  assert.match(home, /const activityInitialTab = directMessagesEnabled \? "messages" : "updates"/);
+  assert.match(
+    home,
+    /navigation\.navigate\("ActivityInbox", \{ initialTab: activityInitialTab \}\)/,
+  );
+  assert.match(
+    home,
+    /preloadRoute\(navigation, "ActivityInbox", \{ initialTab: activityInitialTab \}\)/,
+  );
+  assert.match(home, /import \{ getActivityUnreadCount \} from "@\/features\/home\/activity"/);
+  assert.match(
+    home,
+    /const dbActivityEvents = useActivityStore\(\(state\) => state\.dbActivityEvents\)/,
+  );
+  assert.match(
+    home,
+    /const fetchActivityEvents = useActivityStore\(\(state\) => state\.fetchActivityEvents\)/,
+  );
+  assert.match(
+    home,
+    /serviceProviderMode === "mock"[\s\S]*\? activityUpdates[\s\S]*: \[\.\.\.dbActivityEvents, \.\.\.activityUpdates\]/,
+  );
+  assert.match(home, /void fetchActivityEvents\(\)/);
   assert.match(home, /getHungryService\(\)[\s\S]*\.chat\.listConversations\(\)/);
   assert.match(home, /if \(!FEATURE_FLAGS\.directMessagesEnabled\)/);
   assert.match(home, /recipients=\{directMessagesEnabled \? shareRecipients : \[\]\}/);
@@ -76,13 +99,26 @@ test("home bell opens activity inbox and gates messages by feature flag", () => 
   assert.match(rootNavigator, /getComponent=\{loadDirectMessagesScreen\} name="DirectMessages"/);
   assert.match(activity, /navigation\.navigate\("ActivityPostDetail"/);
   assert.match(activity, /postId: update\.postId/);
+  assert.match(
+    activity,
+    /const dbActivityEvents = useActivityStore\(\(state\) => state\.dbActivityEvents\)/,
+  );
+  assert.match(
+    activity,
+    /const fetchActivityEvents = useActivityStore\(\(state\) => state\.fetchActivityEvents\)/,
+  );
+  assert.match(
+    activity,
+    /getServiceProvider\(\)\.mode === "mock"[\s\S]*\[\.\.\.ACTIVITY_UPDATES, \.\.\.activityUpdates\][\s\S]*\[\.\.\.dbActivityEvents, \.\.\.activityUpdates\]/,
+  );
+  assert.match(activity, /visibleUpdates/);
   assert.match(activity, /stylesInline\.kindBadge/);
   assert.match(activity, /type ActivityTab = "messages" \| "updates"/);
   assert.match(
     activity,
     /FEATURE_FLAGS\.directMessagesEnabled\s+\? \["messages", "updates"\]\s+: \["updates"\]/,
   );
-  assert.match(activity, /route\.params\?\.initialTab === "messages"/);
+  assert.match(activity, /route\.params\?\.initialTab \?\? "messages"/);
   assert.match(activity, /getHungryService\(\)[\s\S]*\.chat[\s\S]*\.listConversations\(\)/);
   assert.match(activity, /type \{ ChatConversation \}/);
   assert.match(activity, /conversation\.unreadCount/);
@@ -98,10 +134,20 @@ test("home bell opens activity inbox and gates messages by feature flag", () => 
   assert.match(activity, /updateUnreadSlot: \{[\s\S]*width: 14/);
   assert.match(activityStore, /name: "hungry-activity-v1"/);
   assert.match(activityStore, /readActivityIds/);
+  assert.match(activityStore, /dbActivityEvents/);
+  assert.match(activityStore, /fetchActivityEvents: \(\) => Promise<void>/);
   assert.match(
     activityStore,
-    /getActivityUnreadCount\(get\(\)\.readActivityIds, get\(\)\.activityUpdates\)/,
+    /getActivityUnreadCount\(get\(\)\.readActivityIds, \[[\s\S]*\.\.\.get\(\)\.dbActivityEvents,[\s\S]*\.\.\.get\(\)\.activityUpdates/,
   );
+  assert.match(activityStore, /notifications\.listActivityEvents\(\)/);
+  assert.match(activityStore, /notifications\.markActivityRead\(id\)/);
+  assert.doesNotMatch(activityStore, /console\.error\("Failed to fetch activity events"/);
+  assert.match(activityStore, /console\.warn\("Failed to fetch activity events"/);
+  assert.match(activityStore, /set\(\{ dbActivityEvents: \[\] \}\)/);
+  assert.match(supabaseService, /function isMissingActivityEventsSchemaError/);
+  assert.match(supabaseService, /if \(isMissingActivityEventsSchemaError\(error\)\) return \[\]/);
+  assert.match(supabaseService, /if \(isMissingMarkActivityReadRpcError\(error\)\) return/);
   assert.match(activityData, /export type SharedPostPayload/);
   assert.match(activityData, /sharedPost\?: SharedPostPayload/);
   assert.match(activityData, /unreadCount\?: number/);
@@ -112,7 +158,7 @@ test("home bell opens activity inbox and gates messages by feature flag", () => 
   assert.match(activityData, /postId: "post-/);
   assert.match(activityData, /kind: "comment"/);
   assert.match(activityData, /kind: "like"/);
-  assert.doesNotMatch(activityData, /kind: "share"/);
+  assert.match(activityData, /ActivityUpdateKind[\s\S]*share/);
 });
 
 test("activity messages and update posts are functional routes, not static mockups", () => {
@@ -141,17 +187,26 @@ test("activity messages and update posts are functional routes, not static mocku
   );
   assert.match(detail, /listSharedStallPostsSync\(repository\)/);
   assert.match(detail, /ACTIVITY_UPDATES\.find/);
+  assert.match(detail, /dbActivityEvents\.find/);
+  assert.match(detail, /void fetchActivityEvents\(\)/);
   assert.match(detail, /markActivityRead\("update", updateId\)/);
   assert.match(detail, /toggleLike\(post\.id\)/);
   assert.match(detail, /toggleSave\(post\.id\)/);
   assert.match(detail, /navigation\.navigate\("DishDetail"/);
   assert.match(detail, /ReviewCommentsSheet/);
+  assert.match(detail, /const commentsEnabled = FEATURE_FLAGS\.commentsEnabled/);
+  assert.match(detail, /\{commentsEnabled \? \(/);
   assert.match(detail, /commentsSheetRef\.current\?\.present\(\)/);
   assert.match(detail, /setActiveCommentReview/);
   assert.match(detail, /accessibilityLabel="Open comments"/);
   assert.match(detail, /seededCommentsForActiveReview/);
+  assert.match(detail, /likeCount: 0/);
+  assert.match(detail, /commentCount: 0/);
   assert.match(detail, /ReviewShareSheet/);
-  assert.match(detail, /incrementShare\(activeShareReview\.postId\)/);
+  assert.match(detail, /onShared=\{\(postId, channel\) => \{/);
+  assert.match(detail, /incrementShare\(postId, channel\)/);
+  assert.doesNotMatch(detail, /likeCount: primaryDish\?\.reviews\.length/);
+  assert.doesNotMatch(detail, /commentCount: primaryDish\?\.reviews\.length/);
   assert.doesNotMatch(detail, /localCommentCount/);
   assert.doesNotMatch(detail, /setLocalCommentCount/);
   assert.doesNotMatch(detail, /incrementShare\(post\.id\)/);

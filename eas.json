@@ -9,6 +9,7 @@
       "distribution": "internal",
       "channel": "development",
       "env": {
+        "EXPO_PUBLIC_APP_ENV": "development",
         "HUNGRY_DATA_SOURCE": "mock"
       }
     },
@@ -16,12 +17,14 @@
       "distribution": "internal",
       "channel": "staging",
       "env": {
+        "EXPO_PUBLIC_APP_ENV": "staging",
         "HUNGRY_DATA_SOURCE": "supabase"
       }
     },
     "production": {
       "channel": "production",
       "env": {
+        "EXPO_PUBLIC_APP_ENV": "production",
         "HUNGRY_DATA_SOURCE": "supabase"
       }
     }

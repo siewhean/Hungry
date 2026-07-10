@@ -110,6 +110,192 @@ test("recommendations.recordExplicitFeedback applies food-specific click signals
   assert.notDeepEqual(result.tasteVector, beforeProfile.tasteVector);
 });
 
+test("checklist mock service persists items, tried state, and reorder", async () => {
+  const checklist = await hungryService.checklist.createChecklist("Codex checklist");
+  const firstItem = await hungryService.checklist.addChecklistItem({
+    checklistId: checklist.id,
+    itemType: "custom",
+    customText: "Try breakfast bee hoon",
+  });
+  const secondItem = await hungryService.checklist.addChecklistItem({
+    checklistId: checklist.id,
+    itemType: "dish",
+    dishId: dishes[0].id,
+  });
+
+  assert.ok(
+    (await hungryService.checklist.getChecklists()).some((entry) => entry.id === checklist.id),
+  );
+  assert.deepEqual(
+    (await hungryService.checklist.getChecklistItems(checklist.id)).map((item) => item.id),
+    [firstItem.id, secondItem.id],
+  );
+
+  await hungryService.checklist.markChecklistItemTried(secondItem.id);
+  assert.ok(
+    (await hungryService.checklist.getChecklistItems(checklist.id)).find(
+      (item) => item.id === secondItem.id,
+    )?.triedAt,
+  );
+
+  await hungryService.checklist.reorderChecklistItems(checklist.id, [secondItem.id, firstItem.id]);
+  assert.deepEqual(
+    (await hungryService.checklist.getChecklistItems(checklist.id)).map((item) => item.id),
+    [secondItem.id, firstItem.id],
+  );
+
+  await assert.rejects(
+    hungryService.checklist.addChecklistItem({
+      checklistId: checklist.id,
+      itemType: "dish",
+      dishId: dishes[0].id,
+    }),
+    /already in the checklist/,
+  );
+  await assert.rejects(
+    hungryService.checklist.reorderChecklistItems(checklist.id, [firstItem.id]),
+    /requires every current item exactly once/,
+  );
+});
+
+test("portfolio mock service persists publish, item, follow, flag, and search state", async () => {
+  const portfolio = await hungryService.portfolio.createPortfolio({
+    name: "Codex hawker picks",
+    description: "Reliable lunch ideas",
+    type: "recommendation",
+    visibility: "public",
+  });
+  const item = await hungryService.portfolio.addPortfolioItem({
+    portfolioId: portfolio.id,
+    itemType: "dish",
+    dishId: dishes[0].id,
+    score: 9,
+    publicNotes: "Worth queueing for",
+  });
+
+  await hungryService.portfolio.publishPortfolio(portfolio.id);
+  const published = await hungryService.portfolio.getPortfolio(portfolio.id);
+  assert.ok(published.publishedAt);
+  assert.equal((await hungryService.portfolio.getPortfolioItems(portfolio.id))[0]?.id, item.id);
+
+  await assert.rejects(
+    hungryService.portfolio.addPortfolioItem({
+      portfolioId: portfolio.id,
+      itemType: "dish",
+      dishId: dishes[0].id,
+    }),
+    /already in the portfolio/,
+  );
+
+  await assert.rejects(
+    hungryService.portfolio.addPortfolioItem({
+      portfolioId: portfolio.id,
+      itemType: "dish",
+      dishId: dishes[1].id,
+      score: 11,
+    }),
+    /score must be between 1 and 10/,
+  );
+  await assert.rejects(
+    hungryService.portfolio.reorderPortfolioItems(portfolio.id, []),
+    /requires every current item exactly once/,
+  );
+
+  await hungryService.portfolio.flagPortfolio(portfolio.id, "misleading", "test report");
+  assert.ok(
+    (await hungryService.portfolio.getPortfolioFlags({ status: "pending" })).some(
+      (flag) => flag.portfolioId === portfolio.id && flag.reason === "misleading",
+    ),
+  );
+
+  const results = await hungryService.portfolio.searchPortfolios("hawker");
+  assert.ok(results.some((entry) => entry.id === portfolio.id));
+});
+
+test("portfolio mock service rejects stale optimistic mutation versions", async () => {
+  const portfolio = await hungryService.portfolio.createPortfolio({
+    name: "Codex conflict picks",
+    description: "Original version",
+    type: "collection",
+    visibility: "private",
+  });
+  const staleVersion = portfolio.updatedAt;
+
+  await new Promise((resolve) => setTimeout(resolve, 2));
+  await hungryService.portfolio.updatePortfolio(portfolio.id, {
+    name: "Remote edit",
+    type: portfolio.type,
+    visibility: portfolio.visibility,
+  });
+
+  await assert.rejects(
+    hungryService.portfolio.addPortfolioItem(
+      {
+        portfolioId: portfolio.id,
+        itemType: "dish",
+        dishId: dishes[2].id,
+      },
+      { portfolioId: portfolio.id, expectedUpdatedAt: staleVersion },
+    ),
+    /changed elsewhere/,
+  );
+
+  const latest = await hungryService.portfolio.getPortfolio(portfolio.id);
+  await hungryService.portfolio.addPortfolioItem(
+    {
+      portfolioId: portfolio.id,
+      itemType: "dish",
+      dishId: dishes[2].id,
+    },
+    { portfolioId: portfolio.id, expectedUpdatedAt: latest.updatedAt },
+  );
+  assert.equal((await hungryService.portfolio.getPortfolioItems(portfolio.id)).length, 1);
+});
+
+test("portfolio mock service records passport contribution progress", async () => {
+  const beforeEvents = await hungryService.passport.getPassportProgressEvents();
+  const portfolio = await hungryService.portfolio.createPortfolio({
+    name: "Codex trail passport",
+    description: "A public trail contribution",
+    type: "trail",
+    visibility: "private",
+  });
+  const item = await hungryService.portfolio.addPortfolioItem({
+    portfolioId: portfolio.id,
+    itemType: "dish",
+    dishId: dishes[1].id,
+    score: 8,
+  });
+
+  await hungryService.portfolio.publishPortfolio(portfolio.id);
+
+  const stamps = await hungryService.passport.getPassportStamps();
+  const events = await hungryService.passport.getPassportProgressEvents();
+  const newEvents = events.filter(
+    (event) => !beforeEvents.some((beforeEvent) => beforeEvent.id === event.id),
+  );
+
+  assert.ok(stamps.some((stamp) => stamp.portfolioItemsAdded >= 1));
+  assert.ok(stamps.some((stamp) => stamp.publicPortfoliosPublished >= 1));
+  assert.ok(stamps.some((stamp) => stamp.trailsCompleted >= 1));
+  assert.ok(
+    newEvents.some(
+      (event) => event.eventType === "portfolio_item_added" && event.referenceId === item.id,
+    ),
+  );
+  assert.ok(
+    newEvents.some(
+      (event) =>
+        event.eventType === "public_portfolio_published" && event.referenceId === portfolio.id,
+    ),
+  );
+  assert.ok(
+    newEvents.some(
+      (event) => event.eventType === "trail_completed" && event.referenceId === portfolio.id,
+    ),
+  );
+});
+
 test("ai.processImplicitFeedback is no-op while explicit learning stabilizes", async () => {
   const dish = dishes[0];
   assert.ok(dish, "Expected fixture dish for implicit feedback no-op test");
@@ -139,11 +325,38 @@ test("auth.requestAccountDeletion clears mock session", async () => {
   assert.equal(session, null);
 });
 
+test("profile.updateProfile persists mock profile visibility", async () => {
+  const beforeProfile = await hungryService.profile.getProfile();
+
+  try {
+    const privateProfile = await hungryService.profile.updateProfile({
+      profileVisibility: "private",
+    });
+    assert.equal(privateProfile.profileVisibility, "private");
+    assert.equal((await hungryService.profile.getProfile()).profileVisibility, "private");
+
+    const publicProfile = await hungryService.profile.updateProfile({
+      profileVisibility: "public",
+    });
+    assert.equal(publicProfile.profileVisibility, "public");
+    assert.equal((await hungryService.profile.getProfile()).profileVisibility, "public");
+  } finally {
+    await hungryService.profile.updateProfile({
+      profileVisibility: beforeProfile.profileVisibility,
+    });
+  }
+});
+
 test("merchant menu methods persist CRUD and status toggles in mock state", async () => {
   const outletId = "outlet-wonton-mee";
+  const userVisibleVenueId = `mock-venue-${outletId}`;
   const beforeMenu = await hungryService.merchant.getMenu(outletId);
+  const seededDish = beforeMenu[0];
+  assert.ok(seededDish, "Expected seeded merchant menu dish");
+  assert.notEqual(seededDish.id, "dish-chicken-rice");
 
   const addedDish = await hungryService.merchant.addDish(outletId, {
+    id: "dish-chicken-rice",
     name: "Codex Test Noodles",
     price: 7.5,
     priceRange: "S$7.50",
@@ -158,6 +371,15 @@ test("merchant menu methods persist CRUD and status toggles in mock state", asyn
   const afterAdd = await hungryService.merchant.getMenu(outletId);
   assert.equal(afterAdd.length, beforeMenu.length + 1);
   assert.ok(afterAdd.some((dish) => dish.id === addedDish.id));
+  assert.notEqual(addedDish.id, "dish-chicken-rice");
+  const userVisibleVenue = await hungryService.discovery.getVenue(userVisibleVenueId);
+  assert.equal(userVisibleVenue?.name, "Uncle Tan's Wonton Mee");
+  assert.equal((await hungryService.discovery.getDish(addedDish.id))?.venueId, userVisibleVenueId);
+  assert.ok(
+    (await hungryService.discovery.listDishesByVenue(userVisibleVenueId)).some(
+      (dish) => dish.id === addedDish.id,
+    ),
+  );
 
   const editedDish = await hungryService.merchant.editDish(outletId, addedDish.id, {
     price: 8,
@@ -165,6 +387,7 @@ test("merchant menu methods persist CRUD and status toggles in mock state", asyn
   });
   assert.equal(editedDish.price, 8);
   assert.equal(editedDish.priceRange, "S$8.00");
+  assert.equal((await hungryService.discovery.getDish(addedDish.id))?.price, 8);
   assert.equal(addedDish.imageUrl, "https://example.com/codex-test-noodles.jpg");
   assert.deepEqual(addedDish.gallery, ["https://example.com/codex-test-noodles.jpg"]);
   assert.deepEqual(addedDish.tasteTags, ["egg noodles", "dark soy sauce"]);
@@ -176,6 +399,9 @@ test("merchant menu methods persist CRUD and status toggles in mock state", asyn
       .find((dish) => dish.id === addedDish.id)
       ?.availabilityFlags.includes("Sold out"),
   );
+  assert.ok(
+    (await hungryService.discovery.getDish(addedDish.id))?.availabilityFlags.includes("Sold out"),
+  );
 
   assert.equal(await hungryService.merchant.toggleFeatured(outletId, addedDish.id), true);
   assert.ok(
@@ -183,11 +409,78 @@ test("merchant menu methods persist CRUD and status toggles in mock state", asyn
       .find((dish) => dish.id === addedDish.id)
       ?.availabilityFlags.includes("Featured"),
   );
+  assert.ok(
+    (await hungryService.discovery.getDish(addedDish.id))?.availabilityFlags.includes("Featured"),
+  );
 
   await hungryService.merchant.deleteDish(outletId, addedDish.id);
   const afterDelete = await hungryService.merchant.getMenu(outletId);
   assert.equal(afterDelete.length, beforeMenu.length);
   assert.ok(!afterDelete.some((dish) => dish.id === addedDish.id));
+  assert.equal(await hungryService.discovery.getDish(addedDish.id), undefined);
+  assert.ok(
+    !(await hungryService.discovery.listDishesByVenue(userVisibleVenueId)).some(
+      (dish) => dish.id === addedDish.id,
+    ),
+  );
+});
+
+test("merchant seeded menu edits do not overwrite original mock catalog fixtures", async () => {
+  const outletId = "outlet-wonton-mee";
+  const seededDish = (await hungryService.merchant.getMenu(outletId))[0];
+  assert.ok(seededDish, "Expected seeded merchant menu dish");
+
+  await hungryService.merchant.toggleFeatured(outletId, seededDish.id);
+
+  const originalDish = await hungryService.discovery.getDish("dish-chicken-rice");
+  const merchantVisibleDish = await hungryService.discovery.getDish(seededDish.id);
+  assert.equal(originalDish?.venueId, "venue-tian-tian");
+  assert.equal(originalDish?.venueName, "Tian Tian Chicken Rice");
+  assert.equal(merchantVisibleDish?.venueId, `mock-venue-${outletId}`);
+  assert.ok(merchantVisibleDish?.availabilityFlags.includes("Featured"));
+});
+
+test("merchant seeded menu is immediately visible from mock user catalog", async () => {
+  const outletId = "outlet-wonton-mee";
+  const userVisibleVenueId = `mock-venue-${outletId}`;
+  const seededDish = (await hungryService.merchant.getMenu(outletId))[0];
+  assert.ok(seededDish, "Expected seeded merchant menu dish");
+
+  const userVisibleVenue = await hungryService.discovery.getVenue(userVisibleVenueId);
+  const userVisibleDish = await hungryService.discovery.getDish(seededDish.id);
+
+  assert.equal(userVisibleVenue?.id, userVisibleVenueId);
+  assert.equal(userVisibleVenue?.topDishId, seededDish.id);
+  assert.equal(userVisibleDish?.venueId, userVisibleVenueId);
+  assert.equal(userVisibleDish?.venueName, userVisibleVenue?.name);
+});
+
+test("merchant profile updates are visible from mock user venue reads", async () => {
+  const outletId = "outlet-wonton-mee";
+  const userVisibleVenueId = `mock-venue-${outletId}`;
+  const seededDish = (await hungryService.merchant.getMenu(outletId))[0];
+  assert.ok(seededDish, "Expected seeded merchant menu dish");
+
+  await hungryService.merchant.updateBusinessProfile(outletId, {
+    name: "Codex Mock Merchant Stall",
+    operatingHours: "9:00 AM – 4:00 PM",
+    temporaryClosure: "Closed for cleaning tomorrow",
+  });
+
+  const userVisibleVenue = await hungryService.discovery.getVenue(userVisibleVenueId);
+  assert.equal(userVisibleVenue?.name, "Codex Mock Merchant Stall");
+  assert.equal(userVisibleVenue?.operatingHours, "9:00 AM – 4:00 PM");
+  assert.equal(userVisibleVenue?.closureNotice, "Closed for cleaning tomorrow");
+  assert.equal(
+    (await hungryService.discovery.getDish(seededDish.id))?.venueName,
+    "Codex Mock Merchant Stall",
+  );
+
+  await hungryService.merchant.updateBusinessProfile(outletId, {
+    name: "Uncle Tan's Wonton Mee",
+    operatingHours: "7:00 AM – 3:00 PM",
+    temporaryClosure: undefined,
+  });
 });
 
 test("merchant OCR draft methods filter drafts and publish accepted dishes", async () => {
@@ -207,6 +500,15 @@ test("merchant OCR draft methods filter drafts and publish accepted dishes", asy
   const afterAcceptMenu = await hungryService.merchant.getMenu(outletId);
   assert.equal(afterAcceptMenu.length, beforeMenu.length + 1);
   assert.ok(afterAcceptMenu.some((dish) => dish.id === acceptedDish.id));
+  assert.equal(
+    (await hungryService.discovery.getDish(acceptedDish.id))?.venueId,
+    `mock-venue-${outletId}`,
+  );
+  assert.ok(
+    (await hungryService.discovery.listDishesByVenue(`mock-venue-${outletId}`)).some(
+      (dish) => dish.id === acceptedDish.id,
+    ),
+  );
 
   const afterAcceptDraft = (await hungryService.merchant.getOCRDrafts(outletId)).find(
     (draft) => draft.id === pendingDrafts[0].id,
@@ -341,6 +643,13 @@ test("merchant promotion create and update persist mock state", async () => {
   const created = await hungryService.merchant.createPromotion(outletId, {
     title: "Codex Draft Promo",
     description: "Draft campaign for service tests.",
+    promotionItemType: "existing_menu_item",
+    targetDishId: (await hungryService.merchant.getMenu(outletId))[0]?.id,
+    originalPrice: 6.5,
+    promotionalPrice: 5.5,
+    finalPrice: 5.5,
+    discountPercentage: 15,
+    isAvailable: true,
     startDate: "2026-05-15T03:00:00Z",
     endDate: "2026-05-16T07:00:00Z",
     targetAudience: ["nearby_users"],
@@ -349,6 +658,8 @@ test("merchant promotion create and update persist mock state", async () => {
 
   assert.match(created.id, /^promo-new-/);
   assert.equal(created.outletId, outletId);
+  assert.equal(created.promotionItemType, "existing_menu_item");
+  assert.equal(created.finalPrice, 5.5);
   assert.ok(created.createdAt);
   assert.deepEqual(created.analytics, {
     impressions: 0,
@@ -374,6 +685,32 @@ test("merchant promotion create and update persist mock state", async () => {
     (await hungryService.merchant.getPromotions(outletId, "active")).some(
       (promotion) => promotion.id === created.id && promotion.title === "Codex Active Promo",
     ),
+  );
+
+  const repriced = await hungryService.merchant.updatePromotion(created.id, {
+    promotionalPrice: 4.5,
+    discountPercentage: 31,
+  });
+  assert.equal(repriced.promotionalPrice, 4.5);
+  assert.equal(repriced.finalPrice, 4.5);
+
+  await assert.rejects(
+    hungryService.merchant.createPromotion(outletId, {
+      title: "Wrong outlet dish",
+      description: "Should not link another outlet's menu item.",
+      promotionItemType: "existing_menu_item",
+      targetDishId: "dish-from-another-outlet",
+      originalPrice: 6.5,
+      promotionalPrice: 5.5,
+      finalPrice: 5.5,
+      discountPercentage: 15,
+      isAvailable: true,
+      startDate: "2026-05-15T03:00:00Z",
+      endDate: "2026-05-16T07:00:00Z",
+      targetAudience: ["nearby_users"],
+      status: "draft",
+    }),
+    /this outlet/,
   );
 
   await assert.rejects(
@@ -411,6 +748,215 @@ test("merchant promotion analytics returns analytics and rejects missing promoti
     hungryService.merchant.getPromotionAnalytics("missing-promo"),
     /Promotion missing-promo not found/,
   );
+});
+
+test("customer active promotions only expose active in-window offers for the current dish", async () => {
+  const dish = dishes.find((item) => item.id === "dish-chicken-rice");
+  assert.ok(dish, "Expected chicken rice fixture dish");
+
+  const activePromotions = await hungryService.discovery.listActivePromotionsForTarget({
+    venueId: dish.venueId,
+    dishId: dish.id,
+  });
+
+  assert.ok(
+    activePromotions.some((promotion) => promotion.id === "promo-1"),
+    "Expected active promotion to appear on matching customer detail surfaces",
+  );
+  assert.equal(
+    activePromotions.some((promotion) => promotion.id === "promo-2"),
+    false,
+    "Scheduled promotions should not appear as customer-active offers",
+  );
+  assert.equal(
+    activePromotions.some((promotion) => promotion.id === "promo-3"),
+    false,
+    "Expired promotions should not appear as customer-active offers",
+  );
+  assert.ok(
+    activePromotions.every(
+      (promotion) => !promotion.targetDishId || promotion.targetDishId === dish.id,
+    ),
+  );
+
+  const otherDish = dishes.find((item) => item.id !== dish.id && item.venueId !== dish.venueId);
+  assert.ok(otherDish, "Expected another fixture dish");
+  assert.deepEqual(
+    await hungryService.discovery.listActivePromotionsForTarget({
+      venueId: otherDish.venueId,
+      dishId: otherDish.id,
+    }),
+    [],
+  );
+});
+
+test("merchant popular visitor pins stay review-backed, capped, reorderable, and venue-filtered", async () => {
+  const outletId = "outlet-wonton-mee";
+  const venueId = `mock-venue-${outletId}`;
+  const candidates = await hungryService.merchant.listPopularVisitorCandidates(outletId);
+
+  assert.ok(candidates.length >= 7, "Expected enough review-backed visitors for cap coverage");
+  assert.ok(candidates.every((candidate) => candidate.reviewId === candidate.sourceId));
+  assert.ok(candidates.every((candidate) => candidate.venueId === venueId));
+
+  const initialPins = await hungryService.merchant.listPopularVisitorPins(outletId);
+  assert.ok(initialPins.length > 1);
+  assert.ok(initialPins.length <= 6);
+  assert.ok(
+    initialPins.every(
+      (pin, index) => index === 0 || initialPins[index - 1].sortOrder <= pin.sortOrder,
+    ),
+  );
+  assert.equal(
+    (await hungryService.content.listPopularVisitorPinsByVenue("missing-venue")).length,
+    0,
+  );
+  assert.equal(
+    (await hungryService.content.listPopularVisitorPinsByVenue(venueId)).length,
+    initialPins.length,
+  );
+
+  const firstUnpinned = candidates.find((candidate) => !candidate.isPinned);
+  assert.ok(firstUnpinned, "Expected an unpinned review candidate");
+  const addedPin = await hungryService.merchant.pinPopularVisitor(outletId, firstUnpinned.reviewId);
+  assert.equal(addedPin.reviewId, firstUnpinned.reviewId);
+  assert.equal(addedPin.venueId, venueId);
+  assert.ok(
+    (await hungryService.content.listPopularVisitorPinsByVenue(venueId)).some(
+      (pin) => pin.id === addedPin.id,
+    ),
+  );
+
+  await hungryService.merchant.unpinPopularVisitor(addedPin.id);
+  assert.ok(
+    !(await hungryService.merchant.listPopularVisitorPins(outletId)).some(
+      (pin) => pin.id === addedPin.id,
+    ),
+  );
+
+  const beforeReorder = await hungryService.merchant.listPopularVisitorPins(outletId);
+  const reordered = await hungryService.merchant.reorderPopularVisitorPins(
+    outletId,
+    beforeReorder
+      .slice()
+      .reverse()
+      .map((pin) => pin.id),
+  );
+  assert.equal(reordered[0].id, beforeReorder[beforeReorder.length - 1].id);
+  assert.ok(reordered.every((pin, index) => pin.sortOrder === index));
+
+  let activePins = await hungryService.merchant.listPopularVisitorPins(outletId);
+  for (const candidate of await hungryService.merchant.listPopularVisitorCandidates(outletId)) {
+    if (activePins.length >= 6) break;
+    if (!activePins.some((pin) => pin.reviewId === candidate.reviewId)) {
+      await hungryService.merchant.pinPopularVisitor(outletId, candidate.reviewId);
+      activePins = await hungryService.merchant.listPopularVisitorPins(outletId);
+    }
+  }
+  assert.equal(activePins.length, 6);
+  const overflowCandidate = (
+    await hungryService.merchant.listPopularVisitorCandidates(outletId)
+  ).find((candidate) => !activePins.some((pin) => pin.reviewId === candidate.reviewId));
+  assert.ok(overflowCandidate, "Expected an overflow candidate beyond the 6 visible pins");
+  await assert.rejects(
+    hungryService.merchant.pinPopularVisitor(outletId, overflowCandidate.reviewId),
+    /up to 6 popular visitors/,
+  );
+});
+
+test("merchant analytics records dish views without duplicate session increments", async () => {
+  const outletId = "outlet-wonton-mee";
+  const menu = await hungryService.merchant.getMenu(outletId);
+  assert.ok(menu[0], "Expected a merchant menu dish");
+
+  const before = await hungryService.merchant.getAnalytics(outletId, "7d");
+  await hungryService.discovery.recordDishView(menu[0].id, { sessionId: "service-methods-view" });
+  await hungryService.discovery.recordDishView(menu[0].id, { sessionId: "service-methods-view" });
+  const after = await hungryService.merchant.getAnalytics(outletId, "7d");
+
+  assert.equal(after.dishViews, before.dishViews + 1);
+  assert.ok(after.topDishes.some((dish) => dish.dishId === menu[0].id && dish.views >= 1));
+});
+
+test("merchant analytics records explicit customer action events", async () => {
+  const outletId = "outlet-wonton-mee";
+  const menu = await hungryService.merchant.getMenu(outletId);
+  assert.ok(menu[0], "Expected a merchant menu dish");
+
+  const before = await hungryService.merchant.getAnalytics(outletId, "7d");
+  await hungryService.discovery.recordMerchantActionEvent({
+    eventType: "stall_profile_view",
+    outletId,
+    dishId: menu[0].id,
+    sessionId: "service-methods-action-profile",
+  });
+  await hungryService.discovery.recordMerchantActionEvent({
+    eventType: "menu_view",
+    outletId,
+    dishId: menu[0].id,
+    sessionId: "service-methods-action-menu",
+  });
+  await hungryService.discovery.recordMerchantActionEvent({
+    eventType: "direction_tap",
+    outletId,
+    dishId: menu[0].id,
+    sessionId: "service-methods-action-direction",
+  });
+  await hungryService.discovery.recordMerchantActionEvent({
+    eventType: "contact_tap",
+    outletId,
+    dishId: menu[0].id,
+    sessionId: "service-methods-action-contact",
+  });
+  await hungryService.discovery.recordMerchantActionEvent({
+    eventType: "social_link_tap",
+    outletId,
+    dishId: menu[0].id,
+    sessionId: "service-methods-action-social",
+  });
+  await hungryService.discovery.recordMerchantActionEvent({
+    eventType: "save",
+    outletId,
+    dishId: menu[0].id,
+    sessionId: "service-methods-action-save",
+  });
+  await hungryService.discovery.recordMerchantActionEvent({
+    eventType: "share",
+    outletId,
+    dishId: menu[0].id,
+    sessionId: "service-methods-action-share",
+  });
+  const after = await hungryService.merchant.getAnalytics(outletId, "7d");
+
+  assert.equal(after.profileVisits, before.profileVisits + 1);
+  assert.equal(after.menuViews, before.menuViews + 1);
+  assert.equal(after.directionTaps, before.directionTaps + 1);
+  assert.equal(after.contactTaps, before.contactTaps + 1);
+  assert.equal(after.socialLinkTaps, before.socialLinkTaps + 1);
+  assert.equal(after.saves, before.saves + 1);
+  assert.equal(after.shares, before.shares + 1);
+  assert.ok(after.topDishes.some((dish) => dish.dishId === menu[0].id && dish.saves >= 1));
+});
+
+test("merchant notifications sync low ratings and weekly summaries with dedupe", async () => {
+  const account = await hungryService.merchant.getMerchantAccount();
+  assert.ok(account);
+  const outletId = "outlet-wonton-mee";
+
+  const lowRatingNotifications = await hungryService.merchant.syncLowRatingNotifications(outletId);
+  assert.ok(lowRatingNotifications.length > 0);
+  assert.ok(lowRatingNotifications.every((notification) => notification.kind === "low_rating"));
+
+  const weeklySummary = await hungryService.merchant.getWeeklySummaryStats(outletId);
+  assert.ok(weeklySummary.totalViews >= weeklySummary.dishViews);
+
+  const weeklyNotifications = await hungryService.merchant.sendWeeklySummaryNotifications(outletId);
+  assert.ok(weeklyNotifications.length > 0);
+  assert.ok(weeklyNotifications.every((notification) => notification.kind === "weekly_summary"));
+
+  const allNotifications = await hungryService.merchant.getMerchantNotifications(account.id);
+  const dedupeKeys = new Set(allNotifications.map((notification) => notification.dedupeKey));
+  assert.equal(dedupeKeys.size, allNotifications.length);
 });
 
 test("merchant AI assistant returns insight slices and weekly summary", async () => {
@@ -464,11 +1010,14 @@ test("merchant settings team methods persist members and role changes", async ()
     account.id,
     " NewStaff@Hawker.sg ",
     "staff",
+    "New Staff",
   );
 
   assert.match(addedMember.id, /^tm-new-/);
   assert.equal(addedMember.email, "newstaff@hawker.sg");
+  assert.equal(addedMember.displayName, "New Staff");
   assert.equal(addedMember.role, "staff");
+  assert.equal(addedMember.inviteStatus, "pending");
 
   await hungryService.merchant.updateTeamMemberRole(addedMember.id, "manager");
   const afterRoleUpdate = await hungryService.merchant.getTeamMembers(account.id);
@@ -490,12 +1039,16 @@ test("merchant settings team methods validate duplicates and protected owner rol
   assert.ok(owner, "Expected owner team member");
 
   await assert.rejects(
-    hungryService.merchant.addTeamMember(account.id, owner.email.toUpperCase(), "staff"),
+    hungryService.merchant.addTeamMember(account.id, owner.email.toUpperCase(), "staff", "Owner"),
     /already exists/,
   );
   await assert.rejects(
-    hungryService.merchant.addTeamMember(account.id, "not-an-email", "staff"),
+    hungryService.merchant.addTeamMember(account.id, "not-an-email", "staff", "Invalid"),
     /Valid team member email is required/,
+  );
+  await assert.rejects(
+    hungryService.merchant.addTeamMember(account.id, "valid@example.test", "staff", ""),
+    /Team member name is required/,
   );
   await assert.rejects(
     hungryService.merchant.updateTeamMemberRole(owner.id, "manager"),

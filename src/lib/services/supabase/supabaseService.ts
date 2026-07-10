@@ -1,9 +1,10 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import * as WebBrowser from "expo-web-browser";
 
 import { getFloorPlan } from "@/lib/geo/floorPlans";
 import { similarityScore } from "@/lib/ai/similarityScore";
 import { computeTasteProfileFromQuiz } from "@/lib/ai/tasteQuiz";
+import { STORY_GALLERY_ASSETS } from "@/lib/services/storyGalleryAssets";
 import {
   averageTasteVectors,
   processExplicitFeedback as processExplicitFeedbackCore,
@@ -11,7 +12,18 @@ import {
 } from "@/lib/ai/tasteEngine";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import {
+  countVenuesInAreaViaRpc,
+  getDishByIdViaRpc,
+  getBuildingDetailViaRpc,
+  getVenueByIdViaRpc,
+  listBuildingsViaRpc,
+  listDiscoveryFeedByLocationViaRpc,
+  listDishesByVenueViaRpc,
+  listPopularNearbyViaRpc,
+  listVenuesByBuildingViaRpc,
   refreshSupabaseRepositoryCache,
+  searchDishesViaRpc,
+  searchVenuesByLocationViaRpc,
   supabaseRepository,
 } from "@/lib/services/supabase/supabaseRepository";
 import { getSupabaseClient } from "@/lib/services/supabase/client";
@@ -21,11 +33,13 @@ import {
   uploadPostMediaFromUri,
 } from "@/lib/services/supabase/mediaUpload";
 import { validateMerchantProfileUpdates } from "@/features/merchant/profileValidation";
+import { validateMerchantPromotionInput } from "@/features/merchant/promotionValidation";
 import type {
   Bite,
   BiteDraft,
   BlockUserRequest,
   BuildingDetail,
+  DiscoveryLocationFeed,
   ChatConversation,
   ChatMessage,
   ChatParticipant,
@@ -34,6 +48,7 @@ import type {
   ExplicitFeedbackInput,
   HungryService,
   ImplicitSignalInput,
+  PortfolioMutationOptions,
   QuizAnswer,
   RankedRecommendation,
   RecommendationSlateRequest,
@@ -43,6 +58,8 @@ import type {
 } from "@/lib/services/types";
 import type {
   AIBusinessInsight,
+  Checklist,
+  ChecklistItem,
   CustomerInteraction,
   DietaryFlag,
   DishDetail,
@@ -50,19 +67,37 @@ import type {
   InteractionType,
   MerchantAccount,
   MerchantAnalytics,
+  MerchantNotification,
   MerchantNotificationPreferences,
   MerchantOutlet,
   MerchantPromotion,
   MerchantRole,
+  MerchantTeamMember,
+  MerchantWeeklySummary,
   OCRDishDraft,
+  PassportEventType,
+  PassportProgressEvent,
+  PassportStamp,
+  PopularVisitorCandidate,
+  PopularVisitorPin,
+  Portfolio,
+  PortfolioCollaborator,
+  PortfolioFlag,
+  PortfolioFollow,
+  PortfolioItem,
+  ProfileVisibility,
   PromotionStatus,
   SearchFilters,
   TasteProfile,
   TasteInteractionEvent,
   TasteInteractionType,
   TasteVector,
+  VenueSummary,
   Story,
   StoryContent,
+  UserStallSubmission,
+  UserStallSubmissionDeliveryLink,
+  UserStallSubmissionMenuItem,
   UserProfile,
   VerificationEvidence,
 } from "@/types/domain";
@@ -73,10 +108,15 @@ type DishPresentation = {
   dietaryFlags: DietaryFlag[];
   tasteVector?: TasteVector;
 };
+type MerchantActionEventInput = Parameters<
+  HungryService["discovery"]["recordMerchantActionEvent"]
+>[0];
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const merchantAnonymousSessionId = `anon:${Date.now().toString(36)}:${Math.random()
+  .toString(36)
+  .slice(2, 12)}`;
 
-const DEFAULT_AUTH_PROFILE: UserProfile = {
-  id: "supabase-user",
+const DEFAULT_AUTH_PROFILE_BASE: Omit<UserProfile, "id"> = {
   displayName: "Hungry User",
   email: "",
   profileVisibility: "public",
@@ -94,7 +134,7 @@ const DEFAULT_AUTH_PROFILE: UserProfile = {
 };
 
 const DEFAULT_GUEST_PROFILE: UserProfile = {
-  ...DEFAULT_AUTH_PROFILE,
+  ...DEFAULT_AUTH_PROFILE_BASE,
   id: "guest-user",
   displayName: "Guest",
   email: "guest@hungry.local",
@@ -146,8 +186,253 @@ function asRecord(value: unknown): Row {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Row) : {};
 }
 
+function mapChecklist(row: Row): Checklist {
+  return {
+    id: String(row.id ?? ""),
+    userId: String(row.user_id ?? row.userId ?? ""),
+    name: String(row.name ?? "Untitled checklist"),
+    createdAt: String(row.created_at ?? row.createdAt ?? ""),
+    updatedAt: String(row.updated_at ?? row.updatedAt ?? ""),
+  };
+}
+
+function mapChecklistItem(row: Row): ChecklistItem {
+  return {
+    id: String(row.id ?? ""),
+    checklistId: String(row.checklist_id ?? row.checklistId ?? ""),
+    itemType: String(row.item_type ?? row.itemType ?? "custom") as ChecklistItem["itemType"],
+    dishId: asString(row.dish_id ?? row.dishId),
+    stallId: asString(row.stall_id ?? row.stallId),
+    customText: asString(row.custom_text ?? row.customText),
+    reminderAt: asString(row.reminder_at ?? row.reminderAt),
+    plannedVisitDate: asString(row.planned_visit_date ?? row.plannedVisitDate),
+    triedAt: asString(row.tried_at ?? row.triedAt),
+    position: Number(row.position ?? 0),
+    createdAt: String(row.created_at ?? row.createdAt ?? ""),
+    updatedAt: String(row.updated_at ?? row.updatedAt ?? ""),
+  };
+}
+
+function mapPortfolio(row: Row): Portfolio {
+  return {
+    id: String(row.id ?? ""),
+    ownerId: String(row.owner_id ?? row.ownerId ?? ""),
+    name: String(row.name ?? "Untitled portfolio"),
+    description: asString(row.description),
+    type: String(row.type ?? "recommendation") as Portfolio["type"],
+    visibility: String(row.visibility ?? "private") as Portfolio["visibility"],
+    publishedAt: asString(row.published_at ?? row.publishedAt),
+    createdAt: String(row.created_at ?? row.createdAt ?? ""),
+    updatedAt: String(row.updated_at ?? row.updatedAt ?? ""),
+  };
+}
+
+function mapPortfolioItem(row: Row): PortfolioItem {
+  return {
+    id: String(row.id ?? ""),
+    portfolioId: String(row.portfolio_id ?? row.portfolioId ?? ""),
+    itemType: String(row.item_type ?? row.itemType ?? "dish") as PortfolioItem["itemType"],
+    dishId: asString(row.dish_id ?? row.dishId),
+    stallId: asString(row.stall_id ?? row.stallId),
+    score: asNumber(row.score),
+    publicNotes: asString(row.public_notes ?? row.publicNotes),
+    privateNotes: asString(row.private_notes ?? row.privateNotes),
+    position: Number(row.position ?? 0),
+    createdAt: String(row.created_at ?? row.createdAt ?? ""),
+    updatedAt: String(row.updated_at ?? row.updatedAt ?? ""),
+  };
+}
+
+function mapPortfolioCollaborator(row: Row): PortfolioCollaborator {
+  return {
+    id: String(row.id ?? ""),
+    portfolioId: String(row.portfolio_id ?? row.portfolioId ?? ""),
+    userId: String(row.user_id ?? row.userId ?? ""),
+    role: String(row.role ?? "viewer") as PortfolioCollaborator["role"],
+    createdAt: String(row.created_at ?? row.createdAt ?? ""),
+  };
+}
+
+function mapPortfolioFollow(row: Row): PortfolioFollow {
+  return {
+    id: String(row.id ?? ""),
+    portfolioId: String(row.portfolio_id ?? row.portfolioId ?? ""),
+    userId: String(row.user_id ?? row.userId ?? ""),
+    createdAt: String(row.created_at ?? row.createdAt ?? ""),
+  };
+}
+
+function mapPortfolioFlag(row: Row): PortfolioFlag {
+  return {
+    id: String(row.id ?? ""),
+    portfolioId: String(row.portfolio_id ?? row.portfolioId ?? ""),
+    reporterId: String(row.reporter_id ?? row.reporterId ?? ""),
+    reason: String(row.reason ?? "other") as PortfolioFlag["reason"],
+    details: asString(row.details),
+    status: String(row.status ?? "pending") as PortfolioFlag["status"],
+    reviewedBy: asString(row.reviewed_by ?? row.reviewedBy),
+    reviewedAt: asString(row.reviewed_at ?? row.reviewedAt),
+    createdAt: String(row.created_at ?? row.createdAt ?? ""),
+  };
+}
+
+function mapPassportStamp(row: Row): PassportStamp {
+  return {
+    id: String(row.id ?? ""),
+    userId: String(row.user_id ?? row.userId ?? ""),
+    categoryId: String(row.category_id ?? row.categoryId ?? ""),
+    level: Number(row.level ?? 0),
+    dishesTriedCount: Number(row.dishes_tried_count ?? row.dishesTriedCount ?? 0),
+    stallsVisitedCount: Number(row.stalls_visited_count ?? row.stallsVisitedCount ?? 0),
+    stallsSubmittedCount: Number(row.stalls_submitted_count ?? row.stallsSubmittedCount ?? 0),
+    reviewsPostedCount: Number(row.reviews_posted_count ?? row.reviewsPostedCount ?? 0),
+    photosPostedCount: Number(row.photos_posted_count ?? row.photosPostedCount ?? 0),
+    portfolioItemsAdded: Number(row.portfolio_items_added ?? row.portfolioItemsAdded ?? 0),
+    publicPortfoliosPublished: Number(
+      row.public_portfolios_published ?? row.publicPortfoliosPublished ?? 0,
+    ),
+    trailsCompleted: Number(row.trails_completed ?? row.trailsCompleted ?? 0),
+    createdAt: String(row.created_at ?? row.createdAt ?? ""),
+    updatedAt: String(row.updated_at ?? row.updatedAt ?? ""),
+  };
+}
+
+function mapPassportProgressEvent(row: Row): PassportProgressEvent {
+  return {
+    id: String(row.id ?? ""),
+    userId: String(row.user_id ?? row.userId ?? ""),
+    categoryId: String(row.category_id ?? row.categoryId ?? ""),
+    eventType: String(
+      row.event_type ?? row.eventType ?? "portfolio_item_added",
+    ) as PassportProgressEvent["eventType"],
+    referenceId:
+      row.reference_id || row.referenceId ? String(row.reference_id ?? row.referenceId) : undefined,
+    createdAt: String(row.created_at ?? row.createdAt ?? ""),
+  };
+}
+
+function mapSubmissionMenuItems(value: unknown): UserStallSubmissionMenuItem[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => {
+      const row = asRecord(item);
+      const name = asString(row.name)?.trim();
+      if (!name) return null;
+      const menuItem: UserStallSubmissionMenuItem = { name };
+      const priceRange = asString(row.priceRange ?? row.price_range);
+      const notes = asString(row.notes);
+      if (priceRange) menuItem.priceRange = priceRange;
+      if (notes) menuItem.notes = notes;
+      return menuItem;
+    })
+    .filter((item): item is UserStallSubmissionMenuItem => item !== null);
+}
+
+function mapSubmissionDeliveryLinks(value: unknown): UserStallSubmissionDeliveryLink[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => {
+      const row = asRecord(item);
+      const label = asString(row.label)?.trim();
+      const url = asString(row.url)?.trim();
+      if (!label || !url) return null;
+      return { label, url };
+    })
+    .filter((item): item is UserStallSubmissionDeliveryLink => item !== null);
+}
+
+async function mapSubmissionGalleryUrls(
+  client: SupabaseClient,
+  value: unknown,
+  fallbackUrl: string,
+): Promise<string[]> {
+  if (!Array.isArray(value)) return fallbackUrl ? [fallbackUrl] : [];
+  const urls = await Promise.all(
+    value.map(async (item) => {
+      if (!item || typeof item !== "object") return undefined;
+      const row = item as Row;
+      const bucket = asString(row.bucket) ?? asString(row.storageBucket);
+      const path = asString(row.path) ?? asString(row.storagePath);
+      if (bucket && path) {
+        return (await createSignedStorageUrl(client, bucket, path)) ?? asString(row.url);
+      }
+      return asString(row.url);
+    }),
+  );
+  const cleaned = urls.filter((url): url is string => Boolean(url));
+  return cleaned.length > 0 ? cleaned : fallbackUrl ? [fallbackUrl] : [];
+}
+
+async function mapUserStallSubmission(
+  client: SupabaseClient,
+  row: Row,
+): Promise<UserStallSubmission> {
+  const bucket = asString(row.image_storage_bucket);
+  const path = asString(row.image_storage_path);
+  const signedUrl = bucket && path ? await createSignedStorageUrl(client, bucket, path) : undefined;
+  const imageUrl = signedUrl ?? asString(row.image_url) ?? "";
+  return {
+    id: String(row.id ?? ""),
+    userId: String(row.user_id ?? ""),
+    stallName: asString(row.stall_name) ?? "",
+    imageUrl,
+    galleryImageUrls: await mapSubmissionGalleryUrls(client, row.gallery_images, imageUrl),
+    imageStorageBucket: bucket,
+    imageStoragePath: path,
+    imageMimeType: asString(row.image_mime_type),
+    sourceUrl: asString(row.source_url),
+    buildingName: asString(row.building_name),
+    area: asString(row.area),
+    address: asString(row.address),
+    postalCode: asString(row.postal_code),
+    unitNumber: asString(row.unit_number),
+    floor: asString(row.floor),
+    operatingHours: asString(row.operating_hours),
+    menuItems: mapSubmissionMenuItems(row.menu_items),
+    deliveryLinks: mapSubmissionDeliveryLinks(row.delivery_links),
+    notes: asString(row.notes),
+    status: String(row.status ?? "pending") as UserStallSubmission["status"],
+    createdAt: String(row.created_at ?? ""),
+    updatedAt: String(row.updated_at ?? ""),
+  };
+}
+
+function getDisplayNameFromUserMetadata(metadata: unknown): string | undefined {
+  const userMetadata = asRecord(metadata);
+  const metadataName =
+    asString(userMetadata.name) ??
+    asString(userMetadata.full_name) ??
+    asString(userMetadata.given_name) ??
+    asString(userMetadata.family_name) ??
+    asString(userMetadata.nickname) ??
+    asString(userMetadata.preferred_username) ??
+    asString(userMetadata.username);
+  if (metadataName) return metadataName;
+
+  const structuredName = asRecord(userMetadata.name);
+  const firstName = asString(structuredName.first_name) ?? asString(structuredName.givenName);
+  const lastName = asString(structuredName.last_name) ?? asString(structuredName.familyName);
+  if (firstName && lastName) return `${firstName} ${lastName}`.trim();
+  if (firstName) return firstName;
+  if (lastName) return lastName;
+
+  return undefined;
+}
+
+function asRowArray(value: unknown): Row[] {
+  return Array.isArray(value)
+    ? value.map((item) => asRecord(item)).filter((item) => Object.keys(item).length > 0)
+    : [];
+}
+
 function isLocalUri(value: string): boolean {
   return value.startsWith("file://") || value.startsWith("content://") || value.startsWith("/");
+}
+
+function assertLocalUserMediaUri(value: string, label: string): void {
+  if (!isLocalUri(value)) {
+    throw new Error(`${label} must be uploaded from a local device file.`);
+  }
 }
 
 function sanitizeStorageSegment(value: string): string {
@@ -190,6 +475,28 @@ function requireSupabaseClient(): SupabaseClient {
   return client;
 }
 
+function portfolioEditConflictError(): Error {
+  return new Error(
+    "This portfolio changed elsewhere. Review the latest version before saving again.",
+  );
+}
+
+async function assertSupabasePortfolioVersion(
+  client: SupabaseClient,
+  portfolioId: string | undefined,
+  options?: PortfolioMutationOptions,
+): Promise<void> {
+  if (!portfolioId || !options?.expectedUpdatedAt) return;
+  const { data, error } = await client
+    .from("portfolios")
+    .select("id")
+    .eq("id", portfolioId)
+    .eq("updated_at", options.expectedUpdatedAt)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw portfolioEditConflictError();
+}
+
 async function getCurrentSupabaseUserId(): Promise<string | null> {
   const client = getSupabaseClient();
   if (!client) return null;
@@ -211,19 +518,39 @@ async function ensureCurrentUserProfileRow(client: SupabaseClient): Promise<void
   const user = sessionData.session?.user;
   if (!user?.id) return;
 
-  const payload = {
+  const providerDisplayName = getDisplayNameFromUserMetadata(user.user_metadata);
+  const existingProfile = await client
+    .from("user_profiles")
+    .select("display_name")
+    .eq("id", user.id)
+    .maybeSingle();
+  const existingDisplayName = asString(asRecord(existingProfile.data).display_name);
+  const payload: Row = {
     id: user.id,
     email: user.email ?? null,
-    display_name:
-      (user.user_metadata?.name as string | undefined) ??
-      (user.user_metadata?.full_name as string | undefined) ??
-      null,
   };
+  if (!existingDisplayName && providerDisplayName) {
+    payload.display_name = providerDisplayName;
+  }
 
   const { error } = await client.from("user_profiles").upsert(payload, { onConflict: "id" });
   if (error) {
     throw error;
   }
+}
+
+async function fetchFavouriteDishIdsForUser(
+  client: SupabaseClient,
+  userId: string,
+): Promise<string[]> {
+  const { data, error } = await client
+    .from("user_favourite_dishes")
+    .select("dish_id")
+    .eq("user_id", userId);
+  if (error || !Array.isArray(data)) return [];
+  return (data as Row[])
+    .map((row) => asString(row.dish_id))
+    .filter((dishId): dishId is string => Boolean(dishId));
 }
 
 async function fetchUserProfile(client: SupabaseClient, userId: string, email?: string) {
@@ -235,14 +562,16 @@ async function fetchUserProfile(client: SupabaseClient, userId: string, email?: 
     .maybeSingle();
   const row = (data ?? {}) as Row;
   const privacyRow = (privacyData ?? {}) as Row;
-  const favouriteDishIds = asStringArray(row.favourite_dish_ids);
+  const favouriteDishIds = await fetchFavouriteDishIdsForUser(client, userId);
   const reviewedDishIds = asStringArray(row.reviewed_dish_ids);
   const accountVisibility = asString(privacyRow.account_visibility);
   return {
-    ...DEFAULT_AUTH_PROFILE,
+    ...DEFAULT_AUTH_PROFILE_BASE,
     id: userId,
     displayName:
-      asString(row.display_name) ?? asString(row.displayName) ?? DEFAULT_AUTH_PROFILE.displayName,
+      asString(row.display_name) ??
+      asString(row.displayName) ??
+      DEFAULT_AUTH_PROFILE_BASE.displayName,
     email: asString(row.email) ?? email ?? "",
     avatarUrl: asString(row.avatar_url),
     profileVisibility: accountVisibility === "private" ? "private" : "public",
@@ -271,6 +600,56 @@ async function getCurrentUserProfileOrGuest(): Promise<UserProfile> {
 
 const STORY_TTL_MS = 24 * 60 * 60 * 1000;
 
+function clampRadiusMeters(radiusMeters?: number): number {
+  if (typeof radiusMeters !== "number" || !Number.isFinite(radiusMeters))
+    return Number.MAX_SAFE_INTEGER;
+  return radiusMeters > 0 ? radiusMeters : Number.MAX_SAFE_INTEGER;
+}
+
+function getFallbackDiscoveryFeed(request: {
+  areaName?: string;
+  lat?: number;
+  lng?: number;
+  radiusMeters?: number;
+  limit?: number;
+}): DiscoveryLocationFeed {
+  const limit = request.limit ?? 20;
+  const fallbackFilters: SearchFilters = {
+    query: "",
+    categories: [],
+    dietaryFlags: [],
+    tasteValues: NEUTRAL_TASTE_VECTOR,
+    radius: clampRadiusMeters(request.radiusMeters),
+    latitude: request.lat,
+    longitude: request.lng,
+    areaName: request.areaName,
+    openOnly: false,
+  };
+
+  const fallbackDishes = supabaseRepository
+    .searchDishes(fallbackFilters, NEUTRAL_TASTE_VECTOR)
+    .slice(0, limit);
+
+  const venueById = new Map<string, VenueSummary>();
+  const discoveryVenues: VenueSummary[] = [];
+
+  for (const dish of fallbackDishes) {
+    const venue = supabaseRepository.getVenueById(dish.venueId);
+    if (venue && !venueById.has(venue.id)) {
+      venueById.set(venue.id, venue);
+      discoveryVenues.push(venue);
+    }
+  }
+
+  return {
+    venues: discoveryVenues,
+    results: fallbackDishes.map((dish) => ({
+      dish,
+      score: dish.rating / 5,
+    })),
+  };
+}
+
 function cloneStory(story: Story): Story {
   return {
     ...story,
@@ -298,13 +677,20 @@ function isFreshStory(story: Story): boolean {
   return Date.now() - createdAt < STORY_TTL_MS;
 }
 
-function buildStorySeed(displayName: string, avatarUrl?: string): Story[] {
+function buildStorySeed(profile: {
+  id: string;
+  displayName: string;
+  avatarUrl?: string;
+  profileVisibility?: ProfileVisibility;
+}): Story[] {
   const now = Date.now();
   return [
     {
       id: `s_${now}`,
-      displayName,
-      avatarUrl: avatarUrl,
+      displayName: profile.displayName,
+      authorId: profile.id,
+      authorProfileVisibility: profile.profileVisibility,
+      avatarUrl: profile.avatarUrl,
       hasUnseen: false,
       isStall: false,
       isOwn: true,
@@ -318,6 +704,8 @@ function buildStorySeed(displayName: string, avatarUrl?: string): Story[] {
     {
       id: `s_${now + 1}`,
       displayName: "Tian Tian",
+      authorId: "story-author-tian-tian",
+      authorProfileVisibility: "public",
       avatarUrl:
         "https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=150&h=150&fit=crop",
       hasUnseen: true,
@@ -327,11 +715,13 @@ function buildStorySeed(displayName: string, avatarUrl?: string): Story[] {
         url: "https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=800&q=80",
       },
       createdAt: new Date(now - 3_600_000).toISOString(),
-      interaction: { liked: false, saved: false, likeCount: 120, commentCount: 12, shareCount: 5 },
+      interaction: { liked: false, saved: false, likeCount: 0, commentCount: 0, shareCount: 0 },
     },
     {
       id: `s_${now + 2}`,
       displayName: "Wei Ming",
+      authorId: "story-author-wei-ming",
+      authorProfileVisibility: "public",
       avatarUrl: "https://i.pravatar.cc/150?u=wm",
       hasUnseen: true,
       isStall: false,
@@ -340,7 +730,7 @@ function buildStorySeed(displayName: string, avatarUrl?: string): Story[] {
         url: "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=800&q=80",
       },
       createdAt: new Date(now - 7_200_000).toISOString(),
-      interaction: { liked: false, saved: false, likeCount: 45, commentCount: 3, shareCount: 1 },
+      interaction: { liked: false, saved: false, likeCount: 0, commentCount: 0, shareCount: 0 },
     },
   ];
 }
@@ -352,7 +742,7 @@ async function getStoryCache(): Promise<Story[]> {
     return cloneStoryList(supabaseStoryCache.map(sanitizeStoryTimestamp).filter(isFreshStory));
   }
   const profile = await getCurrentUserProfileOrGuest();
-  supabaseStoryCache = buildStorySeed(profile.displayName, profile.avatarUrl);
+  supabaseStoryCache = buildStorySeed(profile);
   return cloneStoryList(supabaseStoryCache.map(sanitizeStoryTimestamp).filter(isFreshStory));
 }
 
@@ -385,14 +775,13 @@ async function uploadReviewPhotos(
   userId: string,
   reviewId: string,
   photos: string[],
-): Promise<string[]> {
-  const uploaded: string[] = [];
+): Promise<Row[]> {
+  const uploaded: Row[] = [];
   for (let index = 0; index < photos.length; index += 1) {
     const uri = photos[index];
     if (!uri) continue;
     if (!isLocalUri(uri)) {
-      uploaded.push(uri);
-      continue;
+      throw new Error("Review photos must be uploaded from local device files.");
     }
     const extension = uri.split(".").pop()?.toLowerCase() || "jpg";
     const path = `${userId}/${reviewId}/photo-${index}.${extension}`;
@@ -402,9 +791,89 @@ async function uploadReviewPhotos(
       path,
       uri,
     });
-    uploaded.push(asset.publicUrl);
+    uploaded.push({
+      url: asset.path,
+      storage_bucket: "review-media",
+      storage_path: asset.path,
+    });
   }
   return uploaded;
+}
+
+async function mapSupabaseReviewRows(
+  client: SupabaseClient,
+  rows: Row[],
+): Promise<DishDetail["reviews"]> {
+  const reviewIds = rows.map((row) => asString(row.id)).filter((id): id is string => Boolean(id));
+  const userIds = rows
+    .map((row) => asString(row.user_id))
+    .filter((id): id is string => Boolean(id));
+  const photosByReviewId = new Map<string, string[]>();
+  const namesByUserId = new Map<string, string>();
+  const avatarsByUserId = new Map<string, string>();
+
+  if (reviewIds.length > 0) {
+    const { data: photoRows } = await client
+      .from("review_photos")
+      .select("review_id,url,storage_bucket,storage_path,sort_order")
+      .in("review_id", reviewIds)
+      .order("sort_order", { ascending: true });
+
+    if (Array.isArray(photoRows)) {
+      for (const photoRow of photoRows as Row[]) {
+        const reviewId = asString(photoRow.review_id);
+        if (!reviewId) continue;
+        const bucket = asString(photoRow.storage_bucket) || "review-media";
+        const path = asString(photoRow.storage_path);
+        const legacyUrl = asString(photoRow.url);
+        const displayUrl =
+          path && bucket === "review-media"
+            ? ((await createSignedStorageUrl(client, bucket, path)) ?? legacyUrl)
+            : legacyUrl;
+        if (!displayUrl) continue;
+        photosByReviewId.set(reviewId, [...(photosByReviewId.get(reviewId) ?? []), displayUrl]);
+      }
+    }
+  }
+
+  if (userIds.length > 0) {
+    const { data: profileRows } = await client
+      .from("public_profiles")
+      .select("id,display_name,avatar_url")
+      .in("id", Array.from(new Set(userIds)));
+
+    if (Array.isArray(profileRows)) {
+      (profileRows as Row[]).forEach((profileRow) => {
+        const userId = asString(profileRow.id);
+        const displayName = asString(profileRow.display_name);
+        const avatarUrl = asString(profileRow.avatar_url);
+        if (!userId) return;
+        if (displayName) namesByUserId.set(userId, displayName);
+        if (avatarUrl) avatarsByUserId.set(userId, avatarUrl);
+      });
+    }
+  }
+
+  return rows.map((row) => {
+    const id = asString(row.id) ?? `${Date.now()}`;
+    const userId = asString(row.user_id);
+    return {
+      id,
+      dishId: asString(row.dish_id),
+      venueId: asString(row.venue_id),
+      authorName:
+        (userId ? namesByUserId.get(userId) : undefined) ??
+        asString(row.author_name) ??
+        "Hungry User",
+      authorAvatarUrl: (userId ? avatarsByUserId.get(userId) : undefined) ?? undefined,
+      rating: asNumber(row.rating) ?? 0,
+      createdAt: asString(row.created_at) ?? new Date().toISOString(),
+      text: asString(row.text) ?? "",
+      tags: asStringArray(row.tags),
+      wouldRecommend: asBoolean(row.would_recommend) ?? true,
+      photos: photosByReviewId.get(id) ?? [],
+    };
+  });
 }
 
 async function uploadAvatarIfNeeded(
@@ -412,8 +881,11 @@ async function uploadAvatarIfNeeded(
   userId: string,
   avatarUri?: string,
 ): Promise<string | undefined> {
-  if (!avatarUri || !isLocalUri(avatarUri)) {
-    return avatarUri;
+  if (!avatarUri) {
+    return undefined;
+  }
+  if (!isLocalUri(avatarUri)) {
+    throw new Error("Profile avatar must be uploaded from a local device file.");
   }
   const extension = avatarUri.split(".").pop()?.toLowerCase() || "jpg";
   const uploaded = await uploadImageFromUri({
@@ -506,16 +978,7 @@ async function buildPostMediaRows(
       continue;
     }
 
-    rows.push({
-      post_id: postId,
-      media_type: mediaKind,
-      storage_bucket: "external",
-      storage_path: uri,
-      public_url: uri,
-      mime_type: mediaKind === "video" ? "video/external" : "image/external",
-      sort_order: index,
-    });
-    displayUrls.push(uri);
+    throw new Error("Post media must be uploaded from local device files.");
   }
 
   return {
@@ -597,7 +1060,7 @@ async function fetchPublishedPostBites(client: SupabaseClient, limit = 40): Prom
     dishIds.length > 0
       ? client
           .from("dishes")
-          .select("id,name,price,rating_avg,rating,image_url,venue_id,building_id")
+          .select("id,name,price,rating_avg,image_url,venue_id,building_id")
           .in("id", dishIds)
           .then(({ data: rows, error: rowsError }) =>
             rowsError || !Array.isArray(rows) ? [] : (rows as Row[]),
@@ -686,14 +1149,93 @@ async function fetchPublishedPostBites(client: SupabaseClient, limit = 40): Prom
         photoUrl,
         mediaUrls: mediaUrls.length > 0 ? mediaUrls : photoUrl ? [photoUrl] : [],
         mediaType,
+        showFoodContextOverlay: meta.showFoodContextOverlay !== false,
         caption: asString(row.caption) ?? "",
         tags: asStringArray(meta.tags),
         tasteStamp: tasteStampFromPostMeta(meta),
         cravingCount: asNumber(row.like_count) ?? 0,
         savedCount: asNumber(row.save_count) ?? 0,
-        rating:
-          asNumber(meta.rating) ?? asNumber(dishRow?.rating_avg) ?? asNumber(dishRow?.rating) ?? 0,
+        rating: asNumber(meta.rating) ?? asNumber(dishRow?.rating_avg) ?? 0,
         price: asNumber(dishRow?.price) ?? asNumber(dishMeta.price) ?? 0,
+        expiresAt:
+          asString(row.published_at) ?? asString(row.created_at) ?? new Date().toISOString(),
+        createdAt:
+          asString(row.published_at) ?? asString(row.created_at) ?? new Date().toISOString(),
+      } satisfies Bite;
+    }),
+  );
+}
+
+async function fetchHomeSocialFeedBitesViaRpc(
+  client: SupabaseClient,
+  limit = 40,
+): Promise<Bite[] | undefined> {
+  const v2Result = await client.rpc("get_home_social_feed_v2", {
+    p_limit: limit,
+    p_cursor_feed_created_at: null,
+    p_cursor_post_id: null,
+  });
+  const legacyResult = v2Result.error
+    ? await client.rpc("get_home_social_feed", {
+        p_limit: limit,
+        p_cursor_published_at: null,
+        p_cursor_id: null,
+      })
+    : v2Result;
+
+  if (legacyResult.error) {
+    console.warn("Failed to fetch Home social feed RPC", legacyResult.error.message);
+    return undefined;
+  }
+  if (!Array.isArray(legacyResult.data)) return undefined;
+
+  const rows = legacyResult.data as Row[];
+  return Promise.all(
+    rows.map(async (row) => {
+      const meta = asRecord(row.generated_content);
+      const authorMeta = asRecord(meta.author);
+      const dishMeta = asRecord(meta.dish);
+      const venueMeta = asRecord(meta.venue);
+      const mediaRows = asRowArray(row.media);
+      const mediaUrls = (
+        await Promise.all(mediaRows.map((mediaRow) => resolvePostMediaDisplayUrl(client, mediaRow)))
+      ).filter((url): url is string => url.length > 0);
+      const fallbackImage =
+        asString(row.dish_image_url) ??
+        asString(dishMeta.imageUrl) ??
+        asString(row.public_url) ??
+        "";
+      const photoUrl = mediaUrls[0] ?? fallbackImage;
+      const mediaType = resolvePostBiteMediaType(mediaRows, meta);
+
+      return {
+        id: asString(row.id) ?? `post-${Date.now()}`,
+        authorId: asString(row.author_id) ?? "unknown-author",
+        authorName:
+          asString(authorMeta.displayName) ?? asString(row.author_display_name) ?? "Hungry User",
+        authorAvatar: asString(authorMeta.avatarUrl) ?? asString(row.author_avatar_url),
+        dishId: asString(row.dish_id) ?? asString(dishMeta.id) ?? "",
+        dishName: asString(row.dish_name) ?? asString(dishMeta.name) ?? "Unknown dish",
+        venueId: asString(row.venue_id) ?? asString(venueMeta.id) ?? "",
+        venueName: asString(row.venue_name) ?? asString(venueMeta.name) ?? "Unknown venue",
+        unitNumber: asString(row.venue_unit_number) ?? asString(venueMeta.unitNumber) ?? "",
+        buildingId:
+          asString(row.building_id) ??
+          asString(row.venue_building_id) ??
+          asString(venueMeta.buildingId) ??
+          "",
+        buildingName: asString(row.building_name) ?? asString(venueMeta.buildingName) ?? "",
+        photoUrl,
+        mediaUrls: mediaUrls.length > 0 ? mediaUrls : photoUrl ? [photoUrl] : [],
+        mediaType,
+        showFoodContextOverlay: meta.showFoodContextOverlay !== false,
+        caption: asString(row.caption) ?? "",
+        tags: asStringArray(meta.tags),
+        tasteStamp: tasteStampFromPostMeta(meta),
+        cravingCount: asNumber(row.like_count) ?? 0,
+        savedCount: asNumber(row.save_count) ?? 0,
+        rating: asNumber(meta.rating) ?? asNumber(row.dish_rating) ?? 0,
+        price: asNumber(row.dish_price) ?? asNumber(dishMeta.price) ?? 0,
         expiresAt:
           asString(row.published_at) ?? asString(row.created_at) ?? new Date().toISOString(),
         createdAt:
@@ -720,7 +1262,7 @@ function matchesRecommendationQuery(dish: DishDetail, query?: string) {
 
 function getRankedRecommendations(
   request: RecommendationSlateRequest,
-  profile: UserProfile = DEFAULT_AUTH_PROFILE,
+  profile: UserProfile = DEFAULT_GUEST_PROFILE,
 ): RankedRecommendation[] {
   const dishes = listAllDishesFromRepository().filter((dish) =>
     matchesRecommendationQuery(dish, request.query),
@@ -983,7 +1525,9 @@ async function persistFeedbackEvent({
     return true;
   }
 
-  console.warn("Failed to persist taste interaction event via RPC", error.message);
+  if (!isMissingPgVectorTypeError(error)) {
+    console.warn("Failed to persist taste interaction event via RPC", error.message);
+  }
   const { error: insertError } = await client.from("taste_interaction_events").insert({
     user_id: userId,
     type: persistedType,
@@ -1000,7 +1544,9 @@ async function persistFeedbackEvent({
     created_at: createdAt,
   });
   if (insertError) {
-    console.warn("Failed to persist taste interaction event", insertError.message);
+    if (!isMissingPgVectorTypeError(insertError)) {
+      console.warn("Failed to persist taste interaction event", insertError.message);
+    }
   }
 
   return false;
@@ -1023,6 +1569,39 @@ function confidenceDeltaForFeedback(feedback: ExplicitFeedbackInput): number {
   if (feedback.feedbackType === "food_button_click") return 0.012;
   if (feedback.feedbackType === "dismissed") return 0.01;
   return 0.01;
+}
+
+function isMissingPgVectorTypeError(error: { message?: string } | null | undefined): boolean {
+  return /type "vector" does not exist/i.test(error?.message ?? "");
+}
+
+function isMissingActivityEventsSchemaError(error: PostgrestError | null | undefined): boolean {
+  if (!error) return false;
+  const message = `${error.message ?? ""} ${error.details ?? ""} ${error.hint ?? ""}`.toLowerCase();
+  return (
+    message.includes("activity_events") &&
+    (error.code === "PGRST205" ||
+      error.code === "42P01" ||
+      message.includes("schema cache") ||
+      message.includes("does not exist") ||
+      message.includes("could not find the table"))
+  );
+}
+
+function isMissingMarkActivityReadRpcError(error: PostgrestError | null | undefined): boolean {
+  if (!error) return false;
+  const message = `${error.message ?? ""} ${error.details ?? ""} ${error.hint ?? ""}`.toLowerCase();
+  return (
+    (message.includes("mark_activity_read") || message.includes("activity_events")) &&
+    (error.code === "PGRST202" ||
+      error.code === "PGRST205" ||
+      error.code === "42883" ||
+      error.code === "42P01" ||
+      message.includes("schema cache") ||
+      message.includes("does not exist") ||
+      message.includes("could not find the function") ||
+      message.includes("could not find the table"))
+  );
 }
 
 function buildTasteVectorFromAnswers(answers: QuizAnswer[]): TasteVector {
@@ -1064,16 +1643,139 @@ function normalizeMenuEntry(value: string): string {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
-function getOpsDraftApiKey(): string {
-  return (
-    process.env.EXPO_PUBLIC_OPS_DISHES_DRAFT_API_KEY?.trim() ??
-    process.env.OPS_DISHES_DRAFT_API_KEY?.trim() ??
-    ""
-  );
-}
-
 function getAuthEmailRedirectTo(): string {
   return process.env.EXPO_PUBLIC_AUTH_REDIRECT_URL?.trim() || "hungry://auth/callback";
+}
+
+function getMerchantAnalyticsSince(dateRange: MerchantAnalytics["dateRange"]): string | null {
+  const now = new Date();
+  if (dateRange === "today") {
+    now.setHours(0, 0, 0, 0);
+    return now.toISOString();
+  }
+  if (dateRange === "7d") {
+    now.setDate(now.getDate() - 7);
+    return now.toISOString();
+  }
+  if (dateRange === "30d") {
+    now.setDate(now.getDate() - 30);
+    return now.toISOString();
+  }
+  return null;
+}
+
+function getMerchantAnalyticsSessionId(context?: { sessionId?: string; userId?: string }): string {
+  return context?.sessionId ?? context?.userId ?? merchantAnonymousSessionId;
+}
+
+function mapMerchantAnalyticsPayload(
+  payload: unknown,
+  outletId: string,
+  dateRange: MerchantAnalytics["dateRange"],
+): MerchantAnalytics {
+  const row = asRecord(payload);
+  const previousPeriodComparison = asRecord(row.previousPeriodComparison);
+  return {
+    outletId: asString(row.outletId) ?? outletId,
+    dateRange,
+    profileVisits: asNumber(row.profileVisits) ?? 0,
+    menuViews: asNumber(row.menuViews) ?? 0,
+    dishViews: asNumber(row.dishViews) ?? 0,
+    directionTaps: asNumber(row.directionTaps) ?? 0,
+    saves: asNumber(row.saves) ?? 0,
+    shares: asNumber(row.shares) ?? 0,
+    contactTaps: asNumber(row.contactTaps) ?? 0,
+    socialLinkTaps: asNumber(row.socialLinkTaps) ?? 0,
+    postInteractions: asNumber(row.postInteractions) ?? 0,
+    reviewCount: asNumber(row.reviewCount) ?? 0,
+    averageRating: asNumber(row.averageRating) ?? 0,
+    topDishes: asRowArray(row.topDishes).map((dish) => ({
+      dishId: asString(dish.dishId) ?? "",
+      name: asString(dish.name) ?? "",
+      views: asNumber(dish.views) ?? 0,
+      saves: asNumber(dish.saves) ?? 0,
+    })),
+    mostSearchedKeywords: asStringArray(row.mostSearchedKeywords),
+    peakDiscoveryHours: Array.isArray(row.peakDiscoveryHours)
+      ? row.peakDiscoveryHours
+          .map((hour) => asNumber(hour))
+          .filter((hour): hour is number => typeof hour === "number")
+      : [],
+    customerTasteTags: asRowArray(row.customerTasteTags).map((tagRow) => ({
+      tag: asString(tagRow.tag) ?? "",
+      count: asNumber(tagRow.count) ?? 0,
+    })),
+    previousPeriodComparison: {
+      profileVisits: asNumber(previousPeriodComparison.profileVisits) ?? 0,
+      menuViews: asNumber(previousPeriodComparison.menuViews) ?? 0,
+      reviewCount: asNumber(previousPeriodComparison.reviewCount) ?? 0,
+      averageRating: asNumber(previousPeriodComparison.averageRating) ?? 0,
+    },
+  };
+}
+
+function callbackBaseMatches(url: string, expectedRedirectTo: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const expected = new URL(expectedRedirectTo);
+    return (
+      parsed.protocol === expected.protocol &&
+      parsed.hostname === expected.hostname &&
+      normalizeCallbackPath(parsed.pathname) === normalizeCallbackPath(expected.pathname)
+    );
+  } catch {
+    return false;
+  }
+}
+
+function normalizeCallbackPath(path: string): string {
+  if (!path) return "/";
+  const normalized = path.endsWith("/") ? path.slice(0, -1) : path;
+  return normalized || "/";
+}
+
+async function exchangeRecoveryCodeIfPresent(client: SupabaseClient, token: string): Promise<void> {
+  const trimmed = token.trim();
+  if (!trimmed) return;
+
+  let code = trimmed;
+  try {
+    const parsed = new URL(trimmed);
+    if (!callbackBaseMatches(parsed.toString(), getAuthEmailRedirectTo())) {
+      throw new Error("Password recovery callback URL was not trusted.");
+    }
+    const {
+      accessToken,
+      refreshToken,
+      code: callbackCode,
+    } = getAuthTokensFromCallback(parsed.toString());
+    if (accessToken || refreshToken) {
+      throw new Error("Password recovery token fragments are not accepted.");
+    }
+    code = callbackCode ?? "";
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("Password recovery")) {
+      throw error;
+    }
+  }
+
+  if (!code) {
+    throw new Error("Password recovery callback did not include a code.");
+  }
+
+  const { error } = await client.auth.exchangeCodeForSession(code);
+  if (error) throw error;
+}
+
+function getOAuthStateFromUrl(url: string): string | undefined {
+  try {
+    const parsed = new URL(url);
+    const query = new URLSearchParams(parsed.search.startsWith("?") ? parsed.search.slice(1) : "");
+    const hash = new URLSearchParams(parsed.hash.startsWith("#") ? parsed.hash.slice(1) : "");
+    return hash.get("state") ?? query.get("state") ?? undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function getAuthTokensFromCallback(url: string): {
@@ -1094,7 +1796,7 @@ function getAuthTokensFromCallback(url: string): {
   return {
     accessToken: hash.get("access_token") ?? query.get("access_token") ?? undefined,
     refreshToken: hash.get("refresh_token") ?? query.get("refresh_token") ?? undefined,
-    code: query.get("code") ?? undefined,
+    code: query.get("code") ?? hash.get("code") ?? undefined,
   };
 }
 
@@ -1110,6 +1812,14 @@ const DEFAULT_MERCHANT_NOTIFICATION_PREFERENCES: MerchantNotificationPreferences
 function asMerchantRole(value: unknown): MerchantRole {
   const role = asString(value);
   return role === "manager" || role === "staff" ? role : "owner";
+}
+
+function asMerchantInviteStatus(value: unknown): MerchantTeamMember["inviteStatus"] {
+  const status = asString(value);
+  if (status === "accepted" || status === "active") return "accepted";
+  if (status === "declined") return "declined";
+  if (status === "removed") return "removed";
+  return "pending";
 }
 
 function normalizeAvailabilityFlag(flag: string): string {
@@ -1185,7 +1895,12 @@ async function toMerchantOutlet(client: SupabaseClient, row: Row): Promise<Merch
     description: asString(row.description) ?? "",
     cuisineCategories: [],
     operatingHours: asString(row.operating_hours) ?? venue?.operatingHours ?? "",
+    temporaryClosure: asString(row.temporary_closure),
+    profilePhotoUrl: asString(row.profile_photo_url),
+    coverPhotoUrl: asString(row.cover_photo_url),
     galleryUrls: [],
+    contactPhone: asString(row.contact_phone),
+    contactEmail: asString(row.contact_email),
     socialLinks: [],
     deliveryLinks: venue?.deliveryLinks ?? [],
     dietaryLabels: [],
@@ -1286,7 +2001,7 @@ async function getMerchantOutletRow(client: SupabaseClient, outletId: string): P
 
 function mapSupabaseDish(row: Row, venue?: Row, presentation?: DishPresentation): DishDetail {
   const gallery = presentation?.gallery ?? [];
-  const imageUrl = asString(row.image_url) ?? gallery[0] ?? "";
+  const imageUrl = gallery[0] ?? asString(row.image_url) ?? "";
   return {
     id: asString(row.id) ?? "",
     venueId: asString(row.venue_id) ?? asString(venue?.id) ?? "",
@@ -1402,6 +2117,90 @@ async function requireLinkedMerchantOutlet(client: SupabaseClient, outletId: str
   return outlet;
 }
 
+async function listPromotionOutletDishIds(client: SupabaseClient, outlet: Row): Promise<string[]> {
+  const venueId = asString(outlet.venue_id);
+  if (!venueId) return [];
+  const { data, error } = await client.from("dishes").select("id").eq("venue_id", venueId);
+  if (error) throw error;
+  return (Array.isArray(data) ? (data as Row[]) : [])
+    .map((row) => asString(row.id))
+    .filter((id): id is string => !!id);
+}
+
+function mapPopularVisitorPin(row: Row): PopularVisitorPin {
+  return {
+    id: asString(row.id) ?? "",
+    outletId: asString(row.outlet_id) ?? "",
+    venueId: asString(row.venue_id) ?? "",
+    reviewId: asString(row.review_id) ?? "",
+    sourceId: asString(row.source_id) ?? asString(row.review_id) ?? "",
+    authorProfileId: asString(row.author_profile_id),
+    authorName: asString(row.author_name) ?? "Hungry diner",
+    authorAvatarUrl: asString(row.author_avatar_url),
+    authorLocation: asString(row.author_location),
+    reviewText: asString(row.review_text) ?? "",
+    rating: asNumber(row.rating) ?? 0,
+    dishName: asString(row.dish_name),
+    visitedAt: asString(row.visited_at) ?? asString(row.created_at) ?? new Date().toISOString(),
+    pinnedAt: asString(row.pinned_at) ?? new Date().toISOString(),
+    sortOrder: asNumber(row.sort_order) ?? 0,
+    isActive: asBoolean(row.is_active) ?? true,
+  };
+}
+
+async function listSupabasePopularVisitorPinsForOutlet(
+  client: SupabaseClient,
+  outletId: string,
+): Promise<PopularVisitorPin[]> {
+  const { data, error } = await client
+    .from("merchant_popular_visitor_pins")
+    .select("*")
+    .eq("outlet_id", outletId)
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true })
+    .order("pinned_at", { ascending: false })
+    .limit(6);
+  if (error) throw error;
+  return (Array.isArray(data) ? (data as Row[]) : []).map(mapPopularVisitorPin);
+}
+
+async function listSupabasePopularVisitorPinsForVenue(
+  client: SupabaseClient,
+  venueId: string,
+): Promise<PopularVisitorPin[]> {
+  const { data, error } = await client
+    .from("merchant_popular_visitor_pins")
+    .select("*")
+    .eq("venue_id", venueId)
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true })
+    .order("pinned_at", { ascending: false })
+    .limit(6);
+  if (error) throw error;
+  return (Array.isArray(data) ? (data as Row[]) : []).map(mapPopularVisitorPin);
+}
+
+async function fetchSafeProfileRowsById(
+  client: SupabaseClient,
+  profileIds: string[],
+): Promise<Map<string, Row>> {
+  const uniqueIds = Array.from(new Set(profileIds.filter((id) => UUID_PATTERN.test(id))));
+  const profileById = new Map<string, Row>();
+  if (uniqueIds.length === 0) return profileById;
+
+  const { data, error } = await client
+    .from("public_profiles")
+    .select("id,display_name,avatar_url")
+    .in("id", uniqueIds);
+  if (error || !Array.isArray(data)) return profileById;
+
+  (data as Row[]).forEach((row) => {
+    const id = asString(row.id);
+    if (id) profileById.set(id, row);
+  });
+  return profileById;
+}
+
 function buildDishPayload(outlet: Row, dish: Partial<DishDetail>): Row {
   const venueId = asString(outlet.venue_id) ?? "";
   const buildingId = asString(outlet.building_id) ?? "";
@@ -1465,10 +2264,7 @@ async function resolveMerchantDishGalleryUrls(
 
   for (let index = 0; index < requestedUrls.length; index += 1) {
     const url = requestedUrls[index];
-    if (!isLocalUri(url)) {
-      uploadedUrls.push(url);
-      continue;
-    }
+    assertLocalUserMediaUri(url, "Merchant dish image");
     if (!userId) throw new Error("You must be signed in to upload merchant dish images.");
     const extension = extensionFromUri(url);
     const uploaded = await uploadImageFromUri({
@@ -1596,8 +2392,67 @@ function mapPromotion(row: Row): MerchantPromotion {
     endDate: asString(row.end_date) ?? new Date().toISOString(),
     targetAudience: asStringArray(row.target_audience) as MerchantPromotion["targetAudience"],
     status,
+    promotionItemType:
+      asString(row.promotion_item_type) === "existing_menu_item"
+        ? "existing_menu_item"
+        : "new_item",
+    originalPrice: asNumber(row.original_price),
+    promotionalPrice: asNumber(row.promotional_price),
+    finalPrice: asNumber(row.final_price),
+    discountPercentage: asNumber(row.discount_percentage),
+    isAvailable: asBoolean(row.is_available) ?? status === "active",
     createdAt: asString(row.created_at) ?? new Date().toISOString(),
     analytics,
+  };
+}
+
+function mapMerchantNotification(row: Row): MerchantNotification {
+  return {
+    id: asString(row.id) ?? "",
+    merchantAccountId: asString(row.merchant_account_id) ?? "",
+    outletId: asString(row.outlet_id),
+    recipientUserId: asString(row.recipient_user_id),
+    recipientEmail: asString(row.recipient_email),
+    kind: (asString(row.kind) as MerchantNotification["kind"]) ?? "ai_insight",
+    title: asString(row.title) ?? "",
+    body: asString(row.body) ?? "",
+    status: (asString(row.status) as MerchantNotification["status"]) ?? "unread",
+    dedupeKey: asString(row.dedupe_key) ?? "",
+    deepLink: asString(row.deep_link),
+    metadata:
+      row.metadata && typeof row.metadata === "object"
+        ? (asRecord(row.metadata) as Record<string, string | number | boolean | null>)
+        : undefined,
+    createdAt: asString(row.created_at) ?? new Date().toISOString(),
+  };
+}
+
+function buildWeeklySummaryFromAnalytics(
+  outletId: string,
+  analytics: MerchantAnalytics,
+  reviews: CustomerInteraction[],
+  promotions: MerchantPromotion[],
+): MerchantWeeklySummary {
+  const now = new Date();
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - 6);
+  return {
+    id: `weekly-${outletId}-${weekStart.toISOString().slice(0, 10)}`,
+    outletId,
+    weekStart: weekStart.toISOString(),
+    weekEnd: now.toISOString(),
+    totalViews: analytics.profileVisits + analytics.menuViews + analytics.dishViews,
+    dishViews: analytics.dishViews,
+    topDishes: analytics.topDishes,
+    newReviews: reviews.length,
+    averageRating: analytics.averageRating,
+    ratingChange: analytics.averageRating - analytics.previousPeriodComparison.averageRating,
+    unrepliedReviews: reviews.filter((review) => !review.reply).length,
+    promotionViews: promotions.reduce(
+      (sum, promotion) => sum + (promotion.analytics?.impressions ?? 0),
+      0,
+    ),
+    createdAt: now.toISOString(),
   };
 }
 
@@ -1616,19 +2471,22 @@ async function signInWithOAuthProvider(provider: "google" | "apple"): Promise<Se
     throw new Error("OAuth provider URL was not generated.");
   }
 
+  const expectedState = getOAuthStateFromUrl(data.url);
   WebBrowser.maybeCompleteAuthSession();
   const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
   if (result.type !== "success" || !result.url) {
     throw new Error("OAuth sign-in was cancelled.");
   }
+  if (!callbackBaseMatches(result.url, redirectTo)) {
+    throw new Error("OAuth callback URL was not trusted.");
+  }
+  if (expectedState && getOAuthStateFromUrl(result.url) !== expectedState) {
+    throw new Error("OAuth callback state did not match the sign-in request.");
+  }
 
   const { accessToken, refreshToken, code } = getAuthTokensFromCallback(result.url);
-  if (accessToken && refreshToken) {
-    const { error: sessionError } = await client.auth.setSession({
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    });
-    if (sessionError) throw sessionError;
+  if (accessToken || refreshToken) {
+    throw new Error("OAuth callback token fragments are not accepted.");
   } else if (code) {
     const { error: exchangeError } = await client.auth.exchangeCodeForSession(code);
     if (exchangeError) throw exchangeError;
@@ -1701,8 +2559,8 @@ async function hydrateChatParticipants(
   const profileRows = new Map<string, Row>();
   if (userIds.length > 0) {
     const { data } = await client
-      .from("user_profiles")
-      .select("id,display_name,email,avatar_url")
+      .from("public_profiles")
+      .select("id,display_name,avatar_url")
       .in("id", userIds);
     (Array.isArray(data) ? (data as Row[]) : []).forEach((row) => {
       const id = asString(row.id);
@@ -1714,7 +2572,7 @@ async function hydrateChatParticipants(
   if (merchantIds.length > 0) {
     const { data } = await client
       .from("merchant_accounts")
-      .select("id,display_name,email")
+      .select("id,display_name")
       .in("id", merchantIds);
     (Array.isArray(data) ? (data as Row[]) : []).forEach((row) => {
       const id = asString(row.id);
@@ -1732,11 +2590,7 @@ async function hydrateChatParticipants(
     const participant: ChatParticipant = {
       ...fallback,
       displayName:
-        asString(profile?.display_name) ??
-        asString(profile?.email) ??
-        asString(merchant?.display_name) ??
-        asString(merchant?.email) ??
-        fallback.displayName,
+        asString(profile?.display_name) ?? asString(merchant?.display_name) ?? fallback.displayName,
       avatarUrl: asString(profile?.avatar_url) ?? fallback.avatarUrl,
     };
     participants.set(participantKey(participant), participant);
@@ -1957,12 +2811,15 @@ export const supabaseService: HungryService = {
 
     async forgotPassword(email) {
       const client = requireSupabaseClient();
-      const { error } = await client.auth.resetPasswordForEmail(email);
+      const { error } = await client.auth.resetPasswordForEmail(email, {
+        redirectTo: getAuthEmailRedirectTo(),
+      });
       if (error) throw error;
     },
 
-    async resetPassword(_token, password) {
+    async resetPassword(token, password) {
       const client = requireSupabaseClient();
+      await exchangeRecoveryCodeIfPresent(client, token);
       const { error } = await client.auth.updateUser({ password });
       if (error) throw error;
     },
@@ -1983,11 +2840,26 @@ export const supabaseService: HungryService = {
   },
 
   discovery: {
-    async listBuildings() {
-      return supabaseRepository.listBuildings();
+    async listBuildings(lat, lng, radiusMeters) {
+      return (
+        (await listBuildingsViaRpc(lat, lng, radiusMeters)) ?? supabaseRepository.listBuildings()
+      );
+    },
+
+    async countVenuesInArea(lat, lng, radiusMeters, areaName) {
+      const exactCount = await countVenuesInAreaViaRpc(lat, lng, radiusMeters, areaName);
+      if (typeof exactCount === "number") return exactCount;
+
+      const locationBuildings = await listBuildingsViaRpc(lat, lng, radiusMeters);
+      if (locationBuildings) {
+        return locationBuildings.reduce((total, building) => total + building.venueCount, 0);
+      }
+      return undefined;
     },
 
     async getBuildingDetail(id) {
+      const rpcDetail = await getBuildingDetailViaRpc(id);
+      if (rpcDetail) return rpcDetail;
       const building = supabaseRepository.listBuildings().find((item) => item.id === id);
       if (!building) return undefined;
       const venues = supabaseRepository.listVenuesByBuilding(id);
@@ -2020,26 +2892,98 @@ export const supabaseService: HungryService = {
     },
 
     async getVenue(id) {
-      return supabaseRepository.getVenueById(id);
+      return (await getVenueByIdViaRpc(id)) ?? supabaseRepository.getVenueById(id);
     },
 
     async listVenuesByBuilding(buildingId) {
-      return supabaseRepository.listVenuesByBuilding(buildingId);
+      return (
+        (await listVenuesByBuildingViaRpc(buildingId)) ??
+        supabaseRepository.listVenuesByBuilding(buildingId)
+      );
     },
 
     async getDish(id) {
-      return supabaseRepository.getDishById(id);
+      return (await getDishByIdViaRpc(id)) ?? supabaseRepository.getDishById(id);
+    },
+
+    async listActivePromotionsForTarget(input) {
+      const client = getSupabaseClient();
+      if (!client) return [];
+      const { data, error } = await client.rpc("list_customer_active_promotions", {
+        p_venue_id: input.venueId,
+        p_dish_id: input.dishId ?? null,
+      });
+      if (error) return [];
+      return (Array.isArray(data) ? (data as Row[]) : []).map(mapPromotion);
+    },
+
+    async recordDishView(dishId, context) {
+      const client = getSupabaseClient();
+      if (!client) return;
+      const sessionId = getMerchantAnalyticsSessionId(context);
+      // Dish view tracking is analytics only; permission or network failures must not break detail screens.
+      try {
+        const { error } = await client.rpc("record_merchant_dish_view", {
+          p_dish_id: dishId,
+          p_session_id: sessionId,
+        });
+        if (error) {
+          return;
+        }
+      } catch {
+        return;
+      }
+    },
+
+    async recordMerchantActionEvent(input: MerchantActionEventInput) {
+      const client = getSupabaseClient();
+      if (!client) return;
+      const sessionId = getMerchantAnalyticsSessionId({
+        sessionId: input.sessionId,
+        userId: input.userId,
+      });
+      try {
+        const { error } = await client.rpc("record_merchant_action_event", {
+          p_event_type: input.eventType,
+          p_session_id: sessionId,
+          p_outlet_id: input.outletId ?? null,
+          p_venue_id: input.venueId ?? null,
+          p_dish_id: input.dishId ?? null,
+          p_promotion_id: input.promotionId ?? null,
+          p_source: input.source ?? "customer",
+          p_metadata: input.metadata ?? {},
+        });
+        if (error) {
+          return;
+        }
+      } catch {
+        return;
+      }
     },
 
     async listDishesByVenue(venueId) {
-      return supabaseRepository.listDishesByVenue(venueId);
+      return (
+        (await listDishesByVenueViaRpc(venueId)) ?? supabaseRepository.listDishesByVenue(venueId)
+      );
     },
 
-    async listPopularNearby() {
-      return supabaseRepository.listPopularNearby();
+    async listPopularNearby(lat, lng) {
+      return (await listPopularNearbyViaRpc(lat, lng)) ?? supabaseRepository.listPopularNearby();
+    },
+
+    async listDiscoveryFeedByLocation(request) {
+      const rpcFeed = await listDiscoveryFeedByLocationViaRpc(request);
+      if (rpcFeed) return rpcFeed;
+      return getFallbackDiscoveryFeed(request);
+    },
+
+    async searchVenuesByLocation(request) {
+      return searchVenuesByLocationViaRpc(request);
     },
 
     async searchDishes(filters: SearchFilters, tasteProfile: TasteVector): Promise<SearchResult[]> {
+      const rpcResults = await searchDishesViaRpc(filters, tasteProfile);
+      if (rpcResults) return rpcResults;
       const results = supabaseRepository.searchDishes(filters, tasteProfile);
       return results.map((dish) => ({
         dish,
@@ -2061,25 +3005,33 @@ export const supabaseService: HungryService = {
 
   reviews: {
     async getReviewsForDish(dishId) {
-      return supabaseRepository.getDishById(dishId)?.reviews ?? [];
+      const client = requireSupabaseClient();
+      const { data, error } = await client
+        .from("reviews")
+        .select(
+          "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend",
+        )
+        .eq("dish_id", dishId)
+        .order("created_at", { ascending: false });
+      if (error || !Array.isArray(data)) {
+        return [];
+      }
+      return mapSupabaseReviewRows(client, data as Row[]);
     },
 
     async getUserReviews(userId) {
       const client = requireSupabaseClient();
-      const { data, error } = await client.from("reviews").select("*").eq("user_id", userId);
+      const { data, error } = await client
+        .from("reviews")
+        .select(
+          "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend",
+        )
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
       if (error || !Array.isArray(data)) {
         return [];
       }
-      return (data as Row[]).map((row) => ({
-        id: asString(row.id) ?? `${Date.now()}`,
-        authorName: asString(row.author_name) ?? "Hungry User",
-        rating: asNumber(row.rating) ?? 0,
-        createdAt: asString(row.created_at) ?? new Date().toISOString(),
-        text: asString(row.text) ?? "",
-        tags: asStringArray(row.tags),
-        wouldRecommend: asBoolean(row.would_recommend) ?? true,
-        photos: asStringArray(row.photos),
-      }));
+      return mapSupabaseReviewRows(client, data as Row[]);
     },
 
     async submitReview(draft: SubmitReviewInput) {
@@ -2104,12 +3056,14 @@ export const supabaseService: HungryService = {
         throw error ?? new Error("Review insert failed.");
       }
 
-      const uploadedPhotoUrls = await uploadReviewPhotos(client, userId, data.id, draft.photos);
-      if (uploadedPhotoUrls.length > 0) {
+      const uploadedPhotos = await uploadReviewPhotos(client, userId, data.id, draft.photos);
+      if (uploadedPhotos.length > 0) {
         const { error: photoInsertError } = await client.from("review_photos").insert(
-          uploadedPhotoUrls.map((url, index) => ({
+          uploadedPhotos.map((photo, index) => ({
             review_id: data.id,
-            url,
+            url: photo.url,
+            storage_bucket: photo.storage_bucket,
+            storage_path: photo.storage_path,
             sort_order: index,
           })),
         );
@@ -2185,19 +3139,26 @@ export const supabaseService: HungryService = {
 
       const { data } = await client
         .from("user_favourite_dishes")
-        .select("id")
+        .select("user_id,dish_id")
         .eq("user_id", userId)
         .eq("dish_id", dishId)
         .maybeSingle();
 
-      if (data?.id) {
-        const { error } = await client.from("user_favourite_dishes").delete().eq("id", data.id);
+      if (data?.dish_id === dishId) {
+        const { error } = await client
+          .from("user_favourite_dishes")
+          .delete()
+          .eq("user_id", userId)
+          .eq("dish_id", dishId);
         if (error) throw error;
         return false;
       }
       const { error } = await client
         .from("user_favourite_dishes")
-        .insert({ user_id: userId, dish_id: dishId });
+        .upsert(
+          { user_id: userId, dish_id: dishId },
+          { onConflict: "user_id,dish_id", ignoreDuplicates: true },
+        );
       if (error) throw error;
       return true;
     },
@@ -2206,14 +3167,7 @@ export const supabaseService: HungryService = {
       const client = requireSupabaseClient();
       const userId = await getCurrentSupabaseUserId();
       if (!userId) return [];
-      const { data, error } = await client
-        .from("user_favourite_dishes")
-        .select("dish_id")
-        .eq("user_id", userId);
-      if (error || !Array.isArray(data)) return [];
-      return (data as Row[])
-        .map((row) => asString(row.dish_id))
-        .filter((dishId): dishId is string => Boolean(dishId));
+      return fetchFavouriteDishIdsForUser(client, userId);
     },
 
     async updateTasteVector(vector: TasteVector) {
@@ -2273,7 +3227,15 @@ export const supabaseService: HungryService = {
   social: {
     async getBitesFeed() {
       const client = requireSupabaseClient();
+      const rpcBites = await fetchHomeSocialFeedBitesViaRpc(client);
+      if (rpcBites) return rpcBites;
       return fetchPublishedPostBites(client);
+    },
+
+    async listUserPosts(userId: string) {
+      const client = requireSupabaseClient();
+      const bites = await fetchPublishedPostBites(client);
+      return bites.filter((bite) => bite.authorId === userId);
     },
 
     async postBite(draft: BiteDraft) {
@@ -2314,6 +3276,7 @@ export const supabaseService: HungryService = {
         tags: draft.tags ?? [],
         mediaType: draft.mediaType ?? "photo",
         mediaTypes: draft.mediaTypes ?? [],
+        showFoodContextOverlay: draft.showFoodContextOverlay ?? true,
       };
 
       const initialPayload = {
@@ -2392,6 +3355,7 @@ export const supabaseService: HungryService = {
         photoUrl: primaryMediaUrl,
         mediaUrls: media.displayUrls.length > 0 ? media.displayUrls : [primaryMediaUrl],
         mediaType: media.canonicalMediaType,
+        showFoodContextOverlay: draft.showFoodContextOverlay ?? true,
         caption: draft.caption,
         tags: draft.tags,
         tasteStamp: draft.tasteStamp,
@@ -2411,12 +3375,12 @@ export const supabaseService: HungryService = {
       const table = reaction === "craving" ? "post_likes" : "post_saves";
       const existing = await client
         .from(table)
-        .select("id")
+        .select("post_id")
         .eq("post_id", biteId)
         .eq("user_id", userId)
         .maybeSingle();
       if (existing.error) throw existing.error;
-      if ((existing.data as Row | null)?.id) {
+      if ((existing.data as Row | null)?.post_id) {
         const { error } = await client
           .from(table)
           .delete()
@@ -2429,8 +3393,26 @@ export const supabaseService: HungryService = {
       if (error) throw error;
     },
 
+    async shareBite(biteId, options) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to share.");
+      const { error } = await client.from("post_shares").insert({
+        post_id: biteId,
+        user_id: userId,
+        share_channel: options?.channel ?? "in_app",
+        target_conversation_id: options?.targetConversationId ?? null,
+        target_user_id: options?.targetUserId ?? null,
+      });
+      if (error) throw error;
+    },
+
     async getStories() {
       return getStoryCache();
+    },
+
+    async listStoryGalleryAssets() {
+      return [...STORY_GALLERY_ASSETS];
     },
 
     async likeStory(storyId: string) {
@@ -2474,12 +3456,33 @@ export const supabaseService: HungryService = {
       persistStoryCache(nextStories);
     },
 
+    async shareStory(storyId: string) {
+      const stories = await getStoryCache();
+      const target = stories.find((story) => story.id === storyId);
+      if (!target) return;
+
+      const nextStories = stories.map((story) => {
+        if (story.id !== storyId) return story;
+        return {
+          ...story,
+          interaction: {
+            ...story.interaction,
+            shareCount: story.interaction.shareCount + 1,
+          },
+        };
+      });
+
+      persistStoryCache(nextStories);
+    },
+
     async addStory(content: StoryContent) {
       const stories = await getStoryCache();
       const profile = await getCurrentUserProfileOrGuest();
       const newStory: Story = {
         id: `s_${Date.now()}`,
         displayName: profile.displayName,
+        authorId: profile.id,
+        authorProfileVisibility: profile.profileVisibility,
         avatarUrl: profile.avatarUrl,
         hasUnseen: false,
         isStall: false,
@@ -2534,6 +3537,162 @@ export const supabaseService: HungryService = {
       );
       return (await fetchPublishedPostBites(client)).filter((bite) => likedIds.has(bite.id));
     },
+
+    async followUser(userId: string) {
+      const client = requireSupabaseClient();
+      const currentUserId = await getCurrentSupabaseUserId();
+      if (!currentUserId) throw new Error("You must be signed in to follow users.");
+      const { error } = await client
+        .from("follows")
+        .upsert(
+          { follower_id: currentUserId, followee_id: userId, status: "approved" },
+          { onConflict: "follower_id,followee_id" },
+        );
+      if (error) throw error;
+    },
+
+    async unfollowUser(userId: string) {
+      const client = requireSupabaseClient();
+      const currentUserId = await getCurrentSupabaseUserId();
+      if (!currentUserId) throw new Error("You must be signed in to unfollow users.");
+      const { error } = await client
+        .from("follows")
+        .delete()
+        .eq("follower_id", currentUserId)
+        .eq("followee_id", userId);
+      if (error) throw error;
+    },
+
+    async listFollowers(userId: string) {
+      const client = requireSupabaseClient();
+      const { data, error } = await client
+        .from("follows")
+        .select("follower_id, user_profiles!follows_follower_id_fkey(id, display_name, avatar_url)")
+        .eq("followee_id", userId)
+        .eq("status", "approved");
+      if (error || !data) return [];
+      return (data as Row[]).map((row) => {
+        const p = row.user_profiles as Row | null;
+        return {
+          userId: asString(row.follower_id) ?? "",
+          displayName: asString(p?.display_name) ?? "",
+          avatarUrl: asString(p?.avatar_url),
+        };
+      });
+    },
+
+    async listFollowing(userId: string) {
+      const client = requireSupabaseClient();
+      const { data, error } = await client
+        .from("follows")
+        .select("followee_id, user_profiles!follows_followee_id_fkey(id, display_name, avatar_url)")
+        .eq("follower_id", userId)
+        .eq("status", "approved");
+      if (error || !data) return [];
+      return (data as Row[]).map((row) => {
+        const p = row.user_profiles as Row | null;
+        return {
+          userId: asString(row.followee_id) ?? "",
+          displayName: asString(p?.display_name) ?? "",
+          avatarUrl: asString(p?.avatar_url),
+        };
+      });
+    },
+
+    async isFollowing(userId: string) {
+      const client = requireSupabaseClient();
+      const currentUserId = await getCurrentSupabaseUserId();
+      if (!currentUserId) return false;
+      const { data } = await client
+        .from("follows")
+        .select("followee_id")
+        .eq("follower_id", currentUserId)
+        .eq("followee_id", userId)
+        .eq("status", "approved")
+        .maybeSingle();
+      return data !== null;
+    },
+
+    async createComment(postId: string, body: string, parentCommentId?: string) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to comment.");
+      const { data, error } = await client
+        .from("post_comments")
+        .insert({
+          post_id: postId,
+          user_id: userId,
+          body,
+          parent_comment_id: parentCommentId ?? null,
+        })
+        .select("id, user_id, body, created_at, parent_comment_id")
+        .single();
+      if (error || !data) throw error ?? new Error("Failed to create comment.");
+      const row = data as Row;
+      const profile = await fetchUserProfile(client, userId);
+      return {
+        id: asString(row.id) ?? "",
+        userId: asString(row.user_id) ?? userId,
+        body: asString(row.body) ?? "",
+        createdAt: asString(row.created_at) ?? new Date().toISOString(),
+        parentCommentId: asString(row.parent_comment_id),
+        authorName: profile.displayName,
+        authorAvatarUrl: profile.avatarUrl,
+      };
+    },
+
+    async deleteComment(commentId: string) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to delete a comment.");
+      const { error } = await client
+        .from("post_comments")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", commentId)
+        .eq("user_id", userId);
+      if (error) throw error;
+    },
+
+    async listCommentsForPost(postId: string) {
+      const client = requireSupabaseClient();
+      const { data, error } = await client
+        .from("post_comments")
+        .select("id, user_id, body, created_at, parent_comment_id")
+        .eq("post_id", postId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: true });
+      if (error || !data) return [];
+      const rows = data as Row[];
+      const authorIds = Array.from(
+        new Set(rows.map((row) => asString(row.user_id)).filter((id): id is string => !!id)),
+      );
+      const publicProfileRows =
+        authorIds.length > 0
+          ? await client
+              .from("public_profiles")
+              .select("id, display_name, avatar_url")
+              .in("id", authorIds)
+              .then(({ data: profiles, error: profileError }) =>
+                profileError || !Array.isArray(profiles) ? [] : (profiles as Row[]),
+              )
+          : [];
+      const publicProfileById = new Map(
+        publicProfileRows.map((profileRow) => [asString(profileRow.id) ?? "", profileRow]),
+      );
+      return rows.map((row) => {
+        const userId = asString(row.user_id) ?? "";
+        const publicProfile = publicProfileById.get(userId);
+        return {
+          id: asString(row.id) ?? "",
+          userId,
+          body: asString(row.body) ?? "",
+          createdAt: asString(row.created_at) ?? "",
+          parentCommentId: asString(row.parent_comment_id),
+          authorName: asString(publicProfile?.display_name),
+          authorAvatarUrl: asString(publicProfile?.avatar_url),
+        };
+      });
+    },
   },
 
   chat: {
@@ -2587,39 +3746,15 @@ export const supabaseService: HungryService = {
       let conversationRow = existing.data as Row | null;
       if (!conversationRow) {
         const { data, error } = await client
-          .from("conversations")
-          .insert({
-            conversation_type: type,
-            dedupe_key: dedupeKey,
-            subject_merchant_account_id: input.target.merchantAccountId ?? null,
-            created_by_user_id: currentUserId,
+          .rpc("open_chat_conversation", {
+            p_target_user_id: input.target.kind === "user" ? input.target.userId : null,
+            p_target_merchant_account_id:
+              input.target.kind === "merchant" ? input.target.merchantAccountId : null,
+            p_conversation_type: type,
           })
-          .select("id,conversation_type,subject_merchant_account_id,created_by_user_id,updated_at")
           .maybeSingle();
         if (error || !data) throw error ?? new Error("Failed to create conversation.");
         conversationRow = data as Row;
-
-        const conversationId = asString(conversationRow.id);
-        if (!conversationId) throw new Error("Conversation id missing after create.");
-        const participantRows = [
-          {
-            conversation_id: conversationId,
-            participant_kind: "user",
-            participant_user_id: currentUserId,
-            participant_merchant_account_id: null,
-          },
-          {
-            conversation_id: conversationId,
-            participant_kind: input.target.kind,
-            participant_user_id: input.target.kind === "user" ? input.target.userId : null,
-            participant_merchant_account_id:
-              input.target.kind === "merchant" ? input.target.merchantAccountId : null,
-          },
-        ];
-        const { error: participantError } = await client
-          .from("conversation_participants")
-          .insert(participantRows);
-        if (participantError) throw participantError;
       }
 
       const conversationId = asString(conversationRow.id);
@@ -2674,28 +3809,15 @@ export const supabaseService: HungryService = {
       const body = input.body.trim();
       if (!body) throw new Error("Message cannot be empty.");
 
-      const now = new Date().toISOString();
       const { data, error } = await client
-        .from("messages")
-        .insert({
-          conversation_id: input.conversationId,
-          sender_user_id: input.senderMerchantAccountId ? null : currentUserId,
-          sender_merchant_account_id: input.senderMerchantAccountId ?? null,
-          body,
-          client_nonce: input.clientNonce ?? `${currentUserId}-${Date.now()}`,
-          delivered_at: now,
+        .rpc("send_chat_message", {
+          p_conversation_id: input.conversationId,
+          p_body: body,
+          p_client_nonce: input.clientNonce ?? `${currentUserId}-${Date.now()}`,
+          p_sender_merchant_account_id: input.senderMerchantAccountId ?? null,
         })
-        .select(
-          "id,conversation_id,sender_user_id,sender_merchant_account_id,body,client_nonce,delivered_at,created_at",
-        )
         .maybeSingle();
       if (error || !data) throw error ?? new Error("Failed to send message.");
-
-      const { error: updateError } = await client
-        .from("conversations")
-        .update({ updated_at: now })
-        .eq("id", input.conversationId);
-      if (updateError) throw updateError;
 
       const participantRows = await listConversationParticipantRows(client, [input.conversationId]);
       const participantsByKey = await hydrateChatParticipants(
@@ -2814,12 +3936,27 @@ export const supabaseService: HungryService = {
       const userId = await getCurrentSupabaseUserId();
       if (!userId) throw new Error("You must be signed in to report content.");
 
-      const { error } = await client.from("content_reports").insert({
-        reporter_id: userId,
-        target_type: request.targetType,
-        target_id: request.targetId,
-        target_author_key: request.targetAuthorKey,
-        reason: request.reason,
+      if (request.targetType === "post") {
+        if (!UUID_PATTERN.test(request.targetId)) {
+          throw new Error("Post reports require a valid post id.");
+        }
+
+        const { error } = await client.rpc("report_post", {
+          p_post_id: request.targetId,
+          p_reason_code: request.reason,
+          p_details: request.targetAuthorKey
+            ? `target_author_key:${request.targetAuthorKey}`
+            : null,
+        });
+        if (error) throw error;
+        return;
+      }
+
+      const { error } = await client.rpc("report_content", {
+        p_target_type: request.targetType,
+        p_target_id: request.targetId,
+        p_reason: request.reason,
+        p_target_author_key: request.targetAuthorKey ?? null,
       });
       if (error) throw error;
     },
@@ -2836,6 +3973,497 @@ export const supabaseService: HungryService = {
       });
       if (error) throw error;
     },
+
+    async hidePost(postId: string, reason?: string) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to hide posts.");
+      if (!UUID_PATTERN.test(postId)) throw new Error("Post hiding requires a valid post id.");
+
+      const { error } = await client.rpc("hide_post", {
+        p_post_id: postId,
+        p_reason: reason ?? "hidden_by_user",
+      });
+      if (error) throw error;
+    },
+
+    async unhidePost(postId: string) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to unhide posts.");
+      if (!UUID_PATTERN.test(postId)) throw new Error("Post unhiding requires a valid post id.");
+
+      const { error } = await client.rpc("unhide_post", {
+        p_post_id: postId,
+      });
+      if (error) throw error;
+    },
+
+    async getBlockedUsers() {
+      const client = requireSupabaseClient();
+      const { data, error } = await client
+        .from("user_blocks")
+        .select("blocked_user_key, reason, created_at")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []).map((row: any) => ({
+        blockedUserKey: row.blocked_user_key as string,
+        reason: row.reason as string | undefined,
+        createdAt: row.created_at as string,
+      }));
+    },
+  },
+
+  contributions: {
+    async submitDiscoveredStall(input) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) {
+        throw new Error("You must be signed in to add a stall.");
+      }
+      if (!input.stallName.trim()) {
+        throw new Error("Stall name is required.");
+      }
+      if (!input.imageUri.trim() || !isLocalUri(input.imageUri)) {
+        throw new Error("Stall image must be uploaded from your device.");
+      }
+
+      const imageUris = Array.from(
+        new Set(input.imageUris?.length ? input.imageUris : [input.imageUri]),
+      );
+      imageUris.forEach((uri) => {
+        if (!uri.trim() || !isLocalUri(uri)) {
+          throw new Error("Stall images must be uploaded from your device.");
+        }
+      });
+
+      const uploadPrefix = `${userId}/${Date.now()}-${sanitizeStorageSegment(input.stallName)}`;
+      const uploadedImages = await Promise.all(
+        imageUris.map((uri, index) =>
+          uploadImageFromUri({
+            client,
+            bucket: "user-stall-submission-images",
+            path: `${uploadPrefix}-${index + 1}.${extensionFromUri(uri)}`,
+            uri,
+          }),
+        ),
+      );
+      const uploaded = uploadedImages[0];
+      if (!uploaded) {
+        throw new Error("Stall image must be uploaded from your device.");
+      }
+      const firstImageMimeType = input.imageMimeTypes?.[0] ?? input.imageMimeType ?? null;
+      const galleryImages = uploadedImages.map((image, index) => ({
+        url: image.publicUrl,
+        bucket: "user-stall-submission-images",
+        path: image.path,
+        mimeType: input.imageMimeTypes?.[index] || (index === 0 ? input.imageMimeType : null),
+      }));
+
+      const rpcPayload = {
+        p_stall_name: input.stallName,
+        p_image_url: uploaded.publicUrl,
+        p_image_storage_bucket: "user-stall-submission-images",
+        p_image_storage_path: uploaded.path,
+        p_image_mime_type: firstImageMimeType,
+        p_gallery_images: galleryImages,
+        p_source_url: input.sourceUrl ?? null,
+        p_building_name: input.buildingName ?? null,
+        p_area: input.area ?? null,
+        p_address: input.address ?? null,
+        p_postal_code: input.postalCode ?? null,
+        p_unit_number: input.unitNumber ?? null,
+        p_floor: input.floor ?? null,
+        p_operating_hours: input.operatingHours ?? null,
+        p_menu_items: input.menuItems ?? [],
+        p_delivery_links: input.deliveryLinks ?? [],
+        p_notes: input.notes ?? null,
+      };
+
+      const rpcPayloadWithoutGallery = {
+        ...rpcPayload,
+      };
+      delete (rpcPayloadWithoutGallery as { p_gallery_images?: unknown }).p_gallery_images;
+
+      const legacyRpcPayload = {
+        ...rpcPayloadWithoutGallery,
+      };
+      delete (legacyRpcPayload as { p_postal_code?: string | null }).p_postal_code;
+
+      const primarySubmit = await client
+        .rpc("submit_user_stall_submission", rpcPayload)
+        .maybeSingle();
+      let finalResult: { data: unknown; error: PostgrestError | null } = primarySubmit;
+      const isFunctionSchemaError = (error: PostgrestError | null | undefined) => {
+        if (!error) return false;
+        const message = error.message.toLowerCase();
+        return (
+          error.code === "42883" ||
+          message.includes("could not find the function") ||
+          (message.includes("function") && message.includes("does not exist"))
+        );
+      };
+
+      const isInsertColumnSchemaError = (error: PostgrestError | null | undefined) => {
+        if (!error) return false;
+        const message = error.message.toLowerCase();
+        return (
+          message.includes("could not find the") &&
+          message.includes("column") &&
+          message.includes("schema cache") &&
+          message.includes("of")
+        );
+      };
+
+      const isColumnNotExistError = (error: PostgrestError | null | undefined) => {
+        if (!error) return false;
+        const message = error.message.toLowerCase();
+        return message.includes("column") && message.includes("does not exist");
+      };
+
+      const shouldUseDirectInsertFallback = (error: PostgrestError | null | undefined) =>
+        !!(error && (isFunctionSchemaError(error) || isInsertColumnSchemaError(error)));
+
+      const isRetryableInsertSchemaError = (error: PostgrestError | null | undefined) =>
+        !!(
+          isInsertColumnSchemaError(error) ||
+          isColumnNotExistError(error) ||
+          error?.message.toLowerCase().includes("schema cache")
+        );
+
+      const isPermissionDeniedError = (error: PostgrestError | null | undefined) => {
+        if (!error) return false;
+        const message = error.message.toLowerCase();
+        return (
+          error.code === "42501" ||
+          message.includes("permission denied for table user_stall_submissions") ||
+          message.includes("permission denied for relation")
+        );
+      };
+
+      if (
+        primarySubmit.error &&
+        primarySubmit.error.code === "42883" &&
+        primarySubmit.error.message.includes("submit_user_stall_submission")
+      ) {
+        finalResult = await client
+          .rpc("submit_user_stall_submission", rpcPayloadWithoutGallery)
+          .maybeSingle();
+        if (uploadedImages.length > 1) {
+          void client.storage
+            .from("user-stall-submission-images")
+            .remove(uploadedImages.slice(1).map((image) => image.path));
+        }
+      }
+
+      if (
+        finalResult.error &&
+        finalResult.error.code === "42883" &&
+        finalResult.error.message.includes("submit_user_stall_submission")
+      ) {
+        finalResult = await client
+          .rpc("submit_user_stall_submission", legacyRpcPayload)
+          .maybeSingle();
+      }
+
+      if (
+        finalResult.error &&
+        (shouldUseDirectInsertFallback(finalResult.error) ||
+          isInsertColumnSchemaError(finalResult.error))
+      ) {
+        const submissionBaseRow: Record<string, unknown> = {
+          user_id: userId,
+          stall_name: input.stallName.trim(),
+          image_url: uploaded.publicUrl,
+          image_storage_bucket: "user-stall-submission-images",
+          image_storage_path: uploaded.path,
+          image_mime_type: firstImageMimeType,
+          gallery_images: galleryImages,
+          source_url: input.sourceUrl ?? null,
+          building_name: input.buildingName ?? null,
+          area: input.area ?? null,
+          address: input.address ?? null,
+          postal_code: input.postalCode ?? null,
+          unit_number: input.unitNumber ?? null,
+          floor: input.floor ?? null,
+          operating_hours: input.operatingHours ?? null,
+          menu_items: input.menuItems ?? [],
+          delivery_links: input.deliveryLinks ?? [],
+          notes: input.notes ?? null,
+        };
+
+        const submitDirectInsert = async (row: Record<string, unknown>) => {
+          return client.from("user_stall_submissions").insert(row).select("*").maybeSingle();
+        };
+
+        const readMissingColumn = (errorMessage?: string): string | null => {
+          if (!errorMessage) return null;
+          const directMatch = errorMessage.match(
+            /Could not find the ['"]([^'"]+)['"] column of .*? in the schema cache/i,
+          );
+          if (directMatch?.[1]) {
+            return directMatch[1];
+          }
+          const postgresqlMatch = errorMessage.match(/column "([^"]+)" does not exist/i);
+          if (postgresqlMatch?.[1]) {
+            return postgresqlMatch[1];
+          }
+          return null;
+        };
+
+        let mutableInsertRow: Record<string, unknown> = { ...submissionBaseRow };
+        let insertedRows: Record<string, unknown> | null = null;
+        let insertError: PostgrestError | null = null;
+        const attemptedColumns = new Set<string>();
+
+        for (let i = 0; i < 5; i += 1) {
+          const attempt = await submitDirectInsert(mutableInsertRow);
+          if (!attempt.error) {
+            insertedRows = attempt.data as Record<string, unknown> | null;
+            insertError = null;
+            break;
+          }
+
+          insertError = attempt.error;
+
+          if (
+            !isRetryableInsertSchemaError(attempt.error) ||
+            typeof attempt.error.message !== "string"
+          ) {
+            break;
+          }
+
+          const missingColumn = readMissingColumn(attempt.error.message);
+          if (!missingColumn) break;
+          if (attemptedColumns.has(missingColumn)) break;
+          attemptedColumns.add(missingColumn);
+          delete mutableInsertRow[missingColumn];
+        }
+
+        if (insertedRows && Array.isArray(insertedRows)) {
+          if (insertedRows.length > 0) {
+            insertedRows = insertedRows[0] as Record<string, unknown>;
+          } else {
+            insertedRows = null;
+          }
+        }
+
+        if (!insertError && insertedRows) {
+          finalResult = { data: insertedRows, error: null };
+        } else if (!insertError && !insertedRows) {
+          finalResult = { data: null, error: null };
+        } else if (
+          insertError &&
+          (isRetryableInsertSchemaError(insertError) || isPermissionDeniedError(insertError))
+        ) {
+          finalResult = { data: null, error: null };
+        } else {
+          throw insertError;
+        }
+      }
+
+      const { data, error } = finalResult;
+      if (error) throw error;
+
+      try {
+        const fallbackMenuItems = input.menuItems ?? [];
+        const fallbackDeliveryLinks = input.deliveryLinks ?? [];
+        const fallbackSubmission: UserStallSubmission = {
+          id: `submission_${Date.now()}`,
+          userId,
+          stallName: input.stallName.trim(),
+          imageUrl: uploaded.publicUrl,
+          galleryImageUrls: galleryImages.map((image) => image.url),
+          imageStorageBucket: "user-stall-submission-images",
+          imageStoragePath: uploaded.path,
+          imageMimeType: firstImageMimeType ?? undefined,
+          sourceUrl: input.sourceUrl ?? undefined,
+          buildingName: input.buildingName ?? undefined,
+          area: input.area ?? undefined,
+          address: input.address ?? undefined,
+          postalCode: input.postalCode ?? undefined,
+          unitNumber: input.unitNumber ?? undefined,
+          floor: input.floor ?? undefined,
+          operatingHours: input.operatingHours,
+          menuItems: fallbackMenuItems,
+          deliveryLinks: fallbackDeliveryLinks,
+          notes: input.notes ?? undefined,
+          status: "pending",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        if (!data) {
+          const fallbackWindowIso = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+          const trimmedStallName = input.stallName.trim();
+          const normalizedStallName = trimmedStallName.toLowerCase();
+
+          const resolveByRecentFallback = async () => {
+            const { data: fallbackRows, error: fallbackError } = await client
+              .from("user_stall_submissions")
+              .select("*")
+              .eq("user_id", userId)
+              .gte("created_at", fallbackWindowIso)
+              .order("created_at", { ascending: false })
+              .limit(20);
+            if (fallbackError) return { data: null, error: null };
+            const rows = Array.isArray(fallbackRows) ? (fallbackRows as Row[]) : [];
+            const match = rows.find((row) => {
+              if (!row || typeof row !== "object") return false;
+              const rowStall = asString(asRecord(row).stall_name)?.trim().toLowerCase();
+              const rowPath = asString(asRecord(row).image_storage_path);
+              const rowUrl = asString(asRecord(row).image_url);
+              if (rowStall && rowStall === normalizedStallName && rowPath === uploaded.path)
+                return true;
+              if (rowStall && rowStall === normalizedStallName && rowUrl === uploaded.publicUrl)
+                return true;
+              if (rowStall && rowStall === normalizedStallName) return true;
+              return false;
+            });
+            if (!match) return { data: null, error: null };
+            return { data: mapUserStallSubmission(client, asRecord(match)), error: null };
+          };
+
+          const resolveByImagePath = async () => {
+            if (!uploaded.path) return { error: null, data: null };
+            const { data: pathData, error: pathError } = await client
+              .from("user_stall_submissions")
+              .select("*")
+              .eq("user_id", userId)
+              .eq("image_storage_path", uploaded.path)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            if (pathError) return { error: null, data: null };
+            if (pathData) {
+              return { data: mapUserStallSubmission(client, asRecord(pathData)), error: null };
+            }
+            return { data: null, error: null };
+          };
+
+          const resolveByImageUrl = async () => {
+            if (!uploaded.publicUrl) return { error: null, data: null };
+            const { data: urlData, error: urlError } = await client
+              .from("user_stall_submissions")
+              .select("*")
+              .eq("user_id", userId)
+              .eq("image_url", uploaded.publicUrl)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            if (urlError) return { error: null, data: null };
+            if (urlData) {
+              return { data: mapUserStallSubmission(client, asRecord(urlData)), error: null };
+            }
+            return { data: null, error: null };
+          };
+
+          const resolveByRecentName = async () => {
+            const { data: nameData, error: nameError } = await client
+              .from("user_stall_submissions")
+              .select("*")
+              .eq("user_id", userId)
+              .eq("stall_name", trimmedStallName)
+              .gte("created_at", fallbackWindowIso)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            if (nameError) return { error: null, data: null };
+            if (nameData) {
+              return { data: mapUserStallSubmission(client, asRecord(nameData)), error: null };
+            }
+            return { data: null, error: null };
+          };
+
+          const imagePathFallback = await resolveByImagePath();
+          if (imagePathFallback.data) return imagePathFallback.data;
+
+          const imageUrlFallback = await resolveByImageUrl();
+          if (imageUrlFallback.data) return imageUrlFallback.data;
+
+          const recentNameFallback = await resolveByRecentName();
+          if (recentNameFallback.data) return recentNameFallback.data;
+
+          const recentFallback = await resolveByRecentFallback();
+          if (recentFallback.data) return recentFallback.data;
+
+          return fallbackSubmission;
+        }
+
+        if (typeof data === "string") {
+          const { data: rowById } = await client
+            .from("user_stall_submissions")
+            .select("*")
+            .eq("user_id", userId)
+            .eq("id", data)
+            .maybeSingle();
+          if (rowById) {
+            return mapUserStallSubmission(client, asRecord(rowById));
+          }
+          return fallbackSubmission;
+        }
+
+        if (Array.isArray(data)) {
+          if (data.length === 0) {
+            return fallbackSubmission;
+          }
+          return mapUserStallSubmission(client, asRecord(data[0]));
+        }
+
+        const mapped = asRecord(data as Row | undefined);
+        if (mapped.id) {
+          return mapUserStallSubmission(client, mapped);
+        }
+        return fallbackSubmission;
+      } catch (parseError) {
+        console.warn(
+          "[submitDiscoveredStall] failed to parse rpc response, using fallback",
+          parseError,
+        );
+        return {
+          id: `submission_${Date.now()}`,
+          userId,
+          stallName: input.stallName.trim(),
+          imageUrl: uploaded.publicUrl,
+          galleryImageUrls: galleryImages.map((image) => image.url),
+          imageStorageBucket: "user-stall-submission-images",
+          imageStoragePath: uploaded.path,
+          imageMimeType: firstImageMimeType ?? undefined,
+          sourceUrl: input.sourceUrl ?? undefined,
+          buildingName: input.buildingName ?? undefined,
+          area: input.area ?? undefined,
+          address: input.address ?? undefined,
+          postalCode: input.postalCode ?? undefined,
+          unitNumber: input.unitNumber ?? undefined,
+          floor: input.floor ?? undefined,
+          operatingHours: input.operatingHours,
+          menuItems: input.menuItems ?? [],
+          deliveryLinks: input.deliveryLinks ?? [],
+          notes: input.notes ?? undefined,
+          status: "pending",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+      }
+    },
+
+    async listMyDiscoveredStalls() {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) return [];
+      const { data, error } = await client
+        .from("user_stall_submissions")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return Promise.all(
+        (Array.isArray(data) ? (data as Row[]) : []).map((row) =>
+          mapUserStallSubmission(client, row),
+        ),
+      );
+    },
   },
 
   content: {
@@ -2845,6 +4473,10 @@ export const supabaseService: HungryService = {
 
     async listStallPosts() {
       return supabaseRepository.listStallPosts();
+    },
+
+    async listPopularVisitorPinsByVenue(venueId) {
+      return listSupabasePopularVisitorPinsForVenue(requireSupabaseClient(), venueId);
     },
 
     async getArticle(id) {
@@ -2932,9 +4564,7 @@ export const supabaseService: HungryService = {
 
     async listDraftDishesQueue(venueId) {
       const client = requireSupabaseClient();
-      const opsApiKey = getOpsDraftApiKey();
       const { data, error } = await client.functions.invoke("ops-dishes-draft", {
-        headers: opsApiKey ? { "x-ops-api-key": opsApiKey } : undefined,
         body: {
           action: "list",
           venueId: venueId ?? null,
@@ -2977,9 +4607,7 @@ export const supabaseService: HungryService = {
 
     async reviewDraftDish(draftDishId, decision, notes) {
       const client = requireSupabaseClient();
-      const opsApiKey = getOpsDraftApiKey();
       const { error } = await client.functions.invoke("ops-dishes-draft", {
-        headers: opsApiKey ? { "x-ops-api-key": opsApiKey } : undefined,
         body: {
           action: "review",
           draftDishId,
@@ -3015,7 +4643,56 @@ export const supabaseService: HungryService = {
       const client = requireSupabaseClient();
       const outlet = await getMerchantOutletRow(client, outletId);
       const resolvedOutletId = asString(outlet.id) ?? outletId;
-      const { data, error } = await client
+
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to upload verification evidence.");
+      assertLocalUserMediaUri(evidence.fileUrl, "Merchant verification evidence");
+
+      const { data: existingVerification, error: existingError } = await client
+        .from("merchant_verifications")
+        .select("id")
+        .eq("outlet_id", resolvedOutletId)
+        .maybeSingle();
+      if (existingError) throw existingError;
+
+      let verificationId = asString((existingVerification as Row | null)?.id);
+      if (!verificationId) {
+        const { data: createdVerification, error: createError } = await client
+          .from("merchant_verifications")
+          .insert({
+            outlet_id: resolvedOutletId,
+            status: "draft",
+            method: evidence.method,
+          })
+          .select("id")
+          .single();
+        if (createError) throw createError;
+        verificationId = asString((createdVerification as Row | null)?.id);
+      }
+      if (!verificationId) {
+        throw new Error("Unable to prepare verification evidence upload.");
+      }
+
+      const evidenceExtension = extensionFromUri(evidence.fileUrl);
+      const evidencePath = `${userId}/${resolvedOutletId}/${verificationId}-${Date.now()}.${evidenceExtension}`;
+      const uploadedEvidence = await uploadPostMediaFromUri({
+        client,
+        bucket: "merchant-verification-evidence",
+        path: evidencePath,
+        uri: evidence.fileUrl,
+      });
+      const { error: evidenceError } = await client.from("merchant_verification_evidence").insert({
+        verification_id: verificationId,
+        method: evidence.method,
+        file_url: `supabase://merchant-verification-evidence/${uploadedEvidence.path}`,
+        storage_bucket: "merchant-verification-evidence",
+        storage_path: uploadedEvidence.path,
+        uploaded_by: userId,
+        review_note: evidence.reviewNote ?? null,
+      });
+      if (evidenceError) throw evidenceError;
+
+      const { error } = await client
         .from("merchant_verifications")
         .upsert(
           {
@@ -3031,16 +4708,6 @@ export const supabaseService: HungryService = {
         .select("id")
         .single();
       if (error) throw error;
-
-      const userId = await getCurrentSupabaseUserId();
-      const { error: evidenceError } = await client.from("merchant_verification_evidence").insert({
-        verification_id: (data as Row).id,
-        method: evidence.method,
-        file_url: evidence.fileUrl,
-        uploaded_by: userId,
-        review_note: evidence.reviewNote ?? null,
-      });
-      if (evidenceError) throw evidenceError;
     },
 
     async resubmitVerification(outletId, evidence) {
@@ -3064,6 +4731,41 @@ export const supabaseService: HungryService = {
       if (normalized.description !== undefined) payload.description = normalized.description;
       if (normalized.operatingHours !== undefined) {
         payload.operating_hours = normalized.operatingHours;
+      }
+      if (normalized.temporaryClosure !== undefined) {
+        payload.temporary_closure = normalized.temporaryClosure || null;
+      }
+      if (normalized.contactPhone !== undefined) payload.contact_phone = normalized.contactPhone;
+      if (normalized.contactEmail !== undefined) payload.contact_email = normalized.contactEmail;
+      if (normalized.profilePhotoUrl !== undefined) {
+        payload.profile_photo_url = normalized.profilePhotoUrl || null;
+        if (normalized.profilePhotoUrl && isLocalUri(normalized.profilePhotoUrl)) {
+          const userId = await getCurrentSupabaseUserId();
+          if (!userId) throw new Error("You must be signed in to upload business photos.");
+          const extension = extensionFromUri(normalized.profilePhotoUrl);
+          const upload = await uploadImageFromUri({
+            client,
+            bucket: "merchant-stall-images",
+            path: `${userId}/${resolvedOutletId}/profile-${Date.now()}.${extension}`,
+            uri: normalized.profilePhotoUrl,
+          });
+          payload.profile_photo_url = upload.publicUrl;
+        }
+      }
+      if (normalized.coverPhotoUrl !== undefined) {
+        payload.cover_photo_url = normalized.coverPhotoUrl || null;
+        if (normalized.coverPhotoUrl && isLocalUri(normalized.coverPhotoUrl)) {
+          const userId = await getCurrentSupabaseUserId();
+          if (!userId) throw new Error("You must be signed in to upload business photos.");
+          const extension = extensionFromUri(normalized.coverPhotoUrl);
+          const upload = await uploadImageFromUri({
+            client,
+            bucket: "merchant-stall-images",
+            path: `${userId}/${resolvedOutletId}/cover-${Date.now()}.${extension}`,
+            uri: normalized.coverPhotoUrl,
+          });
+          payload.cover_photo_url = upload.publicUrl;
+        }
       }
       if (normalized.isLive !== undefined) payload.is_live = normalized.isLive;
 
@@ -3378,6 +5080,182 @@ export const supabaseService: HungryService = {
       if (error) throw error;
     },
 
+    async listPopularVisitorCandidates(outletId) {
+      const client = requireSupabaseClient();
+      const outlet = await requireLinkedMerchantOutlet(client, outletId);
+      const resolvedOutletId = asString(outlet.id) ?? outletId;
+      const venueId = asString(outlet.venue_id) ?? "";
+
+      const { data, error } = await client
+        .from("reviews")
+        .select("id,user_id,dish_id,venue_id,author_name,rating,text,created_at")
+        .eq("venue_id", venueId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+
+      const reviewRows = Array.isArray(data) ? (data as Row[]) : [];
+      const activePins = await listSupabasePopularVisitorPinsForOutlet(client, resolvedOutletId);
+      const activePinByReviewId = new Map(activePins.map((pin) => [pin.reviewId, pin]));
+      const profileById = await fetchSafeProfileRowsById(
+        client,
+        reviewRows.map((row) => asString(row.user_id) ?? ""),
+      );
+      const dishIds = Array.from(
+        new Set(reviewRows.map((row) => asString(row.dish_id)).filter(Boolean)),
+      ) as string[];
+      const dishNameById = new Map<string, string>();
+      if (dishIds.length > 0) {
+        const dishRows = await client.from("dishes").select("id,name").in("id", dishIds);
+        if (dishRows.error) throw dishRows.error;
+        (Array.isArray(dishRows.data) ? (dishRows.data as Row[]) : []).forEach((row) => {
+          const id = asString(row.id);
+          const name = asString(row.name);
+          if (id && name) dishNameById.set(id, name);
+        });
+      }
+
+      return reviewRows.map((row) => {
+        const reviewId = asString(row.id) ?? "";
+        const profileId = asString(row.user_id);
+        const profile = profileId ? profileById.get(profileId) : undefined;
+        const activePin = activePinByReviewId.get(reviewId);
+        return {
+          outletId: resolvedOutletId,
+          venueId,
+          reviewId,
+          sourceId: reviewId,
+          authorProfileId: profileId,
+          authorName:
+            asString(profile?.display_name) ?? asString(row.author_name) ?? "Hungry diner",
+          authorAvatarUrl: asString(profile?.avatar_url),
+          reviewText: asString(row.text) ?? "",
+          rating: asNumber(row.rating) ?? 0,
+          dishName: dishNameById.get(asString(row.dish_id) ?? ""),
+          visitedAt: asString(row.created_at) ?? new Date().toISOString(),
+          isPinned: Boolean(activePin),
+          pinId: activePin?.id,
+          sortOrder: activePin?.sortOrder,
+        } satisfies PopularVisitorCandidate;
+      });
+    },
+
+    async listPopularVisitorPins(outletId) {
+      const client = requireSupabaseClient();
+      const outlet = await requireLinkedMerchantOutlet(client, outletId);
+      return listSupabasePopularVisitorPinsForOutlet(client, asString(outlet.id) ?? outletId);
+    },
+
+    async pinPopularVisitor(outletId, reviewId) {
+      const client = requireSupabaseClient();
+      const outlet = await requireLinkedMerchantOutlet(client, outletId);
+      const resolvedOutletId = asString(outlet.id) ?? outletId;
+      const venueId = asString(outlet.venue_id) ?? "";
+
+      const existingPin = await client
+        .from("merchant_popular_visitor_pins")
+        .select("*")
+        .eq("outlet_id", resolvedOutletId)
+        .eq("review_id", reviewId)
+        .maybeSingle();
+      if (existingPin.error) throw existingPin.error;
+      const existingPinRow = existingPin.data as Row | null;
+      if (existingPinRow && asBoolean(existingPinRow.is_active)) {
+        return mapPopularVisitorPin(existingPinRow);
+      }
+
+      const activePins = await listSupabasePopularVisitorPinsForOutlet(client, resolvedOutletId);
+      if (activePins.length >= 6) {
+        throw new Error("A stall can feature up to 6 popular visitors.");
+      }
+
+      const { data: reviewData, error } = await client
+        .from("reviews")
+        .select("id,user_id,dish_id,venue_id,author_name,rating,text,created_at")
+        .eq("id", reviewId)
+        .eq("venue_id", venueId)
+        .single();
+      if (error) throw error;
+
+      const reviewRow = reviewData as Row;
+      const profileId = asString(reviewRow.user_id);
+      const profileById = await fetchSafeProfileRowsById(client, profileId ? [profileId] : []);
+      const profile = profileId ? profileById.get(profileId) : undefined;
+      const safeProfileId = profile ? profileId : undefined;
+      const dishId = asString(reviewRow.dish_id);
+      let dishName: string | undefined;
+      if (dishId) {
+        const dishRow = await client.from("dishes").select("name").eq("id", dishId).maybeSingle();
+        if (dishRow.error) throw dishRow.error;
+        dishName = asString((dishRow.data as Row | null)?.name);
+      }
+      const nextSortOrder = activePins.reduce((max, pin) => Math.max(max, pin.sortOrder), -1) + 1;
+
+      const { data: pinData, error: pinError } = await client
+        .from("merchant_popular_visitor_pins")
+        .upsert(
+          {
+            outlet_id: resolvedOutletId,
+            venue_id: venueId,
+            review_id: reviewId,
+            source_id: reviewId,
+            author_profile_id: safeProfileId ?? null,
+            author_name:
+              asString(profile?.display_name) ?? asString(reviewRow.author_name) ?? "Hungry diner",
+            author_avatar_url: asString(profile?.avatar_url) ?? null,
+            author_location: null,
+            review_text: asString(reviewRow.text) ?? "",
+            rating: asNumber(reviewRow.rating) ?? 0,
+            dish_name: dishName ?? null,
+            visited_at: asString(reviewRow.created_at) ?? new Date().toISOString(),
+            pinned_at: new Date().toISOString(),
+            sort_order: nextSortOrder,
+            is_active: true,
+          },
+          { onConflict: "outlet_id,review_id" },
+        )
+        .select("*")
+        .single();
+      if (pinError) throw pinError;
+      return mapPopularVisitorPin(pinData as Row);
+    },
+
+    async unpinPopularVisitor(pinId) {
+      const { error } = await requireSupabaseClient()
+        .from("merchant_popular_visitor_pins")
+        .update({ is_active: false })
+        .eq("id", pinId);
+      if (error) throw error;
+    },
+
+    async reorderPopularVisitorPins(outletId, orderedPinIds) {
+      const client = requireSupabaseClient();
+      const outlet = await requireLinkedMerchantOutlet(client, outletId);
+      const resolvedOutletId = asString(outlet.id) ?? outletId;
+      const activePins = await listSupabasePopularVisitorPinsForOutlet(client, resolvedOutletId);
+      const activePinIds = new Set(activePins.map((pin) => pin.id));
+      const uniqueOrderedIds = Array.from(
+        new Set(orderedPinIds.filter((pinId) => activePinIds.has(pinId))),
+      );
+      const finalOrder = [
+        ...uniqueOrderedIds,
+        ...activePins.map((pin) => pin.id).filter((pinId) => !uniqueOrderedIds.includes(pinId)),
+      ];
+
+      const updateResults = await Promise.all(
+        finalOrder.map((pinId, index) =>
+          client
+            .from("merchant_popular_visitor_pins")
+            .update({ sort_order: index })
+            .eq("id", pinId)
+            .eq("outlet_id", resolvedOutletId)
+            .eq("is_active", true),
+        ),
+      );
+      const failedUpdate = updateResults.find((result) => result.error);
+      if (failedUpdate?.error) throw failedUpdate.error;
+      return listSupabasePopularVisitorPinsForOutlet(client, resolvedOutletId);
+    },
+
     async getPromotions(outletId, status) {
       const client = requireSupabaseClient();
       const outlet = await getMerchantOutletRow(client, outletId);
@@ -3396,18 +5274,27 @@ export const supabaseService: HungryService = {
       const client = requireSupabaseClient();
       const outlet = await getMerchantOutletRow(client, outletId);
       const resolvedOutletId = asString(outlet.id) ?? outletId;
-      const analytics = buildPromotionAnalytics(promo);
+      const validatedPromo = validateMerchantPromotionInput(promo, {
+        outletDishIds: await listPromotionOutletDishIds(client, outlet),
+      });
+      const analytics = buildPromotionAnalytics(validatedPromo);
       const { data, error } = await client
         .from("merchant_promotions")
         .insert({
           outlet_id: resolvedOutletId,
-          title: promo.title,
-          description: promo.description,
-          target_dish_id: promo.targetDishId ?? null,
-          start_date: promo.startDate,
-          end_date: promo.endDate,
-          target_audience: promo.targetAudience,
-          status: promo.status,
+          title: validatedPromo.title,
+          description: validatedPromo.description,
+          target_dish_id: validatedPromo.targetDishId ?? null,
+          start_date: validatedPromo.startDate,
+          end_date: validatedPromo.endDate,
+          target_audience: validatedPromo.targetAudience,
+          status: validatedPromo.status,
+          promotion_item_type: validatedPromo.promotionItemType ?? "new_item",
+          original_price: validatedPromo.originalPrice ?? null,
+          promotional_price: validatedPromo.promotionalPrice ?? null,
+          final_price: validatedPromo.finalPrice ?? validatedPromo.promotionalPrice ?? null,
+          discount_percentage: validatedPromo.discountPercentage ?? null,
+          is_available: validatedPromo.isAvailable ?? validatedPromo.status === "active",
           impressions: analytics.impressions,
           clicks: analytics.clicks,
           saves: analytics.saves,
@@ -3421,14 +5308,53 @@ export const supabaseService: HungryService = {
     },
 
     async updatePromotion(promoId, updates) {
+      const client = requireSupabaseClient();
+      const { data: currentData, error: currentError } = await client
+        .from("merchant_promotions")
+        .select("*")
+        .eq("id", promoId)
+        .single();
+      if (currentError) throw currentError;
+      const currentPromotion = mapPromotion(currentData as Row);
+      const outlet = await getMerchantOutletRow(client, currentPromotion.outletId);
+      const validatedUpdates = validateMerchantPromotionInput(
+        {
+          ...currentPromotion,
+          ...updates,
+          targetDishId: updates.targetDishId ?? currentPromotion.targetDishId,
+          promotionItemType: updates.promotionItemType ?? currentPromotion.promotionItemType,
+          originalPrice: updates.originalPrice ?? currentPromotion.originalPrice,
+          promotionalPrice: updates.promotionalPrice ?? currentPromotion.promotionalPrice,
+          finalPrice: updates.finalPrice ?? updates.promotionalPrice ?? currentPromotion.finalPrice,
+          discountPercentage: updates.discountPercentage ?? currentPromotion.discountPercentage,
+          isAvailable: updates.isAvailable ?? currentPromotion.isAvailable,
+        },
+        {
+          outletDishIds: await listPromotionOutletDishIds(client, outlet),
+        },
+      );
       const payload: Row = {};
-      if (updates.title !== undefined) payload.title = updates.title;
-      if (updates.description !== undefined) payload.description = updates.description;
-      if (updates.targetDishId !== undefined) payload.target_dish_id = updates.targetDishId;
-      if (updates.startDate !== undefined) payload.start_date = updates.startDate;
-      if (updates.endDate !== undefined) payload.end_date = updates.endDate;
-      if (updates.targetAudience !== undefined) payload.target_audience = updates.targetAudience;
-      if (updates.status !== undefined) payload.status = updates.status;
+      if (updates.title !== undefined) payload.title = validatedUpdates.title;
+      if (updates.description !== undefined) payload.description = validatedUpdates.description;
+      if (updates.targetDishId !== undefined)
+        payload.target_dish_id = validatedUpdates.targetDishId;
+      if (updates.startDate !== undefined) payload.start_date = validatedUpdates.startDate;
+      if (updates.endDate !== undefined) payload.end_date = validatedUpdates.endDate;
+      if (updates.targetAudience !== undefined)
+        payload.target_audience = validatedUpdates.targetAudience;
+      if (updates.status !== undefined) payload.status = validatedUpdates.status;
+      if (updates.promotionItemType !== undefined)
+        payload.promotion_item_type = validatedUpdates.promotionItemType;
+      if (updates.originalPrice !== undefined)
+        payload.original_price = validatedUpdates.originalPrice;
+      if (updates.promotionalPrice !== undefined)
+        payload.promotional_price = validatedUpdates.promotionalPrice;
+      if (updates.finalPrice !== undefined || updates.promotionalPrice !== undefined) {
+        payload.final_price = validatedUpdates.finalPrice;
+      }
+      if (updates.discountPercentage !== undefined)
+        payload.discount_percentage = validatedUpdates.discountPercentage;
+      if (updates.isAvailable !== undefined) payload.is_available = validatedUpdates.isAvailable;
       if (updates.analytics) {
         payload.impressions = updates.analytics.impressions;
         payload.clicks = updates.analytics.clicks;
@@ -3436,7 +5362,7 @@ export const supabaseService: HungryService = {
         payload.profile_visits = updates.analytics.profileVisits;
         payload.dish_views = updates.analytics.dishViews;
       }
-      const { data, error } = await requireSupabaseClient()
+      const { data, error } = await client
         .from("merchant_promotions")
         .update(payload)
         .eq("id", promoId)
@@ -3457,44 +5383,167 @@ export const supabaseService: HungryService = {
     },
 
     async getAnalytics(outletId, dateRange) {
-      const menu = await this.getMenu(outletId);
-      const inbox = await this.getInbox(outletId);
-      const reviewRatings = inbox
-        .map((interaction) => interaction.rating)
-        .filter((rating): rating is number => typeof rating === "number");
-      return {
-        outletId,
-        dateRange,
-        profileVisits: 0,
-        menuViews: 0,
-        dishViews: 0,
-        directionTaps: 0,
-        saves: 0,
-        shares: 0,
-        contactTaps: 0,
-        socialLinkTaps: 0,
-        postInteractions: inbox.length,
-        reviewCount: reviewRatings.length,
-        averageRating:
-          reviewRatings.length === 0
-            ? 0
-            : reviewRatings.reduce((sum, rating) => sum + rating, 0) / reviewRatings.length,
-        topDishes: menu.slice(0, 3).map((dish) => ({
-          dishId: dish.id,
-          name: dish.name,
-          views: 0,
-          saves: 0,
-        })),
-        mostSearchedKeywords: menu.slice(0, 4).map((dish) => dish.name.toLowerCase()),
-        peakDiscoveryHours: [],
-        customerTasteTags: [],
-        previousPeriodComparison: {
-          profileVisits: 0,
-          menuViews: 0,
-          reviewCount: 0,
-          averageRating: 0,
+      const client = requireSupabaseClient();
+      const outlet = await getMerchantOutletRow(client, outletId);
+      const resolvedOutletId = asString(outlet.id) ?? outletId;
+      const since = getMerchantAnalyticsSince(dateRange);
+      const { data, error } = await client.rpc("get_merchant_analytics", {
+        p_outlet_id: resolvedOutletId,
+        p_since: since,
+        p_until: null,
+      });
+      if (error) throw error;
+      return mapMerchantAnalyticsPayload(data, resolvedOutletId, dateRange);
+    },
+
+    async getWeeklySummaryStats(outletId) {
+      const client = requireSupabaseClient();
+      const outlet = await getMerchantOutletRow(client, outletId);
+      const resolvedOutletId = asString(outlet.id) ?? outletId;
+      const analytics = await this.getAnalytics(outletId, "7d");
+      const reviews = await this.getInbox(outletId, { type: "review" });
+      const promotions = await this.getPromotions(outletId);
+      const summary = buildWeeklySummaryFromAnalytics(outletId, analytics, reviews, promotions);
+      const { error } = await client.rpc("persist_merchant_weekly_summary", {
+        p_outlet_id: resolvedOutletId,
+        p_week_start: summary.weekStart.slice(0, 10),
+        p_week_end: summary.weekEnd.slice(0, 10),
+        p_total_views: summary.totalViews,
+        p_dish_views: summary.dishViews,
+        p_top_dishes: summary.topDishes,
+        p_new_reviews: summary.newReviews,
+        p_average_rating: summary.averageRating,
+        p_rating_change: summary.ratingChange,
+        p_unreplied_reviews: summary.unrepliedReviews,
+        p_promotion_views: summary.promotionViews,
+        p_metadata: { source: "merchant_service" },
+      });
+      if (error) throw error;
+      return summary;
+    },
+
+    async getMerchantNotifications(merchantAccountId) {
+      const { data, error } = await requireSupabaseClient()
+        .from("merchant_notifications")
+        .select("*")
+        .eq("merchant_account_id", merchantAccountId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (Array.isArray(data) ? (data as Row[]) : []).map(mapMerchantNotification);
+    },
+
+    async syncLowRatingNotifications(outletId) {
+      const client = requireSupabaseClient();
+      const outlet = await getMerchantOutletRow(client, outletId);
+      const resolvedOutletId = asString(outlet.id) ?? outletId;
+      const merchantAccountId = asString(outlet.merchant_account_id) ?? "";
+      const outletName = asString(outlet.name) ?? "Your stall";
+      const reviews = await this.getInbox(outletId, { type: "review" });
+      const lowReviews = reviews.filter(
+        (review) => typeof review.rating === "number" && review.rating <= 2,
+      );
+      if (lowReviews.length === 0) return [];
+      const rows = lowReviews.map((review) => ({
+        merchant_account_id: merchantAccountId,
+        outlet_id: resolvedOutletId,
+        kind: "low_rating",
+        title: `${outletName} received a low rating`,
+        body: `${review.rating?.toFixed(1)} stars: ${review.text.slice(0, 120)}`,
+        status: "unread",
+        dedupe_key: `low-rating:${review.sourceId ?? review.id}`,
+        deep_link: "MerchantTabs/CustomerInbox",
+        metadata: {
+          reviewId: review.sourceId ?? review.id,
+          rating: review.rating,
+          snippet: review.text,
         },
-      } satisfies MerchantAnalytics;
+        created_at: review.createdAt,
+      }));
+      const { error } = await client
+        .from("merchant_notifications")
+        .upsert(rows, { onConflict: "dedupe_key", ignoreDuplicates: true });
+      if (error) throw error;
+      const keys = rows.map((row) => row.dedupe_key);
+      const { data, error: readError } = await client
+        .from("merchant_notifications")
+        .select("*")
+        .in("dedupe_key", keys)
+        .order("created_at", { ascending: false });
+      if (readError) throw readError;
+      return (Array.isArray(data) ? (data as Row[]) : []).map(mapMerchantNotification);
+    },
+
+    async sendWeeklySummaryNotifications(outletId) {
+      const client = requireSupabaseClient();
+      const outlet = await getMerchantOutletRow(client, outletId);
+      const resolvedOutletId = asString(outlet.id) ?? outletId;
+      const merchantAccountId = asString(outlet.merchant_account_id) ?? "";
+      const outletName = asString(outlet.name) ?? "Your stall";
+      const summary = await this.getWeeklySummaryStats(outletId);
+      const members = await this.getTeamMembers(merchantAccountId);
+      const rows = members
+        .filter((member) => member.inviteStatus !== "removed")
+        .map((member) => ({
+          merchant_account_id: merchantAccountId,
+          outlet_id: resolvedOutletId,
+          recipient_user_id: member.userId || null,
+          recipient_email: member.email,
+          kind: "weekly_summary",
+          title: `${outletName} weekly summary is ready`,
+          body: `${summary.totalViews.toLocaleString()} views, ${summary.newReviews} new reviews, ${summary.unrepliedReviews} unreplied reviews.`,
+          status: "unread",
+          dedupe_key: `weekly-summary:${summary.id}:${member.id}`,
+          deep_link: "MerchantTabs/MerchantAnalytics",
+          metadata: { summaryId: summary.id },
+        }));
+      if (rows.length === 0) return [];
+      const { error } = await client
+        .from("merchant_notifications")
+        .upsert(rows, { onConflict: "dedupe_key", ignoreDuplicates: true });
+      if (error) throw error;
+      const emailRows = rows
+        .filter((row) => row.recipient_email)
+        .map((row) => ({
+          merchant_account_id: merchantAccountId,
+          outlet_id: resolvedOutletId,
+          recipient_email: row.recipient_email,
+          template: "weekly_summary",
+          subject: row.title,
+          body: row.body,
+          status: "queued",
+          dedupe_key: `email:${row.dedupe_key}`,
+          metadata: row.metadata,
+        }));
+      if (emailRows.length > 0) {
+        await Promise.all(
+          emailRows.map(async (row) => {
+            const memberId = row.dedupe_key.split(":").at(-1) ?? row.recipient_email;
+            const { error: emailError } = await client.rpc(
+              "enqueue_merchant_weekly_summary_email",
+              {
+                p_merchant_account_id: merchantAccountId,
+                p_outlet_id: resolvedOutletId,
+                p_recipient_email: row.recipient_email,
+                p_summary_id: String(row.metadata.summaryId ?? summary.id),
+                p_member_id: memberId,
+                p_subject: row.subject,
+                p_body: row.body,
+              },
+            );
+            if (emailError) throw emailError;
+          }),
+        );
+      }
+      const { data, error: readError } = await client
+        .from("merchant_notifications")
+        .select("*")
+        .in(
+          "dedupe_key",
+          rows.map((row) => row.dedupe_key),
+        )
+        .order("created_at", { ascending: false });
+      if (readError) throw readError;
+      return (Array.isArray(data) ? (data as Row[]) : []).map(mapMerchantNotification);
     },
 
     async generateDishDescription(dishName, ingredients) {
@@ -3589,13 +5638,21 @@ export const supabaseService: HungryService = {
         email: asString(row.email) ?? "",
         role: asMerchantRole(row.role),
         addedAt: asString(row.created_at) ?? new Date().toISOString(),
+        inviteStatus: asMerchantInviteStatus(row.invite_status),
+        invitedAt: asString(row.invited_at),
+        acceptedAt: asString(row.accepted_at),
+        removedAt: asString(row.removed_at),
       }));
     },
 
-    async addTeamMember(merchantAccountId, email, role) {
+    async addTeamMember(merchantAccountId, email, role, displayName) {
       const normalizedEmail = email.trim().toLowerCase();
+      const trimmedName = displayName?.trim() ?? "";
       if (!normalizedEmail || !normalizedEmail.includes("@")) {
         throw new Error("Valid team member email is required");
+      }
+      if (!trimmedName) {
+        throw new Error("Team member name is required");
       }
       const { data, error } = await requireSupabaseClient()
         .from("merchant_roles")
@@ -3603,20 +5660,59 @@ export const supabaseService: HungryService = {
           merchant_account_id: merchantAccountId,
           user_id: null,
           email: normalizedEmail,
-          display_name: normalizedEmail.split("@")[0],
+          display_name: trimmedName,
           role,
+          invite_status: "pending",
+          invited_at: new Date().toISOString(),
         })
         .select("*")
         .single();
       if (error) throw error;
+      const row = data as Row;
+      const { error: notificationError } = await requireSupabaseClient()
+        .from("merchant_notifications")
+        .upsert(
+          {
+            merchant_account_id: merchantAccountId,
+            recipient_email: normalizedEmail,
+            kind: "team_invite",
+            title: "You have been invited to manage a Hungry stall",
+            body: `${trimmedName}, open Hungry to accept your merchant team invite.`,
+            status: "sent",
+            dedupe_key: `team-invite:${merchantAccountId}:${normalizedEmail}`,
+            deep_link: "MerchantTabs/MerchantSettings",
+            metadata: {
+              memberId: asString(row.id),
+              role,
+              delivery: "email",
+            },
+          },
+          { onConflict: "dedupe_key", ignoreDuplicates: true },
+        );
+      if (notificationError) throw notificationError;
+      const { error: emailError } = await requireSupabaseClient().rpc(
+        "enqueue_merchant_team_invite_email",
+        {
+          p_merchant_account_id: merchantAccountId,
+          p_recipient_email: normalizedEmail,
+          p_member_id: asString(row.id) ?? null,
+          p_role: role,
+          p_invitee_name: trimmedName,
+        },
+      );
+      if (emailError) throw emailError;
       return {
-        id: asString((data as Row).id) ?? "",
+        id: asString(row.id) ?? "",
         merchantAccountId,
-        userId: asString((data as Row).user_id) ?? "",
-        displayName: asString((data as Row).display_name) ?? normalizedEmail,
-        email: asString((data as Row).email) ?? normalizedEmail,
+        userId: asString(row.user_id) ?? "",
+        displayName: asString(row.display_name) ?? trimmedName,
+        email: asString(row.email) ?? normalizedEmail,
         role,
-        addedAt: asString((data as Row).created_at) ?? new Date().toISOString(),
+        inviteStatus: asMerchantInviteStatus(row.invite_status),
+        invitedAt: asString(row.invited_at),
+        acceptedAt: asString(row.accepted_at),
+        removedAt: asString(row.removed_at),
+        addedAt: asString(row.created_at) ?? new Date().toISOString(),
       };
     },
 
@@ -3925,6 +6021,543 @@ export const supabaseService: HungryService = {
 
     async submitCommunityTags() {
       return;
+    },
+  },
+
+  // ── Checklist ───────────────────────────────────────────────────────────────
+
+  checklist: {
+    async createChecklist(name: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("Sign in before creating a checklist.");
+      const { data, error } = await client
+        .from("checklists")
+        .insert({ user_id: userId, name })
+        .select()
+        .single();
+      if (error) throw error;
+      return mapChecklist(data as Row);
+    },
+
+    async getChecklists() {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { data, error } = await client
+        .from("checklists")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []).map((row) => mapChecklist(row as Row));
+    },
+
+    async getChecklist(id: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { data, error } = await client.from("checklists").select("*").eq("id", id).single();
+      if (error) throw error;
+      return mapChecklist(data as Row);
+    },
+
+    async updateChecklist(id: string, name: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { error } = await client.from("checklists").update({ name }).eq("id", id);
+      if (error) throw error;
+    },
+
+    async deleteChecklist(id: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { error } = await client.from("checklists").delete().eq("id", id);
+      if (error) throw error;
+    },
+
+    async addChecklistItem(input: any) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { data, error } = await client
+        .from("checklist_items")
+        .insert({
+          checklist_id: input.checklistId,
+          item_type: input.itemType,
+          dish_id: input.dishId,
+          stall_id: input.stallId,
+          custom_text: input.customText,
+          reminder_at: input.reminderAt,
+          planned_visit_date: input.plannedVisitDate,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return mapChecklistItem(data as Row);
+    },
+
+    async getChecklistItems(checklistId: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { data, error } = await client
+        .from("checklist_items")
+        .select("*")
+        .eq("checklist_id", checklistId)
+        .order("position", { ascending: true });
+      if (error) throw error;
+      return (data || []).map((row) => mapChecklistItem(row as Row));
+    },
+
+    async updateChecklistItem(id: string, updates: any) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const payload: Row = {};
+      if (updates.itemType !== undefined) payload.item_type = updates.itemType;
+      if (updates.dishId !== undefined) payload.dish_id = updates.dishId;
+      if (updates.stallId !== undefined) payload.stall_id = updates.stallId;
+      if (updates.customText !== undefined) payload.custom_text = updates.customText;
+      if (updates.reminderAt !== undefined) payload.reminder_at = updates.reminderAt;
+      if (updates.plannedVisitDate !== undefined) {
+        payload.planned_visit_date = updates.plannedVisitDate;
+      }
+      const { error } = await client.from("checklist_items").update(payload).eq("id", id);
+      if (error) throw error;
+    },
+
+    async markChecklistItemTried(id: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { error } = await client
+        .from("checklist_items")
+        .update({ tried_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) throw error;
+    },
+
+    async deleteChecklistItem(id: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { error } = await client.from("checklist_items").delete().eq("id", id);
+      if (error) throw error;
+    },
+
+    async reorderChecklistItems(checklistId: string, itemIds: string[]) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { error } = await client.rpc("reorder_checklist_items", {
+        p_checklist_id: checklistId,
+        p_item_ids: itemIds,
+      });
+      if (error) throw error;
+    },
+  },
+
+  // ── Portfolio ───────────────────────────────────────────────────────────────
+
+  portfolio: {
+    async createPortfolio(input: any) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("Sign in before creating a portfolio.");
+      const { data, error } = await client
+        .from("portfolios")
+        .insert({
+          owner_id: userId,
+          name: input.name,
+          description: input.description,
+          type: input.type,
+          visibility: input.visibility,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return mapPortfolio(data as Row);
+    },
+
+    async getPortfolios(filters?: any) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      let query = client.from("portfolios").select("*");
+
+      if (filters?.userId) {
+        query = query.eq("owner_id", filters.userId);
+      }
+      if (filters?.visibility) {
+        query = query.eq("visibility", filters.visibility);
+      }
+      if (filters?.type) {
+        query = query.eq("type", filters.type);
+      }
+
+      query = query.order("created_at", { ascending: false });
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return (data || []).map((row: Row) => mapPortfolio(row));
+    },
+
+    async getPortfolio(id: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { data, error } = await client.from("portfolios").select("*").eq("id", id).single();
+      if (error) throw error;
+      return mapPortfolio(data as Row);
+    },
+
+    async updatePortfolio(id: string, updates: any, options?: PortfolioMutationOptions) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const payload: Row = {};
+      if (updates.name !== undefined) payload.name = updates.name;
+      if (updates.description !== undefined) payload.description = updates.description;
+      if (updates.type !== undefined) payload.type = updates.type;
+      if (updates.visibility !== undefined) payload.visibility = updates.visibility;
+      let query = client.from("portfolios").update(payload).eq("id", id);
+      if (options?.expectedUpdatedAt) {
+        query = query.eq("updated_at", options.expectedUpdatedAt);
+      }
+      const { data, error } = await query.select("id").maybeSingle();
+      if (error) throw error;
+      if (options?.expectedUpdatedAt && !data) throw portfolioEditConflictError();
+    },
+
+    async deletePortfolio(id: string, options?: PortfolioMutationOptions) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      let query = client.from("portfolios").delete().eq("id", id);
+      if (options?.expectedUpdatedAt) {
+        query = query.eq("updated_at", options.expectedUpdatedAt);
+      }
+      const { data, error } = await query.select("id").maybeSingle();
+      if (error) throw error;
+      if (options?.expectedUpdatedAt && !data) throw portfolioEditConflictError();
+    },
+
+    async publishPortfolio(id: string, options?: PortfolioMutationOptions) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { error } = await client.rpc("publish_portfolio_with_passport", {
+        p_portfolio_id: id,
+        p_expected_portfolio_updated_at: options?.expectedUpdatedAt,
+      });
+      if (error) throw error;
+    },
+
+    async addPortfolioItem(input: any, options?: PortfolioMutationOptions) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { data, error } = await client.rpc("add_portfolio_item_with_passport", {
+        p_portfolio_id: input.portfolioId,
+        p_item_type: input.itemType,
+        p_dish_id: input.dishId,
+        p_stall_id: input.stallId,
+        p_score: input.score,
+        p_public_notes: input.publicNotes,
+        p_private_notes: input.privateNotes,
+        p_expected_portfolio_updated_at: options?.expectedUpdatedAt,
+      });
+      if (error) throw error;
+      const insertedId = String(data ?? "");
+      const { data: row, error: fetchError } = await client
+        .from("portfolio_items")
+        .select("*")
+        .eq("id", insertedId)
+        .single();
+      if (fetchError) throw fetchError;
+      return mapPortfolioItem(row as Row);
+    },
+
+    async getPortfolioItems(portfolioId: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { data, error } = await client
+        .from("portfolio_items")
+        .select("*")
+        .eq("portfolio_id", portfolioId)
+        .order("position", { ascending: true });
+      if (error) throw error;
+      return (data || []).map((row) => mapPortfolioItem(row as Row));
+    },
+
+    async updatePortfolioItem(id: string, updates: any, options?: PortfolioMutationOptions) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { error } = await client.rpc("update_portfolio_item_with_version", {
+        p_item_id: id,
+        p_score: updates.score,
+        p_public_notes: updates.publicNotes,
+        p_private_notes: updates.privateNotes,
+        p_expected_portfolio_updated_at: options?.expectedUpdatedAt,
+      });
+      if (error) throw error;
+    },
+
+    async deletePortfolioItem(id: string, options?: PortfolioMutationOptions) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { error } = await client.rpc("delete_portfolio_item_with_version", {
+        p_item_id: id,
+        p_expected_portfolio_updated_at: options?.expectedUpdatedAt,
+      });
+      if (error) throw error;
+    },
+
+    async reorderPortfolioItems(
+      portfolioId: string,
+      itemIds: string[],
+      options?: PortfolioMutationOptions,
+    ) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { error } = await client.rpc("reorder_portfolio_items", {
+        p_portfolio_id: portfolioId,
+        p_item_ids: itemIds,
+        p_expected_portfolio_updated_at: options?.expectedUpdatedAt,
+      });
+      if (error) throw error;
+    },
+
+    async addPortfolioCollaborator(
+      portfolioId: string,
+      userId: string,
+      role: any,
+      options?: PortfolioMutationOptions,
+    ) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      await assertSupabasePortfolioVersion(client, portfolioId, options);
+      const { error } = await client.from("portfolio_collaborators").insert({
+        portfolio_id: portfolioId,
+        user_id: userId,
+        role,
+      });
+      if (error) throw error;
+    },
+
+    async removePortfolioCollaborator(
+      portfolioId: string,
+      userId: string,
+      options?: PortfolioMutationOptions,
+    ) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      await assertSupabasePortfolioVersion(client, portfolioId, options);
+      const { error } = await client
+        .from("portfolio_collaborators")
+        .delete()
+        .eq("portfolio_id", portfolioId)
+        .eq("user_id", userId);
+      if (error) throw error;
+    },
+
+    async getPortfolioCollaborators(portfolioId: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { data, error } = await client
+        .from("portfolio_collaborators")
+        .select("*")
+        .eq("portfolio_id", portfolioId);
+      if (error) throw error;
+      return (data || []).map((row) => mapPortfolioCollaborator(row as Row));
+    },
+
+    async followPortfolio(portfolioId: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("Sign in before following a portfolio.");
+      const { error } = await client
+        .from("portfolio_follows")
+        .upsert(
+          { portfolio_id: portfolioId, user_id: userId },
+          { onConflict: "portfolio_id,user_id", ignoreDuplicates: true },
+        );
+      if (error) throw error;
+    },
+
+    async unfollowPortfolio(portfolioId: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("Sign in before unfollowing a portfolio.");
+      const { error } = await client
+        .from("portfolio_follows")
+        .delete()
+        .eq("portfolio_id", portfolioId)
+        .eq("user_id", userId);
+      if (error) throw error;
+    },
+
+    async getPortfolioFollows(portfolioId: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { data, error } = await client
+        .from("portfolio_follows")
+        .select("*")
+        .eq("portfolio_id", portfolioId);
+      if (error) throw error;
+      return (data || []).map((row) => mapPortfolioFollow(row as Row));
+    },
+
+    async isFollowingPortfolio(portfolioId: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) return false;
+      const { data, error } = await client
+        .from("portfolio_follows")
+        .select("id")
+        .eq("portfolio_id", portfolioId)
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (error) throw error;
+      return !!data;
+    },
+
+    async flagPortfolio(portfolioId: string, reason: string, details?: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("Sign in before flagging a portfolio.");
+      const { error } = await client.from("portfolio_flags").insert({
+        portfolio_id: portfolioId,
+        reporter_id: userId,
+        reason,
+        details,
+      });
+      if (error) throw error;
+    },
+
+    async getPortfolioFlags(filters?: any) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      let query = client.from("portfolio_flags").select("*");
+
+      if (filters?.status) {
+        query = query.eq("status", filters.status);
+      }
+
+      query = query.order("created_at", { ascending: false });
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return (data || []).map((row) => mapPortfolioFlag(row as Row));
+    },
+
+    async resolvePortfolioFlag(flagId: string, resolution: "dismissed" | "removed") {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const userId = await getCurrentSupabaseUserId();
+      const { error } = await client
+        .from("portfolio_flags")
+        .update({
+          status: resolution,
+          reviewed_by: userId,
+          reviewed_at: new Date().toISOString(),
+        })
+        .eq("id", flagId);
+      if (error) throw error;
+    },
+
+    async searchPortfolios(query: string, filters?: any) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { data, error } = await client.rpc("search_portfolios", {
+        p_query: query,
+        p_type: filters?.type,
+        p_visibility: filters?.visibility,
+      });
+      if (error) throw error;
+      return (data || []).map((row: Row) => mapPortfolio(row));
+    },
+  },
+
+  // ── Passport ────────────────────────────────────────────────────────────────
+
+  passport: {
+    async getPassportStamps() {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { data, error } = await client
+        .from("passport_stamps")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []).map((row) => mapPassportStamp(row as Row));
+    },
+
+    async getPassportProgressEvents(categoryId?: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      let query = client
+        .from("passport_progress_events")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (categoryId) {
+        query = query.eq("category_id", categoryId);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return (data || []).map((row) => mapPassportProgressEvent(row as Row));
+    },
+
+    async recordProgress(categoryId: string, eventType: PassportEventType, referenceId?: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { error } = await client.rpc("record_passport_progress", {
+        p_category_id: categoryId,
+        p_event_type: eventType,
+        p_reference_id: referenceId ?? null,
+      });
+      if (error) throw error;
+    },
+  },
+
+  notifications: {
+    async listActivityEvents() {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { data, error } = await client
+        .from("activity_events")
+        .select(
+          `
+          id,
+          event_type,
+          target_type,
+          target_id,
+          read_at,
+          created_at,
+          actor:actor_id (
+            id,
+            display_name,
+            avatar_url
+          )
+        `,
+        )
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (isMissingActivityEventsSchemaError(error)) return [];
+      if (error) throw error;
+      return (data || []).map((row: any) => ({
+        id: row.id as string,
+        actorId: row.actor?.id as string,
+        actorName: (row.actor?.display_name as string) ?? "Unknown",
+        actorAvatarUrl: row.actor?.avatar_url as string | undefined,
+        eventType: row.event_type as "new_like" | "new_comment" | "new_reply" | "new_follower",
+        targetType: row.target_type as "post" | "comment" | "profile",
+        targetId: row.target_id as string,
+        readAt: row.read_at as string | undefined,
+        createdAt: row.created_at as string,
+      }));
+    },
+
+    async markActivityRead(eventId: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { error } = await client.rpc("mark_activity_read", { p_event_id: eventId });
+      if (isMissingMarkActivityReadRpcError(error)) return;
+      if (error) throw error;
     },
   },
 };

@@ -102,7 +102,7 @@ def main() -> None:
         "max_search_text_per_run": args.max_search_text,
         "max_details_per_run": args.max_get_place,
         "max_photo_meta_per_run": args.max_photo_meta,
-        "start_row": 2,
+        "start_row": args.start_row,
         "rows": rows,
         "field_map": {},
     }

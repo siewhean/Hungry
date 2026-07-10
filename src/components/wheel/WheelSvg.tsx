@@ -7,12 +7,14 @@
  *
  * Alternates between palette.orange and palette.bgSoft slices.
  * Labels sit along the arc midpoint at typography.micro size.
- * A static monogram badge is overlaid at the centre.
+ * A static Hungry logo badge is overlaid at the centre.
  */
 
 import { View } from "react-native";
 import { G, Path, Svg, Text as SvgText } from "react-native-svg";
 
+import { AccessibleImage } from "@/components/ui/AccessibleImage";
+import { HUNGRY_LOGO_ICON } from "@/constants/brandAssets";
 import { useHungryTheme } from "@/theme";
 import type { WheelEntry } from "@/types/domain";
 
@@ -86,7 +88,12 @@ export function WheelSvg({ entries, size = 300 }: Props) {
   const maxLabelChars = active.length <= 4 ? 10 : active.length <= 8 ? 7 : 5;
 
   return (
-    <View style={{ width: size, height: size }}>
+    <View
+      accessible
+      accessibilityLabel={`Hungry wheel with ${active.length} options`}
+      accessibilityRole="image"
+      style={{ width: size, height: size }}
+    >
       <Svg width={size} height={size}>
         <G>
           {active.map((entry, i) => {
@@ -134,27 +141,19 @@ export function WheelSvg({ entries, size = 300 }: Props) {
           left: cx - logoSize / 2,
           width: logoSize,
           height: logoSize,
-          borderRadius: logoSize / 2,
+          borderRadius: logoSize * 0.22,
           overflow: "hidden",
           backgroundColor: palette.surface,
-          borderWidth: 2,
-          borderColor: palette.border,
           alignItems: "center",
           justifyContent: "center",
         }}
       >
-        <Svg width={logoSize} height={logoSize}>
-          <SvgText
-            x={logoSize / 2}
-            y={logoSize / 2 + 5}
-            fill={palette.orange}
-            fontSize={logoSize * 0.46}
-            fontWeight="700"
-            textAnchor="middle"
-          >
-            H
-          </SvgText>
-        </Svg>
+        <AccessibleImage
+          source={HUNGRY_LOGO_ICON}
+          contentFit="contain"
+          decorative
+          style={{ width: logoSize, height: logoSize }}
+        />
       </View>
     </View>
   );

@@ -93,6 +93,7 @@ export const VERIFIED_ONLY_SCREENS = [
   "DishEditor",
   "OCRDrafts",
   "CustomerInbox",
+  "FeaturedVisitors",
   "PromotionBuilder",
   "PromotionList",
   "AIAssistant",

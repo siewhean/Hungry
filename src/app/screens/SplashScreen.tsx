@@ -3,19 +3,19 @@
  *
  * Sequence:
  *  0ms  – screen appears (dark bg)
- *  200ms – "H" bites in from above (scale + opacity)
- *  450ms – "ungry" types in from the right
+ *  200ms – logo scales in
  *  700ms – tagline fades in
  *  1000ms – orange dot pulses
  *  1800ms – navigate to onboarding or main tabs
  */
 
 import { useEffect, useRef } from "react";
-import { View, Animated, Easing, StyleSheet } from "react-native";
+import { View, Animated, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import Constants from "expo-constants";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
+import { HUNGRY_LOGO_ICON, HUNGRY_LOGO_STANDARD_SIZE } from "@/constants/brandAssets";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "@/components/ui";
@@ -24,8 +24,8 @@ type Props = NativeStackScreenProps<RootStackParamList, "Splash">;
 
 export function SplashScreen({ navigation }: Props) {
   const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
-  const isAuthReady = useSessionStore((state) => state.isAuthReady);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const isAuthReady = useSessionStore((state) => state.isAuthReady);
   const { palette, motion, spacing, radii, typography } = useHungryTheme();
   const appVersion = Constants.expoConfig?.version ?? "0.1.0";
   const styles = createStyles({ palette, typography, spacing, radii });
@@ -33,8 +33,6 @@ export function SplashScreen({ navigation }: Props) {
   // ── Animated values ───────────────────────────────────────────────────────
   const logoScale = useRef(new Animated.Value(0.4)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
-  const suffixTranslateX = useRef(new Animated.Value(24)).current;
-  const suffixOpacity = useRef(new Animated.Value(0)).current;
   const taglineOpacity = useRef(new Animated.Value(0)).current;
   const dotScale = useRef(new Animated.Value(0.6)).current;
   const dotOpacity = useRef(new Animated.Value(0)).current;
@@ -42,7 +40,7 @@ export function SplashScreen({ navigation }: Props) {
   useEffect(() => {
     // Staggered entrance animation
     Animated.sequence([
-      // H bite down
+      // Logo scales in.
       Animated.parallel([
         Animated.spring(logoScale, {
           toValue: 1,
@@ -58,27 +56,11 @@ export function SplashScreen({ navigation }: Props) {
         }),
       ]),
 
-      // "ungry" slides in
-      Animated.parallel([
-        Animated.timing(suffixTranslateX, {
-          toValue: 0,
-          duration: motion.splashMedium,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(suffixOpacity, {
-          toValue: 1,
-          duration: motion.splashFast,
-          useNativeDriver: true,
-        }),
-      ]),
-
       // Tagline + dot fade in together
       Animated.parallel([
         Animated.timing(taglineOpacity, {
           toValue: 1,
           duration: motion.splashReveal,
-          easing: Easing.out(Easing.quad),
           useNativeDriver: true,
         }),
         Animated.spring(dotScale, {
@@ -100,10 +82,18 @@ export function SplashScreen({ navigation }: Props) {
         return;
       }
 
-      if (isAuthenticated && !hasCompletedOnboarding) {
+      if (!isAuthenticated) {
         navigation.reset({
           index: 0,
-          routes: [{ name: "OnboardingStack", params: { screen: "OnboardingIntro1" } }],
+          routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+        });
+        return;
+      }
+
+      if (!hasCompletedOnboarding) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "OnboardingStack", params: { screen: "OnboardingWelcome" } }],
         });
         return;
       }
@@ -122,11 +112,10 @@ export function SplashScreen({ navigation }: Props) {
     return () => clearTimeout(timer);
   }, [
     hasCompletedOnboarding,
-    isAuthReady,
     isAuthenticated,
+    isAuthReady,
     motion.splashDot,
     motion.splashFast,
-    motion.splashMedium,
     motion.splashReveal,
     motion.splashTotal,
     navigation,
@@ -135,35 +124,19 @@ export function SplashScreen({ navigation }: Props) {
   return (
     <View style={styles.root}>
       {/* Brand lockup */}
-      <View style={[styles.lockup, { gap: 0 }]}>
-        {/* "H" — the "bite" letter */}
-        <Animated.View
+      <View style={styles.lockup}>
+        <Animated.Image
+          source={HUNGRY_LOGO_ICON}
+          resizeMode="contain"
+          accessibilityLabel="Hungry logo"
+          accessibilityRole="image"
           style={{
+            height: HUNGRY_LOGO_STANDARD_SIZE,
             opacity: logoOpacity,
             transform: [{ scale: logoScale }],
+            width: HUNGRY_LOGO_STANDARD_SIZE,
           }}
-        >
-          <View
-            style={[styles.hContainer, { backgroundColor: palette.orange, borderRadius: radii.xl }]}
-          >
-            <AppText style={styles.hLetter}>H</AppText>
-            {/* Bite notch */}
-            <View
-              style={[styles.biteNotch, { backgroundColor: palette.bg, borderRadius: radii.md }]}
-            />
-          </View>
-        </Animated.View>
-
-        {/* "ungry" */}
-        <Animated.View
-          style={{
-            opacity: suffixOpacity,
-            transform: [{ translateX: suffixTranslateX }],
-            justifyContent: "center",
-          }}
-        >
-          <AppText style={styles.brandSuffix}>ungry</AppText>
-        </Animated.View>
+        />
 
         {/* Pulsing orange dot */}
         <Animated.View
@@ -223,31 +196,7 @@ const createStyles = ({
       gap: spacing[4],
     },
     lockup: {
-      flexDirection: "row",
       alignItems: "center",
-    },
-    hContainer: {
-      width: 72,
-      height: 72,
-      alignItems: "center",
-      justifyContent: "center",
-      overflow: "hidden",
-      position: "relative",
-    },
-    hLetter: {
-      ...typography.displayBold,
-      color: "#FFFFFF",
-    },
-    biteNotch: {
-      position: "absolute",
-      top: -6,
-      right: -6,
-      width: 24,
-      height: 24,
-    },
-    brandSuffix: {
-      ...typography.displayBold,
-      color: palette.text,
     },
     dot: {
       width: 10,

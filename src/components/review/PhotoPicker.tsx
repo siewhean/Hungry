@@ -1,10 +1,10 @@
 import { Pressable, StyleSheet, View } from "react-native";
-import { Image } from "expo-image";
 import { Camera } from "lucide-react-native";
 
 import { useHungryTheme } from "@/theme";
 import { useUIStore } from "@/store/useUIStore";
-import { AppText, EmptyState } from "../ui";
+import { AccessibleImage, AppText, EmptyState } from "../ui";
+import { confirmGalleryAccess, isGalleryPermissionGranted } from "@/lib/permissions/gallery";
 
 interface PhotoPickerProps {
   photos: string[];
@@ -29,7 +29,7 @@ export function PhotoPicker({
   onRemovePhoto,
   onPhotoError,
 }: PhotoPickerProps) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const showToast = useUIStore((state) => state.showToast);
   const canAddPhoto = Boolean(onAddPhoto) && photos.length < maxPhotos;
   const handleAddPhoto = async () => {
@@ -47,8 +47,19 @@ export function PhotoPicker({
         return;
       }
 
+      const shouldRequestPermission = await confirmGalleryAccess({
+        title: "Allow gallery access",
+        message: "Hungry needs access to your gallery to let you attach photos from your device.",
+        confirmLabel: "Allow",
+        cancelLabel: "Not now",
+      });
+
+      if (!shouldRequestPermission) {
+        return;
+      }
+
       const permission = await imagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
+      if (!isGalleryPermissionGranted(permission)) {
         showToast({ message: "Photos permission is required to attach images.", tone: "warning" });
         return;
       }
@@ -78,9 +89,10 @@ export function PhotoPicker({
       <View style={styles.grid}>
         {photos.map((uri) => (
           <Pressable key={uri} onPress={() => onRemovePhoto?.(uri)} style={styles.photoWrap}>
-            <Image
+            <AccessibleImage
               source={{ uri }}
-              style={[styles.photo, { borderRadius: radii.sm }]}
+              accessibilityLabel="Attached review photo"
+              style={[styles.photo, { borderRadius: componentRadii.card }]}
               contentFit="cover"
             />
           </Pressable>
@@ -96,7 +108,7 @@ export function PhotoPicker({
                 alignItems: "center",
                 backgroundColor: palette.bgMuted,
                 borderColor: palette.border,
-                borderRadius: radii.sm,
+                borderRadius: componentRadii.card,
                 borderStyle: "dashed",
                 borderWidth: 1,
                 justifyContent: "center",

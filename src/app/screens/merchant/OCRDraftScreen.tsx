@@ -1,10 +1,18 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Image, View, StyleSheet, Alert } from "react-native";
+import { View, StyleSheet, Alert } from "react-native";
 import { Check, Edit2, RefreshCw, X } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-import { AppText, Button, Screen, Chip } from "@/components/ui";
+import {
+  AccessibleImage,
+  AppText,
+  Button,
+  ChipGroup,
+  EmptyState,
+  Screen,
+  StatusChip,
+} from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -14,26 +22,31 @@ import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 type NavigationProp = NativeStackNavigationProp<MerchantTabParamList, "OCRDrafts">;
 
 export function OCRDraftScreen() {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing } = useHungryTheme();
   const navigation = useNavigation<NavigationProp>();
   const activeOutlet = useMerchantStore(getActiveOutlet);
 
   const [drafts, setDrafts] = useState<OCRDishDraft[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const loadDrafts = useCallback(async () => {
+    setError(null);
+    setIsLoading(true);
+
     if (!activeOutlet) {
       setDrafts([]);
+      setError("No active outlet selected for menu scan.");
       setIsLoading(false);
       return;
     }
-    setIsLoading(true);
+
     try {
       const data = await getHungryService().merchant.getOCRDrafts(activeOutlet.id);
       setDrafts(data.filter((draft) => draft.status === "pending"));
     } catch (e) {
       console.error(e);
-      Alert.alert("Error", "Failed to load OCR drafts.");
+      setError(e instanceof Error ? e.message : "Failed to load OCR drafts.");
     } finally {
       setIsLoading(false);
     }
@@ -42,6 +55,22 @@ export function OCRDraftScreen() {
   useEffect(() => {
     void loadDrafts();
   }, [loadDrafts]);
+
+  if (error) {
+    return (
+      <Screen title="Menu Photo Scan">
+        <EmptyState
+          title="Failed to load OCR drafts"
+          body="The OCR draft list is currently unavailable."
+          icon={<X size={40} color={palette.error} />}
+          errorMessage={error}
+          sendErrorContext="OCR draft list"
+          ctaLabel="Retry"
+          onPress={loadDrafts}
+        />
+      </Screen>
+    );
+  }
 
   const handleAccept = async (draftId: string, options: { silent?: boolean } = {}) => {
     try {
@@ -97,7 +126,11 @@ export function OCRDraftScreen() {
     <Screen title="Menu Photo Scan">
       <View style={{ gap: spacing[4], width: "100%" }}>
         <View
-          style={{ backgroundColor: palette.infoSoft, padding: spacing[4], borderRadius: radii.md }}
+          style={{
+            backgroundColor: palette.infoSoft,
+            padding: spacing[4],
+            borderRadius: componentRadii.card,
+          }}
         >
           <AppText variant="bodyBold" style={{ color: palette.info }}>
             Review Extracted Dishes
@@ -152,7 +185,7 @@ export function OCRDraftScreen() {
                 {
                   backgroundColor: palette.surface,
                   borderColor: palette.border,
-                  borderRadius: radii.lg,
+                  borderRadius: componentRadii.card,
                   padding: spacing[4],
                 },
               ]}
@@ -172,21 +205,20 @@ export function OCRDraftScreen() {
                     </AppText>
                   )}
                 </View>
-                <View
-                  style={{
-                    backgroundColor:
-                      draft.confidence > 0.8 ? palette.successSoft : palette.warningSoft,
-                    borderRadius: 16,
-                  }}
-                >
-                  <Chip label={`${Math.round(draft.confidence * 100)}% Match`} selected={false} />
-                </View>
+                <StatusChip
+                  label={`${Math.round(draft.confidence * 100)}% Match`}
+                  tone={draft.confidence > 0.8 ? "success" : "warning"}
+                />
               </View>
 
               {draft.sourcePhotoUrl ? (
-                <Image
+                <AccessibleImage
                   source={{ uri: draft.sourcePhotoUrl }}
-                  style={[styles.sourceImage, { borderRadius: radii.md, marginBottom: spacing[3] }]}
+                  style={[
+                    styles.sourceImage,
+                    { borderRadius: componentRadii.card, marginBottom: spacing[3] },
+                  ]}
+                  accessibilityLabel={`${draft.name} source menu photo`}
                 />
               ) : null}
 
@@ -197,19 +229,22 @@ export function OCRDraftScreen() {
               )}
 
               {draft.suggestedTasteTags && draft.suggestedTasteTags.length > 0 && (
-                <View style={[styles.tagRow, { gap: spacing[2], marginBottom: spacing[3] }]}>
-                  {draft.suggestedTasteTags.slice(0, 4).map((tag) => (
-                    <Chip key={tag} label={tag} selected={false} />
-                  ))}
-                </View>
+                <ChipGroup
+                  options={draft.suggestedTasteTags
+                    .slice(0, 4)
+                    .map((tag) => ({ id: tag, label: tag }))}
+                  style={{ marginBottom: spacing[3] }}
+                />
               )}
 
               {draft.suggestedDietaryTags && draft.suggestedDietaryTags.length > 0 && (
-                <View style={[styles.tagRow, { gap: spacing[2], marginBottom: spacing[3] }]}>
-                  {draft.suggestedDietaryTags.slice(0, 4).map((tag) => (
-                    <Chip key={tag} label={tag.replace(/_/g, "-")} selected={false} />
-                  ))}
-                </View>
+                <ChipGroup
+                  options={draft.suggestedDietaryTags.slice(0, 4).map((tag) => ({
+                    id: tag,
+                    label: tag.replace(/_/g, "-"),
+                  }))}
+                  style={{ marginBottom: spacing[3] }}
+                />
               )}
 
               <Button
@@ -252,10 +287,6 @@ const styles = StyleSheet.create({
   sourceImage: {
     width: "100%",
     height: 160,
-  },
-  tagRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
   },
   emptyContainer: {
     alignItems: "center",

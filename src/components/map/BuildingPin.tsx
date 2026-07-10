@@ -13,7 +13,7 @@ interface BuildingPinProps {
 }
 
 export function BuildingPin({ name, type, selected = false, onPress }: BuildingPinProps) {
-  const { palette, radii, spacing, shadows } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing, shadows } = useHungryTheme();
   const tone =
     type === "hawker_centre"
       ? palette.orange
@@ -35,7 +35,7 @@ export function BuildingPin({ name, type, selected = false, onPress }: BuildingP
         {
           backgroundColor: palette.surface,
           borderColor: selected ? tone : palette.border,
-          borderRadius: radii.md,
+          borderRadius: componentRadii.card,
           opacity: pressed ? 0.9 : 1,
         },
       ]}

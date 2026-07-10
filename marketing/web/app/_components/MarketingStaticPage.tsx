@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 
 import { Navbar } from "../../components/Navbar";
+import { HungryWordmark } from "../../components/HungryWordmark";
 import { WaitlistForm } from "../../components/WaitlistForm";
 
 type StaticPageLink = {
@@ -132,8 +133,8 @@ export function MarketingStaticPage({
       <section className="border-b border-hungry-border/80 bg-white">
         <div className="mx-auto max-w-6xl px-5 pb-16 pt-24 md:pb-20 md:pt-32">
           <div className="mb-8 flex flex-wrap items-center gap-3 text-xs font-mono uppercase tracking-[0.18em] text-hungry-text-muted">
-            <Link className="transition-colors hover:text-hungry-orange" href="/">
-              Hungry
+            <Link className="inline-flex items-center" href="/">
+              <HungryWordmark />
             </Link>
             <span className="h-px w-6 bg-hungry-border" />
             <span>{pageName}</span>
@@ -248,8 +249,8 @@ export function MarketingStaticPage({
         <div className="mx-auto flex max-w-6xl flex-col gap-8 px-5 py-8 md:flex-row md:items-end md:justify-between">
           <div className="space-y-3">
             <div className="flex items-center gap-3">
-              <Link className="font-display text-3xl font-black text-hungry-orange" href="/">
-                hungry
+              <Link className="inline-flex items-center" href="/">
+                <HungryWordmark />
               </Link>
               <span className="h-2 w-2 rounded-full bg-hungry-orange" />
             </div>

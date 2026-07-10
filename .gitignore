@@ -32,6 +32,12 @@ src/graphify-out/
 .env.staging.local
 .env.production.local
 .env.local
+tasks/release-evidence/*.env
+!tasks/release-evidence/*.example.env
+*.watchman-cookie-*
+.watchman-cookie-*
+node_modules.bak_*/
+claude-mem/
 
 # Local build/cache artifacts (large)
 .DerivedData/
@@ -43,3 +49,17 @@ ios/build/
 .env.local
 supabase/.temp/
 secrets*
+
+# Local/generated data work products
+scratch/
+data/~$*.xlsx
+data/*.backup*.xlsx
+data/*.xlsx.bak
+data/menu_enrichment_results.json
+data/scrape_results.json
+data/stalls_to_enrich.json
+data/uris_to_check.json
+scrape_orchestrator.log
+scripts/temp_main.js
+tasks/Roadmap/Database/excel-source-quality-review-queue-*.csv
+tasks/Roadmap/Database/excel-source-quality-audit-*.json

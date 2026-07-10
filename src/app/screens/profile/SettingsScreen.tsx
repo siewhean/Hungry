@@ -1,25 +1,34 @@
 import Constants from "expo-constants";
 import { useState } from "react";
-import { Alert, View, Linking } from "react-native";
+import { Alert, Linking, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
-  User,
+  AtSign,
   Bell,
+  CircleHelp,
+  Database,
   HandMetal,
-  ShieldCheck,
-  Moon,
-  MapPin,
-  Trash2,
   Globe,
   Lock,
+  LogOut,
+  MapPin,
+  Moon,
+  RefreshCw,
+  Shield,
   Star,
+  Smartphone,
+  User,
+  Trash2,
 } from "lucide-react-native";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { Button } from "@/components/ui";
 import { SettingsSection, SettingsRow } from "@/components/settings";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
@@ -36,34 +45,64 @@ export function SettingsScreen() {
   const { palette, spacing } = useHungryTheme();
 
   const clearSession = useSessionStore((state) => state.clearSession);
-  const location = useLocationStore((state) => state.manualLocation);
-  const resetLocationState = useLocationStore((state) => state.resetLocationState);
   const clearProfile = useProfileStore((state) => state.clearProfile);
-  const clearSearchState = useSearchStore((state) => state.clearSearchState);
   const resetDraft = useReviewDraftStore((state) => state.resetDraft);
+  const clearSearchState = useSearchStore((state) => state.clearSearchState);
+  const resetLocationState = useLocationStore((state) => state.resetLocationState);
+  const signOut = useSessionStore((state) => state.signOut);
+  const grantLocation = useLocationStore((state) => state.grantLocation);
+  const denyLocation = useLocationStore((state) => state.denyLocation);
   const setProfileVisibility = useProfileStore((state) => state.setProfileVisibility);
+  const setLeftHandedMode = useProfileStore((state) => state.setLeftHandedMode);
 
   const themePreference = useUIStore((state) => state.themePreference);
   const setThemePreference = useUIStore((state) => state.setThemePreference);
+  const hapticFeedbackEnabled = useUIStore((state) => state.hapticFeedbackEnabled);
+  const setHapticFeedbackEnabled = useUIStore((state) => state.setHapticFeedbackEnabled);
+  const reducedMotionEnabled = useUIStore((state) => state.reducedMotionEnabled);
+  const setReducedMotionEnabled = useUIStore((state) => state.setReducedMotionEnabled);
+  const showLocationBadge = useUIStore((state) => state.showLocationBadge);
+  const setShowLocationBadge = useUIStore((state) => state.setShowLocationBadge);
+  const allowSearchHistory = useUIStore((state) => state.allowSearchHistory);
+  const setAllowSearchHistory = useUIStore((state) => state.setAllowSearchHistory);
+  const openToExternalApps = useUIStore((state) => state.openToExternalApps);
+  const setOpenToExternalApps = useUIStore((state) => state.setOpenToExternalApps);
+  const dietaryFiltersEnabled = useUIStore((state) => state.dietaryFiltersEnabled);
+  const setDietaryFiltersEnabled = useUIStore((state) => state.setDietaryFiltersEnabled);
+  const activityFeedEnabled = useUIStore((state) => state.activityFeedEnabled);
+  const setActivityFeedEnabled = useUIStore((state) => state.setActivityFeedEnabled);
+  const hideReviewedDishesFromFeed = useUIStore((state) => state.hideReviewedDishesFromFeed);
+  const setHideReviewedDishesFromFeed = useUIStore((state) => state.setHideReviewedDishesFromFeed);
+  const showOnlyFavoriteDishes = useUIStore((state) => state.showOnlyFavoriteDishes);
+  const setShowOnlyFavoriteDishes = useUIStore((state) => state.setShowOnlyFavoriteDishes);
+  const pushNotificationsEnabled = useUIStore((state) => state.pushNotificationsEnabled);
+  const setPushNotificationsEnabled = useUIStore((state) => state.setPushNotificationsEnabled);
+  const missionNotificationsEnabled = useUIStore((state) => state.missionNotificationsEnabled);
+  const setMissionNotificationsEnabled = useUIStore(
+    (state) => state.setMissionNotificationsEnabled,
+  );
+  const showCredTier = useUIStore((state) => state.showCredTier);
+  const setShowCredTier = useUIStore((state) => state.setShowCredTier);
+  const showPassportProgress = useUIStore((state) => state.showPassportProgress);
+  const setShowPassportProgress = useUIStore((state) => state.setShowPassportProgress);
+  const showProfileBadges = useUIStore((state) => state.showProfileBadges);
+  const setShowProfileBadges = useUIStore((state) => state.setShowProfileBadges);
 
   const profile = useProfileStore((state) => state.profile);
-  const setLeftHandedMode = useProfileStore((state) => state.setLeftHandedMode);
+  const location = useLocationStore((state) => state.manualLocation);
+  const locationPermission = useLocationStore((state) => state.permission);
   const isProfilePrivate = profile.profileVisibility === "private";
+  const showNotificationSettings = FEATURE_FLAGS.notificationsEnabled;
+  const showGamificationSettings = FEATURE_FLAGS.gamificationEnabled;
 
-  const [dietaryEnabled, setDietaryEnabled] = useState(true);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-
-  // Gamification privacy
-  const [showCredTier, setShowCredTier] = useState(true);
-  const [showPassport, setShowPassport] = useState(true);
-  const [showBadges, setShowBadges] = useState(true);
-  const [missionNotifications, setMissionNotifications] = useState(true);
-
-  const appVersion = Constants.expoConfig?.version ?? "0.1.0";
   const normalizedThemePreference: ThemePreference =
     themePreference === "system" || themePreference === "light" || themePreference === "dark"
       ? themePreference
       : "system";
+
+  const [deletionRequested, setDeletionRequested] = useState(false);
+
+  const appVersion = Constants.expoConfig?.version ?? "0.1.0";
 
   const purgePersistedAccountData = async () => {
     if (!hungryPersistStorage) return;
@@ -79,21 +118,33 @@ export function SettingsScreen() {
   const handleDeleteAccount = () => {
     Alert.alert(
       "Delete account",
-      "This removes your local session and profile data. This action is permanent.",
+      "Hungry will queue deletion of your account and associated personal data. Some security, moderation, or legal retention records may still remain in anonymized form. This action is permanent.",
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Delete",
+          text: "Request deletion",
           style: "destructive",
           onPress: () => {
             void (async () => {
-              await purgePersistedAccountData();
-              clearSession();
-              clearProfile();
-              clearSearchState();
-              resetDraft();
-              resetLocationState();
-              rootNavigation.navigate("AuthStack", { screen: "SignUp" });
+              try {
+                setDeletionRequested(true);
+                await getHungryService().auth.requestAccountDeletion({
+                  reason: "user_initiated_settings_flow",
+                });
+                await purgePersistedAccountData();
+                clearSession();
+                clearProfile();
+                clearSearchState();
+                resetDraft();
+                resetLocationState();
+                rootNavigation.navigate("AuthStack", { screen: "SignUp" });
+              } catch {
+                setDeletionRequested(false);
+                Alert.alert(
+                  "Deletion request failed",
+                  "We could not queue your account deletion request. Please try again or contact support.",
+                );
+              }
             })();
           },
         },
@@ -125,22 +176,119 @@ export function SettingsScreen() {
     ]);
   };
 
+  const openAppSettings = async () => {
+    try {
+      await Linking.openSettings();
+    } catch {
+      Alert.alert(
+        "Open settings",
+        "Unable to open system settings from here. You can update permissions from your device settings app.",
+      );
+    }
+  };
+
+  const handleLocationPermissionToggle = async (enabled: boolean) => {
+    if (enabled) {
+      const granted = await grantLocation({ manualLocation: location });
+      if (!granted) {
+        Alert.alert(
+          "Location permissions",
+          "Hungry could not enable location access. Update this permission in Settings if you previously denied it.",
+          [
+            { text: "Open Settings", onPress: () => void openAppSettings() },
+            { text: "Cancel", style: "cancel" },
+          ],
+        );
+      }
+      return;
+    }
+
+    denyLocation();
+    void openAppSettings();
+  };
+
+  const handleResetLocation = () => {
+    Alert.alert(
+      "Reset location",
+      "This will clear your selected manual location and use GPS defaults.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Reset",
+          onPress: () => {
+            resetLocationState();
+            Alert.alert("Location reset", "Your manual location has been cleared.");
+          },
+        },
+      ],
+    );
+  };
+
+  const handleClearLocalData = () => {
+    Alert.alert("Clear local settings", "This will remove cached searches and draft content.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Clear",
+        onPress: () => {
+          void (async () => {
+            await purgePersistedAccountData();
+            resetDraft();
+            clearSearchState();
+            Alert.alert("Local data cleared", "Cached app data was removed from this device.");
+          })();
+        },
+      },
+    ]);
+  };
+
+  const handleSignOut = () => {
+    Alert.alert("Sign out", "You will be signed out from Hungry on this device.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Sign out",
+        style: "destructive",
+        onPress: () => {
+          signOut();
+          clearSearchState();
+          resetDraft();
+          rootNavigation.reset({
+            index: 0,
+            routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+          });
+        },
+      },
+    ]);
+  };
+
   return (
-    <ProfileScreenShell title="Settings" subtitle="Account and app preferences">
+    <ProfileScreenShell title="Settings">
       <SettingsSection title="Account">
         <SettingsRow
           label="Edit Profile"
           icon={<User size={20} color={palette.orange} />}
           onPress={() => navigation.navigate("EditProfile")}
           value={profile.displayName}
+          isLast={false}
         />
         <SettingsRow
-          label="Location"
-          icon={<MapPin size={20} color={palette.orange} />}
-          onPress={() =>
-            rootNavigation.navigate("OnboardingStack", { screen: "ManualLocationPicker" })
-          }
-          value={location || "Use GPS"}
+          label="Display name"
+          icon={<User size={20} color={palette.orange} />}
+          type="value"
+          value={profile.displayName}
+          isLast={false}
+        />
+        <SettingsRow
+          label="Email"
+          icon={<AtSign size={20} color={palette.orange} />}
+          type="value"
+          value={profile.email?.trim() || "Not linked"}
+          isLast={false}
+        />
+        <SettingsRow
+          label="Profile ID"
+          icon={<CircleHelp size={20} color={palette.orange} />}
+          type="value"
+          value={profile.id}
           isLast
         />
       </SettingsSection>
@@ -158,36 +306,133 @@ export function SettingsScreen() {
           type="navigation"
           value={isProfilePrivate ? "Private" : "Public"}
           onPress={showProfileVisibilityDialog}
+          isLast={false}
+        />
+        <SettingsRow
+          label="Hide reviewed dishes from public feed"
+          icon={<Bell size={20} color={palette.orange} />}
+          type="toggle"
+          isEnabled={hideReviewedDishesFromFeed}
+          onToggle={setHideReviewedDishesFromFeed}
+          isLast={!showGamificationSettings}
+        />
+        {showGamificationSettings ? (
+          <>
+            <SettingsRow
+              label="Show Food Cred tier"
+              icon={<Star size={20} color={palette.orange} />}
+              type="toggle"
+              isEnabled={showCredTier}
+              onToggle={setShowCredTier}
+              isLast={false}
+            />
+            <SettingsRow
+              label="Show Passport progress"
+              icon={<Globe size={20} color={palette.orange} />}
+              type="toggle"
+              isEnabled={showPassportProgress}
+              onToggle={setShowPassportProgress}
+              isLast
+            />
+          </>
+        ) : null}
+      </SettingsSection>
+
+      <SettingsSection title="Location & Discovery">
+        <SettingsRow
+          label="Location"
+          icon={<MapPin size={20} color={palette.orange} />}
+          onPress={() =>
+            rootNavigation.navigate("OnboardingStack", { screen: "ManualLocationPicker" })
+          }
+          value={location || "Use GPS"}
+          isLast={false}
+        />
+        <SettingsRow
+          label="Location permission"
+          icon={<MapPin size={20} color={palette.orange} />}
+          type="toggle"
+          isEnabled={locationPermission === "granted"}
+          onToggle={handleLocationPermissionToggle}
+          isLast={false}
+        />
+        <SettingsRow
+          label="Show location badge"
+          icon={<MapPin size={20} color={palette.orange} />}
+          type="toggle"
+          isEnabled={showLocationBadge}
+          onToggle={setShowLocationBadge}
+          isLast={false}
+        />
+        <SettingsRow
+          label="Reset selected location"
+          icon={<RefreshCw size={20} color={palette.orange} />}
+          onPress={handleResetLocation}
           isLast
         />
       </SettingsSection>
 
-      <SettingsSection title="App Preferences">
+      <SettingsSection title="Feed and discovery settings">
+        <SettingsRow
+          label="Dietary filters"
+          icon={<Shield size={20} color={palette.orange} />}
+          type="toggle"
+          isEnabled={dietaryFiltersEnabled}
+          onToggle={setDietaryFiltersEnabled}
+          isLast={false}
+        />
+        <SettingsRow
+          label="Show activity feed"
+          icon={<Star size={20} color={palette.orange} />}
+          type="toggle"
+          isEnabled={activityFeedEnabled}
+          onToggle={setActivityFeedEnabled}
+          isLast={false}
+        />
         <SettingsRow
           label="Left-handed mode"
           icon={<HandMetal size={20} color={palette.orange} />}
           type="toggle"
           isEnabled={profile.leftHandedMode}
           onToggle={setLeftHandedMode}
+          isLast={false}
         />
         <SettingsRow
-          label="Dietary filters"
-          icon={<ShieldCheck size={20} color={palette.orange} />}
+          label="Show only favourite dishes"
+          icon={<Globe size={20} color={palette.orange} />}
           type="toggle"
-          isEnabled={dietaryEnabled}
-          onToggle={setDietaryEnabled}
-        />
-        <SettingsRow
-          label="Push Notifications"
-          icon={<Bell size={20} color={palette.orange} />}
-          type="toggle"
-          isEnabled={notificationsEnabled}
-          onToggle={setNotificationsEnabled}
+          isEnabled={showOnlyFavoriteDishes}
+          onToggle={setShowOnlyFavoriteDishes}
           isLast
         />
       </SettingsSection>
 
-      <SettingsSection title="Appearance">
+      {showNotificationSettings || showGamificationSettings ? (
+        <SettingsSection title="Notifications">
+          {showNotificationSettings ? (
+            <SettingsRow
+              label="Push notifications"
+              icon={<Bell size={20} color={palette.orange} />}
+              type="toggle"
+              isEnabled={pushNotificationsEnabled}
+              onToggle={setPushNotificationsEnabled}
+              isLast={!showGamificationSettings}
+            />
+          ) : null}
+          {showGamificationSettings ? (
+            <SettingsRow
+              label="Mission notifications"
+              icon={<Bell size={20} color={palette.orange} />}
+              type="toggle"
+              isEnabled={missionNotificationsEnabled}
+              onToggle={setMissionNotificationsEnabled}
+              isLast
+            />
+          ) : null}
+        </SettingsSection>
+      ) : null}
+
+      <SettingsSection title="App settings">
         <SettingsRow
           label="Theme"
           icon={<Moon size={20} color={palette.orange} />}
@@ -199,38 +444,76 @@ export function SettingsScreen() {
                 normalizedThemePreference.slice(1)
           }
           onPress={cycleTheme}
+          isLast={false}
+        />
+        <SettingsRow
+          label="Reduce motion"
+          icon={<Smartphone size={20} color={palette.orange} />}
+          type="toggle"
+          isEnabled={reducedMotionEnabled}
+          onToggle={setReducedMotionEnabled}
+          isLast={false}
+        />
+        <SettingsRow
+          label="Haptic feedback"
+          icon={<HandMetal size={20} color={palette.orange} />}
+          type="toggle"
+          isEnabled={hapticFeedbackEnabled}
+          onToggle={setHapticFeedbackEnabled}
+          isLast={false}
+        />
+        {showGamificationSettings ? (
+          <SettingsRow
+            label="Show badges on profile"
+            icon={<Star size={20} color={palette.orange} />}
+            type="toggle"
+            isEnabled={showProfileBadges}
+            onToggle={setShowProfileBadges}
+            isLast={false}
+          />
+        ) : null}
+        <SettingsRow
+          label="Open in external browsers"
+          icon={<Globe size={20} color={palette.orange} />}
+          type="toggle"
+          isEnabled={openToExternalApps}
+          onToggle={setOpenToExternalApps}
+          isLast={false}
+        />
+        <SettingsRow
+          label="Open app settings"
+          icon={<Smartphone size={20} color={palette.orange} />}
+          onPress={openAppSettings}
+          value="Permissions"
           isLast
         />
       </SettingsSection>
 
-      <SettingsSection title="Gamification">
+      <SettingsSection title="Data & account">
         <SettingsRow
-          label="Show Food Cred tier on profile"
-          icon={<Star size={20} color={palette.orange} />}
+          label="Allow search history"
+          icon={<Database size={20} color={palette.orange} />}
           type="toggle"
-          isEnabled={showCredTier}
-          onToggle={setShowCredTier}
+          isEnabled={allowSearchHistory}
+          onToggle={setAllowSearchHistory}
+          isLast={false}
         />
         <SettingsRow
-          label="Show Passport progress"
-          icon={<Globe size={20} color={palette.orange} />}
-          type="toggle"
-          isEnabled={showPassport}
-          onToggle={setShowPassport}
+          label="Clear local cache"
+          icon={<Database size={20} color={palette.orange} />}
+          onPress={handleClearLocalData}
+          isLast={false}
         />
         <SettingsRow
-          label="Show badges on profile"
-          icon={<ShieldCheck size={20} color={palette.orange} />}
-          type="toggle"
-          isEnabled={showBadges}
-          onToggle={setShowBadges}
+          label="Data controls"
+          icon={<Shield size={20} color={palette.orange} />}
+          onPress={() => void openTrustedExternalUrl("https://hungry.sg/account/delete")}
+          isLast={false}
         />
         <SettingsRow
-          label="Mission notifications"
-          icon={<Bell size={20} color={palette.orange} />}
-          type="toggle"
-          isEnabled={missionNotifications}
-          onToggle={setMissionNotifications}
+          label="Sign out"
+          icon={<LogOut size={20} color={palette.orange} />}
+          onPress={handleSignOut}
           isLast
         />
       </SettingsSection>
@@ -238,28 +521,37 @@ export function SettingsScreen() {
       <SettingsSection title="Support">
         <SettingsRow
           label="Help Center"
-          onPress={() => Linking.openURL("https://hungry.sg/help")}
+          onPress={() => void openTrustedExternalUrl("https://hungry.sg/help")}
+          isLast={false}
         />
         <SettingsRow
           label="Privacy Policy"
-          onPress={() => Linking.openURL("https://hungry.sg/privacy")}
+          onPress={() => void openTrustedExternalUrl("https://hungry.sg/privacy")}
+          isLast={false}
         />
         <SettingsRow
           label="Terms of Service"
-          onPress={() => Linking.openURL("https://hungry.sg/terms")}
+          onPress={() => void openTrustedExternalUrl("https://hungry.sg/terms")}
           isLast
         />
       </SettingsSection>
 
       <SettingsSection title="About">
-        <SettingsRow label="Version" type="value" value={appVersion} isLast />
+        <SettingsRow label="Version" type="value" value={appVersion} isLast={false} />
+        <SettingsRow
+          label="Hungry support"
+          icon={<CircleHelp size={20} color={palette.orange} />}
+          onPress={() => void openTrustedExternalUrl("mailto:support@hungry.sg")}
+          isLast
+        />
       </SettingsSection>
 
-      <View style={{ gap: spacing[3], marginBottom: spacing[12] }}>
+      <View style={{ gap: spacing[3], marginBottom: spacing[4], marginTop: spacing[1] }}>
         <Button
           label="Delete account"
           variant="destructive"
           onPress={handleDeleteAccount}
+          loading={deletionRequested}
           leftIcon={<Trash2 size={20} color={palette.white} />}
         />
       </View>

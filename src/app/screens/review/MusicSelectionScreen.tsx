@@ -14,13 +14,12 @@ import {
   Animated,
   Easing,
 } from "react-native";
-import { Image } from "expo-image";
 import { useNavigation } from "@react-navigation/native";
 import { ChevronLeft, Play, Pause, Bookmark, Search, X, Music2 } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Slider from "@react-native-community/slider";
 
-import { AppText, Input, Button } from "@/components/ui";
+import { AccessibleImage, AppText, Input, Button } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 
 // ─── Mock Data ──────────────────────────────────────────────────────────────
@@ -210,7 +209,7 @@ function WaveformIndicator({
 
 export function MusicSelectionScreen() {
   const navigation = useNavigation();
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
 
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
@@ -290,16 +289,18 @@ export function MusicSelectionScreen() {
         >
           <View style={styles.trackInfo}>
             <View style={styles.thumbnailContainer}>
-              <Image
+              <AccessibleImage
                 source={{ uri: item.thumbnail }}
                 style={[StyleSheet.absoluteFill, { borderRadius: radii.sm }]}
+                contentFit="cover"
+                decorative
               />
               {isPlaying && (
                 <View
                   style={[
                     StyleSheet.absoluteFill,
                     {
-                      backgroundColor: "rgba(0,0,0,0.5)",
+                      backgroundColor: palette.mediaScrim,
                       borderRadius: radii.sm,
                       alignItems: "center",
                       justifyContent: "center",
@@ -381,7 +382,7 @@ export function MusicSelectionScreen() {
             style={{
               width: 40,
               height: 40,
-              borderRadius: 20,
+              borderRadius: componentRadii.iconButton,
               backgroundColor: palette.bgSoft,
               alignItems: "center",
               justifyContent: "center",
@@ -405,7 +406,7 @@ export function MusicSelectionScreen() {
               ) : undefined
             }
             style={{
-              borderRadius: radii.lg,
+              borderRadius: componentRadii.input,
               backgroundColor: palette.surfaceRaised,
               minHeight: 50,
               borderWidth: 0,
@@ -429,6 +430,8 @@ export function MusicSelectionScreen() {
             styles.playerContainer,
             {
               backgroundColor: palette.surface,
+              borderColor: palette.inverseSurfaceBarely,
+              borderRadius: componentRadii.card,
               shadowColor: palette.navy,
               shadowOpacity: 0.15,
               shadowRadius: 20,
@@ -438,9 +441,11 @@ export function MusicSelectionScreen() {
           ]}
         >
           <View style={styles.playerRow}>
-            <Image
+            <AccessibleImage
               source={{ uri: playingTrack.thumbnail }}
               style={[styles.playerThumbnail, { borderRadius: radii.sm }]}
+              contentFit="cover"
+              accessibilityLabel={`${playingTrack.title} artwork`}
             />
             <View style={{ flex: 1, marginLeft: spacing[3] }}>
               <AppText variant="bodyBold" numberOfLines={1}>
@@ -557,9 +562,7 @@ const styles = StyleSheet.create({
     left: 16,
     right: 16,
     padding: 16,
-    borderRadius: 24,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.05)",
   },
   playerRow: {
     flexDirection: "row",

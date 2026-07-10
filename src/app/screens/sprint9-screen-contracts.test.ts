@@ -11,12 +11,105 @@ function read(relativePath: string): string {
 
 test("Sprint 9 screen contract: Login screen uses service auth + error boundary", () => {
   const source = read("src/app/screens/auth/LoginScreen.tsx");
+  const signUpSource = read("src/app/screens/auth/SignUpScreen.tsx");
+  const forgotPasswordSource = read("src/app/screens/auth/ForgotPasswordScreen.tsx");
+  const resetPasswordSource = read("src/app/screens/auth/ResetPasswordScreen.tsx");
+  const emailVerificationSource = read("src/app/screens/auth/EmailVerificationScreen.tsx");
+  const authCopySource = read("src/app/screens/auth/authCopy.ts");
+  const providerButtonSource = read("src/app/screens/auth/AuthProviderButton.tsx");
+  const providerLogoSource = read("src/components/icons/brand/AuthProviderLogos.tsx");
 
   assert.match(source, /getHungryService\(\)\.auth\.signIn\(/);
   assert.match(source, /const service = getHungryService\(\)/);
   assert.match(source, /service\.auth\.signInWithGoogle\(/);
   assert.match(source, /service\.auth\.signInWithApple\(/);
+  assert.match(source, /FEATURE_FLAGS\.oauthProvidersEnabled/);
+  assert.match(source, /AUTH_COPY\.login/);
+  assert.match(
+    source,
+    /<AuthProviderButton[\s\S]*disabled=\{!oauthProvidersEnabled\}[\s\S]*intent="signIn"[\s\S]*provider="google"/,
+  );
+  assert.match(
+    source,
+    /<AuthProviderButton[\s\S]*disabled=\{!oauthProvidersEnabled\}[\s\S]*intent="signIn"[\s\S]*provider="apple"/,
+  );
+  assert.match(signUpSource, /AUTH_COPY\.signUp/);
+  assert.match(signUpSource, /FEATURE_FLAGS\.oauthProvidersEnabled/);
+  assert.match(
+    signUpSource,
+    /<AuthProviderButton[\s\S]*disabled=\{!oauthProvidersEnabled\}[\s\S]*intent="continue"[\s\S]*provider="google"/,
+  );
+  assert.match(
+    signUpSource,
+    /<AuthProviderButton[\s\S]*disabled=\{!oauthProvidersEnabled\}[\s\S]*intent="continue"[\s\S]*provider="apple"/,
+  );
+  assert.match(forgotPasswordSource, /AUTH_COPY\.forgotPassword/);
   assert.match(source, /<FeedErrorBoundary/);
+  assert.match(authCopySource, /login: \{/);
+  assert.match(authCopySource, /signUp: \{/);
+  assert.match(authCopySource, /forgotPassword: \{/);
+  assert.match(authCopySource, /getAuthProviderButtonLabel/);
+  assert.match(authCopySource, /getAuthProviderUnavailableButtonLabel/);
+  assert.match(authCopySource, /getAuthProviderUnavailableMessage/);
+  assert.match(authCopySource, /getSignUpProviderSuccessMessage/);
+  assert.doesNotMatch(source, /"Welcome back\."/);
+  assert.doesNotMatch(signUpSource, /"Account created\. Please verify your email\."/);
+  assert.doesNotMatch(forgotPasswordSource, /"If the email exists, a reset link was sent\."/);
+  assert.match(providerButtonSource, /import \{ AppleLogo, GoogleLogo \}/);
+  assert.match(providerButtonSource, /position: "absolute"/);
+  assert.match(providerButtonSource, /textAlign: "center"/);
+  assert.match(providerButtonSource, /getAuthProviderButtonLabel\(provider, intent\)/);
+  assert.match(providerButtonSource, /getAuthProviderUnavailableButtonLabel\(provider\)/);
+  assert.match(providerButtonSource, /accessibilityLabel=\{label\}/);
+  assert.match(providerButtonSource, /accessibilityState=\{\{ disabled \}\}/);
+  assert.match(providerButtonSource, /disabled=\{disabled\}/);
+  assert.match(
+    source,
+    /accessibilityRole="button"[\s\S]*accessibilityLabel=\{AUTH_COPY\.login\.footerAction\}/,
+  );
+  assert.match(source, /accessibilityHint="Opens the account creation screen"/);
+  assert.match(source, /accessibilityLabel=\{showPassword \? "Hide password" : "Show password"\}/);
+  assert.match(source, /accessibilityHint=\{[\s\S]*Shows the password characters[\s\S]*\}/);
+  assert.match(
+    source,
+    /accessibilityRole="button"[\s\S]*accessibilityLabel=\{AUTH_COPY\.login\.forgotPasswordLink\}/,
+  );
+  assert.match(source, /accessibilityHint="Opens password reset"/);
+  assert.match(signUpSource, /accessibilityLabel=\{AUTH_COPY\.signUp\.footerAction\}/);
+  assert.match(signUpSource, /accessibilityHint="Returns to the sign in screen"/);
+  assert.match(
+    signUpSource,
+    /accessibilityLabel=\{showPassword \? "Hide password" : "Show password"\}/,
+  );
+  assert.match(
+    forgotPasswordSource,
+    /accessibilityLabel=\{AUTH_COPY\.forgotPassword\.backToLogin\}/,
+  );
+  assert.match(forgotPasswordSource, /accessibilityHint="Returns to the sign in screen"/);
+  assert.match(resetPasswordSource, /accessibilityLabel="Back to Sign In"/);
+  assert.match(
+    resetPasswordSource,
+    /accessibilityLabel=\{showPassword \? "Hide password" : "Show password"\}/,
+  );
+  assert.match(
+    resetPasswordSource,
+    /accessibilityLabel=\{\s*showConfirmPassword\s*\?\s*"Hide confirmation password"\s*:\s*"Show confirmation password"\s*\}/,
+  );
+  assert.match(emailVerificationSource, /accessibilityLabel=\{[\s\S]*Resend verification email/);
+  assert.match(emailVerificationSource, /accessibilityHint="Requests a new verification email"/);
+  assert.match(providerLogoSource, /export const AUTH_PROVIDER_LOGO_SIZE = 20/);
+  assert.match(providerLogoSource, /export const AUTH_PROVIDER_APPLE_LOGO_SIZE = 26/);
+  assert.match(providerLogoSource, /export function GoogleLogo/);
+  assert.match(providerLogoSource, /size = AUTH_PROVIDER_LOGO_SIZE/);
+  assert.match(providerLogoSource, /viewBox="1 1 21\.56 22"/);
+  assert.match(providerLogoSource, /AUTH_PROVIDER_GOOGLE_LOGO_COLORS\.blue/);
+  assert.match(providerLogoSource, /AUTH_PROVIDER_GOOGLE_LOGO_COLORS\.green/);
+  assert.match(providerLogoSource, /AUTH_PROVIDER_GOOGLE_LOGO_COLORS\.yellow/);
+  assert.match(providerLogoSource, /AUTH_PROVIDER_GOOGLE_LOGO_COLORS\.red/);
+  assert.match(providerLogoSource, /export function AppleLogo/);
+  assert.match(providerLogoSource, /size = AUTH_PROVIDER_APPLE_LOGO_SIZE/);
+  assert.match(providerLogoSource, /viewBox="2\.94 2 17\.15 20"/);
+  assert.match(providerLogoSource, /AUTH_PROVIDER_APPLE_LOGO_COLOR/);
 });
 
 test("Sprint 9 screen contract: Review screen submits via service and triggers success UI", () => {
@@ -26,6 +119,96 @@ test("Sprint 9 screen contract: Review screen submits via service and triggers s
   assert.match(source, /showReviewSuccess\(/);
   assert.match(source, /showToast\(\{ message: "Review posted!"/);
   assert.match(source, /<FeedErrorBoundary/);
+});
+
+test("Sprint 9 screen contract: onboarding icon controls and location rows are labelled", () => {
+  const locationPermission = read("src/app/screens/onboarding/LocationPermissionScreen.tsx");
+  const manualLocation = read("src/app/screens/onboarding/ManualLocationPickerScreen.tsx");
+  const tasteProfileResult = read("src/app/screens/onboarding/TasteProfileResultScreen.tsx");
+  const tasteQuiz = read("src/app/screens/onboarding/TasteQuizScreen.tsx");
+
+  assert.match(locationPermission, /accessibilityLabel="Back to taste quiz"/);
+  assert.match(locationPermission, /accessibilityHint="Returns to the taste preference questions"/);
+  assert.match(manualLocation, /accessibilityLabel="Back to location permission"/);
+  assert.match(manualLocation, /accessibilityLabel="Search Singapore location"/);
+  assert.match(manualLocation, /accessibilityLabel=\{`Choose \$\{area\.name\}`\}/);
+  assert.match(manualLocation, /accessibilityHint="Sets this as your Hungry discovery location"/);
+  assert.match(tasteProfileResult, /accessibilityLabel=\{`Save \$\{dish\.name\}`\}/);
+  assert.match(
+    tasteProfileResult,
+    /accessibilityHint="Create or sign in to an account before saving this dish"/,
+  );
+  assert.match(tasteProfileResult, /navigation\.navigate\("OnboardingAuth"\)/);
+  assert.match(
+    tasteQuiz,
+    /accessibilityRole="button"[\s\S]*accessibilityLabel=\{`\$\{labels\[index\]\} \$\{QUESTIONS\[currentKey\]\}`\}/,
+  );
+  assert.match(
+    tasteQuiz,
+    /accessibilityHint=\{`Selects \$\{choiceFoods\[index\]\.label\} as your answer for this taste question`\}/,
+  );
+  assert.match(
+    tasteQuiz,
+    /accessibilityState=\{\{ selected: isSelected, disabled: isTransitioning \}\}/,
+  );
+  assert.match(
+    tasteQuiz,
+    /accessibilityRole="checkbox"[\s\S]*accessibilityLabel=\{`Dietary preference \$\{option\.label\}`\}/,
+  );
+  assert.match(tasteQuiz, /accessibilityState=\{\{ checked: isSelected \}\}/);
+  assert.match(tasteQuiz, /const \{ fontScale, width \} = useWindowDimensions\(\)/);
+  assert.match(
+    tasteQuiz,
+    /const accessibilityFooterReserve = Math\.ceil\(Math\.max\(fontScale - 1, 0\) \* 96\)/,
+  );
+  assert.match(
+    tasteQuiz,
+    /const actionFooterBottomPadding = ONBOARDING_ACTIONS_BOTTOM_PADDING \+ spacing\[2\]/,
+  );
+  assert.match(tasteQuiz, /paddingBottom: spacing\[6\] \+ accessibilityFooterReserve/);
+  assert.match(tasteQuiz, /flexShrink: 0/);
+  assert.match(tasteQuiz, /paddingBottom: actionFooterBottomPadding/);
+  assert.match(tasteQuiz, /labelNumberOfLines=\{fontScale > 1\.15 \? 2 : 1\}/);
+});
+
+test("Sprint 9 screen contract: stall menu cards expose dish actions", () => {
+  const stallDetail = read("src/app/screens/detail/StallDetailScreen.tsx");
+
+  assert.match(
+    stallDetail,
+    /accessibilityRole="button"[\s\S]*accessibilityLabel=\{`Open \$\{activeDish\.name\}`\}/,
+  );
+  assert.match(stallDetail, /accessibilityHint="Opens this dish detail page"/);
+});
+
+test("Sprint 9 screen contract: Search cards expose actionable semantics", () => {
+  const search = read("src/app/screens/search/DishSearchScreen.tsx");
+  const collectionDetail = read("src/app/screens/discover/CollectionDetailScreen.tsx");
+  const buildingDrillDown = read("src/app/screens/discover/BuildingDrillDownScreen.tsx");
+  const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
+
+  assert.match(search, /accessibilityLabel="Search dishes, stalls, or hawker centres"/);
+  assert.match(search, /const suggestedDish = collections\[0\]\?\.topDishes\[0\]/);
+  assert.match(
+    search,
+    /accessibilityRole="button"[\s\S]*accessibilityLabel=\{[\s\S]*`Open suggested dish \$\{suggestedDish\.name\}`/,
+  );
+  assert.match(search, /accessibilityHint="Opens this dish detail page"/);
+  assert.match(search, /accessibilityState=\{\{ disabled: !suggestedDish \}\}/);
+  assert.match(search, /accessibilityLabel=\{`Open \$\{collection\.venue\.name\} stall details`\}/);
+  assert.match(search, /accessibilityHint="Opens this stall page with menu and dish information"/);
+  assert.match(
+    collectionDetail,
+    /accessibilityLabel=\{`Open \$\{row\.venue\?\.name \?\? row\.item\.stallId\} stall details`\}/,
+  );
+  assert.match(
+    collectionDetail,
+    /accessibilityHint="Opens this stall page with menu and dish information"/,
+  );
+  assert.match(buildingDrillDown, /accessibilityLabel=\{`Show floor \$\{floor\}`\}/);
+  assert.match(buildingDrillDown, /accessibilityState=\{\{ selected \}\}/);
+  assert.match(rootNavigator, /accessibilityLabel="Go back"/);
+  assert.match(rootNavigator, /accessibilityHint="Returns to the previous screen"/);
 });
 
 test("Sprint 9 screen contract: Home feed interactions are wired for like/save/comment/share", () => {
@@ -38,22 +221,47 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
   assert.match(feedSource, /repository\.getVenueById\(post\.venueId\)/);
   assert.match(feedSource, /repository\.getDishById\(dishId\)/);
   assert.match(source, /useSocialStore/);
+  assert.doesNotMatch(source, /MissionBanner/);
+  assert.doesNotMatch(source, /navigation\.navigate\("MissionsScreen"\)/);
   assert.match(source, /togglePostLike/);
   assert.match(source, /togglePostSave/);
   assert.match(source, /addPostComment/);
   assert.match(source, /addPostReply/);
-  assert.match(source, /const bundle = await getHomeFeedBundle\(profile\)/);
+  assert.match(source, /const bundle = await getHomeFeedBundle\(profile,\s*\{/);
+  assert.match(source, /followedAuthors,/);
+  assert.match(source, /followedUserIds,/);
+  assert.match(source, /refreshSeed: feedRefreshSeedRef\.current/);
   assert.match(source, /\.\.\.bundle\.socialFeed/);
   assert.match(source, /\.\.\.bundle\.sections\.flatMap\(\(section\) => section\.items\)/);
+  assert.match(source, /mode === "social" \? \(/);
+  assert.doesNotMatch(source, /mode === "social" && commentsEnabled/);
   assert.match(source, /const \[activeShareItem, setActiveShareItem\]/);
   assert.match(source, /const shareSheetRef = useRef<BottomSheetModal>\(null\)/);
   assert.match(source, /openShareSheet\(item\)/);
   assert.match(source, /sendPostToHungryUsers/);
   assert.match(source, /sharePostToChat\(chatId,/);
-  assert.match(source, /incrementPostShare\(activeShareItem\.id\)/);
+  assert.match(source, /incrementPostShare\(activeShareItem\.id, "in_app"\)/);
+  assert.match(source, /incrementPostShare\(activeShareItem\.id, "copy_link"\)/);
+  assert.match(source, /incrementPostShare\(activeShareItem\.id, "system_share"\)/);
+  assert.match(source, /const actionTargetName = item\.dishes\[0\]\?\.name \?\? item\.venue\.name/);
+  assert.match(source, /accessibilityLabel=\{`Share \$\{actionTargetName\} in Hungry`\}/);
+  assert.match(source, /accessibilityHint="Opens sharing options for this post"/);
   assert.match(
     source,
-    /accessibilityLabel=\{`Share \$\{item\.dishes\[0\]\?\.name \?\? item\.venue\.name\} in Hungry`\}/,
+    /accessibilityLabel=\{`\$\{isSaved \? "Unsave" : "Save"\} \$\{actionTargetName\}`\}/,
+  );
+  assert.match(source, /isSaved\s*\?\s*"Removes this post from your saved items"/);
+  assert.match(source, /accessibilityLabel=\{`Comment on \$\{actionTargetName\}`\}/);
+  assert.match(source, /accessibilityHint="Opens the comments for this post"/);
+  assert.match(
+    source,
+    /accessibilityLabel=\{`\$\{isLiked \? "Unlike" : "Like"\} \$\{actionTargetName\}`\}/,
+  );
+  assert.match(source, /isLiked\s*\?\s*"Removes your like from this post"/);
+  assert.match(source, /accessibilityLabel="Home food feed"/);
+  assert.match(
+    source,
+    /accessibilityHint="Swipe vertically to browse food posts and pull down to refresh"/,
   );
   assert.match(source, /directMessagesEnabled \? "Share in Hungry" : "Share post"/);
   assert.match(source, /FloatingShareSendButton/);
@@ -66,7 +274,14 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
   assert.match(source, /recipientAccessibilityLabelPrefix="Share post to"/);
   assert.match(source, /Clipboard\.setString/);
   assert.match(source, /Share\.share\(/);
-  assert.match(source, /commentsSheetRef\.current\?\.present\(\)/);
+  assert.match(source, /const openCommentSheet = useCallback/);
+  assert.match(source, /const commentSheet = commentsSheetRef\.current/);
+  assert.match(source, /openCommentSheet\(\)/);
+  assert.match(
+    source,
+    /const loadCommentsForPost = useSocialStore\(\(state\) => state\.loadCommentsForPost\)/,
+  );
+  assert.match(source, /void loadCommentsForPost\(activeCommentItem\.id\)/);
   assert.match(source, /<BottomSheetModal/);
   assert.match(source, /commentsByPostId\[activeCommentItem\.id\] \?\? \[\]/);
   assert.match(source, /addPostComment\(activeCommentItem\.id, newComment\)/);
@@ -90,7 +305,7 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
   assert.match(source, /accessibilityLabel=\{`Open \$\{item\.authorName\} profile photo`\}/);
   assert.match(
     source,
-    /openUserProfile\(item\.authorName, item\.authorAvatarUrl, item\.authorLocation\)/,
+    /openUserProfile\([\s\S]*item\.authorName,[\s\S]*item\.authorAvatarUrl,[\s\S]*item\.authorLocation/,
   );
   assert.match(source, /onPress=\{\(\) => openVenueOnMap\(item\)\}/);
   assert.match(
@@ -99,9 +314,27 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
   );
   assert.match(
     source,
+    /const followedUserIds = useSocialStore\(\(state\) => state\.followedUserIds\)/,
+  );
+  assert.match(
+    source,
     /const toggleAuthorFollow = useSocialStore\(\(state\) => state\.toggleAuthorFollow\)/,
   );
-  assert.match(source, /const isFollowingAuthor = Boolean\(followedAuthors\[item\.authorName\]\)/);
+  assert.match(source, /const toggleFollow = useSocialStore\(\(state\) => state\.toggleFollow\)/);
+  assert.match(source, /const followTargetId = item\.authorId/);
+  assert.match(source, /const canUseAuthorFallbackFollow =/);
+  assert.match(
+    source,
+    /const canShowFollowButton = Boolean\(followTargetId\) \|\| canUseAuthorFallbackFollow/,
+  );
+  assert.match(
+    source,
+    /followTargetId[\s\S]*\? Boolean\(followedUserIds\[followTargetId\]\)[\s\S]*: canUseAuthorFallbackFollow && Boolean\(followedAuthors\[item\.authorName\]\)/,
+  );
+  assert.match(
+    source,
+    /followTargetId[\s\S]*\? toggleFollow\(followTargetId\)[\s\S]*: toggleAuthorFollow\(item\.authorName\)/,
+  );
   assert.match(
     source,
     /accessibilityLabel=\{`\$\{isFollowingAuthor \? "Unfollow" : "Follow"\} \$\{item\.authorName\}`\}/,
@@ -223,6 +456,45 @@ test("Sprint 9 screen contract: Home feed double tap likes with heart animation"
   );
 });
 
+test("Sprint 9 screen contract: Home feed supports pull-to-refresh without hiding ready content", () => {
+  const source = read("src/app/screens/home/HomeFeedScreen.tsx");
+
+  assert.match(source, /RefreshControl/);
+  assert.match(source, /const \[isRefreshing, setIsRefreshing\] = useState\(false\)/);
+  assert.match(source, /const feedRefreshSeedRef = useRef\(0\)/);
+  assert.match(source, /const refreshHomeFeed = useCallback\(async \(\) =>/);
+  assert.match(source, /setIsRefreshing\(true\)/);
+  assert.match(source, /feedRefreshSeedRef\.current \+= 1/);
+  assert.match(
+    source,
+    /await loadFeed\(\{ force: true, preserveReadyOnError: true, showLoading: false \}\)/,
+  );
+  assert.match(source, /refreshing=\{isRefreshing\}/);
+  assert.match(source, /onRefresh=\{refreshHomeFeed\}/);
+});
+
+test("Sprint 9 screen contract: feed videos pause on tap and fast-forward only from edge holds", () => {
+  const source = read("src/components/social/ZoomableVideo.tsx");
+
+  assert.match(source, /const EDGE_FAST_FORWARD_FRACTION = 0\.2/);
+  assert.match(source, /const \[videoWidth, setVideoWidth\] = useState\(0\)/);
+  assert.match(source, /const startFastForward = \(touchX: number\) =>/);
+  assert.match(source, /touchX <= leftEdge \|\| touchX >= rightEdge/);
+  assert.match(source, /if \(!isEdgeHold\) \{\s*return;\s*\}/);
+  assert.match(source, /player\.playbackRate = 2\.0/);
+  assert.match(source, /player\.playbackRate = 1\.0/);
+  assert.match(source, /player\.loop = true/);
+  assert.match(source, /player\.addListener\("playToEnd"/);
+  assert.match(source, /player\.currentTime = 0/);
+  assert.match(source, /player\.play\(\)/);
+  assert.match(source, /Gesture\.LongPress\(\)[\s\S]*runOnJS\(startFastForward\)\(event\.x\)/);
+  assert.match(source, /Gesture\.Tap\(\)\.onEnd[\s\S]*runOnJS\(handleTogglePlay\)\(\)/);
+  assert.match(
+    source,
+    /onLayout=\{\(event\) => \{\s*setVideoWidth\(event\.nativeEvent\.layout\.width\);/,
+  );
+});
+
 test("Sprint 9 screen contract: Home feed header follows app header scale", () => {
   const source = read("src/app/screens/home/HomeFeedScreen.tsx");
 
@@ -294,10 +566,11 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.match(source, /function formatBasePrice\(price: number\)/);
   assert.match(source, /formatBasePrice\(dish\.price\)/);
   assert.match(source, /fontSize: 28, lineHeight: 34/);
-  assert.match(
-    source,
-    /colors=\{\["rgba\(255,255,255,0\)", "rgba\(255,255,255,0\.72\)", palette\.bg\]\}/,
-  );
+  assert.match(source, /const heroGradientColors: readonly \[ColorValue, ColorValue, ColorValue\]/);
+  assert.match(source, /palette\.detailHeroGradientStart/);
+  assert.match(source, /palette\.detailHeroGradientMid/);
+  assert.match(source, /palette\.bg/);
+  assert.match(source, /colors=\{heroGradientColors\}/);
   assert.match(source, /locations=\{\[0, 0\.58, 1\]\}/);
   assert.doesNotMatch(source, /Epicurean Discovery/);
   assert.doesNotMatch(source, /borderBottomWidth: 1,[\s\S]*Epicurean Discovery/);
@@ -314,7 +587,7 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.match(source, /signatureDishes\.slice\(0, 4\)\.map/);
   assert.match(source, /height: signatureGridItemHeight/);
   assert.match(source, /width: signatureGridItemWidth/);
-  assert.match(source, /backgroundColor: "rgba\(15, 23, 42, 0\.48\)"/);
+  assert.match(source, /palette\.detailImageBadgeSurface/);
   assert.match(source, /shadowRadius: 12/);
   assert.match(source, /textShadowRadius: 3/);
   assert.match(source, /formatBasePrice\(item\.price\)/);

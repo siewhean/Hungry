@@ -1,125 +1,109 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import test from "node:test";
 
-function read(pathFromRepoRoot: string): string {
-  return readFileSync(resolve(process.cwd(), pathFromRepoRoot), "utf8");
-}
+import { resolveFeatureFlags } from "@/constants/featureFlags";
+import { createRootLinking } from "@/app/navigation/linking";
+import { assertRepoFileExists, assertSourceIncludes, readRepoFile } from "@/test/sourceContracts";
 
-test("high-risk visible actions are not wired as no-ops or coming-soon alerts", () => {
-  const stallInteractionBar = read("src/components/stall/StallInteractionBar.tsx");
-  const mediaEditor = read("src/features/post/components/MediaEditor.tsx");
-  const reviewTab = read("src/features/post/components/ReviewTab.tsx");
-  const businessProfileEditor = read("src/app/screens/merchant/BusinessProfileEditorScreen.tsx");
-  const ordersComingSoon = read("src/app/screens/merchant/OrdersComingSoonScreen.tsx");
+const REQUIRED_REPORTS = [
+  "tasks/Roadmap/app-production-readiness-audit.md",
+  "tasks/Roadmap/app-screen-qc-checklist.md",
+  "tasks/Roadmap/app-security-privacy-qc-report.md",
+  "tasks/Roadmap/app-accessibility-qc-report.md",
+  "tasks/Roadmap/app-performance-qc-report.md",
+  "tasks/Roadmap/app-native-build-readiness-report.md",
+  "tasks/Roadmap/app-store-submission-checklist.md",
+  "tasks/Roadmap/app-monitoring-and-rollback-plan.md",
+  "tasks/Roadmap/app-final-go-no-go-checklist.md",
+];
 
-  assert.doesNotMatch(stallInteractionBar, /onAddToCollection \?\? \(\(\) => \{\}\)/);
-  assert.match(stallInteractionBar, /\.\.\.\(onAddToCollection/);
+test("public-launch readiness report bundle exists and keeps a no-go verdict until external proof lands", () => {
+  for (const path of REQUIRED_REPORTS) {
+    assertRepoFileExists(path);
+  }
 
-  assert.doesNotMatch(mediaEditor, /onPress=\{\(\) => Haptics\.impactAsync/);
-  assert.doesNotMatch(mediaEditor, /Apply AI Auto-Crop/);
-  assert.match(mediaEditor, /updateMediaAdjustment/);
-  assert.match(mediaEditor, /handleAutoEnhance/);
-  assert.match(mediaEditor, /handleLightAdjustment/);
-  assert.match(mediaEditor, /handleColourAdjustment/);
-
-  assert.match(reviewTab, /HASHTAG_SUGGESTIONS/);
-  assert.match(reviewTab, /setSuggestionOffset/);
-  assert.match(reviewTab, /onPress=\{handleRefreshHashtags\}/);
-
-  assert.doesNotMatch(businessProfileEditor, /Photo upload coming soon|Cover upload coming soon/);
-  assert.match(businessProfileEditor, /Profile image upload unavailable/);
-  assert.match(businessProfileEditor, /Cover image upload unavailable/);
-
-  assert.doesNotMatch(
-    ordersComingSoon,
-    /Registration coming soon|PDF mockup generation coming soon/,
+  const finalChecklist = readRepoFile("tasks/Roadmap/app-final-go-no-go-checklist.md");
+  assert.match(finalChecklist, /Production status:\s+\*\*No-Go\*\*/i);
+  assert.match(finalChecklist, /ANDROID_EAS_PROOF=1/);
+  assert.match(finalChecklist, /Android\/EAS proof\s+\|\s+.*preview artifact pass/i);
+  assert.match(
+    finalChecklist,
+    /does not prove install\/device\/internal-track\/production readiness/,
   );
-  assert.match(ordersComingSoon, /Pilot Program Unavailable/);
-  assert.match(ordersComingSoon, /disabled/);
+  assert.match(finalChecklist, /NATIVE_MAESTRO_ANDROID_PROOF=0/);
+  assert.match(finalChecklist, /PRODUCTION_SECRET_PROOF=0/);
+  assert.match(finalChecklist, /STORE_CONSOLE_PROOF=0/);
+  assert.match(finalChecklist, /APP_STORE_CONNECT_PROOF=0/);
+  assert.match(finalChecklist, /PLAY_CONSOLE_PROOF=0/);
+  assert.match(finalChecklist, /STORE_POLICY_CHECKLIST_APPROVAL_PROOF=0/);
+  assert.match(finalChecklist, /VoiceOver\/TalkBack smoke\s+\|\s+blocked/i);
+  assert.match(finalChecklist, /Production monitoring proof\s+\|\s+blocked/i);
+  assert.match(finalChecklist, /ROLLBACK_REHEARSAL_PROOF=0/);
 });
 
-test("mode presets keep developer data mock-only and user data supabase-backed", () => {
-  const developerLauncher = read("src/app/screens/dev/DeveloperLauncherScreen.tsx");
-  const serviceProvider = read("src/lib/services/serviceProvider.ts");
+test("production feature flags keep public-launch P0 experimental surfaces disabled", () => {
+  const flags = resolveFeatureFlags("production", "production");
 
-  assert.match(serviceProvider, /export function setMockServiceProvider/);
-  assert.match(serviceProvider, /export function setSupabaseServiceProvider/);
-  assert.match(developerLauncher, /const enterDeveloperMode[\s\S]*setMockServiceProvider\(\)/);
-  assert.match(developerLauncher, /const enterMerchantMode[\s\S]*setMockServiceProvider\(\)/);
-  assert.match(developerLauncher, /const enterUserMode[\s\S]*setSupabaseServiceProvider\(\)/);
-  assert.doesNotMatch(developerLauncher, /const enterUserMode[\s\S]*resetServiceProvider\(\)/);
+  assert.equal(flags.directMessagesEnabled, false);
+  assert.equal(flags.commentsEnabled, false);
+  assert.equal(flags.oauthProvidersEnabled, false);
+  assert.equal(flags.floorplansEnabled, false);
+  assert.equal(flags.gamificationEnabled, false);
+  assert.equal(flags.collectionsEnabled, false);
+  assert.equal(flags.storiesEnabled, false);
+  assert.equal(flags.merchantClaimCtaEnabled, false);
+  assert.equal(flags.merchantCentreEnabled, false);
+  assert.equal(flags.prototypeRoutesEnabled, false);
 });
 
-test("web persistence has a browser localStorage fallback before in-memory fallback", () => {
-  const persistStorage = read("src/store/persistStorage.ts");
-  const secureStorage = read("src/store/secureStorage.ts");
-  const mockPersistence = read("src/lib/services/mock/persistence.ts");
+test("root navigation keeps production-disabled routes behind feature flags", () => {
+  const rootNavigator = readRepoFile("src/app/navigation/RootNavigator.tsx");
 
-  assert.match(persistStorage, /function getBrowserStorage\(\)/);
-  assert.match(persistStorage, /window\.localStorage/);
-  assert.match(secureStorage, /function getBrowserStorage\(\)/);
-  assert.match(secureStorage, /window\.localStorage/);
-  assert.match(mockPersistence, /window\.localStorage/);
+  assertSourceIncludes(
+    rootNavigator,
+    [
+      /FEATURE_FLAGS\.merchantClaimCtaEnabled \? \(/,
+      /FEATURE_FLAGS\.directMessagesEnabled \? \(/,
+      /FEATURE_FLAGS\.floorplansEnabled \? \(/,
+      /FEATURE_FLAGS\.prototypeRoutesEnabled \? \(/,
+      /FEATURE_FLAGS\.merchantCentreEnabled \? \(/,
+      /FEATURE_FLAGS\.storiesEnabled \? \(/,
+      /FEATURE_FLAGS\.gamificationEnabled \? \(/,
+      /FEATURE_FLAGS\.collectionsEnabled \? \(/,
+    ],
+    "RootNavigator feature gates",
+  );
 });
 
-test("secure browser persistence is limited to local web test runtimes", () => {
-  const secureStorage = read("src/store/secureStorage.ts");
+test("deep links expose only public discovery routes and redirect protected actions when signed out", () => {
+  const linking = createRootLinking("exp://127.0.0.1:8081/--/", () => ({
+    isAuthReady: true,
+    isAuthenticated: false,
+  }));
+  const screens = linking.config.screens as Record<string, unknown>;
 
-  assert.match(secureStorage, /isLocalWebRuntime/);
-  assert.match(secureStorage, /window\.location\.hostname === "localhost"/);
-  assert.match(secureStorage, /process\.env\.NODE_ENV === "test"/);
+  assert.equal(screens.MerchantTabs, undefined);
+  assert.equal(screens.PortfolioPublicView, undefined);
+  assert.deepEqual(linking.getStateFromPath("merchant"), undefined);
+  assert.deepEqual(linking.getStateFromPath("portfolio/example"), undefined);
+  assert.deepEqual(linking.getStateFromPath("order")?.routes?.[0], {
+    name: "AuthStack",
+    params: { screen: "Login" },
+  });
 });
 
-test("stall interaction loading flags clear after async failures", () => {
-  const stallInteractionBar = read("src/components/stall/StallInteractionBar.tsx");
-
-  assert.match(stallInteractionBar, /try \{[\s\S]*await toggleSaved\(userId, stallId\)/);
-  assert.match(stallInteractionBar, /finally \{[\s\S]*setSavingInProgress\(false\)/);
-  assert.match(stallInteractionBar, /try \{[\s\S]*await markTried\(userId, stallId\)/);
-  assert.match(stallInteractionBar, /finally \{[\s\S]*setTryingInProgress\(false\)/);
-});
-
-test("passport card is not visible for profile surfaces", () => {
-  const profileHome = read("src/app/screens/profile/ProfileHomeScreen.tsx");
-
-  assert.doesNotMatch(profileHome, /isUserMode \? \(\s*<PassportCard/);
-  assert.doesNotMatch(profileHome, /<PassportCard/);
-});
-
-test("merchant audience switches set explicit values instead of double toggling", () => {
-  const promotionBuilder = read("src/app/screens/merchant/PromotionBuilderScreen.tsx");
-
-  assert.match(promotionBuilder, /const setAudienceSelected =/);
-  assert.match(promotionBuilder, /onPress=\{\(\) => setAudienceSelected\(id, !isSelected\)\}/);
-  assert.match(promotionBuilder, /onValueChange=\{\(value\) => setAudienceSelected\(id, value\)\}/);
-  assert.doesNotMatch(promotionBuilder, /onValueChange=\{\(\) => toggleAudience\(id\)\}/);
-});
-
-test("stall detail protected actions route signed-out users to auth with return route", () => {
-  const stallDetail = read("src/app/screens/detail/StallDetailScreen.tsx");
+test("auth/session storage and logout cleanup keep credentials out of plaintext persisted state", () => {
+  const sessionStore = readRepoFile("src/store/useSessionStore.ts");
+  const authStorage = readRepoFile("src/lib/services/supabase/authStorage.ts");
+  const securityDoc = readRepoFile("SECURITY.md");
 
   assert.match(
-    stallDetail,
-    /const setReturnRoute = useSessionStore\(\(state\) => state\.setReturnRoute\)/,
+    sessionStore,
+    /Supabase refresh\/access tokens stay\s*\/\/ in the dedicated SecureStore-backed auth adapter/,
   );
-  assert.match(stallDetail, /const requireAuthForProtectedAction = \(message: string\) =>/);
-  assert.match(
-    stallDetail,
-    /setReturnRoute\(\{[\s\S]*name: "StallDetail"[\s\S]*params: \{ venueId: venue\?\.id \?\? venueId \}/,
-  );
-  assert.match(stallDetail, /navigation\.navigate\("AuthStack", \{ screen: "Login" \}\)/);
-  assert.match(stallDetail, /Sign in to reply to this review\./);
-  assert.match(stallDetail, /Sign in to order from this stall\./);
-  assert.match(stallDetail, /Sign in before claiming this stall\./);
-  assert.match(stallDetail, /Sign in to save this stall\./);
-  assert.match(
-    stallDetail,
-    /if \(!requireAuthForProtectedAction\("Sign in to order from this stall\."\)\)/,
-  );
-  assert.match(
-    stallDetail,
-    /if \(!requireAuthForProtectedAction\("Sign in before claiming this stall\."\)\)/,
-  );
+  assert.match(sessionStore, /clearAccountScopedStores\(\)/);
+  assert.match(sessionStore, /getProfileStoreState\(\)\.clearProfile\(\)/);
+  assert.match(authStorage, /Production keeps auth material out of plaintext AsyncStorage/);
+  assert.match(authStorage, /HUNGRY_ALLOW_INSECURE_AUTH_STORAGE/);
+  assert.match(securityDoc, /never written to plain AsyncStorage in production/i);
 });

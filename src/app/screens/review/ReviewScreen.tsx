@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { View, Pressable, ScrollView, FlatList, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Image } from "expo-image";
 import { Search, MapPin, ChevronRight, Check, Music } from "lucide-react-native";
 
 import {
+  AccessibleImage,
   AppText,
   Button,
   Card,
   Input,
   Screen,
   Badge,
-  Chip,
+  ChipGroup,
   FeedErrorBoundary,
 } from "@/components/ui";
 import { MediaPicker, StarRating } from "@/components/review";
@@ -22,6 +22,7 @@ import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
+import { useMerchantStore } from "@/store/useMerchantStore";
 import { useHungryTheme } from "@/theme";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { REVIEW_TEXT_MAX_LENGTH } from "@/lib/security/inputSanitization";
@@ -33,6 +34,9 @@ export function ReviewScreen({ navigation, route }: Props) {
   const repository = getDataRepository();
   const { palette, radii, spacing, shadows } = useHungryTheme();
   const rootNavigation = navigation.getParent()?.getParent();
+  const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
+  const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
+  const isUserMode = !isMerchantMode && !isDeveloperMode;
 
   // Store state
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
@@ -217,9 +221,10 @@ export function ReviewScreen({ navigation, route }: Props) {
                 }}
               >
                 <View style={{ flexDirection: "row", gap: spacing[3], alignItems: "center" }}>
-                  <Image
+                  <AccessibleImage
                     source={{ uri: selectedDish.imageUrl }}
                     style={{ width: 60, height: 60, borderRadius: radii.md }}
+                    accessibilityLabel={`${selectedDish.name} photo`}
                   />
                   <View style={{ flex: 1 }}>
                     <AppText style={{ fontWeight: "700" }}>{selectedDish.name}</AppText>
@@ -261,19 +266,16 @@ export function ReviewScreen({ navigation, route }: Props) {
               <StarRating value={draft.rating} onChange={actions.setRating} />
             </View>
 
-            <View style={{ gap: spacing[3] }}>
-              <AppText variant="h3">Taste Tags</AppText>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-                {REVIEW_TAGS.map((tag) => (
-                  <Chip
-                    key={tag}
-                    label={tag}
-                    selected={draft.selectedTags.includes(tag)}
-                    onPress={() => actions.toggleTag(tag)}
-                  />
-                ))}
+            {!isUserMode && (
+              <View style={{ gap: spacing[3] }}>
+                <AppText variant="h3">Taste Tags</AppText>
+                <ChipGroup
+                  options={REVIEW_TAGS.map((tag) => ({ id: tag, label: tag }))}
+                  selectedIds={draft.selectedTags}
+                  onSelect={actions.toggleTag}
+                />
               </View>
-            </View>
+            )}
 
             <View style={{ gap: spacing[3] }}>
               <AppText variant="h3">Recommendation</AppText>

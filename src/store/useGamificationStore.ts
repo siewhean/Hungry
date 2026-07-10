@@ -1,12 +1,9 @@
 /**
  * useGamificationStore — Hungry points + level system
  *
- * Current phase: mock-first. All state is in-memory with sensible defaults.
- * Production swap plan:
- *   1. Add `user_points` table to Supabase (user_id, total_points, level_index, updated_at).
- *   2. Replace `_loadFromRemote` stub with a real Supabase query.
- *   3. Replace `_persistToRemote` stub with an upsert call.
- *   4. Call `loadProfile()` inside `useAppBootstrap` after session hydration.
+ * Legacy mock-first points store retained for older review surfaces.
+ * Full Audit V1 persistence lives in `useFoodCredStore`, backed by the
+ * active data repository and Supabase `user_food_cred` tables/RPCs.
  *
  * Level thresholds are intentionally in a separate `LEVEL_CONFIG` constant
  * so the backend can own them without touching store logic.
@@ -95,8 +92,7 @@ interface GamificationState {
   awardPoints: (action: PointsAction) => number;
   /**
    * Load profile from storage.
-   * Mock: resolves immediately with in-memory defaults.
-   * Production: replace body with Supabase query.
+   * Legacy mock-only path; newer Food Cred state is hydrated separately.
    */
   loadProfile: () => Promise<void>;
   /**
@@ -125,19 +121,12 @@ export const useGamificationStore = create<GamificationState>((set, get) => ({
     const earned = POINTS_PER_ACTION[action];
     const newTotal = get().totalPoints + earned;
     set({ totalPoints: newTotal, lastEarnedPoints: earned });
-    // TODO (production): call _persistToRemote(newTotal)
     return newTotal;
   },
 
   // Load profile
   loadProfile: async () => {
-    // Mock phase: just mark loaded with defaults already in state.
-    // Production swap: replace this with a Supabase query:
-    //   const { data } = await supabase
-    //     .from("user_points")
-    //     .select("total_points")
-    //     .eq("user_id", session.user.id)
-    //     .maybeSingle();
+    // Legacy mock-only store; Full Audit V1 persistence lives in useFoodCredStore.
     //   if (data) set({ totalPoints: data.total_points });
     await Promise.resolve();
     set({ isLoaded: true });

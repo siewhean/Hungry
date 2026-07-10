@@ -1,8 +1,7 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Image } from "expo-image";
 import { ArrowLeft, Heart, MapPin, Navigation, Send, Star } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type {
@@ -11,10 +10,15 @@ import type {
 } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Button, Card, EmptyState, Screen } from "@/components/ui";
+import { AccessibleImage, AppText, Button, Card, EmptyState, Screen } from "@/components/ui";
 import { TASTE_DIMENSIONS } from "@/constants/taste";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import {
+  getDataRepository,
+  getHungryService,
+  getServiceProvider,
+} from "@/lib/services/serviceProvider";
 import { openTrustedDeliveryUrl } from "@/lib/security/safeLinking";
+import { PopularVisitorsSection } from "@/components/stall/PopularVisitorsSection";
 import { useCartStore } from "@/store/useCartStore";
 import { useOrderStore } from "@/store/useOrderStore";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -23,6 +27,7 @@ import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
 import type { DeliveryLink, VenueSummary } from "@/types/domain";
+import { isVenueOpenFromHours } from "@/utils/stallStatus";
 
 type Props = NativeStackScreenProps<RootStackParamList, "StallDetailV2">;
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
@@ -40,20 +45,30 @@ function formatDistance(distanceMeters?: number): string | null {
 }
 
 function formatVenueStatus(venue: VenueSummary) {
-  if (!venue.isOpen) {
+  const isVenueOpen = isVenueOpenFromHours(venue.operatingHours, venue.isOpen);
+  if (!isVenueOpen) {
     return venue.closureNotice ?? "Closed now";
   }
-  return venue.operatingHours;
+  return `Listed hours: ${venue.operatingHours}`;
+}
+
+function formatBuildingLabel(venue: VenueSummary) {
+  return venue.buildingName ?? venue.buildingId.replace("hc-", "").replace("-", " ");
 }
 
 export function StallDetailScreenV2({ route }: Props) {
   const navigation = useNavigation<RootNavigation>();
   const repository = getDataRepository();
-  const { palette, spacing, radii } = useHungryTheme();
+  const serviceProviderMode = getServiceProvider().mode;
+  const { componentRadii, palette, spacing, radii } = useHungryTheme();
 
   const venueId = route.params?.venueId ?? route.params?.id ?? "";
-  const venue = useMemo(() => repository.getVenueById(venueId), [venueId, repository]);
-  const dishes = useMemo(() => repository.listDishesByVenue(venueId), [venueId, repository]);
+  const cachedVenue = useMemo(() => repository.getVenueById(venueId), [venueId, repository]);
+  const [hydratedVenue, setHydratedVenue] = useState<typeof cachedVenue>();
+  const venue = hydratedVenue ?? cachedVenue;
+  const cachedDishes = useMemo(() => repository.listDishesByVenue(venueId), [venueId, repository]);
+  const [hydratedDishes, setHydratedDishes] = useState<typeof cachedDishes>();
+  const dishes = hydratedDishes ?? (serviceProviderMode === "supabase" ? [] : cachedDishes);
   const leadDish = dishes[0];
 
   const insets = useSafeAreaInsets();
@@ -65,37 +80,96 @@ export function StallDetailScreenV2({ route }: Props) {
   const setActiveOrder = useOrderStore((state) => state.setActiveOrder);
   const showToast = useUIStore((state) => state.showToast);
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
+  const trackedStallViewId = useRef<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    setHydratedVenue(undefined);
+    if (!venueId || serviceProviderMode !== "supabase") {
+      return () => {
+        active = false;
+      };
+    }
+
+    void getHungryService()
+      .discovery.getVenue(venueId)
+      .then((nextVenue) => {
+        if (active) setHydratedVenue(nextVenue);
+      })
+      .catch(() => {
+        if (active) setHydratedVenue(undefined);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [serviceProviderMode, venueId]);
+
+  useEffect(() => {
+    let active = true;
+    setHydratedDishes(undefined);
+    if (!venueId || serviceProviderMode !== "supabase") {
+      return () => {
+        active = false;
+      };
+    }
+
+    void getHungryService()
+      .discovery.listDishesByVenue(venueId)
+      .then((nextDishes) => {
+        if (active) setHydratedDishes(nextDishes);
+      })
+      .catch(() => {
+        if (active) setHydratedDishes([]);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [serviceProviderMode, venueId]);
   const shareReviewTarget = useMemo<ReviewShareTarget>(() => {
     return {
       reviewId: `stall-${venue?.id ?? ""}`,
-      postId: venue?.id ?? "",
+      postId: "",
       title: venue?.name ?? "Stall",
-      subtitle:
-        `${venue?.buildingId ?? ""}${venue?.unitNumber ? ` · ${venue.unitNumber}` : ""}`.trim(),
+      subtitle: `${venue ? formatBuildingLabel(venue) : ""}${
+        venue?.unitNumber ? ` · ${venue.unitNumber}` : ""
+      }`.trim(),
       imageUrl: leadDish?.imageUrl ?? "",
       authorName: profile.displayName,
-      message: `Check out ${venue?.name ?? "this stall"} at ${venue?.buildingId ?? "Hungry"}!`,
+      message: `Check out ${venue?.name ?? "this stall"} at ${
+        venue ? formatBuildingLabel(venue) : "Hungry"
+      }!`,
       link: `https://hungry.sg/stall/${venue?.id ?? ""}`,
     };
-  }, [
-    leadDish?.imageUrl,
-    profile.displayName,
-    venue?.buildingId,
-    venue?.id,
-    venue?.name,
-    venue?.unitNumber,
-  ]);
+  }, [leadDish?.imageUrl, profile.displayName, venue]);
 
   const openShareSheet = () => {
     if (!venue) {
       return;
     }
 
+    void getHungryService().discovery.recordMerchantActionEvent({
+      eventType: "share",
+      venueId: venue.id,
+      dishId: leadDish?.id,
+      userId: profile.id,
+    });
     setActiveShareReview(shareReviewTarget);
     requestAnimationFrame(() => {
       shareSheetRef.current?.present();
     });
   };
+
+  useEffect(() => {
+    if (!venue || trackedStallViewId.current === venue.id) return;
+    trackedStallViewId.current = venue.id;
+    void getHungryService().discovery.recordMerchantActionEvent({
+      eventType: "stall_profile_view",
+      venueId: venue.id,
+      userId: profile.id,
+    });
+  }, [profile.id, venue]);
 
   if (!venue) {
     return (
@@ -103,6 +177,8 @@ export function StallDetailScreenV2({ route }: Props) {
         <EmptyState
           title="Stall not found"
           body="This stall could not be found. It may have moved or been removed."
+          errorMessage={`Missing stall data for ID: ${route.params?.venueId || "unknown"}`}
+          sendErrorContext="Stall detail"
           ctaLabel="Go back"
           onPress={() => navigation.goBack()}
         />
@@ -112,8 +188,15 @@ export function StallDetailScreenV2({ route }: Props) {
 
   const isSaved = leadDish ? profile.favouriteDishIds.includes(leadDish.id) : false;
   const deliveryLinks = venue.deliveryLinks ?? [];
+  const buildingLabel = formatBuildingLabel(venue);
   const distanceLabel = formatDistance(leadDish?.distanceMeters);
   const statusLabel = formatVenueStatus(venue);
+  const isVenueOpen = isVenueOpenFromHours(venue.operatingHours, venue.isOpen);
+  const statusColor = isVenueOpen
+    ? palette.success
+    : venue.closureNotice
+      ? palette.amber
+      : palette.textMuted;
   const totalReviewCount = dishes.reduce((sum, dish) => sum + dish.reviewCount, 0);
   const displayRating =
     dishes.length > 0
@@ -144,6 +227,14 @@ export function StallDetailScreenV2({ route }: Props) {
     }
 
     toggleFavourite(leadDish);
+    if (!isSaved) {
+      void getHungryService().discovery.recordMerchantActionEvent({
+        eventType: "save",
+        venueId: venue.id,
+        dishId: leadDish.id,
+        userId: profile.id,
+      });
+    }
     showToast({
       message: isSaved ? "Removed from favourites." : "Saved top dish to favourites.",
       tone: "success",
@@ -171,6 +262,16 @@ export function StallDetailScreenV2({ route }: Props) {
     void openTrustedDeliveryUrl(link.platform, link.nativeUrl, link.webUrl);
   };
 
+  const handleDirections = () => {
+    void getHungryService().discovery.recordMerchantActionEvent({
+      eventType: "direction_tap",
+      venueId: venue.id,
+      dishId: leadDish?.id,
+      userId: profile.id,
+    });
+    navigation.navigate("MapZoomedIn", { buildingId: venue.buildingId });
+  };
+
   const handlePrimaryOrderAction = () => {
     const preferredLink = deliveryLinks[0];
     if (preferredLink) {
@@ -185,10 +286,11 @@ export function StallDetailScreenV2({ route }: Props) {
     <Screen scroll={false} style={{ backgroundColor: palette.bg }}>
       {/* Hero Image */}
       <View style={{ height: HERO_HEIGHT, width: "100%", overflow: "hidden" }}>
-        <Image
+        <AccessibleImage
           source={{ uri: dishes[0]?.imageUrl }}
           style={{ width: "100%", height: "100%" }}
           contentFit="cover"
+          accessibilityLabel={`${venue.name} hero dish photo`}
         />
         <View style={[StyleSheet.absoluteFill, { backgroundColor: palette.overlay }]} />
 
@@ -209,7 +311,7 @@ export function StallDetailScreenV2({ route }: Props) {
             style={{
               width: 36,
               height: 36,
-              borderRadius: 18,
+              borderRadius: componentRadii.iconButton,
               backgroundColor: palette.surface,
               alignItems: "center",
               justifyContent: "center",
@@ -225,7 +327,7 @@ export function StallDetailScreenV2({ route }: Props) {
               style={{
                 width: 36,
                 height: 36,
-                borderRadius: 18,
+                borderRadius: componentRadii.iconButton,
                 backgroundColor: palette.surface,
                 alignItems: "center",
                 justifyContent: "center",
@@ -243,7 +345,7 @@ export function StallDetailScreenV2({ route }: Props) {
               style={{
                 width: 36,
                 height: 36,
-                borderRadius: 18,
+                borderRadius: componentRadii.iconButton,
                 backgroundColor: palette.surface,
                 alignItems: "center",
                 justifyContent: "center",
@@ -263,7 +365,7 @@ export function StallDetailScreenV2({ route }: Props) {
             {venue.name}
           </AppText>
           <AppText variant="bodySmall" tone="inverse" style={{ opacity: 0.9 }}>
-            {venue.buildingId.replace("hc-", "").replace("-", " ")}
+            {buildingLabel}
           </AppText>
         </View>
       </View>
@@ -280,17 +382,11 @@ export function StallDetailScreenV2({ route }: Props) {
             <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
               <MapPin size={14} color={palette.textMuted} />
               <AppText variant="bodySmall" tone="secondary">
-                {[
-                  venue.unitNumber,
-                  venue.buildingId.replace("hc-", "").replace("-", " "),
-                  distanceLabel,
-                ]
-                  .filter(Boolean)
-                  .join(" · ")}
+                {[venue.unitNumber, buildingLabel, distanceLabel].filter(Boolean).join(" · ")}
               </AppText>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
-              <AppText variant="bodySmallBold" style={{ color: palette.success }}>
+              <AppText variant="bodySmallBold" style={{ color: statusColor }}>
                 {statusLabel}
               </AppText>
               {displayRating !== undefined && totalReviewCount > 0 ? (
@@ -332,6 +428,8 @@ export function StallDetailScreenV2({ route }: Props) {
           style={{ height: 1, backgroundColor: palette.border, marginHorizontal: spacing[4] }}
         />
 
+        <PopularVisitorsSection venueId={venue.id} style={{ marginTop: spacing[4] }} />
+
         {/* Dishes Carousel */}
         <View style={{ marginTop: spacing[4] }}>
           <View
@@ -347,34 +445,45 @@ export function StallDetailScreenV2({ route }: Props) {
               Their dishes
             </AppText>
           </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: spacing[4], gap: spacing[3] }}
-          >
-            {dishes.map((dish) => (
-              <Card key={dish.id} style={{ width: 140, padding: 0, overflow: "hidden" }}>
-                <Image
-                  source={{ uri: dish.imageUrl }}
-                  style={{ width: "100%", height: 95, backgroundColor: palette.bgSoft }}
-                  contentFit="cover"
-                />
-                <View style={{ padding: spacing[2] }}>
-                  <AppText variant="bodySmallBold" numberOfLines={1}>
-                    {dish.name}
-                  </AppText>
-                  <AppText variant="micro" tone="secondary">
-                    {dish.reviewCount > 0
-                      ? `${dish.rating.toFixed(1)} · ${dish.reviewCount} reviews`
-                      : "No reviews yet"}
-                  </AppText>
-                  <AppText variant="bodySmallBold" tone="accent" style={{ marginTop: 2 }}>
-                    S${dish.price.toFixed(2)}
-                  </AppText>
-                </View>
-              </Card>
-            ))}
-          </ScrollView>
+          {dishes.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: spacing[4], gap: spacing[3] }}
+            >
+              {dishes.map((dish) => (
+                <Card key={dish.id} style={{ width: 140, padding: 0, overflow: "hidden" }}>
+                  <AccessibleImage
+                    source={{ uri: dish.imageUrl }}
+                    style={{ width: "100%", height: 95, backgroundColor: palette.bgSoft }}
+                    contentFit="cover"
+                    decorative
+                  />
+                  <View style={{ padding: spacing[2] }}>
+                    <AppText variant="bodySmallBold" numberOfLines={1}>
+                      {dish.name}
+                    </AppText>
+                    <AppText variant="micro" tone="secondary">
+                      {dish.reviewCount > 0
+                        ? `${dish.rating.toFixed(1)} · ${dish.reviewCount} listed reviews`
+                        : "No reviews yet"}
+                    </AppText>
+                    <AppText variant="bodySmallBold" tone="accent" style={{ marginTop: 2 }}>
+                      S${dish.price.toFixed(2)}
+                    </AppText>
+                  </View>
+                </Card>
+              ))}
+            </ScrollView>
+          ) : (
+            <Card
+              style={{ padding: spacing[4], marginHorizontal: spacing[4], alignItems: "center" }}
+            >
+              <AppText variant="body" tone="secondary" style={{ textAlign: "center" }}>
+                No menu available for this stall yet.
+              </AppText>
+            </Card>
+          )}
         </View>
 
         {/* Delivery Row */}
@@ -419,11 +528,11 @@ export function StallDetailScreenV2({ route }: Props) {
               margin: spacing[4],
               padding: spacing[4],
               backgroundColor: palette.bgSoft,
-              borderRadius: radii.lg,
+              borderRadius: componentRadii.card,
             }}
           >
             <AppText variant="bodySmallBold" style={{ marginBottom: spacing[3] }}>
-              Taste profile{totalReviewCount > 0 ? ` (${totalReviewCount} reviews)` : ""}
+              Taste profile{totalReviewCount > 0 ? ` (${totalReviewCount} listed reviews)` : ""}
             </AppText>
             <View style={{ gap: spacing[2] }}>
               {tasteRows.map((item) => (
@@ -493,7 +602,7 @@ export function StallDetailScreenV2({ route }: Props) {
                     style={{
                       width: 28,
                       height: 28,
-                      borderRadius: 14,
+                      borderRadius: componentRadii.iconButton,
                       backgroundColor: palette.infoSoft,
                       alignItems: "center",
                       justifyContent: "center",
@@ -552,7 +661,7 @@ export function StallDetailScreenV2({ route }: Props) {
           style={{ flex: 1, height: 52 }}
           leftIcon={<Navigation size={18} color={palette.text} />}
           label="Directions"
-          onPress={() => navigation.navigate("MapZoomedIn", { buildingId: venue.buildingId })}
+          onPress={handleDirections}
         />
         <Button
           variant="primary"
@@ -569,8 +678,8 @@ export function StallDetailScreenV2({ route }: Props) {
         onDismiss={() => {
           setActiveShareReview(null);
         }}
-        onShared={(reviewId) => {
-          incrementShare(reviewId);
+        onShared={(postId, channel) => {
+          incrementShare(postId, channel);
         }}
       />
     </Screen>

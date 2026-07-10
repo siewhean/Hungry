@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Easing,
@@ -9,10 +9,9 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { Search, X, SlidersHorizontal, Star } from "lucide-react-native";
-import { Image } from "expo-image";
 import { FlashList } from "@shopify/flash-list";
 
-import { AppText } from "@/components/ui";
+import { AccessibleImage, AppText, EmptyState, Skeleton } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail } from "@/types/domain";
 
@@ -25,9 +24,90 @@ interface SearchResultsViewProps {
   onSubmitQuery?: (query: string) => void;
   onTasteFilterPress: () => void;
   results: DishDetail[];
+  isLoading?: boolean;
   onResultPressIn?: (dish: DishDetail) => void;
   onResultPress: (dish: DishDetail) => void;
 }
+
+function SearchResultsSkeletonList() {
+  const { radii, spacing } = useHungryTheme();
+
+  return (
+    <View style={{ gap: spacing[4], padding: spacing[4] }}>
+      {Array.from({ length: 6 }).map((_, index) => (
+        <View
+          key={`search-result-skeleton-${index}`}
+          style={{ flexDirection: "row", gap: spacing[3] }}
+        >
+          <Skeleton width={80} height={80} borderRadius={radii.md} />
+          <View style={{ flex: 1, gap: spacing[2], justifyContent: "center" }}>
+            <Skeleton width="72%" height={18} borderRadius={radii.sm} />
+            <Skeleton width="42%" height={14} borderRadius={radii.sm} />
+            <Skeleton width={56} height={18} borderRadius={radii.sm} />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+interface SearchResultRowProps {
+  dish: DishDetail;
+  onPressIn?: (dish: DishDetail) => void;
+  onPress: (dish: DishDetail) => void;
+}
+
+const SearchResultRow = memo(function SearchResultRow({
+  dish,
+  onPress,
+  onPressIn,
+}: SearchResultRowProps) {
+  const { palette, radii, spacing } = useHungryTheme();
+
+  const handlePressIn = useCallback(() => {
+    onPressIn?.(dish);
+  }, [dish, onPressIn]);
+
+  const handlePress = useCallback(() => {
+    onPress(dish);
+  }, [dish, onPress]);
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Open ${dish.name}`}
+      onPressIn={handlePressIn}
+      onPress={handlePress}
+      style={{ flexDirection: "row", gap: spacing[3] }}
+    >
+      <AccessibleImage
+        source={{ uri: dish.imageUrl }}
+        accessibilityLabel={`${dish.name} from ${dish.venueName}`}
+        style={{ width: 80, height: 80, borderRadius: radii.md }}
+        contentFit="cover"
+        cachePolicy="memory-disk"
+        transition={120}
+      />
+      <View style={{ flex: 1, justifyContent: "center", gap: spacing[1] }}>
+        <AppText variant="bodyBold" numberOfLines={1}>
+          {dish.name}
+        </AppText>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
+          <Star color={palette.amber} fill={palette.amber} size={14} />
+          <AppText variant="micro" style={{ fontWeight: "700" }}>
+            {dish.rating.toFixed(1)}
+          </AppText>
+          <AppText variant="micro" tone="secondary">
+            ({dish.reviewCount})
+          </AppText>
+        </View>
+        <AppText style={{ color: palette.orange, fontWeight: "800" }}>
+          S${dish.price.toFixed(2)}
+        </AppText>
+      </View>
+    </Pressable>
+  );
+});
 
 export function SearchResultsView({
   query,
@@ -36,6 +116,7 @@ export function SearchResultsView({
   onSubmitQuery,
   onTasteFilterPress,
   results,
+  isLoading = false,
   onResultPressIn,
   onResultPress,
 }: SearchResultsViewProps) {
@@ -68,39 +149,14 @@ export function SearchResultsView({
   const TABS: FilterTab[] = ["All", "Dishes"];
   const renderResult = useCallback(
     ({ item: dish }: { item: DishDetail }) => (
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Open ${dish.name}`}
-        onPressIn={() => onResultPressIn?.(dish)}
-        onPress={() => onResultPress(dish)}
-        style={{ flexDirection: "row", gap: spacing[3] }}
-      >
-        <Image
-          source={{ uri: dish.imageUrl }}
-          style={{ width: 80, height: 80, borderRadius: radii.md }}
-          contentFit="cover"
-        />
-        <View style={{ flex: 1, justifyContent: "center", gap: spacing[1] }}>
-          <AppText variant="bodyBold" numberOfLines={1}>
-            {dish.name}
-          </AppText>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
-            <Star color={palette.amber} fill={palette.amber} size={14} />
-            <AppText variant="micro" style={{ fontWeight: "700" }}>
-              {dish.rating.toFixed(1)}
-            </AppText>
-            <AppText variant="micro" tone="secondary">
-              ({dish.reviewCount})
-            </AppText>
-          </View>
-          <AppText style={{ color: palette.orange, fontWeight: "800" }}>
-            S${dish.price.toFixed(2)}
-          </AppText>
-        </View>
-      </Pressable>
+      <SearchResultRow dish={dish} onPressIn={onResultPressIn} onPress={onResultPress} />
     ),
-    [onResultPress, onResultPressIn, palette.amber, palette.orange, radii.md, spacing],
+    [onResultPress, onResultPressIn],
   );
+  const emptyTitle = query.trim() ? "No matches found" : "No dishes yet";
+  const emptyBody = query.trim()
+    ? "Try another dish or taste filter."
+    : "Search for a dish, stall, or craving.";
 
   const revealSearch = useCallback(() => {
     if (isSearchExpanded) return;
@@ -219,7 +275,7 @@ export function SearchResultsView({
                   onChangeText={onQueryChange}
                   onSubmitEditing={() => onSubmitQuery?.(query)}
                   onBlur={hideSearch}
-                  placeholder="Search..."
+                  placeholder="Search dishes, stalls, or your cravings"
                   placeholderTextColor={palette.textMuted}
                   returnKeyType="search"
                   style={{
@@ -304,16 +360,27 @@ export function SearchResultsView({
         </Pressable>
       </View>
 
-      <FlashList
-        data={results}
-        keyExtractor={(dish) => dish.id}
-        renderItem={renderResult}
-        ItemSeparatorComponent={() => <View style={{ height: spacing[4] }} />}
-        // @ts-ignore FlashList v2 runtime supports this prop but its bundled RN type omits it.
-        estimatedItemSize={96}
-        contentContainerStyle={{ padding: spacing[4] }}
-        showsVerticalScrollIndicator={false}
-      />
+      {isLoading ? (
+        <SearchResultsSkeletonList />
+      ) : (
+        <FlashList
+          data={results}
+          keyExtractor={(dish) => dish.id}
+          renderItem={renderResult}
+          ItemSeparatorComponent={() => <View style={{ height: spacing[4] }} />}
+          ListEmptyComponent={
+            <EmptyState
+              icon={<Search size={34} color={palette.orange} />}
+              title={emptyTitle}
+              body={emptyBody}
+            />
+          }
+          // @ts-ignore FlashList v2 runtime supports this prop but its bundled RN type omits it.
+          estimatedItemSize={96}
+          contentContainerStyle={{ padding: spacing[4] }}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
     </View>
   );
 }

@@ -23,7 +23,7 @@ interface LocationSearchModalProps {
 }
 
 function DynamicHeader({ onClose }: { onClose: () => void }) {
-  const { palette, semanticSpacing, spacing } = useHungryTheme();
+  const { componentRadii, palette, semanticSpacing, spacing } = useHungryTheme();
   const { animatedIndex } = useBottomSheet();
   const insets = useSafeAreaInsets();
 
@@ -81,7 +81,8 @@ function DynamicFooter() {
 }
 
 export function LocationSearchModal({ innerRef }: LocationSearchModalProps) {
-  const { opacity, palette, radii, semanticSpacing, shadows, spacing } = useHungryTheme();
+  const { componentRadii, opacity, palette, radii, semanticSpacing, shadows, spacing } =
+    useHungryTheme();
   const currentLocation = useComposerStore((state) => state.location);
   const setLocation = useComposerStore((state) => state.setLocation);
   const locationOptions = useMemo(() => listComposerLocationOptions(), []);
@@ -142,6 +143,9 @@ export function LocationSearchModal({ innerRef }: LocationSearchModalProps) {
         disappearsOnIndex={-1}
         appearsOnIndex={0}
         opacity={opacity.backdrop}
+        accessibilityRole="button"
+        accessibilityLabel="Close location search"
+        accessibilityHint="Dismisses the location search sheet"
       />
     ),
     [opacity.backdrop],
@@ -157,6 +161,8 @@ export function LocationSearchModal({ innerRef }: LocationSearchModalProps) {
       enableDynamicSizing={false}
       keyboardBehavior="interactive"
       backdropComponent={renderBackdrop}
+      accessibilityLabel="Location search"
+      accessibilityViewIsModal
       backgroundStyle={{ backgroundColor: palette.surface }}
       handleIndicatorStyle={{ backgroundColor: palette.border }}
     >
@@ -176,7 +182,13 @@ export function LocationSearchModal({ innerRef }: LocationSearchModalProps) {
             leftIcon={<Search size={18} color={palette.textMuted} />}
             rightIcon={
               searchQuery.length > 0 ? (
-                <Pressable onPress={() => setSearchQuery("")} style={{ padding: spacing[1] }}>
+                <Pressable
+                  onPress={() => setSearchQuery("")}
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear location search"
+                  accessibilityHint="Clears the current location search text"
+                  style={{ padding: spacing[1] }}
+                >
                   <X size={16} color={palette.textMuted} />
                 </Pressable>
               ) : undefined
@@ -198,7 +210,7 @@ export function LocationSearchModal({ innerRef }: LocationSearchModalProps) {
                 {
                   ...shadows.card,
                   backgroundColor: palette.surfaceGlass,
-                  borderRadius: radii.md,
+                  borderRadius: componentRadii.card,
                   bottom: spacing[3],
                   left: spacing[3],
                   padding: spacing[3],
@@ -229,6 +241,10 @@ export function LocationSearchModal({ innerRef }: LocationSearchModalProps) {
           renderItem={({ item }) => (
             <Pressable
               onPress={() => handleSelectLocation(item)}
+              accessibilityRole="button"
+              accessibilityLabel={`Select location ${item.name}, ${item.address}`}
+              accessibilityHint="Sets this as the location for the post"
+              accessibilityState={{ selected: selectedLoc?.id === item.id }}
               style={({ pressed }) => [
                 styles.locationItem,
                 {
@@ -238,7 +254,7 @@ export function LocationSearchModal({ innerRef }: LocationSearchModalProps) {
                       : pressed
                         ? palette.surfaceRaised
                         : "transparent",
-                  borderRadius: radii.md,
+                  borderRadius: componentRadii.card,
                   gap: spacing[3],
                   padding: spacing[3],
                 },

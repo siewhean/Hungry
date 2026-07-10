@@ -9,7 +9,6 @@ test("offline workbook fallback uses maintained ExcelJS instead of vulnerable Sh
   assert.doesNotMatch(source, /require\("xlsx"\)/);
   assert.match(source, /await workbook\.xlsx\.readFile\(workbookPath\)/);
 });
-
 test("auto-enrichment uses the shared platform abstraction for all delivery adapters", () => {
   assert.match(source, /scrapeWithPlatformAdapter\(\{/);
   for (const platform of ["grabfood", "oddle", "foodpanda", "deliveroo"]) {

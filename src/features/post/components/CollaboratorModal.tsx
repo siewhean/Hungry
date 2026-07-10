@@ -14,7 +14,7 @@ interface CollaboratorModalProps {
 }
 
 export function CollaboratorModal({ innerRef }: CollaboratorModalProps) {
-  const { palette, radii, semanticSpacing, spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, semanticSpacing, spacing } = useHungryTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const users = useMemo(() => listComposerCollaboratorOptions(), []);
 
@@ -36,7 +36,12 @@ export function CollaboratorModal({ innerRef }: CollaboratorModalProps) {
   };
 
   return (
-    <BottomSheet ref={innerRef} snapPoints={["80%"]} keyboardBehavior="interactive">
+    <BottomSheet
+      ref={innerRef}
+      snapPoints={["80%"]}
+      keyboardBehavior="interactive"
+      accessibilityLabel="Tag collaborators"
+    >
       <View style={{ flex: 1, marginHorizontal: -semanticSpacing.screenEdge }}>
         <View
           style={[
@@ -65,7 +70,13 @@ export function CollaboratorModal({ innerRef }: CollaboratorModalProps) {
             leftIcon={<Search size={18} color={palette.textMuted} />}
             rightIcon={
               searchQuery.length > 0 ? (
-                <Pressable onPress={() => setSearchQuery("")} style={{ padding: spacing[1] }}>
+                <Pressable
+                  onPress={() => setSearchQuery("")}
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear collaborator search"
+                  accessibilityHint="Clears the current collaborator search text"
+                  style={{ padding: spacing[1] }}
+                >
                   <X size={16} color={palette.textMuted} />
                 </Pressable>
               ) : undefined
@@ -81,6 +92,10 @@ export function CollaboratorModal({ innerRef }: CollaboratorModalProps) {
             return (
               <Pressable
                 onPress={() => handleToggle(item.handle)}
+                accessibilityRole="button"
+                accessibilityLabel={`${isSelected ? "Remove" : "Add"} collaborator ${item.name}, ${item.handle}`}
+                accessibilityHint="Toggles this collaborator on the post"
+                accessibilityState={{ selected: isSelected }}
                 style={({ pressed }) => [
                   styles.userItem,
                   {
@@ -89,7 +104,7 @@ export function CollaboratorModal({ innerRef }: CollaboratorModalProps) {
                       : pressed
                         ? palette.surfaceRaised
                         : "transparent",
-                    borderRadius: radii.md,
+                    borderRadius: componentRadii.card,
                     gap: spacing[3],
                     marginVertical: spacing[0.5],
                     padding: spacing[3],

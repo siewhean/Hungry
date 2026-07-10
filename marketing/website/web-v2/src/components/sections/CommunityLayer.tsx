@@ -10,11 +10,11 @@ export default function CommunityLayer() {
     <section className={styles.section}>
       <div className="container-wide">
         <Reveal className={styles.header}>
-          <span className={styles.eyebrow}>Community layer</span>
-          <h2>Useful social proof, close to the dish.</h2>
+          <span className={styles.eyebrow}>From other diners</span>
+          <h2>Reviews and photos stay with the dish.</h2>
           <p>
-            Hungry should feel socially alive without relying on fake testimonials. Reviews,
-            rankings, and photos stay attached to the food decision.
+            Hungry should feel alive without fake testimonials. Reviews, rankings, and photos stay
+            close to what people actually ordered.
           </p>
         </Reveal>
 
@@ -34,8 +34,8 @@ export default function CommunityLayer() {
         </div>
 
         <Reveal className={styles.note} delay={0.12}>
-          Prototype states shown here are illustrative product proof. Community content should be
-          populated from real user activity after launch.
+          Prototype states shown here are examples. Community content should come from real user
+          activity after launch.
         </Reveal>
       </div>
     </section>

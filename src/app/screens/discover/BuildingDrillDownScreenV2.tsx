@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ArrowLeft, Search, Star } from "lucide-react-native";
-import { Image } from "expo-image";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { FloorPlanViewer } from "@/components/map/FloorPlanViewer";
@@ -21,7 +20,7 @@ const HERO_HEIGHT = 180;
 export function BuildingDrillDownScreenV2({ route, navigation }: Props) {
   const { width: windowWidth } = useWindowDimensions();
   const repository = getDataRepository();
-  const { palette, radii, spacing, shadows } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing, shadows } = useHungryTheme();
 
   const buildingId = route.params?.buildingId ?? "hc-maxwell";
   const building = useMemo(() => getBuildingById(buildingId)!, [buildingId]);
@@ -56,7 +55,7 @@ export function BuildingDrillDownScreenV2({ route, navigation }: Props) {
             left: 0,
             right: 0,
             height: 100,
-            backgroundColor: "rgba(0,0,0,0.4)",
+            backgroundColor: palette.mediaScrimSoft,
           }}
         />
 
@@ -68,8 +67,8 @@ export function BuildingDrillDownScreenV2({ route, navigation }: Props) {
             left: spacing[4],
             width: 36,
             height: 36,
-            borderRadius: 18,
-            backgroundColor: "rgba(255,255,255,0.9)",
+            borderRadius: componentRadii.search,
+            backgroundColor: palette.surfaceTranslucent,
             alignItems: "center",
             justifyContent: "center",
           }}
@@ -219,7 +218,7 @@ export function BuildingDrillDownScreenV2({ route, navigation }: Props) {
             margin: spacing[4],
             padding: spacing[4],
             backgroundColor: palette.bgSoft,
-            borderRadius: radii.lg,
+            borderRadius: componentRadii.card,
             borderWidth: 1,
             borderColor: palette.border,
           }}

@@ -4,37 +4,59 @@ import { LegalPage } from "../_components/LegalPage";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
-  description: "Plain-language terms for using the Hungry marketing website and waitlist.",
+  description: "Plain-language terms for using Hungry's app, website, and merchant tools.",
 };
 
 const sections = [
   {
-    title: "Using this website",
+    title: "Using Hungry",
     body: (
       <p>
-        You may browse the Hungry marketing website and join the waitlist for early product updates.
-        The current site is an information and interest-registration surface, not an ordering,
-        payment, or merchant management service.
+        Hungry helps people discover dishes, stalls, hawker centres, restaurants, reviews, and
+        merchant information in Singapore. Use the service lawfully, provide accurate account
+        information, and keep your account secure.
       </p>
     ),
   },
   {
-    title: "Waitlist submissions",
+    title: "User-generated content",
     body: (
       <p>
-        Please submit accurate information that belongs to you or your business. Joining the
-        waitlist does not guarantee access, launch timing, merchant approval, or availability in a
-        specific neighbourhood.
+        You are responsible for reviews, posts, comments, messages, photos, videos, and profile
+        content you submit. Do not post abusive, harassing, hateful, sexually explicit, violent,
+        illegal, deceptive, spam, infringing, or unsafe content.
       </p>
     ),
   },
   {
-    title: "Website content",
+    title: "Reporting, blocking, and moderation",
     body: (
       <p>
-        Hungry may update pages, waitlist copy, images, and product descriptions as the service
-        develops. Public website content is provided for general information and may change without
-        notice.
+        Hungry provides report, hide, and block controls for community content. We may hide, remove,
+        restrict, or retain content and safety records when needed for moderation, fraud prevention,
+        legal obligations, or service security.
+      </p>
+    ),
+  },
+  {
+    title: "Merchant and AI-assisted tools",
+    body: (
+      <p>
+        Merchant profiles, menus, promotions, verification details, and claim requests must be
+        accurate and not misleading. OCR, AI-assisted descriptions, replies, and recommendations may
+        be incomplete and should be reviewed before relying on them for pricing, dietary, allergen,
+        business, or safety decisions.
+      </p>
+    ),
+  },
+  {
+    title: "Account deletion",
+    body: (
+      <p>
+        If you create an account, you can request deletion in the app under Settings or at
+        hungry.sg/account/delete. Hungry will remove or anonymize account-associated personal data
+        unless limited retention is required for safety, fraud prevention, legal obligations, or
+        audit purposes.
       </p>
     ),
   },
@@ -42,7 +64,7 @@ const sections = [
     title: "Contact and requests",
     body: (
       <p>
-        If you need help with the waitlist, merchant interest, privacy requests, or website content,
+        If you need help with account deletion, safety reports, privacy requests, or app content,
         contact Hungry at hello@hungry.sg so the request can be reviewed.
       </p>
     ),
@@ -53,8 +75,8 @@ export default function TermsPage() {
   return (
     <LegalPage
       eyebrow="Terms of Service"
-      intro="These terms cover the current Hungry marketing website and waitlist. They are intentionally short because the full consumer app and merchant portal are not live product services on this website today."
-      lastUpdated="May 12, 2026"
+      intro="These terms cover Hungry surfaces that link to this page, including the mobile app, public website, community features, and merchant tools."
+      lastUpdated="May 18, 2026"
       sections={sections}
       title="Terms of Service"
     />

@@ -46,7 +46,11 @@ test("root and nested route targets avoid stale or unregistered screens", () => 
     settings,
     /rootNavigation\.navigate\("OnboardingStack", \{ screen: "ManualLocationPicker" \}\)/,
   );
-  assert.match(merchantSettings, /rootNavigation\.navigate\("MainTabs", \{ screen: "Profile" \}\)/);
+  assert.match(merchantSettings, /CommonActions\.reset/);
+  assert.match(
+    merchantSettings,
+    /routes: \[\{ name: "MainTabs", params: \{ screen: "Home" \} \}\]/,
+  );
   assert.doesNotMatch(merchantSettings, /navigation\.navigate\("Profile" as never\)/);
 });
 
@@ -55,7 +59,7 @@ test("synthetic create tab targets root routes without registering a fake tab ro
   const types = read("src/app/navigation/navigationTypes.ts");
 
   assert.doesNotMatch(tabs, /<Tab\.Screen name="Create"/);
-  assert.doesNotMatch(types, /Create: undefined/);
+  assert.doesNotMatch(types, /^\s+Create: undefined;/m);
   assert.match(tabs, /navigation\.getParent<NavigationProp<RootStackParamList>>\(\)/);
   assert.match(
     tabs,

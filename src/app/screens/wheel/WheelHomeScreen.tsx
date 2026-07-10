@@ -12,7 +12,7 @@ import type { WheelStackParamList } from "./WheelStack";
 type Props = NativeStackScreenProps<WheelStackParamList, "WheelHome">;
 
 export function WheelHomeScreen({ navigation, route }: Props) {
-  const { palette, spacing, radii, shadows } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii, shadows } = useHungryTheme();
   const createParty = useWheelStore((s) => s.createParty);
   const joinParty = useWheelStore((s) => s.joinParty);
 
@@ -91,7 +91,7 @@ export function WheelHomeScreen({ navigation, route }: Props) {
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={{
-              borderRadius: radii.xl,
+              borderRadius: componentRadii.button,
               padding: spacing[5],
               ...shadows.floating,
             }}
@@ -101,7 +101,7 @@ export function WheelHomeScreen({ navigation, route }: Props) {
                 <AppText variant="h2" style={{ color: palette.white }}>
                   Host a Party
                 </AppText>
-                <AppText variant="bodySmall" style={{ color: "rgba(255,255,255,0.8)" }}>
+                <AppText variant="bodySmall" style={{ color: palette.inverseTextSecondary }}>
                   Start a new room and invite your friends to join the spin.
                 </AppText>
               </View>
@@ -110,7 +110,7 @@ export function WheelHomeScreen({ navigation, route }: Props) {
                   width: 44,
                   height: 44,
                   borderRadius: 22,
-                  backgroundColor: "rgba(255,255,255,0.2)",
+                  backgroundColor: palette.inverseSurfaceSubtle,
                   alignItems: "center",
                   justifyContent: "center",
                 }}

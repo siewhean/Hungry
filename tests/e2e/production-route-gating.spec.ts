@@ -16,32 +16,50 @@ test.describe("production route gating", () => {
     );
   });
 
-  test("prototype, merchant, and direct-message routes are feature gated", () => {
+  test("prototype, merchant, social, and gamification routes are feature gated", () => {
     const flags = read("src/constants/featureFlags.ts");
     const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
 
     expect(flags).toContain("prototypeRoutesEnabled");
+    expect(flags).toContain("gamificationEnabled");
+    expect(flags).toContain("collectionsEnabled");
+    expect(flags).toContain("storiesEnabled");
+    expect(flags).toContain("commentsEnabled: nonProductionSurfaceEnabled");
+    expect(flags).toContain("directMessagesEnabled: nonProductionSurfaceEnabled");
+    expect(flags).toContain("const merchantCentreEnabled = nonProductionSurfaceEnabled");
+    expect(flags).toContain("const merchantClaimCtaEnabled = nonProductionSurfaceEnabled");
     expect(flags).toContain('appEnv !== "production"');
     expect(rootNavigator).toContain("FEATURE_FLAGS.prototypeRoutesEnabled ? (");
     expect(rootNavigator).toContain("FEATURE_FLAGS.merchantCentreEnabled ? (");
+    expect(rootNavigator).toContain("FEATURE_FLAGS.merchantClaimCtaEnabled ? (");
     expect(rootNavigator).toContain("FEATURE_FLAGS.directMessagesEnabled ? (");
+    expect(rootNavigator).toContain("FEATURE_FLAGS.storiesEnabled ? (");
+    expect(rootNavigator).toContain("FEATURE_FLAGS.gamificationEnabled ? (");
+    expect(rootNavigator).toContain("FEATURE_FLAGS.collectionsEnabled ? (");
 
     for (const routeName of [
-      "DiscoverV2",
       "DishDetailV2",
-      "SearchHomeV2",
       "StallDetailV2",
       "BuildingDrillDownV2",
-      "QuickReviewV2",
       "SplashV2",
       "DesignGallery",
-      "ReviewFeedV2",
       "VenueDirectory",
       "MerchantTabs",
       "ChatDetail",
       "DirectMessages",
+      "StoryViewer",
+      "AddStory",
+      "PassportScreen",
+      "MissionsScreen",
+      "CollectionList",
+      "CollectionDetail",
+      "PortfolioPublicView",
+      "AdminPortfolioFlags",
     ]) {
       expect(rootNavigator).toContain(`name="${routeName}"`);
+    }
+    for (const removedRouteName of ["DiscoverV2", "SearchHomeV2", "QuickReviewV2", "ReviewFeedV2"]) {
+      expect(rootNavigator).not.toContain(`name="${removedRouteName}"`);
     }
   });
 });

@@ -9,7 +9,7 @@ import {
   type ActivityChatMessage,
   type SharedPostPayload,
 } from "@/features/home/activity";
-import { getHungryService } from "@/lib/services/serviceProvider";
+import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
 
 import { hungryPersistStorage } from "./persistStorage";
 
@@ -17,11 +17,14 @@ interface ActivityState {
   readActivityIds: string[];
   sharedPostMessages: Record<string, ActivityChatMessage[]>;
   activityUpdates: ActivityUpdate[];
+  dbActivityEvents: ActivityUpdate[];
   markActivityRead: (type: ActivityItemType, id: string) => void;
   isActivityUnread: (type: ActivityItemType, id: string, initialUnread?: boolean) => boolean;
   getUnreadCount: () => number;
   sharePostToChat: (chatId: string, post: SharedPostPayload) => Promise<void>;
   addActivityUpdate: (update: Omit<ActivityUpdate, "id">) => void;
+  fetchActivityEvents: () => Promise<void>;
+  clearAccountScopedState: () => void;
 }
 
 export const useActivityStore = create<ActivityState>()(
@@ -30,17 +33,41 @@ export const useActivityStore = create<ActivityState>()(
       readActivityIds: [],
       sharedPostMessages: {},
       activityUpdates: [],
+      dbActivityEvents: [],
+      clearAccountScopedState: () =>
+        set({
+          readActivityIds: [],
+          sharedPostMessages: {},
+          activityUpdates: [],
+          dbActivityEvents: [],
+        }),
       markActivityRead: (type, id) => {
         const readKey = getActivityReadKey(type, id);
         set((state) =>
           state.readActivityIds.includes(readKey)
             ? state
-            : { readActivityIds: [...state.readActivityIds, readKey] },
+            : {
+                readActivityIds: [...state.readActivityIds, readKey],
+                dbActivityEvents: state.dbActivityEvents.map((event) =>
+                  event.id === id ? { ...event, unread: false } : event,
+                ),
+              },
         );
+        if (type === "update" && getServiceProvider().mode !== "mock") {
+          void getHungryService()
+            .notifications.markActivityRead(id)
+            .catch((error) => {
+              console.warn("Failed to mark activity read", error);
+            });
+        }
       },
       isActivityUnread: (type, id, initialUnread = false) =>
         initialUnread && !get().readActivityIds.includes(getActivityReadKey(type, id)),
-      getUnreadCount: () => getActivityUnreadCount(get().readActivityIds, get().activityUpdates),
+      getUnreadCount: () =>
+        getActivityUnreadCount(get().readActivityIds, [
+          ...get().dbActivityEvents,
+          ...get().activityUpdates,
+        ]),
       addActivityUpdate: (update) => {
         set((state) => ({
           activityUpdates: [
@@ -52,6 +79,39 @@ export const useActivityStore = create<ActivityState>()(
             },
           ],
         }));
+      },
+      fetchActivityEvents: async () => {
+        if (getServiceProvider().mode === "mock") return;
+        try {
+          const events = await getHungryService().notifications.listActivityEvents();
+          const mapped: ActivityUpdate[] = events.map((e) => ({
+            id: e.id,
+            kind:
+              e.eventType === "new_like"
+                ? "like"
+                : e.eventType === "new_follower"
+                  ? "share"
+                  : "comment",
+            postId: e.targetType === "post" ? e.targetId : "",
+            actorId: e.actorId,
+            actorName: e.actorName,
+            text:
+              e.eventType === "new_like"
+                ? "liked your post"
+                : e.eventType === "new_comment"
+                  ? "commented on your post"
+                  : e.eventType === "new_reply"
+                    ? "replied to your comment"
+                    : "started following you",
+            target: e.targetId,
+            time: e.createdAt,
+            unread: !e.readAt,
+          }));
+          set({ dbActivityEvents: mapped });
+        } catch (error) {
+          console.warn("Failed to fetch activity events", error);
+          set({ dbActivityEvents: [] });
+        }
       },
       sharePostToChat: async (chatId, post) => {
         const shareBody = `Shared ${post.title}\n${post.subtitle}`;

@@ -23,18 +23,32 @@ test("root navigation keeps heavy routes lazy-loaded", () => {
   assert.match(rootNavigator, /getComponent=\{loadDeveloperLauncherScreen\}/);
   assert.match(rootNavigator, /QuickReviewModalHost/);
   assert.match(rootNavigator, /ReviewSuccessModalHost/);
+  assert.doesNotMatch(rootNavigator, /import \* as CredEarnedToastModule/);
+  assert.match(rootNavigator, /function CredEarnedToastHost/);
+  assert.match(rootNavigator, /FEATURE_FLAGS\.gamificationEnabled/);
+  assert.match(rootNavigator, /require\("@\/components\/gamification\/CredEarnedToast"\)/);
 
   assert.doesNotMatch(tabs, /import \{ DiscoverHomeScreen \}/);
   assert.doesNotMatch(tabs, /import \{ ReviewFeedScreen \}/);
   assert.doesNotMatch(tabs, /import \{ ProfileStack \}/);
-  assert.match(tabs, /lazy:\s*true/);
-  assert.match(tabs, /lazyPlaceholder:\s*\(\)\s*=>/);
+  assert.match(tabs, /lazy:\s*!tabPreloadEnabled/);
+  assert.match(tabs, /lazyPlaceholder:\s*\(\)\s*=>\s*<TabScreenLoadingPlaceholder \/>/);
   assert.match(
     tabs,
     /scheduleIdleWork|InteractionManager\.runAfterInteractions|requestIdleCallback|setTimeout\(/,
   );
+  assert.match(tabs, /function createDeferredTabScreen/);
+  assert.match(tabs, /function scheduleMainTabScreensWarmup/);
+  assert.match(tabs, /function TabScreenLoadingPlaceholder/);
+  assert.match(tabs, /function warmMainTabRoute/);
+  assert.match(tabs, /onPressIn=\{onPressIn\}/);
+  assert.doesNotMatch(tabs, /ActivityIndicator/);
+  assert.doesNotMatch(tabs, /preloadRoute\(navigation, route\.name\)/);
   assert.match(tabs, /tabPreloadEnabled/);
-  assert.match(tabs, /lazyPreloadDistance:\s*tabPreloadEnabled \? 1 : 0/);
+  assert.match(tabs, /const MAIN_TAB_PRELOAD_DISTANCE = 3/);
+  assert.match(tabs, /const MAIN_TAB_WARMUP_TIMEOUT_MS = 350/);
+  assert.match(tabs, /fallbackDelayMs: MAIN_TAB_WARMUP_FALLBACK_DELAY_MS/);
+  assert.match(tabs, /lazyPreloadDistance:\s*tabPreloadEnabled \? MAIN_TAB_PRELOAD_DISTANCE : 0/);
 });
 
 test("startup does not block indefinitely on fonts or analytics", () => {
@@ -81,7 +95,14 @@ test("home, discover, and quick bites avoid duplicate render-time data work", ()
 
   assert.match(homeFeed, /export interface HomeFeedBundle/);
   assert.match(homeFeed, /export async function getHomeFeedBundle/);
-  assert.match(homeScreen, /getHomeFeedBundle\(profile\)/);
+  assert.match(homeFeed, /const HOME_FEED_BUNDLE_CACHE_TTL_MS = 5_000/);
+  assert.match(homeFeed, /const homeFeedBundleCache = new Map/);
+  assert.match(homeFeed, /export function getHomeFeedBundleCacheKey/);
+  assert.match(homeFeed, /export function clearHomeFeedBundleCache/);
+  assert.match(homeScreen, /getHomeFeedBundle\(profile,\s*\{/);
+  assert.match(homeScreen, /followedAuthors,/);
+  assert.match(homeScreen, /followedUserIds,/);
+  assert.match(homeScreen, /refreshSeed: feedRefreshSeedRef\.current/);
   assert.doesNotMatch(homeScreen, /getHomeFeed\(profile\)/);
   assert.doesNotMatch(homeScreen, /getHomeSocialFeed\(profile\)/);
   assert.doesNotMatch(homeScreen, /useEffect\(\(\) => \{\s*void loadFeed\(\);/);
@@ -93,6 +114,10 @@ test("home, discover, and quick bites avoid duplicate render-time data work", ()
   assert.doesNotMatch(homeScreen, /const publishedPosts = usePublishedPostStore/);
   assert.match(discover, /getDiscoverBites\(repository\)/);
   assert.match(discover, /getDiscoverBiteCollections\(discoverBaseBites, repository\)/);
+  assert.match(discover, /const repositoryLookup = useMemo<DiscoverRepositoryLookup>/);
+  assert.match(discover, /const dishById = new Map<string, DishDetail \| undefined>\(\)/);
+  assert.match(discover, /const dishesByVenue = new Map<string, DishDetail\[\]>\(\)/);
+  assert.match(discover, /const venuesByBuilding = new Map<string, VenueSummary\[\]>\(\)/);
   assert.match(discover, /const discoverDishById = useMemo/);
   assert.match(discover, /discoverDishById\.get\(bite\.dishId\)/);
   assert.doesNotMatch(discover, /getDiscoverBiteCollection\("quickBites"/);
@@ -108,6 +133,7 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   const discover = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
   const search = read("src/app/screens/search/SearchResultsScreen.tsx");
   const searchResultsView = read("src/components/discover/SearchResultsView.tsx");
+  const quickBites = read("src/app/screens/discover/QuickBitesScreen.tsx");
   const merchantTabs = read("src/app/navigation/MerchantTabs.tsx");
   const zoomableMedia = read("src/components/social/ZoomableMedia.tsx");
   const zoomableVideo = read("src/components/social/ZoomableVideo.tsx");
@@ -115,15 +141,63 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   assert.match(prefetch, /ExpoImage\.prefetch/);
   assert.match(prefetch, /const prefetchedDishDetails = new Set<string>\(\)/);
   assert.match(prefetch, /const prefetchedStallDetails = new Set<string>\(\)/);
+  assert.match(
+    prefetch,
+    /import \{ scheduleIdleWork \} from "@\/lib\/performance\/scheduleIdleWork"/,
+  );
+  assert.match(prefetch, /function schedulePrefetchWork/);
+  assert.match(prefetch, /const PREFETCH_FALLBACK_DELAY_MS = 160/);
+  assert.match(prefetch, /const MAX_IDLE_PREFETCH_WORK_PER_TICK = 8/);
+  assert.match(prefetch, /pendingIdlePrefetchWorkCount/);
+  assert.match(prefetch, /const scheduledRoutePreloads = new Set<string>\(\)/);
+  assert.match(prefetch, /const scheduledBrowseResultPrefetches = new Set<string>\(\)/);
   assert.match(prefetch, /export function prefetchDishDetail/);
   assert.match(prefetch, /export function prefetchStallDetail/);
   assert.match(prefetch, /export function prefetchPostDetail/);
   assert.match(prefetch, /export function preloadRoute/);
+  assert.match(prefetch, /export function prefetchBrowseResults/);
+  assert.match(prefetch, /getBrowseIndex\(repository\)/);
+  assert.match(prefetch, /searchBrowseDishes\(browseIndex/);
+  assert.match(prefetch, /finally \{[\s\S]*scheduledBrowseResultPrefetches\.delete\(key\)/);
+  assert.doesNotMatch(prefetch, /repository: DataRepository = getDataRepository\(\)/);
+  assert.match(prefetch, /schedulePrefetchWork\(\(\) => \{[\s\S]*"preload" in navigation/);
   assert.match(prefetch, /"preload" in navigation/);
   assert.match(prefetch, /export function prefetchMerchantTab/);
   assert.match(homeScreen, /onPressIn=\{\(\) => prefetchFeedCardRoute\(item\)\}/);
   assert.match(discover, /onPressIn=\{\(\) => prefetchBiteCard\(bite\)\}/);
+  assert.match(discover, /useDeferredValue\(activeDiscoverChipIds\)/);
+  assert.match(discover, /renderLeftIcon=\{\(chip, isActive\) =>/);
+  assert.match(discover, /prefetchBrowseResults\(item\.query, navigation/);
+  assert.match(discover, /<PopularFoodStyleItem/);
+  assert.match(searchResultsView, /const SearchResultRow = memo/);
+  assert.match(searchResultsView, /<SearchResultRow dish=\{dish\}/);
+  assert.doesNotMatch(discover, /preloadRoute\(navigation, "SearchResults"/);
+  assert.match(discover, /scheduleIdleWork\([\s\S]*recordTasteInteraction[\s\S]*popular_right_now/);
+  assert.match(
+    discover,
+    /navigation\.navigate\("DishDetail", \{ dishId: bite\.dishId \}\);[\s\S]*scheduleIdleWork\([\s\S]*dish_result_click/,
+  );
+  assert.match(
+    homeScreen,
+    /navigation\.navigate\("DishDetail", \{ dishId: primaryDish\.id \}\);[\s\S]*scheduleIdleWork\([\s\S]*dish_result_click/,
+  );
+  assert.match(
+    quickBites,
+    /navigation\.navigate\("SearchHome"\);[\s\S]*scheduleIdleWork\([\s\S]*rememberSearch\(trimmed\)/,
+  );
   assert.match(search, /onPressIn=\{\(\) =>/);
+  assert.match(search, /function BrowseGridLoadingState/);
+  assert.match(search, /getCachedBrowseIndex\(repository\)/);
+  assert.match(search, /getBrowseIndex\(repository\)/);
+  assert.match(search, /isBrowseDataReady \? \(/);
+  assert.match(
+    search,
+    /navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dish\.id \}\);[\s\S]*scheduleIdleWork\([\s\S]*dish_result_click/,
+  );
+  assert.match(
+    search,
+    /navigation\.navigate\("DishDetail", \{ dishId: dish\.id \}\);[\s\S]*scheduleIdleWork\([\s\S]*rememberSearch\(filters\.query\)/,
+  );
   assert.match(search, /const browsePostIndexes = useMemo/);
   assert.match(search, /postByDishId\.get\(dish\.id\)/);
   assert.match(search, /postByVenueId\.get\(venue\.id\)/);
@@ -131,12 +205,17 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   assert.doesNotMatch(search, /results\.slice\(0, 8\)\.forEach/);
   assert.doesNotMatch(search, /filteredFeedItems\.slice\(0, 8\)\.forEach/);
   assert.match(searchResultsView, /import \{ FlashList \} from "@shopify\/flash-list"/);
+  assert.match(searchResultsView, /function SearchResultsSkeletonList/);
   assert.match(searchResultsView, /renderItem=\{renderResult\}/);
   assert.doesNotMatch(searchResultsView, /results\.map/);
   assert.match(merchantTabs, /prefetchMerchantTab\(route\.name/);
   assert.doesNotMatch(zoomableMedia, /from "expo-video"/);
   assert.match(zoomableMedia, /require\("\.\/ZoomableVideo"\)/);
   assert.match(zoomableVideo, /from "expo-video"/);
+
+  const scheduler = read("src/lib/performance/scheduleIdleWork.ts");
+  assert.match(scheduler, /onComplete\?: \(\) => void/);
+  assert.match(scheduler, /options\?\.onComplete\?\.\(\)/);
 });
 
 test("remaining high-traffic profile, developer, and merchant links prefetch on intent", () => {
@@ -161,6 +240,10 @@ test("remaining high-traffic profile, developer, and merchant links prefetch on 
   assert.match(prefetch, /await merchant\.getMerchantAccount\(\)/);
   assert.match(merchantDashboard, /onPressIn=\{\(\) => prefetchMerchantRoute\("Menu"\)\}/);
   assert.match(merchantDashboard, /onPressIn=\{\(\) => prefetchMerchantRoute\("CustomerInbox"\)\}/);
+  assert.match(
+    merchantDashboard,
+    /onPressIn=\{\(\) => prefetchMerchantRoute\("FeaturedVisitors"\)\}/,
+  );
   assert.match(
     merchantDashboard,
     /onPressIn=\{\(\) => prefetchMerchantRoute\("BusinessProfileEditor"\)\}/,
@@ -197,7 +280,10 @@ test("remaining high-traffic profile, developer, and merchant links prefetch on 
   assert.match(developerLauncher, /const prefetchSampleDishDetail =/);
   assert.match(developerLauncher, /onV1PressIn=\{\(\) => prefetchSampleStallDetail\("v1"\)\}/);
   assert.match(developerLauncher, /onV2PressIn=\{\(\) => prefetchSampleDishDetail\("v2"\)\}/);
-  assert.match(developerLauncher, /onV1PressIn=\{\(\) => preloadRoute\(navigation, "MainTabs"/);
+  assert.match(
+    developerLauncher,
+    /onV1PressIn=\{\(\) =>\s+preloadRoute\(navigation, "PostComposerV2"/,
+  );
 });
 
 test("developer and merchant surfaces defer non-selected work", () => {
@@ -230,6 +316,9 @@ test("developer and merchant surfaces defer non-selected work", () => {
   assert.match(prefetch, /merchant\.getAnalytics\(outletId, "7d"\)/);
   assert.match(prefetch, /routeName === "PromotionList"/);
   assert.match(prefetch, /merchant\.getPromotions\(outletId\)/);
+  assert.match(prefetch, /routeName === "FeaturedVisitors"/);
+  assert.match(prefetch, /merchant\.listPopularVisitorPins\(outletId\)/);
+  assert.match(prefetch, /merchant\.listPopularVisitorCandidates\(outletId\)/);
   assert.match(prefetch, /routeName === "AIAssistant"/);
   assert.match(prefetch, /merchant\.getAIInsights\(outletId\)/);
   assert.match(prefetch, /merchant\.getWeeklySummary\(outletId\)/);

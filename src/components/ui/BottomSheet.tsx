@@ -12,10 +12,20 @@ import { useHungryTheme } from "@/theme";
 interface BottomSheetProps extends Partial<BottomSheetModalProps> {
   children: ReactNode;
   snapPoints?: string[];
+  accessibilityLabel?: string;
 }
 
+/**
+ * Accessibility contract:
+ * - Every sheet needs a contextual label from the caller when the default is too generic.
+ * - The backdrop remains a labelled dismiss target.
+ * - Native focus order must be smoke-tested because the sheet is third-party native UI.
+ */
 export const BottomSheet = forwardRef<BottomSheetModal, BottomSheetProps>(
-  ({ children, snapPoints: customSnapPoints, ...props }, ref) => {
+  (
+    { children, snapPoints: customSnapPoints, accessibilityLabel = "Bottom sheet", ...props },
+    ref,
+  ) => {
     const { opacity, palette, spacing } = useHungryTheme();
 
     const defaultSnapPoints = useMemo(() => ["50%", "90%"], []);
@@ -27,6 +37,9 @@ export const BottomSheet = forwardRef<BottomSheetModal, BottomSheetProps>(
           {...props}
           disappearsOnIndex={-1}
           appearsOnIndex={0}
+          accessibilityRole="button"
+          accessibilityLabel="Close bottom sheet"
+          accessibilityHint="Dismisses the current bottom sheet"
           opacity={opacity.backdrop}
         />
       ),
@@ -41,9 +54,15 @@ export const BottomSheet = forwardRef<BottomSheetModal, BottomSheetProps>(
         backdropComponent={renderBackdrop}
         backgroundStyle={{ backgroundColor: palette.surface }}
         handleIndicatorStyle={{ backgroundColor: palette.border }}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityViewIsModal
         {...props}
       >
-        <BottomSheetView style={[styles.content, { padding: spacing[4] }]}>
+        <BottomSheetView
+          accessibilityLabel={accessibilityLabel}
+          accessibilityViewIsModal
+          style={[styles.content, { padding: spacing[4] }]}
+        >
           {children}
         </BottomSheetView>
       </BottomSheetModal>

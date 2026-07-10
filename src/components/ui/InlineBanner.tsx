@@ -9,7 +9,7 @@ interface InlineBannerProps {
 }
 
 export function InlineBanner({ message, tone = "info" }: InlineBannerProps) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { componentCornerCurve, componentRadii, palette, spacing } = useHungryTheme();
 
   const tones = {
     info: { bg: palette.infoSoft, fg: palette.info },
@@ -22,7 +22,8 @@ export function InlineBanner({ message, tone = "info" }: InlineBannerProps) {
     <View
       style={{
         backgroundColor: tones[tone].bg,
-        borderRadius: radii.sm,
+        borderRadius: componentRadii.card,
+        borderCurve: componentCornerCurve.borderCurve,
         paddingHorizontal: spacing[3],
         paddingVertical: spacing[3],
       }}

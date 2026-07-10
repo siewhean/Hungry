@@ -74,7 +74,6 @@
   position: absolute;
   inset: 0;
   object-fit: cover;
-  transform: scale(1.02);
   transition: transform var(--duration-slow) var(--ease-out);
 }
 
@@ -123,11 +122,31 @@
 
 @media (max-width: 760px) {
   .controls {
-    justify-content: flex-start;
+    display: none;
   }
 
   .rail {
-    grid-auto-columns: minmax(17rem, 82vw);
+    grid-auto-columns: initial;
+    grid-auto-flow: row;
+    grid-template-columns: 1fr;
+    margin: 0;
+    overflow-x: visible;
+    padding: 0;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1199px) {
+  .controls {
+    display: none;
+  }
+
+  .rail {
+    grid-auto-columns: initial;
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 0;
+    overflow-x: visible;
+    padding: 0;
   }
 }
 

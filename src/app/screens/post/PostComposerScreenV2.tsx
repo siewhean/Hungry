@@ -8,6 +8,7 @@ import * as Haptics from "expo-haptics";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { useHungryTheme } from "@/theme";
 import { useComposerStore } from "@/features/post/useComposerStore";
+import { useMerchantStore } from "@/store/useMerchantStore";
 
 // Components
 import { ComposerHeader } from "@/features/post/components/ComposerHeader";
@@ -37,6 +38,10 @@ export function PostComposerScreenV2({ navigation, route }: Props) {
   const { palette, spacing, semanticSpacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const activeTab = useComposerStore((state) => state.activeTab);
+  const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
+  const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
+  const isUserMode = !isMerchantMode && !isDeveloperMode;
+  const shouldShowAiSuite = !isUserMode;
   const reset = useComposerStore((state) => state.reset);
   const editingMediaId = useComposerStore((state) => state.editingMediaId);
   const setEditingMediaId = useComposerStore((state) => state.setEditingMediaId);
@@ -136,87 +141,89 @@ export function PostComposerScreenV2({ navigation, route }: Props) {
         </View>
 
         {/* AI Assistant Section - Global bottom */}
-        <View style={{ padding: spacing.xl, gap: spacing.lg, marginTop: spacing.lg }}>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: spacing.md,
-              marginBottom: spacing.sm,
-            }}
-          >
-            <Sparkles size={18} color={palette.orange} />
-            <AppText variant="bodyBold">AI Creator Suite</AppText>
-          </View>
+        {shouldShowAiSuite && (
+          <View style={{ padding: spacing.xl, gap: spacing.lg, marginTop: spacing.lg }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: spacing.md,
+                marginBottom: spacing.sm,
+              }}
+            >
+              <Sparkles size={18} color={palette.orange} />
+              <AppText variant="bodyBold">AI Creator Suite</AppText>
+            </View>
 
-          <View
-            style={{
-              flexDirection: "row",
-              gap: spacing.md,
-            }}
-          >
-            <Pressable onPress={() => handleAiAction(generateCaptionIdeas)} style={{ flex: 1 }}>
-              <Card
-                style={[
-                  styles.aiCard,
-                  {
-                    borderColor: palette.orange,
-                    backgroundColor: palette.surface,
-                    gap: spacing.xs,
-                  },
-                ]}
-              >
-                <TrendingUp size={20} color={palette.orange} />
-                <AppText variant="micro" style={{ fontWeight: "700", textAlign: "center" }}>
-                  Caption Ideas
-                </AppText>
-              </Card>
-            </Pressable>
-            <Pressable onPress={() => handleAiAction(suggestBestTime)} style={{ flex: 1 }}>
-              <Card
-                style={[
-                  styles.aiCard,
-                  {
-                    backgroundColor: palette.surface,
-                    borderColor: palette.border,
-                    gap: spacing.xs,
-                  },
-                ]}
-              >
-                <Clock size={20} color={palette.text} />
-                <AppText variant="micro" style={{ fontWeight: "700", textAlign: "center" }}>
-                  Best Time
-                </AppText>
-              </Card>
-            </Pressable>
-            <Pressable onPress={() => handleAiAction(optimiseCaption)} style={{ flex: 1 }}>
-              <Card
-                style={[
-                  styles.aiCard,
-                  {
-                    backgroundColor: palette.surface,
-                    borderColor: palette.border,
-                    gap: spacing.xs,
-                  },
-                ]}
-              >
-                <BarChart3 size={20} color={palette.text} />
-                <AppText variant="micro" style={{ fontWeight: "700", textAlign: "center" }}>
-                  Optimise
-                </AppText>
-              </Card>
-            </Pressable>
-          </View>
+            <View
+              style={{
+                flexDirection: "row",
+                gap: spacing.md,
+              }}
+            >
+              <Pressable onPress={() => handleAiAction(generateCaptionIdeas)} style={{ flex: 1 }}>
+                <Card
+                  style={[
+                    styles.aiCard,
+                    {
+                      borderColor: palette.orange,
+                      backgroundColor: palette.surface,
+                      gap: spacing.xs,
+                    },
+                  ]}
+                >
+                  <TrendingUp size={20} color={palette.orange} />
+                  <AppText variant="micro" style={{ fontWeight: "700", textAlign: "center" }}>
+                    Caption Ideas
+                  </AppText>
+                </Card>
+              </Pressable>
+              <Pressable onPress={() => handleAiAction(suggestBestTime)} style={{ flex: 1 }}>
+                <Card
+                  style={[
+                    styles.aiCard,
+                    {
+                      backgroundColor: palette.surface,
+                      borderColor: palette.border,
+                      gap: spacing.xs,
+                    },
+                  ]}
+                >
+                  <Clock size={20} color={palette.text} />
+                  <AppText variant="micro" style={{ fontWeight: "700", textAlign: "center" }}>
+                    Best Time
+                  </AppText>
+                </Card>
+              </Pressable>
+              <Pressable onPress={() => handleAiAction(optimiseCaption)} style={{ flex: 1 }}>
+                <Card
+                  style={[
+                    styles.aiCard,
+                    {
+                      backgroundColor: palette.surface,
+                      borderColor: palette.border,
+                      gap: spacing.xs,
+                    },
+                  ]}
+                >
+                  <BarChart3 size={20} color={palette.text} />
+                  <AppText variant="micro" style={{ fontWeight: "700", textAlign: "center" }}>
+                    Optimise
+                  </AppText>
+                </Card>
+              </Pressable>
+            </View>
 
-          {/* Preview Section */}
-          <Button
-            label="Live Preview"
-            variant="secondary"
-            onPress={() => useComposerStore.getState().setShowPreview(true)}
-            leftIcon={<Eye size={18} color={palette.text} />}
-            style={{ marginTop: spacing.lg }}
-          />
-        </View>
+            {/* Preview Section */}
+            <Button
+              label="Live Preview"
+              variant="secondary"
+              onPress={() => useComposerStore.getState().setShowPreview(true)}
+              leftIcon={<Eye size={18} color={palette.text} />}
+              style={{ marginTop: spacing.lg }}
+            />
+          </View>
+        )}
       </ScrollView>
 
       {/* Overlays & Fixed Components */}

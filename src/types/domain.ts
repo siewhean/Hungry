@@ -51,7 +51,18 @@ export type HawkerTasteTag =
   | "sedap" // deeply delicious, umami-rich
   | "power"; // exceptionally strong flavor, standout dish
 
-export type BuildingType = "hawker_centre" | "food_court" | "restaurant" | "mall";
+export type BuildingType =
+  | "hawker_centre"
+  | "food_court"
+  | "restaurant"
+  | "mall"
+  | "mixed_development"
+  | "cafe"
+  | "bar_bistro"
+  | "chain_outlet"
+  | "standalone"
+  | "kopitiam"
+  | "other";
 export type DeliveryPlatform = "grabfood" | "foodpanda";
 export type DietaryFlag =
   | "halal"
@@ -106,6 +117,9 @@ export interface BuildingSummary {
   venueCount: number;
   isClosedToday: boolean;
   heroDishId: string;
+  planningArea?: string;
+  imageUrl?: string;
+  logoUrl?: string;
 }
 
 export interface VenueSummary {
@@ -121,6 +135,74 @@ export interface VenueSummary {
   closureNotice?: string;
   deliveryLinks: DeliveryLink[];
   verificationStatus?: VerificationStatus;
+  planningArea?: string;
+  imageUrl?: string;
+  logoUrl?: string;
+  buildingName?: string;
+  address?: string;
+  postalCode?: string;
+}
+
+export type UserStallSubmissionStatus =
+  | "pending"
+  | "under_review"
+  | "accepted"
+  | "rejected"
+  | "duplicate";
+
+export interface UserStallSubmissionMenuItem {
+  name: string;
+  priceRange?: string;
+  notes?: string;
+}
+
+export interface UserStallSubmissionDeliveryLink {
+  label: string;
+  url: string;
+}
+
+export interface UserStallSubmission {
+  id: string;
+  userId: string;
+  stallName: string;
+  imageUrl: string;
+  galleryImageUrls?: string[];
+  imageStorageBucket?: string;
+  imageStoragePath?: string;
+  imageMimeType?: string;
+  sourceUrl?: string;
+  buildingName?: string;
+  area?: string;
+  address?: string;
+  postalCode?: string;
+  unitNumber?: string;
+  floor?: string;
+  operatingHours?: string;
+  menuItems: UserStallSubmissionMenuItem[];
+  deliveryLinks: UserStallSubmissionDeliveryLink[];
+  notes?: string;
+  status: UserStallSubmissionStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SubmitUserStallSubmissionInput {
+  stallName: string;
+  imageUri: string;
+  imageUris?: string[];
+  imageMimeType?: string;
+  imageMimeTypes?: string[];
+  sourceUrl?: string;
+  buildingName?: string;
+  area?: string;
+  address?: string;
+  postalCode?: string;
+  unitNumber?: string;
+  floor?: string;
+  operatingHours?: string;
+  menuItems?: UserStallSubmissionMenuItem[];
+  deliveryLinks?: UserStallSubmissionDeliveryLink[];
+  notes?: string;
 }
 
 export interface DishSummary {
@@ -147,13 +229,53 @@ export interface DishSummary {
 
 export interface Review {
   id: string;
+  dishId?: string;
+  venueId?: string;
   authorName: string;
+  authorAvatarUrl?: string;
   rating: number;
   createdAt: string;
   text: string;
   tags: string[];
   wouldRecommend: boolean;
   photos: string[];
+}
+
+export interface PopularVisitorPin {
+  id: string;
+  outletId: string;
+  venueId: string;
+  reviewId: string;
+  sourceId: string;
+  authorProfileId?: string;
+  authorName: string;
+  authorAvatarUrl?: string;
+  authorLocation?: string;
+  reviewText: string;
+  rating: number;
+  dishName?: string;
+  visitedAt: string;
+  pinnedAt: string;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+export interface PopularVisitorCandidate {
+  outletId: string;
+  venueId: string;
+  reviewId: string;
+  sourceId: string;
+  authorProfileId?: string;
+  authorName: string;
+  authorAvatarUrl?: string;
+  authorLocation?: string;
+  reviewText: string;
+  rating: number;
+  dishName?: string;
+  visitedAt: string;
+  isPinned: boolean;
+  pinId?: string;
+  sortOrder?: number;
 }
 
 export interface DishDetail extends DishSummary {
@@ -265,6 +387,12 @@ export interface SearchFilters {
   dietaryFlags: DietaryFlag[];
   tasteValues: TasteVector;
   radius: number;
+  latitude?: number;
+  longitude?: number;
+  areaName?: string;
+  cuisineTags?: string[];
+  maxPrice?: number;
+  openOnly?: boolean;
 }
 
 export interface StallPost {
@@ -280,6 +408,8 @@ export interface StallPost {
   mediaUrl: string;
   /** Optional carousel media. Keep mediaUrl as the first/canonical image for legacy consumers. */
   mediaUrls?: string[];
+  /** Controls the bottom-left dish/stall label overlay on feed media. Defaults to true. */
+  showFoodContextOverlay?: boolean;
   caption: string;
   /** Post-authored social tags. Falls back to dish taste tags when omitted. */
   tags?: string[];
@@ -399,6 +529,13 @@ export type VerificationMethod =
 export type LocationPrivacy = "exact" | "approximate" | "hidden";
 
 export type MerchantRole = "owner" | "manager" | "staff";
+export type MerchantInviteStatus = "pending" | "accepted" | "declined" | "removed";
+export type MerchantNotificationKind =
+  | "team_invite"
+  | "team_added"
+  | "low_rating"
+  | "weekly_summary"
+  | "ai_insight";
 
 export interface VerificationEvidence {
   id: string;
@@ -466,6 +603,10 @@ export interface MerchantTeamMember {
   displayName: string;
   email: string;
   role: MerchantRole;
+  inviteStatus?: MerchantInviteStatus;
+  invitedAt?: string;
+  acceptedAt?: string;
+  removedAt?: string;
   addedAt: string;
 }
 
@@ -498,6 +639,141 @@ export interface MerchantAnalytics {
 
 export type PromotionStatus = "draft" | "scheduled" | "active" | "ended";
 
+// ─── Checklist Types ──────────────────────────────────────────────────────────
+
+export type ChecklistItemType = "dish" | "stall" | "custom";
+
+export interface Checklist {
+  id: string;
+  userId: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChecklistItem {
+  id: string;
+  checklistId: string;
+  itemType: ChecklistItemType;
+  dishId?: string;
+  stallId?: string;
+  customText?: string;
+  reminderAt?: string;
+  plannedVisitDate?: string;
+  triedAt?: string;
+  position: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ─── Portfolio Types ──────────────────────────────────────────────────────────
+
+export type PortfolioType = "recommendation" | "ranking" | "trail" | "collection";
+export type PortfolioVisibility = "private" | "followers_only" | "public";
+export type PortfolioItemType = "dish" | "stall";
+export type PortfolioCollaboratorRole = "viewer" | "editor";
+export type PortfolioFlagReason = "spam" | "inappropriate" | "misleading" | "other";
+export type PortfolioFlagStatus = "pending" | "dismissed" | "removed";
+
+export interface Portfolio {
+  id: string;
+  ownerId: string;
+  name: string;
+  description?: string;
+  type: PortfolioType;
+  visibility: PortfolioVisibility;
+  publishedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PortfolioItem {
+  id: string;
+  portfolioId: string;
+  itemType: PortfolioItemType;
+  dishId?: string;
+  stallId?: string;
+  score?: number;
+  publicNotes?: string;
+  privateNotes?: string;
+  position: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PortfolioCollaborator {
+  id: string;
+  portfolioId: string;
+  userId: string;
+  role: PortfolioCollaboratorRole;
+  createdAt: string;
+}
+
+export interface PortfolioFollow {
+  id: string;
+  portfolioId: string;
+  userId: string;
+  createdAt: string;
+}
+
+export interface PortfolioFlag {
+  id: string;
+  portfolioId: string;
+  reporterId: string;
+  reason: PortfolioFlagReason;
+  details?: string;
+  status: PortfolioFlagStatus;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  createdAt: string;
+}
+
+// ─── Passport Types ───────────────────────────────────────────────────────────
+
+export type PassportEventType =
+  | "dish_tried"
+  | "stall_visited"
+  | "stall_submitted"
+  | "review_posted"
+  | "photo_posted"
+  | "portfolio_item_added"
+  | "public_portfolio_published"
+  | "trail_completed";
+
+export interface PassportStamp {
+  id: string;
+  userId: string;
+  categoryId: string;
+  level: number;
+  dishesTriedCount: number;
+  stallsVisitedCount: number;
+  stallsSubmittedCount: number;
+  reviewsPostedCount: number;
+  photosPostedCount: number;
+  portfolioItemsAdded: number;
+  publicPortfoliosPublished: number;
+  trailsCompleted: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PassportProgressEvent {
+  id: string;
+  userId: string;
+  categoryId: string;
+  eventType: PassportEventType;
+  referenceId?: string;
+  createdAt: string;
+}
+
+export interface PassportContributionStats {
+  stallsSubmitted: number;
+  portfolioItemsAdded: number;
+  publicPortfoliosPublished: number;
+  trailsCompleted: number;
+  recentEvents: PassportProgressEvent[];
+}
+
 export type PromotionTargetAudience =
   | "nearby_users"
   | "saved_stall_users"
@@ -511,8 +787,14 @@ export interface MerchantPromotion {
   description: string;
   /** Dish ID if promoting a specific dish, else outlet-level */
   targetDishId?: string;
+  promotionItemType?: "new_item" | "existing_menu_item";
   startDate: string;
   endDate: string;
+  originalPrice?: number;
+  promotionalPrice?: number;
+  finalPrice?: number;
+  discountPercentage?: number;
+  isAvailable?: boolean;
   targetAudience: PromotionTargetAudience[];
   status: PromotionStatus;
   createdAt: string;
@@ -577,6 +859,47 @@ export interface MerchantNotificationPreferences {
   aiInsights: boolean;
 }
 
+export interface MerchantNotification {
+  id: string;
+  merchantAccountId: string;
+  outletId?: string;
+  recipientUserId?: string;
+  recipientEmail?: string;
+  kind: MerchantNotificationKind;
+  title: string;
+  body: string;
+  status: "unread" | "read" | "sent";
+  dedupeKey: string;
+  deepLink?: string;
+  metadata?: Record<string, string | number | boolean | null>;
+  createdAt: string;
+}
+
+export interface MerchantDishViewEvent {
+  id: string;
+  outletId: string;
+  dishId: string;
+  sessionId: string;
+  userId?: string;
+  viewedAt: string;
+}
+
+export interface MerchantWeeklySummary {
+  id: string;
+  outletId: string;
+  weekStart: string;
+  weekEnd: string;
+  totalViews: number;
+  dishViews: number;
+  topDishes: { dishId: string; name: string; views: number; saves: number }[];
+  newReviews: number;
+  averageRating: number;
+  ratingChange: number;
+  unrepliedReviews: number;
+  promotionViews: number;
+  createdAt: string;
+}
+
 export interface AIBusinessInsight {
   id: string;
   outletId: string;
@@ -603,6 +926,8 @@ export interface AIBusinessInsight {
 export interface StoryItem {
   id: string;
   displayName: string;
+  authorId?: string;
+  authorProfileVisibility?: ProfileVisibility;
   avatarUrl?: string;
   emoji?: string;
   /** true = stall account (orange gradient ring + fork badge), false = user (grey ring) */
@@ -617,9 +942,15 @@ export interface StoryContent {
   url: string;
 }
 
+export interface StoryGalleryAsset extends StoryContent {
+  id: string;
+  title: string;
+}
+
 export interface StoryInteraction {
   liked: boolean;
   saved: boolean;
+  savedAt?: string;
   likeCount: number;
   commentCount: number;
   shareCount: number;
@@ -687,6 +1018,7 @@ export type FoodCredAction =
   | "photo_uploaded"
   | "stall_saved"
   | "stall_marked_tried"
+  | "stall_submitted"
   | "helpful_vote_received"
   | "stall_info_corrected"
   | "tag_added"
@@ -760,7 +1092,27 @@ export interface ReviewHelpfulVote {
 // ─── Passport ─────────────────────────────────────────────────────────────────
 
 /** Top-level dimension of the Hungry Passport */
-export type PassportCategoryType = "cuisine" | "neighbourhood";
+export type PassportCategoryType =
+  | "cuisine"
+  | "neighbourhood"
+  | "classic"
+  | "dietary"
+  | "contributor";
+
+export type PassportStampAssetKey =
+  | "stamp-cuisine-hawker"
+  | "stamp-classic-laksa"
+  | "stamp-hood-chinatown"
+  | "stamp-dietary-halal";
+
+export type PassportBadgeAssetKey =
+  | "badge-hawker-explorer"
+  | "badge-classics-trail"
+  | "badge-night-makan"
+  | "badge-contributor";
+
+export type PassportInkTone = "orange" | "amber" | "navy" | "teal";
+export type PassportStampShape = "rounded" | "oval" | "slanted";
 
 /**
  * A single passport category (e.g. "Japanese Explorer", "CBD Lunch Explorer").
@@ -777,6 +1129,48 @@ export interface PassportCategory {
   stampThresholds: number[];
 }
 
+export interface PassportStampDefinition {
+  id: string;
+  categoryId: string;
+  threshold: number;
+  index: number;
+  title: string;
+  subtitle: string;
+  description: string;
+  assetKey: PassportStampAssetKey;
+  inkTone: PassportInkTone;
+  stampShape: PassportStampShape;
+}
+
+export interface PassportBadgeDefinition {
+  id: string;
+  title: string;
+  description: string;
+  categoryType: PassportCategoryType;
+  assetKey: PassportBadgeAssetKey;
+  unlockCategoryId?: string;
+  unlockThreshold: number;
+}
+
+export interface EarnedPassportStamp extends PassportStampDefinition {
+  triedCount: number;
+}
+
+export interface PassportNextStamp {
+  category: PassportCategory;
+  stamp: PassportStampDefinition;
+  triedCount: number;
+  remainingCount: number;
+  progressFraction: number;
+}
+
+export interface PassportCelebrateMarker {
+  stampId: string;
+  categoryId: string;
+  title: string;
+  shouldCelebrate: boolean;
+}
+
 /**
  * A user's computed progress within one passport category.
  * Computed from user_stall_interactions — not stored independently for MVP.
@@ -789,6 +1183,15 @@ export interface UserPassportProgress {
   nextStampIndex: number;
   /** Thresholds for which stamps have been awarded */
   earnedStampThresholds: number[];
+}
+
+export interface UserPassportStamp {
+  stampId: string;
+  categoryId: string;
+  threshold: number;
+  earnedAt: string;
+  triggerAction: FoodCredAction | "initial_sync";
+  celebratedAt?: string;
 }
 
 // ─── Collections ──────────────────────────────────────────────────────────────
@@ -846,6 +1249,7 @@ export interface UserCollectionSave {
 
 export type MissionType =
   | "save_stalls"
+  | "add_stall"
   | "create_post"
   | "write_review"
   | "mark_tried"

@@ -1,25 +1,28 @@
-import React, { useEffect } from "react";
-import {
-  View,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-  Switch,
-} from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { Camera, Image as ImageIcon } from "lucide-react-native";
 import { useForm, Controller } from "react-hook-form";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
-import { AppText, Button, Screen, Chip } from "@/components/ui";
+import {
+  AccessibleImage,
+  AppText,
+  Button,
+  EmptyState,
+  FormSwitchRow,
+  Input,
+  Screen,
+  SelectField,
+} from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import { confirmGalleryAccess, isGalleryPermissionGranted } from "@/lib/permissions/gallery";
 import type { MerchantOutlet, LocationPrivacy } from "@/types/domain";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
+import { formatBusinessType } from "@/features/merchant/merchantReadiness";
 
 type NavigationProp = NativeStackNavigationProp<MerchantTabParamList, "BusinessProfileEditor">;
 
@@ -33,19 +36,163 @@ type FormData = {
   locationPrivacy: LocationPrivacy;
   operatingHours: string;
   temporaryClosure: string;
+  profilePhotoUrl: string;
+  coverPhotoUrl: string;
   contactPhone: string;
   contactEmail: string;
   dietaryLabels: string;
   tasteTags: string;
 };
 
+const BUSINESS_TYPE_OPTIONS: MerchantOutlet["businessType"][] = [
+  "hawker_stall",
+  "food_court_stall",
+  "restaurant",
+  "cafe",
+  "mall_tenant",
+  "home_based",
+];
+const BUSINESS_TYPE_SELECT_OPTIONS = BUSINESS_TYPE_OPTIONS.map((value) => ({
+  label: formatBusinessType(value),
+  value,
+}));
+
+function loadImagePickerModule() {
+  try {
+    return require("expo-image-picker");
+  } catch {
+    return null;
+  }
+}
+
+function BusinessTypeDropdown({
+  value,
+  onChange,
+}: {
+  value: MerchantOutlet["businessType"];
+  onChange: (value: MerchantOutlet["businessType"]) => void;
+}) {
+  return (
+    <SelectField
+      label="Business Type"
+      value={value}
+      options={BUSINESS_TYPE_SELECT_OPTIONS}
+      onChange={onChange}
+    />
+  );
+}
+
+function BusinessImageField({
+  label,
+  value,
+  onChange,
+  isSaving,
+  icon,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  isSaving: boolean;
+  icon: React.ReactNode;
+}) {
+  const { componentRadii, palette, spacing } = useHungryTheme();
+  const [error, setError] = useState<string | null>(null);
+
+  const handlePick = async () => {
+    try {
+      setError(null);
+      const imagePicker = loadImagePickerModule();
+      if (!imagePicker) {
+        setError("Photo picker is unavailable in this build.");
+        return;
+      }
+
+      const shouldRequestPermission = await confirmGalleryAccess({
+        title: "Allow gallery access",
+        message:
+          "Hungry needs access to your photo library to upload your profile image for the outlet.",
+        confirmLabel: "Allow",
+        cancelLabel: "Not now",
+      });
+
+      if (!shouldRequestPermission) {
+        return;
+      }
+
+      const permission = await imagePicker.requestMediaLibraryPermissionsAsync();
+      if (!isGalleryPermissionGranted(permission)) {
+        setError("Photos permission is required to upload this image.");
+        return;
+      }
+      const result = await imagePicker.launchImageLibraryAsync({
+        allowsEditing: true,
+        mediaTypes: imagePicker.MediaTypeOptions.Images,
+        quality: 0.82,
+        selectionLimit: 1,
+      });
+      if (result.canceled || !result.assets?.length) return;
+      onChange(result.assets[0].uri);
+    } catch {
+      setError("Unable to open the photo library right now.");
+    }
+  };
+
+  return (
+    <View style={{ gap: spacing[2] }}>
+      <AppText variant="bodyBold">{label}</AppText>
+      {value.trim() ? (
+        <AccessibleImage
+          source={{ uri: value.trim() }}
+          style={[
+            styles.photoPreview,
+            { borderRadius: componentRadii.input, borderColor: palette.border },
+          ]}
+          accessibilityLabel={`${label} preview`}
+        />
+      ) : (
+        <View
+          accessibilityLabel={`${label} preview`}
+          style={[
+            styles.photoPlaceholder,
+            {
+              backgroundColor: palette.bgSoft,
+              borderColor: palette.border,
+              borderRadius: componentRadii.input,
+            },
+          ]}
+        >
+          {icon}
+          <AppText variant="micro" tone="muted" style={{ marginTop: 4 }}>
+            Upload from your phone or gallery.
+          </AppText>
+        </View>
+      )}
+      {isSaving && value ? (
+        <AppText variant="micro" tone="muted">
+          Uploading and saving image...
+        </AppText>
+      ) : null}
+      {error ? (
+        <AppText variant="micro" style={{ color: palette.error }}>
+          {error}
+        </AppText>
+      ) : null}
+      <View style={{ flexDirection: "row", gap: spacing[2] }}>
+        <Button label={value ? "Replace" : "Upload"} variant="secondary" onPress={handlePick} />
+        {value ? <Button label="Remove" variant="ghost" onPress={() => onChange("")} /> : null}
+      </View>
+    </View>
+  );
+}
+
 export function BusinessProfileEditorScreen() {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const navigation = useNavigation<NavigationProp>();
   const rootNavigation = getRootNavigation(navigation as any);
   const repository = getDataRepository();
   const activeOutlet = useMerchantStore(getActiveOutlet);
   const updateOutletProfile = useMerchantStore((state) => state.updateOutletProfile);
+  const [isUploadingImages, setIsUploadingImages] = useState(false);
 
   const {
     control,
@@ -63,6 +210,8 @@ export function BusinessProfileEditorScreen() {
       locationPrivacy: "exact",
       operatingHours: "",
       temporaryClosure: "",
+      profilePhotoUrl: "",
+      coverPhotoUrl: "",
       contactPhone: "",
       contactEmail: "",
       dietaryLabels: "",
@@ -81,6 +230,8 @@ export function BusinessProfileEditorScreen() {
       setValue("locationPrivacy", activeOutlet.locationPrivacy || "exact");
       setValue("operatingHours", activeOutlet.operatingHours || "");
       setValue("temporaryClosure", activeOutlet.temporaryClosure || "");
+      setValue("profilePhotoUrl", activeOutlet.profilePhotoUrl || "");
+      setValue("coverPhotoUrl", activeOutlet.coverPhotoUrl || "");
       setValue("contactPhone", activeOutlet.contactPhone || "");
       setValue("contactEmail", activeOutlet.contactEmail || "");
       setValue("dietaryLabels", activeOutlet.dietaryLabels?.join(", ") || "");
@@ -91,6 +242,17 @@ export function BusinessProfileEditorScreen() {
   const onSubmit = async (data: FormData) => {
     if (!activeOutlet) return;
     try {
+      const profilePhotoUrl = data.profilePhotoUrl.trim();
+      const coverPhotoUrl = data.coverPhotoUrl.trim();
+      setIsUploadingImages(
+        [profilePhotoUrl, coverPhotoUrl].some(
+          (value) =>
+            value.startsWith("file://") || value.startsWith("content://") || value.startsWith("/"),
+        ),
+      );
+      const galleryUrls = Array.from(
+        new Set([profilePhotoUrl, coverPhotoUrl, ...activeOutlet.galleryUrls].filter(Boolean)),
+      );
       const updates: Partial<MerchantOutlet> = {
         name: data.name,
         description: data.description,
@@ -104,6 +266,9 @@ export function BusinessProfileEditorScreen() {
         locationPrivacy: data.locationPrivacy,
         operatingHours: data.operatingHours,
         temporaryClosure: data.temporaryClosure,
+        ...(profilePhotoUrl ? { profilePhotoUrl } : {}),
+        ...(coverPhotoUrl ? { coverPhotoUrl } : {}),
+        galleryUrls,
         contactPhone: data.contactPhone,
         contactEmail: data.contactEmail,
         dietaryLabels: data.dietaryLabels
@@ -125,7 +290,9 @@ export function BusinessProfileEditorScreen() {
       navigation.goBack();
     } catch (error) {
       console.error(error);
-      Alert.alert("Error", "Failed to update profile.");
+      Alert.alert("Error", error instanceof Error ? error.message : "Failed to update profile.");
+    } finally {
+      setIsUploadingImages(false);
     }
   };
 
@@ -153,7 +320,12 @@ export function BusinessProfileEditorScreen() {
   if (!activeOutlet) {
     return (
       <Screen title="Error">
-        <AppText>No active outlet selected.</AppText>
+        <EmptyState
+          title="No active outlet selected"
+          body="A business profile cannot be loaded until you choose a merchant outlet."
+          errorMessage="No active outlet was found for this merchant session."
+          sendErrorContext="Business profile editor"
+        />
       </Screen>
     );
   }
@@ -161,6 +333,7 @@ export function BusinessProfileEditorScreen() {
   return (
     <Screen
       title="Business Profile"
+      contentContainerStyle={{ paddingBottom: spacing[6] }}
       headerRight={
         <TouchableOpacity
           onPress={handlePreviewAsCustomer}
@@ -188,7 +361,7 @@ export function BusinessProfileEditorScreen() {
               {
                 paddingVertical: spacing[2],
                 paddingHorizontal: spacing[3],
-                borderRadius: radii.md,
+                borderRadius: componentRadii.card,
               },
               { backgroundColor: palette.successSoft, borderColor: palette.success },
             ]}
@@ -205,123 +378,49 @@ export function BusinessProfileEditorScreen() {
           </AppText>
 
           <View>
-            <AppText variant="bodyBold" style={{ marginBottom: spacing[2] }}>
-              Business Name *
-            </AppText>
             <Controller
               control={control}
               name="name"
               rules={{ required: "Name is required" }}
               render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  style={[
-                    styles.input,
-                    {
-                      borderRadius: radii.md,
-                      paddingHorizontal: spacing[3],
-                      paddingVertical: spacing[2],
-                    },
-                    {
-                      backgroundColor: palette.surface,
-                      borderColor: palette.border,
-                      color: palette.text,
-                    },
-                    errors.name && { borderColor: palette.error },
-                  ]}
+                <Input
+                  label="Business Name *"
                   onBlur={onBlur}
                   onChangeText={onChange}
                   value={value}
                   placeholder="e.g. Uncle Tan's Chicken Rice"
-                  placeholderTextColor={palette.textMuted}
+                  error={Boolean(errors.name)}
+                  errorText={errors.name?.message}
                 />
               )}
             />
-            {errors.name && (
-              <AppText variant="micro" style={{ color: palette.error, marginTop: 4 }}>
-                {errors.name.message}
-              </AppText>
-            )}
           </View>
 
           <View>
-            <AppText variant="bodyBold" style={{ marginBottom: spacing[2] }}>
-              Description
-            </AppText>
             <Controller
               control={control}
               name="description"
               render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  style={[
-                    styles.input,
-                    {
-                      borderRadius: radii.md,
-                      paddingHorizontal: spacing[3],
-                      paddingVertical: spacing[2],
-                    },
-                    styles.textArea,
-                    { height: 100 },
-                    {
-                      backgroundColor: palette.surface,
-                      borderColor: palette.border,
-                      color: palette.text,
-                    },
-                  ]}
+                <Input
+                  label="Description"
                   onBlur={onBlur}
                   onChangeText={onChange}
                   value={value}
                   multiline
                   numberOfLines={4}
                   placeholder="Tell customers about your business..."
-                  placeholderTextColor={palette.textMuted}
+                  style={{ minHeight: 100, textAlignVertical: "top" }}
                 />
               )}
             />
           </View>
 
           <View>
-            <AppText variant="bodyBold" style={{ marginBottom: spacing[2] }}>
-              Business Type
-            </AppText>
             <Controller
               control={control}
               name="businessType"
               render={({ field: { onChange, value } }) => (
-                <View style={[styles.pickerContainer, { gap: spacing[2], marginTop: spacing[1] }]}>
-                  {[
-                    "hawker_stall",
-                    "food_court_stall",
-                    "restaurant",
-                    "cafe",
-                    "mall_tenant",
-                    "home_based",
-                  ].map((type) => (
-                    <TouchableOpacity
-                      key={type}
-                      style={[
-                        styles.pickerChip,
-                        {
-                          paddingVertical: spacing[1],
-                          paddingHorizontal: spacing[3],
-                          borderRadius: radii.pill,
-                        },
-                        { backgroundColor: palette.bgSoft, borderColor: palette.border },
-                        value === type && {
-                          backgroundColor: palette.orangeLight,
-                          borderColor: palette.orange,
-                        },
-                      ]}
-                      onPress={() => onChange(type)}
-                    >
-                      <AppText
-                        variant="bodySmallBold"
-                        style={{ color: value === type ? palette.orange : palette.textMuted }}
-                      >
-                        {type.replace("_", " ")}
-                      </AppText>
-                    </TouchableOpacity>
-                  ))}
-                </View>
+                <BusinessTypeDropdown value={value} onChange={onChange} />
               )}
             />
           </View>
@@ -331,49 +430,35 @@ export function BusinessProfileEditorScreen() {
           <AppText variant="h3" style={{ fontWeight: "600" }}>
             Photos
           </AppText>
-          <View style={{ flexDirection: "row", gap: spacing[4] }}>
-            <View style={{ flex: 1, gap: spacing[2] }}>
-              <AppText variant="bodyBold">Profile Image</AppText>
-              <View
-                accessibilityLabel="Profile image upload unavailable"
-                style={{
-                  height: 100,
-                  backgroundColor: palette.bgSoft,
-                  borderColor: palette.border,
-                  borderWidth: 1,
-                  borderRadius: radii.xl,
-                  borderStyle: "dashed",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Camera size={24} color={palette.textMuted} />
-                <AppText variant="micro" tone="muted" style={{ marginTop: 4 }}>
-                  Image URL only
-                </AppText>
-              </View>
-            </View>
-            <View style={{ flex: 1, gap: spacing[2] }}>
-              <AppText variant="bodyBold">Cover Image</AppText>
-              <View
-                accessibilityLabel="Cover image upload unavailable"
-                style={{
-                  height: 100,
-                  backgroundColor: palette.bgSoft,
-                  borderColor: palette.border,
-                  borderWidth: 1,
-                  borderRadius: radii.xl,
-                  borderStyle: "dashed",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <ImageIcon size={24} color={palette.textMuted} />
-                <AppText variant="micro" tone="muted" style={{ marginTop: 4 }}>
-                  Image URL only
-                </AppText>
-              </View>
-            </View>
+
+          <View style={{ gap: spacing[4] }}>
+            <Controller
+              control={control}
+              name="profilePhotoUrl"
+              render={({ field: { onChange, value } }) => (
+                <BusinessImageField
+                  label="Profile Image"
+                  value={value}
+                  onChange={onChange}
+                  isSaving={isUploadingImages}
+                  icon={<Camera size={24} color={palette.textMuted} />}
+                />
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="coverPhotoUrl"
+              render={({ field: { onChange, value } }) => (
+                <BusinessImageField
+                  label="Cover Image"
+                  value={value}
+                  onChange={onChange}
+                  isSaving={isUploadingImages}
+                  icon={<ImageIcon size={24} color={palette.textMuted} />}
+                />
+              )}
+            />
           </View>
         </View>
 
@@ -383,96 +468,48 @@ export function BusinessProfileEditorScreen() {
           </AppText>
 
           <View>
-            <AppText variant="bodyBold" style={{ marginBottom: spacing[2] }}>
-              Cuisine Categories
-            </AppText>
             <Controller
               control={control}
               name="cuisineCategories"
               render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  style={[
-                    styles.input,
-                    {
-                      borderRadius: radii.md,
-                      paddingHorizontal: spacing[3],
-                      paddingVertical: spacing[2],
-                    },
-                    {
-                      backgroundColor: palette.surface,
-                      borderColor: palette.border,
-                      color: palette.text,
-                    },
-                  ]}
+                <Input
+                  label="Cuisine Categories"
                   onBlur={onBlur}
                   onChangeText={onChange}
                   value={value}
                   placeholder="e.g. Chinese, Noodles (comma-separated)"
-                  placeholderTextColor={palette.textMuted}
                 />
               )}
             />
           </View>
 
           <View>
-            <AppText variant="bodyBold" style={{ marginBottom: spacing[2] }}>
-              Dietary Labels
-            </AppText>
             <Controller
               control={control}
               name="dietaryLabels"
               render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  style={[
-                    styles.input,
-                    {
-                      borderRadius: radii.md,
-                      paddingHorizontal: spacing[3],
-                      paddingVertical: spacing[2],
-                    },
-                    {
-                      backgroundColor: palette.surface,
-                      borderColor: palette.border,
-                      color: palette.text,
-                    },
-                  ]}
+                <Input
+                  label="Dietary Labels"
                   onBlur={onBlur}
                   onChangeText={onChange}
                   value={value}
                   placeholder="e.g. halal, pork_free, vegetarian"
-                  placeholderTextColor={palette.textMuted}
                 />
               )}
             />
           </View>
 
           <View>
-            <AppText variant="bodyBold" style={{ marginBottom: spacing[2] }}>
-              Taste Tags
-            </AppText>
             <Controller
               control={control}
               name="tasteTags"
               render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  style={[
-                    styles.input,
-                    {
-                      borderRadius: radii.md,
-                      paddingHorizontal: spacing[3],
-                      paddingVertical: spacing[2],
-                    },
-                    {
-                      backgroundColor: palette.surface,
-                      borderColor: palette.border,
-                      color: palette.text,
-                    },
-                  ]}
+                <Input
+                  label="Taste Tags"
                   onBlur={onBlur}
                   onChangeText={onChange}
                   value={value}
                   placeholder="e.g. Spicy, Savoury, Wok Hei"
-                  placeholderTextColor={palette.textMuted}
                 />
               )}
             />
@@ -486,27 +523,12 @@ export function BusinessProfileEditorScreen() {
 
           <View style={{ flexDirection: "row", gap: spacing[3] }}>
             <View style={{ flex: 1 }}>
-              <AppText variant="bodyBold" style={{ marginBottom: spacing[2] }}>
-                Unit Number
-              </AppText>
               <Controller
                 control={control}
                 name="unitNumber"
                 render={({ field: { onChange, onBlur, value } }) => (
-                  <TextInput
-                    style={[
-                      styles.input,
-                      {
-                        borderRadius: radii.md,
-                        paddingHorizontal: spacing[3],
-                        paddingVertical: spacing[2],
-                      },
-                      {
-                        backgroundColor: palette.surface,
-                        borderColor: palette.border,
-                        color: palette.text,
-                      },
-                    ]}
+                  <Input
+                    label="Unit Number"
                     onBlur={onBlur}
                     onChangeText={onChange}
                     value={value}
@@ -516,27 +538,12 @@ export function BusinessProfileEditorScreen() {
               />
             </View>
             <View style={{ flex: 1 }}>
-              <AppText variant="bodyBold" style={{ marginBottom: spacing[2] }}>
-                Floor
-              </AppText>
               <Controller
                 control={control}
                 name="floor"
                 render={({ field: { onChange, onBlur, value } }) => (
-                  <TextInput
-                    style={[
-                      styles.input,
-                      {
-                        borderRadius: radii.md,
-                        paddingHorizontal: spacing[3],
-                        paddingVertical: spacing[2],
-                      },
-                      {
-                        backgroundColor: palette.surface,
-                        borderColor: palette.border,
-                        color: palette.text,
-                      },
-                    ]}
+                  <Input
+                    label="Floor"
                     onBlur={onBlur}
                     onChangeText={onChange}
                     value={value}
@@ -548,27 +555,12 @@ export function BusinessProfileEditorScreen() {
           </View>
 
           <View>
-            <AppText variant="bodyBold" style={{ marginBottom: spacing[2] }}>
-              Operating Hours
-            </AppText>
             <Controller
               control={control}
               name="operatingHours"
               render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  style={[
-                    styles.input,
-                    {
-                      borderRadius: radii.md,
-                      paddingHorizontal: spacing[3],
-                      paddingVertical: spacing[2],
-                    },
-                    {
-                      backgroundColor: palette.surface,
-                      borderColor: palette.border,
-                      color: palette.text,
-                    },
-                  ]}
+                <Input
+                  label="Operating Hours"
                   onBlur={onBlur}
                   onChangeText={onChange}
                   value={value}
@@ -579,64 +571,33 @@ export function BusinessProfileEditorScreen() {
           </View>
 
           <View>
-            <AppText variant="bodyBold" style={{ marginBottom: spacing[2] }}>
-              Temporary Closure Notice
-            </AppText>
             <Controller
               control={control}
               name="temporaryClosure"
               render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  style={[
-                    styles.input,
-                    {
-                      borderRadius: radii.md,
-                      paddingHorizontal: spacing[3],
-                      paddingVertical: spacing[2],
-                    },
-                    {
-                      backgroundColor: palette.surface,
-                      borderColor: palette.border,
-                      color: palette.text,
-                    },
-                  ]}
+                <Input
+                  label="Temporary Closure Notice"
                   onBlur={onBlur}
                   onChangeText={onChange}
                   value={value}
                   placeholder="e.g. Closed for CNY until 15 Feb"
-                  placeholderTextColor={palette.textMuted}
                 />
               )}
             />
           </View>
 
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginTop: spacing[2],
-            }}
-          >
-            <View style={{ flex: 1, paddingRight: spacing[4] }}>
-              <AppText variant="bodyBold">Exact Location Privacy</AppText>
-              <AppText variant="micro" tone="muted">
-                Turn off to hide your exact unit number and floor (useful for home-based
-                businesses).
-              </AppText>
-            </View>
-            <Controller
-              control={control}
-              name="locationPrivacy"
-              render={({ field: { onChange, value } }) => (
-                <Switch
-                  value={value === "exact"}
-                  onValueChange={(val) => onChange(val ? "exact" : "hidden")}
-                  trackColor={{ false: palette.border, true: palette.orange }}
-                />
-              )}
-            />
-          </View>
+          <Controller
+            control={control}
+            name="locationPrivacy"
+            render={({ field: { onChange, value } }) => (
+              <FormSwitchRow
+                label="Exact Location Privacy"
+                description="Turn off to hide your exact unit number and floor (useful for home-based businesses)."
+                value={value === "exact"}
+                onValueChange={(val) => onChange(val ? "exact" : "hidden")}
+              />
+            )}
+          />
         </View>
 
         <View style={{ gap: spacing[4] }}>
@@ -645,9 +606,6 @@ export function BusinessProfileEditorScreen() {
           </AppText>
 
           <View>
-            <AppText variant="bodyBold" style={{ marginBottom: spacing[2] }}>
-              Phone Number
-            </AppText>
             <Controller
               control={control}
               name="contactPhone"
@@ -658,45 +616,21 @@ export function BusinessProfileEditorScreen() {
                 },
               }}
               render={({ field: { onChange, onBlur, value } }) => (
-                <View>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      {
-                        borderRadius: radii.md,
-                        paddingHorizontal: spacing[3],
-                        paddingVertical: spacing[2],
-                      },
-                      {
-                        backgroundColor: palette.surface,
-                        borderColor: errors.contactPhone ? palette.error : palette.border,
-                        color: palette.text,
-                      },
-                    ]}
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    value={value}
-                    keyboardType="phone-pad"
-                    placeholder="e.g. 8123 4567"
-                    placeholderTextColor={palette.textMuted}
-                  />
-                  {errors.contactPhone && (
-                    <AppText
-                      variant="micro"
-                      style={{ color: palette.error, marginTop: spacing[1] }}
-                    >
-                      {errors.contactPhone.message}
-                    </AppText>
-                  )}
-                </View>
+                <Input
+                  label="Phone Number"
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  value={value}
+                  keyboardType="phone-pad"
+                  placeholder="e.g. 8123 4567"
+                  error={Boolean(errors.contactPhone)}
+                  errorText={errors.contactPhone?.message}
+                />
               )}
             />
           </View>
 
           <View>
-            <AppText variant="bodyBold" style={{ marginBottom: spacing[2] }}>
-              Email Address
-            </AppText>
             <Controller
               control={control}
               name="contactEmail"
@@ -707,38 +641,17 @@ export function BusinessProfileEditorScreen() {
                 },
               }}
               render={({ field: { onChange, onBlur, value } }) => (
-                <View>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      {
-                        borderRadius: radii.md,
-                        paddingHorizontal: spacing[3],
-                        paddingVertical: spacing[2],
-                      },
-                      {
-                        backgroundColor: palette.surface,
-                        borderColor: errors.contactEmail ? palette.error : palette.border,
-                        color: palette.text,
-                      },
-                    ]}
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    value={value}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    placeholder="e.g. hello@business.com"
-                    placeholderTextColor={palette.textMuted}
-                  />
-                  {errors.contactEmail && (
-                    <AppText
-                      variant="micro"
-                      style={{ color: palette.error, marginTop: spacing[1] }}
-                    >
-                      {errors.contactEmail.message}
-                    </AppText>
-                  )}
-                </View>
+                <Input
+                  label="Email Address"
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  value={value}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  placeholder="e.g. hello@business.com"
+                  error={Boolean(errors.contactEmail)}
+                  errorText={errors.contactEmail?.message}
+                />
               )}
             />
           </View>
@@ -765,18 +678,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignSelf: "flex-start",
   },
-  input: {
+  photoPreview: {
+    width: "100%",
+    height: 140,
     borderWidth: 1,
-    fontSize: 16,
   },
-  textArea: {
-    textAlignVertical: "top",
-  },
-  pickerContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
-  pickerChip: {
+  photoPlaceholder: {
+    height: 140,
     borderWidth: 1,
+    borderStyle: "dashed",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

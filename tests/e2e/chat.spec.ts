@@ -9,14 +9,14 @@ test.describe("chat", () => {
     );
   });
 
-  test("hides direct-message surfaces when the feature flag is disabled", async ({ page }) => {
+  test("keeps direct-message surfaces available in dev smoke mode", async ({ page }) => {
     await resetAppState(page);
     await startOnboardedMockSession(page);
     await clickDevButton(page, "Home", "Core app flow");
 
     await page.getByRole("button", { name: "Open activity inbox" }).click();
-    await expect(page.getByTestId("activity-tab-updates")).toBeVisible();
-    await expect(page.getByRole("tab", { name: "Messages" })).toHaveCount(0);
-    await expect(page.getByRole("button", { name: /Open chat with/i })).toHaveCount(0);
+    await expect(page.getByTestId("activity-tab-updates").first()).toBeVisible();
+    await page.getByRole("tab", { name: "Messages" }).click();
+    await expect(page.getByRole("button", { name: /Open chat with/i }).first()).toBeVisible();
   });
 });

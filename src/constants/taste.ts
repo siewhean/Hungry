@@ -20,6 +20,14 @@ export const TASTE_DIMENSIONS: {
   { key: "aromatic", label: "Aromatic", shortLabel: "Ar", icon: "Leaf" },
 ];
 
+export const TASTE_LABELS = TASTE_DIMENSIONS.reduce(
+  (labels, dimension) => ({
+    ...labels,
+    [dimension.key]: dimension.label,
+  }),
+  {} as Record<TasteKey, string>,
+);
+
 export const NEUTRAL_TASTE_VECTOR: TasteVector = {
   sweet: 5,
   spicy: 5,

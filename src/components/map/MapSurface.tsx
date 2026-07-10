@@ -8,19 +8,22 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
-import { Image } from "expo-image";
-import MapboxGL from "@rnmapbox/maps";
 import { Utensils } from "lucide-react-native";
 
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import type { BuildingType, Coordinate } from "@/types/domain";
 import { useHungryTheme } from "@/theme";
-import { AppText } from "@/components/ui";
+import { componentRadii } from "@/theme/tokens";
+import { AccessibleImage, AppText } from "@/components/ui";
 import { BuildingPin } from "./BuildingPin";
 
 const MAPBOX_ACCESS_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
 let hasConfiguredMapboxToken = false;
+
+function getMapboxGL() {
+  return require("@rnmapbox/maps") as typeof import("@rnmapbox/maps");
+}
 
 export interface MapSurfaceMarker {
   id: string;
@@ -109,7 +112,7 @@ function MarkerVisual({
   zoomLevel?: number;
   isTrending?: boolean;
 }) {
-  const { palette, radii, spacing, shadows } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing, shadows } = useHungryTheme();
   const showLabel = selected || zoomLevel >= 15.5;
 
   if (isTrending) {
@@ -120,7 +123,7 @@ function MarkerVisual({
             {
               width: 56,
               height: 56,
-              borderRadius: radii.lg,
+              borderRadius: componentRadii.card,
               borderWidth: 3,
               borderColor: palette.orange,
               backgroundColor: palette.surface,
@@ -129,10 +132,11 @@ function MarkerVisual({
             shadows.floating,
           ]}
         >
-          <Image
+          <AccessibleImage
             source="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=120&q=80"
             style={{ flex: 1 }}
             contentFit="cover"
+            decorative
           />
         </View>
         {showLabel && (
@@ -168,7 +172,7 @@ function MarkerVisual({
           {
             backgroundColor: accent,
             borderColor: selected ? palette.surface : `${accent}40`,
-            borderRadius: radii.md,
+            borderRadius: componentRadii.iconButton,
             width: selected ? 44 : 36,
             height: selected ? 44 : 36,
             transform: [],
@@ -418,13 +422,14 @@ export function MapSurface({
   const shouldUseFallback = FEATURE_FLAGS.mockMapboxEnabled || !MAPBOX_ACCESS_TOKEN;
 
   useEffect(() => {
-    if (!MAPBOX_ACCESS_TOKEN || hasConfiguredMapboxToken) {
+    if (shouldUseFallback || !MAPBOX_ACCESS_TOKEN || hasConfiguredMapboxToken) {
       return;
     }
 
+    const MapboxGL = getMapboxGL();
     MapboxGL.setAccessToken(MAPBOX_ACCESS_TOKEN);
     hasConfiguredMapboxToken = true;
-  }, []);
+  }, [shouldUseFallback]);
 
   if (shouldUseFallback) {
     return (
@@ -459,6 +464,8 @@ export function MapSurface({
       </View>
     );
   }
+
+  const MapboxGL = getMapboxGL();
 
   return (
     <View
@@ -589,7 +596,7 @@ const styles = StyleSheet.create({
     top: 12,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 14,
+    borderRadius: componentRadii.card,
     borderWidth: 1,
   },
 });

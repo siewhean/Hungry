@@ -11,7 +11,7 @@ import { RootNavigator } from "@/app/navigation/RootNavigator";
 const APP_SHELL_FONT_GRACE_MS = 900;
 
 export function AppBody() {
-  useAppBootstrap();
+  const isBootstrapReady = useAppBootstrap();
   const { colorScheme, theme, palette, spacing, fontsLoaded } = useHungryTheme();
   const [fontGraceReached, setFontGraceReached] = useState(false);
 
@@ -38,6 +38,24 @@ export function AppBody() {
       >
         <AppText variant="h3" style={{ textAlign: "center" }}>
           Loading fonts…
+        </AppText>
+      </View>
+    );
+  }
+
+  if (!isBootstrapReady) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: palette.bg,
+          alignItems: "center",
+          justifyContent: "center",
+          paddingHorizontal: spacing[6],
+        }}
+      >
+        <AppText variant="h3" style={{ textAlign: "center" }}>
+          Connecting securely…
         </AppText>
       </View>
     );

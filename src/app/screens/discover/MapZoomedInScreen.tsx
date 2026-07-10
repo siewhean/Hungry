@@ -8,11 +8,13 @@ import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { MapSurface, type MapSurfaceMarker } from "@/components/map/MapSurface";
 import { AppText, Button, Card, Badge } from "@/components/ui";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { getBuildingVenues } from "@/features/discovery/discovery";
 import { getBuildingById, singaporeBuildings, toSummary } from "@/lib/geo/singaporeBuildings";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useHungryTheme } from "@/theme";
+import { isVenueOpenFromHours } from "@/utils/stallStatus";
 
 type Props = NativeStackScreenProps<RootStackParamList, "MapZoomedIn">;
 
@@ -81,8 +83,17 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
     return [buildingMarker];
   }, [building, palette, currentZoom]);
 
-  const featuredStalls = getBuildingVenues(building.id)
-    .filter((v) => v.isOpen)
+  const featuredStallsWithStatus = useMemo(() => {
+    return getBuildingVenues(building.id).map((venue) => ({
+      venue,
+      isOpen: isVenueOpenFromHours(venue.operatingHours, venue.isOpen),
+    }));
+  }, [building.id]);
+
+  const openVenueCount = featuredStallsWithStatus.filter((entry) => entry.isOpen).length;
+  const featuredStalls = featuredStallsWithStatus
+    .filter((entry) => entry.isOpen)
+    .map((entry) => entry.venue)
     .slice(0, 3);
   const bottomSheetRef = useRef<BottomSheet>(null);
 
@@ -166,7 +177,10 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
                   {building.address}
                 </AppText>
               </View>
-              <Badge label="Open" tone="success" />
+              <Badge
+                label={openVenueCount > 0 ? `Open now (${openVenueCount})` : "Closed now"}
+                tone={openVenueCount > 0 ? "success" : "warning"}
+              />
             </View>
 
             <View style={{ gap: spacing[2] }}>
@@ -196,10 +210,12 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
               ))}
             </View>
 
-            <Button
-              label="Explore Layout"
-              onPress={() => navigation.navigate("VenueDirectory", { venueId: building.id })}
-            />
+            {FEATURE_FLAGS.floorplansEnabled ? (
+              <Button
+                label="Explore Layout"
+                onPress={() => navigation.navigate("VenueDirectory", { venueId: building.id })}
+              />
+            ) : null}
           </View>
         </BottomSheetScrollView>
       </BottomSheet>

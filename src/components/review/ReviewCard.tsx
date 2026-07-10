@@ -1,10 +1,9 @@
 import { View } from "react-native";
-import { Image } from "expo-image";
 
 import type { Review } from "@/types/domain";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { useHungryTheme } from "@/theme";
-import { AppText, Badge, Card } from "../ui";
+import { AccessibleImage, AppText, Badge, Card } from "../ui";
 import { StarRating } from "./StarRating";
 
 interface ReviewCardProps {
@@ -12,7 +11,7 @@ interface ReviewCardProps {
 }
 
 export function ReviewCard({ review }: ReviewCardProps) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
 
   const initials = review.authorName
     .split(" ")
@@ -59,10 +58,11 @@ export function ReviewCard({ review }: ReviewCardProps) {
       {review.photos.length ? (
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
           {review.photos.map((uri) => (
-            <Image
+            <AccessibleImage
               key={uri}
               source={{ uri }}
-              style={{ borderRadius: radii.sm, height: 72, width: 72 }}
+              accessibilityLabel={`Review photo by ${review.authorName}`}
+              style={{ borderRadius: componentRadii.card, height: 72, width: 72 }}
               contentFit="cover"
             />
           ))}

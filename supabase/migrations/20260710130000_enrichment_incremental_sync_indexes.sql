@@ -2,6 +2,7 @@
 -- The original core tables predate updated_at, so establish the cursor columns and
 -- maintenance triggers before creating the indexes. IF NOT EXISTS keeps this
 -- compatible with environments where the columns were added out of band.
+-- The sync filters and orders on updated_at before using id as its stable tie-breaker.
 
 alter table public.venues
   add column if not exists updated_at timestamptz not null default now();

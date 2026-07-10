@@ -66,7 +66,10 @@ Required function environment variables:
 - `INGEST_MENU_PHOTO_ALLOWED_ORIGINS` (comma-separated exact origins; origin-less native requests are accepted after JWT validation)
 - `GOOGLE_CLOUD_VISION_API_KEY`
 - `GEMINI_API_KEY` (optional; falls back to deterministic OCR parsing when absent)
-- `OPS_DISHES_DRAFT_API_KEY` (required header: `x-ops-api-key`)
+- `OPS_DISHES_DRAFT_ALLOWED_ORIGINS` (comma-separated exact trusted ops origins; native no-origin requests still require JWT)
+- `SUPABASE_ANON_KEY` (used to validate caller JWT before service-role operations)
+
+Ops draft review access now requires an authenticated Supabase user present in `app_ops_admins`; static `x-ops-api-key` authorization is no longer supported.
 
 ## Guest Session API (scaffold)
 

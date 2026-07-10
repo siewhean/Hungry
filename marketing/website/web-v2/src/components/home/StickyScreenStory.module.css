@@ -2,154 +2,292 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-10);
+  align-items: center;
 }
 
 .visualRail {
+  position: -webkit-sticky;
   position: sticky;
-  top: calc(var(--header-height) + var(--space-6));
-  z-index: 2;
-  display: grid;
+  top: 50svh;
+  transform: translateY(-50%);
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
   gap: var(--space-5);
   align-self: start;
+  height: calc(100vh - var(--header-height) - var(--space-12));
+  height: calc(100svh - var(--header-height) - var(--space-12));
+  max-height: 850px;
+  justify-content: center;
 }
 
 .deviceDeck {
   position: relative;
-  min-height: clamp(28rem, 70vh, 44rem);
-  border-radius: var(--radius-3xl);
-  background:
-    radial-gradient(circle at 20% 15%, color-mix(in srgb, var(--color-accent) 28%, transparent), transparent 34%),
-    linear-gradient(140deg, var(--color-text-primary), var(--color-ink-soft));
+  flex: 1;
+  min-height: 0;
+  border-radius: 0;
+  background: transparent;
+  border: 0;
   overflow: hidden;
-  box-shadow: var(--shadow-float);
-}
-
-.deviceDeck::before {
-  content: '';
-  position: absolute;
-  inset: 1px;
-  border: 1px solid color-mix(in srgb, var(--color-surface) 16%, transparent);
-  border-radius: inherit;
-  pointer-events: none;
 }
 
 .screenLayer {
   position: absolute;
-  inset: clamp(1rem, 4vw, 3rem);
-  display: grid;
-  place-items: center;
-  opacity: 0;
-  transform: translateY(30px) scale(0.96) rotate(-1deg);
-  transition:
-    opacity var(--duration-slow) var(--ease-out),
-    transform var(--duration-slow) var(--ease-out);
+  inset: var(--space-6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  visibility: hidden;
+  opacity: 1;
+  transform: none;
+  pointer-events: none;
 }
 
 .screenLayer > figure {
-  width: min(72vw, 22rem);
+  height: 100%;
+  width: auto;
+  max-width: min(22rem, 100%);
   max-height: 100%;
+  display: flex;
+  justify-content: center;
 }
 
-.screenLayer:nth-child(n + 3) > figure {
-  width: min(78vw, 34rem);
+.phonePreviewFrame {
+  position: relative;
+  aspect-ratio: 393 / 852;
 }
 
 .active {
   z-index: 3;
-  opacity: 1;
-  transform: translateY(0) scale(1) rotate(0deg);
+  visibility: visible;
+  pointer-events: auto;
+  transform: none;
 }
 
 .progressDots {
   display: flex;
   justify-content: center;
   gap: var(--space-3);
+  padding-bottom: var(--space-2);
 }
 
 .progressDot {
-  width: 2.25rem;
-  height: 0.35rem;
-  border-radius: var(--radius-full);
-  background: color-mix(in srgb, var(--color-text-primary) 18%, transparent);
+  width: 3rem !important;
+  min-width: 0 !important;
+  height: 0.22rem !important;
+  min-height: 0 !important;
+  border-radius: 2px !important;
+  border: 0 !important;
+  background: color-mix(in srgb, var(--color-text-primary) 28%, transparent) !important;
   transition:
     width var(--duration-fast) var(--ease-out),
     background var(--duration-fast) var(--ease-out);
+  padding: 0 !important;
+  cursor: pointer;
 }
 
 .progressDotActive {
-  width: 4.5rem;
-  background: var(--color-primary);
+  background: var(--color-primary) !important;
+  width: 4rem !important;
 }
 
 .copyRail {
   display: grid;
-  gap: var(--space-8);
+  gap: var(--space-4);
+  padding-bottom: 12vh;
+  position: relative;
+  z-index: 2;
 }
 
 .step {
-  min-height: 58vh;
+  min-height: 38vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: var(--space-4);
+  gap: var(--space-6);
   border-left: 2px solid color-mix(in srgb, var(--color-text-primary) 13%, transparent);
-  padding: var(--space-8) 0 var(--space-8) var(--space-6);
-  color: var(--color-text-secondary);
-  transition: border-color var(--duration-fast) var(--ease-out);
+  padding: var(--space-8) 0 var(--space-8) var(--space-12);
+  color: color-mix(in srgb, var(--color-text-secondary) 35%, var(--color-text-muted));
+  transition:
+    border-color 180ms var(--ease-out),
+    opacity 220ms var(--ease-out),
+    transform 260ms var(--ease-out),
+    color 180ms var(--ease-out);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(12px);
 }
 
 .stepActive {
   border-color: var(--color-primary);
+  opacity: 1;
+  color: var(--color-text-primary);
+  pointer-events: auto;
+  transform: translateY(0);
 }
 
 .eyebrow {
   width: fit-content;
-  border-radius: var(--radius-full);
-  background: var(--color-orange-light);
-  color: var(--color-primary);
-  padding: var(--space-2) var(--space-3);
   font-family: var(--font-mono);
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   font-weight: 500;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: inherit;
 }
 
 .step h3 {
-  max-width: 12ch;
-  color: var(--color-text-primary);
-  font-size: clamp(2rem, 4.6vw, 4.4rem);
-  line-height: 0.98;
+  max-width: 18ch;
+  color: inherit;
+  font-size: clamp(1.8rem, 3vw, 3rem);
+  line-height: 1.04;
+  letter-spacing: 0;
+  margin: 0;
 }
 
 .step p {
-  max-width: 33rem;
-  font-size: clamp(1rem, 1.3vw, 1.18rem);
+  max-width: 31rem;
+  font-size: clamp(1rem, 1.1vw, 1.125rem);
   line-height: 1.65;
+  margin: 0;
+  color: inherit;
 }
 
 @media (min-width: 980px) {
   .story {
-    grid-template-columns: minmax(25rem, 0.9fr) minmax(26rem, 1fr);
-    gap: var(--space-16);
+    grid-template-columns: minmax(25rem, 42%) minmax(24rem, 1fr);
+    gap: var(--space-6);
+    align-items: center;
   }
 
   .visualRail {
-    top: calc(var(--header-height) + var(--space-8));
-  }
-}
-
-@media (max-width: 760px) {
-  .visualRail {
-    position: relative;
-    top: auto;
+    grid-column: 1;
+    margin-top: calc(-1 * clamp(19rem, 20vw, 24rem));
+    top: calc(var(--header-height) + var(--space-3));
+    transform: none;
+    justify-content: flex-start;
   }
 
   .deviceDeck {
-    min-height: 31rem;
+    transform: translateX(calc(var(--space-6) * -1));
+  }
+
+  .copyRail {
+    grid-column: 2;
+    padding-top: 0;
+    transform: translateY(calc(-1 * clamp(3rem, 6svh, 5rem)));
   }
 
   .step {
+    min-height: min(520px, calc(64svh - var(--header-height)));
+  }
+}
+
+@media (max-width: 979px) {
+  .visualRail {
+    position: sticky;
+    top: calc(var(--header-height) + var(--space-4));
+    transform: none;
+    height: min(58svh, 500px);
+    min-height: 360px;
+    max-height: calc(100svh - var(--header-height) - var(--space-8));
+    z-index: 10;
+    padding-top: 0;
+    margin-bottom: var(--space-8);
+  }
+
+  .deviceDeck {
+    width: min(100%, 24rem);
+    aspect-ratio: 393 / 852;
+    margin: 0 auto;
+    border-radius: var(--radius-xl);
+  }
+
+  .copyRail {
+    gap: var(--space-6);
+    padding-bottom: var(--space-8);
+  }
+
+  .step {
+    min-height: 42svh;
+    padding: var(--space-4) 0 var(--space-12) var(--space-10);
+  }
+}
+
+@media (min-width: 700px) and (max-width: 979px) {
+  .story {
     min-height: auto;
+    align-items: start;
+    grid-template-columns: minmax(14rem, 0.9fr) minmax(18rem, 1fr);
+    gap: var(--space-10);
+  }
+
+  .visualRail {
+    grid-column: 1;
+    align-self: start;
+    position: sticky;
+    top: calc(var(--header-height) + var(--space-5));
+    transform: none;
+    z-index: 2;
+    height: clamp(360px, calc(100svh - var(--header-height) - var(--space-10)), 760px);
+    min-height: 0;
+    max-height: calc(100svh - var(--header-height) - var(--space-10));
+    margin-bottom: 0;
+    padding-top: 0;
+    justify-content: center;
+  }
+
+  .deviceDeck {
+    height: 100%;
+    max-height: min(70svh, 640px);
+    width: auto;
+    max-width: min(21rem, 100%);
+    aspect-ratio: 393 / 852;
+    min-height: auto;
+    border-radius: var(--radius-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .phonePreviewFrame {
+    max-width: min(21rem, 100%);
+  }
+
+  .screenLayer > figure {
+    width: auto;
+  }
+
+  .copyRail {
+    grid-column: 2;
+    align-self: stretch;
+    padding-top: clamp(9rem, 23svh, 13rem);
+    padding-bottom: 14vh;
+  }
+
+  .step {
+    min-height: min(480px, max(340px, calc(62svh - var(--header-height))));
+    padding: var(--space-8) 0 var(--space-8) clamp(var(--space-10), 5vw, var(--space-16));
+    transform: translateY(0);
+  }
+
+  .stepActive {
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 560px) {
+  .visualRail {
+    height: min(52svh, 430px);
+    min-height: 320px;
+  }
+
+  .deviceDeck {
+    width: min(100%, 20rem);
+  }
+
+  .step {
+    min-height: 40svh;
   }
 }
 

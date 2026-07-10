@@ -3,16 +3,26 @@ import {
   View,
   StyleSheet,
   Pressable,
-  Animated,
+  Animated as RNAnimated,
   PanResponder,
   ActivityIndicator,
+  InteractionManager,
+  type LayoutChangeEvent,
 } from "react-native";
-import { Image } from "expo-image";
+import Reanimated, {
+  cancelAnimation,
+  Easing as ReanimatedEasing,
+  runOnJS,
+  useAnimatedReaction,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { X, Heart, MessageCircle, MessageCircleMore, Bookmark } from "lucide-react-native";
-import { AppText, IconButton, Avatar } from "@/components/ui";
+import { Heart, Share2 } from "lucide-react-native";
+import { AccessibleImage, AppText, IconButton, Avatar } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useStoryStore } from "@/store/useStoryStore";
 import { RootStackParamList } from "@/app/navigation/navigationTypes";
@@ -20,37 +30,48 @@ import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 
 import { useUIStore } from "@/store/useUIStore";
 
-const CommentIcon = MessageCircle ?? MessageCircleMore;
-
-const STORY_DURATION = 5000;
+const STORY_IMAGE_DURATION_MS = 7000;
+const STORY_VIDEO_DURATION_MS = 7000;
+const STORY_OPEN_READY_FALLBACK_MS = 850;
+const STORY_SEEN_OPEN_FALLBACK_MS = 1400;
+const STORY_MEDIA_READY_FALLBACK_MS = 1200;
+const STORY_SEEN_COMMIT_DELAY_MS = 650;
 const SWIPE_THRESHOLD = 48;
 const STORY_ROTATE_ANGLE = 105;
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
 const StoryMedia = React.memo(function StoryMedia({
+  storyId,
   uri,
+  authorName,
+  opacity,
   rotateY,
+  onReady,
 }: {
+  storyId: string;
   uri: string;
-  rotateY: Animated.Value;
+  authorName: string;
+  opacity: RNAnimated.Value;
+  rotateY: RNAnimated.Value;
+  onReady: (storyId: string) => void;
 }) {
+  const mediaRotateY = rotateY.interpolate({
+    inputRange: [-1, 0, 1],
+    outputRange: [`-${STORY_ROTATE_ANGLE}deg`, "0deg", `${STORY_ROTATE_ANGLE}deg`],
+  });
   return (
-    <Animated.View
+    <RNAnimated.View
       style={[
         StyleSheet.absoluteFill,
         {
           backfaceVisibility: "hidden",
+          opacity,
           transform: [
             { perspective: 520 },
-            {
-              rotateY: rotateY.interpolate({
-                inputRange: [-STORY_ROTATE_ANGLE, 0, STORY_ROTATE_ANGLE],
-                outputRange: [`-${STORY_ROTATE_ANGLE}deg`, "0deg", `${STORY_ROTATE_ANGLE}deg`],
-              }),
-            },
+            { rotateY: mediaRotateY },
             {
               scale: rotateY.interpolate({
-                inputRange: [-STORY_ROTATE_ANGLE, 0, STORY_ROTATE_ANGLE],
+                inputRange: [-1, 0, 1],
                 outputRange: [0.9, 1, 0.9],
               }),
             },
@@ -58,8 +79,14 @@ const StoryMedia = React.memo(function StoryMedia({
         },
       ]}
     >
-      <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" />
-    </Animated.View>
+      <AccessibleImage
+        source={{ uri }}
+        style={StyleSheet.absoluteFill}
+        contentFit="cover"
+        accessibilityLabel={`Story by ${authorName}`}
+        onLoadEnd={() => onReady(storyId)}
+      />
+    </RNAnimated.View>
   );
 });
 
@@ -75,21 +102,39 @@ export function StoryViewerScreen() {
   const route = useRoute<RouteProp<RootStackParamList, "StoryViewer">>();
   const initialStoryId = route.params.initialStoryId;
 
-  const { stories, loadStories, likeStory, saveStory, markSeenForDisplayName } = useStoryStore();
+  const { stories, loadStories, likeStory, shareStory, markSeenForDisplayName } = useStoryStore();
   const showToast = useUIStore((state) => state.showToast);
   const [activeStoryId, setActiveStoryId] = useState(() => initialStoryId);
   const [isPaused, setIsPaused] = useState(false);
   const [hasRequestedStories, setHasRequestedStories] = useState(false);
+  const [hasViewerOpened, setHasViewerOpened] = useState(false);
+  const [hasViewerSettled, setHasViewerSettled] = useState(false);
+  const [isCurrentMediaReady, setIsCurrentMediaReady] = useState(false);
+  const [isActiveProgressTrackMeasured, setIsActiveProgressTrackMeasured] = useState(false);
+  const [isStoryTransitioning, setIsStoryTransitioning] = useState(false);
+  const [canCommitSeen, setCanCommitSeen] = useState(false);
 
-  const progressAnim = useRef(new Animated.Value(0)).current;
-  const rotateY = useRef(new Animated.Value(0)).current;
-  const closeOpacity = useRef(new Animated.Value(1)).current;
-  const trackWidthsRef = useRef<Record<string, number>>({});
-  const progressValueRef = useRef(0);
+  const progressAnim = useSharedValue(0);
+  const progressTrackWidth = useSharedValue(0);
+  const storyOpacity = useRef(new RNAnimated.Value(1)).current;
+  const rotateY = useRef(new RNAnimated.Value(0)).current;
+  const closeOpacity = useRef(new RNAnimated.Value(1)).current;
   const playbackStoryIdsRef = useRef<string[]>([]);
+  const handleNextRef = useRef<() => void>(() => {});
+  const isStoryTransitioningRef = useRef(false);
 
   const currentStory = stories.find((story) => story.id === activeStoryId);
   const playbackIndex = playbackStoryIdsRef.current.indexOf(activeStoryId);
+  const isStoryPlaybackReady =
+    hasViewerOpened &&
+    isCurrentMediaReady &&
+    isActiveProgressTrackMeasured &&
+    !isStoryTransitioning;
+  const currentStoryDuration = useMemo(
+    () =>
+      currentStory?.content.type === "video" ? STORY_VIDEO_DURATION_MS : STORY_IMAGE_DURATION_MS,
+    [currentStory?.content.type],
+  );
 
   useEffect(() => {
     if (stories.length === 0) {
@@ -131,40 +176,76 @@ export function StoryViewerScreen() {
   const subIndex = currentStory ? userStories.findIndex((s) => s.id === currentStory.id) : 0;
 
   useEffect(() => {
-    const listenerId = progressAnim.addListener(({ value }) => {
-      progressValueRef.current = value;
-    });
-    return () => progressAnim.removeListener(listenerId);
-  }, [progressAnim]);
-
-  useEffect(() => {
-    progressValueRef.current = 0;
-    progressAnim.setValue(0);
-    rotateY.setValue(0);
+    cancelAnimation(progressAnim);
+    progressAnim.value = 0;
+    progressTrackWidth.value = 0;
+    setIsActiveProgressTrackMeasured(false);
     closeOpacity.setValue(1);
-  }, [closeOpacity, currentStory?.id, progressAnim, rotateY]);
+    storyOpacity.setValue(1);
+    rotateY.setValue(0);
+  }, [closeOpacity, currentStory?.id, progressAnim, progressTrackWidth, rotateY, storyOpacity]);
 
-  const runRotateTransition = (nextId: string, direction: "next" | "prev") => {
-    const outAngle = direction === "next" ? -STORY_ROTATE_ANGLE : STORY_ROTATE_ANGLE;
-    const inAngle = direction === "next" ? STORY_ROTATE_ANGLE : -STORY_ROTATE_ANGLE;
-    Animated.timing(rotateY, {
-      toValue: outAngle,
+  const startProgress = useCallback(
+    (fromValue = progressAnim.value) => {
+      const clampedValue = Math.min(Math.max(fromValue, 0), 1);
+      cancelAnimation(progressAnim);
+      progressAnim.value = clampedValue;
+      progressAnim.value = withTiming(1, {
+        duration: Math.max(0, (1 - clampedValue) * currentStoryDuration),
+        easing: ReanimatedEasing.linear,
+      });
+    },
+    [currentStoryDuration, progressAnim],
+  );
+
+  const activeProgressStyle = useAnimatedStyle(() => {
+    const progress = Math.min(Math.max(progressAnim.value, 0), 1);
+    const trackWidth = progressTrackWidth.value;
+
+    return {
+      opacity: trackWidth > 0 ? 1 : 0,
+      width: trackWidth * progress,
+    };
+  }, []);
+
+  const handleActiveProgressTrackLayout = useCallback(
+    (event: LayoutChangeEvent) => {
+      progressTrackWidth.value = event.nativeEvent.layout.width;
+      setIsActiveProgressTrackMeasured(event.nativeEvent.layout.width > 0);
+    },
+    [progressTrackWidth],
+  );
+
+  const runRotateTransition = (nextId: string, direction: 1 | -1 = 1) => {
+    if (isStoryTransitioningRef.current) {
+      return;
+    }
+    isStoryTransitioningRef.current = true;
+    setIsStoryTransitioning(true);
+    cancelAnimation(progressAnim);
+    rotateY.setValue(0);
+
+    RNAnimated.timing(rotateY, {
+      toValue: direction,
       duration: 320,
       useNativeDriver: true,
     }).start(() => {
       setActiveStoryId(nextId);
-      rotateY.setValue(inAngle);
-      Animated.timing(rotateY, {
+      rotateY.setValue(-direction);
+      RNAnimated.timing(rotateY, {
         toValue: 0,
-        duration: 320,
+        duration: 220,
         useNativeDriver: true,
-      }).start();
+      }).start(() => {
+        isStoryTransitioningRef.current = false;
+        setIsStoryTransitioning(false);
+      });
     });
   };
 
   const closeWithFade = useCallback(() => {
     setIsPaused(true);
-    Animated.timing(closeOpacity, {
+    RNAnimated.timing(closeOpacity, {
       toValue: 0,
       duration: 180,
       useNativeDriver: true,
@@ -174,7 +255,7 @@ export function StoryViewerScreen() {
   }, [closeOpacity, navigation]);
 
   const handlePrevious = useCallback(() => {
-    if (!currentStory) return;
+    if (!currentStory || isStoryTransitioningRef.current) return;
     if (playbackIndex > 0) {
       const prev = stories.find(
         (story) => story.id === playbackStoryIdsRef.current[playbackIndex - 1],
@@ -187,19 +268,53 @@ export function StoryViewerScreen() {
       }
 
       // Different user — rotate the block to indicate a user change
-      runRotateTransition(prev.id, "prev");
+      runRotateTransition(prev.id, -1);
     } else {
-      progressAnim.setValue(0);
-      Animated.timing(progressAnim, {
-        toValue: 1,
-        duration: STORY_DURATION,
-        useNativeDriver: false,
-      }).start();
+      startProgress(0);
     }
-  }, [currentStory, playbackIndex, progressAnim, stories]);
+  }, [currentStory, playbackIndex, startProgress, stories]);
+
+  const commitSeenIfReady = useCallback(
+    (displayName: string) => {
+      if (isStoryPlaybackReady) {
+        markSeenForDisplayName(displayName);
+      }
+    },
+    [isStoryPlaybackReady, markSeenForDisplayName],
+  );
+
+  useEffect(() => {
+    if (
+      !currentStory ||
+      currentStory.isOwn ||
+      !currentStory.hasUnseen ||
+      !isStoryPlaybackReady ||
+      !hasViewerSettled ||
+      !canCommitSeen
+    ) {
+      return;
+    }
+
+    markSeenForDisplayName(currentStory.displayName);
+  }, [
+    canCommitSeen,
+    currentStory?.displayName,
+    currentStory?.hasUnseen,
+    currentStory?.isOwn,
+    hasViewerSettled,
+    isStoryPlaybackReady,
+    markSeenForDisplayName,
+  ]);
+
+  const handleCloseStory = useCallback(() => {
+    if (currentStory) {
+      commitSeenIfReady(currentStory.displayName);
+    }
+    closeWithFade();
+  }, [closeWithFade, commitSeenIfReady, currentStory]);
 
   const handleNext = useCallback(() => {
-    if (!currentStory) return;
+    if (!currentStory || isStoryTransitioningRef.current) return;
     if (playbackIndex >= 0 && playbackIndex < playbackStoryIdsRef.current.length - 1) {
       const next = stories.find(
         (story) => story.id === playbackStoryIdsRef.current[playbackIndex + 1],
@@ -211,37 +326,143 @@ export function StoryViewerScreen() {
         return;
       }
 
-      // Mark current user's stories as seen before switching user
-      if (currentStory) markSeenForDisplayName(currentStory.displayName);
+      commitSeenIfReady(currentStory.displayName);
 
-      // Different user — rotate the block to indicate a user change
-      runRotateTransition(next.id, "next");
+      // Different user — fade stories to indicate a user change
+      runRotateTransition(next.id, 1);
     } else {
-      // End of list — mark seen for this user and close
-      if (currentStory) markSeenForDisplayName(currentStory.displayName);
-      closeWithFade();
+      handleCloseStory();
     }
-  }, [closeWithFade, currentStory, markSeenForDisplayName, playbackIndex, stories]);
+  }, [commitSeenIfReady, currentStory, handleCloseStory, playbackIndex, stories]);
+
+  useEffect(() => {
+    handleNextRef.current = handleNext;
+  }, [handleNext]);
+
+  const handleProgressComplete = useCallback(() => {
+    handleNextRef.current();
+  }, []);
+
+  useAnimatedReaction(
+    () => progressAnim.value >= 1,
+    (isComplete, wasComplete) => {
+      if (isComplete && !wasComplete) {
+        runOnJS(handleProgressComplete)();
+      }
+    },
+    [handleProgressComplete],
+  );
 
   useEffect(() => {
     if (!currentStory) return;
-    if (isPaused) {
-      progressAnim.stopAnimation();
+    if (isPaused || !isStoryPlaybackReady) {
+      cancelAnimation(progressAnim);
       return;
     }
-    const remainingDuration = Math.max(0, (1 - progressValueRef.current) * STORY_DURATION);
-    const animation = Animated.timing(progressAnim, {
-      toValue: 1,
-      duration: remainingDuration,
-      useNativeDriver: false,
-    });
-    animation.start(({ finished }) => {
-      if (finished) {
-        handleNext();
+    startProgress(progressAnim.value);
+    return () => cancelAnimation(progressAnim);
+  }, [currentStory?.id, isPaused, isStoryPlaybackReady, progressAnim, startProgress]);
+
+  useEffect(() => {
+    let didMarkOpened = false;
+    let didMarkSettled = false;
+    let openedAnimationFrame: number | null = null;
+    let settledAnimationFrame: number | null = null;
+    let openedInteractionTask: { cancel?: () => void } | null = null;
+    let settledInteractionTask: { cancel?: () => void } | null = null;
+    const openFallbackTimeout = setTimeout(markOpened, STORY_OPEN_READY_FALLBACK_MS);
+    const settledFallbackTimeout = setTimeout(markSettled, STORY_SEEN_OPEN_FALLBACK_MS);
+
+    function markOpened() {
+      if (didMarkOpened) {
+        return;
+      }
+      didMarkOpened = true;
+      openedAnimationFrame = requestAnimationFrame(() => {
+        openedInteractionTask = InteractionManager.runAfterInteractions(() => {
+          setHasViewerOpened(true);
+        });
+      });
+    }
+
+    function markSettled() {
+      if (didMarkSettled) {
+        return;
+      }
+      didMarkSettled = true;
+      settledAnimationFrame = requestAnimationFrame(() => {
+        settledInteractionTask = InteractionManager.runAfterInteractions(() => {
+          setHasViewerSettled(true);
+        });
+      });
+    }
+
+    const unsubscribeTransitionEnd = navigation.addListener("transitionEnd", (event) => {
+      const data = event.data as { closing?: boolean } | undefined;
+      if (!data?.closing) {
+        markOpened();
+        markSettled();
       }
     });
-    return () => animation.stop();
-  }, [currentStory?.id, handleNext, isPaused, progressAnim]);
+
+    return () => {
+      unsubscribeTransitionEnd();
+      clearTimeout(openFallbackTimeout);
+      clearTimeout(settledFallbackTimeout);
+      if (openedAnimationFrame !== null) {
+        cancelAnimationFrame(openedAnimationFrame);
+      }
+      if (settledAnimationFrame !== null) {
+        cancelAnimationFrame(settledAnimationFrame);
+      }
+      openedInteractionTask?.cancel?.();
+      settledInteractionTask?.cancel?.();
+    };
+  }, [navigation]);
+
+  useEffect(() => {
+    setIsCurrentMediaReady(false);
+    const fallbackTimeout = setTimeout(() => {
+      setIsCurrentMediaReady(true);
+    }, STORY_MEDIA_READY_FALLBACK_MS);
+
+    return () => clearTimeout(fallbackTimeout);
+  }, [currentStory?.id]);
+
+  const handleCurrentMediaReady = useCallback(
+    (storyId: string) => {
+      if (storyId === activeStoryId) {
+        setIsCurrentMediaReady(true);
+      }
+    },
+    [activeStoryId],
+  );
+
+  useEffect(() => {
+    setCanCommitSeen(false);
+
+    if (!currentStory || !isStoryPlaybackReady || !hasViewerSettled) {
+      return undefined;
+    }
+
+    let animationFrame: number | null = null;
+    let interactionTask: { cancel?: () => void } | null = null;
+    const commitDelay = setTimeout(() => {
+      animationFrame = requestAnimationFrame(() => {
+        interactionTask = InteractionManager.runAfterInteractions(() => {
+          setCanCommitSeen(true);
+        });
+      });
+    }, STORY_SEEN_COMMIT_DELAY_MS);
+
+    return () => {
+      clearTimeout(commitDelay);
+      if (animationFrame !== null) {
+        cancelAnimationFrame(animationFrame);
+      }
+      interactionTask?.cancel?.();
+    };
+  }, [currentStory?.id, hasViewerSettled, isStoryPlaybackReady]);
 
   const gestureResponder = useMemo(
     () =>
@@ -266,12 +487,12 @@ export function StoryViewerScreen() {
           }
 
           if (gestureState.dy > SWIPE_THRESHOLD) {
-            closeWithFade();
+            handleCloseStory();
           }
         },
         onPanResponderTerminate: () => setIsPaused(false),
       }),
-    [closeWithFade, handleNext, handlePrevious],
+    [handleCloseStory, handleNext, handlePrevious],
   );
 
   const onLike = async () => {
@@ -283,16 +504,13 @@ export function StoryViewerScreen() {
     }
   };
 
-  const onSave = async () => {
+  const onShare = async () => {
     if (!currentStory) return;
     try {
-      await saveStory(currentStory.id);
-      showToast({
-        message: currentStory.interaction.saved ? "Story removed from saved" : "Story saved",
-        tone: "success",
-      });
+      await shareStory(currentStory.id);
+      showToast({ message: "Story shared", tone: "success" });
     } catch (e) {
-      showToast({ message: "Failed to save story", tone: "error" });
+      showToast({ message: "Failed to share story", tone: "error" });
     }
   };
 
@@ -315,24 +533,35 @@ export function StoryViewerScreen() {
     });
   };
 
-  // Mark stories for this user as seen when first opened/viewed so the carousel shows grey ring
-  useEffect(() => {
-    if (currentStory?.hasUnseen) {
-      markSeenForDisplayName(currentStory.displayName);
-    }
-  }, [currentStory?.id, currentStory?.hasUnseen]);
-
   if (!currentStory) {
     return (
-      <View style={[styles.container, styles.loadingContainer]}>
+      <View
+        style={[
+          styles.container,
+          styles.loadingContainer,
+          { backgroundColor: palette.storyViewerBackground },
+        ]}
+      >
         <ActivityIndicator color={palette.white} />
       </View>
     );
   }
 
   return (
-    <Animated.View style={[styles.container, { backgroundColor: "#000", opacity: closeOpacity }]}>
-      <StoryMedia uri={currentStory.content.url} rotateY={rotateY} />
+    <RNAnimated.View
+      style={[
+        styles.container,
+        { backgroundColor: palette.storyViewerBackground, opacity: closeOpacity },
+      ]}
+    >
+      <StoryMedia
+        storyId={currentStory.id}
+        uri={currentStory.content.url}
+        authorName={currentStory.displayName}
+        opacity={storyOpacity}
+        rotateY={rotateY}
+        onReady={handleCurrentMediaReady}
+      />
 
       <View
         style={[
@@ -370,55 +599,31 @@ export function StoryViewerScreen() {
           {userStories.map((story, idx) => (
             <View
               key={story.id}
+              onLayout={idx === subIndex ? handleActiveProgressTrackLayout : undefined}
               style={[
                 styles.progressBarTrack,
-                { backgroundColor: "rgba(255, 255, 255, 0.3)", borderRadius: radii.pill },
+                { backgroundColor: palette.storyProgressTrack, borderRadius: radii.pill },
               ]}
-              onLayout={(e) => {
-                const w = e.nativeEvent.layout.width;
-                trackWidthsRef.current[story.id] = w;
-              }}
             >
               {idx < subIndex && (
                 <View
                   style={[
-                    StyleSheet.absoluteFill,
-                    { backgroundColor: palette.white, borderRadius: radii.pill },
+                    styles.progressBarFill,
+                    { backgroundColor: palette.white, borderRadius: radii.pill, width: "100%" },
                   ]}
                 />
               )}
               {idx === subIndex && (
-                <Animated.View
+                <Reanimated.View
                   pointerEvents="none"
-                  style={(() => {
-                    const measured = trackWidthsRef.current[story.id] || 0;
-                    if (measured > 0) {
-                      return [
-                        {
-                          height: "100%",
-                          backgroundColor: palette.white,
-                          borderRadius: radii.pill,
-                          width: progressAnim.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [0, measured],
-                          }),
-                        },
-                      ];
-                    }
-
-                    // Fallback to percentage-based width while measurement isn't available
-                    return [
-                      {
-                        height: "100%",
-                        backgroundColor: palette.white,
-                        borderRadius: radii.pill,
-                        width: progressAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: ["0%", "100%"],
-                        }) as unknown as number,
-                      },
-                    ];
-                  })()}
+                  style={[
+                    styles.progressBarFill,
+                    activeProgressStyle,
+                    {
+                      backgroundColor: palette.white,
+                      borderRadius: radii.pill,
+                    },
+                  ]}
                 />
               )}
             </View>
@@ -426,20 +631,23 @@ export function StoryViewerScreen() {
         </View>
 
         <View style={styles.userInfoRow} pointerEvents="box-none">
-          <View style={styles.userInfoLeft} pointerEvents="none">
-            <Avatar uri={currentStory.avatarUrl} name={currentStory.displayName} size={32} />
-            <AppText style={{ color: palette.white, fontWeight: "bold", marginLeft: 8 }}>
-              {currentStory.displayName}
-            </AppText>
-            <AppText style={{ color: "rgba(255,255,255,0.7)", marginLeft: 8, fontSize: 12 }}>
-              {formatTimeAgo(new Date(currentStory.createdAt))}
-            </AppText>
+          <View
+            style={[
+              styles.userInfoLeftScrim,
+              { backgroundColor: palette.mediaScrimSubtle, borderRadius: radii.md },
+            ]}
+            pointerEvents="none"
+          >
+            <View style={styles.userInfoLeft}>
+              <Avatar uri={currentStory.avatarUrl} name={currentStory.displayName} size={32} />
+              <AppText style={{ color: palette.white, fontWeight: "bold", marginLeft: 8 }}>
+                {currentStory.displayName}
+              </AppText>
+              <AppText style={{ color: palette.storyMetaText, marginLeft: 8, fontSize: 12 }}>
+                {formatTimeAgo(new Date(currentStory.createdAt))}
+              </AppText>
+            </View>
           </View>
-          <IconButton
-            icon={<X color={palette.white} size={24} />}
-            onPress={closeWithFade}
-            accessibilityLabel="Close story"
-          />
         </View>
       </View>
 
@@ -452,11 +660,10 @@ export function StoryViewerScreen() {
           accessibilityLabel={
             currentStory.isOwn ? "Add another story" : `Message ${currentStory.displayName}`
           }
-          style={styles.inputSimulator}
+          style={[styles.inputSimulator, { borderColor: palette.storyControlBorder }]}
           onPress={handleStoryMessage}
         >
-          <CommentIcon color={palette.white} size={18} />
-          <AppText style={{ color: palette.white }}>
+          <AppText style={{ color: palette.white, width: "100%", textAlign: "left" }}>
             {currentStory.isOwn ? "Add story" : "Send message"}
           </AppText>
         </Pressable>
@@ -473,28 +680,24 @@ export function StoryViewerScreen() {
               onPress={onLike}
               accessibilityLabel="Like story"
             />
-            <AppText style={styles.actionCountText}>
+            <AppText style={[styles.actionCountText, { color: palette.white }]}>
               {currentStory.interaction.likeCount > 0 ? currentStory.interaction.likeCount : " "}
             </AppText>
           </View>
 
           <View style={styles.actionButtonStack}>
             <IconButton
-              icon={
-                <Bookmark
-                  color={currentStory.interaction.saved ? palette.orange : palette.white}
-                  fill={currentStory.interaction.saved ? palette.orange : "transparent"}
-                  size={28}
-                />
-              }
-              onPress={onSave}
-              accessibilityLabel="Save story"
+              icon={<Share2 color={palette.white} size={28} />}
+              onPress={onShare}
+              accessibilityLabel="Share story"
             />
-            <AppText style={styles.actionCountText}> </AppText>
+            <AppText style={[styles.actionCountText, { color: palette.white }]}>
+              {currentStory.interaction.shareCount > 0 ? currentStory.interaction.shareCount : " "}
+            </AppText>
           </View>
         </View>
       </View>
-    </Animated.View>
+    </RNAnimated.View>
   );
 }
 
@@ -505,7 +708,6 @@ const styles = StyleSheet.create({
   loadingContainer: {
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#000",
   },
   navigationLayer: {
     position: "absolute",
@@ -535,6 +737,13 @@ const styles = StyleSheet.create({
     height: 2,
     overflow: "hidden",
   },
+  progressBarFill: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    top: 0,
+    width: "100%",
+  },
   userInfoRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -543,6 +752,12 @@ const styles = StyleSheet.create({
   userInfoLeft: {
     flexDirection: "row",
     alignItems: "center",
+  },
+  userInfoLeftScrim: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
   footerOverlay: {
     position: "absolute",
@@ -559,12 +774,10 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
     height: 44,
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.4)",
-    justifyContent: "center",
+    justifyContent: "flex-start",
     paddingHorizontal: 16,
     marginRight: 16,
   },
@@ -580,7 +793,6 @@ const styles = StyleSheet.create({
     minHeight: 58,
   },
   actionCountText: {
-    color: "#FFFFFF",
     fontSize: 10,
     lineHeight: 14,
     minHeight: 14,

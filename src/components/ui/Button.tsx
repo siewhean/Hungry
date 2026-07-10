@@ -5,6 +5,7 @@ import {
   StyleSheet,
   View,
   type StyleProp,
+  type TextStyle,
   type ViewStyle,
   type PressableProps,
 } from "react-native";
@@ -23,10 +24,19 @@ interface ButtonProps extends Omit<PressableProps, "style"> {
   loading?: boolean;
   fullWidth?: boolean;
   style?: StyleProp<ViewStyle>;
+  labelColor?: string;
+  labelNumberOfLines?: number;
+  labelEllipsizeMode?: "head" | "middle" | "tail" | "clip";
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
 }
 
+/**
+ * Accessibility contract:
+ * - Visible `label` is the accessible name by default.
+ * - `loading` maps to `accessibilityState.busy` and disables the control.
+ * - Caller-provided `accessibilityState` is merged, not replaced.
+ */
 export function Button({
   label,
   variant = "primary",
@@ -35,12 +45,18 @@ export function Button({
   disabled,
   fullWidth = true,
   style,
+  labelColor,
+  labelNumberOfLines,
+  labelEllipsizeMode,
   leftIcon,
   rightIcon,
   onPressIn,
+  accessibilityLabel,
+  accessibilityState,
   ...props
 }: ButtonProps) {
-  const { componentSizes, opacity, palette, radii, spacing } = useHungryTheme();
+  const { componentCornerCurve, componentRadii, componentSizes, opacity, palette, spacing } =
+    useHungryTheme();
   const isDisabled = disabled || loading;
 
   const variantStyle: Record<ButtonVariant, ViewStyle> = {
@@ -88,10 +104,29 @@ export function Button({
       paddingHorizontal: spacing[6],
     },
   };
+  const foregroundColor =
+    variant === "primary"
+      ? palette.textOnOrange
+      : variant === "destructive" || variant === "glass"
+        ? palette.textOnDark
+        : undefined;
+  const labelTextStyle: TextStyle[] = [];
+  if (foregroundColor) {
+    labelTextStyle.push({ color: foregroundColor });
+  }
+  if (labelColor) {
+    labelTextStyle.push({ color: labelColor });
+  }
 
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityState={{
+        ...accessibilityState,
+        disabled: Boolean(accessibilityState?.disabled || isDisabled),
+        busy: Boolean(accessibilityState?.busy || loading),
+      }}
       disabled={isDisabled}
       onPressIn={(event) => {
         if (!isDisabled) {
@@ -104,7 +139,8 @@ export function Button({
         variantStyle[variant],
         sizeStyle[size],
         {
-          borderRadius: radii.pill,
+          borderRadius: componentRadii.button,
+          borderCurve: componentCornerCurve.borderCurve,
           opacity: isDisabled ? opacity.disabled : 1,
           width: fullWidth ? "100%" : undefined,
           transform: [{ translateY: pressed ? 1 : 0 }],
@@ -118,7 +154,13 @@ export function Button({
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === "primary" || variant === "destructive" ? palette.white : palette.text}
+          color={
+            variant === "primary"
+              ? palette.white
+              : variant === "destructive"
+                ? palette.white
+                : palette.text
+          }
         />
       ) : (
         <View
@@ -126,6 +168,8 @@ export function Button({
             flexDirection: "row",
             alignItems: "center",
             gap: spacing[2],
+            minWidth: 0,
+            flexShrink: 1,
           }}
         >
           {leftIcon}
@@ -136,6 +180,9 @@ export function Button({
                 ? "inverse"
                 : "default"
             }
+            style={[{ flexShrink: 1, minWidth: 0, textAlign: "center" }, ...labelTextStyle]}
+            numberOfLines={labelNumberOfLines}
+            ellipsizeMode={labelEllipsizeMode}
           >
             {label}
           </AppText>

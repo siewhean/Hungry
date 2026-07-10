@@ -20,7 +20,7 @@ type ShareQuickActionGroupProps = {
 };
 
 export function ShareQuickActionGroup({ actions }: ShareQuickActionGroupProps) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { componentRadii, palette, spacing } = useHungryTheme();
 
   return (
     <View style={{ flexDirection: "row", gap: spacing[2] }}>
@@ -40,7 +40,7 @@ export function ShareQuickActionGroup({ actions }: ShareQuickActionGroupProps) {
             style={{
               alignItems: "center",
               backgroundColor: palette.bgSoft,
-              borderRadius: radii.pill,
+              borderRadius: componentRadii.iconButton,
               justifyContent: "center",
               padding: spacing[3],
               width: 56,
@@ -357,7 +357,7 @@ export function ShareRecipientRows({
   accessibilityLabelPrefix,
   showLastMessage = true,
 }: ShareRecipientRowsProps) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
 
   return (
     <>
@@ -376,7 +376,7 @@ export function ShareRecipientRows({
               style={{
                 alignItems: "center",
                 borderColor: selected ? palette.orange : palette.border,
-                borderRadius: radii.lg,
+                borderRadius: componentRadii.card,
                 borderWidth: 1,
                 flexDirection: "row",
                 gap: spacing[3],

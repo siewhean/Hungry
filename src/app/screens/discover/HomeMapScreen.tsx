@@ -24,15 +24,15 @@ import {
   Zap,
 } from "lucide-react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { MapSurface, type MapSurfaceMarker, BuildingLegend } from "@/components/map";
 import {
+  AccessibleImage,
   AppText,
-  Chip,
   Button,
+  FilterChipRail,
   FeedErrorBoundary,
   ExpandableSearchLauncher,
 } from "@/components/ui";
@@ -42,6 +42,7 @@ import {
   singaporeBuildings,
   toSummary,
 } from "@/lib/geo/singaporeBuildings";
+import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useLocationStore } from "@/store/useLocationStore";
@@ -50,6 +51,14 @@ import { useHungryTheme } from "@/theme";
 import type { DishDetail } from "@/types/domain";
 
 const DEFAULT_BUILDING_ID = "hc-maxwell";
+type HomeMapFilterId = "nearMe" | "hawkerOnly" | "topRated" | "openNow";
+
+const HOME_MAP_FILTER_OPTIONS: readonly { id: HomeMapFilterId; label: string }[] = [
+  { id: "nearMe", label: "Near me" },
+  { id: "hawkerOnly", label: "Hawker" },
+  { id: "topRated", label: "Top Rated" },
+  { id: "openNow", label: "Open Now" },
+];
 
 function CrowdIndicator({ level }: { level?: "low" | "medium" | "high" }) {
   const { palette, spacing, radii } = useHungryTheme();
@@ -112,8 +121,9 @@ export function HomeMapScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const repository = getDataRepository();
   const insets = useSafeAreaInsets();
-  const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
+  const { componentRadii, palette, radii, shadows, spacing, zIndex } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
+  const mapStatusDisclosure = getDataTrustDisclosure("mapStatus");
   const searchQuery = useSearchStore((state) => state.filters.query);
   const updateSearchQuery = useSearchStore((state) => state.updateQuery);
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
@@ -379,38 +389,19 @@ export function HomeMapScreen() {
               )}
             </Pressable>
           </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: spacing[2] }}
-          >
-            <Chip
-              label="Near me"
-              selected={mapFilters.nearMe}
-              onPress={() => toggleMapFilter("nearMe")}
-              leftIcon={
-                <LocateFixed
-                  size={14}
-                  color={mapFilters.nearMe ? palette.orange : palette.textMuted}
-                />
-              }
-            />
-            <Chip
-              label="Hawker"
-              selected={mapFilters.hawkerOnly}
-              onPress={() => toggleMapFilter("hawkerOnly")}
-            />
-            <Chip
-              label="Top Rated"
-              selected={mapFilters.topRated}
-              onPress={() => toggleMapFilter("topRated")}
-            />
-            <Chip
-              label="Open Now"
-              selected={mapFilters.openNow}
-              onPress={() => toggleMapFilter("openNow")}
-            />
-          </ScrollView>
+          <FilterChipRail
+            options={HOME_MAP_FILTER_OPTIONS}
+            selectedIds={HOME_MAP_FILTER_OPTIONS.filter((option) => mapFilters[option.id]).map(
+              (option) => option.id,
+            )}
+            onSelect={toggleMapFilter}
+            gap={spacing[2]}
+            renderLeftIcon={(option, selected) =>
+              option.id === "nearMe" ? (
+                <LocateFixed size={14} color={selected ? palette.orange : palette.textMuted} />
+              ) : null
+            }
+          />
         </View>
       </SafeAreaView>
 
@@ -539,6 +530,9 @@ export function HomeMapScreen() {
                     <AppText variant="micro" tone="secondary">
                       {venue.floor} {venue.unitNumber} · {venue.operatingHours}
                     </AppText>
+                    <AppText variant="micro" tone="muted">
+                      {mapStatusDisclosure}
+                    </AppText>
                   </View>
                   <ChevronRight size={16} color={palette.orange} />
                 </Pressable>
@@ -577,7 +571,7 @@ export function HomeMapScreen() {
                   style={[
                     {
                       backgroundColor: palette.surface,
-                      borderRadius: radii.xl,
+                      borderRadius: componentRadii.card,
                       overflow: "hidden",
                       width: 320,
                     },
@@ -586,10 +580,11 @@ export function HomeMapScreen() {
                 >
                   <View style={{ height: 160 }}>
                     <AnimatedReanimated.View style={StyleSheet.absoluteFill}>
-                      <Image
+                      <AccessibleImage
                         source={{ uri: dish.imageUrl }}
                         style={StyleSheet.absoluteFill}
                         contentFit="cover"
+                        accessibilityLabel={`${dish.name} photo`}
                       />
                     </AnimatedReanimated.View>
                     {dish.liveCrowd && (
@@ -614,6 +609,9 @@ export function HomeMapScreen() {
                     </View>
                     <AppText variant="micro" tone="secondary">
                       {dish.venueName}
+                    </AppText>
+                    <AppText variant="micro" tone="muted">
+                      {mapStatusDisclosure}
                     </AppText>
                   </View>
                 </Pressable>
