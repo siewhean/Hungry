@@ -697,12 +697,16 @@ def patch_cached_table_sheet(
             rows_by_id[row_id] = row_number
 
     patched_cells = 0
+    next_row = sheet.max_row + 1
     for changed in changed_rows:
         row_id = clean(changed.get("id"))
         if not row_id:
             raise SystemExit(f"Incremental workbook patch failed: {sheet_name} row missing id")
         is_new = row_id not in rows_by_id
-        row_number = rows_by_id.get(row_id, sheet.max_row + 1)
+        row_number = rows_by_id.get(row_id)
+        if row_number is None:
+            row_number = next_row
+            next_row += 1
         rows_by_id[row_id] = row_number
         for column in columns:
             if not is_new and column not in changed:

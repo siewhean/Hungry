@@ -8,7 +8,7 @@ from pathlib import Path
 from unittest import mock
 from urllib import parse
 
-from openpyxl import load_workbook
+from openpyxl import Workbook, load_workbook
 
 
 SCRIPTS_DIR = Path(__file__).resolve().parent
@@ -25,6 +25,39 @@ def sheet1_row(**overrides: object) -> dict[str, object]:
 
 
 class IncrementalSyncTests(unittest.TestCase):
+    def test_cached_table_patch_reads_max_row_once_per_phase(self) -> None:
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.title = "Supabase Venues"
+        sheet.append(sync.VENUE_COLUMNS)
+        for venue_id in ("venue-1", "venue-2"):
+            sheet.append(
+                [
+                    venue_id if column == "id" else "Old" if column == "name" else None
+                    for column in sync.VENUE_COLUMNS
+                ]
+            )
+
+        worksheet_type = type(sheet)
+        original_max_row = worksheet_type.max_row.fget
+        max_row_reads = 0
+
+        def counted_max_row(worksheet: object) -> int:
+            nonlocal max_row_reads
+            max_row_reads += 1
+            return original_max_row(worksheet)
+
+        with mock.patch.object(worksheet_type, "max_row", new=property(counted_max_row)):
+            patched = sync.patch_cached_table_sheet(
+                workbook,
+                "Supabase Venues",
+                sync.VENUE_COLUMNS,
+                [{"id": "venue-1", "name": "New 1"}, {"id": "venue-2", "name": "New 2"}],
+            )
+
+        self.assertEqual(patched, 2)
+        self.assertEqual(max_row_reads, 2)
+
     def test_first_incremental_page_uses_exclusive_since_watermark(self) -> None:
         response = mock.MagicMock()
         response.read.return_value = b"[]"
