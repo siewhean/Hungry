@@ -20,6 +20,14 @@ from urllib.parse import urlparse
 
 from openpyxl import load_workbook
 
+from data_display_policy import (
+    ALLOWED_RIGHTS_STATUSES as APPROVED_RIGHTS_STATUSES,
+    approved_rights_status,
+    display_authorized,
+    is_placeholder_url,
+    truthy,
+)
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_WORKBOOK = ROOT / "data" / "Hungry F&B Database.xlsx"
@@ -34,14 +42,6 @@ UNSAFE_BULK_DOMAINS = ("grab.com", "foodpanda.", "deliveroo.")
 GENERIC_IMAGE_HOSTS = ("images.unsplash.com",)
 GOOGLE_HOSTS = ("googleapis.com", "googleusercontent.com", "gstatic.com")
 URL_RE = re.compile(r"https?://[^\s,;)]+", re.IGNORECASE)
-TRUTHY_VALUES = {"1", "true", "yes", "y", "approved", "display", "displayable"}
-APPROVED_RIGHTS_STATUSES = {
-    "licensed",
-    "merchant_owned",
-    "operator_owned",
-    "user_submitted",
-    "permitted_api",
-}
 
 
 def clean(value: Any) -> str:
@@ -60,14 +60,6 @@ def host(value: str) -> str:
 
 def hosts_in_text(value: str) -> list[str]:
     return [host(match.group(0)) for match in URL_RE.finditer(value)]
-
-
-def truthy(value: Any) -> bool:
-    return clean(value).casefold() in TRUTHY_VALUES
-
-
-def approved_rights_status(value: Any) -> bool:
-    return clean(value).casefold() in APPROVED_RIGHTS_STATUSES
 
 
 def source_family(menu_source: str) -> str:
@@ -190,6 +182,97 @@ def classify_row(row: dict[str, Any]) -> tuple[list[str], str]:
     return flags, status
 
 
+def audit_supabase_cache(workbook_path: Path, limit: int | None = None) -> dict[str, Any]:
+    """Audit the authoritative approval/rights columns in workbook cache sheets."""
+
+    workbook = load_workbook(workbook_path, read_only=True, data_only=True)
+    cache_sheet_names = ("Supabase Venues", "Supabase Dishes")
+    missing_sheets = [name for name in cache_sheet_names if name not in workbook.sheetnames]
+    flag_counts: Counter[str] = Counter()
+    blocked_samples: list[dict[str, Any]] = []
+    blocked_count = 0
+    rows_checked = 0
+    try:
+        for sheet_name in cache_sheet_names:
+            if sheet_name not in workbook.sheetnames:
+                continue
+            sheet = workbook[sheet_name]
+            header_values = next(sheet.iter_rows(min_row=1, max_row=1, values_only=True), None)
+            if header_values is None:
+                missing_sheets.append(sheet_name)
+                continue
+            headers = [clean(value) for value in header_values]
+            sheet_rows_checked = 0
+            for row_number, values in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
+                if not any(value not in (None, "") for value in values):
+                    continue
+                if limit is not None and sheet_rows_checked >= limit:
+                    break
+                sheet_rows_checked += 1
+                rows_checked += 1
+                row = {
+                    header: values[index] if index < len(values) else None
+                    for index, header in enumerate(headers)
+                    if header
+                }
+                flags: list[str] = []
+                menu_approved = truthy(row.get("menu_approved_for_display"))
+                media_approved = truthy(row.get("media_approved_for_display"))
+                menu_rights = row.get("menu_rights_status")
+                media_rights = row.get("media_rights_status")
+                media_urls = [row.get("image_url")]
+                if sheet_name == "Supabase Venues":
+                    media_urls.append(row.get("logo_url"))
+
+                if not display_authorized(menu_approved, menu_rights):
+                    flags.append("menu_not_authorized")
+                if menu_approved and not approved_rights_status(menu_rights):
+                    flags.append("menu_approval_rights_conflict")
+
+                has_media = any(clean(value) for value in media_urls)
+                if has_media and not display_authorized(media_approved, media_rights):
+                    flags.append("media_not_authorized")
+                if media_approved and not approved_rights_status(media_rights):
+                    flags.append("media_approval_rights_conflict")
+                if any(is_placeholder_url(value) for value in media_urls):
+                    flags.append("placeholder_media")
+
+                for flag in flags:
+                    flag_counts[flag] += 1
+                if flags:
+                    blocked_count += 1
+                    if len(blocked_samples) < 25:
+                        blocked_samples.append(
+                            {
+                                "sheet": sheet_name,
+                                "row_number": row_number,
+                                "id": clean(row.get("id")),
+                                "flags": flags,
+                            }
+                        )
+    finally:
+        workbook.close()
+
+    if missing_sheets:
+        flag_counts["missing_cache_sheet"] += len(missing_sheets)
+        blocked_count += len(missing_sheets)
+        for name in missing_sheets:
+            if len(blocked_samples) < 25:
+                blocked_samples.append(
+                    {"sheet": name, "row_number": 1, "id": "", "flags": ["missing_cache_sheet"]}
+                )
+
+    return {
+        "rows_checked": rows_checked,
+        "missing_sheets": missing_sheets,
+        "flag_counts": dict(flag_counts.most_common()),
+        "blocked_rows": blocked_count,
+        "sample_blocked_rows": blocked_samples,
+        "passed": blocked_count == 0,
+        "_blocked_count": blocked_count,
+    }
+
+
 def audit_workbook(workbook_path: Path, sheet_name: str, limit: int | None = None) -> dict[str, Any]:
     workbook = load_workbook(workbook_path, read_only=True, data_only=True)
     if sheet_name not in workbook.sheetnames:
@@ -226,7 +309,10 @@ def audit_workbook(workbook_path: Path, sheet_name: str, limit: int | None = Non
         if limit is not None and len(rows) >= limit:
             break
 
+    workbook.close()
     total = len(rows)
+    cache_audit = audit_supabase_cache(workbook_path, limit)
+    blocked_cache_rows = cache_audit.pop("_blocked_count")
     report = {
         "workbook": str(workbook_path),
         "sheet": sheet_name,
@@ -248,8 +334,9 @@ def audit_workbook(workbook_path: Path, sheet_name: str, limit: int | None = Non
             "menu_display_approved_rows": flag_counts["menu_display_approved"],
             "image_display_approved_rows": flag_counts["image_display_approved"],
         },
+        "supabase_cache_display_audit": cache_audit,
     }
-    return {"report": report, "rows": rows}
+    return {"report": report, "rows": rows, "blocked_cache_rows": blocked_cache_rows}
 
 
 def unapproved_display_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -312,7 +399,7 @@ def main() -> int:
     parser.add_argument(
         "--fail-unapproved-display",
         action="store_true",
-        help="Exit non-zero if any row is not approved for production catalog display.",
+        help="Exit non-zero if the Supabase cache sheets contain display approval/rights blockers.",
     )
     args = parser.parse_args()
 
@@ -323,18 +410,18 @@ def main() -> int:
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(report, indent=2, ensure_ascii=False, sort_keys=True) + "\n", encoding="utf-8")
     write_review_queue(rows, args.queue)
-    blocked_rows = unapproved_display_rows(rows)
+    blocked_rows = result["blocked_cache_rows"]
     report["display_gate"] = {
         "mode": "licensed_or_owner_authorized_only",
-        "blocked_rows": len(blocked_rows),
-        "passed": len(blocked_rows) == 0,
+        "blocked_rows": blocked_rows,
+        "passed": blocked_rows == 0,
     }
     args.report.write_text(json.dumps(report, indent=2, ensure_ascii=False, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps(report, indent=2, ensure_ascii=False, sort_keys=True))
     print(f"review_queue={args.queue}")
     if args.fail_unapproved_display and blocked_rows:
         print(
-            f"display_gate_failed={len(blocked_rows)} rows require licensed/owned menu and image provenance",
+            f"display_gate_failed={blocked_rows} rows require licensed/owned menu and image provenance",
         )
         return 3
     return 0

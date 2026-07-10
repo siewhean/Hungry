@@ -22,6 +22,7 @@ from urllib import error, parse, request
 import xlsxwriter
 from openpyxl import load_workbook
 
+from data_display_policy import display_authorized
 from validate_excel_workbook import DEFAULT_WORKBOOK, EXPECTED_COLUMNS, clean, dedupe_key
 
 
@@ -271,10 +272,14 @@ def choose_venue(current: dict[str, Any] | None, candidate: dict[str, Any]) -> d
         return candidate
 
     def score(row: dict[str, Any]) -> tuple[int, int, int, str]:
+        media_authorized = display_authorized(
+            row.get("media_approved_for_display"),
+            row.get("media_rights_status"),
+        )
         return (
-            1 if is_good_url(row.get("logo_url")) else 0,
-            1 if row.get("media_approved_for_display") else 0,
-            1 if is_good_url(row.get("image_url")) else 0,
+            1 if media_authorized and is_good_url(row.get("logo_url")) else 0,
+            1 if media_authorized else 0,
+            1 if media_authorized and is_good_url(row.get("image_url")) else 0,
             clean(row.get("updated_at")),
         )
 
@@ -463,6 +468,9 @@ def update_sheet1_row(
     match_type: str,
 ) -> dict[str, Any]:
     out = {column: row.get(column) for column in EXPECTED_COLUMNS}
+    # A cache refresh is not source verification. Preserve the source date even
+    # when the matching Supabase venue has a newer last_verified_at/updated_at.
+    out["Last Verified Date"] = row.get("Last Verified Date")
     out["Coverage Status"] = normalize_coverage_status(out.get("Coverage Status"))
     stats[f"match_{match_type}"] += 1
 
@@ -478,13 +486,17 @@ def update_sheet1_row(
     if not venue:
         return out
 
-    if is_good_url(venue.get("logo_url")):
+    venue_media_authorized = display_authorized(
+        venue.get("media_approved_for_display"),
+        venue.get("media_rights_status"),
+    )
+    if venue_media_authorized and is_good_url(venue.get("logo_url")):
         out["Logo URL"] = venue.get("logo_url")
         stats["filled_logo_url"] += 1
     else:
         out["Logo URL"] = None
 
-    if venue.get("media_approved_for_display") and is_good_url(venue.get("image_url")):
+    if venue_media_authorized and is_good_url(venue.get("image_url")):
         out["Image URL"] = venue.get("image_url")
         stats["filled_approved_venue_image_url"] += 1
 
@@ -503,14 +515,29 @@ def update_sheet1_row(
     approved_images = [
         dish.get("image_url")
         for dish in venue_dishes
-        if dish.get("media_approved_for_display")
-        and dish.get("menu_approved_for_display")
+        if display_authorized(
+            dish.get("media_approved_for_display"),
+            dish.get("media_rights_status"),
+        )
+        and display_authorized(
+            dish.get("menu_approved_for_display"),
+            dish.get("menu_rights_status"),
+        )
         and is_good_url(dish.get("image_url"))
     ]
     if approved_images:
         out["Dishes Image URL"] = approved_images[0]
         stats["filled_approved_dish_image_url"] += 1
-    menu_items = format_menu_items([dish for dish in venue_dishes if dish.get("menu_approved_for_display")])
+    menu_items = format_menu_items(
+        [
+            dish
+            for dish in venue_dishes
+            if display_authorized(
+                dish.get("menu_approved_for_display"),
+                dish.get("menu_rights_status"),
+            )
+        ]
+    )
     if menu_items:
         out["Menu Items"] = menu_items
         stats["updated_menu_items_from_supabase"] += 1

@@ -14,8 +14,14 @@ from typing import Any
 
 from openpyxl import load_workbook
 
+from data_display_policy import (
+    approved_rights_status,
+    display_authorized,
+    is_placeholder_url,
+    truthy,
+)
 from dish_taxonomy import lookup_dish_taxonomy
-from validate_excel_workbook import DEFAULT_WORKBOOK, clean
+from validate_excel_workbook import DEFAULT_WORKBOOK, clean, dedupe_key
 
 
 DEFAULT_OUTPUT = Path("src/lib/services/excel/excelCatalog.generated.json")
@@ -115,13 +121,12 @@ def number_value(row: dict[str, Any], key: str) -> float | None:
     return number if number == number else None
 
 
-def bool_value(row: dict[str, Any], key: str) -> bool:
-    value = row_value(row, key)
-    if isinstance(value, bool):
-        return value
-    if value is None:
-        return False
-    return str(value).strip().lower() in {"1", "true", "yes", "y"}
+class CatalogValidationError(ValueError):
+    """Raised before export when workbook data is unsafe or ambiguous."""
+
+
+def _validation_error(code: str, detail: str) -> str:
+    return f"{code}: {detail}"
 
 
 def numeric_value(value: Any) -> float | None:
@@ -390,16 +395,10 @@ def clean_evidence_dish_name(value: Any) -> str:
     return dish_name
 
 
-def stable_url_choice(urls: list[str], seed: str) -> str:
-    if not urls:
-        return ""
-    digest = hashlib.sha1(seed.encode("utf-8")).hexdigest()
-    return urls[int(digest[:8], 16) % len(urls)]
-
-
 def load_source_image_evidence(workbook_path: Path) -> dict[str, Any]:
     workbook = load_workbook(workbook_path, read_only=True, data_only=True)
     if "Source Image Evidence" not in workbook.sheetnames:
+        workbook.close()
         return {
             "rows": 0,
             "directRows": 0,
@@ -435,12 +434,14 @@ def load_source_image_evidence(workbook_path: Path) -> dict[str, Any]:
             if image_url not in by_stall[stall_key]:
                 by_stall[stall_key].append(image_url)
 
-    return {
+    result = {
         "rows": row_count,
         "directRows": direct_count,
         "byDish": dict(by_dish),
         "byStall": dict(by_stall),
     }
+    workbook.close()
+    return result
 
 
 def load_sheet_rows(workbook_path: Path) -> list[dict[str, Any]]:
@@ -454,12 +455,14 @@ def load_sheet_rows(workbook_path: Path) -> list[dict[str, Any]]:
         row = {str(headers[index]): values[index] if index < len(values) else None for index in range(len(headers))}
         row["_row_number"] = row_number
         rows.append(row)
+    workbook.close()
     return rows
 
 
 def load_named_sheet_rows(workbook_path: Path, sheet_name: str) -> list[dict[str, Any]]:
     workbook = load_workbook(workbook_path, read_only=True, data_only=True)
     if sheet_name not in workbook.sheetnames:
+        workbook.close()
         return []
     sheet = workbook[sheet_name]
     headers = [cell.value for cell in next(sheet.iter_rows(min_row=1, max_row=1))]
@@ -467,13 +470,296 @@ def load_named_sheet_rows(workbook_path: Path, sheet_name: str) -> list[dict[str
     for row_number, values in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
         if not any(value not in (None, "") for value in values):
             continue
-        row = {str(headers[index]): values[index] if index < len(headers) else None for index in range(len(headers))}
+        row = {
+            str(headers[index]): values[index] if index < len(values) else None
+            for index in range(len(headers))
+        }
         row["_row_number"] = row_number
         rows.append(row)
+    workbook.close()
     return rows
 
 
+def source_match_keys(row: dict[str, Any], *, cached: bool) -> list[str]:
+    if cached:
+        raw_keys = [
+            ("business", row.get("business_id")),
+            ("business", row.get("id")),
+            ("stall", row.get("stall_id")),
+            ("licence", row.get("licence_no")),
+            (
+                "name-location",
+                "|".join(
+                    [
+                        text_value(row, "name"),
+                        text_value(row, "postal_code"),
+                        text_value(row, "unit_number"),
+                    ]
+                ),
+            ),
+        ]
+    else:
+        raw_keys = [
+            ("business", row.get("Business ID")),
+            ("stall", row.get("Stall ID")),
+            ("licence", row.get("Licence No")),
+            (
+                "name-location",
+                "|".join(
+                    [
+                        text_value(row, "Stall / Restaurant Name"),
+                        text_value(row, "Postal Code"),
+                        text_value(row, "Unit No."),
+                    ]
+                ),
+            ),
+        ]
+    keys: list[str] = []
+    for prefix, value in raw_keys:
+        normalized = normalize_lookup_key(value)
+        if normalized and normalized != normalize_lookup_key("||"):
+            keys.append(f"{prefix}:{normalized}")
+            if prefix == "business":
+                family = venue_family_key(value)
+                if family:
+                    keys.append(f"business-family:{family}")
+    return list(dict.fromkeys(keys))
+
+
+def match_source_rows(
+    rows: list[dict[str, Any]],
+    supabase_venues: list[dict[str, Any]],
+) -> tuple[dict[int, dict[str, Any]], list[str]]:
+    indexes: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)
+    for venue in supabase_venues:
+        for key in source_match_keys(venue, cached=True):
+            indexes[key].append(venue)
+
+    matches: dict[int, dict[str, Any]] = {}
+    errors: list[str] = []
+    for row in rows:
+        row_number = int(row["_row_number"])
+        candidates: dict[str, dict[str, Any]] = {}
+        for key in source_match_keys(row, cached=False):
+            for venue in indexes.get(key, []):
+                venue_id = text_value(venue, "id")
+                if venue_id:
+                    candidates[venue_id] = venue
+        if len(candidates) > 1:
+            errors.append(
+                _validation_error(
+                    "ambiguous_source_row",
+                    f"Sheet1 row {row_number} matches cache venue ids {', '.join(sorted(candidates))}",
+                )
+            )
+        elif candidates:
+            matches[row_number] = next(iter(candidates.values()))
+    return matches, errors
+
+
+def validate_export_inputs(
+    rows: list[dict[str, Any]],
+    supabase_venues: list[dict[str, Any]],
+    supabase_dishes: list[dict[str, Any]],
+) -> dict[int, dict[str, Any]]:
+    errors: list[str] = []
+    error_count = 0
+
+    def add_error(value: str) -> None:
+        nonlocal error_count
+        error_count += 1
+        if len(errors) < 100:
+            errors.append(value)
+
+    def raise_if_errors() -> None:
+        if not error_count:
+            return
+        sample = "\n".join(f"- {error}" for error in errors)
+        suffix = (
+            f"\n- ... {error_count - len(errors)} additional errors"
+            if error_count > len(errors)
+            else ""
+        )
+        raise CatalogValidationError(
+            f"Catalog export preflight failed with {error_count} error(s):\n{sample}{suffix}"
+        )
+
+    source_keys: defaultdict[str, list[int]] = defaultdict(list)
+    for row in rows:
+        row_number = int(row["_row_number"])
+        key = dedupe_key(row)
+        if not key:
+            add_error(
+                _validation_error(
+                    "ambiguous_source_row",
+                    f"Sheet1 row {row_number} has no stable source or name/location key",
+                )
+            )
+        else:
+            source_keys[key].append(row_number)
+        for field in ("Image URL", "Dishes Image URL", "Logo URL"):
+            if is_placeholder_url(row.get(field)):
+                add_error(
+                    _validation_error(
+                        "placeholder_media",
+                        f"Sheet1 row {row_number} has placeholder {field}",
+                    )
+                )
+    for key, row_numbers in source_keys.items():
+        if len(row_numbers) > 1:
+            add_error(
+                _validation_error(
+                    "duplicate_source_key",
+                    f"{key} occurs on Sheet1 rows {', '.join(map(str, row_numbers))}",
+                )
+            )
+
+    cache_ids: dict[str, set[str]] = {}
+    for label, cache_rows in (("venue", supabase_venues), ("dish", supabase_dishes)):
+        seen: set[str] = set()
+        duplicates: set[str] = set()
+        for row in cache_rows:
+            row_id = text_value(row, "id")
+            if not row_id:
+                add_error(
+                    _validation_error(
+                        "ambiguous_cache_row",
+                        f"Supabase {label} row {row.get('_row_number')} has no id",
+                    )
+                )
+                continue
+            if row_id in seen:
+                duplicates.add(row_id)
+            seen.add(row_id)
+
+            for kind, approved_column, rights_column in (
+                ("menu", "menu_approved_for_display", "menu_rights_status"),
+                ("media", "media_approved_for_display", "media_rights_status"),
+            ):
+                if truthy(row.get(approved_column)) and not approved_rights_status(row.get(rights_column)):
+                    add_error(
+                        _validation_error(
+                            "approval_rights_conflict",
+                            f"Supabase {label} {row_id} has {kind} approval without allowed {rights_column}",
+                        )
+                    )
+            media_fields = ("image_url", "logo_url") if label == "venue" else ("image_url",)
+            for field in media_fields:
+                if is_placeholder_url(row.get(field)):
+                    add_error(
+                        _validation_error(
+                            "placeholder_media",
+                            f"Supabase {label} {row_id} has placeholder {field}",
+                        )
+                    )
+        for duplicate_id in sorted(duplicates):
+            add_error(
+                _validation_error(
+                    f"duplicate_{label}_id",
+                    f"Supabase cache id {duplicate_id} occurs more than once",
+                )
+            )
+        cache_ids[label] = seen
+
+    for dish in supabase_dishes:
+        dish_id = text_value(dish, "id") or f"row {dish.get('_row_number')}"
+        venue_id = text_value(dish, "venue_id")
+        if not venue_id or venue_id not in cache_ids.get("venue", set()):
+            add_error(
+                _validation_error(
+                    "orphan_dish_reference",
+                    f"Supabase dish {dish_id} references missing venue {venue_id or '<blank>'}",
+                )
+            )
+
+    raise_if_errors()
+    source_matches, match_errors = match_source_rows(rows, supabase_venues)
+    for error in match_errors:
+        add_error(error)
+    raise_if_errors()
+    return source_matches
+
+
+def validate_generated_catalog(
+    buildings: list[dict[str, Any]],
+    venues: list[dict[str, Any]],
+    dishes: list[dict[str, Any]],
+) -> None:
+    errors: list[str] = []
+
+    def collect_ids(label: str, records: list[dict[str, Any]]) -> set[str]:
+        seen: set[str] = set()
+        duplicates: set[str] = set()
+        for record in records:
+            record_id = text_value(record, "id")
+            if not record_id:
+                errors.append(_validation_error(f"missing_generated_{label}_id", "generated record has no id"))
+            elif record_id in seen:
+                duplicates.add(record_id)
+            else:
+                seen.add(record_id)
+        for duplicate_id in sorted(duplicates):
+            errors.append(
+                _validation_error(
+                    f"duplicate_generated_{label}_id",
+                    duplicate_id,
+                )
+            )
+        return seen
+
+    building_ids = collect_ids("building", buildings)
+    venue_ids = collect_ids("venue", venues)
+    dish_ids = collect_ids("dish", dishes)
+    for venue in venues:
+        venue_id = text_value(venue, "id")
+        building_id = text_value(venue, "buildingId")
+        top_dish_id = text_value(venue, "topDishId")
+        if building_id not in building_ids:
+            errors.append(_validation_error("orphan_venue_building", f"{venue_id} -> {building_id or '<blank>'}"))
+        if top_dish_id and top_dish_id not in dish_ids:
+            errors.append(_validation_error("orphan_venue_top_dish", f"{venue_id} -> {top_dish_id}"))
+        for field in ("imageUrl", "logoUrl"):
+            if is_placeholder_url(venue.get(field)):
+                errors.append(_validation_error("placeholder_generated_media", f"venue {venue_id} {field}"))
+    for dish in dishes:
+        dish_id = text_value(dish, "id")
+        if text_value(dish, "venueId") not in venue_ids:
+            errors.append(_validation_error("orphan_generated_dish_venue", dish_id))
+        if text_value(dish, "buildingId") not in building_ids:
+            errors.append(_validation_error("orphan_generated_dish_building", dish_id))
+        if is_placeholder_url(dish.get("imageUrl")):
+            errors.append(_validation_error("placeholder_generated_media", f"dish {dish_id} imageUrl"))
+    for building in buildings:
+        hero_dish_id = text_value(building, "heroDishId")
+        if hero_dish_id and hero_dish_id not in dish_ids:
+            errors.append(
+                _validation_error(
+                    "orphan_building_hero_dish",
+                    f"{text_value(building, 'id')} -> {hero_dish_id}",
+                )
+            )
+    if errors:
+        raise CatalogValidationError(
+            "Generated catalog integrity failed:\n" + "\n".join(f"- {error}" for error in errors)
+        )
+
+
 def build_catalog(rows: list[dict[str, Any]], workbook_path: Path, max_menu_items: int) -> dict[str, Any]:
+    workbook = load_workbook(workbook_path, read_only=True, data_only=True)
+    try:
+        missing_cache_sheets = [
+            name for name in ("Supabase Venues", "Supabase Dishes") if name not in workbook.sheetnames
+        ]
+    finally:
+        workbook.close()
+    if missing_cache_sheets:
+        raise CatalogValidationError(
+            "Catalog export preflight failed: missing authoritative cache sheet(s): "
+            + ", ".join(missing_cache_sheets)
+        )
+    supabase_venues = load_named_sheet_rows(workbook_path, "Supabase Venues")
+    supabase_dishes = load_named_sheet_rows(workbook_path, "Supabase Dishes")
+    source_matches = validate_export_inputs(rows, supabase_venues, supabase_dishes)
     source_image_evidence = load_source_image_evidence(workbook_path)
     source_images_by_dish: dict[tuple[str, str], list[dict[str, Any]]] = source_image_evidence["byDish"]
     source_images_by_stall: dict[str, list[str]] = source_image_evidence["byStall"]
@@ -488,30 +774,12 @@ def build_catalog(rows: list[dict[str, Any]], workbook_path: Path, max_menu_item
     represented_business_ids: set[str] = set()
     represented_venue_families: set[str] = set()
     represented_venue_keys: set[str] = set()
-    supabase_venues = load_named_sheet_rows(workbook_path, "Supabase Venues")
-    supabase_dishes = load_named_sheet_rows(workbook_path, "Supabase Dishes")
-    supabase_venues_by_family: dict[str, dict[str, Any]] = {}
-    for venue_row in supabase_venues:
-        source_venue_id = text_value(venue_row, "id")
-        family_key = venue_family_key(source_venue_id)
-        if not family_key:
-            continue
-        existing_row = supabase_venues_by_family.get(family_key)
-        row_has_logo = bool(good_url(row_value(venue_row, "logo_url"), allow_wikimedia=True))
-        row_has_image = bool(good_url(row_value(venue_row, "image_url")))
-        existing_has_logo = bool(
-            existing_row and good_url(row_value(existing_row, "logo_url"), allow_wikimedia=True)
-        )
-        existing_has_image = bool(existing_row and good_url(row_value(existing_row, "image_url")))
-        if (
-            existing_row is None
-            or (row_has_logo and not existing_has_logo)
-            or (row_has_image and not existing_has_image)
-        ):
-            supabase_venues_by_family[family_key] = venue_row
     supabase_dishes_by_venue: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)
     for dish_row in supabase_dishes:
-        if not bool_value(dish_row, "menu_approved_for_display"):
+        if not display_authorized(
+            row_value(dish_row, "menu_approved_for_display"),
+            row_value(dish_row, "menu_rights_status"),
+        ):
             continue
         venue_id = text_value(dish_row, "venue_id")
         dish_name = text_value(dish_row, "name")
@@ -521,6 +789,12 @@ def build_catalog(rows: list[dict[str, Any]], workbook_path: Path, max_menu_item
 
     for row in rows:
         row_number = int(row["_row_number"])
+        matched_venue_row = source_matches.get(row_number)
+        if not matched_venue_row or not display_authorized(
+            row_value(matched_venue_row, "menu_approved_for_display"),
+            row_value(matched_venue_row, "menu_rights_status"),
+        ):
+            continue
         name = text_value(row, "Stall / Restaurant Name") or text_value(row, "Google Display Name")
         if not name:
             continue
@@ -551,14 +825,22 @@ def build_catalog(rows: list[dict[str, Any]], workbook_path: Path, max_menu_item
             "latitude": latitude if latitude is not None else DEFAULT_COORDINATE["latitude"],
             "longitude": longitude if longitude is not None else DEFAULT_COORDINATE["longitude"],
         }
-        logo_url = good_url(row_value(row, "Logo URL"), allow_wikimedia=True)
-        venue_image_url = good_url(row_value(row, "Image URL"))
-        supabase_venue_row = supabase_venues_by_family.get(venue_family_key(raw_business_id)) if raw_business_id else None
-        if supabase_venue_row:
-            logo_url = logo_url or good_url(row_value(supabase_venue_row, "logo_url"), allow_wikimedia=True)
-            venue_image_url = venue_image_url or good_url(row_value(supabase_venue_row, "image_url"))
-        dish_image_url = good_url(row_value(row, "Dishes Image URL"))
-        current_stall_lookup_keys = stall_lookup_keys(name)
+        supabase_venue_row = matched_venue_row
+        venue_media_authorized = display_authorized(
+            row_value(supabase_venue_row, "media_approved_for_display"),
+            row_value(supabase_venue_row, "media_rights_status"),
+        )
+        logo_url = (
+            good_url(row_value(supabase_venue_row, "logo_url"), allow_wikimedia=True)
+            if venue_media_authorized
+            else ""
+        )
+        venue_image_url = (
+            good_url(row_value(supabase_venue_row, "image_url")) if venue_media_authorized else ""
+        )
+        # Sheet1 and Source Image Evidence do not carry approval/rights columns;
+        # they cannot provide production media without a cache-backed approval.
+        dish_image_url = ""
         cuisine = text_value(row, "Cuisine")
         cuisine_tags = split_tags(cuisine)
         flags = dietary_flags(text_value(row, "Dietary Options"))
@@ -573,9 +855,9 @@ def build_catalog(rows: list[dict[str, Any]], workbook_path: Path, max_menu_item
             menu_items = menu_items[:max_menu_items]
 
         supabase_dish_rows: list[dict[str, Any]] = []
-        if raw_business_id:
-            supabase_dish_rows.extend(supabase_dishes_by_venue.get(raw_business_id, []))
-            supabase_dish_rows.extend(supabase_dishes_by_venue.get(f"ven-{raw_business_id}", []))
+        source_venue_id = text_value(supabase_venue_row, "id")
+        if source_venue_id:
+            supabase_dish_rows.extend(supabase_dishes_by_venue.get(source_venue_id, []))
         supabase_dishes_by_name: dict[str, dict[str, Any]] = {}
         for dish_row in supabase_dish_rows:
             dish_lookup_key = normalize_lookup_key(text_value(dish_row, "name"))
@@ -584,11 +866,17 @@ def build_catalog(rows: list[dict[str, Any]], workbook_path: Path, max_menu_item
             existing_dish_row = supabase_dishes_by_name.get(dish_lookup_key)
             existing_has_image = bool(
                 existing_dish_row
-                and bool_value(existing_dish_row, "media_approved_for_display")
+                and display_authorized(
+                    row_value(existing_dish_row, "media_approved_for_display"),
+                    row_value(existing_dish_row, "media_rights_status"),
+                )
                 and good_url(row_value(existing_dish_row, "image_url"))
             )
             next_has_image = bool(
-                bool_value(dish_row, "media_approved_for_display")
+                display_authorized(
+                    row_value(dish_row, "media_approved_for_display"),
+                    row_value(dish_row, "media_rights_status"),
+                )
                 and good_url(row_value(dish_row, "image_url"))
             )
             if existing_dish_row is None or (next_has_image and not existing_has_image):
@@ -602,45 +890,22 @@ def build_catalog(rows: list[dict[str, Any]], workbook_path: Path, max_menu_item
             price, price_range = parse_price(item, fallback_min, fallback_max)
             dish_id = f"{venue_id}-dish-{index + 1}-{slugify(dish_name, 'item')}"
             dish_key = normalize_lookup_key(dish_name)
-            exact_source_evidence = next(
-                (
-                    source_images_by_dish[(stall_key, dish_key)]
-                    for stall_key in current_stall_lookup_keys
-                    if (stall_key, dish_key) in source_images_by_dish
-                ),
-                [],
-            )
-            representative_source_images = next(
-                (
-                    source_images_by_stall[stall_key]
-                    for stall_key in current_stall_lookup_keys
-                    if stall_key in source_images_by_stall
-                ),
-                [],
-            )
-            source_image_seed = "|".join([*current_stall_lookup_keys, dish_key, str(index)])
-            exact_source_price = exact_source_evidence[0].get("price") if exact_source_evidence else None
             supabase_dish_row = supabase_dishes_by_name.get(dish_key)
             supabase_dish_image_url = (
                 good_url(row_value(supabase_dish_row, "image_url"))
-                if supabase_dish_row and bool_value(supabase_dish_row, "media_approved_for_display")
+                if supabase_dish_row
+                and display_authorized(
+                    row_value(supabase_dish_row, "media_approved_for_display"),
+                    row_value(supabase_dish_row, "media_rights_status"),
+                )
                 else ""
             )
-            source_image_url = exact_source_evidence[0]["url"] if exact_source_evidence else stable_url_choice(
-                representative_source_images,
-                source_image_seed,
-            )
-            image_url = supabase_dish_image_url or dish_image_url or source_image_url or venue_image_url
+            image_url = supabase_dish_image_url or venue_image_url
             if supabase_dish_image_url or dish_image_url:
                 dish_images_from_dish_column += 1
-            elif source_image_url:
-                dish_images_from_source_evidence += 1
             elif venue_image_url:
                 dish_images_from_venue_image += 1
-            if exact_source_price is not None:
-                price = float(exact_source_price)
-                price_range = f"S${price:.2f}"
-            elif supabase_dish_row:
+            if supabase_dish_row:
                 supabase_price = number_value(supabase_dish_row, "price")
                 if supabase_price is not None and supabase_price > 0:
                     price = supabase_price
@@ -718,7 +983,10 @@ def build_catalog(rows: list[dict[str, Any]], workbook_path: Path, max_menu_item
     for row in sorted(supabase_venues, key=supabase_venue_sort_key):
         source_venue_id = text_value(row, "id")
         name = text_value(row, "name")
-        if not source_venue_id or not name or not bool_value(row, "menu_approved_for_display"):
+        if not source_venue_id or not name or not display_authorized(
+            row_value(row, "menu_approved_for_display"),
+            row_value(row, "menu_rights_status"),
+        ):
             continue
         source_venue_family = venue_family_key(source_venue_id)
         business_id = normalize_lookup_key(text_value(row, "business_id"))
@@ -756,9 +1024,17 @@ def build_catalog(rows: list[dict[str, Any]], workbook_path: Path, max_menu_item
             "latitude": latitude if latitude is not None else DEFAULT_COORDINATE["latitude"],
             "longitude": longitude if longitude is not None else DEFAULT_COORDINATE["longitude"],
         }
-        logo_url = good_url(row_value(row, "logo_url"), allow_wikimedia=True)
+        venue_media_authorized = display_authorized(
+            row_value(row, "media_approved_for_display"),
+            row_value(row, "media_rights_status"),
+        )
+        logo_url = (
+            good_url(row_value(row, "logo_url"), allow_wikimedia=True)
+            if venue_media_authorized
+            else ""
+        )
         venue_image_url = (
-            good_url(row_value(row, "image_url")) if bool_value(row, "media_approved_for_display") else ""
+            good_url(row_value(row, "image_url")) if venue_media_authorized else ""
         )
         cuisine_tags = split_tags(text_value(row, "cuisine_tags"))
         flags = dietary_flags(text_value(row, "dietary_tags"))
@@ -770,7 +1046,10 @@ def build_catalog(rows: list[dict[str, Any]], workbook_path: Path, max_menu_item
             price_range = text_value(dish_row, "price_range") or (f"S${price:.2f}" if price > 0 else "")
             dish_image_url = (
                 good_url(row_value(dish_row, "image_url"))
-                if bool_value(dish_row, "media_approved_for_display")
+                if display_authorized(
+                    row_value(dish_row, "media_approved_for_display"),
+                    row_value(dish_row, "media_rights_status"),
+                )
                 else ""
             )
             if dish_image_url:
@@ -856,6 +1135,9 @@ def build_catalog(rows: list[dict[str, Any]], workbook_path: Path, max_menu_item
         building["venueCount"] = building_venue_counts[building_id]
         building["heroDishId"] = building_hero_dishes.get(building_id, building.get("heroDishId") or "")
 
+    building_rows = list(buildings_by_key.values())
+    validate_generated_catalog(building_rows, venues, dishes)
+
     workbook_bytes = workbook_path.read_bytes()
     return {
         "metadata": {
@@ -877,7 +1159,7 @@ def build_catalog(rows: list[dict[str, Any]], workbook_path: Path, max_menu_item
             "sourceImageEvidenceStallKeys": len(source_images_by_stall),
         },
         "buildingColumns": BUILDING_COLUMNS,
-        "buildings": compact_rows(list(buildings_by_key.values()), BUILDING_COLUMNS),
+        "buildings": compact_rows(building_rows, BUILDING_COLUMNS),
         "venueColumns": VENUE_COLUMNS,
         "venues": compact_rows(venues, VENUE_COLUMNS),
         "dishColumns": DISH_COLUMNS,
@@ -904,7 +1186,11 @@ def main() -> int:
     args = parser.parse_args()
 
     rows = load_sheet_rows(args.workbook)
-    catalog = build_catalog(rows, args.workbook, args.max_menu_items)
+    try:
+        catalog = build_catalog(rows, args.workbook, args.max_menu_items)
+    except CatalogValidationError as exc:
+        print(str(exc))
+        return 2
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(catalog, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     print(json.dumps(catalog["metadata"], indent=2, sort_keys=True))

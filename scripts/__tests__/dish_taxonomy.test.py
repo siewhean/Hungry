@@ -72,6 +72,36 @@ class DishTaxonomyTest(unittest.TestCase):
                 ]
             )
             sheet.append(["SFA-TEST", "Test Stall", "Asian", "Beef Bibimbap", 12, 12])
+            venues = workbook.create_sheet("Supabase Venues")
+            venues.append(
+                [
+                    "id",
+                    "business_id",
+                    "name",
+                    "menu_approved_for_display",
+                    "menu_rights_status",
+                    "media_approved_for_display",
+                    "media_rights_status",
+                ]
+            )
+            venues.append(
+                ["venue-test", "SFA-TEST", "Test Stall", True, "operator_owned", False, "unverified"]
+            )
+            dishes = workbook.create_sheet("Supabase Dishes")
+            dishes.append(
+                [
+                    "id",
+                    "venue_id",
+                    "name",
+                    "menu_approved_for_display",
+                    "menu_rights_status",
+                    "media_approved_for_display",
+                    "media_rights_status",
+                ]
+            )
+            dishes.append(
+                ["dish-test", "venue-test", "Beef Bibimbap", True, "licensed", False, "unverified"]
+            )
             workbook.save(workbook_path)
 
             catalog = build_catalog(load_sheet_rows(workbook_path), workbook_path, 0)
