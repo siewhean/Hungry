@@ -74,6 +74,7 @@
     "data:excel:validate": "python3 scripts/validate_excel_workbook.py",
     "data:excel:audit": "python3 scripts/audit_excel_source_quality.py",
     "data:excel:display-gate": "python3 scripts/audit_excel_source_quality.py --fail-unapproved-display",
+    "data:excel:reconcile": "python3 scripts/reconcile_excel_workbook.py",
     "data:excel:export-app": "python3 scripts/export_excel_catalog_for_app.py",
     "data:excel:sync": "python3 scripts/sync_supabase_excel_master.py",
     "data:excel:sync:incremental": "python3 scripts/sync_supabase_excel_master.py --incremental",
