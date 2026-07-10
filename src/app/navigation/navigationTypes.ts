@@ -106,6 +106,7 @@ export type RootStackParamList = {
     | {
         browseMode?: "dishes" | "stalls";
         initialQuery?: string;
+        foodTypeTag?: string;
         initialFilter?:
           | "All"
           | "Local"

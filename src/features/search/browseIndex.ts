@@ -21,6 +21,7 @@ let cachedBrowseIndex: { index: BrowseIndex; repository: DataRepository } | null
 function toDishSearchText(dish: DishDetail, venue?: VenueSummary): string {
   return [
     dish.name,
+    dish.foodTypeTag,
     dish.venueName,
     venue?.name,
     dish.priceRange,
@@ -114,11 +115,13 @@ export function searchBrowseDishes(
   index: BrowseIndex,
   options: {
     dietaryFlags?: readonly DietaryFlag[];
+    foodTypeTag?: string;
     query?: string;
     radiusMeters?: number;
   },
 ): DishDetail[] {
   const normalizedQuery = options.query?.trim().toLowerCase() ?? "";
+  const normalizedFoodTypeTag = options.foodTypeTag?.trim().toLowerCase() ?? "";
   const dietaryFlags = options.dietaryFlags ?? [];
   const radiusMeters = options.radiusMeters ?? Number.MAX_SAFE_INTEGER;
 
@@ -129,9 +132,19 @@ export function searchBrowseDishes(
         (index.searchTextByDishId.get(dish.id) ?? dish.name.toLowerCase()).includes(
           normalizedQuery,
         );
+      const searchText = index.searchTextByDishId.get(dish.id) ?? dish.name.toLowerCase();
+      const matchesFoodTypeTag =
+        !normalizedFoodTypeTag ||
+        dish.foodTypeTag?.toLowerCase() === normalizedFoodTypeTag ||
+        searchText.includes(normalizedFoodTypeTag);
       const matchesDietary =
         dietaryFlags.length === 0 || dietaryFlags.every((flag) => dish.dietaryFlags.includes(flag));
-      return matchesQuery && matchesDietary && dish.distanceMeters <= radiusMeters;
+      return (
+        matchesQuery &&
+        matchesFoodTypeTag &&
+        matchesDietary &&
+        dish.distanceMeters <= radiusMeters
+      );
     })
     .sort((left, right) => {
       if (right.rating !== left.rating) {
