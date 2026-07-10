@@ -140,10 +140,7 @@ export function searchBrowseDishes(
       const matchesDietary =
         dietaryFlags.length === 0 || dietaryFlags.every((flag) => dish.dietaryFlags.includes(flag));
       return (
-        matchesQuery &&
-        matchesFoodTypeTag &&
-        matchesDietary &&
-        dish.distanceMeters <= radiusMeters
+        matchesQuery && matchesFoodTypeTag && matchesDietary && dish.distanceMeters <= radiusMeters
       );
     })
     .sort((left, right) => {
