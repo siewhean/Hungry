@@ -1,0 +1,171 @@
+name: Scheduled enrichment
+
+on:
+  schedule:
+    - cron: "15 18 * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Review creates evidence only; apply is manual-only and updates existing rows"
+        required: true
+        default: review
+        type: choice
+        options:
+          - review
+          - apply
+      approval:
+        description: "Apply mode requires the exact confirmation APPLY_EXISTING_ROWS"
+        required: false
+        default: ""
+        type: string
+      limit:
+        description: "Venue limit (review maximum 25; apply maximum 10)"
+        required: true
+        default: "10"
+        type: string
+      workers:
+        description: "Bounded Playwright workers"
+        required: true
+        default: "2"
+        type: choice
+        options:
+          - "1"
+          - "2"
+          - "3"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scheduled-enrichment
+  cancel-in-progress: false
+
+jobs:
+  review:
+    if: >-
+      (github.event_name == 'workflow_dispatch' && inputs.mode == 'review') ||
+      github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+      ENRICHMENT_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.limit || vars.HUNGRY_SCHEDULED_ENRICHMENT_LIMIT || '10' }}
+      ENRICHMENT_WORKERS: ${{ github.event_name == 'workflow_dispatch' && inputs.workers || vars.HUNGRY_SCHEDULED_ENRICHMENT_WORKERS || '2' }}
+      HUNGRY_SUPABASE_IMPORT_URL: ${{ secrets.HUNGRY_SUPABASE_IMPORT_URL }}
+      HUNGRY_SUPABASE_IMPORT_SERVICE_ROLE_KEY: ${{ secrets.HUNGRY_SUPABASE_IMPORT_SERVICE_ROLE_KEY }}
+      EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Generate dry-run review artifact
+        id: enrichment
+        continue-on-error: true
+        run: >-
+          node scripts/run-scheduled-enrichment-review.mjs
+          --mode=review
+          --limit="${ENRICHMENT_LIMIT}"
+          --workers="${ENRICHMENT_WORKERS}"
+          --output-dir="${RUNNER_TEMP}/scheduled-enrichment"
+
+      - name: Upload review evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: enrichment-review-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/scheduled-enrichment
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Enforce review gate
+        if: steps.enrichment.outcome != 'success'
+        run: |
+          echo "Scheduled enrichment review failed. Inspect the uploaded run summary."
+          exit 1
+
+  reject-unconfirmed-apply:
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      inputs.mode == 'apply' &&
+      (inputs.approval != 'APPLY_EXISTING_ROWS' || github.actor != github.repository_owner)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reject unconfirmed apply request
+        run: |
+          echo "Apply mode requires the exact approval phrase APPLY_EXISTING_ROWS."
+          exit 1
+
+  apply:
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      inputs.mode == 'apply' &&
+      inputs.approval == 'APPLY_EXISTING_ROWS' &&
+      github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment:
+      name: enrichment-production
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+      ENRICHMENT_LIMIT: ${{ inputs.limit }}
+      ENRICHMENT_WORKERS: ${{ inputs.workers }}
+      HUNGRY_SUPABASE_IMPORT_URL: ${{ secrets.HUNGRY_SUPABASE_IMPORT_URL }}
+      HUNGRY_SUPABASE_IMPORT_SERVICE_ROLE_KEY: ${{ secrets.HUNGRY_SUPABASE_IMPORT_SERVICE_ROLE_KEY }}
+      EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      HUNGRY_ENABLE_SCHEDULED_ENRICHMENT_WRITES: ${{ secrets.HUNGRY_ENABLE_SCHEDULED_ENRICHMENT_WRITES }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Apply bounded existing-row enrichment
+        id: enrichment
+        continue-on-error: true
+        run: >-
+          node scripts/run-scheduled-enrichment-review.mjs
+          --mode=apply
+          --limit="${ENRICHMENT_LIMIT}"
+          --workers="${ENRICHMENT_WORKERS}"
+          --output-dir="${RUNNER_TEMP}/scheduled-enrichment"
+
+      - name: Upload apply evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: enrichment-apply-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/scheduled-enrichment
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Enforce apply gate
+        if: steps.enrichment.outcome != 'success'
+        run: |
+          echo "Scheduled enrichment apply did not complete. Inspect the uploaded run summary."
+          exit 1

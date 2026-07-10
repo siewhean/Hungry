@@ -219,17 +219,19 @@ seedSqlParts.push(
   ),
 );
 
+const dishDietaryRows = dishes.flatMap((dish) =>
+  (dish.dietaryFlags ?? []).map((flag) => `(${toSqlValue(dish.id)}, ${toSqlValue(flag)})`),
+);
 seedSqlParts.push(
-  insertStatement(
-    "dish_dietary_flags",
-    ["dish_id", "dietary_flag_id"],
-    dishes.flatMap((dish) =>
-      (dish.dietaryFlags ?? [])
-        .map((flag) => dietaryIdBySlug.get(flag))
-        .filter((id): id is string => Boolean(id))
-        .map((dietaryId) => `(${toSqlValue(dish.id)}, ${toSqlValue(dietaryId)})`),
-    ),
-  ),
+  dishDietaryRows.length === 0
+    ? "-- dish_dietary_flags: no rows"
+    : `insert into dish_dietary_flags (dish_id, dietary_flag_id)
+select source.dish_id, flags.id
+from (values
+${dishDietaryRows.join(",\n")}
+) as source(dish_id, dietary_slug)
+join dietary_flags flags on flags.slug = source.dietary_slug
+on conflict do nothing;`,
 );
 
 seedSqlParts.push(
