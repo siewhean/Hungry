@@ -6,6 +6,18 @@
 
 ## Current Focus
 
+- `DATA-ENRICH-ROADMAP-01` — Done. 2026-07-10 completed the audited R1–R14 enrichment
+  roadmap: pending backfills were applied; checkpointed/batched writes and provenance-safe chain
+  propagation are in place; the core scraper now uses shared Grab/Oddle/Foodpanda/Deliveroo
+  adapters, direct platform resolution, weighted identity bands, and a bounded worker pool;
+  Supabase-to-Excel sync supports timestamp/keyset incremental runs; Grab directory discovery,
+  scheduled review/apply enrichment, non-consumer classification, and a structured 74-dish
+  cuisine/taste taxonomy are implemented. Independent QA passes the complete repo-local contract.
+  Draft PR #32 is pushed; review-mode variables/secrets and a branch-restricted
+  `enrichment-production` environment are configured. Required-reviewer protection is blocked by
+  the current GitHub billing plan. Production writes remain disabled while live platform,
+  incremental-index migration, scheduled apply, and cleanup-apply evidence are pending.
+
 - `PAGE-QAQC-01` — Repo-local multi-agent page QA/QC loop complete; external proof pending.
   2026-06-24 refreshed the canonical page-agent plan/reports, shared Playwright helper, page-agent
   specs for Home Feed, Discovery, Review, Post Composer, and Profile, production feature-gate

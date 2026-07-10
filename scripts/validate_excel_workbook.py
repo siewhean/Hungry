@@ -78,6 +78,8 @@ EXPECTED_COLUMNS = [
     "Menu Source",
     "Menu Items",
     "Dishes Image URL",
+    "Area",
+    "Logo URL",
 ]
 
 VALID_STALL_TYPES = {
