@@ -20,6 +20,7 @@ import Animated, {
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "@/components/ui/AppText";
 import { useFoodCredStore } from "@/store/useFoodCredStore";
@@ -30,6 +31,7 @@ const AUTO_DISMISS_MS = 2500;
 export function CredEarnedToast() {
   const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
   const lastEarnedPoints = useFoodCredStore((s) => s.lastEarnedPoints);
+  const reduceMotion = useReduceMotion();
   const totalPoints = useFoodCredStore((s) => s.totalPoints);
   const currentLevel = resolveFoodCredLevel(totalPoints);
 
@@ -42,12 +44,16 @@ export function CredEarnedToast() {
   useEffect(() => {
     if (!visible) return;
     lastShownRef.current = lastEarnedPoints;
+    if (reduceMotion) {
+      scale.value = 1;
+      return;
+    }
     scale.value = withSequence(
       withSpring(1.05, { damping: 10, stiffness: 250 }),
       withDelay(100, withSpring(1, { damping: 14, stiffness: 180 })),
     );
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  }, [visible, lastEarnedPoints, scale]);
+  }, [visible, lastEarnedPoints, reduceMotion, scale]);
 
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
@@ -56,8 +62,8 @@ export function CredEarnedToast() {
   return (
     <View pointerEvents="none" style={[styles.wrapper, { zIndex: zIndex.toast + 1 }]}>
       <Animated.View
-        entering={FadeInDown.duration(200).springify()}
-        exiting={FadeOutUp.duration(180).delay(AUTO_DISMISS_MS - 180)}
+        entering={reduceMotion ? undefined : FadeInDown.duration(200).springify()}
+        exiting={reduceMotion ? undefined : FadeOutUp.duration(180).delay(AUTO_DISMISS_MS - 180)}
       >
         <Animated.View style={animStyle}>
           <View

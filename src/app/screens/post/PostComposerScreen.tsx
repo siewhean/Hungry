@@ -11,6 +11,7 @@ import {
   Button,
   Card,
   EmptyState,
+  FeedErrorBoundary,
   Input,
   Screen,
 } from "@/components/ui";
@@ -53,7 +54,7 @@ function loadImagePickerModule() {
   }
 }
 
-export function PostComposerScreen({ navigation, route }: Props) {
+function PostComposerScreenInner({ navigation, route }: Props) {
   const { componentRadii, palette, spacing } = useHungryTheme();
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
@@ -393,5 +394,17 @@ export function PostComposerScreen({ navigation, route }: Props) {
         onPress={handlePublish}
       />
     </Screen>
+  );
+}
+
+export function PostComposerScreen(props: Props) {
+  return (
+    <FeedErrorBoundary
+      title="Post composer failed"
+      body="We hit a snag loading the post composer. Please try again."
+      screenName="PostComposerScreen"
+    >
+      <PostComposerScreenInner {...props} />
+    </FeedErrorBoundary>
   );
 }

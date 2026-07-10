@@ -230,7 +230,7 @@ export function MusicSelectionScreen() {
 
   // ── Simulated Playback ────────────────────────────────────────────────────
   useEffect(() => {
-    let interval: any;
+    let interval: ReturnType<typeof setInterval> | undefined;
     if (playingId && !isPaused) {
       interval = setInterval(() => {
         setCurrentTime((prev) => {
@@ -239,7 +239,11 @@ export function MusicSelectionScreen() {
         });
       }, 1000);
     }
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
   }, [playingId, isPaused, playingTrack]);
 
   const toggleSave = (id: string) => {

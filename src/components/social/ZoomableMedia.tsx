@@ -1,7 +1,14 @@
-import { StyleSheet, Pressable, type GestureResponderEvent } from "react-native";
+import {
+  StyleSheet,
+  Pressable,
+  type GestureResponderEvent,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useHungryTheme } from "@/theme";
 import { AccessibleImage } from "@/components/ui/AccessibleImage";
 
@@ -11,7 +18,7 @@ interface ZoomableMediaProps {
   accessibilityLabel?: string;
   accessibilityHint?: string;
   onPress?: (event: GestureResponderEvent) => void;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export function ZoomableMedia({
@@ -57,6 +64,7 @@ function ZoomableImage({
   "uri" | "accessibilityLabel" | "accessibilityHint" | "onPress" | "style"
 >) {
   const { palette } = useHungryTheme();
+  const reduceMotion = useReduceMotion();
   const scale = useSharedValue(1);
   const focalX = useSharedValue(0);
   const focalY = useSharedValue(0);
@@ -71,7 +79,7 @@ function ZoomableImage({
       scale.value = e.scale;
     })
     .onEnd(() => {
-      scale.value = withSpring(1);
+      scale.value = reduceMotion ? 1 : withSpring(1);
     });
 
   const animatedStyle = useAnimatedStyle(() => ({

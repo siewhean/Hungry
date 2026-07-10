@@ -12,7 +12,7 @@ import Constants from "expo-constants";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { useSessionStore } from "@/store/useSessionStore";
-import { useHungryTheme } from "@/theme";
+import { useHungryTheme, type HungryTheme } from "@/theme";
 import { AppText } from "@/components/ui";
 import { WordmarkLogoV2 } from "@/components/icons/brand/WordmarkLogoV2";
 import { HUNGRY_LOGO_STANDARD_WORDMARK_SIZE } from "@/constants/brandAssets";
@@ -190,7 +190,10 @@ export function SplashScreenV2({ navigation, route }: Props) {
   );
 }
 
-const createStyles = ({ palette, spacing }: any) =>
+const createStyles = ({
+  palette,
+  spacing,
+}: Pick<HungryTheme, "palette" | "typography" | "spacing" | "radii">) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: palette.bg },
     container: { flex: 1, alignItems: "center", justifyContent: "center" },

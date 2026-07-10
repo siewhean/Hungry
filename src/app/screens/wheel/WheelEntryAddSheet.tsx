@@ -18,7 +18,7 @@ import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
-import type { SearchCategory, VenueSummary, DishDetail } from "@/types/domain";
+import type { SearchCategory, VenueSummary, DishDetail, DietaryFlag } from "@/types/domain";
 
 const CATEGORIES: SearchCategory[] = [
   "local favourites",
@@ -169,7 +169,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
 
   // Group dietary summary
   const groupDietaryRestrictions = useMemo(() => {
-    const all = new Set<string>();
+    const all = new Set<DietaryFlag>();
     members.forEach((m) => m.dietaryPreferences?.forEach((p) => all.add(p)));
     return Array.from(all);
   }, [members]);
@@ -187,7 +187,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
     // Conflict detection
     if (groupDietaryRestrictions.length > 0 && venueDish) {
       const conflicts = groupDietaryRestrictions.filter(
-        (pref) => !venueDish.dietaryFlags.includes(pref as any),
+        (pref) => !venueDish.dietaryFlags.includes(pref),
       );
 
       if (conflicts.length > 0) {

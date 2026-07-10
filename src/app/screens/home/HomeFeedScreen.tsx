@@ -101,7 +101,7 @@ import { useStoryStore } from "@/store/useStoryStore";
 import { useSocialStore, type SocialComment, type SocialReply } from "@/store/useSocialStore";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useUIStore } from "@/store/useUIStore";
-import { useHungryTheme } from "@/theme";
+import { useHungryTheme, type HungryTheme } from "@/theme";
 import type { StoryItem } from "@/types/domain";
 
 type HapticsModule = typeof import("expo-haptics");
@@ -2483,7 +2483,7 @@ function VerticalActionMetric({
 }: {
   icon: ReactNode;
   count?: number;
-  palette: any;
+  palette: HungryTheme["palette"];
 }) {
   return (
     <View style={{ alignItems: "center", gap: 4 }}>

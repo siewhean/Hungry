@@ -38,7 +38,7 @@ import {
   zIndex,
 } from "./tokens";
 
-type HungryTheme = {
+export type HungryTheme = {
   colorScheme: "light" | "dark";
   theme: Theme;
   palette: (typeof colors)[keyof typeof colors];

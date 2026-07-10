@@ -23,6 +23,7 @@ import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Heart, Share2 } from "lucide-react-native";
 import { AccessibleImage, AppText, IconButton, Avatar } from "@/components/ui";
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useHungryTheme } from "@/theme";
 import { useStoryStore } from "@/store/useStoryStore";
 import { RootStackParamList } from "@/app/navigation/navigationTypes";
@@ -97,6 +98,7 @@ function orderedStoriesFrom<T>(items: T[], startIndex: number): T[] {
 
 export function StoryViewerScreen() {
   const { palette, spacing, radii } = useHungryTheme();
+  const reduceMotion = useReduceMotion();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<RootNavigation>();
   const route = useRoute<RouteProp<RootStackParamList, "StoryViewer">>();
@@ -190,12 +192,16 @@ export function StoryViewerScreen() {
       const clampedValue = Math.min(Math.max(fromValue, 0), 1);
       cancelAnimation(progressAnim);
       progressAnim.value = clampedValue;
+      if (reduceMotion) {
+        progressAnim.value = 1;
+        return;
+      }
       progressAnim.value = withTiming(1, {
         duration: Math.max(0, (1 - clampedValue) * currentStoryDuration),
         easing: ReanimatedEasing.linear,
       });
     },
-    [currentStoryDuration, progressAnim],
+    [currentStoryDuration, progressAnim, reduceMotion],
   );
 
   const activeProgressStyle = useAnimatedStyle(() => {
