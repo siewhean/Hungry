@@ -421,6 +421,16 @@ class IncrementalSyncTests(unittest.TestCase):
         self.assertIn("current_user in ('postgres', 'supabase_admin', 'service_role')", normalized)
         self.assertIn("if auth.uid() is null then raise exception 'authentication required'", normalized)
 
+    def test_known_source_scan_has_a_guarded_partial_index(self) -> None:
+        migration = (
+            Path(__file__).resolve().parents[1]
+            / "supabase/migrations/20260710163000_enrichment_known_source_index.sql"
+        ).read_text(encoding="utf-8")
+        normalized = " ".join(migration.lower().split())
+        self.assertIn("column_name = 'menu_source_url'", normalized)
+        self.assertIn("create index if not exists idx_venues_known_menu_source_id", normalized)
+        self.assertIn("on public.venues (id) where menu_source_url is not null", normalized)
+
 
 if __name__ == "__main__":
     unittest.main()
