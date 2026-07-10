@@ -38,6 +38,18 @@ QUARANTINE_SHEETS = {
     DISH_SHEET: "Quarantine Dishes",
 }
 SOURCE_MEDIA_FIELDS = ("Image URL", "Dishes Image URL", "Logo URL")
+SOURCE_MENU_FIELDS = ("Menu", "Menu Items", "Menu Source", "Signature Dish")
+UNVERIFIED_SOURCE_MENU_PREFIXES = (
+    "cuisine category seed",
+    "category_seed:",
+    "claude ai fallback",
+    "online_reference_seed:",
+    "online_menu_candidate:",
+    "source_description:",
+    "grabfood scrape",
+    "foodpanda",
+    "deliveroo",
+)
 CACHE_MEDIA_FIELDS = {
     VENUE_SHEET: ("image_url", "logo_url"),
     DISH_SHEET: ("image_url",),
@@ -152,6 +164,14 @@ def sanitize_display_fields(
         if is_placeholder_url(sanitized.get(field)):
             sanitized[field] = None
             reasons.append(f"placeholder_media:{field}")
+
+    if sheet_name == SOURCE_SHEET:
+        menu_source = clean_text(sanitized.get("Menu Source")).casefold()
+        if menu_source.startswith(UNVERIFIED_SOURCE_MENU_PREFIXES):
+            for field in SOURCE_MENU_FIELDS:
+                if field in sanitized:
+                    sanitized[field] = None
+            reasons.append("unverified_source_menu")
 
     if sheet_name in (VENUE_SHEET, DISH_SHEET):
         for kind, approved_field, rights_field in (

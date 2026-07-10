@@ -16,7 +16,12 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from export_excel_catalog_for_app import build_catalog, load_sheet_rows  # noqa: E402
-from reconcile_excel_workbook import ReconciliationError, reconcile_workbook  # noqa: E402
+from reconcile_excel_workbook import (  # noqa: E402
+    ReconciliationError,
+    SOURCE_SHEET,
+    reconcile_workbook,
+    sanitize_display_fields,
+)
 
 
 SOURCE_HEADERS = [
@@ -27,6 +32,7 @@ SOURCE_HEADERS = [
     "Postal Code",
     "Unit No.",
     "Menu Items",
+    "Menu Source",
     "Last Verified Date",
     "Image URL",
     "Dishes Image URL",
@@ -77,6 +83,7 @@ def make_workbook(path: Path) -> None:
         "Postal Code": "238801",
         "Unit No.": "#01-01",
         "Last Verified Date": "2026-06-01",
+        "Menu Source": "official_online_seed:https://merchant.example/menu",
         "Image URL": "https://cdn.example/placeholder.jpg",
         "Latitude": 1.3,
         "Longitude": 103.8,
@@ -221,6 +228,10 @@ class ReconcileExcelWorkbookTest(unittest.TestCase):
             source_rows = rows_by_header(output, "Sheet1")
             self.assertEqual([row["Business ID"] for row in source_rows], ["biz-safe"])
             self.assertEqual(source_rows[0]["Menu Items"], "Chicken Rice ($5.00)")
+            self.assertEqual(
+                source_rows[0]["Menu Source"],
+                "official_online_seed:https://merchant.example/menu",
+            )
             self.assertEqual(source_rows[0]["Last Verified Date"], "2026-06-01")
             self.assertIsNone(source_rows[0]["Image URL"])
 
@@ -257,6 +268,25 @@ class ReconcileExcelWorkbookTest(unittest.TestCase):
             catalog = build_catalog(load_sheet_rows(output), output, 0)
             self.assertEqual(catalog["metadata"]["venueCount"], 1)
             self.assertEqual(catalog["metadata"]["dishCount"], 1)
+
+    def test_generic_source_menu_is_preserved_in_quarantine_and_cleared_from_active_row(self) -> None:
+        headers = ["Business ID", "Menu Items", "Menu Source", "Last Verified Date"]
+        row = {
+            "Business ID": "generic-source",
+            "Menu Items": "Generic Dish ($5.00)",
+            "Menu Source": "Cuisine Category Seed",
+            "Last Verified Date": "2026-04-04",
+            "_row_number": 2,
+        }
+
+        sanitized, quarantine, reasons = sanitize_display_fields(row, headers, SOURCE_SHEET)
+
+        self.assertIsNone(sanitized["Menu Items"])
+        self.assertIsNone(sanitized["Menu Source"])
+        self.assertEqual(sanitized["Last Verified Date"], "2026-04-04")
+        self.assertIsNotNone(quarantine)
+        self.assertEqual(quarantine["Menu Items"], "Generic Dish ($5.00)")
+        self.assertIn("unverified_source_menu", reasons)
 
     def test_same_input_and_output_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

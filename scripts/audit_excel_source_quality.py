@@ -191,6 +191,7 @@ def audit_supabase_cache(workbook_path: Path, limit: int | None = None) -> dict[
     flag_counts: Counter[str] = Counter()
     blocked_samples: list[dict[str, Any]] = []
     blocked_count = 0
+    excluded_count = 0
     rows_checked = 0
     try:
         for sheet_name in cache_sheet_names:
@@ -216,6 +217,7 @@ def audit_supabase_cache(workbook_path: Path, limit: int | None = None) -> dict[
                     if header
                 }
                 flags: list[str] = []
+                blocking_flags: list[str] = []
                 menu_approved = truthy(row.get("menu_approved_for_display"))
                 media_approved = truthy(row.get("media_approved_for_display"))
                 menu_rights = row.get("menu_rights_status")
@@ -228,18 +230,23 @@ def audit_supabase_cache(workbook_path: Path, limit: int | None = None) -> dict[
                     flags.append("menu_not_authorized")
                 if menu_approved and not approved_rights_status(menu_rights):
                     flags.append("menu_approval_rights_conflict")
+                    blocking_flags.append("menu_approval_rights_conflict")
 
                 has_media = any(clean(value) for value in media_urls)
                 if has_media and not display_authorized(media_approved, media_rights):
                     flags.append("media_not_authorized")
                 if media_approved and not approved_rights_status(media_rights):
                     flags.append("media_approval_rights_conflict")
+                    blocking_flags.append("media_approval_rights_conflict")
                 if any(is_placeholder_url(value) for value in media_urls):
                     flags.append("placeholder_media")
+                    blocking_flags.append("placeholder_media")
 
                 for flag in flags:
                     flag_counts[flag] += 1
-                if flags:
+                if "menu_not_authorized" in flags or "media_not_authorized" in flags:
+                    excluded_count += 1
+                if blocking_flags:
                     blocked_count += 1
                     if len(blocked_samples) < 25:
                         blocked_samples.append(
@@ -247,7 +254,7 @@ def audit_supabase_cache(workbook_path: Path, limit: int | None = None) -> dict[
                                 "sheet": sheet_name,
                                 "row_number": row_number,
                                 "id": clean(row.get("id")),
-                                "flags": flags,
+                                "flags": blocking_flags,
                             }
                         )
     finally:
@@ -266,6 +273,7 @@ def audit_supabase_cache(workbook_path: Path, limit: int | None = None) -> dict[
         "rows_checked": rows_checked,
         "missing_sheets": missing_sheets,
         "flag_counts": dict(flag_counts.most_common()),
+        "excluded_rows": excluded_count,
         "blocked_rows": blocked_count,
         "sample_blocked_rows": blocked_samples,
         "passed": blocked_count == 0,
@@ -413,6 +421,7 @@ def main() -> int:
     blocked_rows = result["blocked_cache_rows"]
     report["display_gate"] = {
         "mode": "licensed_or_owner_authorized_only",
+        "excluded_rows": report["supabase_cache_display_audit"]["excluded_rows"],
         "blocked_rows": blocked_rows,
         "passed": blocked_rows == 0,
     }
@@ -421,7 +430,7 @@ def main() -> int:
     print(f"review_queue={args.queue}")
     if args.fail_unapproved_display and blocked_rows:
         print(
-            f"display_gate_failed={blocked_rows} rows require licensed/owned menu and image provenance",
+            f"display_gate_failed={blocked_rows} rows could enter display without licensed/owned provenance",
         )
         return 3
     return 0

@@ -161,6 +161,48 @@ class AuditExcelSourceQualityTest(unittest.TestCase):
         self.assertEqual(result["flag_counts"]["media_not_authorized"], 1)
         self.assertNotIn("menu_not_authorized", result["flag_counts"])
 
+    def test_unapproved_cache_rows_are_excluded_without_failing_display_gate(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "audit.xlsx"
+            workbook = Workbook()
+            workbook.active.title = "Sheet1"
+            workbook["Sheet1"].append(["Business ID", "Stall / Restaurant Name"])
+            workbook["Sheet1"].append(["business-1", "Quarantined Venue"])
+            venues = workbook.create_sheet("Supabase Venues")
+            venues.append(
+                [
+                    "id",
+                    "menu_approved_for_display",
+                    "menu_rights_status",
+                    "media_approved_for_display",
+                    "media_rights_status",
+                    "image_url",
+                    "logo_url",
+                ]
+            )
+            venues.append(["venue-1", False, "unverified", False, "unverified", "", ""])
+            dishes = workbook.create_sheet("Supabase Dishes")
+            dishes.append(
+                [
+                    "id",
+                    "menu_approved_for_display",
+                    "menu_rights_status",
+                    "media_approved_for_display",
+                    "media_rights_status",
+                    "image_url",
+                ]
+            )
+            dishes.append(["dish-1", False, "unverified", False, "unverified", ""])
+            workbook.save(path)
+            workbook.close()
+
+            result = audit_supabase_cache(path)
+
+        self.assertTrue(result["passed"])
+        self.assertEqual(result["blocked_rows"], 0)
+        self.assertEqual(result["excluded_rows"], 2)
+        self.assertEqual(result["flag_counts"]["menu_not_authorized"], 2)
+
 
 if __name__ == "__main__":
     unittest.main()
