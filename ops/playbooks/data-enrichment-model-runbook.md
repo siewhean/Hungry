@@ -348,7 +348,7 @@ The default is dry-run. Approval requires exact postal evidence, strong name sim
 
 ## Scheduled Review Batch
 
-`.github/workflows/scheduled-enrichment-review.yml` runs the trusted source-backed batch nightly. Review is the default and supplies `--dry-run --known-sources-only --no-inserts`. A scheduled apply can be enabled only by setting repository variable `HUNGRY_SCHEDULED_ENRICHMENT_MODE=apply`, approving the protected `enrichment-production` environment, and setting its secret `HUNGRY_ENABLE_SCHEDULED_ENRICHMENT_WRITES=1`. Apply is capped at 10 venues and three workers, remains known-source-only, and never inserts new dishes or discovers new sources. Both paths validate credentials, redact logs, and upload result/checkpoint/log artifacts.
+`.github/workflows/scheduled-enrichment-review.yml` runs the trusted source-backed batch nightly. Scheduled runs are permanently review-only and supply `--dry-run --known-sources-only --no-inserts`. Apply is manual-only through `workflow_dispatch` and requires the repository owner, the exact `APPLY_EXISTING_ROWS` confirmation, the `enrichment-production` environment branch policy, and its separate `HUNGRY_ENABLE_SCHEDULED_ENRICHMENT_WRITES=1` secret. Keep that secret absent until a reviewed apply window. Apply is capped at 10 venues and three workers, remains known-source-only, and never inserts new dishes or discovers new sources. Both paths validate credentials, redact logs, and upload result/checkpoint/log artifacts. The legacy `HUNGRY_SCHEDULED_ENRICHMENT_MODE=review` variable can remain for compatibility but cannot enable scheduled writes.
 
 ## Non-Consumer Entity Audit
 

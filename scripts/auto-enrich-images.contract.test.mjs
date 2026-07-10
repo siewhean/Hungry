@@ -4,6 +4,12 @@ import test from "node:test";
 
 const source = await fs.readFile(new URL("./auto-enrich-images.mjs", import.meta.url), "utf8");
 
+test("offline workbook fallback uses maintained ExcelJS instead of vulnerable SheetJS", () => {
+  assert.match(source, /require\("exceljs"\)/);
+  assert.doesNotMatch(source, /require\("xlsx"\)/);
+  assert.match(source, /await workbook\.xlsx\.readFile\(workbookPath\)/);
+});
+
 test("auto-enrichment uses the shared platform abstraction for all delivery adapters", () => {
   assert.match(source, /scrapeWithPlatformAdapter\(\{/);
   for (const platform of ["grabfood", "oddle", "foodpanda", "deliveroo"]) {

@@ -14,6 +14,21 @@ import {
   runScheduledEnrichment,
 } from "../run-scheduled-enrichment-review.mjs";
 
+const workflowSource = await fs.readFile(
+  path.resolve(".github/workflows/scheduled-enrichment-review.yml"),
+  "utf8",
+);
+
+
+test("workflow schedules review only and requires explicit manual apply confirmation", () => {
+  assert.ok(workflowSource.includes("inputs.approval == 'APPLY_EXISTING_ROWS'"));
+  assert.ok(workflowSource.includes("inputs.approval != 'APPLY_EXISTING_ROWS'"));
+  assert.ok(workflowSource.includes("github.actor == github.repository_owner"));
+  assert.ok(workflowSource.includes("github.actor != github.repository_owner"));
+  assert.equal(workflowSource.includes("vars.HUNGRY_SCHEDULED_ENRICHMENT_MODE == 'apply'"), false);
+  assert.ok(workflowSource.includes("github.event_name == 'schedule'"));
+});
+
 
 test("review command is dry-run, bounded, known-sources-only, and no-inserts", () => {
   const args = buildEnrichmentArgs({ mode: "review", limit: 10, workers: 2, outputDir: "/tmp/review" });
