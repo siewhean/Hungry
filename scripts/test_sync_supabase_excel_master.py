@@ -363,6 +363,15 @@ class IncrementalSyncTests(unittest.TestCase):
                 saved_state["last_successful_sync_at"],
             )
 
+    def test_incremental_keyset_queries_have_supporting_indexes(self) -> None:
+        migration = (
+            Path(__file__).resolve().parents[1]
+            / "supabase/migrations/20260710130000_enrichment_incremental_sync_indexes.sql"
+        ).read_text(encoding="utf-8")
+        normalized = " ".join(migration.lower().split())
+        self.assertIn("on public.venues (updated_at, id)", normalized)
+        self.assertIn("on public.dishes (updated_at, id)", normalized)
+
 
 if __name__ == "__main__":
     unittest.main()

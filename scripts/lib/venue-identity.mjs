@@ -121,6 +121,9 @@ export function scoreVenueIdentity({
   const urlLocation = expectedLocationTokens.length > 0 && candidateUrlTokens.length > 0
     ? recallScore(expectedLocationTokens, candidateUrlTokens)
     : null;
+  const sharedUrlLocationTokens = expectedLocationTokens.filter((token) => candidateUrlTokens.includes(token));
+  const hasUrlStreetEvidence = sharedUrlLocationTokens.some((token) => /^\d+[a-z]?$/.test(token)) &&
+    sharedUrlLocationTokens.some((token) => /^[a-z]{3,}$/.test(token));
 
   const signals = { name, postal, address, urlLocation };
   let weightedScore = 0;
@@ -147,6 +150,7 @@ export function scoreVenueIdentity({
   if (nameMismatch) hardReasons.push("name_mismatch");
   const hasPositiveLocationEvidence = postal === 1 || (address !== null && address >= 0.35) ||
     (urlLocation !== null && urlLocation >= 0.5) ||
+    hasUrlStreetEvidence ||
     (requiredOutletTokens.length > 0 && outletMatched);
   if (!hasPositiveLocationEvidence) hardReasons.push("missing_outlet_evidence");
   if (hardReasons.length > 0) score = Math.min(score, thresholds.review - 0.01);

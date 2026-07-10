@@ -50,3 +50,20 @@ test("keeps a name-only chain match out of the accept band", () => {
   assert.notEqual(result.band, "accept");
   assert.ok(result.hardReasons.includes("missing_outlet_evidence"));
 });
+
+test("accepts exact street-number and street-name evidence from a stored platform URL", () => {
+  const result = scoreVenueIdentity({
+    venue: {
+      name: "STIRLING STEAKS",
+      address: "Capitol Singapore, 13 Stamford Road, #B2-53",
+      postal_code: "178905",
+    },
+    candidate: {
+      name: "Stirling Steaks - 13 Stamford road",
+      url: "https://food.grab.com/sg/en/restaurant/stirling-steaks-13-stamford-road-delivery/example",
+    },
+  });
+
+  assert.equal(result.band, "accept");
+  assert.equal(result.hardReasons.includes("missing_outlet_evidence"), false);
+});
