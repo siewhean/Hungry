@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabaseAuthStorage } from "./authStorage";
 import { installPkceCryptoPolyfill } from "./pkceCryptoPolyfill";
 
-export type HungryDataSource = "mock" | "supabase";
+export type HungryDataSource = "mock" | "supabase" | "excel";
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim() ?? "";
 // Accept both the canonical ANON_KEY name and the newer publishable KEY alias
@@ -23,8 +23,10 @@ export function getConfiguredDataSource(): HungryDataSource {
   const privateSource = process.env.HUNGRY_DATA_SOURCE?.trim().toLowerCase();
   const publicSource = process.env.EXPO_PUBLIC_HUNGRY_DATA_SOURCE?.trim().toLowerCase();
   const explicit = e2eSource || privateSource || publicSource;
-  // If explicitly set, honour it (allows forcing mock even when credentials exist).
-  if (explicit) return explicit === "supabase" ? "supabase" : "mock";
+  // If explicitly set, honour supported local and remote sources. Unknown values
+  // stay on the safe mock fallback rather than connecting to Supabase implicitly.
+  if (explicit === "supabase" || explicit === "excel" || explicit === "mock") return explicit;
+  if (explicit) return "mock";
   // If not explicitly set but credentials are present, prefer supabase automatically.
   return SUPABASE_URL.length > 0 && SUPABASE_ANON_KEY.length > 0 ? "supabase" : "mock";
 }
