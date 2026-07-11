@@ -12,7 +12,8 @@
   deterministic reconciled workbook and rights-safe generated catalog after identity-first
   deduplication, conflict/orphan quarantine, and display-approval validation. No live Supabase
   writes were performed. Local code, data, dependency, security, and iOS runtime gates pass;
-  independent final QA returned no findings. The main-target PR is the remaining delivery control.
+  independent final QA returned no findings. PR #38 passed quality, security, Supabase Preview,
+  Vercel, and merchant catalog E2E checks and is merged to `main` at `19d79fd39`.
 
 - `DATA-ENRICH-ROADMAP-01` — Done. 2026-07-10 completed the audited R1–R14 enrichment
   roadmap: pending backfills were applied; checkpointed/batched writes and provenance-safe chain
