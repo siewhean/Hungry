@@ -14,7 +14,7 @@ All P0 blockers resolved. All static predeploy gates pass.
 |---|---|
 | TypeScript (`tsc --noEmit`) | ✅ 0 errors |
 | ESLint (`npm run lint`) | ✅ 0 warnings |
-| Route inventory (59 routes) | ✅ Pass |
+| Route inventory (63 routes) | ✅ Pass |
 | Security route contracts | ✅ Pass |
 | SEO/AI readiness | ✅ Pass |
 | Sitemap validation | ✅ Pass |
@@ -196,9 +196,13 @@ All P0 blockers resolved. All static predeploy gates pass.
 | `/api/merchant/session` | API private | Private | Yes | No | Merchant session | Medium | Auth + rate limit |
 | `/api/merchant/signup` | API public auth | Public | No | No | Merchant auth service | High | Validate payload + rate limit |
 | `/api/merchant/verification` | API private | Private | Yes | No | Supabase merchant data | High | Auth + CSRF + audit log |
+| `/api/console/dataset` | API private | Private | Yes | No | Supabase console datasets | High | Admin auth + rate limit + redaction |
+| `/api/console/me` | API private | Private | Yes | No | Console session identity | Medium | Admin auth + role-safe response |
 | `/api/console/merchants` | API private | Private | Yes | No | Supabase console data | High | Admin auth + redaction |
 | `/api/console/merchants/[outletId]/verification` | API private | Private | Yes | No | Supabase console mutation | High | Admin auth + UUID validation + audit log |
 | `/api/console/summary` | API private | Private | Yes | No | Supabase console data | High | Admin auth + redaction |
+| `/api/console/team` | API private | Private | Yes | No | Console admin membership | High | Admin role + CSRF + JSON validation + rate limit |
+| `/api/console/team/[memberId]` | API private | Private | Yes | No | Console admin membership mutation | High | Admin role + CSRF + validation + rate limit |
 | `/api/console/waitlist` | API private | Private | Yes | No | Supabase waitlist data | High | Admin auth + redaction |
 
 ---
