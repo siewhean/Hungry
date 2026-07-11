@@ -30,9 +30,11 @@ export function AppText({
   variant = "body",
   tone = "default",
   style,
+  maxFontSizeMultiplier,
+  allowFontScaling,
   ...props
 }: PropsWithChildren<AppTextProps>) {
-  const { palette, typography } = useHungryTheme();
+  const { fontScaling, palette, typography } = useHungryTheme();
 
   const color =
     tone === "secondary"
@@ -40,16 +42,26 @@ export function AppText({
       : tone === "muted"
         ? palette.textMuted
         : tone === "accent"
-          ? palette.orange
+          ? palette.accentText
           : tone === "inverse"
             ? palette.textOnDark
             : tone === "success"
-              ? palette.statusFast
+              ? palette.successText
               : palette.text;
+  const defaultMaxFontSizeMultiplier =
+    variant === "display" || variant === "displayBold" || variant === "displaySm"
+      ? fontScaling.displayMaxMultiplier
+      : variant === "h1" || variant === "h2" || variant === "h3"
+        ? fontScaling.headingMaxMultiplier
+        : variant === "micro" || variant === "price" || variant === "code"
+          ? fontScaling.compactMaxMultiplier
+          : fontScaling.bodyMaxMultiplier;
 
   return (
     <Text
       {...props}
+      allowFontScaling={allowFontScaling ?? true}
+      maxFontSizeMultiplier={maxFontSizeMultiplier ?? defaultMaxFontSizeMultiplier}
       style={[
         typography[variant],
         {

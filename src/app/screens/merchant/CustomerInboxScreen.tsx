@@ -1,13 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import {
-  View,
-  ScrollView,
-  TextInput,
-  StyleSheet,
-  Pressable,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
+import { View, StyleSheet, Pressable, ActivityIndicator, Alert } from "react-native";
 import {
   MessageSquare,
   Star,
@@ -22,7 +14,8 @@ import {
   AppText,
   Button,
   IconButton,
-  Chip,
+  FilterChipRail,
+  Input,
   Screen,
   Avatar,
   Skeleton,
@@ -33,20 +26,34 @@ import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import type { CustomerInteraction, InteractionType } from "@/types/domain";
 
+type InboxFilter = InteractionType | "all" | "unreplied";
+
+const INBOX_FILTER_OPTIONS: { id: InboxFilter; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "unreplied", label: "Unreplied" },
+  { id: "review", label: "Reviews" },
+  { id: "comment", label: "Comments" },
+  { id: "post_mention", label: "Mentions" },
+];
+
 export function CustomerInboxScreen() {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const activeOutlet = useMerchantStore(getActiveOutlet);
 
   const [interactions, setInteractions] = useState<CustomerInteraction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<InteractionType | "all" | "unreplied">("all");
+  const [filter, setFilter] = useState<InboxFilter>("all");
   const [replyingTo, setReplyingTo] = useState<CustomerInteraction | null>(null);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchInteractions = useCallback(async () => {
-    if (!activeOutlet) return;
+    if (!activeOutlet) {
+      setInteractions([]);
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
-    setError(false);
+    setError(null);
     try {
       const data = await getHungryService().merchant.getInbox(activeOutlet.id, {
         type: filter === "all" || filter === "unreplied" ? undefined : filter,
@@ -55,7 +62,7 @@ export function CustomerInboxScreen() {
       setInteractions(data);
     } catch (e) {
       console.error("Failed to fetch interactions", e);
-      setError(true);
+      setError(e instanceof Error ? e.message : "Unable to load customer interactions.");
     } finally {
       setIsLoading(false);
     }
@@ -98,33 +105,12 @@ export function CustomerInboxScreen() {
     <Screen title="Customer Inbox">
       <View style={{ gap: spacing[4], width: "100%" }}>
         {/* Filters */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: spacing[2], paddingHorizontal: spacing[1] }}
-        >
-          <Chip label="All" selected={filter === "all"} onPress={() => setFilter("all")} />
-          <Chip
-            label="Unreplied"
-            selected={filter === "unreplied"}
-            onPress={() => setFilter("unreplied")}
-          />
-          <Chip
-            label="Reviews"
-            selected={filter === "review"}
-            onPress={() => setFilter("review")}
-          />
-          <Chip
-            label="Comments"
-            selected={filter === "comment"}
-            onPress={() => setFilter("comment")}
-          />
-          <Chip
-            label="Mentions"
-            selected={filter === "post_mention"}
-            onPress={() => setFilter("post_mention")}
-          />
-        </ScrollView>
+        <FilterChipRail
+          options={INBOX_FILTER_OPTIONS}
+          selectedId={filter}
+          onSelect={setFilter}
+          gap={spacing[2]}
+        />
 
         {/* Sentiment Summary */}
         <SentimentSummary interactions={interactions} />
@@ -142,6 +128,8 @@ export function CustomerInboxScreen() {
               title="Failed to load inbox"
               body="There was a problem loading your customer interactions."
               icon={<X size={48} color={palette.error} />}
+              errorMessage={error}
+              sendErrorContext="Customer inbox"
               ctaLabel="Retry"
               onPress={fetchInteractions}
             />
@@ -185,7 +173,7 @@ export function CustomerInboxScreen() {
 }
 
 function SentimentSummary({ interactions }: { interactions: CustomerInteraction[] }) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing } = useHungryTheme();
 
   const stats = useMemo(() => {
     if (interactions.length === 0) return null;
@@ -208,7 +196,7 @@ function SentimentSummary({ interactions }: { interactions: CustomerInteraction[
         styles.summaryCard,
         {
           backgroundColor: palette.surface,
-          borderRadius: radii.xl,
+          borderRadius: componentRadii.card,
           padding: spacing[4],
           borderColor: palette.border,
           borderWidth: 1,
@@ -267,7 +255,7 @@ function InteractionCard({
   onViewOriginal: (item: CustomerInteraction) => void;
   onReport: (item: CustomerInteraction) => void;
 }) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
 
   const typeLabel = interaction.type.charAt(0).toUpperCase() + interaction.type.slice(1);
   const showMoreActions = () => {
@@ -287,7 +275,7 @@ function InteractionCard({
         {
           backgroundColor: palette.surface,
           borderColor: palette.border,
-          borderRadius: radii.lg,
+          borderRadius: componentRadii.card,
           padding: spacing[4],
         },
       ]}
@@ -339,7 +327,7 @@ function InteractionCard({
             styles.replyBox,
             {
               backgroundColor: palette.bgSoft,
-              borderRadius: radii.md,
+              borderRadius: componentRadii.card,
               padding: spacing[3],
               marginTop: spacing[2],
             },
@@ -391,7 +379,7 @@ function ReplyComposer({
   onClose: () => void;
   onSent: () => void;
 }) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const [text, setText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [suggestion, setSuggestion] = useState<string | null>(null);
@@ -423,7 +411,7 @@ function ReplyComposer({
     <View
       style={[
         StyleSheet.absoluteFill,
-        { backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
+        { backgroundColor: palette.mediaScrim, justifyContent: "flex-end" },
       ]}
     >
       <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
@@ -432,8 +420,8 @@ function ReplyComposer({
           styles.composer,
           {
             backgroundColor: palette.surface,
-            borderTopLeftRadius: radii.xl,
-            borderTopRightRadius: radii.xl,
+            borderTopLeftRadius: componentRadii.card,
+            borderTopRightRadius: componentRadii.card,
             padding: spacing[5],
             paddingBottom: 40,
           },
@@ -465,7 +453,7 @@ function ReplyComposer({
               {
                 backgroundColor: palette.orangeLight,
                 borderColor: palette.orange,
-                borderRadius: radii.md,
+                borderRadius: componentRadii.card,
                 padding: spacing[3],
                 marginBottom: spacing[4],
               },
@@ -483,23 +471,13 @@ function ReplyComposer({
           </Pressable>
         )}
 
-        <TextInput
-          style={[
-            styles.input,
-            {
-              backgroundColor: palette.bgSoft,
-              borderRadius: radii.lg,
-              color: palette.text,
-              borderColor: palette.border,
-              padding: spacing[4],
-            },
-          ]}
+        <Input
           placeholder="Type your message..."
-          placeholderTextColor={palette.textMuted}
           multiline
           value={text}
           onChangeText={setText}
           autoFocus
+          style={{ minHeight: 120, textAlignVertical: "top" }}
         />
 
         <Button
@@ -527,12 +505,6 @@ const styles = StyleSheet.create({
   },
   replyBox: {},
   composer: {},
-  input: {
-    height: 120,
-    borderWidth: 1,
-    textAlignVertical: "top",
-    fontSize: 16,
-  },
   aiChip: {
     borderWidth: 1,
   },

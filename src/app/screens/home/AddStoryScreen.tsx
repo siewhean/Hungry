@@ -1,36 +1,57 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { Image } from "expo-image";
 import { Camera, Check, ChevronLeft, Film, Image as ImageIcon } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AppText, Button, IconButton, Screen } from "@/components/ui";
+import { AccessibleImage, AppText, Button, IconButton, Screen } from "@/components/ui";
 import { useStoryStore } from "@/store/useStoryStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
-import type { StoryContent } from "@/types/domain";
-import { mockGalleryAssets } from "@/lib/services/mock/storyGalleryFixtures";
+import type { StoryContent, StoryGalleryAsset } from "@/types/domain";
+import { getHungryService } from "@/lib/services/serviceProvider";
 
 type GalleryFilter = "all" | StoryContent["type"];
 
 export function AddStoryScreen() {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { addStory } = useStoryStore();
   const showToast = useUIStore((state) => state.showToast);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedAssetId, setSelectedAssetId] = useState(mockGalleryAssets[0]?.id ?? "");
+  const [galleryAssets, setGalleryAssets] = useState<StoryGalleryAsset[]>([]);
+  const [selectedAssetId, setSelectedAssetId] = useState("");
   const [filter, setFilter] = useState<GalleryFilter>("all");
 
+  useEffect(() => {
+    let isMounted = true;
+
+    getHungryService()
+      .social.listStoryGalleryAssets()
+      .then((assets) => {
+        if (!isMounted) return;
+        setGalleryAssets(assets);
+        setSelectedAssetId((current) => current || assets[0]?.id || "");
+      })
+      .catch(() => {
+        if (isMounted) {
+          showToast({ message: "Failed to load gallery assets.", tone: "error" });
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [showToast]);
+
   const visibleAssets = useMemo(
-    () => mockGalleryAssets.filter((asset) => filter === "all" || asset.type === filter),
-    [filter],
+    () => galleryAssets.filter((asset) => filter === "all" || asset.type === filter),
+    [filter, galleryAssets],
   );
   const selectedAsset =
-    mockGalleryAssets.find((asset) => asset.id === selectedAssetId) ?? visibleAssets[0];
+    galleryAssets.find((asset) => asset.id === selectedAssetId) ?? visibleAssets[0];
 
   const handlePost = async () => {
     if (!selectedAsset) {
@@ -87,14 +108,15 @@ export function AddStoryScreen() {
         showsVerticalScrollIndicator={false}
       >
         {selectedAsset ? (
-          <View style={[styles.preview, { borderRadius: radii.xl }]}>
-            <Image
+          <View style={[styles.preview, { borderRadius: componentRadii.card }]}>
+            <AccessibleImage
               source={{ uri: selectedAsset.url }}
               contentFit="cover"
               style={StyleSheet.absoluteFill}
+              accessibilityLabel={`Selected ${selectedAsset.type} preview`}
             />
             {selectedAsset.type === "video" ? (
-              <View style={[styles.videoPill, { backgroundColor: "rgba(15, 23, 42, 0.72)" }]}>
+              <View style={[styles.videoPill, { backgroundColor: palette.detailImageOverlay }]}>
                 <Film color={palette.white} size={16} />
                 <AppText variant="micro" style={{ color: palette.white, fontWeight: "900" }}>
                   Video
@@ -146,16 +168,22 @@ export function AddStoryScreen() {
                   styles.galleryItem,
                   {
                     borderColor: selected ? palette.orange : palette.border,
-                    borderRadius: radii.lg,
+                    borderRadius: componentRadii.button,
                   },
                 ]}
               >
-                <Image
+                <AccessibleImage
                   source={{ uri: asset.url }}
                   contentFit="cover"
                   style={StyleSheet.absoluteFill}
+                  decorative
                 />
-                <View style={styles.mediaTypeBadge}>
+                <View
+                  style={[
+                    styles.mediaTypeBadge,
+                    { backgroundColor: palette.imageOverlayGradientEnd },
+                  ]}
+                >
                   {asset.type === "video" ? (
                     <Film color={palette.white} size={13} />
                   ) : (
@@ -189,7 +217,7 @@ export function AddStoryScreen() {
           label={isSubmitting ? "Posting..." : "Post to Your Story"}
           variant="primary"
           fullWidth
-          disabled={!selectedAsset || isSubmitting}
+          disabled={!selectedAsset || isSubmitting || galleryAssets.length === 0}
           onPress={handlePost}
         />
       </View>
@@ -238,7 +266,6 @@ const styles = StyleSheet.create({
     width: "31.9%",
   },
   mediaTypeBadge: {
-    backgroundColor: "rgba(15, 23, 42, 0.68)",
     borderRadius: 999,
     left: 8,
     padding: 5,

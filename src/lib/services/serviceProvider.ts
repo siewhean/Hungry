@@ -1,10 +1,10 @@
 import type { TasteVector } from "@/types/domain";
-import { getConfiguredDataSource } from "@/lib/services/supabase/client";
+import { getConfiguredDataSource, setConfiguredDataSource } from "@/lib/services/supabase/client";
 import { similarityScore } from "@/lib/ai/similarityScore";
 import type { DataRepository, HungryService } from "@/lib/services/types";
 
 export interface ServiceProvider {
-  mode: "mock" | "supabase";
+  mode: "mock" | "supabase" | "excel";
   service: HungryService;
   repository: DataRepository;
   similarityScore: (left: TasteVector, right: TasteVector) => number;
@@ -57,8 +57,43 @@ function createSupabaseProvider(): ServiceProvider {
   };
 }
 
+function createExcelProvider(): ServiceProvider {
+  // Match the Supabase provider's lazy loading so choosing mock or Supabase
+  // never parses the large generated Excel catalog.
+  let cachedService: HungryService | null = null;
+  let cachedRepository: DataRepository | null = null;
+
+  const loadModules = () => {
+    if (cachedService && cachedRepository) return;
+
+    const { excelRepository } =
+      require("@/lib/services/excel/repositories") as typeof import("@/lib/services/excel/repositories");
+    const { excelService } =
+      require("@/lib/services/excel/excelService") as typeof import("@/lib/services/excel/excelService");
+
+    cachedRepository = excelRepository;
+    cachedService = excelService;
+  };
+
+  return {
+    mode: "excel",
+    get service() {
+      loadModules();
+      return cachedService as HungryService;
+    },
+    get repository() {
+      loadModules();
+      return cachedRepository as DataRepository;
+    },
+    similarityScore,
+  };
+}
+
 function createProviderFromEnv(): ServiceProvider {
-  return getConfiguredDataSource() === "supabase" ? createSupabaseProvider() : createMockProvider();
+  const dataSource = getConfiguredDataSource();
+  if (dataSource === "supabase") return createSupabaseProvider();
+  if (dataSource === "excel") return createExcelProvider();
+  return createMockProvider();
 }
 
 let activeProvider: ServiceProvider | null = null;
@@ -75,18 +110,27 @@ export function getServiceProvider(): ServiceProvider {
 }
 
 export function setServiceProvider(provider: ServiceProvider): void {
+  setConfiguredDataSource();
   activeProvider = provider;
 }
 
 export function setMockServiceProvider(): void {
+  setConfiguredDataSource("mock");
   activeProvider = createMockProvider();
 }
 
 export function setSupabaseServiceProvider(): void {
+  setConfiguredDataSource("supabase");
   activeProvider = createSupabaseProvider();
 }
 
+export function setExcelServiceProvider(): void {
+  setConfiguredDataSource("excel");
+  activeProvider = createExcelProvider();
+}
+
 export function resetServiceProvider(): void {
+  setConfiguredDataSource();
   activeProvider = null;
 }
 

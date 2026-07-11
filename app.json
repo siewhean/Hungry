@@ -4,6 +4,7 @@
     "slug": "hungry-mobile",
     "version": "0.1.0",
     "runtimeVersion": "0.1.0",
+    "icon": "./assets/images/Logo/hungry_logo_icon_transparent.png",
     "updates": {
       "enabled": false
     },
@@ -35,7 +36,11 @@
       "package": "app.hungry.mobile",
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_EXTERNAL_STORAGE"
       ]
     },
     "experiments": {
@@ -52,6 +57,12 @@
       "expo-web-browser",
       "expo-location",
       "expo-secure-store",
+      [
+        "@rnmapbox/maps",
+        {
+          "RNMapboxMapsVersion": "11.18.2"
+        }
+      ],
       [
         "@sentry/react-native/expo",
         {

@@ -6,9 +6,9 @@ import {
   ScrollView,
   useWindowDimensions,
   Animated,
+  type ViewToken,
 } from "react-native";
-import { Image } from "expo-image";
-import { ArrowLeft, MapPinned, Heart } from "lucide-react-native";
+import { ArrowLeft, MapPinned, Heart, Utensils } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -16,7 +16,18 @@ import { FlashList } from "@shopify/flash-list";
 import { LinearGradient } from "expo-linear-gradient";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Chip, ExpandableSearchLauncher, Screen, Avatar } from "@/components/ui";
+import {
+  AccessibleImage,
+  AppText,
+  ExpandableSearchLauncher,
+  FilterChipRail,
+  Screen,
+  Avatar,
+} from "@/components/ui";
+import {
+  CyclingGridImage,
+  CYCLING_GRID_IMAGE_INTERVAL_MS,
+} from "@/components/discover/CyclingGridImage";
 import {
   prefetchDishDetail,
   prefetchImages,
@@ -27,10 +38,14 @@ import { useHungryTheme } from "@/theme";
 import { useLocationStore } from "@/store/useLocationStore";
 import { getHomeBitesFeed } from "@/features/home/bites";
 import type { Bite } from "@/lib/services/types";
+import { getServiceProvider } from "@/lib/services/serviceProvider";
 import { useSearchStore } from "@/store/useSearchStore";
+import { useProfileStore } from "@/store/useProfileStore";
+import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import {
   DISCOVER_CUISINE_FILTERS,
   getDiscoverBiteCollection,
+  getDiscoverBitesFromSearch,
   getDiscoverBiteDistance,
   getDiscoverBites,
   type DiscoverCollection,
@@ -38,6 +53,191 @@ import {
 
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 type QuickBitesRoute = RouteProp<RootStackParamList, "QuickBites">;
+type QuickBiteGridItem = Bite & { distance: number };
+type QuickBiteCycleFrame = {
+  imageUrl: string;
+  item: QuickBiteGridItem;
+};
+
+function QuickBiteImagePlaceholder({ height }: { height: number }) {
+  const { palette } = useHungryTheme();
+
+  return (
+    <View
+      accessibilityRole="image"
+      accessibilityLabel="Food photo unavailable"
+      style={{
+        alignItems: "center",
+        backgroundColor: palette.surfaceRaised,
+        height,
+        justifyContent: "center",
+        width: "100%",
+      }}
+    >
+      <Utensils color={palette.orange} size={28} />
+    </View>
+  );
+}
+
+function QuickBiteCarouselImage({ bite }: { bite: Bite }) {
+  const imageUrls = useMemo(
+    () =>
+      [bite.photoUrl, ...(bite.mediaUrls ?? [])].filter(
+        (imageUrl, index, imageUrls) =>
+          imageUrl.trim().length > 0 && imageUrls.indexOf(imageUrl) === index,
+      ),
+    [bite.mediaUrls, bite.photoUrl],
+  );
+  const [failedUrls, setFailedUrls] = useState<readonly string[]>([]);
+  const imageSignature = imageUrls.join("\u001f");
+  const activeImageUrl = imageUrls.find((imageUrl) => !failedUrls.includes(imageUrl));
+
+  useEffect(() => {
+    setFailedUrls([]);
+  }, [imageSignature]);
+
+  if (!activeImageUrl) {
+    return <QuickBiteImagePlaceholder height={104} />;
+  }
+
+  return (
+    <AccessibleImage
+      source={{ uri: activeImageUrl }}
+      style={{ height: 104, width: "100%" }}
+      contentFit="cover"
+      onError={() => {
+        setFailedUrls((current) =>
+          current.includes(activeImageUrl) ? current : [...current, activeImageUrl],
+        );
+      }}
+      decorative
+    />
+  );
+}
+
+function getQuickBiteCycleSlides(item: QuickBiteGridItem, items: QuickBiteGridItem[]) {
+  const crossStallSlides = items.filter(
+    (candidate) => candidate.id !== item.id && candidate.venueId !== item.venueId,
+  );
+  const fallbackSlides = items.filter((candidate) => candidate.id !== item.id);
+
+  return [item, ...crossStallSlides, ...fallbackSlides].slice(0, 4);
+}
+
+function getQuickBiteImageUrls(item: Bite) {
+  return [item.photoUrl, ...(item.mediaUrls ?? [])].filter(
+    (imageUrl, index, imageUrls) =>
+      imageUrl.trim().length > 0 && imageUrls.indexOf(imageUrl) === index,
+  );
+}
+
+function getQuickBiteCycleFrames(slides: QuickBiteGridItem[]): QuickBiteCycleFrame[] {
+  return slides.flatMap((slide) =>
+    getQuickBiteImageUrls(slide).map((imageUrl) => ({ imageUrl, item: slide })),
+  );
+}
+
+function QuickBiteGridCard({
+  allItems,
+  index,
+  item,
+  itemWidth,
+  isAutoCycleActive,
+  onOpen,
+  onPrefetch,
+}: {
+  allItems: QuickBiteGridItem[];
+  index: number;
+  item: QuickBiteGridItem;
+  itemWidth: number;
+  isAutoCycleActive: boolean;
+  onOpen: (item: QuickBiteGridItem) => void;
+  onPrefetch: (item: QuickBiteGridItem) => void;
+}) {
+  const { palette } = useHungryTheme();
+  const slides = useMemo(() => getQuickBiteCycleSlides(item, allItems), [allItems, item]);
+  const cycleFrames = useMemo(() => getQuickBiteCycleFrames(slides), [slides]);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const activeSlide = cycleFrames[activeIndex]?.item ?? slides[activeIndex] ?? item;
+  const handleActiveIndexChange = useCallback((nextIndex: number) => {
+    setActiveIndex(nextIndex);
+  }, []);
+
+  useEffect(() => {
+    if (activeIndex >= Math.max(cycleFrames.length, slides.length)) {
+      setActiveIndex(0);
+    }
+  }, [activeIndex, cycleFrames.length, slides.length]);
+
+  return (
+    <Pressable
+      onPressIn={() => onPrefetch(activeSlide)}
+      onPress={() => onOpen(activeSlide)}
+      style={{
+        width: itemWidth,
+        height: itemWidth * 1.35,
+        backgroundColor: palette.surface,
+        borderRightWidth: 0.5,
+        borderBottomWidth: 0.5,
+        borderColor: palette.border,
+      }}
+    >
+      <QuickBiteImagePlaceholder height={itemWidth * 1.35} />
+      <CyclingGridImage
+        images={cycleFrames.map((frame) => frame.imageUrl)}
+        cycleMs={CYCLING_GRID_IMAGE_INTERVAL_MS}
+        isAutoCycleActive={isAutoCycleActive}
+        startDelayMs={(index % 4) * 350}
+        onActiveIndexChange={handleActiveIndexChange}
+        style={StyleSheet.absoluteFill}
+      />
+      <LinearGradient
+        pointerEvents="none"
+        colors={["transparent", palette.mediaGradientMid, palette.detailImageOverlay]}
+        style={StyleSheet.absoluteFill}
+      />
+      <View pointerEvents="none" style={styles.cardContent}>
+        <View style={[styles.authorBadge, { backgroundColor: palette.mediaScrimSoft }]}>
+          <Avatar uri={activeSlide.authorAvatar} name={activeSlide.authorName} size={18} />
+          <AppText
+            variant="micro"
+            style={{ color: palette.white, fontWeight: "700", fontSize: 10 }}
+          >
+            {activeSlide.authorName}
+          </AppText>
+        </View>
+        <View style={{ flex: 1 }} />
+        <AppText
+          variant="bodySmallBold"
+          style={{ color: palette.white, marginBottom: 2 }}
+          numberOfLines={1}
+        >
+          {activeSlide.dishName}
+        </AppText>
+        <View style={styles.metaRow}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
+            <MapPinned size={10} color={palette.white} />
+            <AppText
+              variant="micro"
+              style={{ color: palette.white, fontWeight: "600", fontSize: 10 }}
+            >
+              {activeSlide.distance}m
+            </AppText>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+            <Heart size={10} color={palette.white} fill={palette.white} style={{ opacity: 0.8 }} />
+            <AppText
+              variant="micro"
+              style={{ color: palette.white, fontWeight: "700", fontSize: 10 }}
+            >
+              {activeSlide.cravingCount}
+            </AppText>
+          </View>
+        </View>
+      </View>
+    </Pressable>
+  );
+}
 
 export const COLLECTION_COPY: Record<
   NonNullable<DiscoverCollection>,
@@ -83,15 +283,22 @@ export const COLLECTION_COPY: Record<
 export function QuickBitesScreen() {
   const navigation = useNavigation<RootNavigation>();
   const route = useRoute<QuickBitesRoute>();
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const currentLocation = useLocationStore((state) => state.currentLocation);
+  const tasteVector = useProfileStore((state) => state.profile.tasteVector);
+  const dietaryPreferences = useProfileStore((state) => state.profile.dietaryPreferences);
   const collection: DiscoverCollection = route.params?.collection ?? "quickBites";
   const collectionCopy = COLLECTION_COPY[collection];
   const fallbackBites = useMemo(() => getDiscoverBites(), []);
 
   const [selectedCuisine, setSelectedCuisine] = useState("All");
+  const cuisineFilterOptions = useMemo(
+    () => DISCOVER_CUISINE_FILTERS.map((cuisine) => ({ id: cuisine, label: cuisine })),
+    [],
+  );
   const [bites, setBites] = useState<Bite[]>(fallbackBites);
+  const [fullyVisibleBiteIds, setFullyVisibleBiteIds] = useState<Set<string>>(() => new Set());
   const searchQuery = useSearchStore((state) => state.filters.query);
   const updateSearchQuery = useSearchStore((state) => state.updateQuery);
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
@@ -102,10 +309,15 @@ export function QuickBitesScreen() {
 
   const submitSearch = useCallback(() => {
     const trimmed = searchQuery.trim();
-    if (trimmed) {
-      rememberSearch(trimmed);
-    }
     navigation.navigate("SearchHome");
+    if (trimmed) {
+      scheduleIdleWork(
+        () => {
+          rememberSearch(trimmed);
+        },
+        { timeout: 500, fallbackDelayMs: 80 },
+      );
+    }
   }, [navigation, rememberSearch, searchQuery]);
 
   const prefetchBiteRoute = useCallback(
@@ -142,7 +354,20 @@ export function QuickBitesScreen() {
   useEffect(() => {
     // Sync with location and real feed if available
     const loadBites = async () => {
+      const isSupabaseDataSource = getServiceProvider().mode === "supabase";
       try {
+        if (isSupabaseDataSource) {
+          const liveBites = await getDiscoverBitesFromSearch(collection, {
+            latitude: currentLocation.latitude,
+            longitude: currentLocation.longitude,
+            radiusMeters: 3000,
+            tasteVector,
+            dietaryFlags: dietaryPreferences,
+          });
+          setBites(liveBites);
+          return;
+        }
+
         const feed = await getHomeBitesFeed(currentLocation.latitude, currentLocation.longitude);
         if (feed && feed.length > 0) {
           const feedIds = new Set(feed.map((bite) => bite.id));
@@ -151,11 +376,11 @@ export function QuickBitesScreen() {
           setBites(fallbackBites);
         }
       } catch {
-        setBites(fallbackBites);
+        setBites(isSupabaseDataSource ? [] : fallbackBites);
       }
     };
     void loadBites();
-  }, [currentLocation, fallbackBites]);
+  }, [collection, currentLocation, dietaryPreferences, fallbackBites, tasteVector]);
 
   const collectionBites = useMemo(() => {
     return getDiscoverBiteCollection(collection, bites);
@@ -188,73 +413,32 @@ export function QuickBitesScreen() {
 
   const numColumns = 2;
   const itemWidth = screenWidth / numColumns;
+  const fullTileViewabilityConfig = useRef({ itemVisiblePercentThreshold: 100 }).current;
+  const handleFullyVisibleBitesChanged = useRef(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      setFullyVisibleBiteIds(
+        new Set(
+          viewableItems
+            .filter((token) => token.isViewable && token.item)
+            .map((token) => (token.item as QuickBiteGridItem).id),
+        ),
+      );
+    },
+  ).current;
 
   const renderBiteItem = useCallback(
-    ({ item }: { item: Bite & { distance: number } }) => (
-      <Pressable
-        onPressIn={() => prefetchBiteRoute(item)}
-        onPress={() => navigation.navigate("DishDetail", { dishId: item.dishId })}
-        style={{
-          width: itemWidth,
-          height: itemWidth * 1.35,
-          backgroundColor: palette.surface,
-          borderRightWidth: 0.5,
-          borderBottomWidth: 0.5,
-          borderColor: palette.border,
-        }}
-      >
-        <Image source={{ uri: item.photoUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
-        <LinearGradient
-          colors={["transparent", "rgba(0,0,0,0.15)", "rgba(0,0,0,0.8)"]}
-          style={StyleSheet.absoluteFill}
-        />
-        <View style={styles.cardContent}>
-          <View style={styles.authorBadge}>
-            <Avatar uri={item.authorAvatar} name={item.authorName} size={18} />
-            <AppText
-              variant="micro"
-              style={{ color: palette.white, fontWeight: "700", fontSize: 10 }}
-            >
-              {item.authorName}
-            </AppText>
-          </View>
-          <View style={{ flex: 1 }} />
-          <AppText
-            variant="bodySmallBold"
-            style={{ color: palette.white, marginBottom: 2 }}
-            numberOfLines={1}
-          >
-            {item.dishName}
-          </AppText>
-          <View style={styles.metaRow}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
-              <MapPinned size={10} color={palette.white} />
-              <AppText
-                variant="micro"
-                style={{ color: palette.white, fontWeight: "600", fontSize: 10 }}
-              >
-                {item.distance}m
-              </AppText>
-            </View>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
-              <Heart
-                size={10}
-                color={palette.white}
-                fill={palette.white}
-                style={{ opacity: 0.8 }}
-              />
-              <AppText
-                variant="micro"
-                style={{ color: palette.white, fontWeight: "700", fontSize: 10 }}
-              >
-                {item.cravingCount}
-              </AppText>
-            </View>
-          </View>
-        </View>
-      </Pressable>
+    ({ item, index }: { item: QuickBiteGridItem; index: number }) => (
+      <QuickBiteGridCard
+        allItems={filteredBites}
+        index={index}
+        isAutoCycleActive={fullyVisibleBiteIds.has(item.id)}
+        item={item}
+        itemWidth={itemWidth}
+        onOpen={(activeItem) => navigation.navigate("DishDetail", { dishId: activeItem.dishId })}
+        onPrefetch={prefetchBiteRoute}
+      />
     ),
-    [itemWidth, palette, navigation, prefetchBiteRoute],
+    [filteredBites, fullyVisibleBiteIds, itemWidth, navigation, prefetchBiteRoute],
   );
 
   const renderFoodCarousel = useCallback(
@@ -281,15 +465,11 @@ export function QuickBitesScreen() {
                   {
                     backgroundColor: palette.surface,
                     borderColor: palette.border,
-                    borderRadius: radii.lg,
+                    borderRadius: componentRadii.card,
                   },
                 ]}
               >
-                <Image
-                  source={{ uri: bite.photoUrl }}
-                  style={{ height: 104, width: "100%" }}
-                  contentFit="cover"
-                />
+                <QuickBiteCarouselImage bite={bite} />
                 <View style={{ padding: spacing[2], gap: 2 }}>
                   <AppText variant="bodySmallBold" numberOfLines={1}>
                     {bite.dishName}
@@ -314,7 +494,7 @@ export function QuickBitesScreen() {
       palette.orange,
       palette.surface,
       prefetchBiteRoute,
-      radii.lg,
+      componentRadii.card,
       spacing,
     ],
   );
@@ -366,20 +546,13 @@ export function QuickBitesScreen() {
             overflow: "hidden",
           }}
         >
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingVertical: spacing[3], gap: spacing[2] }}
-          >
-            {DISCOVER_CUISINE_FILTERS.map((cuisine) => (
-              <Chip
-                key={cuisine}
-                label={cuisine}
-                selected={selectedCuisine === cuisine}
-                onPress={() => setSelectedCuisine(cuisine)}
-              />
-            ))}
-          </ScrollView>
+          <FilterChipRail
+            options={cuisineFilterOptions}
+            selectedId={selectedCuisine}
+            onSelect={setSelectedCuisine}
+            gap={spacing[2]}
+            contentContainerStyle={{ paddingVertical: spacing[3] }}
+          />
         </Animated.View>
       </View>
 
@@ -388,6 +561,8 @@ export function QuickBitesScreen() {
           data={filteredBites}
           renderItem={renderBiteItem}
           keyExtractor={(item) => item.id}
+          onViewableItemsChanged={handleFullyVisibleBitesChanged}
+          viewabilityConfig={fullTileViewabilityConfig}
           onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
             useNativeDriver: false,
           })}
@@ -450,7 +625,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "rgba(0,0,0,0.4)",
     padding: 4,
     paddingRight: 8,
     borderRadius: 12,

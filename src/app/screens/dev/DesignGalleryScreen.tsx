@@ -6,6 +6,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Screen, Button } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
+import { HUNGRY_LOGO_STANDARD_WORDMARK_SIZE } from "@/constants/brandAssets";
 
 // Brand Logos
 import { WordmarkLogoV2 } from "@/components/icons/brand/WordmarkLogoV2";
@@ -28,7 +29,7 @@ import { LaksaIconV2 } from "@/components/icons/food/LaksaIconV2";
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export function DesignGalleryScreen() {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing } = useHungryTheme();
   const navigation = useNavigation<NavigationProp>();
 
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
@@ -41,7 +42,9 @@ export function DesignGalleryScreen() {
   );
 
   const Item = ({ label, children }: { label: string; children: React.ReactNode }) => (
-    <View style={[styles.item, { backgroundColor: palette.bgSoft, borderRadius: radii.lg }]}>
+    <View
+      style={[styles.item, { backgroundColor: palette.bgSoft, borderRadius: componentRadii.card }]}
+    >
       <View style={styles.iconContainer}>{children}</View>
       <AppText variant="micro" tone="muted" style={{ textAlign: "center", marginTop: spacing[2] }}>
         {label}
@@ -57,13 +60,13 @@ export function DesignGalleryScreen() {
       >
         <Section title="B3 — Brand Logos">
           <Item label="WordmarkLogoV2">
-            <WordmarkLogoV2 size={100} />
+            <WordmarkLogoV2 size={HUNGRY_LOGO_STANDARD_WORDMARK_SIZE} />
           </Item>
           <Item label="IconWordmarkLogoV2">
-            <IconWordmarkLogoV2 size={120} />
+            <IconWordmarkLogoV2 size={HUNGRY_LOGO_STANDARD_WORDMARK_SIZE} />
           </Item>
           <Item label="LogomarkLogoV2">
-            <LogomarkLogoV2 size={48} />
+            <LogomarkLogoV2 size={HUNGRY_LOGO_STANDARD_WORDMARK_SIZE} />
           </Item>
         </Section>
 

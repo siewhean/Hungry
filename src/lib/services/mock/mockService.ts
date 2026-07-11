@@ -8,8 +8,10 @@
  */
 
 import { getFloorPlan } from "@/lib/geo/floorPlans";
+import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { similarityScore } from "@/lib/ai/similarityScore";
+import { STORY_GALLERY_ASSETS } from "@/lib/services/storyGalleryAssets";
 import {
   blogPosts,
   buildings,
@@ -25,6 +27,7 @@ import {
   merchantCustomerInteractions,
   merchantOCRDrafts,
   merchantPromotions,
+  popularVisitorPins,
   userProfile,
   venues,
 } from "./data";
@@ -38,10 +41,14 @@ import type {
   ChatMessage,
   ChatParticipant,
   ChatSubscriptionHandlers,
+  ChecklistItemCreateInput,
   ExplicitFeedbackInput,
   ExtendedRecommendationContext,
   HungryService,
   ImplicitSignalInput,
+  PortfolioCreateInput,
+  PortfolioItemCreateInput,
+  PortfolioMutationOptions,
   QuizAnswer,
   RankedRecommendation,
   RecommendationContext,
@@ -58,10 +65,16 @@ import type {
   DishDetail,
   DietaryFlag,
   HawkerTasteTag,
+  MerchantAnalytics,
+  MerchantDishViewEvent,
+  MerchantNotification,
   MerchantNotificationPreferences,
   MerchantPromotion,
   MerchantTeamMember,
+  MerchantWeeklySummary,
   OCRDishDraft,
+  PopularVisitorCandidate,
+  PopularVisitorPin,
   SearchFilters,
   TasteProfile,
   TasteVector,
@@ -69,6 +82,20 @@ import type {
   Story,
   StoryContent,
   MerchantAccount,
+  VenueSummary,
+  Checklist,
+  ChecklistItem,
+  Portfolio,
+  PortfolioCollaborator,
+  PortfolioFlag,
+  PortfolioFlagReason,
+  PortfolioFollow,
+  PortfolioItem,
+  PassportEventType,
+  PassportProgressEvent,
+  PassportStamp,
+  SubmitUserStallSubmissionInput,
+  UserStallSubmission,
 } from "@/types/domain";
 import { computeTasteProfileFromQuiz } from "@/lib/ai/tasteQuiz";
 import {
@@ -78,6 +105,8 @@ import {
 import type { ExplicitFeedbackEvent } from "@/lib/ai/tasteEngine";
 import { applyVerificationSubmission } from "@/features/merchant/verificationStateMachine";
 import { validateMerchantProfileUpdates } from "@/features/merchant/profileValidation";
+import { filterCustomerVisiblePromotions } from "@/features/merchant/customerPromotions";
+import { validateMerchantPromotionInput } from "@/features/merchant/promotionValidation";
 import { loadMockState, saveMockState } from "./persistence";
 import { biteToStallPost } from "@/lib/services/postTransforms";
 import {
@@ -85,6 +114,15 @@ import {
   hydratePublishedStallPosts,
   listMockStallPosts,
 } from "./stallPostState";
+
+type MerchantActionEventInput = Parameters<
+  HungryService["discovery"]["recordMerchantActionEvent"]
+>[0];
+type MockMerchantActionEvent = MerchantActionEventInput & {
+  outletId: string;
+  sessionId: string;
+  occurredAt: string;
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -114,6 +152,135 @@ function matchReason(userVec: TasteVector, dishVec: TasteVector): string {
   return `${labels[topKey]} — matches your taste profile`;
 }
 
+function canViewMockPortfolio(portfolio: Portfolio): boolean {
+  return (
+    portfolio.ownerId === _profile.id ||
+    portfolio.visibility === "public" ||
+    _portfolioFollows.some(
+      (follow) => follow.portfolioId === portfolio.id && follow.userId === _profile.id,
+    )
+  );
+}
+
+function assertMockPortfolioVersion(portfolioId: string, options?: PortfolioMutationOptions): void {
+  if (!options?.expectedUpdatedAt) return;
+  const portfolio = _portfolios.find((entry) => entry.id === portfolioId);
+  if (!portfolio || portfolio.updatedAt !== options.expectedUpdatedAt) {
+    throw new Error(
+      "This portfolio changed elsewhere. Review the latest version before saving again.",
+    );
+  }
+}
+
+function ensureMockContributorStamp(now = new Date().toISOString()): PassportStamp {
+  const existing = _passportStamps.find(
+    (stamp) => stamp.userId === _profile.id && stamp.categoryId === "contributor",
+  );
+  if (existing) {
+    return existing;
+  }
+
+  const stamp: PassportStamp = {
+    id: `passport-stamp-${++_passportStampCounter}`,
+    userId: _profile.id,
+    categoryId: "contributor",
+    level: 1,
+    dishesTriedCount: 0,
+    stallsVisitedCount: 0,
+    stallsSubmittedCount: 0,
+    reviewsPostedCount: 0,
+    photosPostedCount: 0,
+    portfolioItemsAdded: 0,
+    publicPortfoliosPublished: 0,
+    trailsCompleted: 0,
+    createdAt: now,
+    updatedAt: now,
+  };
+  _passportStamps = [..._passportStamps, stamp];
+  return stamp;
+}
+
+function recordMockPassportProgress(eventType: PassportEventType, referenceId?: string): void {
+  const now = new Date().toISOString();
+  const event: PassportProgressEvent = {
+    id: `passport-event-${++_passportEventCounter}`,
+    userId: _profile.id,
+    categoryId: "contributor",
+    eventType,
+    referenceId,
+    createdAt: now,
+  };
+  _passportEvents = [event, ..._passportEvents];
+
+  ensureMockContributorStamp(now);
+  _passportStamps = _passportStamps.map((stamp) => {
+    if (stamp.userId !== _profile.id || stamp.categoryId !== "contributor") {
+      return stamp;
+    }
+
+    return {
+      ...stamp,
+      portfolioItemsAdded:
+        eventType === "portfolio_item_added"
+          ? stamp.portfolioItemsAdded + 1
+          : stamp.portfolioItemsAdded,
+      publicPortfoliosPublished:
+        eventType === "public_portfolio_published"
+          ? stamp.publicPortfoliosPublished + 1
+          : stamp.publicPortfoliosPublished,
+      trailsCompleted:
+        eventType === "trail_completed" ? stamp.trailsCompleted + 1 : stamp.trailsCompleted,
+      stallsSubmittedCount:
+        eventType === "stall_submitted"
+          ? stamp.stallsSubmittedCount + 1
+          : stamp.stallsSubmittedCount,
+      updatedAt: now,
+    };
+  });
+}
+
+function cleanOptionalText(value?: string): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+function createMockUserStallSubmission(input: SubmitUserStallSubmissionInput): UserStallSubmission {
+  const now = new Date().toISOString();
+  return {
+    id: `mock-stall-submission-${++_userStallSubmissionCounter}`,
+    userId: _profile.id,
+    stallName: input.stallName.trim(),
+    imageUrl: input.imageUri,
+    galleryImageUrls: input.imageUris?.length ? input.imageUris : [input.imageUri],
+    imageMimeType: input.imageMimeType,
+    sourceUrl: cleanOptionalText(input.sourceUrl),
+    buildingName: cleanOptionalText(input.buildingName),
+    area: cleanOptionalText(input.area),
+    address: cleanOptionalText(input.address),
+    postalCode: cleanOptionalText(input.postalCode),
+    unitNumber: cleanOptionalText(input.unitNumber),
+    floor: cleanOptionalText(input.floor),
+    operatingHours: cleanOptionalText(input.operatingHours),
+    menuItems: (input.menuItems ?? [])
+      .map((item) => ({
+        name: item.name.trim(),
+        priceRange: cleanOptionalText(item.priceRange),
+        notes: cleanOptionalText(item.notes),
+      }))
+      .filter((item) => item.name.length > 0),
+    deliveryLinks: (input.deliveryLinks ?? [])
+      .map((link) => ({
+        label: link.label.trim(),
+        url: link.url.trim(),
+      }))
+      .filter((link) => link.label.length > 0 && link.url.length > 0),
+    notes: cleanOptionalText(input.notes),
+    status: "pending",
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
 // ─── Mutable in-memory state (mirrors what Supabase would persist) ─────────────
 
 let _profile: UserProfile = { ...guestProfile };
@@ -124,8 +291,31 @@ let _merchantPromotionCounter = 0;
 let _merchantOCRDrafts: OCRDishDraft[] = clone(merchantOCRDrafts);
 let _merchantInbox: CustomerInteraction[] = clone(merchantCustomerInteractions);
 let _merchantPromotions: MerchantPromotion[] = clone(merchantPromotions);
+let _popularVisitorPins: PopularVisitorPin[] = clone(popularVisitorPins);
 let _merchantAIInsights = clone(merchantAIInsights);
 let _merchantTeamMemberCounter = 0;
+let _merchantDishViewCounter = 0;
+let _merchantNotificationCounter = 0;
+let _checklistCounter = 0;
+let _checklistItemCounter = 0;
+let _portfolioCounter = 0;
+let _portfolioItemCounter = 0;
+let _portfolioCollaboratorCounter = 0;
+let _portfolioFollowCounter = 0;
+let _portfolioFlagCounter = 0;
+let _passportStampCounter = 0;
+let _passportEventCounter = 0;
+let _userStallSubmissionCounter = 0;
+let _checklists: Checklist[] = [];
+let _checklistItems: ChecklistItem[] = [];
+let _portfolios: Portfolio[] = [];
+let _portfolioItems: PortfolioItem[] = [];
+let _portfolioCollaborators: PortfolioCollaborator[] = [];
+let _portfolioFollows: PortfolioFollow[] = [];
+let _portfolioFlags: PortfolioFlag[] = [];
+let _passportStamps: PassportStamp[] = [];
+let _passportEvents: PassportProgressEvent[] = [];
+let _userStallSubmissions: UserStallSubmission[] = [];
 let _chatConversations: ChatConversation[] = clone(chatConversations);
 let _chatMessages: Record<string, ChatMessage[]> = clone(chatMessages);
 const _chatSubscribers = new Map<string, Set<(message: ChatMessage) => void>>();
@@ -135,6 +325,8 @@ let _mockStories: Story[] = [
   {
     id: "s0",
     displayName: "Your Story",
+    authorId: _profile.id,
+    authorProfileVisibility: _profile.profileVisibility,
     avatarUrl: "https://i.pravatar.cc/150?u=me",
     hasUnseen: false,
     isStall: false,
@@ -149,6 +341,8 @@ let _mockStories: Story[] = [
   {
     id: "s1",
     displayName: "Tian Tian",
+    authorId: "story-author-tian-tian",
+    authorProfileVisibility: "public",
     avatarUrl: "https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=150&h=150&fit=crop",
     hasUnseen: true,
     isStall: true,
@@ -157,11 +351,13 @@ let _mockStories: Story[] = [
       url: "https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=800&q=80",
     },
     createdAt: new Date(Date.now() - 3600000).toISOString(),
-    interaction: { liked: false, saved: false, likeCount: 120, commentCount: 12, shareCount: 5 },
+    interaction: { liked: false, saved: false, likeCount: 0, commentCount: 0, shareCount: 0 },
   },
   {
     id: "s2",
     displayName: "Wei Ming",
+    authorId: "story-author-wei-ming",
+    authorProfileVisibility: "public",
     avatarUrl: "https://i.pravatar.cc/150?u=wm",
     hasUnseen: true,
     isStall: false,
@@ -170,7 +366,7 @@ let _mockStories: Story[] = [
       url: "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=800&q=80",
     },
     createdAt: new Date(Date.now() - 7200000).toISOString(),
-    interaction: { liked: false, saved: false, likeCount: 45, commentCount: 3, shareCount: 1 },
+    interaction: { liked: false, saved: false, likeCount: 0, commentCount: 0, shareCount: 0 },
   },
 ];
 
@@ -311,6 +507,8 @@ const _merchantTeamMembersByAccount = new Map<string, MerchantTeamMember[]>([
         email: merchantAccount.email,
         role: "owner",
         addedAt: merchantAccount.createdAt,
+        inviteStatus: "accepted",
+        acceptedAt: merchantAccount.createdAt,
       },
       {
         id: "tm-2",
@@ -320,6 +518,8 @@ const _merchantTeamMembersByAccount = new Map<string, MerchantTeamMember[]>([
         email: "meilin@hawker.sg",
         role: "manager",
         addedAt: "2026-04-01T09:00:00Z",
+        inviteStatus: "accepted",
+        acceptedAt: "2026-04-01T09:00:00Z",
       },
     ],
   ],
@@ -335,17 +535,10 @@ const DEFAULT_NOTIFICATION_PREFERENCES: MerchantNotificationPreferences = {
 const _merchantNotificationPreferencesByAccount = new Map<string, MerchantNotificationPreferences>([
   [merchantAccount.id, clone(DEFAULT_NOTIFICATION_PREFERENCES)],
 ]);
-const _merchantMenuByOutlet = new Map<string, DishDetail[]>(
-  merchantAccount.outlets.map((outlet) => {
-    const signatureDishes = outlet.signatureDishIds
-      .map((dishId) => dishes.find((dish) => dish.id === dishId))
-      .filter((dish): dish is DishDetail => Boolean(dish));
-    const fallbackDishes = dishes
-      .filter((dish) => dish.buildingId === outlet.buildingId)
-      .slice(0, 8);
-    return [outlet.id, clone(signatureDishes.length > 0 ? signatureDishes : fallbackDishes)];
-  }),
-);
+const _merchantDishViewEvents: MerchantDishViewEvent[] = [];
+const _merchantActionEvents: MockMerchantActionEvent[] = [];
+const _merchantNotifications: MerchantNotification[] = [];
+const _merchantMenuByOutlet = new Map<string, DishDetail[]>();
 const _biteReactions: Record<string, { cravings: Set<string>; saves: Set<string> }> = {};
 const _merchantClaimInterests = new Set<string>();
 const _merchantInteractionReports: {
@@ -361,6 +554,72 @@ const _contentReports: {
   reason: string;
 }[] = [];
 const _blockedUserKeys = new Set<string>();
+const _userFollows = new Set<string>(); // Set of followee userId strings (current user follows these)
+const _mockFollowersByUser: Record<
+  string,
+  { userId: string; displayName: string; avatarUrl?: string }[]
+> = {
+  [userProfile.id]: [
+    {
+      userId: "user-sarah-lim",
+      displayName: "Sarah Lim",
+      avatarUrl: "https://i.pravatar.cc/64?img=5",
+    },
+    {
+      userId: "user-sarah-l",
+      displayName: "Sarah L",
+      avatarUrl: "https://i.pravatar.cc/64?img=6",
+    },
+    {
+      userId: "user-tan-ah-teck",
+      displayName: "Tan Ah Teck",
+      avatarUrl: "https://i.pravatar.cc/64?img=15",
+    },
+    {
+      userId: "user-emma-watson",
+      displayName: "Emma Watson",
+      avatarUrl: "https://i.pravatar.cc/64?img=47",
+    },
+    {
+      userId: "user-emma-c",
+      displayName: "Emma C",
+      avatarUrl: "https://i.pravatar.cc/64?img=50",
+    },
+    {
+      userId: "user-wei-ming",
+      displayName: "Wei Ming",
+      avatarUrl: "https://i.pravatar.cc/64?img=11",
+    },
+  ],
+};
+
+function dedupeMockFollowers(
+  followers: { userId: string; displayName: string; avatarUrl?: string }[],
+) {
+  const seen = new Set<string>();
+
+  return followers.filter((follower) => {
+    const normalizedId = follower.userId.trim();
+    const normalizedName = follower.displayName.trim().toLowerCase();
+    const key = normalizedId || normalizedName;
+
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+const _mockComments: Record<
+  string,
+  {
+    id: string;
+    userId: string;
+    body: string;
+    createdAt: string;
+    parentCommentId?: string;
+    authorName?: string;
+    authorAvatarUrl?: string;
+  }[]
+> = {};
 
 if (typeof __DEV__ !== "undefined" && __DEV__) {
   // TODO(api): keep fixture validation while mock mode is active; remove once backend contracts are fully live.
@@ -368,6 +627,15 @@ if (typeof __DEV__ !== "undefined" && __DEV__) {
 }
 
 // ─── Mock session ─────────────────────────────────────────────────────────────
+
+function mockUserIdFromEmail(email: string): string {
+  const slug = email
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return `user-${slug || "mock"}`;
+}
 
 function mockSession(profile: UserProfile): Session {
   return {
@@ -385,17 +653,211 @@ function getMerchantOutlet(outletId: string) {
   return outlet;
 }
 
+function getMockMerchantVenueId(outletId: string): string {
+  return `mock-venue-${outletId}`;
+}
+
+function getMockMerchantSeedDishId(outletId: string, dishId: string): string {
+  return `mock-${outletId}-${dishId}`;
+}
+
+function toMerchantMenuSeedDish(outletId: string, dish: DishDetail): DishDetail {
+  const outlet = getMerchantOutlet(outletId);
+  return {
+    ...dish,
+    id: getMockMerchantSeedDishId(outletId, dish.id),
+    venueId: getMockMerchantVenueId(outletId),
+    buildingId: outlet.buildingId ?? dish.buildingId,
+    venueName: outlet.name,
+    unitNumber: outlet.unitNumber ?? dish.unitNumber,
+    floor: outlet.floor ?? dish.floor,
+    venueVerificationStatus: outlet.verification.status,
+  };
+}
+
 function getMerchantMenu(outletId: string): DishDetail[] {
   const outlet = getMerchantOutlet(outletId);
   const existingMenu = _merchantMenuByOutlet.get(outletId);
-  if (existingMenu) return existingMenu;
+  if (existingMenu) {
+    syncMerchantMenuToUserCatalog(outletId, existingMenu);
+    return existingMenu;
+  }
 
   const seededMenu =
     outlet.signatureDishIds.length > 0
       ? dishes.filter((dish) => outlet.signatureDishIds.includes(dish.id)).slice(0, 8)
       : dishes.filter((dish) => dish.buildingId === outlet.buildingId).slice(0, 8);
-  _merchantMenuByOutlet.set(outletId, clone(seededMenu));
-  return _merchantMenuByOutlet.get(outletId) ?? [];
+  const merchantMenu = seededMenu.map((dish) => toMerchantMenuSeedDish(outletId, dish));
+  _merchantMenuByOutlet.set(outletId, merchantMenu);
+  syncMerchantMenuToUserCatalog(outletId, merchantMenu);
+  return merchantMenu;
+}
+
+function getMerchantPromotionOutletDishIds(outletId: string): string[] {
+  const outlet = getMerchantOutlet(outletId);
+  const menu = getMerchantMenu(outletId);
+  return Array.from(new Set([...menu.map((dish) => dish.id), ...outlet.signatureDishIds]));
+}
+
+function syncMerchantOutletToUserCatalog(
+  outlet: ReturnType<typeof getMerchantOutlet>,
+): VenueSummary {
+  const venueId = getMockMerchantVenueId(outlet.id);
+  const menu = _merchantMenuByOutlet.get(outlet.id) ?? [];
+  const topDishId = menu[0]?.id ?? outlet.signatureDishIds[0] ?? "";
+  const venue: VenueSummary = {
+    id: venueId,
+    buildingId: outlet.buildingId ?? "building-maxwell",
+    name: outlet.name,
+    unitNumber: outlet.unitNumber ?? "",
+    floor: outlet.floor ?? "",
+    isOpen: outlet.isLive && !outlet.temporaryClosure,
+    liveCrowd: "medium",
+    topDishId,
+    operatingHours: outlet.operatingHours,
+    closureNotice: outlet.temporaryClosure,
+    deliveryLinks: outlet.deliveryLinks,
+    verificationStatus: outlet.verification.status,
+  };
+  const venueIndex = venues.findIndex((item) => item.id === venueId);
+  if (venueIndex === -1) {
+    venues.push(venue);
+  } else {
+    venues[venueIndex] = venue;
+  }
+  dishes.forEach((dish) => {
+    if (dish.venueId !== venueId) return;
+    dish.buildingId = venue.buildingId;
+    dish.venueName = venue.name;
+    dish.unitNumber = venue.unitNumber;
+    dish.floor = venue.floor;
+    dish.liveCrowd = dish.liveCrowd ?? venue.liveCrowd;
+    dish.venueVerificationStatus = venue.verificationStatus;
+  });
+  return venue;
+}
+
+function syncMerchantDishToUserCatalog(outletId: string, dish: DishDetail): DishDetail {
+  const outlet = getMerchantOutlet(outletId);
+  const venue = syncMerchantOutletToUserCatalog(outlet);
+  const userVisibleDish: DishDetail = {
+    ...dish,
+    venueId: venue.id,
+    buildingId: venue.buildingId,
+    venueName: venue.name,
+    unitNumber: venue.unitNumber,
+    floor: venue.floor,
+    liveCrowd: dish.liveCrowd ?? venue.liveCrowd,
+    venueVerificationStatus: venue.verificationStatus,
+  };
+  const dishIndex = dishes.findIndex((item) => item.id === userVisibleDish.id);
+  if (dishIndex === -1) {
+    dishes.push(userVisibleDish);
+  } else {
+    dishes[dishIndex] = userVisibleDish;
+  }
+  syncMerchantOutletToUserCatalog(outlet);
+  return userVisibleDish;
+}
+
+function syncMerchantMenuToUserCatalog(outletId: string, menu: DishDetail[]): void {
+  syncMerchantOutletToUserCatalog(getMerchantOutlet(outletId));
+  menu.forEach((dish) => {
+    syncMerchantDishToUserCatalog(outletId, dish);
+  });
+}
+
+function sortPopularVisitorPins(pins: PopularVisitorPin[]): PopularVisitorPin[] {
+  return [...pins].sort((left, right) => {
+    if (left.sortOrder !== right.sortOrder) return left.sortOrder - right.sortOrder;
+    return new Date(right.pinnedAt).getTime() - new Date(left.pinnedAt).getTime();
+  });
+}
+
+function listActivePopularVisitorPins(outletId: string): PopularVisitorPin[] {
+  getMerchantOutlet(outletId);
+  return sortPopularVisitorPins(
+    _popularVisitorPins.filter((pin) => pin.outletId === outletId && pin.isActive),
+  ).slice(0, 6);
+}
+
+function getReviewBackedVisitorCandidates(outletId: string): PopularVisitorCandidate[] {
+  const outlet = getMerchantOutlet(outletId);
+  const venueId = getMockMerchantVenueId(outlet.id);
+  const menu = getMerchantMenu(outlet.id);
+  const fallbackDishName = menu[0]?.name;
+  const activePinByReviewId = new Map(
+    listActivePopularVisitorPins(outlet.id).map((pin) => [pin.reviewId, pin]),
+  );
+
+  return _merchantInbox
+    .filter((interaction) => interaction.outletId === outlet.id && interaction.type === "review")
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
+    .map((interaction) => {
+      const reviewId = interaction.sourceId ?? interaction.id;
+      const activePin = activePinByReviewId.get(reviewId);
+      return {
+        outletId: outlet.id,
+        venueId,
+        reviewId,
+        sourceId: reviewId,
+        authorProfileId: `mock-profile-${interaction.authorName
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "")}`,
+        authorName: interaction.authorName,
+        authorAvatarUrl: interaction.authorAvatarUrl,
+        authorLocation: "Singapore",
+        reviewText: interaction.text,
+        rating: interaction.rating ?? 0,
+        dishName: fallbackDishName,
+        visitedAt: interaction.createdAt,
+        isPinned: Boolean(activePin),
+        pinId: activePin?.id,
+        sortOrder: activePin?.sortOrder,
+      } satisfies PopularVisitorCandidate;
+    });
+}
+
+function buildPopularVisitorPin(outletId: string, reviewId: string): PopularVisitorPin {
+  const candidate = getReviewBackedVisitorCandidates(outletId).find(
+    (item) => item.reviewId === reviewId,
+  );
+  if (!candidate) {
+    throw new Error(`Review ${reviewId} was not found for outlet ${outletId}`);
+  }
+  const activePins = listActivePopularVisitorPins(outletId);
+  if (activePins.length >= 6) {
+    throw new Error("A stall can feature up to 6 popular visitors.");
+  }
+  const nextSortOrder = activePins.reduce((max, pin) => Math.max(max, pin.sortOrder), -1) + 1;
+  return {
+    id: `pin-${outletId}-${reviewId}`,
+    outletId: candidate.outletId,
+    venueId: candidate.venueId,
+    reviewId: candidate.reviewId,
+    sourceId: candidate.sourceId,
+    authorProfileId: candidate.authorProfileId,
+    authorName: candidate.authorName,
+    authorAvatarUrl: candidate.authorAvatarUrl,
+    authorLocation: candidate.authorLocation,
+    reviewText: candidate.reviewText,
+    rating: candidate.rating,
+    dishName: candidate.dishName,
+    visitedAt: candidate.visitedAt,
+    pinnedAt: new Date().toISOString(),
+    sortOrder: nextSortOrder,
+    isActive: true,
+  };
+}
+
+function removeMerchantDishFromUserCatalog(outletId: string, dishId: string): void {
+  const venueId = getMockMerchantVenueId(outletId);
+  const dishIndex = dishes.findIndex((dish) => dish.id === dishId && dish.venueId === venueId);
+  if (dishIndex !== -1) {
+    dishes.splice(dishIndex, 1);
+  }
+  syncMerchantOutletToUserCatalog(getMerchantOutlet(outletId));
 }
 
 function uniqueValues(values: string[]): string[] {
@@ -413,11 +875,13 @@ function buildMerchantDish(outletId: string, input: Partial<DishDetail>): DishDe
     getMerchantMenu(outletId)[0] ??
     dishes.find((dish) => dish.buildingId === outlet.buildingId) ??
     dishes[0];
+  const venueId = getMockMerchantVenueId(outletId);
 
   return {
     ...base,
     ...input,
     id: input.id ?? `merchant-dish-${++_merchantDishCounter}`,
+    venueId,
     buildingId: outlet.buildingId ?? base.buildingId,
     venueName: outlet.name,
     unitNumber: outlet.unitNumber ?? base.unitNumber,
@@ -439,6 +903,15 @@ function getPromotionAnalyticsValue(
     return { impressions: 0, clicks: 0, saves: 0, profileVisits: 0, dishViews: 0 };
   }
   return { impressions: 1200, clicks: 96, saves: 24, profileVisits: 48, dishViews: 132 };
+}
+
+function getPromotionOutletVenueId(promotion: MerchantPromotion): string | undefined {
+  if (promotion.targetDishId) {
+    return dishes.find((dish) => dish.id === promotion.targetDishId)?.venueId;
+  }
+  const outlet = merchantAccount.outlets.find((item) => item.id === promotion.outletId);
+  const signatureDishId = outlet?.signatureDishIds[0];
+  return signatureDishId ? dishes.find((dish) => dish.id === signatureDishId)?.venueId : undefined;
 }
 
 function getAIInsightsForOutlet(
@@ -477,6 +950,189 @@ function getNotificationPreferencesForAccount(
   const seeded = clone(DEFAULT_NOTIFICATION_PREFERENCES);
   _merchantNotificationPreferencesByAccount.set(merchantAccountId, seeded);
   return seeded;
+}
+
+function getOutletForDishView(dishId: string): ReturnType<typeof getMerchantOutlet> | undefined {
+  for (const outlet of _merchantAccount.outlets) {
+    const menu = getMerchantMenu(outlet.id);
+    if (menu.some((dish) => dish.id === dishId)) return outlet;
+    const userVisibleVenueId = getMockMerchantVenueId(outlet.id);
+    if (dishes.some((dish) => dish.id === dishId && dish.venueId === userVisibleVenueId)) {
+      return outlet;
+    }
+  }
+  return undefined;
+}
+
+function getOutletForMerchantAction(
+  input: MerchantActionEventInput,
+): ReturnType<typeof getMerchantOutlet> | undefined {
+  if (input.outletId) {
+    const outlet = _merchantAccount.outlets.find((candidate) => candidate.id === input.outletId);
+    if (outlet) return outlet;
+  }
+
+  if (input.dishId) {
+    const outlet = getOutletForDishView(input.dishId);
+    if (outlet) return outlet;
+  }
+
+  if (input.venueId) {
+    return _merchantAccount.outlets.find(
+      (outlet) =>
+        getMockMerchantVenueId(outlet.id) === input.venueId ||
+        dishes.some(
+          (dish) =>
+            dish.venueId === input.venueId && getOutletForDishView(dish.id)?.id === outlet.id,
+        ),
+    );
+  }
+
+  return undefined;
+}
+
+function getDishViewCounts(outletId: string): Map<string, number> {
+  const counts = new Map<string, number>();
+  _merchantDishViewEvents
+    .filter((event) => event.outletId === outletId)
+    .forEach((event) => {
+      counts.set(event.dishId, (counts.get(event.dishId) ?? 0) + 1);
+    });
+  return counts;
+}
+
+function buildMockMerchantAnalytics(
+  outletId: string,
+  dateRange: "today" | "7d" | "30d",
+): MerchantAnalytics {
+  const base =
+    dateRange === "7d"
+      ? merchantAnalytics7d
+      : dateRange === "30d"
+        ? merchantAnalytics30d
+        : merchantAnalyticsToday;
+  const analytics = clone(base);
+  analytics.outletId = outletId;
+  analytics.dateRange = dateRange;
+
+  const menu = getMerchantMenu(outletId);
+  const viewCounts = getDishViewCounts(outletId);
+  const eventViews = Array.from(viewCounts.values()).reduce((sum, count) => sum + count, 0);
+  const actionEvents = _merchantActionEvents.filter((event) => event.outletId === outletId);
+  const countActions = (eventType: MerchantActionEventInput["eventType"]) =>
+    actionEvents.filter((event) => event.eventType === eventType).length;
+  const saveCounts = new Map<string, number>();
+  actionEvents
+    .filter((event) => event.eventType === "save" && event.dishId)
+    .forEach((event) => {
+      saveCounts.set(event.dishId!, (saveCounts.get(event.dishId!) ?? 0) + 1);
+    });
+  analytics.dishViews += eventViews;
+  analytics.menuViews += eventViews;
+  analytics.profileVisits += Math.floor(eventViews / 2);
+  analytics.profileVisits += countActions("stall_profile_view");
+  analytics.menuViews += countActions("menu_view");
+  analytics.directionTaps += countActions("direction_tap");
+  analytics.saves += countActions("save");
+  analytics.shares += countActions("share");
+  analytics.contactTaps += countActions("contact_tap");
+  analytics.socialLinkTaps += countActions("social_link_tap");
+  analytics.topDishes = menu
+    .map((dish, index) => ({
+      dishId: dish.id,
+      name: dish.name,
+      views: (analytics.topDishes[index]?.views ?? 0) + (viewCounts.get(dish.id) ?? 0),
+      saves: (analytics.topDishes[index]?.saves ?? 0) + (saveCounts.get(dish.id) ?? 0),
+    }))
+    .sort((left, right) => right.views - left.views)
+    .slice(0, 5);
+
+  const reviews = _merchantInbox.filter(
+    (interaction) => interaction.outletId === outletId && interaction.type === "review",
+  );
+  const ratings = reviews
+    .map((interaction) => interaction.rating)
+    .filter((rating): rating is number => typeof rating === "number");
+  analytics.reviewCount = ratings.length;
+  analytics.averageRating =
+    ratings.length === 0 ? 0 : ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length;
+  analytics.postInteractions = _merchantInbox.filter(
+    (interaction) => interaction.outletId === outletId,
+  ).length;
+  return analytics;
+}
+
+function createMerchantNotification(
+  input: Omit<MerchantNotification, "id" | "createdAt"> & { createdAt?: string },
+): MerchantNotification {
+  const existing = _merchantNotifications.find(
+    (notification) => notification.dedupeKey === input.dedupeKey,
+  );
+  if (existing) return existing;
+  const notification: MerchantNotification = {
+    ...input,
+    id: `merchant-note-${++_merchantNotificationCounter}`,
+    createdAt: input.createdAt ?? new Date().toISOString(),
+  };
+  _merchantNotifications.push(notification);
+  return notification;
+}
+
+function getLowRatingNotificationsForOutlet(outletId: string): MerchantNotification[] {
+  const outlet = getMerchantOutlet(outletId);
+  const lowReviews = _merchantInbox.filter(
+    (interaction) =>
+      interaction.outletId === outletId &&
+      interaction.type === "review" &&
+      typeof interaction.rating === "number" &&
+      interaction.rating <= 2,
+  );
+  return lowReviews.map((review) =>
+    createMerchantNotification({
+      merchantAccountId: outlet.merchantAccountId,
+      outletId,
+      kind: "low_rating",
+      title: `${outlet.name} received a low rating`,
+      body: `${review.rating?.toFixed(1)} stars: ${review.text.slice(0, 120)}`,
+      status: "unread",
+      dedupeKey: `low-rating:${review.id}`,
+      deepLink: "MerchantTabs/CustomerInbox",
+      metadata: {
+        reviewId: review.id,
+        rating: review.rating ?? null,
+        snippet: review.text,
+      },
+      createdAt: review.createdAt,
+    }),
+  );
+}
+
+function buildWeeklySummaryStats(outletId: string): MerchantWeeklySummary {
+  const analytics = buildMockMerchantAnalytics(outletId, "7d");
+  const interactions = _merchantInbox.filter((interaction) => interaction.outletId === outletId);
+  const reviews = interactions.filter((interaction) => interaction.type === "review");
+  const unrepliedReviews = reviews.filter((review) => !review.reply).length;
+  const promotionViews = _merchantPromotions
+    .filter((promotion) => promotion.outletId === outletId)
+    .reduce((sum, promotion) => sum + (promotion.analytics?.impressions ?? 0), 0);
+  const now = new Date();
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - 6);
+  return {
+    id: `weekly-${outletId}-${weekStart.toISOString().slice(0, 10)}`,
+    outletId,
+    weekStart: weekStart.toISOString(),
+    weekEnd: now.toISOString(),
+    totalViews: analytics.profileVisits + analytics.menuViews + analytics.dishViews,
+    dishViews: analytics.dishViews,
+    topDishes: analytics.topDishes,
+    newReviews: reviews.length,
+    averageRating: analytics.averageRating,
+    ratingChange: analytics.averageRating - analytics.previousPeriodComparison.averageRating,
+    unrepliedReviews,
+    promotionViews,
+    createdAt: now.toISOString(),
+  };
 }
 
 // ─── Mock bites feed ─────────────────────────────────────────────────────────
@@ -664,7 +1320,7 @@ export const hungryService: HungryService = {
       _isAuthenticated = true;
       _profile = {
         ...userProfile,
-        id: `user-${Date.now()}`,
+        id: mockUserIdFromEmail(email),
         email,
         displayName: name,
         favouriteDishIds: [],
@@ -743,6 +1399,22 @@ export const hungryService: HungryService = {
       return resolve([...buildings]);
     },
 
+    async countVenuesInArea(lat?, lng?, radiusMeters?, areaName?) {
+      const normalizedAreaName = areaName?.trim().toLowerCase();
+      if (normalizedAreaName) {
+        return resolve(
+          venues.filter((venue) => venue.planningArea?.trim().toLowerCase() === normalizedAreaName)
+            .length,
+        );
+      }
+      const scopedBuildings =
+        typeof lat === "number" && typeof lng === "number"
+          ? getNearestBuildings(lat, lng, radiusMeters ? radiusMeters / 1000 : 3, 14)
+          : buildings;
+      const scopedBuildingIds = new Set(scopedBuildings.map((building) => building.id));
+      return resolve(venues.filter((venue) => scopedBuildingIds.has(venue.buildingId)).length);
+    },
+
     async getBuildingDetail(id) {
       const building = buildings.find((b) => b.id === id);
       if (!building) return resolve(undefined);
@@ -783,12 +1455,82 @@ export const hungryService: HungryService = {
       return resolve(dishes.find((d) => d.id === id));
     },
 
+    async listActivePromotionsForTarget(input) {
+      const promotions = _merchantPromotions.filter(
+        (promotion) => getPromotionOutletVenueId(promotion) === input.venueId,
+      );
+      return resolve(clone(filterCustomerVisiblePromotions(promotions, { dishId: input.dishId })));
+    },
+
+    async recordDishView(dishId, context) {
+      const outlet = getOutletForDishView(dishId);
+      if (!outlet) return resolve(undefined);
+      const sessionId =
+        context?.sessionId ??
+        context?.userId ??
+        (_isAuthenticated ? _profile.id : "mock-guest-session");
+      const dedupeWindow = new Date().toISOString().slice(0, 13);
+      const hasRecentView = _merchantDishViewEvents.some(
+        (event) =>
+          event.dishId === dishId &&
+          event.outletId === outlet.id &&
+          event.sessionId === sessionId &&
+          event.viewedAt.slice(0, 13) === dedupeWindow,
+      );
+      if (hasRecentView) return resolve(undefined);
+      _merchantDishViewEvents.push({
+        id: `dish-view-${++_merchantDishViewCounter}`,
+        outletId: outlet.id,
+        dishId,
+        sessionId,
+        userId: context?.userId ?? (_isAuthenticated ? _profile.id : undefined),
+        viewedAt: new Date().toISOString(),
+      });
+      return resolve(undefined);
+    },
+
+    async recordMerchantActionEvent(input) {
+      const outlet = getOutletForMerchantAction(input);
+      if (!outlet) return resolve(undefined);
+      _merchantActionEvents.push({
+        ...input,
+        outletId: outlet.id,
+        sessionId:
+          input.sessionId ??
+          input.userId ??
+          (_isAuthenticated ? _profile.id : "mock-guest-session"),
+        occurredAt: new Date().toISOString(),
+      });
+      return resolve(undefined);
+    },
+
     async listDishesByVenue(venueId) {
       return resolve(dishes.filter((d) => d.venueId === venueId));
     },
 
     async listPopularNearby(_lat?, _lng?) {
       return resolve([...dishes].sort((a, b) => a.distanceMeters - b.distanceMeters).slice(0, 6));
+    },
+
+    async listDiscoveryFeedByLocation(request) {
+      const nearbyVenues = venues.slice(0, request.limit ?? 20);
+      return resolve({
+        venues: nearbyVenues,
+        results: nearbyVenues
+          .map((venue) => {
+            const dish = dishes.find((item) => item.id === venue.topDishId);
+            return dish ? { dish, score: dish.rating / 5 } : undefined;
+          })
+          .filter((result): result is SearchResult => Boolean(result)),
+      });
+    },
+
+    async searchVenuesByLocation(request) {
+      const query = request.query?.trim().toLowerCase();
+      const scopedVenues = query
+        ? venues.filter((venue) => venue.name.toLowerCase().includes(query))
+        : venues;
+      return resolve(scopedVenues.slice(0, request.limit ?? 30));
     },
 
     async searchDishes(filters: SearchFilters, tasteProfile: TasteVector): Promise<SearchResult[]> {
@@ -912,6 +1654,11 @@ export const hungryService: HungryService = {
       return resolve([...MOCK_BITES_FEED]);
     },
 
+    async listUserPosts(userId: string) {
+      await hydrateSocial();
+      return resolve(MOCK_BITES_FEED.filter((bite) => bite.authorId === userId));
+    },
+
     async postBite(draft: BiteDraft) {
       await hydrateSocial();
       const venue = venues.find((v) => v.id === draft.venueId);
@@ -932,6 +1679,7 @@ export const hungryService: HungryService = {
         photoUrl: draft.photoUrl,
         mediaUrls: draft.mediaUrls,
         mediaType: draft.mediaType,
+        showFoodContextOverlay: draft.showFoodContextOverlay,
         caption: draft.caption,
         tags: draft.tags,
         tasteStamp: draft.tasteStamp,
@@ -949,6 +1697,7 @@ export const hungryService: HungryService = {
           mediaType: draft.mediaType,
           mediaUrls: draft.mediaUrls ?? [draft.photoUrl],
           tags: draft.tags,
+          showFoodContextOverlay: draft.showFoodContextOverlay,
         }),
       );
       return resolve(newBite);
@@ -981,10 +1730,18 @@ export const hungryService: HungryService = {
       return resolve(undefined);
     },
 
+    async shareBite() {
+      return resolve(undefined);
+    },
+
     async getStories() {
       await hydrateSocial();
       pruneMockStories();
       return resolve([..._mockStories]);
+    },
+
+    async listStoryGalleryAssets() {
+      return resolve([...STORY_GALLERY_ASSETS]);
     },
 
     async likeStory(storyId: string) {
@@ -1010,12 +1767,25 @@ export const hungryService: HungryService = {
       return resolve(undefined);
     },
 
+    async shareStory(storyId: string) {
+      await hydrateSocial();
+      pruneMockStories();
+      const story = _mockStories.find((s) => s.id === storyId);
+      if (story) {
+        story.interaction.shareCount += 1;
+        void saveMockState("stories", _mockStories);
+      }
+      return resolve(undefined);
+    },
+
     async addStory(content: StoryContent) {
       await hydrateSocial();
       pruneMockStories();
       const newStory: Story = {
         id: `s_${Date.now()}`,
         displayName: _profile.displayName || "You",
+        authorId: _profile.id,
+        authorProfileVisibility: _profile.profileVisibility,
         avatarUrl: _profile.avatarUrl || "https://i.pravatar.cc/150?u=me",
         hasUnseen: false,
         isStall: false,
@@ -1062,6 +1832,67 @@ export const hungryService: HungryService = {
       );
       const likedBites = MOCK_BITES_FEED.filter((b) => likedBiteIds.includes(b.id));
       return resolve(likedBites);
+    },
+
+    async followUser(userId: string) {
+      _userFollows.add(userId);
+      return resolve(undefined as void);
+    },
+
+    async unfollowUser(userId: string) {
+      _userFollows.delete(userId);
+      return resolve(undefined as void);
+    },
+
+    async listFollowers(_userId: string) {
+      return resolve(
+        dedupeMockFollowers(
+          _mockFollowersByUser[_userId]?.filter(Boolean) ??
+            _mockFollowersByUser[userProfile.id] ??
+            [],
+        ),
+      );
+    },
+
+    async listFollowing(_userId: string) {
+      return resolve(
+        Array.from(_userFollows).map((id) => ({
+          userId: id,
+          displayName: id,
+          avatarUrl: undefined,
+        })),
+      );
+    },
+
+    async isFollowing(userId: string) {
+      return resolve(_userFollows.has(userId));
+    },
+
+    async createComment(postId: string, body: string, parentCommentId?: string) {
+      const id = `mock-comment-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      const comment = {
+        id,
+        userId: _profile.id,
+        body,
+        createdAt: new Date().toISOString(),
+        parentCommentId,
+        authorName: _profile.displayName,
+        authorAvatarUrl: _profile.avatarUrl,
+      };
+      if (!_mockComments[postId]) _mockComments[postId] = [];
+      _mockComments[postId].push(comment);
+      return resolve(comment);
+    },
+
+    async deleteComment(commentId: string) {
+      for (const postId of Object.keys(_mockComments)) {
+        _mockComments[postId] = (_mockComments[postId] ?? []).filter((c) => c.id !== commentId);
+      }
+      return resolve(undefined as void);
+    },
+
+    async listCommentsForPost(postId: string) {
+      return resolve(_mockComments[postId] ?? []);
     },
   },
 
@@ -1181,6 +2012,57 @@ export const hungryService: HungryService = {
       _blockedUserKeys.add(request.blockedUserKey);
       return resolve(undefined);
     },
+
+    async hidePost(postId, reason) {
+      _contentReports.push({
+        reporterId: _profile.id,
+        targetType: "post",
+        targetId: postId,
+        reason: reason ?? "hidden_by_user",
+      });
+      return resolve(undefined);
+    },
+
+    async unhidePost(postId) {
+      _contentReports.push({
+        reporterId: _profile.id,
+        targetType: "post",
+        targetId: postId,
+        reason: "unhidden_by_user",
+      });
+      return resolve(undefined);
+    },
+
+    async getBlockedUsers() {
+      return resolve([]);
+    },
+  },
+
+  // ── User Contributions ─────────────────────────────────────────────────────
+
+  contributions: {
+    async submitDiscoveredStall(input) {
+      if (!_isAuthenticated) {
+        throw new Error("You must be signed in to add a stall.");
+      }
+      if (!input.stallName.trim()) {
+        throw new Error("Stall name is required.");
+      }
+      if (!input.imageUri.trim()) {
+        throw new Error("Stall image is required.");
+      }
+
+      const submission = createMockUserStallSubmission(input);
+      _userStallSubmissions = [submission, ..._userStallSubmissions];
+      return resolve(clone(submission));
+    },
+
+    async listMyDiscoveredStalls() {
+      if (!_isAuthenticated) return resolve([]);
+      return resolve(
+        clone(_userStallSubmissions.filter((submission) => submission.userId === _profile.id)),
+      );
+    },
   },
 
   // ── Content ─────────────────────────────────────────────────────────────────
@@ -1193,6 +2075,13 @@ export const hungryService: HungryService = {
     async listStallPosts() {
       await hydrateSocial();
       return resolve(listMockStallPosts());
+    },
+
+    async listPopularVisitorPinsByVenue(venueId) {
+      const pins = sortPopularVisitorPins(
+        _popularVisitorPins.filter((pin) => pin.venueId === venueId && pin.isActive),
+      ).slice(0, 6);
+      return resolve(clone(pins));
     },
 
     async getArticle(id) {
@@ -1474,6 +2363,7 @@ export const hungryService: HungryService = {
       const outlet = getMerchantOutlet(outletId);
       const normalized = validateMerchantProfileUpdates(updates);
       Object.assign(outlet, normalized);
+      syncMerchantOutletToUserCatalog(outlet);
       return resolve(outlet);
     },
 
@@ -1483,8 +2373,9 @@ export const hungryService: HungryService = {
 
     async addDish(outletId, dish) {
       const menu = getMerchantMenu(outletId);
-      const newDish = buildMerchantDish(outletId, dish);
+      const newDish = buildMerchantDish(outletId, { ...dish, id: undefined });
       menu.push(newDish);
+      syncMerchantDishToUserCatalog(outletId, newDish);
       return resolve(clone(newDish));
     },
 
@@ -1498,6 +2389,7 @@ export const hungryService: HungryService = {
         id: dishId,
       });
       menu[dishIndex] = updatedDish;
+      syncMerchantDishToUserCatalog(outletId, updatedDish);
       return resolve(clone(updatedDish));
     },
 
@@ -1506,6 +2398,7 @@ export const hungryService: HungryService = {
       const dishIndex = menu.findIndex((dish) => dish.id === dishId);
       if (dishIndex === -1) throw new Error(`Dish ${dishId} not found for outlet ${outletId}`);
       menu.splice(dishIndex, 1);
+      removeMerchantDishFromUserCatalog(outletId, dishId);
       return resolve(undefined);
     },
 
@@ -1515,6 +2408,7 @@ export const hungryService: HungryService = {
       if (!dish) throw new Error(`Dish ${dishId} not found for outlet ${outletId}`);
       const isSoldOut = !dish.availabilityFlags.includes("Sold out");
       dish.availabilityFlags = mergeAvailabilityFlag(dish.availabilityFlags, "Sold out", isSoldOut);
+      syncMerchantDishToUserCatalog(outletId, dish);
       return resolve(isSoldOut);
     },
 
@@ -1528,6 +2422,7 @@ export const hungryService: HungryService = {
         "Featured",
         isFeatured,
       );
+      syncMerchantDishToUserCatalog(outletId, dish);
       return resolve(isFeatured);
     },
 
@@ -1554,6 +2449,7 @@ export const hungryService: HungryService = {
         dietaryFlags: draft.suggestedDietaryTags ?? [],
       });
       getMerchantMenu(draft.outletId).push(acceptedDish);
+      syncMerchantDishToUserCatalog(draft.outletId, acceptedDish);
       draft.status = "accepted";
       return resolve(clone(acceptedDish));
     },
@@ -1605,6 +2501,63 @@ export const hungryService: HungryService = {
       return resolve(undefined);
     },
 
+    async listPopularVisitorCandidates(outletId) {
+      return resolve(clone(getReviewBackedVisitorCandidates(outletId)));
+    },
+
+    async listPopularVisitorPins(outletId) {
+      return resolve(clone(listActivePopularVisitorPins(outletId)));
+    },
+
+    async pinPopularVisitor(outletId, reviewId) {
+      getMerchantOutlet(outletId);
+      const existing = _popularVisitorPins.find(
+        (pin) => pin.outletId === outletId && pin.reviewId === reviewId,
+      );
+      if (existing?.isActive) {
+        return resolve(clone(existing));
+      }
+
+      const nextPin = buildPopularVisitorPin(outletId, reviewId);
+      if (existing) {
+        Object.assign(existing, {
+          ...nextPin,
+          id: existing.id,
+        });
+        return resolve(clone(existing));
+      }
+
+      _popularVisitorPins.push(nextPin);
+      return resolve(clone(nextPin));
+    },
+
+    async unpinPopularVisitor(pinId) {
+      const pin = _popularVisitorPins.find((item) => item.id === pinId);
+      if (!pin) throw new Error(`Popular visitor pin ${pinId} not found`);
+      pin.isActive = false;
+      return resolve(undefined);
+    },
+
+    async reorderPopularVisitorPins(outletId, orderedPinIds) {
+      const activePins = listActivePopularVisitorPins(outletId);
+      const activePinIds = new Set(activePins.map((pin) => pin.id));
+      const uniqueOrderedIds = Array.from(
+        new Set(orderedPinIds.filter((pinId) => activePinIds.has(pinId))),
+      );
+      const remainingIds = activePins
+        .map((pin) => pin.id)
+        .filter((pinId) => !uniqueOrderedIds.includes(pinId));
+
+      [...uniqueOrderedIds, ...remainingIds].forEach((pinId, index) => {
+        const pin = _popularVisitorPins.find(
+          (item) => item.id === pinId && item.outletId === outletId && item.isActive,
+        );
+        if (pin) pin.sortOrder = index;
+      });
+
+      return resolve(clone(listActivePopularVisitorPins(outletId)));
+    },
+
     async getPromotions(outletId, status) {
       getMerchantOutlet(outletId);
       let promotions = _merchantPromotions.filter((promo) => promo.outletId === outletId);
@@ -1619,12 +2572,20 @@ export const hungryService: HungryService = {
 
     async createPromotion(outletId, promo) {
       getMerchantOutlet(outletId);
+      const validatedPromo = validateMerchantPromotionInput(promo, {
+        outletDishIds: getMerchantPromotionOutletDishIds(outletId),
+      });
       const newPromotion: MerchantPromotion = {
-        ...promo,
+        ...validatedPromo,
         id: `promo-new-${++_merchantPromotionCounter}`,
         outletId,
         createdAt: new Date().toISOString(),
-        analytics: getPromotionAnalyticsValue({ ...promo, id: "preview", outletId, createdAt: "" }),
+        analytics: getPromotionAnalyticsValue({
+          ...validatedPromo,
+          id: "preview",
+          outletId,
+          createdAt: "",
+        }),
       };
       _merchantPromotions.push(newPromotion);
       return resolve(clone(newPromotion));
@@ -1633,9 +2594,26 @@ export const hungryService: HungryService = {
     async updatePromotion(promoId, updates) {
       const promoIndex = _merchantPromotions.findIndex((p) => p.id === promoId);
       if (promoIndex === -1) throw new Error(`Promotion ${promoId} not found`);
+      const currentPromotion = _merchantPromotions[promoIndex];
+      const validatedPromotion = validateMerchantPromotionInput(
+        {
+          ...currentPromotion,
+          ...updates,
+          targetDishId: updates.targetDishId ?? currentPromotion.targetDishId,
+          promotionItemType: updates.promotionItemType ?? currentPromotion.promotionItemType,
+          originalPrice: updates.originalPrice ?? currentPromotion.originalPrice,
+          promotionalPrice: updates.promotionalPrice ?? currentPromotion.promotionalPrice,
+          finalPrice: updates.finalPrice ?? updates.promotionalPrice ?? currentPromotion.finalPrice,
+          discountPercentage: updates.discountPercentage ?? currentPromotion.discountPercentage,
+          isAvailable: updates.isAvailable ?? currentPromotion.isAvailable,
+        },
+        {
+          outletDishIds: getMerchantPromotionOutletDishIds(currentPromotion.outletId),
+        },
+      );
       const updatedPromotion: MerchantPromotion = {
         ..._merchantPromotions[promoIndex],
-        ...updates,
+        ...validatedPromotion,
       };
       updatedPromotion.analytics = getPromotionAnalyticsValue(updatedPromotion);
       _merchantPromotions[promoIndex] = updatedPromotion;
@@ -1649,10 +2627,54 @@ export const hungryService: HungryService = {
       return resolve(clone(promo.analytics));
     },
 
-    async getAnalytics(_outletId, dateRange) {
-      if (dateRange === "7d") return resolve(merchantAnalytics7d);
-      if (dateRange === "30d") return resolve(merchantAnalytics30d);
-      return resolve(merchantAnalyticsToday);
+    async getAnalytics(outletId, dateRange) {
+      getMerchantOutlet(outletId);
+      return resolve(clone(buildMockMerchantAnalytics(outletId, dateRange)));
+    },
+
+    async getWeeklySummaryStats(outletId) {
+      getMerchantOutlet(outletId);
+      return resolve(clone(buildWeeklySummaryStats(outletId)));
+    },
+
+    async getMerchantNotifications(merchantAccountId) {
+      getMerchantAccountById(merchantAccountId);
+      return resolve(
+        clone(
+          _merchantNotifications
+            .filter((notification) => notification.merchantAccountId === merchantAccountId)
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+        ),
+      );
+    },
+
+    async syncLowRatingNotifications(outletId) {
+      const notifications = getLowRatingNotificationsForOutlet(outletId);
+      return resolve(clone(notifications));
+    },
+
+    async sendWeeklySummaryNotifications(outletId) {
+      const outlet = getMerchantOutlet(outletId);
+      const summary = buildWeeklySummaryStats(outletId);
+      const members = getTeamMembersForAccount(outlet.merchantAccountId).filter(
+        (member) => member.inviteStatus !== "removed",
+      );
+      const notifications = members.map((member) =>
+        createMerchantNotification({
+          merchantAccountId: outlet.merchantAccountId,
+          outletId,
+          recipientUserId: member.userId,
+          recipientEmail: member.email,
+          kind: "weekly_summary",
+          title: `${outlet.name} weekly summary is ready`,
+          body: `${summary.totalViews.toLocaleString()} views, ${summary.newReviews} new reviews, ${summary.unrepliedReviews} unreplied reviews.`,
+          status: "unread",
+          dedupeKey: `weekly-summary:${summary.id}:${member.id}`,
+          deepLink: "MerchantTabs/MerchantAnalytics",
+          metadata: { summaryId: summary.id },
+        }),
+      );
+      return resolve(clone(notifications));
     },
 
     async generateDishDescription(dishName, ingredients) {
@@ -1749,11 +2771,15 @@ export const hungryService: HungryService = {
       return resolve(clone(getTeamMembersForAccount(merchantAccountId)));
     },
 
-    async addTeamMember(merchantAccountId, email, role) {
+    async addTeamMember(merchantAccountId, email, role, displayName) {
       const members = getTeamMembersForAccount(merchantAccountId);
       const normalizedEmail = email.trim().toLowerCase();
+      const trimmedName = displayName?.trim() ?? "";
       if (!normalizedEmail || !normalizedEmail.includes("@")) {
         throw new Error("Valid team member email is required");
+      }
+      if (!trimmedName) {
+        throw new Error("Team member name is required");
       }
       if (members.some((member) => member.email.toLowerCase() === normalizedEmail)) {
         throw new Error(`Team member ${normalizedEmail} already exists`);
@@ -1761,13 +2787,30 @@ export const hungryService: HungryService = {
       const newMember: MerchantTeamMember = {
         id: `tm-new-${++_merchantTeamMemberCounter}`,
         merchantAccountId,
-        userId: `user-new-${_merchantTeamMemberCounter}`,
-        displayName: normalizedEmail.split("@")[0],
+        userId: `invited-user-${_merchantTeamMemberCounter}`,
+        displayName: trimmedName,
         email: normalizedEmail,
         role,
         addedAt: new Date().toISOString(),
+        inviteStatus: "pending",
+        invitedAt: new Date().toISOString(),
       };
       members.push(newMember);
+      createMerchantNotification({
+        merchantAccountId,
+        recipientEmail: normalizedEmail,
+        kind: "team_invite",
+        title: "You have been invited to manage a Hungry stall",
+        body: `${trimmedName}, open Hungry to accept your merchant team invite.`,
+        status: "sent",
+        dedupeKey: `team-invite:${merchantAccountId}:${normalizedEmail}`,
+        deepLink: "MerchantTabs/MerchantSettings",
+        metadata: {
+          memberId: newMember.id,
+          role,
+          delivery: "email",
+        },
+      });
       return resolve(clone(newMember));
     },
 
@@ -1804,6 +2847,781 @@ export const hungryService: HungryService = {
     async updateNotificationPreferences(merchantAccountId, prefs) {
       const current = getNotificationPreferencesForAccount(merchantAccountId);
       Object.assign(current, prefs);
+      return resolve(undefined);
+    },
+  },
+
+  // ── Checklist ───────────────────────────────────────────────────────────────
+
+  checklist: {
+    async createChecklist(name: string) {
+      const now = new Date().toISOString();
+      const checklist: Checklist = {
+        id: `checklist-${++_checklistCounter}`,
+        userId: _profile.id,
+        name: name.trim() || "Untitled checklist",
+        createdAt: now,
+        updatedAt: now,
+      };
+      _checklists = [checklist, ..._checklists];
+      return resolve(clone(checklist));
+    },
+
+    async getChecklists() {
+      return resolve(
+        clone(
+          _checklists
+            .filter((checklist) => checklist.userId === _profile.id)
+            .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)),
+        ),
+      );
+    },
+
+    async getChecklist(id: string) {
+      const checklist = _checklists.find(
+        (entry) => entry.id === id && entry.userId === _profile.id,
+      );
+      if (!checklist) {
+        throw new Error(`Checklist ${id} not found`);
+      }
+      return resolve(clone(checklist));
+    },
+
+    async updateChecklist(id: string, name: string) {
+      const updatedAt = new Date().toISOString();
+      let found = false;
+      _checklists = _checklists.map((checklist) => {
+        if (checklist.id !== id || checklist.userId !== _profile.id) {
+          return checklist;
+        }
+        found = true;
+        return {
+          ...checklist,
+          name: name.trim() || checklist.name,
+          updatedAt,
+        };
+      });
+      if (!found) {
+        throw new Error(`Checklist ${id} not found`);
+      }
+      return resolve(undefined);
+    },
+
+    async deleteChecklist(id: string) {
+      const beforeCount = _checklists.length;
+      _checklists = _checklists.filter(
+        (checklist) => !(checklist.id === id && checklist.userId === _profile.id),
+      );
+      if (_checklists.length === beforeCount) {
+        throw new Error(`Checklist ${id} not found`);
+      }
+      _checklistItems = _checklistItems.filter((item) => item.checklistId !== id);
+      return resolve(undefined);
+    },
+
+    async addChecklistItem(input: ChecklistItemCreateInput) {
+      const checklist = _checklists.find(
+        (entry) => entry.id === input.checklistId && entry.userId === _profile.id,
+      );
+      if (!checklist) {
+        throw new Error(`Checklist ${input.checklistId} not found`);
+      }
+      if (input.itemType === "custom" && !input.customText?.trim()) {
+        throw new Error("Custom checklist items require text");
+      }
+      if (
+        input.itemType !== "custom" &&
+        _checklistItems.some(
+          (item) =>
+            item.checklistId === input.checklistId &&
+            item.itemType === input.itemType &&
+            item.dishId === input.dishId &&
+            item.stallId === input.stallId,
+        )
+      ) {
+        throw new Error("This item is already in the checklist");
+      }
+      const now = new Date().toISOString();
+      const position =
+        Math.max(
+          -1,
+          ..._checklistItems
+            .filter((item) => item.checklistId === input.checklistId)
+            .map((item) => item.position),
+        ) + 1;
+      const item: ChecklistItem = {
+        id: `checklist-item-${++_checklistItemCounter}`,
+        checklistId: input.checklistId,
+        itemType: input.itemType,
+        dishId: input.dishId,
+        stallId: input.stallId,
+        customText: input.customText?.trim(),
+        reminderAt: input.reminderAt,
+        plannedVisitDate: input.plannedVisitDate,
+        triedAt: undefined,
+        position,
+        createdAt: now,
+        updatedAt: now,
+      };
+      _checklistItems = [..._checklistItems, item];
+      _checklists = _checklists.map((entry) =>
+        entry.id === checklist.id ? { ...entry, updatedAt: now } : entry,
+      );
+      return resolve(clone(item));
+    },
+
+    async getChecklistItems(checklistId: string) {
+      const checklist = _checklists.find(
+        (entry) => entry.id === checklistId && entry.userId === _profile.id,
+      );
+      if (!checklist) {
+        throw new Error(`Checklist ${checklistId} not found`);
+      }
+      return resolve(
+        clone(
+          _checklistItems
+            .filter((item) => item.checklistId === checklistId)
+            .sort((left, right) => left.position - right.position),
+        ),
+      );
+    },
+
+    async updateChecklistItem(id: string, updates: Partial<ChecklistItemCreateInput>) {
+      const updatedAt = new Date().toISOString();
+      let updatedChecklistId: string | undefined;
+      _checklistItems = _checklistItems.map((item) => {
+        if (item.id !== id) {
+          return item;
+        }
+        const checklist = _checklists.find(
+          (entry) => entry.id === item.checklistId && entry.userId === _profile.id,
+        );
+        if (!checklist) {
+          return item;
+        }
+        updatedChecklistId = item.checklistId;
+        return {
+          ...item,
+          ...updates,
+          customText: updates.customText?.trim() ?? item.customText,
+          updatedAt,
+        };
+      });
+      if (!updatedChecklistId) {
+        throw new Error(`Checklist item ${id} not found`);
+      }
+      _checklists = _checklists.map((entry) =>
+        entry.id === updatedChecklistId ? { ...entry, updatedAt } : entry,
+      );
+      return resolve(undefined);
+    },
+
+    async markChecklistItemTried(id: string) {
+      const triedAt = new Date().toISOString();
+      let updatedChecklistId: string | undefined;
+      _checklistItems = _checklistItems.map((item) => {
+        if (item.id !== id) {
+          return item;
+        }
+        const checklist = _checklists.find(
+          (entry) => entry.id === item.checklistId && entry.userId === _profile.id,
+        );
+        if (!checklist) {
+          return item;
+        }
+        updatedChecklistId = item.checklistId;
+        return { ...item, triedAt, updatedAt: triedAt };
+      });
+      if (!updatedChecklistId) {
+        throw new Error(`Checklist item ${id} not found`);
+      }
+      _checklists = _checklists.map((entry) =>
+        entry.id === updatedChecklistId ? { ...entry, updatedAt: triedAt } : entry,
+      );
+      return resolve(undefined);
+    },
+
+    async deleteChecklistItem(id: string) {
+      const item = _checklistItems.find((entry) => entry.id === id);
+      if (!item) {
+        throw new Error(`Checklist item ${id} not found`);
+      }
+      const checklist = _checklists.find(
+        (entry) => entry.id === item.checklistId && entry.userId === _profile.id,
+      );
+      if (!checklist) {
+        throw new Error(`Checklist item ${id} not found`);
+      }
+      _checklistItems = _checklistItems.filter((entry) => entry.id !== id);
+      const remainingItems = _checklistItems
+        .filter((entry) => entry.checklistId === item.checklistId)
+        .sort((left, right) => left.position - right.position)
+        .map((entry, position) => ({ ...entry, position }));
+      _checklistItems = [
+        ..._checklistItems.filter((entry) => entry.checklistId !== item.checklistId),
+        ...remainingItems,
+      ];
+      _checklists = _checklists.map((entry) =>
+        entry.id === item.checklistId ? { ...entry, updatedAt: new Date().toISOString() } : entry,
+      );
+      return resolve(undefined);
+    },
+
+    async reorderChecklistItems(checklistId: string, itemIds: string[]) {
+      const checklist = _checklists.find(
+        (entry) => entry.id === checklistId && entry.userId === _profile.id,
+      );
+      if (!checklist) {
+        throw new Error(`Checklist ${checklistId} not found`);
+      }
+      const currentItems = _checklistItems.filter((item) => item.checklistId === checklistId);
+      const itemById = new Map(currentItems.map((item) => [item.id, item]));
+      const requestedIds = new Set(itemIds);
+      if (
+        requestedIds.size !== itemIds.length ||
+        requestedIds.size !== currentItems.length ||
+        itemIds.some((id) => !itemById.has(id))
+      ) {
+        throw new Error("Checklist reorder requires every current item exactly once");
+      }
+      const orderedItems = itemIds
+        .map((id) => itemById.get(id))
+        .filter((item): item is ChecklistItem => Boolean(item));
+      const updatedAt = new Date().toISOString();
+      const nextItems = orderedItems.map((item, position) => ({
+        ...item,
+        position,
+        updatedAt,
+      }));
+      _checklistItems = [
+        ..._checklistItems.filter((item) => item.checklistId !== checklistId),
+        ...nextItems,
+      ];
+      _checklists = _checklists.map((entry) =>
+        entry.id === checklistId ? { ...entry, updatedAt } : entry,
+      );
+      return resolve(undefined);
+    },
+  },
+
+  // ── Portfolio ───────────────────────────────────────────────────────────────
+
+  portfolio: {
+    async createPortfolio(input: PortfolioCreateInput) {
+      const now = new Date().toISOString();
+      const portfolio: Portfolio = {
+        id: `portfolio-${++_portfolioCounter}`,
+        ownerId: _profile.id,
+        name: input.name.trim() || "Untitled portfolio",
+        description: input.description?.trim(),
+        type: input.type,
+        visibility: input.visibility,
+        publishedAt: undefined,
+        createdAt: now,
+        updatedAt: now,
+      };
+      _portfolios = [portfolio, ..._portfolios];
+      return resolve(clone(portfolio));
+    },
+
+    async getPortfolios(filters?: { userId?: string; visibility?: string; type?: string }) {
+      const visiblePortfolios = _portfolios.filter((portfolio) => {
+        if (filters?.userId && portfolio.ownerId !== filters.userId) return false;
+        if (filters?.visibility && portfolio.visibility !== filters.visibility) return false;
+        if (filters?.type && portfolio.type !== filters.type) return false;
+        if (portfolio.ownerId === _profile.id) return true;
+        if (portfolio.visibility === "public") return true;
+        return _portfolioFollows.some(
+          (follow) => follow.portfolioId === portfolio.id && follow.userId === _profile.id,
+        );
+      });
+      return resolve(
+        clone(
+          visiblePortfolios.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)),
+        ),
+      );
+    },
+
+    async getPortfolio(id: string) {
+      const portfolio = _portfolios.find((entry) => entry.id === id);
+      if (!portfolio) {
+        throw new Error(`Portfolio ${id} not found`);
+      }
+      if (!canViewMockPortfolio(portfolio)) {
+        throw new Error(`Portfolio ${id} not found`);
+      }
+      return resolve(clone(portfolio));
+    },
+
+    async updatePortfolio(
+      id: string,
+      updates: Partial<PortfolioCreateInput>,
+      options?: PortfolioMutationOptions,
+    ) {
+      assertMockPortfolioVersion(id, options);
+      const updatedAt = new Date().toISOString();
+      let found = false;
+      _portfolios = _portfolios.map((portfolio) => {
+        if (portfolio.id !== id || portfolio.ownerId !== _profile.id) {
+          return portfolio;
+        }
+        found = true;
+        return {
+          ...portfolio,
+          ...updates,
+          name: updates.name?.trim() ?? portfolio.name,
+          description: updates.description?.trim() ?? portfolio.description,
+          updatedAt,
+        };
+      });
+      if (!found) {
+        throw new Error(`Portfolio ${id} not found`);
+      }
+      return resolve(undefined);
+    },
+
+    async deletePortfolio(id: string, options?: PortfolioMutationOptions) {
+      assertMockPortfolioVersion(id, options);
+      const beforeCount = _portfolios.length;
+      _portfolios = _portfolios.filter(
+        (portfolio) => !(portfolio.id === id && portfolio.ownerId === _profile.id),
+      );
+      if (_portfolios.length === beforeCount) {
+        throw new Error(`Portfolio ${id} not found`);
+      }
+      _portfolioItems = _portfolioItems.filter((item) => item.portfolioId !== id);
+      _portfolioCollaborators = _portfolioCollaborators.filter(
+        (collaborator) => collaborator.portfolioId !== id,
+      );
+      _portfolioFollows = _portfolioFollows.filter((follow) => follow.portfolioId !== id);
+      return resolve(undefined);
+    },
+
+    async publishPortfolio(id: string, options?: PortfolioMutationOptions) {
+      assertMockPortfolioVersion(id, options);
+      const publishedAt = new Date().toISOString();
+      let found = false;
+      let shouldRecordPublish = false;
+      let publishedPortfolioType: Portfolio["type"] | undefined;
+      _portfolios = _portfolios.map((portfolio) => {
+        if (portfolio.id !== id || portfolio.ownerId !== _profile.id) {
+          return portfolio;
+        }
+        found = true;
+        shouldRecordPublish = !portfolio.publishedAt;
+        publishedPortfolioType = portfolio.type;
+        return {
+          ...portfolio,
+          publishedAt,
+          visibility: "public",
+          updatedAt: publishedAt,
+        };
+      });
+      if (!found) {
+        throw new Error(`Portfolio ${id} not found`);
+      }
+      if (shouldRecordPublish) {
+        recordMockPassportProgress("public_portfolio_published", id);
+        if (publishedPortfolioType === "trail") {
+          recordMockPassportProgress("trail_completed", id);
+        }
+      }
+      return resolve(undefined);
+    },
+
+    async addPortfolioItem(input: PortfolioItemCreateInput, options?: PortfolioMutationOptions) {
+      assertMockPortfolioVersion(input.portfolioId, options);
+      const portfolio = _portfolios.find(
+        (entry) => entry.id === input.portfolioId && entry.ownerId === _profile.id,
+      );
+      const canEdit =
+        Boolean(portfolio) ||
+        _portfolioCollaborators.some(
+          (collaborator) =>
+            collaborator.portfolioId === input.portfolioId &&
+            collaborator.userId === _profile.id &&
+            collaborator.role === "editor",
+        );
+      if (!canEdit) {
+        throw new Error(`Portfolio ${input.portfolioId} not found`);
+      }
+      const duplicateItem = _portfolioItems.find(
+        (item) =>
+          item.portfolioId === input.portfolioId &&
+          item.itemType === input.itemType &&
+          item.dishId === input.dishId &&
+          item.stallId === input.stallId,
+      );
+      if (duplicateItem) {
+        throw new Error("This item is already in the portfolio");
+      }
+      if (typeof input.score === "number" && (input.score < 1 || input.score > 10)) {
+        throw new Error("Portfolio item score must be between 1 and 10");
+      }
+      const now = new Date().toISOString();
+      const position =
+        Math.max(
+          -1,
+          ..._portfolioItems
+            .filter((item) => item.portfolioId === input.portfolioId)
+            .map((item) => item.position),
+        ) + 1;
+      const item: PortfolioItem = {
+        id: `portfolio-item-${++_portfolioItemCounter}`,
+        portfolioId: input.portfolioId,
+        itemType: input.itemType,
+        dishId: input.dishId,
+        stallId: input.stallId,
+        score: input.score,
+        publicNotes: input.publicNotes?.trim(),
+        privateNotes: input.privateNotes?.trim(),
+        position,
+        createdAt: now,
+        updatedAt: now,
+      };
+      _portfolioItems = [..._portfolioItems, item];
+      _portfolios = _portfolios.map((entry) =>
+        entry.id === input.portfolioId ? { ...entry, updatedAt: now } : entry,
+      );
+      recordMockPassportProgress("portfolio_item_added", item.id);
+      return resolve(clone(item));
+    },
+
+    async getPortfolioItems(portfolioId: string) {
+      const portfolio = _portfolios.find((entry) => entry.id === portfolioId);
+      if (!portfolio || !canViewMockPortfolio(portfolio)) {
+        throw new Error(`Portfolio ${portfolioId} not found`);
+      }
+      return resolve(
+        clone(
+          _portfolioItems
+            .filter((item) => item.portfolioId === portfolioId)
+            .sort((left, right) => left.position - right.position),
+        ),
+      );
+    },
+
+    async updatePortfolioItem(
+      id: string,
+      updates: Partial<PortfolioItemCreateInput>,
+      options?: PortfolioMutationOptions,
+    ) {
+      if (options?.portfolioId) {
+        assertMockPortfolioVersion(options.portfolioId, options);
+      }
+      const updatedAt = new Date().toISOString();
+      let updatedPortfolioId: string | undefined;
+      _portfolioItems = _portfolioItems.map((item) => {
+        if (item.id !== id) {
+          return item;
+        }
+        const portfolio = _portfolios.find(
+          (entry) => entry.id === item.portfolioId && entry.ownerId === _profile.id,
+        );
+        if (!portfolio) {
+          return item;
+        }
+        if (typeof updates.score === "number" && (updates.score < 1 || updates.score > 10)) {
+          throw new Error("Portfolio item score must be between 1 and 10");
+        }
+        updatedPortfolioId = item.portfolioId;
+        return {
+          ...item,
+          ...updates,
+          publicNotes: updates.publicNotes?.trim() ?? item.publicNotes,
+          privateNotes: updates.privateNotes?.trim() ?? item.privateNotes,
+          updatedAt,
+        };
+      });
+      if (!updatedPortfolioId) {
+        throw new Error(`Portfolio item ${id} not found`);
+      }
+      _portfolios = _portfolios.map((entry) =>
+        entry.id === updatedPortfolioId ? { ...entry, updatedAt } : entry,
+      );
+      return resolve(undefined);
+    },
+
+    async deletePortfolioItem(id: string, options?: PortfolioMutationOptions) {
+      const item = _portfolioItems.find((entry) => entry.id === id);
+      if (!item) {
+        throw new Error(`Portfolio item ${id} not found`);
+      }
+      assertMockPortfolioVersion(item.portfolioId, options);
+      const portfolio = _portfolios.find(
+        (entry) => entry.id === item.portfolioId && entry.ownerId === _profile.id,
+      );
+      if (!portfolio) {
+        throw new Error(`Portfolio item ${id} not found`);
+      }
+      _portfolioItems = _portfolioItems.filter((entry) => entry.id !== id);
+      const remainingItems = _portfolioItems
+        .filter((entry) => entry.portfolioId === item.portfolioId)
+        .sort((left, right) => left.position - right.position)
+        .map((entry, position) => ({ ...entry, position }));
+      _portfolioItems = [
+        ..._portfolioItems.filter((entry) => entry.portfolioId !== item.portfolioId),
+        ...remainingItems,
+      ];
+      _portfolios = _portfolios.map((entry) =>
+        entry.id === item.portfolioId ? { ...entry, updatedAt: new Date().toISOString() } : entry,
+      );
+      return resolve(undefined);
+    },
+
+    async reorderPortfolioItems(
+      portfolioId: string,
+      itemIds: string[],
+      options?: PortfolioMutationOptions,
+    ) {
+      assertMockPortfolioVersion(portfolioId, options);
+      const portfolio = _portfolios.find(
+        (entry) => entry.id === portfolioId && entry.ownerId === _profile.id,
+      );
+      if (!portfolio) {
+        throw new Error(`Portfolio ${portfolioId} not found`);
+      }
+      const currentItems = _portfolioItems.filter((item) => item.portfolioId === portfolioId);
+      const itemById = new Map(currentItems.map((item) => [item.id, item]));
+      const requestedIds = new Set(itemIds);
+      if (
+        requestedIds.size !== itemIds.length ||
+        requestedIds.size !== currentItems.length ||
+        itemIds.some((id) => !itemById.has(id))
+      ) {
+        throw new Error("Portfolio reorder requires every current item exactly once");
+      }
+      const orderedItems = itemIds
+        .map((id) => itemById.get(id))
+        .filter((item): item is PortfolioItem => Boolean(item));
+      const updatedAt = new Date().toISOString();
+      const nextItems = orderedItems.map((item, position) => ({
+        ...item,
+        position,
+        updatedAt,
+      }));
+      _portfolioItems = [
+        ..._portfolioItems.filter((item) => item.portfolioId !== portfolioId),
+        ...nextItems,
+      ];
+      _portfolios = _portfolios.map((entry) =>
+        entry.id === portfolioId ? { ...entry, updatedAt } : entry,
+      );
+      return resolve(undefined);
+    },
+
+    async addPortfolioCollaborator(
+      portfolioId: string,
+      userId: string,
+      role: "viewer" | "editor",
+      options?: PortfolioMutationOptions,
+    ) {
+      assertMockPortfolioVersion(portfolioId, options);
+      const portfolio = _portfolios.find(
+        (entry) => entry.id === portfolioId && entry.ownerId === _profile.id,
+      );
+      if (!portfolio) {
+        throw new Error(`Portfolio ${portfolioId} not found`);
+      }
+      _portfolioCollaborators = _portfolioCollaborators.filter(
+        (collaborator) =>
+          !(collaborator.portfolioId === portfolioId && collaborator.userId === userId),
+      );
+      _portfolioCollaborators = [
+        ..._portfolioCollaborators,
+        {
+          id: `portfolio-collaborator-${++_portfolioCollaboratorCounter}`,
+          portfolioId,
+          userId,
+          role,
+          createdAt: new Date().toISOString(),
+        },
+      ];
+      return resolve(undefined);
+    },
+
+    async getPortfolioCollaborators(portfolioId: string) {
+      const portfolio = _portfolios.find((entry) => entry.id === portfolioId);
+      if (!portfolio || !canViewMockPortfolio(portfolio)) {
+        throw new Error(`Portfolio ${portfolioId} not found`);
+      }
+      return resolve(
+        clone(_portfolioCollaborators.filter((entry) => entry.portfolioId === portfolioId)),
+      );
+    },
+
+    async removePortfolioCollaborator(
+      portfolioId: string,
+      userId: string,
+      options?: PortfolioMutationOptions,
+    ) {
+      assertMockPortfolioVersion(portfolioId, options);
+      const portfolio = _portfolios.find(
+        (entry) => entry.id === portfolioId && entry.ownerId === _profile.id,
+      );
+      if (!portfolio) {
+        throw new Error(`Portfolio ${portfolioId} not found`);
+      }
+      _portfolioCollaborators = _portfolioCollaborators.filter(
+        (entry) => !(entry.portfolioId === portfolioId && entry.userId === userId),
+      );
+      return resolve(undefined);
+    },
+
+    async followPortfolio(portfolioId: string) {
+      const portfolio = _portfolios.find((entry) => entry.id === portfolioId);
+      if (!portfolio) {
+        throw new Error(`Portfolio ${portfolioId} not found`);
+      }
+      if (portfolio.ownerId === _profile.id) {
+        return resolve(undefined);
+      }
+      const existingFollow = _portfolioFollows.find(
+        (follow) => follow.portfolioId === portfolioId && follow.userId === _profile.id,
+      );
+      if (!existingFollow) {
+        _portfolioFollows = [
+          ..._portfolioFollows,
+          {
+            id: `portfolio-follow-${++_portfolioFollowCounter}`,
+            portfolioId,
+            userId: _profile.id,
+            createdAt: new Date().toISOString(),
+          },
+        ];
+      }
+      return resolve(undefined);
+    },
+
+    async unfollowPortfolio(portfolioId: string) {
+      _portfolioFollows = _portfolioFollows.filter(
+        (follow) => !(follow.portfolioId === portfolioId && follow.userId === _profile.id),
+      );
+      return resolve(undefined);
+    },
+
+    async getPortfolioFollows(portfolioId: string) {
+      const portfolio = _portfolios.find((entry) => entry.id === portfolioId);
+      if (!portfolio || !canViewMockPortfolio(portfolio)) {
+        throw new Error(`Portfolio ${portfolioId} not found`);
+      }
+      return resolve(clone(_portfolioFollows.filter((entry) => entry.portfolioId === portfolioId)));
+    },
+
+    async isFollowingPortfolio(portfolioId: string) {
+      return resolve(
+        _portfolioFollows.some(
+          (follow) => follow.portfolioId === portfolioId && follow.userId === _profile.id,
+        ),
+      );
+    },
+
+    async flagPortfolio(portfolioId: string, reason: string, details?: string) {
+      const portfolio = _portfolios.find((entry) => entry.id === portfolioId);
+      if (!portfolio || portfolio.visibility !== "public") {
+        throw new Error(`Portfolio ${portfolioId} not found`);
+      }
+      const normalizedReason = (
+        ["spam", "inappropriate", "misleading"].includes(reason) ? reason : "other"
+      ) as PortfolioFlagReason;
+      const existingFlag = _portfolioFlags.find(
+        (flag) => flag.portfolioId === portfolioId && flag.reporterId === _profile.id,
+      );
+      if (existingFlag) {
+        return resolve(undefined);
+      }
+      _portfolioFlags = [
+        ..._portfolioFlags,
+        {
+          id: `portfolio-flag-${++_portfolioFlagCounter}`,
+          portfolioId,
+          reporterId: _profile.id,
+          reason: normalizedReason,
+          details: details?.trim(),
+          status: "pending",
+          createdAt: new Date().toISOString(),
+        },
+      ];
+      return resolve(undefined);
+    },
+
+    async getPortfolioFlags(filters?: { status?: string }) {
+      return resolve(
+        clone(
+          _portfolioFlags.filter((flag) => {
+            if (!filters?.status) return true;
+            return flag.status === filters.status;
+          }),
+        ),
+      );
+    },
+
+    async resolvePortfolioFlag(flagId: string, resolution: "dismissed" | "removed") {
+      const reviewedAt = new Date().toISOString();
+      let found = false;
+      _portfolioFlags = _portfolioFlags.map((flag) => {
+        if (flag.id !== flagId) {
+          return flag;
+        }
+        found = true;
+        return {
+          ...flag,
+          status: resolution,
+          reviewedAt,
+          reviewedBy: _profile.id,
+        };
+      });
+      if (!found) {
+        throw new Error(`Portfolio flag ${flagId} not found`);
+      }
+      return resolve(undefined);
+    },
+
+    async searchPortfolios(query: string, filters?: { type?: string; visibility?: string }) {
+      const normalizedQuery = query.trim().toLowerCase();
+      const results = _portfolios.filter((portfolio) => {
+        if (portfolio.visibility !== "public" && portfolio.ownerId !== _profile.id) return false;
+        if (filters?.type && portfolio.type !== filters.type) return false;
+        if (filters?.visibility && portfolio.visibility !== filters.visibility) return false;
+        if (!normalizedQuery) return true;
+        return `${portfolio.name} ${portfolio.description ?? ""} ${portfolio.type}`
+          .toLowerCase()
+          .includes(normalizedQuery);
+      });
+      return resolve(
+        clone(results.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))),
+      );
+    },
+  },
+
+  // ── Passport ────────────────────────────────────────────────────────────────
+
+  passport: {
+    async getPassportStamps() {
+      return resolve(clone(_passportStamps.filter((stamp) => stamp.userId === _profile.id)));
+    },
+
+    async getPassportProgressEvents(categoryId?: string) {
+      const events = _passportEvents.filter(
+        (event) => event.userId === _profile.id && (!categoryId || event.categoryId === categoryId),
+      );
+      return resolve(clone(events));
+    },
+
+    async recordProgress(categoryId, eventType, referenceId) {
+      if (categoryId !== "contributor") {
+        return resolve(undefined);
+      }
+      recordMockPassportProgress(eventType, referenceId);
+      return resolve(undefined);
+    },
+  },
+
+  notifications: {
+    async listActivityEvents() {
+      return resolve([]);
+    },
+    async markActivityRead(_eventId: string) {
       return resolve(undefined);
     },
   },

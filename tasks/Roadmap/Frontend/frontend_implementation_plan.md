@@ -195,9 +195,9 @@ Generate initial mascot concept via `generate_image`. Proposed direction:
 
 **Current state:** `ReviewScreen.tsx` is actually a **post composer** — it shows a media picker, music, caption, rating. This is the **posting screen**, not a review feed.
 
-**Clarification confirmed (7b):** 
+**Clarification confirmed (7b):**
 - **Tab 3 = Review** → pure feed of user-submitted reviews (photo + rating + tagged dish + caption)
-- **Tab 4 = Post** → composer (currently misnamed "ReviewScreen") 
+- **Tab 4 = Post** → composer (currently misnamed "ReviewScreen")
 
 #### New Tab 3 — `ReviewFeedScreen.tsx` (NEW)
 
@@ -370,7 +370,7 @@ You can create the animaitions for the splash screen straight away
 
 > [!IMPORTANT]
 > **Q3 — Mascot:** Should the mascot be a **bowl with eyes**, a **fork character**, or something else? Any character style preferences (cute/minimalist/expressive)?
-Up to you to decide. Make it appealing for people of different ages. 
+Up to you to decide. Make it appealing for people of different ages.
 
 > [!IMPORTANT]
 > **Q4 — Merchant mode scope (Phase C3):** For the initial implementation, should merchant mode be fully mock (analytics charts + fake order data) or just the shell/navigation structure with empty states?

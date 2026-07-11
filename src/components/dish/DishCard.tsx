@@ -1,10 +1,9 @@
 import { Pressable, StyleSheet, View } from "react-native";
 import { Heart } from "lucide-react-native";
-import { Image } from "expo-image";
 
 import type { DishDetail } from "@/types/domain";
-import { useHungryTheme } from "@/theme";
-import { AppText, Badge, Card } from "../ui";
+import { useHungryTheme, type HungryTheme } from "@/theme";
+import { AccessibleImage, AppText, Badge, Card } from "../ui";
 
 interface DishCardProps {
   dish: DishDetail;
@@ -48,8 +47,9 @@ export function DishCard({
           },
         ]}
       >
-        <Image
+        <AccessibleImage
           source={{ uri: dish.imageUrl }}
+          accessibilityLabel={`${dish.name} from ${dish.venueName}`}
           style={[
             styles.image,
             {
@@ -105,7 +105,7 @@ export function DishCard({
   );
 }
 
-const createStyles = (spacing: any) =>
+const createStyles = (spacing: HungryTheme["spacing"]) =>
   StyleSheet.create({
     content: {
       alignItems: "flex-start",

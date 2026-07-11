@@ -56,15 +56,29 @@ Gate 4: Manual Smoke    → npm run ios               (after native/runtime/navi
 
 ---
 
-## Gate 3 — Unit Tests
+## Gate 3 — Source, Service, and Contract Tests
 
 | Command | `npm run test` |
 |---------|--------------|
-| Runner | Jest + React Native Testing Library |
-| Config | `jest.config.js` (or `package.json jest` key) |
-| Expected | All tests pass, no snapshots changed unexpectedly |
+| Runner | Node test runner with `tsx` |
+| Config | `package.json` `scripts.test` + `tsconfig.test.json` |
+| Expected | All `.test.ts` files under `src/` pass; skipped provider-mode tests must be intentional |
+| Current shape | Service tests, source contracts, store tests, migration SQL contracts, and security contracts |
 
----
+Run focused source/service contracts directly when one slice changes:
+
+```bash
+TMPDIR=/private/tmp HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/app/user-mode-coverage-contracts.test.ts
+```
+
+## Gate 3b — Playwright Web/Mobile Browser
+
+| Command | `npm run test:e2e -- --reporter=line` |
+|---------|---------------------------------------|
+| Runner | Playwright |
+| Config | `playwright.config.ts` |
+| Expected | Primary user/merchant browser flows pass against Expo Web |
+| Local note | Codex sandbox may block localhost; rerun with approved localhost access when Expo Web fails before app load |
 
 ## Gate 4 — Manual Simulator Smoke
 
@@ -92,7 +106,7 @@ Discover Tab
   [ ] Taste filter screen opens
   [ ] Search results render
 
-Maps Tab
+Map Surfaces (merchant/developer only)
   [ ] Map renders (or mock surface if flag enabled)
   [ ] Building pins visible
   [ ] Tapping pin opens bottom sheet
@@ -119,10 +133,12 @@ DishDetail
   [ ] Hero image renders
   [ ] Taste radar chart renders
   [ ] Reviews list renders (or empty state)
-  [ ] Delivery buttons render when links available
   [ ] MustOrder badge shows only on tagged dishes
 
 StallDetail
+  [ ] Hero image renders at dish-detail scale
+  [ ] Address and menu sections render
+  [ ] No cart/footer/order controls are visible in user mode
   [ ] Operating hours shown
   [ ] Hygiene grade badge correct colour
   [ ] Closure notice shown when applicable
@@ -138,7 +154,7 @@ Dark Mode
 
 Agents may freely write tests. Use these patterns.
 
-### Unit Test — Pure Component
+### Component Test — Pure Component
 
 ```ts
 // __tests__/components/ui/Badge.test.tsx
@@ -159,7 +175,7 @@ describe('Badge', () => {
 })
 ```
 
-### Unit Test — Store Logic
+### Store Logic Test
 
 ```ts
 // __tests__/store/useSessionStore.test.ts
@@ -185,7 +201,19 @@ describe('useSessionStore', () => {
 })
 ```
 
-### Unit Test — Mock Repository
+### Source Contract Test
+
+```ts
+import test from "node:test";
+import { assertSourceIncludes, readRepoFile } from "@/test/sourceContracts";
+
+test("screen keeps the required interaction wired", () => {
+  const source = readRepoFile("src/app/screens/example/ExampleScreen.tsx");
+  assertSourceIncludes(source, [/onPress=\{handleSave\}/, /navigation\.navigate/], "ExampleScreen");
+});
+```
+
+### Service Test — Mock Repository
 
 ```ts
 // __tests__/lib/repositories.test.ts
@@ -243,8 +271,8 @@ it('DishCard renders dish name', () => {
 
 | Rule | Detail |
 |------|--------|
-| Location | `__tests__/` directory adjacent to the file under test |
-| Naming | `ComponentName.test.tsx` or `fileName.test.ts` |
+| Location | Prefer adjacent source area or `src/app/*-contracts.test.ts`; Playwright specs live in `tests/e2e/` |
+| Naming | `fileName.test.ts`, `feature-contracts.test.ts`, or Playwright `*.spec.ts` |
 | Imports | Use `@/` aliases — same as production code |
 | Mock data | Import from `@/lib/services/mock/data` — never inline |
 | Theme | Always wrap with `HungryThemeProvider` for component tests |

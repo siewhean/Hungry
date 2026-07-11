@@ -4,6 +4,7 @@ import * as WebBrowser from "expo-web-browser";
 const ALLOWED_HOSTS = new Set(["hungry.sg", "www.hungry.sg"]);
 const ALLOWED_SCHEMES = new Set(["https"]);
 const ALLOWED_BLOG_HOSTS = new Set(["hungry.sg", "www.hungry.sg"]);
+const ALLOWED_MAPS_HOSTS = new Set(["www.google.com", "maps.google.com"]);
 const ALLOWED_DELIVERY_SCHEMES: Record<string, Set<string>> = {
   grabfood: new Set(["grab"]),
   foodpanda: new Set(["foodpanda"]),
@@ -43,6 +44,21 @@ export async function openTrustedBlogUrl(url: string): Promise<void> {
     await WebBrowser.openBrowserAsync(url);
   } catch {
     Alert.alert("Unable to open article", "Please try again later.");
+  }
+}
+
+export async function openTrustedMapsUrl(url: string): Promise<void> {
+  try {
+    const parsed = parseUrl(url);
+    if (parsed.protocol !== "https:" || !ALLOWED_MAPS_HOSTS.has(parsed.hostname.toLowerCase())) {
+      throw new Error("Blocked non-allowlisted maps host.");
+    }
+    if (!parsed.pathname.startsWith("/maps/search")) {
+      throw new Error("Blocked non-search maps URL.");
+    }
+    await Linking.openURL(url);
+  } catch {
+    Alert.alert("Unable to open maps", "Please try again later.");
   }
 }
 

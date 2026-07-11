@@ -16,6 +16,7 @@ const MAX_TTL_HOURS = 72;
 const MAX_METADATA_BYTES = 2048;
 const MAX_DEVICE_ID_LENGTH = 128;
 const MAX_SESSIONS_PER_DEVICE_PER_HOUR = 20;
+const MAX_SESSIONS_PER_IP_PER_HOUR = 50;
 
 const BASE_CORS_HEADERS = {
   "Access-Control-Allow-Headers":
@@ -63,6 +64,16 @@ function toJsonResponse(status: number, body: Json, origin: string | null): Resp
   });
 }
 
+function getClientIp(request: Request): string | null {
+  const forwarded = request.headers.get("cf-connecting-ip") ?? request.headers.get("x-real-ip");
+  if (forwarded?.trim()) {
+    return forwarded.trim().slice(0, 128);
+  }
+  const xForwardedFor = request.headers.get("x-forwarded-for") ?? "";
+  const firstForwarded = xForwardedFor.split(",")[0]?.trim();
+  return firstForwarded ? firstForwarded.slice(0, 128) : null;
+}
+
 function createGuestToken(): string {
   const randomBytes = new Uint8Array(24);
   crypto.getRandomValues(randomBytes);
@@ -91,7 +102,11 @@ function validatePayload(payload: CreateGuestSessionPayload): string | null {
     return `deviceId must be 1-${MAX_DEVICE_ID_LENGTH} characters.`;
   }
   if (payload.metadata !== undefined) {
-    if (!payload.metadata || Array.isArray(payload.metadata) || typeof payload.metadata !== "object") {
+    if (
+      !payload.metadata ||
+      Array.isArray(payload.metadata) ||
+      typeof payload.metadata !== "object"
+    ) {
       return "metadata must be a JSON object.";
     }
     if (new TextEncoder().encode(JSON.stringify(payload.metadata)).length > MAX_METADATA_BYTES) {
@@ -132,11 +147,12 @@ Deno.serve(async (request) => {
 
   const configuredApiKey = Deno.env.get("GUEST_SESSION_API_KEY")?.trim() ?? "";
   if (!configuredApiKey) {
+    console.error("Guest session function missing GUEST_SESSION_API_KEY");
     return toJsonResponse(
       500,
       {
-        error: "missing_env",
-        message: "GUEST_SESSION_API_KEY is required.",
+        error: "server_misconfigured",
+        message: "Guest session service is unavailable.",
       },
       allowedOrigin,
     );
@@ -167,11 +183,12 @@ Deno.serve(async (request) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!supabaseUrl || !serviceRoleKey) {
+    console.error("Guest session function missing Supabase environment");
     return toJsonResponse(
       500,
       {
-        error: "missing_env",
-        message: "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.",
+        error: "server_misconfigured",
+        message: "Guest session service is unavailable.",
       },
       allowedOrigin,
     );
@@ -226,17 +243,19 @@ Deno.serve(async (request) => {
   });
 
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const clientIp = getClientIp(request);
   const { count, error: countError } = await adminClient
     .from("guest_sessions")
     .select("id", { count: "exact", head: true })
     .eq("device_id", payload.deviceId)
     .gte("created_at", oneHourAgo);
   if (countError) {
+    console.error("Guest session device rate-limit check failed", countError);
     return toJsonResponse(
       500,
       {
         error: "rate_limit_check_failed",
-        message: countError.message,
+        message: "Unable to verify guest session limits.",
       },
       allowedOrigin,
     );
@@ -252,11 +271,41 @@ Deno.serve(async (request) => {
     );
   }
 
+  if (clientIp) {
+    const { count: ipCount, error: ipCountError } = await adminClient
+      .from("guest_sessions")
+      .select("id", { count: "exact", head: true })
+      .eq("client_ip", clientIp)
+      .gte("created_at", oneHourAgo);
+    if (ipCountError) {
+      console.error("Guest session IP rate-limit check failed", ipCountError);
+      return toJsonResponse(
+        500,
+        {
+          error: "rate_limit_check_failed",
+          message: "Unable to verify guest session limits.",
+        },
+        allowedOrigin,
+      );
+    }
+    if ((ipCount ?? 0) >= MAX_SESSIONS_PER_IP_PER_HOUR) {
+      return toJsonResponse(
+        429,
+        {
+          error: "rate_limited",
+          message: "Too many guest sessions requested from this network. Try again later.",
+        },
+        allowedOrigin,
+      );
+    }
+  }
+
   const { data, error } = await adminClient
     .from("guest_sessions")
     .insert({
       token_hash: tokenHash,
       device_id: payload.deviceId,
+      client_ip: clientIp,
       metadata: payload.metadata ?? {},
       expires_at: expiresAt,
     })
@@ -264,11 +313,12 @@ Deno.serve(async (request) => {
     .single();
 
   if (error || !data?.id) {
+    console.error("Guest session create failed", error);
     return toJsonResponse(
       500,
       {
         error: "guest_session_create_failed",
-        message: error?.message ?? "Unable to create guest session.",
+        message: "Unable to create guest session.",
       },
       allowedOrigin,
     );

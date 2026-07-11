@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { footerLinks } from "@/content/site";
+import { HungryWordmark } from "@/components/brand/HungryWordmark";
 import styles from "./Footer.module.css";
 
 export default function Footer() {
@@ -7,8 +8,8 @@ export default function Footer() {
     <footer className={styles.footerWrapper}>
       <div className={`container-wide ${styles.footer}`}>
         <div className={styles.brandInfo}>
-          <Link href="/" className={styles.logo}>
-            <span className={styles.logoText}>Hungry</span>
+          <Link href="/" className={styles.logo} prefetch>
+            <HungryWordmark />
           </Link>
           <p className={styles.tagline}>
             Built for the way Singapore eats. Discover the dish, not just the venue.
@@ -19,7 +20,7 @@ export default function Footer() {
           <div className={styles.linkGroup}>
             <h4 className={styles.linkGroupTitle}>Legal</h4>
             {footerLinks.legal.map((link) => (
-              <Link href={link.href} className={styles.link} key={link.label}>
+              <Link href={link.href} className={styles.link} key={link.label} prefetch>
                 {link.label}
               </Link>
             ))}
@@ -27,7 +28,7 @@ export default function Footer() {
           <div className={styles.linkGroup}>
             <h4 className={styles.linkGroupTitle}>Discover</h4>
             {footerLinks.discover.map((link) => (
-              <Link href={link.href} className={styles.link} key={link.label}>
+              <Link href={link.href} className={styles.link} key={link.label} prefetch>
                 {link.label}
               </Link>
             ))}
@@ -35,7 +36,7 @@ export default function Footer() {
           <div className={styles.linkGroup}>
             <h4 className={styles.linkGroupTitle}>Connect</h4>
             {footerLinks.connect.map((link) => (
-              <Link href={link.href} className={styles.link} key={link.label}>
+              <Link href={link.href} className={styles.link} key={link.label} prefetch>
                 {link.label}
               </Link>
             ))}
@@ -45,7 +46,7 @@ export default function Footer() {
 
       <div className="container-wide">
         <div className={styles.bottomBar}>
-          <p>&copy; 2026 Hungry Singapore. Your trusted guide to the local makan scene.</p>
+          <p>&copy; 2026 Hungry Singapore. Built for local makan decisions.</p>
         </div>
       </div>
     </footer>

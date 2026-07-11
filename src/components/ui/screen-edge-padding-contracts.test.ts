@@ -14,7 +14,6 @@ test("Screen edge padding contract: app-level surfaces use the shared screenEdge
   const screen = read("src/components/ui/Screen.tsx");
   const home = read("src/app/screens/home/HomeFeedScreen.tsx");
   const activity = read("src/app/screens/home/ActivityInboxScreen.tsx");
-  const discoverV2 = read("src/app/screens/discover/DiscoverHomeScreenV2.tsx");
 
   assert.match(tokens, /screenEdge: 16/);
   assert.match(screen, /semanticSpacing\.screenEdge/);
@@ -22,6 +21,4 @@ test("Screen edge padding contract: app-level surfaces use the shared screenEdge
   assert.match(home, /paddingHorizontal: semanticSpacing\.screenEdge/);
   assert.match(activity, /horizontalPadding=\{semanticSpacing\.screenEdge\}/);
   assert.match(activity, /paddingHorizontal: semanticSpacing\.screenEdge/);
-  assert.match(discoverV2, /<Screen scroll=\{false\} fullWidth/);
-  assert.match(discoverV2, /horizontalPadding=\{semanticSpacing\.screenEdge\}/);
 });

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, StyleSheet, Pressable, Platform, TouchableWithoutFeedback } from "react-native";
+import { View, StyleSheet, Pressable, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { ChevronUp, Send, Save, Check, Calendar, Clock } from "lucide-react-native";
@@ -14,7 +14,7 @@ interface ComposerBottomBarProps {
 }
 
 export function ComposerBottomBar({ routeDishId, routeVenueId }: ComposerBottomBarProps) {
-  const { palette, spacing, semanticSpacing, shadows, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing, semanticSpacing, shadows, radii } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const [showOptions, setShowOptions] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -23,20 +23,30 @@ export function ComposerBottomBar({ routeDishId, routeVenueId }: ComposerBottomB
   const [draftHour, setDraftHour] = useState(12);
   const [draftMinute, setDraftMinute] = useState(0);
   const [publishMode, setPublishMode] = useState<"both" | "post" | "review">("both");
+  const showInlineSchedulePickerHeader = Platform.OS === "ios" || Platform.OS === "web";
 
   const publishingState = useComposerStore((state) => state.publishingState);
   const setPublishingState = useComposerStore((state) => state.setPublishingState);
+  const setPublishingError = useComposerStore((state) => state.setPublishingError);
+  const setLastPublishRequest = useComposerStore((state) => state.setLastPublishRequest);
   const scheduledTime = useComposerStore((state) => state.scheduledTime);
   const setScheduledTime = useComposerStore((state) => state.setScheduledTime);
   const reset = useComposerStore((state) => state.reset);
 
   const handlePublish = async () => {
+    const request = { publishMode, routeDishId, routeVenueId };
+    setLastPublishRequest(request);
+    setPublishingError(null);
     setPublishingState("posting");
     try {
-      await publishComposerPost({ publishMode, routeDishId, routeVenueId });
+      await publishComposerPost(request);
       setPublishingState("success");
     } catch (error) {
-      console.error("Failed to publish post", error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "An unexpected error occurred while publishing your post. Please try again.";
+      setPublishingError(errorMessage);
       setPublishingState("error");
     }
   };
@@ -91,13 +101,14 @@ export function ComposerBottomBar({ routeDishId, routeVenueId }: ComposerBottomB
   return (
     <View style={styles.wrapper} pointerEvents="box-none">
       {showOptions && (
-        <TouchableWithoutFeedback
+        <Pressable
+          accessibilityLabel="Dismiss publish options"
+          accessibilityRole="button"
           onPress={() => {
             setShowOptions(false);
           }}
-        >
-          <View style={[styles.overlay, { backgroundColor: "transparent" }]} />
-        </TouchableWithoutFeedback>
+          style={[styles.overlay, { backgroundColor: "transparent" }]}
+        />
       )}
 
       <View
@@ -129,6 +140,14 @@ export function ComposerBottomBar({ routeDishId, routeVenueId }: ComposerBottomB
             {(["both", "post", "review"] as const).map((mode) => (
               <Pressable
                 key={mode}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  mode === "both"
+                    ? "Select Post and Review publish mode"
+                    : mode === "post"
+                      ? "Select Post Only publish mode"
+                      : "Select Review Only publish mode"
+                }
                 onPress={() => {
                   void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setPublishMode(mode);
@@ -158,7 +177,12 @@ export function ComposerBottomBar({ routeDishId, routeVenueId }: ComposerBottomB
               }}
             />
 
-            <Pressable onPress={handleSchedule} style={styles.optionItem}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Schedule Post"
+              onPress={handleSchedule}
+              style={styles.optionItem}
+            >
               <View
                 style={{
                   flexDirection: "row",
@@ -215,6 +239,8 @@ export function ComposerBottomBar({ routeDishId, routeVenueId }: ComposerBottomB
               leftIcon={<Send size={16} color={palette.textOnPrimary} />}
             />
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Open publish options"
               onPress={() => {
                 void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 setShowOptions(!showOptions);
@@ -223,12 +249,12 @@ export function ComposerBottomBar({ routeDishId, routeVenueId }: ComposerBottomB
                 backgroundColor: palette.orange,
                 width: 40,
                 height: 40,
-                borderTopRightRadius: radii.pill,
-                borderBottomRightRadius: radii.pill,
+                borderTopRightRadius: componentRadii.button,
+                borderBottomRightRadius: componentRadii.button,
                 alignItems: "center",
                 justifyContent: "center",
                 borderLeftWidth: 1,
-                borderLeftColor: "rgba(255,255,255,0.2)",
+                borderLeftColor: palette.inverseSurfaceSubtle,
               }}
             >
               <ChevronUp size={18} color={palette.white} />
@@ -240,15 +266,19 @@ export function ComposerBottomBar({ routeDishId, routeVenueId }: ComposerBottomB
       {showDatePicker && (
         <View
           style={
-            Platform.OS === "ios"
+            showInlineSchedulePickerHeader
               ? [
                   styles.iosPickerContainer,
-                  { backgroundColor: palette.surface, paddingBottom: insets.bottom },
+                  {
+                    backgroundColor: palette.surface,
+                    paddingBottom: insets.bottom,
+                    shadowColor: palette.mediaBackdrop,
+                  },
                 ]
               : null
           }
         >
-          {Platform.OS === "ios" && (
+          {showInlineSchedulePickerHeader && (
             <View style={[styles.iosPickerHeader, { borderBottomColor: palette.border }]}>
               <Button
                 label="Cancel"
@@ -297,11 +327,16 @@ export function ComposerBottomBar({ routeDishId, routeVenueId }: ComposerBottomB
                   return (
                     <Pressable
                       key={date.toISOString()}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Choose ${date.toLocaleDateString([], {
+                        month: "short",
+                        day: "numeric",
+                      })}`}
                       onPress={() => setDraftDate(date)}
                       style={{
                         width: 32,
                         height: 32,
-                        borderRadius: 16,
+                        borderRadius: componentRadii.iconButton,
                         alignItems: "center",
                         justifyContent: "center",
                         backgroundColor: isSelected ? palette.orange : palette.bgSoft,
@@ -326,12 +361,14 @@ export function ComposerBottomBar({ routeDishId, routeVenueId }: ComposerBottomB
               {hourOptions.map((hour) => (
                 <Pressable
                   key={hour}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Choose ${String(hour).padStart(2, "0")} hour`}
                   onPress={() => setDraftHour(hour)}
                   style={{
                     width: 56,
                     alignItems: "center",
                     paddingVertical: 8,
-                    borderRadius: radii.md,
+                    borderRadius: componentRadii.card,
                     backgroundColor: draftHour === hour ? palette.orangeLight : palette.bgSoft,
                     borderWidth: 1,
                     borderColor: draftHour === hour ? palette.orange : palette.border,
@@ -350,11 +387,13 @@ export function ComposerBottomBar({ routeDishId, routeVenueId }: ComposerBottomB
               {minuteOptions.map((minute) => (
                 <Pressable
                   key={minute}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Choose ${String(minute).padStart(2, "0")} minutes`}
                   onPress={() => setDraftMinute(minute)}
                   style={{
                     paddingHorizontal: 12,
                     paddingVertical: 8,
-                    borderRadius: radii.md,
+                    borderRadius: componentRadii.card,
                     backgroundColor: draftMinute === minute ? palette.orangeLight : palette.bgSoft,
                     borderWidth: 1,
                     borderColor: draftMinute === minute ? palette.orange : palette.border,
@@ -416,7 +455,6 @@ const styles = StyleSheet.create({
     zIndex: 200,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,

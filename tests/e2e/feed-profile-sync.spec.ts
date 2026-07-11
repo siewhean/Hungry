@@ -2,9 +2,7 @@ import type { Page } from "@playwright/test";
 
 import { test, expect } from "./fixtures";
 import {
-  clickDevButton,
   expectPostCaptionVisible,
-  gotoLauncher,
   publishPostFromComposer,
   uniqueCaption,
 } from "./helpers/app";
@@ -61,13 +59,12 @@ test.describe("feed/profile sync", () => {
     const caption = uniqueCaption(testInfo);
 
     await publishPostFromComposer(page, caption);
-    await page.getByRole("button", { name: "View Post" }).click();
+    await page.getByRole("button", { name: "View Post" }).first().click();
     await expectPostCaptionVisible(page, caption, "home-social-feed");
     const publishedPostId = await getPublishedPostIdByCaption(page, caption);
     expect(publishedPostId).toBeTruthy();
 
-    await gotoLauncher(page);
-    await clickDevButton(page, "Profile", "Profile & Review");
-    await expect(page.getByTestId(`profile-post-tile-${publishedPostId}`).first()).toBeVisible();
+    await page.getByRole("button", { name: /^Open Wei Ming profile$/ }).first().click();
+    await expect(page.getByRole("button", { name: `Open post ${caption}` }).first()).toBeVisible();
   });
 });

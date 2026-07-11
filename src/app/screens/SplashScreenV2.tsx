@@ -6,19 +6,18 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { View, Animated, Easing, StyleSheet, Dimensions } from "react-native";
+import { View, Animated, Easing, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import Constants from "expo-constants";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { useSessionStore } from "@/store/useSessionStore";
-import { useHungryTheme } from "@/theme";
+import { useHungryTheme, type HungryTheme } from "@/theme";
 import { AppText } from "@/components/ui";
 import { WordmarkLogoV2 } from "@/components/icons/brand/WordmarkLogoV2";
+import { HUNGRY_LOGO_STANDARD_WORDMARK_SIZE } from "@/constants/brandAssets";
 
 type Props = NativeStackScreenProps<RootStackParamList, "SplashV2">;
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 export function SplashScreenV2({ navigation, route }: Props) {
   const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
@@ -158,7 +157,7 @@ export function SplashScreenV2({ navigation, route }: Props) {
         <Animated.View
           style={[styles.lockup, { opacity: logoOpacity, transform: [{ scale: logoScale }] }]}
         >
-          <WordmarkLogoV2 size={SCREEN_WIDTH * 0.6} />
+          <WordmarkLogoV2 size={HUNGRY_LOGO_STANDARD_WORDMARK_SIZE} />
 
           {/* Crumbs Overlay */}
           {crumbs.map((c, i) => (
@@ -191,7 +190,10 @@ export function SplashScreenV2({ navigation, route }: Props) {
   );
 }
 
-const createStyles = ({ palette, spacing }: any) =>
+const createStyles = ({
+  palette,
+  spacing,
+}: Pick<HungryTheme, "palette" | "typography" | "spacing" | "radii">) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: palette.bg },
     container: { flex: 1, alignItems: "center", justifyContent: "center" },

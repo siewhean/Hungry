@@ -1,5 +1,5 @@
 /**
- * StallInteractionBar — Save / Tried / Add to Collection actions for a stall.
+ * StallInteractionBar — Save / Visited / Add to Collection actions for a stall.
  *
  * Mounted inside StallDetailScreen. Uses useStallInteractionStore + useFoodCredStore.
  * Each action is idempotent (tried cannot be un-tried in Phase 1).
@@ -13,11 +13,15 @@ import * as Haptics from "expo-haptics";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "@/components/ui/AppText";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
+import { useUIStore } from "@/store/useUIStore";
 import { useMissionStore } from "@/store/useMissionStore";
 
 interface StallInteractionBarProps {
   userId: string;
   stallId: string;
+  reviewPromptText?: string;
+  hasReviewedDishAtVenue?: boolean;
+  onReviewRequired?: () => void;
   /** Called when user taps "Add to Collection" — parent handles sheet/modal */
   onAddToCollection?: () => void;
 }
@@ -25,10 +29,14 @@ interface StallInteractionBarProps {
 export function StallInteractionBar({
   userId,
   stallId,
+  reviewPromptText,
+  hasReviewedDishAtVenue,
+  onReviewRequired,
   onAddToCollection,
 }: StallInteractionBarProps) {
-  const { palette, radii, spacing, typography } = useHungryTheme();
-  const interaction = useStallInteractionStore((s) => s.getInteraction(stallId));
+  const { componentRadii, palette, spacing, typography } = useHungryTheme();
+  const interactions = useStallInteractionStore((state) => state.interactions);
+  const interaction = interactions[stallId];
   const toggleSaved = useStallInteractionStore((s) => s.toggleSaved);
   const markTried = useStallInteractionStore((s) => s.markTried);
   const incrementProgress = useMissionStore((s) => s.incrementProgress);
@@ -38,6 +46,7 @@ export function StallInteractionBar({
 
   const [savingInProgress, setSavingInProgress] = useState(false);
   const [tryingInProgress, setTryingInProgress] = useState(false);
+  const showToast = useUIStore((state) => state.showToast);
 
   async function handleSave() {
     if (savingInProgress) return;
@@ -55,12 +64,26 @@ export function StallInteractionBar({
   }
 
   async function handleTried() {
-    if (isTried || tryingInProgress) return;
+    if (tryingInProgress) return;
     setTryingInProgress(true);
     try {
+      const hasReviewed = hasReviewedDishAtVenue ?? false;
+      if (!hasReviewed) {
+        const message = reviewPromptText ?? "Review this stall once before marking it as visited.";
+        showToast({ message, tone: "warning", duration: 3000 });
+        onReviewRequired?.();
+        return;
+      }
+
+      const triedResult = await markTried(userId, stallId);
+      if (triedResult.isTried) {
+        await incrementProgress(userId, "mark_tried");
+        showToast({ message: "Marked as visited", tone: "success", duration: 3000 });
+      } else {
+        showToast({ message: "Removed from visited", tone: "info", duration: 3000 });
+      }
+
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      await markTried(userId, stallId);
-      await incrementProgress(userId, "mark_tried");
     } finally {
       setTryingInProgress(false);
     }
@@ -85,12 +108,11 @@ export function StallInteractionBar({
     },
     {
       id: "tried",
-      label: isTried ? "Tried" : "Mark Tried",
+      label: isTried ? "Visited" : "Mark Visited",
       icon: CheckCircle,
       active: isTried,
       onPress: handleTried,
       loading: tryingInProgress,
-      disabled: isTried,
     },
     ...(onAddToCollection
       ? [
@@ -111,7 +133,7 @@ export function StallInteractionBar({
         styles.container,
         {
           borderColor: palette.border,
-          borderRadius: radii.lg,
+          borderRadius: componentRadii.card,
           borderWidth: 1,
           gap: 0,
         },
@@ -139,10 +161,10 @@ export function StallInteractionBar({
                     : "transparent",
                 borderRightColor: !isLast ? palette.border : "transparent",
                 borderRightWidth: !isLast ? 1 : 0,
-                borderBottomLeftRadius: isFirst ? radii.lg : 0,
-                borderTopLeftRadius: isFirst ? radii.lg : 0,
-                borderBottomRightRadius: isLast ? radii.lg : 0,
-                borderTopRightRadius: isLast ? radii.lg : 0,
+                borderBottomLeftRadius: isFirst ? componentRadii.card : 0,
+                borderTopLeftRadius: isFirst ? componentRadii.card : 0,
+                borderBottomRightRadius: isLast ? componentRadii.card : 0,
+                borderTopRightRadius: isLast ? componentRadii.card : 0,
                 paddingVertical: spacing[3],
               },
             ]}

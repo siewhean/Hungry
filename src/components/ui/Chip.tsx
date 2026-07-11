@@ -7,18 +7,35 @@ import { AppText } from "./AppText";
 
 interface ChipProps {
   label: string;
+  accessibilityLabel?: string;
   selected?: boolean;
   onPress?: () => void;
   leftIcon?: ReactNode;
   style?: StyleProp<ViewStyle>;
 }
 
-export function Chip({ label, selected = false, onPress, leftIcon, style }: ChipProps) {
-  const { colorScheme, componentSizes, opacity, palette, radii, spacing } = useHungryTheme();
+export function Chip({
+  label,
+  accessibilityLabel,
+  selected = false,
+  onPress,
+  leftIcon,
+  style,
+}: ChipProps) {
+  const {
+    colorScheme,
+    componentCornerCurve,
+    componentRadii,
+    componentSizes,
+    opacity,
+    palette,
+    spacing,
+  } = useHungryTheme();
 
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ selected }}
       onPress={() => {
         void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -33,7 +50,8 @@ export function Chip({ label, selected = false, onPress, leftIcon, style }: Chip
               ? palette.surfaceRaised
               : palette.surface,
           borderColor: selected ? palette.orange : palette.border,
-          borderRadius: radii.pill,
+          borderRadius: componentRadii.button,
+          borderCurve: componentCornerCurve.borderCurve,
           minHeight: componentSizes.touchTarget,
           paddingHorizontal: spacing[3],
           paddingVertical: spacing[2],

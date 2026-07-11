@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, TextInput, View, useWindowDimensions } from "react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
@@ -7,6 +7,7 @@ import {
   Heart,
   MessageCircle,
   MessageCircleMore,
+  MoreHorizontal,
   PlayCircle,
   Send,
 } from "lucide-react-native";
@@ -18,6 +19,7 @@ import { ZoomableMedia } from "@/components/social";
 import { AppText, Avatar, Screen } from "@/components/ui";
 import { ACTIVITY_UPDATES } from "@/features/home/activity";
 import { listSharedStallPostsSync } from "@/features/social/sharedStallPosts";
+import { promptPostSafetyActions } from "@/lib/security/communitySafety";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { ReviewCommentsSheet, type ActiveReviewCommentTarget } from "@/components/social";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
@@ -25,6 +27,7 @@ import { useActivityStore } from "@/store/useActivityStore";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useSocialStore, type SocialComment } from "@/store/useSocialStore";
 import { useHungryTheme } from "@/theme";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 
 const CommentIcon = MessageCircle ?? MessageCircleMore;
 
@@ -34,11 +37,14 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
   const { palette, spacing, semanticSpacing } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const repository = getDataRepository();
+  const commentsEnabled = FEATURE_FLAGS.commentsEnabled;
   const { postId, updateId } = route.params;
   const publishedPosts = usePublishedPostStore((state) => state.posts);
   const posts = useMemo(() => listSharedStallPostsSync(repository), [publishedPosts, repository]);
   const post = posts.find((candidate) => candidate.id === postId);
   const activityUpdates = useActivityStore((state) => state.activityUpdates);
+  const dbActivityEvents = useActivityStore((state) => state.dbActivityEvents);
+  const fetchActivityEvents = useActivityStore((state) => state.fetchActivityEvents);
   const interactions = useSocialStore((state) => state.interactions);
   const initializeInteractions = useSocialStore((state) => state.initializeInteractions);
   const toggleLike = useSocialStore((state) => state.toggleLike);
@@ -53,6 +59,12 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
     null,
   );
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
+  const openCommentsSheet = useCallback(() => {
+    void commentsSheetRef.current?.present();
+    requestAnimationFrame(() => {
+      commentsSheetRef.current?.snapToIndex(0);
+    });
+  }, []);
 
   useEffect(() => {
     initializeInteractions(posts);
@@ -64,12 +76,17 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
     }
   }, [markActivityRead, updateId]);
 
+  useEffect(() => {
+    void fetchActivityEvents();
+  }, [fetchActivityEvents]);
+
   const update = useMemo(() => {
     return (
       ACTIVITY_UPDATES.find((candidate) => candidate.id === updateId) ??
+      dbActivityEvents.find((candidate) => candidate.id === updateId) ??
       activityUpdates.find((candidate) => candidate.id === updateId)
     );
-  }, [activityUpdates, updateId]);
+  }, [activityUpdates, dbActivityEvents, updateId]);
 
   const seededCommentsForActiveReview = useMemo<SocialComment[]>(() => {
     if (!activeCommentReview) {
@@ -112,19 +129,33 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
   const interaction = interactions[post.id] ?? {
     liked: false,
     saved: false,
-    likeCount: primaryDish?.reviews.length ?? 0,
+    likeCount: 0,
     saveCount: 0,
     shareCount: 0,
-    commentCount: primaryDish?.reviews.length ?? 0,
+    commentCount: 0,
   };
   const imageHeight = Math.min(Math.max(screenWidth * 1.12, 360), 460);
-  const kindLabel = update?.kind === "like" ? "Like" : "Comment";
-  const kindColor = update?.kind === "like" ? palette.error : palette.orange;
+  const kindLabel =
+    update?.kind === "like"
+      ? "Like"
+      : update?.kind === "share"
+        ? "Share"
+        : update?.kind === "submission"
+          ? "Submission"
+          : "Comment";
+  const kindColor =
+    update?.kind === "like"
+      ? palette.error
+      : update?.kind === "share"
+        ? palette.orange
+        : update?.kind === "submission"
+          ? palette.orange
+          : palette.orange;
 
   return (
     <Screen
       title="Activity post"
-      subtitle={update ? `${update.actorName} · ${kindLabel}` : "Food update"}
+      subtitle={update ? `${update.actorName} · ${kindLabel}` : undefined}
       fullWidth
       contentContainerStyle={{ paddingHorizontal: 0 }}
     >
@@ -153,19 +184,24 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
           <ZoomableMedia
             uri={post.mediaUrl}
             type={post.mediaType === "video" ? "video" : "image"}
+            accessibilityLabel={`${primaryDish?.name ?? venue?.name ?? "Activity post"} ${
+              post.mediaType === "video" ? "video" : "image"
+            }`}
             style={styles.heroImage}
           />
 
           {post.mediaType === "video" ? (
             <View pointerEvents="none" style={styles.playButtonContainer}>
-              <View style={styles.playButtonBackdrop}>
+              <View
+                style={[styles.playButtonBackdrop, { backgroundColor: palette.mediaScrimSubtle }]}
+              >
                 <PlayCircle color={palette.white} size={54} strokeWidth={1.4} />
               </View>
             </View>
           ) : null}
 
           <LinearGradient
-            colors={["transparent", "rgba(0,0,0,0.6)"]}
+            colors={["transparent", palette.mediaScrimStrong]}
             style={[styles.gradientScrim, { height: "40%", top: "60%" }]}
             pointerEvents="none"
           />
@@ -183,10 +219,26 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
             <AppText variant="h3" style={{ color: palette.white }}>
               {primaryDish?.name ?? venue?.name ?? post.authorName}
             </AppText>
-            <AppText variant="micro" style={{ color: "rgba(255,255,255,0.8)" }}>
+            <AppText variant="micro" style={{ color: palette.inverseTextSecondary }}>
               {venue ? `${venue.name} · ${venue.floor} ${venue.unitNumber}` : post.authorLocation}
             </AppText>
           </View>
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Manage ${post.authorName}'s post`}
+            hitSlop={10}
+            onPress={() =>
+              promptPostSafetyActions({
+                postId: post.id,
+                authorName: post.authorName,
+                label: "post",
+              })
+            }
+            style={[styles.imageMenuButton, { right: spacing[2], top: spacing[2] }]}
+          >
+            <MoreHorizontal color={palette.white} size={24} />
+          </Pressable>
         </View>
 
         <View
@@ -247,31 +299,30 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
                   size={24}
                 />
               </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Open comments"
-                hitSlop={10}
-                onPress={() => {
-                  setActiveCommentReview({
-                    id: post.id,
-                    authorName: post.authorName,
-                    dishName: primaryDish?.name ?? post.authorName,
-                    caption: post.caption,
-                  });
-                  requestAnimationFrame(() => {
-                    commentsSheetRef.current?.present();
-                    commentsSheetRef.current?.snapToIndex(0);
-                  });
-                }}
-                style={styles.inlineAction}
-              >
-                <CommentIcon color={palette.text} size={24} />
-                {interaction.commentCount > 0 ? (
-                  <AppText variant="micro" style={{ color: palette.text }}>
-                    {interaction.commentCount}
-                  </AppText>
-                ) : null}
-              </Pressable>
+              {commentsEnabled ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Open comments"
+                  hitSlop={10}
+                  onPress={() => {
+                    setActiveCommentReview({
+                      id: post.id,
+                      authorName: post.authorName,
+                      dishName: primaryDish?.name ?? post.authorName,
+                      caption: post.caption,
+                    });
+                    openCommentsSheet();
+                  }}
+                  style={styles.inlineAction}
+                >
+                  <CommentIcon color={palette.text} size={24} />
+                  {interaction.commentCount > 0 ? (
+                    <AppText variant="micro" style={{ color: palette.text }}>
+                      {interaction.commentCount}
+                    </AppText>
+                  ) : null}
+                </Pressable>
+              ) : null}
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Like post"
@@ -307,22 +358,23 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
         </View>
       </View>
 
-      <ReviewCommentsSheet
-        activeReview={activeCommentReview}
-        inputRef={commentInputRef}
-        innerRef={commentsSheetRef}
-        seededComments={seededCommentsForActiveReview}
-        onDismiss={() => setActiveCommentReview(null)}
-      />
+      {commentsEnabled ? (
+        <ReviewCommentsSheet
+          activeReview={activeCommentReview}
+          inputRef={commentInputRef}
+          innerRef={commentsSheetRef}
+          seededComments={seededCommentsForActiveReview}
+          onDismiss={() => setActiveCommentReview(null)}
+        />
+      ) : null}
 
       <ReviewShareSheet
         activeReview={activeShareReview}
         bottomInset={insets.bottom}
         innerRef={shareSheetRef}
         onDismiss={() => setActiveShareReview(null)}
-        onShared={() => {
-          if (!activeShareReview) return;
-          incrementShare(activeShareReview.postId);
+        onShared={(postId, channel) => {
+          incrementShare(postId, channel);
         }}
       />
     </Screen>
@@ -359,7 +411,6 @@ const styles = StyleSheet.create({
   },
   playButtonBackdrop: {
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.28)",
     borderRadius: 36,
     height: 72,
     justifyContent: "center",
@@ -381,6 +432,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     gap: 4,
+  },
+  imageMenuButton: {
+    position: "absolute",
+    zIndex: 5,
   },
   commentsSection: {
     borderTopWidth: 1,

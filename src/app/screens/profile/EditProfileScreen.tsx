@@ -1,16 +1,15 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { View, Pressable } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ChevronRight, Camera } from "lucide-react-native";
-import { Image } from "expo-image";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
-import { AppText, Button, Card, Chip, Input } from "@/components/ui";
+import { AccessibleImage, AppText, Button, Card, Input } from "@/components/ui";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
-import type { DietaryFlag } from "@/types/domain";
+import { confirmGalleryAccess, isGalleryPermissionGranted } from "@/lib/permissions/gallery";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import type { ProfileStackParamList } from "./ProfileStack";
 
@@ -33,32 +32,41 @@ function loadImagePickerModule() {
   }
 }
 
-const EDITABLE_DIETARY_OPTIONS: { label: string; value: DietaryFlag }[] = [
-  { label: "Halal", value: "halal" },
-  { label: "Vegetarian", value: "vegetarian" },
-  { label: "Vegan", value: "vegan" },
-  { label: "Gluten free", value: "gluten_free" },
-  { label: "Nut free", value: "nut_free" },
-  { label: "Pork free", value: "pork_free" },
-  { label: "Dairy free", value: "dairy_free" },
-  { label: "Seafood free", value: "shellfish_free" },
-];
-
 export function EditProfileScreen({ navigation }: Props) {
   const profile = useProfileStore((state) => state.profile);
-  const updateProfile = useProfileStore((state) => state.updateProfile);
-  const setDietaryPreferences = useProfileStore((state) => state.setDietaryPreferences);
+  const applyProfile = useProfileStore((state) => state.applyProfile);
   const showToast = useUIStore((state) => state.showToast);
   const { palette, spacing, radii } = useHungryTheme();
   const [displayName, setDisplayName] = useState(profile.displayName);
   const [email, setEmail] = useState(profile.email);
-  const [dietaryPreferences, setDietaryPreferencesState] = useState<DietaryFlag[]>(
-    profile.dietaryPreferences,
-  );
   const [avatarUri, setAvatarUri] = useState<string | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
+  const avatarPreviewUri = avatarUri ?? profile.avatarUrl;
+  const avatarSize = spacing[20];
+  const avatarInitials = useMemo(
+    () =>
+      displayName
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase())
+        .join("") || "HU",
+    [displayName],
+  );
 
   const handlePickAvatar = async () => {
+    const shouldRequestPermission = await confirmGalleryAccess({
+      title: "Allow gallery access",
+      message: "Hungry needs access to your photo library to update your profile picture.",
+      confirmLabel: "Allow",
+      cancelLabel: "Not now",
+    });
+
+    if (!shouldRequestPermission) {
+      return;
+    }
+
     const imagePicker = loadImagePickerModule();
     if (!imagePicker) {
       showToast({
@@ -69,7 +77,7 @@ export function EditProfileScreen({ navigation }: Props) {
     }
 
     const permission = await imagePicker.requestMediaLibraryPermissionsAsync();
-    if (permission.status !== "granted") {
+    if (!isGalleryPermissionGranted(permission)) {
       showToast({
         message: "Photo permission is required to update your avatar.",
         tone: "warning",
@@ -92,12 +100,6 @@ export function EditProfileScreen({ navigation }: Props) {
     showToast({ message: "Profile photo updated.", tone: "success" });
   };
 
-  const toggleDietary = (flag: DietaryFlag) => {
-    setDietaryPreferencesState((current) =>
-      current.includes(flag) ? current.filter((value) => value !== flag) : [...current, flag],
-    );
-  };
-
   const handleChangePassword = () => {
     const rootNavigation = getRootNavigation(navigation);
     rootNavigation.navigate("AuthStack", {
@@ -107,10 +109,7 @@ export function EditProfileScreen({ navigation }: Props) {
   };
 
   return (
-    <ProfileScreenShell
-      title="Edit profile"
-      subtitle="Changes sync to your account when connected."
-    >
+    <ProfileScreenShell title="Edit profile">
       <View style={{ alignItems: "center", marginBottom: spacing[2] }}>
         <Pressable
           style={{ position: "relative" }}
@@ -120,30 +119,36 @@ export function EditProfileScreen({ navigation }: Props) {
         >
           <View
             style={{
-              width: 100,
-              height: 100,
+              width: avatarSize,
+              height: avatarSize,
               borderRadius: radii.pill,
               backgroundColor: palette.bgSoft,
+              borderWidth: 2,
+              borderColor: palette.surface,
               alignItems: "center",
               justifyContent: "center",
               overflow: "hidden",
             }}
           >
-            {avatarUri ? (
-              <Image
-                source={{ uri: avatarUri }}
+            {avatarPreviewUri ? (
+              <AccessibleImage
+                source={{ uri: avatarPreviewUri }}
                 style={{ height: "100%", width: "100%" }}
                 contentFit="cover"
+                accessibilityLabel="Profile avatar preview"
               />
             ) : (
               <AppText
+                variant="h1"
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.78}
                 style={{
-                  fontSize: 32,
-                  fontWeight: "700",
                   color: palette.orange,
+                  textAlign: "center",
                 }}
               >
-                {displayName.charAt(0).toUpperCase()}
+                {avatarInitials}
               </AppText>
             )}
           </View>
@@ -189,18 +194,6 @@ export function EditProfileScreen({ navigation }: Props) {
             <AppText style={{ fontWeight: "600" }}>Change Password</AppText>
             <ChevronRight size={18} color={palette.textMuted} />
           </Pressable>
-
-          <AppText variant="h3">Dietary preferences</AppText>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-            {EDITABLE_DIETARY_OPTIONS.map((option) => (
-              <Chip
-                key={option.value}
-                label={option.label}
-                selected={dietaryPreferences.includes(option.value)}
-                onPress={() => toggleDietary(option.value)}
-              />
-            ))}
-          </View>
         </View>
       </Card>
       <Button
@@ -210,14 +203,13 @@ export function EditProfileScreen({ navigation }: Props) {
           void (async () => {
             setIsSaving(true);
             try {
-              await getHungryService().profile.updateProfile({
+              const savedProfile = await getHungryService().profile.updateProfile({
                 displayName,
                 email,
                 avatarUrl: avatarUri,
+                dietaryPreferences: profile.dietaryPreferences,
               });
-              await getHungryService().profile.updateDietaryPreferences(dietaryPreferences);
-              updateProfile({ displayName, email, avatarUrl: avatarUri });
-              setDietaryPreferences(dietaryPreferences);
+              applyProfile(savedProfile);
               showToast({ message: "Profile updated.", tone: "success" });
               navigation.goBack();
             } catch {

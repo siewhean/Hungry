@@ -9,12 +9,14 @@ import {
   View,
   useWindowDimensions,
   Easing,
+  type ListRenderItemInfo,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Image } from "expo-image";
 import { Check, ChevronRight, Search } from "lucide-react-native";
 
-import { Button, AppText, Card, EmptyState, Input } from "@/components/ui";
+import { AccessibleImage, Button, AppText, Card, EmptyState, Input } from "@/components/ui";
 import { NEUTRAL_TASTE_VECTOR, TASTE_DIMENSIONS } from "@/constants/taste";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -27,6 +29,7 @@ import {
   ONBOARDING_ACTIONS_GAP,
   ONBOARDING_ACTIONS_HORIZONTAL_PADDING,
 } from "./layoutConstants";
+import { TASTE_QUESTION_FOODS } from "./onboardingFoodImages";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "TasteQuiz" | "DietaryPreferences">;
 
@@ -41,49 +44,11 @@ const QUESTIONS = {
   aromatic: "How fragrant should it be?",
 } as const;
 
-const CHOICE_IMAGES = {
-  sweet: [
-    "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1499636136210-6f4ee915583e?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1495147466023-ac5c588e2e94?auto=format&fit=crop&w=800&q=80",
-  ],
-  spicy: [
-    "https://images.unsplash.com/photo-1617692855027-33b14f061079?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1583032015879-e5022cb87c3b?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&w=800&q=80",
-  ],
-  sour: [
-    "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1553279768-865429fa0078?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1505252585461-04db1eb84625?auto=format&fit=crop&w=800&q=80",
-  ],
-  salty: [
-    "https://images.unsplash.com/photo-1516684669134-de6f7c473a2a?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1541544741938-0af808871cc0?auto=format&fit=crop&w=800&q=80",
-  ],
-  rich: [
-    "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80",
-  ],
-  aromatic: [
-    "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1484723091739-30a097e8f929?auto=format&fit=crop&w=800&q=80",
-  ],
-} as const;
-
-function toBwVariant(url: string) {
-  return `${url}&sat=-100`;
-}
-
 const STEPS = TASTE_DIMENSIONS.map((d) => d.key);
 
 const OPTIONS = [2, 5, 8] as const;
 const BACK_BUTTON_WIDTH = "30%" as const;
 const PRIMARY_BUTTON_WIDTH = "54%" as const;
-const ACTIONS_FOOTER_HEIGHT = 124;
 const OPTIONS_VERTICAL_GAP_UNITS = 6;
 
 const LABELS = {
@@ -160,8 +125,8 @@ const DIETARY_OPTIONS: {
 ];
 
 export function TasteQuizScreen({ navigation, route }: Props) {
-  const { motion, palette, radii, spacing } = useHungryTheme();
-  const { width } = useWindowDimensions();
+  const { componentRadii, motion, palette, radii, spacing } = useHungryTheme();
+  const { fontScale, width } = useWindowDimensions();
   const setTasteVector = useProfileStore((state) => state.setTasteVector);
   const profile = useProfileStore((state) => state.profile);
   const setDietaryPreferences = useProfileStore((state) => state.setDietaryPreferences);
@@ -188,7 +153,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
 
   const currentKey = STEPS[step];
   const labels = LABELS[currentKey];
-  const choiceImages = CHOICE_IMAGES[currentKey];
+  const choiceFoods = TASTE_QUESTION_FOODS[currentKey];
   const totalSteps = STEPS.length + 1;
 
   const CARD_WIDTH = 220;
@@ -197,6 +162,8 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   const SNAP_INTERVAL = CARD_WIDTH + CARD_GAP;
   const horizontalPadding = Math.max(0, (width - CARD_WIDTH) / 2);
   const snapOffsets = useMemo(() => [0, SNAP_INTERVAL, SNAP_INTERVAL * 2], [SNAP_INTERVAL]);
+  const accessibilityFooterReserve = Math.ceil(Math.max(fontScale - 1, 0) * 96);
+  const actionFooterBottomPadding = ONBOARDING_ACTIONS_BOTTOM_PADDING + spacing[2];
 
   useEffect(() => {
     const offset = SNAP_INTERVAL;
@@ -270,6 +237,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   const currentValue = values[currentKey];
   const hasRestrictions = dietaryPreferences.length > 0;
   const dietaryPrimaryLabel = hasRestrictions ? "Continue" : "I have no restrictions";
+  const dietaryPrimaryButtonSize = dietaryPrimaryLabel === "I have no restrictions" ? "sm" : "md";
   const normalizedDietaryQuery = dietaryQuery.trim().toLowerCase();
   const filteredDietaryOptions = DIETARY_OPTIONS.filter((option) => {
     if (!normalizedDietaryQuery) return true;
@@ -281,6 +249,24 @@ export function TasteQuizScreen({ navigation, route }: Props) {
     setDietaryPreferencesState((current) =>
       current.includes(flag) ? current.filter((value) => value !== flag) : [...current, flag],
     );
+  };
+
+  const selectTasteOption = (index: number) => {
+    const option = OPTIONS[index];
+    setSnappedIndex(index);
+    carouselRef.current?.scrollToOffset({
+      animated: true,
+      offset: SNAP_INTERVAL * index,
+    });
+    if (values[currentKey] !== option) {
+      const next = { ...values, [currentKey]: option };
+      setValues(next);
+      setTasteVector(next);
+      setAnsweredKeys((previous) => ({
+        ...previous,
+        [currentKey]: true,
+      }));
+    }
   };
 
   useEffect(() => {
@@ -362,7 +348,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
             <View
               style={{
                 flex: 1,
-                paddingBottom: ACTIONS_FOOTER_HEIGHT + spacing[6],
+                paddingBottom: spacing[4],
                 paddingHorizontal: spacing[3],
               }}
             >
@@ -379,7 +365,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                   showsVerticalScrollIndicator={false}
                   contentContainerStyle={{
                     gap: spacing[2],
-                    paddingBottom: spacing[6],
+                    paddingBottom: spacing[6] + accessibilityFooterReserve,
                     paddingTop: spacing[1],
                   }}
                 >
@@ -389,11 +375,19 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                       <Pressable
                         key={option.value}
                         onPress={() => toggleDietary(option.value)}
+                        accessibilityRole="checkbox"
+                        accessibilityLabel={`Dietary preference ${option.label}`}
+                        accessibilityHint={
+                          isSelected
+                            ? "Double tap to remove this dietary preference"
+                            : "Double tap to add this dietary preference"
+                        }
+                        accessibilityState={{ checked: isSelected }}
                         style={{
                           alignItems: "center",
                           backgroundColor: isSelected ? palette.orangeLight : palette.surface,
                           borderColor: isSelected ? palette.orange : palette.border,
-                          borderRadius: radii.lg,
+                          borderRadius: componentRadii.button,
                           borderWidth: 1,
                           flexDirection: "row",
                           gap: spacing[3],
@@ -435,7 +429,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                 flex: 1,
                 justifyContent: "center",
                 overflow: "visible",
-                paddingBottom: ACTIONS_FOOTER_HEIGHT + spacing[OPTIONS_VERTICAL_GAP_UNITS],
+                paddingBottom: spacing[OPTIONS_VERTICAL_GAP_UNITS],
                 paddingTop: spacing[OPTIONS_VERTICAL_GAP_UNITS],
                 transform: [{ translateX: optionsSlideAnim }],
               }}
@@ -463,7 +457,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                   paddingTop: spacing[2],
                 }}
                 ItemSeparatorComponent={() => <View style={{ width: CARD_GAP }} />}
-                getItemLayout={(_: any, index: number) => ({
+                getItemLayout={(_: ArrayLike<number> | null | undefined, index: number) => ({
                   index,
                   length: SNAP_INTERVAL,
                   offset: SNAP_INTERVAL * index,
@@ -489,7 +483,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                 onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: quizScrollX } } }], {
                   useNativeDriver: true,
                 })}
-                onMomentumScrollEnd={(event: any) => {
+                onMomentumScrollEnd={(event: NativeSyntheticEvent<NativeScrollEvent>) => {
                   const index = Math.max(
                     0,
                     Math.min(2, Math.round(event.nativeEvent.contentOffset.x / SNAP_INTERVAL)),
@@ -513,19 +507,27 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                     }));
                   }
                 }}
-                renderItem={({ item: index }: any) => {
+                renderItem={({ item: index }: ListRenderItemInfo<number>) => {
                   const isSelected = snappedIndex === index;
-                  const bwOpacity = quizScrollX.interpolate({
+                  const dimOpacity = quizScrollX.interpolate({
                     inputRange: [
                       (index - 1) * SNAP_INTERVAL,
                       index * SNAP_INTERVAL,
                       (index + 1) * SNAP_INTERVAL,
                     ],
-                    outputRange: [1, 0, 1],
+                    outputRange: [0.45, 0, 0.45],
                     extrapolate: "clamp",
                   });
                   return (
-                    <View style={{ alignItems: "center", width: CARD_WIDTH }}>
+                    <Pressable
+                      onPress={() => selectTasteOption(index)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${labels[index]} ${QUESTIONS[currentKey]}`}
+                      accessibilityHint={`Selects ${choiceFoods[index].label} as your answer for this taste question`}
+                      accessibilityState={{ selected: isSelected, disabled: isTransitioning }}
+                      disabled={isTransitioning}
+                      style={{ alignItems: "center", width: CARD_WIDTH }}
+                    >
                       <View
                         style={[
                           isSelected
@@ -544,30 +546,25 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                           },
                         ]}
                       >
-                        <Image
-                          source={{ uri: choiceImages[index] }}
+                        <AccessibleImage
+                          source={choiceFoods[index].imageSource}
                           contentFit="cover"
                           contentPosition="center"
                           style={{ height: "100%", width: "100%" }}
+                          decorative
                         />
                         <Animated.View
                           pointerEvents="none"
                           style={{
+                            backgroundColor: palette.bg,
                             bottom: 0,
                             left: 0,
                             position: "absolute",
                             right: 0,
                             top: 0,
-                            opacity: bwOpacity,
+                            opacity: dimOpacity,
                           }}
-                        >
-                          <Image
-                            source={{ uri: toBwVariant(choiceImages[index]) }}
-                            contentFit="cover"
-                            contentPosition="center"
-                            style={{ height: "100%", width: "100%" }}
-                          />
-                        </Animated.View>
+                        />
                       </View>
                       <AppText
                         variant={isSelected ? "h3" : "body"}
@@ -581,7 +578,15 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                       >
                         {labels[index]}
                       </AppText>
-                    </View>
+                      <AppText
+                        variant="micro"
+                        tone="secondary"
+                        numberOfLines={1}
+                        style={{ marginTop: spacing[1], textAlign: "center", width: "100%" }}
+                      >
+                        {choiceFoods[index].label}
+                      </AppText>
+                    </Pressable>
                   );
                 }}
               />
@@ -591,11 +596,11 @@ export function TasteQuizScreen({ navigation, route }: Props) {
 
         <View
           style={{
-            bottom: ONBOARDING_ACTIONS_BOTTOM_PADDING + spacing[2],
+            flexShrink: 0,
             gap: ONBOARDING_ACTIONS_GAP,
-            left: ONBOARDING_ACTIONS_HORIZONTAL_PADDING,
-            position: "absolute",
-            right: ONBOARDING_ACTIONS_HORIZONTAL_PADDING,
+            paddingBottom: actionFooterBottomPadding,
+            paddingHorizontal: ONBOARDING_ACTIONS_HORIZONTAL_PADDING,
+            paddingTop: spacing[2],
           }}
         >
           {inDietaryStep ? (
@@ -611,6 +616,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                 <Button
                   label="Back"
                   variant="secondary"
+                  fullWidth={false}
                   onPress={() => {
                     if (isDietaryRoute) {
                       navigation.goBack();
@@ -618,12 +624,22 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                     }
                     setPhase("taste");
                   }}
-                  style={{ width: BACK_BUTTON_WIDTH }}
+                  style={{
+                    flex: 1,
+                    minWidth: 86,
+                  }}
                 />
                 <Button
                   label={dietaryPrimaryLabel}
                   onPress={handleFinish}
-                  style={{ width: PRIMARY_BUTTON_WIDTH }}
+                  fullWidth={false}
+                  size={dietaryPrimaryButtonSize}
+                  style={{
+                    flex: 2,
+                    minWidth: 160,
+                  }}
+                  labelNumberOfLines={fontScale > 1.15 ? 2 : 1}
+                  labelEllipsizeMode="tail"
                 />
               </View>
               <View style={{ minHeight: 44 }} />

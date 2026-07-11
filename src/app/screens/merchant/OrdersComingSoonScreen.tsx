@@ -1,12 +1,21 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import { QrCode, Smartphone, CreditCard, Clock } from "lucide-react-native";
 
 import { AppText, Button, Screen } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
+import { getActiveOutlet, useMerchantStore } from "@/store/useMerchantStore";
 
 export function OrdersComingSoonScreen() {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii } = useHungryTheme();
+  const activeOutlet = useMerchantStore(getActiveOutlet);
+  const qrCells = useMemo(() => {
+    const seed = activeOutlet?.id ?? "hungry-order-preview";
+    return Array.from({ length: 49 }, (_, index) => {
+      const code = seed.charCodeAt(index % seed.length);
+      return (code + index * 7) % 10 > 4;
+    });
+  }, [activeOutlet?.id]);
 
   return (
     <Screen title="In-App Ordering">
@@ -50,7 +59,7 @@ export function OrdersComingSoonScreen() {
               {
                 backgroundColor: palette.surface,
                 borderColor: palette.border,
-                borderRadius: radii.lg,
+                borderRadius: componentRadii.card,
                 padding: spacing[4],
               },
             ]}
@@ -69,7 +78,7 @@ export function OrdersComingSoonScreen() {
               <View
                 style={[
                   styles.stepIcon,
-                  { backgroundColor: palette.bgSoft, borderRadius: radii.md },
+                  { backgroundColor: palette.bgSoft, borderRadius: componentRadii.iconButton },
                 ]}
               >
                 <QrCode size={20} color={palette.text} />
@@ -95,7 +104,7 @@ export function OrdersComingSoonScreen() {
               <View
                 style={[
                   styles.stepIcon,
-                  { backgroundColor: palette.bgSoft, borderRadius: radii.md },
+                  { backgroundColor: palette.bgSoft, borderRadius: componentRadii.iconButton },
                 ]}
               >
                 <CreditCard size={20} color={palette.text} />
@@ -121,7 +130,7 @@ export function OrdersComingSoonScreen() {
               <View
                 style={[
                   styles.stepIcon,
-                  { backgroundColor: palette.bgSoft, borderRadius: radii.md },
+                  { backgroundColor: palette.bgSoft, borderRadius: componentRadii.iconButton },
                 ]}
               >
                 <Smartphone size={20} color={palette.text} />
@@ -147,7 +156,7 @@ export function OrdersComingSoonScreen() {
               <View
                 style={[
                   styles.stepIcon,
-                  { backgroundColor: palette.bgSoft, borderRadius: radii.md },
+                  { backgroundColor: palette.bgSoft, borderRadius: componentRadii.iconButton },
                 ]}
               >
                 <Clock size={20} color={palette.text} />
@@ -173,7 +182,7 @@ export function OrdersComingSoonScreen() {
               {
                 backgroundColor: palette.surface,
                 borderColor: palette.border,
-                borderRadius: radii.lg,
+                borderRadius: componentRadii.card,
                 padding: spacing[5] || 24,
               },
             ]}
@@ -190,7 +199,7 @@ export function OrdersComingSoonScreen() {
                   styles.qrBox,
                   {
                     borderColor: palette.border,
-                    borderRadius: radii.md,
+                    borderRadius: componentRadii.card,
                     backgroundColor: palette.surface,
                   },
                 ]}
@@ -205,13 +214,13 @@ export function OrdersComingSoonScreen() {
                     padding: 8,
                   }}
                 >
-                  {Array.from({ length: 49 }).map((_, i) => (
+                  {qrCells.map((filled, i) => (
                     <View
                       key={i}
                       style={{
                         width: 14,
                         height: 14,
-                        backgroundColor: (i * 7) % 10 > 4 ? palette.text : "transparent",
+                        backgroundColor: filled ? palette.text : "transparent",
                         margin: 1,
                       }}
                     />
@@ -253,7 +262,7 @@ export function OrdersComingSoonScreen() {
                 </View>
               </View>
               <AppText variant="bodySmall" tone="muted" style={{ marginTop: spacing[3] }}>
-                Hungry / Your Stall Name
+                Hungry / {activeOutlet?.name ?? "Merchant preview"}
               </AppText>
             </View>
 
@@ -280,7 +289,7 @@ export function OrdersComingSoonScreen() {
               {
                 backgroundColor: palette.surface,
                 borderColor: palette.border,
-                borderRadius: radii.lg,
+                borderRadius: componentRadii.card,
                 padding: spacing[4],
               },
             ]}

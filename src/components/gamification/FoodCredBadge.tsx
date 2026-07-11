@@ -12,9 +12,12 @@ import { View, StyleSheet, type ViewStyle } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { useEffect } from "react";
 
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "@/components/ui/AppText";
 import { useFoodCredStore, FOOD_CRED_LEVELS } from "@/store/useFoodCredStore";
+import { resolveFoodCredLevel, resolveLevelProgress } from "@/constants/foodCredConfig";
+import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
 
 interface FoodCredBadgeProps {
   size?: "sm" | "md" | "lg";
@@ -25,15 +28,19 @@ interface FoodCredBadgeProps {
 export function FoodCredBadge({ size = "md", showPoints = false, style }: FoodCredBadgeProps) {
   const { palette, radii, spacing, typography } = useHungryTheme();
   const totalPoints = useFoodCredStore((s) => s.totalPoints);
-  const currentLevel = useFoodCredStore((s) => s.currentLevel());
-  const levelProgress = useFoodCredStore((s) => s.levelProgress());
+  const reduceMotion = useReduceMotion();
+  const currentLevel = resolveFoodCredLevel(totalPoints);
+  const levelProgress = resolveLevelProgress(totalPoints);
   const isMaxLevel = currentLevel.index >= FOOD_CRED_LEVELS.length - 1;
+  const disclosure = getDataTrustDisclosure("foodCred");
 
   // Animate progress bar fill
   const progressWidth = useSharedValue(0);
   useEffect(() => {
-    progressWidth.value = withSpring(levelProgress, { damping: 18, stiffness: 120 });
-  }, [levelProgress, progressWidth]);
+    progressWidth.value = reduceMotion
+      ? levelProgress
+      : withSpring(levelProgress, { damping: 18, stiffness: 120 });
+  }, [levelProgress, progressWidth, reduceMotion]);
 
   const progressStyle = useAnimatedStyle(() => ({
     width: `${Math.min(progressWidth.value * 100, 100)}%`,
@@ -89,6 +96,9 @@ export function FoodCredBadge({ size = "md", showPoints = false, style }: FoodCr
             {totalPoints} pts
           </AppText>
         )}
+        <AppText tone="muted" variant="micro" style={{ marginLeft: spacing[2] }}>
+          {disclosure}
+        </AppText>
       </View>
     );
   }
@@ -120,6 +130,9 @@ export function FoodCredBadge({ size = "md", showPoints = false, style }: FoodCr
           {totalPoints} pts
         </AppText>
       </View>
+      <AppText tone="muted" variant="micro">
+        {disclosure}
+      </AppText>
 
       {/* Progress bar */}
       {!isMaxLevel && nextLevel && (

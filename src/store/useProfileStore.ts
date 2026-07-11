@@ -25,8 +25,74 @@ import type {
   TasteVector,
   UserProfile,
 } from "@/types/domain";
-import { NEUTRAL_TASTE_PROFILE } from "@/constants/taste";
+import { NEUTRAL_TASTE_PROFILE, NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { hungryPersistStorage } from "./persistStorage";
+import { getConfiguredDataSource } from "@/lib/services/supabase/client";
+
+const SUPABASE_USER_GUEST_PROFILE: UserProfile = {
+  id: "guest-user",
+  displayName: "Guest",
+  email: "guest@hungry.local",
+  profileVisibility: "public",
+  tasteVector: NEUTRAL_TASTE_VECTOR,
+  dietaryPreferences: [],
+  favouriteDishIds: [],
+  reviewedDishIds: [],
+  stats: {
+    dishesReviewed: 0,
+    stallsVisited: 0,
+    favouritesCount: 0,
+    followersCount: 0,
+    followingCount: 0,
+  },
+};
+
+function isUuidLikeProfileId(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+  );
+}
+
+function ensureSupabaseCompatibleProfile(profile: UserProfile): UserProfile {
+  if (getConfiguredDataSource() !== "supabase") {
+    return profile;
+  }
+  if (isUuidLikeProfileId(profile.id)) {
+    return profile;
+  }
+  if (profile.id === "guest-user") {
+    return { ...SUPABASE_USER_GUEST_PROFILE };
+  }
+  return { ...SUPABASE_USER_GUEST_PROFILE };
+}
+
+function getSessionStoreState() {
+  const { useSessionStore } = require("./useSessionStore") as typeof import("./useSessionStore");
+  return useSessionStore.getState();
+}
+
+function shouldSyncAuthenticatedProfile(profile: UserProfile): boolean {
+  if (getServiceProvider().mode === "mock") {
+    return false;
+  }
+  const session = getSessionStoreState();
+  return (
+    session.isAuthenticated &&
+    Boolean(session.authenticatedUserId) &&
+    profile.id === session.authenticatedUserId
+  );
+}
+
+function withNeutralTasteProfile(profile: UserProfile): UserProfile {
+  return {
+    ...profile,
+    tasteProfile: profile.tasteProfile ?? {
+      ...NEUTRAL_TASTE_PROFILE,
+      vector: profile.tasteVector,
+    },
+  };
+}
 
 interface ProfileState {
   profile: UserProfile;
@@ -38,7 +104,7 @@ interface ProfileState {
     { rating: number; text: string; tags: string[]; createdAt: string }
   >;
   applyProfile: (profile: UserProfile) => void;
-  syncProfile: (isAuthenticated: boolean) => void;
+  syncProfile: (isAuthenticated: boolean, userId?: string | null) => void;
   toggleFavourite: (dish: DishDetail) => void;
   updateProfile: (next: Partial<Pick<UserProfile, "displayName" | "email" | "avatarUrl">>) => void;
   setProfileVisibility: (profileVisibility: ProfileVisibility) => void;
@@ -47,6 +113,7 @@ interface ProfileState {
   setDietaryPreferences: (dietaryPreferences: DietaryFlag[]) => void;
   addReview: (dish: DishDetail) => void;
   addReviewedDish: (dishId: string) => void;
+  removeReviewedDish: (dishId: string) => void;
   recordReviewEntry: (
     dishId: string,
     entry: { rating: number; text: string; tags: string[] },
@@ -84,6 +151,8 @@ const FEEDBACK_CONFIDENCE_DELTAS: Record<ExplicitFeedbackEvent["type"], number> 
   food_button_click: 0.012,
   dismissed: 0.01,
 };
+
+const pendingFavouriteDishToggles = new Set<string>();
 
 function clampConfidence(value: number) {
   return Math.max(0, Math.min(1, Number(value.toFixed(3))));
@@ -274,29 +343,90 @@ function resolveInteractionVector(input: RecordTasteInteractionInput, profile: U
 export const useProfileStore = create<ProfileState>()(
   persist(
     (set, get) => ({
-      profile: getDataRepository().getProfile(false),
+      profile: withNeutralTasteProfile(
+        ensureSupabaseCompatibleProfile(getDataRepository().getProfile(false)),
+      ),
       tasteProfile: NEUTRAL_TASTE_PROFILE,
       tasteInteractionEvents: [],
       reviewEntries: {},
       applyProfile: (profile) =>
         set({
-          profile,
+          profile: withNeutralTasteProfile(ensureSupabaseCompatibleProfile(profile)),
           tasteProfile: profile.tasteProfile ?? {
             ...NEUTRAL_TASTE_PROFILE,
             vector: profile.tasteVector,
           },
         }),
-      syncProfile: (isAuthenticated) => {
-        set({ profile: getDataRepository().getProfile(isAuthenticated) });
+      syncProfile: (isAuthenticated, userId) => {
+        const currentProfile = get().profile;
+        const authenticatedUserId =
+          isAuthenticated && userId && getServiceProvider().mode !== "mock" ? userId : null;
+        const rehydrateFavouriteDishIds = () => {
+          if (!authenticatedUserId) return;
+          const targetUserId = authenticatedUserId;
+          void getHungryService()
+            .profile.getFavouriteDishIds()
+            .then((ids) => {
+              const session = getSessionStoreState();
+              if (!session.isAuthenticated || session.authenticatedUserId !== targetUserId) {
+                return;
+              }
+              set((state) => {
+                if (state.profile.id !== targetUserId) return {};
+                return {
+                  profile: withNeutralTasteProfile({
+                    ...state.profile,
+                    favouriteDishIds: ids,
+                    stats: {
+                      ...state.profile.stats,
+                      favouritesCount: ids.length,
+                    },
+                  }),
+                };
+              });
+            })
+            .catch((error) => {
+              console.warn("Failed to rehydrate favourite dish IDs", error);
+            });
+        };
+
+        if (isAuthenticated && userId && currentProfile.id === userId) {
+          rehydrateFavouriteDishIds();
+          return;
+        }
+
+        set({
+          profile: withNeutralTasteProfile(
+            ensureSupabaseCompatibleProfile(
+              getDataRepository().getProfile(isAuthenticated, userId),
+            ),
+          ),
+          tasteProfile: NEUTRAL_TASTE_PROFILE,
+        });
+        rehydrateFavouriteDishIds();
       },
       toggleFavourite: (dish) => {
+        const dishId = dish.id;
+        if (pendingFavouriteDishToggles.has(dishId)) {
+          return;
+        }
+        if (!getSessionStoreState().isAuthenticated) {
+          console.warn("Favourite toggle ignored because the user is signed out.");
+          return;
+        }
+        pendingFavouriteDishToggles.add(dishId);
+        const previousSnapshot = {
+          profile: get().profile,
+          tasteProfile: get().tasteProfile,
+          tasteInteractionEvents: get().tasteInteractionEvents,
+        };
         let recordedEvent: TasteInteractionEvent | undefined;
         let interactionInput: RecordTasteInteractionInput | undefined;
         set((state) => {
-          const isFavourite = state.profile.favouriteDishIds.includes(dish.id);
+          const isFavourite = state.profile.favouriteDishIds.includes(dishId);
           const nextIds = isFavourite
-            ? state.profile.favouriteDishIds.filter((id) => id !== dish.id)
-            : [...state.profile.favouriteDishIds, dish.id];
+            ? state.profile.favouriteDishIds.filter((id) => id !== dishId)
+            : [...state.profile.favouriteDishIds, dishId];
           const feedbackType: ExplicitFeedbackEvent["type"] = isFavourite ? "unsaved" : "saved";
           const updatedTasteVector = processExplicitFeedback(state.profile.tasteVector, {
             type: feedbackType,
@@ -340,33 +470,70 @@ export const useProfileStore = create<ProfileState>()(
         if (interactionInput) {
           persistTasteInteraction(interactionInput, recordedEvent);
         }
+        if (getServiceProvider().mode !== "mock") {
+          const optimisticProfile = get().profile;
+          void getHungryService()
+            .profile.toggleFavourite(dishId)
+            .catch((error) => {
+              console.error("Failed to sync favourite toggle", error);
+              if (get().profile !== optimisticProfile) return;
+              set(previousSnapshot);
+            })
+            .finally(() => {
+              pendingFavouriteDishToggles.delete(dishId);
+            });
+        } else {
+          pendingFavouriteDishToggles.delete(dishId);
+        }
       },
-      updateProfile: (next) =>
+      updateProfile: (next) => {
+        const previousProfile = get().profile;
         set((state) => ({
           profile: {
             ...state.profile,
             ...next,
           },
-        })),
+        }));
+        const optimisticProfile = get().profile;
+        if (!shouldSyncAuthenticatedProfile(optimisticProfile)) {
+          return;
+        }
+        void getHungryService()
+          .profile.updateProfile(next)
+          .catch((error) => {
+            console.error("Failed to sync profile update", error);
+            if (get().profile !== optimisticProfile) return;
+            set({ profile: previousProfile });
+          });
+      },
       setProfileVisibility: (profileVisibility) => {
         const currentVisibility = get().profile.profileVisibility;
         if (currentVisibility === profileVisibility) return;
+        const previousProfile = get().profile;
         set((state) => ({
           profile: {
             ...state.profile,
             profileVisibility,
           },
         }));
-        if (getServiceProvider().mode === "mock") {
+        const optimisticProfile = get().profile;
+        if (!shouldSyncAuthenticatedProfile(optimisticProfile)) {
           return;
         }
         void getHungryService()
           .profile.updateProfile({ profileVisibility })
           .catch((error) => {
             console.error("Failed to update profile visibility", error);
+            if (get().profile !== optimisticProfile) return;
+            set({ profile: previousProfile });
           });
       },
-      setTasteVector: (tasteVector) =>
+      setTasteVector: (tasteVector) => {
+        const previousSnapshot = {
+          profile: get().profile,
+          tasteProfile: get().tasteProfile,
+          tasteInteractionEvents: get().tasteInteractionEvents,
+        };
         set((state) => {
           trackAnalyticsEvent("taste_quiz_completed", {
             skipped: false,
@@ -396,8 +563,25 @@ export const useProfileStore = create<ProfileState>()(
             },
             tasteInteractionEvents: appendTasteEvent(state.tasteInteractionEvents, event),
           };
-        }),
-      setTasteProfile: (tasteProfile) =>
+        });
+        const optimisticProfile = get().profile;
+        if (!shouldSyncAuthenticatedProfile(optimisticProfile)) {
+          return;
+        }
+        void getHungryService()
+          .profile.updateTasteVector(tasteVector)
+          .catch((error) => {
+            console.error("Failed to sync taste vector", error);
+            if (get().profile !== optimisticProfile) return;
+            set(previousSnapshot);
+          });
+      },
+      setTasteProfile: (tasteProfile) => {
+        const previousSnapshot = {
+          profile: get().profile,
+          tasteProfile: get().tasteProfile,
+          tasteInteractionEvents: get().tasteInteractionEvents,
+        };
         set((state) => {
           trackAnalyticsEvent("taste_quiz_completed", {
             skipped: false,
@@ -427,8 +611,21 @@ export const useProfileStore = create<ProfileState>()(
             tasteProfile,
             tasteInteractionEvents: appendTasteEvent(state.tasteInteractionEvents, event),
           };
-        }),
-      setDietaryPreferences: (dietaryPreferences) =>
+        });
+        const optimisticProfile = get().profile;
+        if (!shouldSyncAuthenticatedProfile(optimisticProfile)) {
+          return;
+        }
+        void getHungryService()
+          .profile.updateTasteProfile(tasteProfile)
+          .catch((error) => {
+            console.error("Failed to sync taste profile", error);
+            if (get().profile !== optimisticProfile) return;
+            set(previousSnapshot);
+          });
+      },
+      setDietaryPreferences: (dietaryPreferences) => {
+        const previousProfile = get().profile;
         set((state) => {
           trackAnalyticsEvent("dietary_preferences_set", {
             flags: dietaryPreferences,
@@ -439,7 +636,19 @@ export const useProfileStore = create<ProfileState>()(
               dietaryPreferences,
             },
           };
-        }),
+        });
+        const optimisticProfile = get().profile;
+        if (!shouldSyncAuthenticatedProfile(optimisticProfile)) {
+          return;
+        }
+        void getHungryService()
+          .profile.updateDietaryPreferences(dietaryPreferences)
+          .catch((error) => {
+            console.error("Failed to sync dietary preferences", error);
+            if (get().profile !== optimisticProfile) return;
+            set({ profile: previousProfile });
+          });
+      },
       addReview: (dish) =>
         set((state) => {
           const reviewedDishIds = state.profile.reviewedDishIds.includes(dish.id)
@@ -463,6 +672,20 @@ export const useProfileStore = create<ProfileState>()(
             ? state.profile.reviewedDishIds
             : [...state.profile.reviewedDishIds, dishId];
 
+          return {
+            profile: {
+              ...state.profile,
+              reviewedDishIds,
+              stats: {
+                ...state.profile.stats,
+                dishesReviewed: reviewedDishIds.length,
+              },
+            },
+          };
+        }),
+      removeReviewedDish: (dishId) =>
+        set((state) => {
+          const reviewedDishIds = state.profile.reviewedDishIds.filter((id) => id !== dishId);
           return {
             profile: {
               ...state.profile,
@@ -607,7 +830,9 @@ export const useProfileStore = create<ProfileState>()(
         })),
       clearProfile: () =>
         set({
-          profile: getDataRepository().getProfile(false),
+          profile: withNeutralTasteProfile(
+            ensureSupabaseCompatibleProfile(getDataRepository().getProfile(false)),
+          ),
           tasteProfile: NEUTRAL_TASTE_PROFILE,
           tasteInteractionEvents: [],
           reviewEntries: {},
@@ -616,6 +841,21 @@ export const useProfileStore = create<ProfileState>()(
     {
       name: "hungry-profile-v1",
       storage: hungryPersistStorage,
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        if (!state.profile) {
+          state.profile = withNeutralTasteProfile(SUPABASE_USER_GUEST_PROFILE);
+          state.tasteProfile = NEUTRAL_TASTE_PROFILE;
+          return;
+        }
+
+        state.profile = withNeutralTasteProfile(
+          ensureSupabaseCompatibleProfile(state.profile as UserProfile),
+        );
+        if (!state.tasteProfile) {
+          state.tasteProfile = NEUTRAL_TASTE_PROFILE;
+        }
+      },
       partialize: (state) => ({
         profile: state.profile,
         tasteProfile: state.tasteProfile,

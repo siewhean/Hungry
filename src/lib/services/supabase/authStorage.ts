@@ -323,14 +323,20 @@ export const supabaseAuthStorage = {
   setItem: async (name: string, value: string): Promise<void> => {
     const wrote = await writeToSecureStore(name, value);
     if (wrote) {
-      // Belt-and-braces: if a legacy copy lingered in AsyncStorage, remove it
-      // now that the canonical copy lives in SecureStore.
       const asyncStorage = getAsyncStorage();
       if (asyncStorage) {
         try {
-          await asyncStorage.removeItem(name);
+          if (canUsePlaintextTokenFallback()) {
+            // Dev/test simulator reloads have repeatedly shown SecureStore can
+            // be unavailable or inconsistent while iterating. Keep a dev-only
+            // AsyncStorage mirror so reload/close keeps the user signed in.
+            await asyncStorage.setItem(name, value);
+          } else {
+            // Production keeps auth material out of plaintext AsyncStorage.
+            await asyncStorage.removeItem(name);
+          }
         } catch {
-          // Ignore — not critical to the write path.
+          // Ignore — SecureStore remains the canonical production write.
         }
       }
       memoryStore.delete(name);

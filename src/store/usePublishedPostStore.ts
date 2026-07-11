@@ -8,6 +8,7 @@ interface PublishedPostState {
   posts: StallPost[];
   version: number;
   upsertPost: (post: StallPost) => void;
+  clearPosts: () => void;
   clearPostsForTest: () => void;
 }
 
@@ -24,6 +25,7 @@ export const usePublishedPostStore = create<PublishedPostState>()(
     (set) => ({
       posts: [],
       version: 0,
+      clearPosts: () => set((state) => ({ posts: [], version: state.version + 1 })),
       upsertPost: (post) =>
         set((state) => {
           const nextPosts = upsert(state.posts, post);

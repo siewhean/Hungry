@@ -1,20 +1,12 @@
 import React from "react";
 import { ScrollView, View, StyleSheet, Pressable } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { CommonActions, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import {
-  Clock,
-  MapPin,
-  Phone,
-  LogOut,
-  ChevronRight,
-  ShieldCheck,
-  CreditCard,
-  Settings as SettingsIcon,
-} from "lucide-react-native";
+import { Clock, MapPin, Phone, LogOut, ChevronRight, ShieldCheck } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Screen, Avatar, Button, EmptyState } from "@/components/ui";
+import { getRootNavigation } from "@/app/navigation/getRootNavigation";
+import { AppText, Screen, Avatar, EmptyState, Button } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useSessionStore } from "@/store/useSessionStore";
 import { getActiveOutlet, useMerchantStore } from "@/store/useMerchantStore";
@@ -29,10 +21,12 @@ type ProfileItemProps = {
 };
 
 export function MerchantProfileScreen() {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing } = useHungryTheme();
   const navigation = useNavigation<NavigationProp>();
+  const rootNavigation = getRootNavigation(navigation);
   const signOut = useSessionStore((state) => state.signOut);
   const account = useMerchantStore((state) => state.account);
+  const clearMerchant = useMerchantStore((state) => state.clearMerchant);
   const activeOutlet = useMerchantStore(getActiveOutlet);
   const repository = getDataRepository();
   const outletBuilding = activeOutlet?.buildingId
@@ -62,7 +56,11 @@ export function MerchantProfileScreen() {
       onPress={onPress}
       style={[
         styles.item,
-        { backgroundColor: palette.surfaceRaised, borderRadius: radii.lg, padding: spacing[4] },
+        {
+          backgroundColor: palette.surfaceRaised,
+          borderRadius: componentRadii.card,
+          padding: spacing[4],
+        },
       ]}
     >
       <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3], flex: 1 }}>
@@ -81,16 +79,14 @@ export function MerchantProfileScreen() {
   if (!activeOutlet) {
     return (
       <Screen title="Stall Profile" subtitle="Manage your stall information">
-        <View style={{ paddingVertical: spacing[8], gap: spacing[4] }}>
-          <EmptyState
-            title="No merchant outlet yet"
-            body="No merchant outlet is linked to this account yet."
-          />
-          <Button
-            label="Open verification"
-            onPress={() => navigation.navigate("VerificationCentre" as any)}
-          />
-        </View>
+        <EmptyState
+          title="No merchant outlet yet"
+          body="No merchant outlet is linked to this account yet."
+          errorMessage="No active outlet is currently linked to this account."
+          sendErrorContext="Merchant profile"
+          ctaLabel="Open verification"
+          onPress={() => navigation.navigate("VerificationCentre" as any)}
+        />
       </Screen>
     );
   }
@@ -136,33 +132,29 @@ export function MerchantProfileScreen() {
           />
         </Section>
 
-        <Section title="Payouts & Billing">
-          <ProfileItem
-            icon={CreditCard}
-            label="Bank Account"
-            value={account?.role === "owner" ? "Configure in settings" : "Owner access required"}
-            onPress={() => navigation.navigate("MerchantSettings" as any)}
-          />
-          <ProfileItem
-            icon={SettingsIcon}
-            label="Platform Fees"
-            value="View current settings"
-            onPress={() => navigation.navigate("MerchantSettings" as any)}
-          />
-        </Section>
-
         <View style={{ marginTop: spacing[8], gap: spacing[3] }}>
           <Button
             label="Switch to Customer Mode"
             variant="secondary"
-            onPress={() => navigation.navigate("MainTabs" as any)}
+            onPress={() => {
+              clearMerchant();
+              rootNavigation.dispatch(
+                CommonActions.reset({
+                  index: 0,
+                  routes: [{ name: "MainTabs", params: { screen: "Home" } }],
+                }),
+              );
+            }}
           />
           <Button
             label="Sign Out"
             variant="destructive"
             onPress={() => {
               signOut();
-              navigation.reset({ index: 0, routes: [{ name: "AuthStack" as any }] });
+              rootNavigation.reset({
+                index: 0,
+                routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+              });
             }}
             leftIcon={<LogOut size={20} color="white" />}
           />

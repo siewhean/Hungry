@@ -8,6 +8,7 @@ import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
+import { isVenueOpenFromHours } from "@/utils/stallStatus";
 import type { ProfileStackParamList } from "./ProfileStack";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 
@@ -23,7 +24,7 @@ type VenueItem = {
 };
 
 export function VisitedStallsScreen({ navigation }: Props) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing } = useHungryTheme();
   const profile = useProfileStore((state) => state.profile);
   const repository = getDataRepository();
   const rootNavigation = getRootNavigation(navigation as any);
@@ -66,7 +67,7 @@ export function VisitedStallsScreen({ navigation }: Props) {
                 {
                   borderColor: palette.border,
                   borderWidth: 1,
-                  borderRadius: radii.lg,
+                  borderRadius: componentRadii.card,
                   backgroundColor: pressed ? palette.bgSoft : palette.surface,
                   overflow: "hidden",
                 },
@@ -84,7 +85,9 @@ export function VisitedStallsScreen({ navigation }: Props) {
                     </AppText>
                     <AppText tone="secondary" variant="micro">
                       {venue.operatingHours ?? "Hours unavailable"} ·{" "}
-                      {venue.isOpen ? "Open now" : "Closed"}
+                      {isVenueOpenFromHours(venue.operatingHours, !!venue.isOpen)
+                        ? "Open now"
+                        : "Closed"}
                     </AppText>
                   </View>
                 </View>

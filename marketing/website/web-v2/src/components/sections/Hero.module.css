@@ -48,7 +48,7 @@
   z-index: 8;
   display: grid;
   gap: var(--space-5);
-  max-width: 46rem;
+  max-width: 54rem;
 }
 
 .eyebrow {
@@ -68,11 +68,11 @@
 .headline {
   display: grid;
   gap: var(--space-1);
-  max-width: 11ch;
-  font-size: clamp(3.1rem, 5.9vw, 5.8rem);
+  max-width: min(100%, 22ch);
+  font-size: clamp(3.1rem, 5.2vw, 5.4rem);
   line-height: 0.94;
   letter-spacing: 0;
-  color: var(--color-text-primary);
+  color: var(--color-ink-deep);
 }
 
 .lineMask {
@@ -84,9 +84,14 @@
 .headlineLine {
   display: block;
   transform: none;
+  white-space: nowrap;
 }
 
-.lineMask:nth-child(2) .headlineLine {
+.headlineLinePrimary {
+  color: var(--color-text-primary);
+}
+
+.headlineLineAccent {
   color: var(--color-primary);
 }
 
@@ -117,6 +122,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: var(--space-2);
   border-radius: var(--radius-full);
   padding: var(--space-4) var(--space-8);
   font-size: var(--font-size-lg);
@@ -137,6 +143,14 @@
   background: var(--color-primary-dark);
   box-shadow: var(--shadow-float);
   transform: translateY(-3px);
+}
+
+.ctaIcon {
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.primaryCta:hover .ctaIcon {
+  transform: translateX(4px);
 }
 
 .secondaryCta {
@@ -163,25 +177,75 @@
 }
 
 .visualContent {
+  --hero-phone-width: min(
+    100%,
+    22rem,
+    calc((100svh - var(--announcement-height) - var(--header-height) - var(--space-16)) * 0.39)
+  );
+
   position: relative;
-  min-height: clamp(34rem, 66vw, 50rem);
+  min-height: clamp(29rem, 48vw, 39rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.previewStage {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.phoneWrapper {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.phoneMockup {
+  width: var(--hero-phone-width);
+  min-width: min(15.75rem, 100%);
+  aspect-ratio: 393 / 852;
+  filter: drop-shadow(0 28px 52px rgb(26 46 68 / 0.26));
+  pointer-events: auto;
+  transform-origin: center;
 }
 
 .foodOrbit {
   position: absolute;
-  inset: 0;
+  left: 50%;
+  top: 50%;
+  z-index: 4;
+  width: var(--hero-phone-width);
+  min-width: min(15.75rem, 100%);
+  aspect-ratio: 393 / 852;
+  translate: -50% -50%;
   pointer-events: none;
 }
 
 .foodCard {
   position: absolute;
-  width: clamp(8rem, 14vw, 13rem);
+  width: clamp(6.25rem, 38%, 10.5rem);
   aspect-ratio: 1;
   border: 8px solid color-mix(in srgb, var(--color-surface) 82%, transparent);
   border-radius: 50%;
   box-shadow: var(--shadow-float);
   overflow: hidden;
   pointer-events: auto;
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.foodCard:nth-child(odd):hover {
+  transform: scale(1.06) rotate(-2deg);
+}
+
+.foodCard:nth-child(even):hover {
+  transform: scale(1.06) rotate(2deg);
 }
 
 .foodCardImage {
@@ -189,43 +253,29 @@
 }
 
 .foodCard1 {
-  top: 7%;
-  left: 2%;
+  top: -6%;
+  left: -28%;
 }
 
 .foodCard2 {
-  right: 6%;
-  top: 8%;
+  right: -28%;
+  top: -4%;
 }
 
 .foodCard3 {
-  left: 4%;
-  bottom: 9%;
-}
-
-.deviceCluster {
-  position: absolute;
-  inset: 5% 9% 7% 18%;
-  display: grid;
-  place-items: center;
-}
-
-.deviceCluster > figure:first-child {
-  width: min(52vw, 21rem);
-  transform: rotate(-3deg);
-}
-
-.secondaryScreen {
-  position: absolute;
-  right: -7%;
-  bottom: 7%;
-  width: min(48vw, 25rem);
-  transform: rotate(5deg);
+  left: -24%;
+  bottom: 8%;
 }
 
 .chipLayer {
   position: absolute;
-  inset: 0;
+  z-index: 8;
+  left: 50%;
+  top: 50%;
+  width: var(--hero-phone-width);
+  min-width: min(15.75rem, 100%);
+  aspect-ratio: 393 / 852;
+  translate: -50% -50%;
   pointer-events: none;
 }
 
@@ -234,42 +284,46 @@
   z-index: 6;
   display: inline-flex;
   align-items: center;
-  min-height: 2.8rem;
+  min-height: 2.1rem;
   border-radius: var(--radius-full);
-  padding: var(--space-2) var(--space-4);
+  padding: var(--space-1) var(--space-3);
   border: 1px solid var(--color-border);
   background: color-mix(in srgb, var(--color-surface) 88%, transparent);
   color: var(--color-text-primary);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   font-weight: 800;
   box-shadow: var(--shadow-lg);
   backdrop-filter: blur(14px);
   pointer-events: auto;
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.floatChip:hover {
+  transform: translateY(-4px) scale(1.03);
+}
+
+.floatChip:active {
+  transform: scale(0.97);
 }
 
 .chip1 {
-  top: 24%;
-  left: 0;
+  top: 20%;
+  left: -45%;
 }
 
 .chip2 {
-  top: 36%;
-  right: 0;
+  top: 38%;
+  right: -20%;
 }
 
 .chip3 {
-  left: 18%;
-  bottom: 16%;
+  left: -18%;
+  bottom: 7%;
 }
 
 .chip4 {
-  right: 6%;
-  bottom: 25%;
-}
-
-.chip5 {
-  left: 38%;
-  top: 8%;
+  right: -14%;
+  bottom: 27%;
 }
 
 .orange {
@@ -292,23 +346,79 @@
   color: var(--color-text-primary);
 }
 
-@media (min-width: 980px) {
+@media (min-width: 1120px) {
   .heroContainer {
-    grid-template-columns: minmax(26rem, 0.88fr) minmax(28rem, 1fr);
+    grid-template-columns: minmax(34rem, 1.2fr) minmax(22rem, 0.8fr);
+    gap: clamp(var(--space-12), 5vw, var(--space-20));
+  }
+
+  .visualContent {
+    justify-content: center;
+  }
+}
+
+@media (min-width: 1120px) and (max-width: 1320px) {
+  .headline {
+    font-size: clamp(3.1rem, 4.5vw, 4.2rem);
+    max-width: min(100%, 22ch);
+  }
+}
+
+@media (max-width: 1119px) {
+  .heroSection {
+    min-height: auto;
+  }
+
+  .heroContainer {
+    gap: clamp(var(--space-8), 7vw, var(--space-16));
+  }
+
+  .textContent {
+    max-width: 44rem;
+  }
+
+  .visualContent {
+    width: min(100%, 42rem);
+    justify-self: center;
+    margin-top: var(--space-2);
+    min-height: clamp(30rem, 72vw, 38rem);
+  }
+
+  .phoneWrapper {
+    align-items: flex-start;
+    padding-top: var(--space-2);
+  }
+
+  .foodOrbit {
+    top: var(--space-2);
+    translate: -50% 0;
+  }
+
+  .chipLayer {
+    top: var(--space-2);
+    translate: -50% 0;
   }
 }
 
 @media (max-width: 760px) {
-  .heroSection {
-    min-height: calc(100svh - var(--announcement-height));
+  .heroContainer {
+    gap: var(--space-8);
+    padding-top: var(--space-8);
+    padding-bottom: var(--space-12);
   }
 
-  .heroContainer {
-    padding-top: var(--space-10);
+  .textContent {
+    gap: var(--space-4);
   }
 
   .headline {
-    font-size: clamp(3rem, 17vw, 5.2rem);
+    font-size: clamp(2.45rem, 10.5vw, 3.35rem);
+    line-height: 1.02;
+    max-width: min(100%, 12ch);
+  }
+
+  .headlineLine {
+    white-space: normal;
   }
 
   .ctas {
@@ -321,35 +431,35 @@
   }
 
   .visualContent {
-    min-height: 35rem;
+    --hero-phone-width: min(76vw, 20.5rem, calc((100svh - var(--announcement-height) - var(--space-8)) * 0.462));
+
+    min-height: clamp(34rem, 136vw, 43rem);
   }
 
-  .deviceCluster {
-    inset: 8% 6%;
+  .phoneMockup {
+    min-width: min(15rem, 76vw);
   }
 
-  .deviceCluster > figure:first-child {
-    width: min(72vw, 18rem);
+  .foodOrbit {
+    min-width: min(15rem, 76vw);
   }
 
-  .secondaryScreen {
-    right: 0;
-    bottom: 8%;
-    width: min(78vw, 22rem);
+  .chipLayer {
+    min-width: min(15rem, 76vw);
   }
 
   .foodCard1 {
-    top: 1%;
+    top: -3%;
+    left: -22%;
   }
 
   .foodCard2 {
-    right: 0;
-    top: 4%;
+    right: -22%;
+    top: 0;
   }
 
   .chip1,
-  .chip4,
-  .chip5 {
+  .chip4 {
     display: none;
   }
 }

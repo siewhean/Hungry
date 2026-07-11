@@ -6,6 +6,7 @@ import { useHungryTheme } from "@/theme";
 
 interface SettingsRowProps {
   label: string;
+  description?: string;
   icon?: ReactNode;
   onPress?: () => void;
   value?: string;
@@ -18,6 +19,7 @@ interface SettingsRowProps {
 
 export function SettingsRow({
   label,
+  description,
   icon,
   onPress,
   value,
@@ -62,15 +64,32 @@ export function SettingsRow({
           style={{
             color: destructive ? palette.error : palette.text,
             fontWeight: "500",
+            flexShrink: 1,
+            flex: 1,
+            flexWrap: "wrap",
           }}
         >
           {label}
         </AppText>
+        {description ? (
+          <AppText
+            variant="bodySmall"
+            tone="muted"
+            style={[styles.description, { marginLeft: icon ? 36 : 0 }]}
+          >
+            {description}
+          </AppText>
+        ) : null}
       </View>
 
       <View style={styles.right}>
         {type === "value" && value ? (
-          <AppText tone="secondary" style={styles.valueText}>
+          <AppText
+            tone="secondary"
+            style={[styles.valueText, styles.rightText]}
+            numberOfLines={2}
+            ellipsizeMode="tail"
+          >
             {value}
           </AppText>
         ) : null}
@@ -78,7 +97,11 @@ export function SettingsRow({
         {type === "navigation" ? (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             {value ? (
-              <AppText tone="secondary" style={styles.valueText}>
+              <AppText
+                tone="secondary"
+                style={[styles.valueText, styles.rightText]}
+                numberOfLines={1}
+              >
                 {value}
               </AppText>
             ) : null}
@@ -105,6 +128,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
+    minWidth: 0,
+    flexWrap: "wrap",
+  },
+  description: {
+    flexBasis: "100%",
+    marginTop: 2,
   },
   iconWrap: {
     marginRight: 12,
@@ -115,8 +144,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginLeft: 16,
+    flexShrink: 1,
+    flexWrap: "wrap",
+    minWidth: 0,
   },
   valueText: {
     fontSize: 14,
+  },
+  rightText: {
+    textAlign: "right",
   },
 });

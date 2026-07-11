@@ -1,5 +1,7 @@
 import { SectionEyebrow } from "./SectionEyebrow";
 import { WaitlistForm } from "./WaitlistForm";
+import Link from "next/link";
+import { HungryWordmark } from "./HungryWordmark";
 
 export function Footer() {
   return (
@@ -24,15 +26,21 @@ export function Footer() {
       <div className="border-t border-hungry-border">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 py-8 text-xs text-hungry-text-muted sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-base font-extrabold tracking-[-0.04em] text-hungry-navy">
-              Hungry
-            </span>
+            <Link className="inline-flex items-center" href="/">
+              <HungryWordmark />
+            </Link>
             <span className="font-mono uppercase tracking-[0.18em]">Singapore</span>
           </div>
 
           <div className="flex items-center gap-6">
+            <a href="/terms" className="transition-colors hover:text-hungry-navy">
+              Terms
+            </a>
             <a href="/privacy" className="transition-colors hover:text-hungry-navy">
               Privacy
+            </a>
+            <a href="/account/delete" className="transition-colors hover:text-hungry-navy">
+              Delete account
             </a>
             <a href="mailto:hello@hungry.sg" className="transition-colors hover:text-hungry-navy">
               Contact

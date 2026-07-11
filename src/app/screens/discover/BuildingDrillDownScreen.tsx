@@ -1,4 +1,12 @@
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ComponentProps,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ChevronRight, MapPin, Minus, Plus, RotateCcw, Search } from "lucide-react-native";
@@ -12,11 +20,13 @@ import { getBuildingVenues } from "@/features/discovery/discovery";
 import { getDirectoryDescriptor } from "@/features/discovery/venueDescriptor";
 import { getFloorPlan } from "@/lib/geo/floorPlans";
 import { getBuildingById, singaporeBuildings, toSummary } from "@/lib/geo/singaporeBuildings";
+import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import type { StallPolygon } from "@/lib/services/types";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail } from "@/types/domain";
+import { isVenueOpenFromHours } from "@/utils/stallStatus";
 
 type Props = NativeStackScreenProps<RootStackParamList, "BuildingDrillDown">;
 
@@ -107,6 +117,8 @@ function FloorToggle({
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={`Show floor ${floor}`}
+      accessibilityState={{ selected }}
       onPress={onPress}
       style={{
         alignItems: "center",
@@ -143,6 +155,7 @@ function DirectoryFilter({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityState={{ selected }}
       onPress={onPress}
       style={{
         backgroundColor: selected ? palette.bgSoft : palette.surface,
@@ -165,21 +178,49 @@ function DirectoryFilter({
 type VenueStatus = "open" | "closing_soon" | "closed";
 
 function parseTimeToMinutes(value: string): number | null {
-  const match = value.trim().match(/^(\d{1,2}):(\d{2})\s*([AP]M)$/i);
+  const match = value.trim().match(/^(\d{1,2})(?::(\d{2}))?\s*([AP]M)?$/i);
   if (!match) {
     return null;
   }
 
   const hours = Number(match[1]);
-  const minutes = Number(match[2]);
-  const suffix = match[3].toUpperCase();
+  const minutes = Number(match[2] ?? 0);
+  const suffix = match[3]?.toUpperCase();
 
-  if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+  if (Number.isNaN(hours) || Number.isNaN(minutes) || minutes > 59) {
     return null;
+  }
+
+  if (!match[3]) {
+    if (hours > 23) {
+      return null;
+    }
+    return hours * 60 + minutes;
   }
 
   const normalizedHours = (hours % 12) + (suffix === "PM" ? 12 : 0);
   return normalizedHours * 60 + minutes;
+}
+
+function getCurrentSingaporeMinutes(now = new Date()): number {
+  const parts = new Intl.DateTimeFormat("en-SG", {
+    timeZone: "Asia/Singapore",
+    hour12: false,
+    hour: "2-digit",
+    minute: "2-digit",
+  }).formatToParts(now);
+
+  const hourPart = parts.find((part) => part.type === "hour");
+  const minutePart = parts.find((part) => part.type === "minute");
+
+  const hour = Number(hourPart?.value ?? NaN);
+  const minute = Number(minutePart?.value ?? NaN);
+
+  if (Number.isNaN(hour) || Number.isNaN(minute)) {
+    return now.getHours() * 60 + now.getMinutes();
+  }
+
+  return hour * 60 + minute;
 }
 
 function isClosingWithinOneHour(operatingHours?: string, now = new Date()): boolean {
@@ -197,13 +238,14 @@ function isClosingWithinOneHour(operatingHours?: string, now = new Date()): bool
     return false;
   }
 
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const currentMinutes = getCurrentSingaporeMinutes(now);
   const diff = closingMinutes - currentMinutes;
   return diff >= 0 && diff <= 60;
 }
 
 function getVenueStatus(isOpen: boolean, operatingHours?: string): VenueStatus {
-  if (!isOpen) {
+  const dynamicOpen = isVenueOpenFromHours(operatingHours, isOpen);
+  if (!dynamicOpen) {
     return "closed";
   }
 
@@ -277,7 +319,8 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
   const repository = getDataRepository();
-  const { palette, radii, spacing, shadows } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing, shadows } = useHungryTheme();
+  const mapStatusDisclosure = getDataTrustDisclosure("mapStatus");
   const selectedBuilding = useDiscoveryStore((state) => state.selectedBuilding);
   const selectedFloor = useDiscoveryStore((state) => state.selectedFloor);
   const highlightedStallVenueId = useDiscoveryStore((state) => state.highlightedStallVenueId);
@@ -346,7 +389,9 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
         const dish = venue ? repository.getDishById(venue.topDishId) : undefined;
         const title = venue?.name ?? stall.label ?? `Unit ${stall.unitNumber}`;
         const unitNumber = venue?.unitNumber ?? stall.unitNumber;
-        const isOpen = venue ? venue.isOpen : stall.status === "open";
+        const isOpen = venue
+          ? isVenueOpenFromHours(venue.operatingHours, venue.isOpen)
+          : stall.status === "open";
         const descriptor = getDirectoryDescriptor({
           operatingHours: venue?.operatingHours,
           isFacility: stall.status === "non_food",
@@ -420,7 +465,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
       openCount: allOnFloor.filter((s) => s.isOpen).length,
       dessertCount: allOnFloor.filter((s) => s.isDessert).length,
     };
-  }, [tenantPolygons, venueById]);
+  }, [repository, tenantPolygons, venueById]);
 
   const menuPreview = useMemo(
     () =>
@@ -476,8 +521,16 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
   }, [floorDirectory, activeStallId]);
 
   const renderBackdrop = useCallback(
-    (props: any) => (
-      <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.5} />
+    (props: ComponentProps<typeof BottomSheetBackdrop>) => (
+      <BottomSheetBackdrop
+        {...props}
+        disappearsOnIndex={-1}
+        appearsOnIndex={0}
+        opacity={0.5}
+        accessibilityRole="button"
+        accessibilityLabel="Close venue details"
+        accessibilityHint="Dismisses the venue details sheet"
+      />
     ),
     [],
   );
@@ -505,6 +558,9 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
               <AppText variant="h1">{building.name}</AppText>
               <AppText variant="bodySmall" tone="secondary">
                 Browse realistic floor overlays, select a unit polygon, then open the stall details.
+              </AppText>
+              <AppText variant="micro" tone="muted">
+                {mapStatusDisclosure}
               </AppText>
             </View>
 
@@ -539,7 +595,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
               style={{
                 backgroundColor: palette.surface,
                 borderColor: palette.border,
-                borderRadius: radii.xl,
+                borderRadius: componentRadii.card,
                 borderWidth: 1,
                 overflow: "hidden",
               }}
@@ -574,7 +630,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                     {
                       backgroundColor: palette.surfaceTranslucent,
                       borderColor: palette.border,
-                      borderRadius: radii.lg,
+                      borderRadius: componentRadii.card,
                       padding: spacing[1],
                       left: spacing[3],
                       bottom: spacing[3],
@@ -611,7 +667,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                     {
                       backgroundColor: palette.surfaceTranslucent,
                       borderColor: palette.border,
-                      borderRadius: radii.lg,
+                      borderRadius: componentRadii.card,
                       padding: spacing[1],
                       right: spacing[3],
                       bottom: spacing[3],
@@ -711,7 +767,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                 style={{
                   backgroundColor: palette.surface,
                   borderColor: palette.border,
-                  borderRadius: radii.xl,
+                  borderRadius: componentRadii.card,
                   borderWidth: 1,
                   gap: spacing[3],
                   paddingHorizontal: spacing[3],
@@ -750,7 +806,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                       style={{
                         backgroundColor: palette.bgSoft,
                         borderColor: palette.border,
-                        borderRadius: radii.lg,
+                        borderRadius: componentRadii.card,
                         borderWidth: 1,
                         gap: spacing[1],
                         minWidth: 164,
@@ -781,6 +837,8 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
         index={0}
         snapPoints={snapPoints}
         backdropComponent={renderBackdrop}
+        accessibilityLabel="Venue details"
+        accessibilityViewIsModal
         backgroundStyle={{ backgroundColor: palette.surface }}
         handleIndicatorStyle={{ backgroundColor: palette.border }}
       >
@@ -838,7 +896,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                     style={{
                       backgroundColor: palette.bgSoft,
                       borderColor: palette.border,
-                      borderRadius: radii.lg,
+                      borderRadius: componentRadii.card,
                       borderWidth: 1,
                       padding: spacing[4],
                       flexDirection: "row",

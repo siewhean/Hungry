@@ -3,6 +3,18 @@
 > Canonical checklist surface for store-submission documentation tasks.
 > Update this file when submission requirements or evidence links change.
 
+## Policy Source Spot-Check — 2026-05-23
+
+Official sources checked for the current No-Go store-submission gate:
+
+- Apple account deletion: https://developer.apple.com/support/offering-account-deletion-in-your-app/
+- Apple App Review Guidelines: https://developer.apple.com/app-store/review/guidelines/
+- Google Play user-generated content policy: https://support.google.com/googleplay/android-developer/answer/9876937
+- Google Play account deletion requirements: https://support.google.com/googleplay/android-developer/answer/13327111
+- Google Play Data Safety overview: https://support.google.com/googleplay/answer/11416267
+
+Current evidence status: repo-side privacy/account-deletion/UGC surfaces exist, but store submission remains blocked until final public URL reachability, App Store Connect privacy metadata, Google Play Data Safety/account-deletion answers, and reviewer access/test steps are verified from the external store consoles.
+
 ## APPLE-02 — App Store Metadata + Review Notes Checklist
 
 Owner: User  
@@ -41,6 +53,24 @@ Status: Open (external store listing and public URL actions required)
 Evidence target:
 - Store listing URL fields + in-app settings link all point to the final public policy URL.
 
+Repo evidence:
+- Policy URL target: `https://hungry.sg/privacy`
+- Account deletion URL target: `https://hungry.sg/account/delete`
+- App linkage: `src/app/screens/profile/SettingsScreen.tsx`, `src/app/screens/auth/SignUpScreen.tsx`
+- Public pages: `marketing/web/app/privacy/page.tsx`, `marketing/web/app/account/delete/page.tsx`, `marketing/website/web-v2/src/app/privacy/page.tsx`, `marketing/website/web-v2/src/app/account/delete/page.tsx`
+
+Disclosure matrix to mirror in Apple App Privacy and Google Play Data Safety:
+
+| Data category | Hungry usage | Shared/processed by | Store disclosure note |
+|---|---|---|---|
+| Name, email, auth identifiers | Account creation, sign-in, support, deletion requests | Supabase Auth/database | User-linked account data |
+| Location | Nearby discovery, maps, area selection | Mapbox/Google where enabled, Supabase if persisted | Declare location use when permission is requested |
+| Photos/videos/menu images | Posts, reviews, profile/merchant media, OCR/menu ingestion | Supabase Storage, Google Vision/Gemini where enabled | User content/media uploads |
+| Reviews/posts/comments/messages | Community, social feed, reporting, moderation | Supabase database/realtime | User-generated content; moderation controls required |
+| Taste and interaction signals | Recommendations, personalization, analytics | Supabase, PostHog where configured | Product personalization/activity data |
+| Merchant claim/menu/team data | Merchant tools, verification, notifications | Supabase, OCR/AI processors where enabled | Business/contact content where submitted |
+| Crash/diagnostic/analytics events | Reliability, abuse prevention, product analytics | Sentry, PostHog, Expo/EAS where configured | Diagnostics and app activity |
+
 ## PLAY-01 — Play Data Safety + Account Deletion URL Checklist
 
 Owner: User  
@@ -57,3 +87,7 @@ Status: Open (external Play Console actions required)
 
 Evidence target:
 - Final Play Console Data Safety questionnaire + Account Deletion URL field values.
+
+Repo evidence:
+- Account deletion is discoverable in app Settings and public URL documentation once `ACCDEL-01` implementation is verified.
+- Data Safety answers must match the disclosure matrix above and the final shipped feature flags.

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { View, Pressable, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import type { MaterialTopTabBarProps } from "@react-navigation/material-top-tabs";
 import type { NavigationProp } from "@react-navigation/native";
@@ -7,7 +7,7 @@ import { House, Compass, BookOpenText, Plus, User } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { HomeFeedScreen } from "@/app/screens/home/HomeFeedScreen";
-import { AppText } from "@/components/ui";
+import { AppBottomTabItem, Skeleton } from "@/components/ui";
 import { preloadRoute } from "@/features/navigation/prefetch";
 import { useHungryTheme } from "@/theme";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -16,32 +16,177 @@ import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 
 const Tab = createMaterialTopTabNavigator<MainTabParamList>();
+const MAIN_TAB_PRELOAD_DISTANCE = 3;
+const MAIN_TAB_WARMUP_TIMEOUT_MS = 350;
+const MAIN_TAB_WARMUP_FALLBACK_DELAY_MS = 120;
+
+type TabScreenComponent = React.ComponentType<object>;
+
+interface TabScreenLoader {
+  getCached: () => TabScreenComponent | null;
+  load: () => TabScreenComponent;
+}
+
+function createTabScreenLoader(loadModule: () => TabScreenComponent): TabScreenLoader {
+  let cached: TabScreenComponent | null = null;
+
+  return {
+    getCached: () => cached,
+    load: () => {
+      if (!cached) {
+        cached = loadModule();
+      }
+      return cached;
+    },
+  };
+}
+
+const reviewScreenLoader = createTabScreenLoader(() => {
+  const { ReviewFeedScreen } =
+    require("@/app/screens/review/ReviewFeedScreen") as typeof import("@/app/screens/review/ReviewFeedScreen");
+  return ReviewFeedScreen as TabScreenComponent;
+});
+
+const discoverScreenLoader = createTabScreenLoader(() => {
+  const { DiscoverHomeScreen } =
+    require("@/app/screens/discover/DiscoverHomeScreen") as typeof import("@/app/screens/discover/DiscoverHomeScreen");
+  return DiscoverHomeScreen as TabScreenComponent;
+});
+
+const profileStackLoader = createTabScreenLoader(() => {
+  const { ProfileStack } =
+    require("@/app/screens/profile/ProfileStack") as typeof import("@/app/screens/profile/ProfileStack");
+  return ProfileStack as TabScreenComponent;
+});
+
+const mainTabScreenLoaders = [discoverScreenLoader, reviewScreenLoader, profileStackLoader];
+const mainTabScreenLoaderByRouteName: Partial<Record<keyof MainTabParamList, TabScreenLoader>> = {
+  Discover: discoverScreenLoader,
+  Review: reviewScreenLoader,
+  Profile: profileStackLoader,
+};
+
+function warmMainTabRoute(routeName?: string) {
+  const loader = routeName
+    ? mainTabScreenLoaderByRouteName[routeName as keyof MainTabParamList]
+    : undefined;
+  loader?.load();
+}
+
+function TabScreenLoadingPlaceholder() {
+  const { palette, radii, spacing } = useHungryTheme();
+
+  return (
+    <View
+      style={[
+        styles.loadingPlaceholder,
+        {
+          backgroundColor: palette.bg,
+          paddingBottom: spacing[8],
+        },
+      ]}
+    >
+      <View style={{ gap: spacing[5], width: "100%" }}>
+        <View style={{ gap: spacing[2], paddingHorizontal: spacing[4] }}>
+          <Skeleton width="46%" height={28} borderRadius={radii.sm} />
+          <Skeleton width="100%" height={52} borderRadius={radii.lg} />
+        </View>
+        <View style={{ flexDirection: "row", gap: spacing[3], paddingHorizontal: spacing[4] }}>
+          <Skeleton width={108} height={44} borderRadius={radii.pill} />
+          <Skeleton width={136} height={44} borderRadius={radii.pill} />
+          <Skeleton width={96} height={44} borderRadius={radii.pill} />
+        </View>
+        <View style={{ gap: spacing[3], paddingHorizontal: spacing[4] }}>
+          <Skeleton width="56%" height={24} borderRadius={radii.sm} />
+          <View style={{ flexDirection: "row", gap: spacing[3] }}>
+            <Skeleton width={156} height={150} borderRadius={radii.lg} />
+            <Skeleton width={156} height={150} borderRadius={radii.lg} />
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function createDeferredTabScreen(loader: TabScreenLoader) {
+  function DeferredTabScreen(props: object) {
+    const [Component, setComponent] = useState<TabScreenComponent | null>(() => loader.getCached());
+
+    useEffect(() => {
+      if (Component) {
+        return undefined;
+      }
+
+      let cancelled = false;
+      const LoadedComponent = loader.load();
+      if (!cancelled) {
+        setComponent(() => LoadedComponent);
+      }
+
+      return () => {
+        cancelled = true;
+      };
+    }, [Component, loader]);
+
+    return Component ? <Component {...props} /> : <TabScreenLoadingPlaceholder />;
+  }
+
+  DeferredTabScreen.displayName = "DeferredTabScreen";
+  return DeferredTabScreen;
+}
+
+function scheduleMainTabScreensWarmup(onComplete: () => void) {
+  let cancelled = false;
+  let cancelCurrentWarmup: (() => void) | undefined;
+  let loaderIndex = 0;
+
+  const warmNextLoader = () => {
+    if (cancelled) {
+      return;
+    }
+
+    const loader = mainTabScreenLoaders[loaderIndex];
+    if (!loader) {
+      onComplete();
+      return;
+    }
+
+    cancelCurrentWarmup = scheduleIdleWork(
+      () => {
+        if (cancelled) {
+          return;
+        }
+
+        loader.load();
+        loaderIndex += 1;
+        warmNextLoader();
+      },
+      {
+        timeout: MAIN_TAB_WARMUP_TIMEOUT_MS,
+        fallbackDelayMs: MAIN_TAB_WARMUP_FALLBACK_DELAY_MS,
+      },
+    );
+  };
+
+  warmNextLoader();
+
+  return () => {
+    cancelled = true;
+    cancelCurrentWarmup?.();
+  };
+}
 
 function HomeWrapper() {
   return <HomeFeedScreen mode="social" />;
 }
 
-function ReviewWrapper() {
-  const { ReviewFeedScreen } =
-    require("@/app/screens/review/ReviewFeedScreen") as typeof import("@/app/screens/review/ReviewFeedScreen");
-  return <ReviewFeedScreen />;
-}
-
-function DiscoverWrapper() {
-  const { DiscoverHomeScreen } =
-    require("@/app/screens/discover/DiscoverHomeScreen") as typeof import("@/app/screens/discover/DiscoverHomeScreen");
-  return <DiscoverHomeScreen />;
-}
-
-function ProfileWrapper() {
-  const { ProfileStack } =
-    require("@/app/screens/profile/ProfileStack") as typeof import("@/app/screens/profile/ProfileStack");
-  return <ProfileStack />;
-}
+const ReviewWrapper = createDeferredTabScreen(reviewScreenLoader);
+const DiscoverWrapper = createDeferredTabScreen(discoverScreenLoader);
+const ProfileWrapper = createDeferredTabScreen(profileStackLoader);
 
 function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
-  const { componentSizes, palette, radii, spacing } = useHungryTheme();
-  const styles = createStyles(componentSizes, spacing);
+  const { componentSizes, palette, spacing } = useHungryTheme();
+  const styles = createStyles();
   const insets = useSafeAreaInsets();
   const [highlightVisible, setHighlightVisible] = useState(true);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -141,9 +286,7 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
             preloadRoute(rootNavigation, composerRoute);
             return;
           }
-          if (route?.name) {
-            preloadRoute(navigation, route.name);
-          }
+          warmMainTabRoute(routeName);
         };
 
         const Icon = item.icon;
@@ -153,48 +296,18 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
         const currentColor = isFocused && highlightVisible ? activeColor : inactiveColor;
 
         return (
-          <Pressable
+          <AppBottomTabItem
             key={routeKey}
+            accessibilityLabel={item.label}
+            color={currentColor}
+            createAction={isCreateAction}
+            focused={isFocused}
+            icon={Icon}
+            label={item.label}
             onPress={onPress}
             onPressIn={onPressIn}
-            style={styles.tabItem}
-            accessibilityRole="button"
-            accessibilityState={isFocused ? { selected: true } : {}}
-            accessibilityLabel={item.label}
-          >
-            <View
-              style={
-                isCreateAction
-                  ? [
-                      styles.createButton,
-                      {
-                        backgroundColor: palette.orange,
-                        borderRadius: radii.pill,
-                      },
-                    ]
-                  : styles.iconSlot
-              }
-            >
-              <Icon
-                color={isCreateAction ? palette.white : currentColor}
-                size={componentSizes.bottomTabIcon}
-              />
-            </View>
-            {isCreateAction ? null : (
-              <AppText
-                variant="micro"
-                numberOfLines={1}
-                style={{
-                  color: currentColor,
-                  fontSize: componentSizes.bottomTabLabelFontSize,
-                  fontWeight: isFocused ? "800" : "700",
-                  lineHeight: componentSizes.bottomTabLabelLineHeight,
-                }}
-              >
-                {item.label}
-              </AppText>
-            )}
-          </Pressable>
+            showLabel={!isCreateAction}
+          />
         );
       })}
     </View>
@@ -205,12 +318,12 @@ export function SwipeableTabNavigator() {
   const [tabPreloadEnabled, setTabPreloadEnabled] = useState(false);
 
   useEffect(() => {
-    const cancelIdle = scheduleIdleWork(() => {
+    const cancelWarmup = scheduleMainTabScreensWarmup(() => {
       setTabPreloadEnabled(true);
     });
 
     return () => {
-      cancelIdle();
+      cancelWarmup();
     };
   }, []);
 
@@ -222,9 +335,9 @@ export function SwipeableTabNavigator() {
       screenOptions={{
         swipeEnabled: true,
         animationEnabled: false,
-        lazy: true,
-        lazyPlaceholder: () => null,
-        lazyPreloadDistance: tabPreloadEnabled ? 1 : 0,
+        lazy: !tabPreloadEnabled,
+        lazyPlaceholder: () => <TabScreenLoadingPlaceholder />,
+        lazyPreloadDistance: tabPreloadEnabled ? MAIN_TAB_PRELOAD_DISTANCE : 0,
       }}
     >
       <Tab.Screen name="Home" component={HomeWrapper} />
@@ -235,10 +348,7 @@ export function SwipeableTabNavigator() {
   );
 }
 
-const createStyles = (
-  componentSizes: ReturnType<typeof useHungryTheme>["componentSizes"],
-  spacing: ReturnType<typeof useHungryTheme>["spacing"],
-) =>
+const createStyles = () =>
   StyleSheet.create({
     tabBarContainer: {
       flexDirection: "row",
@@ -246,22 +356,12 @@ const createStyles = (
       elevation: 0,
       shadowOpacity: 0,
     },
-    tabItem: {
-      flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
-      gap: spacing[0.5],
-    },
-    iconSlot: {
-      alignItems: "center",
-      height: componentSizes.bottomTabIconSlotHeight,
-      justifyContent: "center",
-      width: componentSizes.bottomTabIconSlotWidth,
-    },
-    createButton: {
-      alignItems: "center",
-      height: componentSizes.bottomTabCreateButton,
-      justifyContent: "center",
-      width: componentSizes.bottomTabCreateButton,
-    },
   });
+
+const styles = StyleSheet.create({
+  loadingPlaceholder: {
+    alignItems: "center",
+    flex: 1,
+    justifyContent: "center",
+  },
+});

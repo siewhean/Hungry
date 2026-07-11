@@ -1,58 +1,85 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import type { StoryScreen } from "@/content/site";
-import { AppScreenshotFrame } from "./AppScreenshotFrame";
+import { DiscoveryPhoneMockup, type DiscoveryPhoneMockupScreen } from "./DiscoveryPhoneMockup";
 import styles from "./StickyScreenStory.module.css";
 
 type StickyScreenStoryProps = {
   screens: readonly StoryScreen[];
+  animateContent?: boolean;
 };
 
-export function StickyScreenStory({ screens }: StickyScreenStoryProps) {
+const storyScreens: readonly DiscoveryPhoneMockupScreen[] = [
+  "discover",
+  "stall-detail",
+  "stall-menu",
+  "review-feed",
+];
+
+export function StickyScreenStory({
+  screens,
+  animateContent = false,
+}: StickyScreenStoryProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const stepRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduceMotion) return undefined;
+    let cleanup: (() => void) | undefined;
+    let cancelled = false;
 
-    gsap.registerPlugin(ScrollTrigger);
+    void Promise.all([import("gsap"), import("gsap/ScrollTrigger")]).then(
+      ([gsapModule, scrollTriggerModule]) => {
+        if (cancelled) return;
 
-    const ctx = gsap.context(() => {
-      stepRefs.current.forEach((step, index) => {
-        if (!step) return;
+        const gsap = gsapModule.default;
+        const ScrollTrigger = scrollTriggerModule.ScrollTrigger;
+        gsap.registerPlugin(ScrollTrigger);
 
-        ScrollTrigger.create({
-          trigger: step,
-          start: "top 58%",
-          end: "bottom 42%",
-          onEnter: () => setActiveIndex(index),
-          onEnterBack: () => setActiveIndex(index),
-        });
+        const updateActiveStep = () => {
+          const viewportAnchor = window.innerHeight * 0.52;
+          let closestIndex = 0;
+          let closestDistance = Number.POSITIVE_INFINITY;
 
-        gsap.fromTo(
-          step,
-          { autoAlpha: 0.35, y: 28 },
-          {
-            autoAlpha: 1,
-            y: 0,
-            ease: "power3.out",
-            scrollTrigger: {
-              trigger: step,
-              start: "top 80%",
-              end: "center 52%",
-              scrub: 0.55,
-            },
-          },
-        );
-      });
-    }, rootRef);
+          stepRefs.current.forEach((step, index) => {
+            if (!step) return;
 
-    return () => ctx.revert();
+            const rect = step.getBoundingClientRect();
+            const stepAnchor = rect.top + rect.height * 0.42;
+            const distance = Math.abs(stepAnchor - viewportAnchor);
+
+            if (distance < closestDistance) {
+              closestDistance = distance;
+              closestIndex = index;
+            }
+          });
+
+          setActiveIndex((current) => (current === closestIndex ? current : closestIndex));
+        };
+
+        const ctx = gsap.context(() => {
+          ScrollTrigger.create({
+            trigger: rootRef.current,
+            start: "top bottom",
+            end: "bottom top",
+            onEnter: updateActiveStep,
+            onEnterBack: updateActiveStep,
+            onUpdate: updateActiveStep,
+            onRefresh: updateActiveStep,
+          });
+
+          updateActiveStep();
+        }, rootRef);
+
+        cleanup = () => ctx.revert();
+      },
+    );
+
+    return () => {
+      cancelled = true;
+      cleanup?.();
+    };
   }, [screens.length]);
 
   return (
@@ -64,12 +91,13 @@ export function StickyScreenStory({ screens }: StickyScreenStoryProps) {
               className={`${styles.screenLayer} ${index === activeIndex ? styles.active : ""}`}
               key={screen.title}
             >
-              <AppScreenshotFrame
-                src={screen.src}
-                alt={screen.alt}
-                label={screen.stat}
-                orientation={index > 1 ? "landscape" : "portrait"}
-              />
+              <figure className={styles.phonePreviewFrame} aria-label={screen.alt}>
+                <DiscoveryPhoneMockup
+                  screen={storyScreens[index] ?? "discover"}
+                  isActive={index === activeIndex}
+                  animateContent={animateContent}
+                />
+              </figure>
             </div>
           ))}
         </div>

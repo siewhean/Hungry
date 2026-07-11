@@ -11,6 +11,8 @@ interface ExtractionDish {
   extraction_confidence: number;
 }
 
+const ALLOWED_OCR_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/heic", "image/webp"]);
+
 const BASE_CORS_HEADERS = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -18,7 +20,12 @@ const BASE_CORS_HEADERS = {
 
 function getAllowedOrigins(): Set<string> {
   const raw = Deno.env.get("INGEST_MENU_PHOTO_ALLOWED_ORIGINS") ?? "";
-  return new Set(raw.split(",").map((origin) => origin.trim()).filter(Boolean));
+  return new Set(
+    raw
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean),
+  );
 }
 
 function resolveAllowedOrigin(request: Request, allowedOrigins: Set<string>): string | null {
@@ -146,6 +153,22 @@ async function runVision(visionApiKey: string, imageBase64: string): Promise<str
   return typeof text === "string" ? text : "";
 }
 
+function bytesToBase64(bytes: Uint8Array): string {
+  const chunkSize = 0x8000;
+  const chunks: string[] = [];
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    chunks.push(String.fromCharCode(...bytes.subarray(offset, offset + chunkSize)));
+  }
+  return btoa(chunks.join(""));
+}
+
+function assertValidOcrImageType(response: Response): void {
+  const contentType = response.headers.get("content-type")?.split(";")[0]?.trim().toLowerCase();
+  if (!contentType || !ALLOWED_OCR_IMAGE_TYPES.has(contentType)) {
+    throw new Error(`invalid_ocr_image_type:${contentType ?? "missing"}`);
+  }
+}
+
 async function runLlmExtraction(apiKey: string, text: string): Promise<ExtractionDish[] | null> {
   if (!apiKey) return null;
   const response = await fetch(
@@ -225,9 +248,11 @@ Deno.serve(async (request) => {
   const visionApiKey = Deno.env.get("GOOGLE_CLOUD_VISION_API_KEY") ?? "";
   const llmApiKey = Deno.env.get("GEMINI_API_KEY") ?? "";
   if (!supabaseUrl || !serviceRoleKey || !anonKey) {
+    console.error("ingest-menu-photo missing Supabase environment");
     return toJson(500, { error: "missing_supabase_env" }, allowedOrigin);
   }
   if (!visionApiKey) {
+    console.error("ingest-menu-photo missing Google Vision API key");
     return toJson(500, { error: "missing_vision_api_key" }, allowedOrigin);
   }
 
@@ -258,7 +283,9 @@ Deno.serve(async (request) => {
 
   const { data: submission, error: submissionError } = await client
     .from("menu_photo_submissions")
-    .select("id, venue_id, building_id, submitted_by, storage_bucket, storage_path, ocr_attempts, ocr_status")
+    .select(
+      "id, venue_id, building_id, submitted_by, storage_bucket, storage_path, ocr_attempts, ocr_status",
+    )
     .eq("id", submissionId)
     .maybeSingle();
   if (submissionError || !submission) {
@@ -274,20 +301,43 @@ Deno.serve(async (request) => {
     return toJson(429, { error: "ocr_retry_limit_exceeded" }, allowedOrigin);
   }
 
-  await client
+  const { data: rateAllowed, error: rateLimitError } = await client.rpc(
+    "app_can_make_user_request",
+    {
+      p_actor_user_id: callerUserId,
+      p_action: "ingest-menu-photo",
+      p_limit: 10,
+    },
+  );
+  if (rateLimitError || rateAllowed !== true) {
+    return toJson(429, { error: "rate_limited" }, allowedOrigin);
+  }
+
+  const ocrJobId = crypto.randomUUID();
+  const { data: processingSubmission, error: claimError } = await client
     .from("menu_photo_submissions")
     .update({
       ocr_status: "processing",
       ocr_attempts: Number(submission.ocr_attempts ?? 0) + 1,
-      ocr_job_id: crypto.randomUUID(),
+      ocr_job_id: ocrJobId,
       ocr_error: null,
     })
-    .eq("id", submissionId);
+    .eq("id", submissionId)
+    .eq("submitted_by", callerUserId)
+    .in("ocr_status", ["pending", "failed"])
+    .lt("ocr_attempts", 3)
+    .select(
+      "id, venue_id, building_id, submitted_by, storage_bucket, storage_path, ocr_attempts, ocr_status",
+    )
+    .maybeSingle();
+  if (claimError || !processingSubmission) {
+    return toJson(409, { error: "submission_not_queued" }, allowedOrigin);
+  }
 
   try {
     const signed = await client.storage
-      .from(String(submission.storage_bucket))
-      .createSignedUrl(String(submission.storage_path), 120);
+      .from(String(processingSubmission.storage_bucket))
+      .createSignedUrl(String(processingSubmission.storage_path), 120);
     if (signed.error || !signed.data?.signedUrl) {
       throw new Error(signed.error?.message ?? "signed_url_failed");
     }
@@ -296,8 +346,9 @@ Deno.serve(async (request) => {
     if (!imageResponse.ok) {
       throw new Error(`image_fetch_failed:${imageResponse.status}`);
     }
+    assertValidOcrImageType(imageResponse);
     const imageBytes = new Uint8Array(await imageResponse.arrayBuffer());
-    const imageBase64 = btoa(String.fromCharCode(...imageBytes));
+    const imageBase64 = bytesToBase64(imageBytes);
 
     const ocrText = await runVision(visionApiKey, imageBase64);
     const llmResult = await runLlmExtraction(llmApiKey, ocrText);
@@ -308,7 +359,7 @@ Deno.serve(async (request) => {
     const { data: existingRows } = await client
       .from("dishes_draft")
       .select("id, name, price_cents, extraction_confidence, confidence_bumps")
-      .eq("venue_id", submission.venue_id)
+      .eq("venue_id", processingSubmission.venue_id)
       .in("review_status", ["pending", "accepted", "edited"]);
 
     const existing = Array.isArray(existingRows) ? existingRows : [];
@@ -348,9 +399,9 @@ Deno.serve(async (request) => {
       }
 
       await client.from("dishes_draft").insert({
-        venue_id: submission.venue_id,
-        building_id: submission.building_id,
-        source_photo_id: submission.id,
+        venue_id: processingSubmission.venue_id,
+        building_id: processingSubmission.building_id,
+        source_photo_id: processingSubmission.id,
         name: dish.name,
         name_normalized: normalizedName,
         price_cents: toPriceCents(dish.price),
@@ -373,16 +424,16 @@ Deno.serve(async (request) => {
 
     return toJson(200, { ok: true, submissionId, extracted: extracted.length }, allowedOrigin);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "unknown_error";
+    console.error("OCR pipeline error", error);
     await client
       .from("menu_photo_submissions")
       .update({
         ocr_status: "failed",
-        ocr_error: message.slice(0, 500),
+        ocr_error: "Processing failed. Please try again.",
         processed_at: new Date().toISOString(),
       })
       .eq("id", submissionId);
 
-    return toJson(500, { error: "ocr_pipeline_failed", message }, allowedOrigin);
+    return toJson(500, { error: "ocr_pipeline_failed" }, allowedOrigin);
   }
 });

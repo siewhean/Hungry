@@ -7,16 +7,15 @@ import {
   ArrowRight,
   MapPin,
   Star,
-  Clock,
   Storefront,
   Quotes,
   Heart,
-  MagnifyingGlass,
   CheckCircle,
 } from "@phosphor-icons/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
+import { HungryWordmark } from "../components/HungryWordmark";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger, useGSAP);
@@ -52,8 +51,8 @@ export default function Home() {
       });
 
       // 2. Reveal on Scroll for standard sections
-      const revealElements = gsap.utils.toArray(".reveal-on-scroll");
-      revealElements.forEach((el: any) => {
+      const revealElements = gsap.utils.toArray<Element>(".reveal-on-scroll");
+      revealElements.forEach((el) => {
         gsap.fromTo(
           el,
           { opacity: 0, y: 40 },
@@ -72,7 +71,7 @@ export default function Home() {
 
       // 3. Sticky Product Showcase
       if (showcaseRef.current && showcaseStickyRef.current) {
-        const steps = gsap.utils.toArray(".showcase-step");
+        const steps = gsap.utils.toArray<Element>(".showcase-step");
 
         ScrollTrigger.create({
           trigger: showcaseRef.current,
@@ -82,7 +81,7 @@ export default function Home() {
           scrub: true,
         });
 
-        steps.forEach((step: any, i) => {
+        steps.forEach((step, i) => {
           ScrollTrigger.create({
             trigger: step,
             start: "top center",
@@ -124,6 +123,7 @@ export default function Home() {
 
   return (
     <main
+      id="home-top"
       ref={mainRef}
       className="w-full bg-hungry-bg text-hungry-text font-body selection:bg-hungry-orange selection:text-white"
     >
@@ -137,9 +137,9 @@ export default function Home() {
 
       {/* Navigation */}
       <nav className="sticky top-0 z-50 w-full bg-hungry-bg/90 backdrop-blur-md border-b border-hungry-border py-4 px-6 md:px-12 flex justify-between items-center">
-        <div className="font-display font-bold text-2xl tracking-tight text-hungry-text">
-          Hungry
-        </div>
+        <Link href="/#home-top" className="inline-flex items-center" scroll={false}>
+          <HungryWordmark />
+        </Link>
         <div className="hidden md:flex gap-8 text-hungry-text-secondary font-medium text-sm">
           <Link href="/for-foodies" className="hover:text-hungry-orange transition-colors">
             Foodies
@@ -152,6 +152,15 @@ export default function Home() {
           </Link>
           <Link href="/merchant-login" className="hover:text-hungry-orange transition-colors">
             Merchant Portal
+          </Link>
+          <Link href="/terms" className="hover:text-hungry-orange transition-colors">
+            Terms
+          </Link>
+          <Link href="/privacy" className="hover:text-hungry-orange transition-colors">
+            Privacy
+          </Link>
+          <Link href="/account/delete" className="hover:text-hungry-orange transition-colors">
+            Delete account
           </Link>
         </div>
         <Link

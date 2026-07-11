@@ -10,7 +10,7 @@ interface BadgeProps {
 }
 
 export function Badge({ label, tone = "neutral" }: BadgeProps) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { componentCornerCurve, componentRadii, palette, spacing } = useHungryTheme();
   const toneStyles = getBadgeToneStyles(palette, tone);
 
   return (
@@ -20,7 +20,8 @@ export function Badge({ label, tone = "neutral" }: BadgeProps) {
         {
           backgroundColor: toneStyles.bg,
           borderColor: toneStyles.border,
-          borderRadius: radii.md,
+          borderRadius: componentRadii.card,
+          borderCurve: componentCornerCurve.borderCurve,
           borderWidth: 1,
           paddingHorizontal: spacing[2],
           paddingVertical: spacing[1],

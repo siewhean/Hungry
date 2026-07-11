@@ -33,6 +33,7 @@ export const FOOD_CRED_LEVELS: FoodCredLevel[] = [
 export const FOOD_CRED_POINTS: Record<FoodCredAction, number> = {
   stall_saved: 2,
   stall_marked_tried: 5,
+  stall_submitted: 12,
   review_created: 15,
   photo_uploaded: 5,
   post_created: 10,
@@ -54,6 +55,7 @@ export const FOOD_CRED_POINTS: Record<FoodCredAction, number> = {
 export const FOOD_CRED_DAILY_CAP: Record<FoodCredAction, number> = {
   stall_saved: 10,
   stall_marked_tried: 5,
+  stall_submitted: 5,
   review_created: 5,
   photo_uploaded: 10,
   post_created: 3,

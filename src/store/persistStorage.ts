@@ -6,7 +6,14 @@ type AsyncStorageLike = {
   removeItem: (name: string) => Promise<void>;
 };
 
+type SecureStoreLike = {
+  getItemAsync: (key: string) => Promise<string | null>;
+  setItemAsync: (key: string, value: string) => Promise<void>;
+  deleteItemAsync: (key: string) => Promise<void>;
+};
+
 let cachedAsyncStorage: AsyncStorageLike | null | undefined;
+let cachedLegacySecureStore: SecureStoreLike | null | undefined;
 
 function getAsyncStorage(): AsyncStorageLike | null {
   if (process.env.HUNGRY_DISABLE_ASYNC_STORAGE === "1") {
@@ -38,6 +45,34 @@ function getAsyncStorage(): AsyncStorageLike | null {
 
   cachedAsyncStorage = null;
   return cachedAsyncStorage;
+}
+
+function getLegacySecureStore(): SecureStoreLike | null {
+  if (process.env.HUNGRY_DISABLE_SECURE_STORE === "1") {
+    cachedLegacySecureStore = null;
+    return cachedLegacySecureStore;
+  }
+
+  if (cachedLegacySecureStore !== undefined) {
+    return cachedLegacySecureStore;
+  }
+
+  try {
+    const moduleRef = require("expo-secure-store") as SecureStoreLike;
+    if (
+      moduleRef &&
+      typeof moduleRef.getItemAsync === "function" &&
+      typeof moduleRef.deleteItemAsync === "function"
+    ) {
+      cachedLegacySecureStore = moduleRef;
+      return cachedLegacySecureStore;
+    }
+  } catch {
+    // Native module is not available in this runtime.
+  }
+
+  cachedLegacySecureStore = null;
+  return cachedLegacySecureStore;
 }
 
 const memoryStore = new Map<string, string>();
@@ -84,7 +119,35 @@ const safeAsyncStorage: StateStorage = {
     }
 
     try {
-      return await asyncStorage.getItem(name);
+      const asyncValue = await asyncStorage.getItem(name);
+      if (asyncValue !== null) {
+        return asyncValue;
+      }
+    } catch {
+      return memoryStorage.getItem(name);
+    }
+
+    const legacySecureStore = getLegacySecureStore();
+    if (!legacySecureStore) {
+      return memoryStorage.getItem(name);
+    }
+
+    try {
+      const legacyValue = await legacySecureStore.getItemAsync(name);
+      if (legacyValue === null) {
+        return memoryStorage.getItem(name);
+      }
+
+      // App metadata previously used SecureStore. Read it once, promote it to
+      // durable app storage, and remove the legacy secure copy so existing
+      // signed-in installs do not look logged out after this storage split.
+      try {
+        await asyncStorage.setItem(name, legacyValue);
+        await legacySecureStore.deleteItemAsync(name);
+      } catch {
+        // Keep the legacy copy readable if promotion cleanup fails.
+      }
+      return legacyValue;
     } catch {
       return memoryStorage.getItem(name);
     }

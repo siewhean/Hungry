@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Hungry Web V2
 
-## Getting Started
+Next.js marketing site for Hungry, the Singapore dish-first food discovery app.
 
-First, run the development server:
+## Commands
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run lint
+npm run seo:audit
+npm run build:webpack
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Public Routes
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `/`
+- `/for-foodies`
+- `/for-merchants`
+- `/join-waitlist`
+- `/privacy`
+- `/terms`
+- `/account/delete`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Route metadata is centralized in `src/app/seo.ts`. Keep sitemap routes, canonical metadata, and LLM context files aligned with that source.
 
-## Learn More
+## SEO And AI Discovery Surfaces
 
-To learn more about Next.js, take a look at the following resources:
+- `src/app/layout.tsx`: metadata base, default title template, Open Graph, Twitter, robots metadata, and global JSON-LD.
+- `src/app/robots.ts`: public crawler policy for normal search crawlers and AI retrieval/training crawlers.
+- `src/app/sitemap.ts`: generated XML sitemap from the canonical public route list.
+- `src/components/seo/JsonLd.tsx`: JSON-LD script component.
+- `public/llms.txt`: concise AI/LLM context map.
+- `public/llms-full.txt`: expanded AI/LLM context and canonical wording.
+- `scripts/seo-ai-readiness-check.mjs`: local guard for crawler files, structured data, AI crawler markers, and stale LLM routes.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Environment
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Set `NEXT_PUBLIC_SITE_URL` in production if the canonical domain changes. It defaults to `https://hungry.sg`.
 
-## Deploy on Vercel
+Database-backed waitlist, Console, and Merchant Portal routes require the shared Hungry Supabase project:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `NEXT_PUBLIC_SUPABASE_URL` or `EXPO_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, or the Expo public anon key equivalents
+- `SUPABASE_SERVICE_ROLE_KEY` or `HUNGRY_SUPABASE_SERVICE_ROLE_KEY` for Console reads/admin writes and waitlist upserts
+- `HUNGRY_CONSOLE_USERNAME` and `HUNGRY_CONSOLE_PASSWORD` for Console access. Store these as deployment secrets and local `.env.local` values only; never commit real credentials. Console pages and `/api/console/*` fail closed when either value is missing.
+- Optional durable rate limiting uses an Upstash Redis REST-compatible store:
+  - `HUNGRY_RATE_LIMIT_REDIS_REST_URL` / `HUNGRY_RATE_LIMIT_REDIS_REST_TOKEN`
+  - or `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`
+  - Without those values, route limits fall back to an in-memory process-local guard for local development only.
+- Console prototype localStorage persistence is disabled in production unless `NEXT_PUBLIC_HUNGRY_CONSOLE_PROTOTYPE_STORAGE=1` is explicitly set. Production Console authority should come from server APIs, not browser-local state.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The public waitlist writes to `public.website_waitlist_entries`. Console summary and merchant verification APIs read/write the app merchant tables through the service role. The Merchant Portal uses Supabase Auth cookies and the same `merchant_accounts`, `merchant_outlets`, `merchant_verifications`, `dishes`, and review/analytics tables used by the mobile merchant surface, with the web shell linking to `hungry://merchant` for the app portal.
+
+Merchant Portal mutation APIs use a double-submit CSRF guard. Login and session checks issue the readable `hungry_merchant_csrf_token` cookie, login rejects cross-site or non-JSON cookie-setting requests, and client-side merchant mutations send the matching `x-hungry-csrf-token` header through `merchantMutationFetch`. Server routes also reject mismatched cross-origin mutation requests unless explicitly allowed by `HUNGRY_MERCHANT_PORTAL_ORIGIN`.

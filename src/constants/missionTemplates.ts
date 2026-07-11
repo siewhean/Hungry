@@ -2,10 +2,10 @@
  * missionTemplates.ts — Weekly mission definitions
  *
  * Static pool of mission templates. Active missions are selected weekly
- * (4 per week at launch). All users see the same pool in Phase 1.
+ * (5 per week at launch). All users see the same pool in Phase 1.
  *
  * Rotation: missions with the same weekStart are active together.
- * In production, a backend job populates weekly_missions with 4 records
+ * In production, a backend job populates weekly_missions with 5 records
  * drawn from this pool. For MVP/mock, we hard-code a current week's set.
  */
 
@@ -56,6 +56,15 @@ export const MISSION_TEMPLATE_POOL: Omit<WeeklyMission, "weekStart" | "weekEnd" 
     rewardValue: 15,
   },
   {
+    id: "mission-add-new-stall",
+    title: "Add a stall find",
+    description: "Submit a stall you found online with a photo and useful details.",
+    missionType: "add_stall",
+    requirementCount: 1,
+    rewardType: "food_cred",
+    rewardValue: 20,
+  },
+  {
     id: "mission-add-collection",
     title: "Add 2 stalls to a collection",
     description: "Build your personal food lists.",
@@ -98,11 +107,11 @@ function getWeekEnd(): string {
 // ─── Active Mock Missions ─────────────────────────────────────────────────────
 
 /**
- * The 4 missions active for the current week.
- * Drawn from the first 4 templates in the pool.
+ * The 5 missions active for the current week.
+ * Drawn from the first 5 templates in the pool.
  * Production: replaced by DB query for `weekly_missions WHERE is_active = true`.
  */
-export const MOCK_ACTIVE_MISSIONS: WeeklyMission[] = MISSION_TEMPLATE_POOL.slice(0, 4).map(
+export const MOCK_ACTIVE_MISSIONS: WeeklyMission[] = MISSION_TEMPLATE_POOL.slice(0, 5).map(
   (template) => ({
     ...template,
     weekStart: getWeekStart(),

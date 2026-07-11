@@ -1,8 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 import { homepage } from "@/content/site";
 import { Reveal } from "@/components/motion/Reveal";
+import { trackWebsiteEvent } from "@/lib/analytics/websiteEvents";
 import styles from "./SplitSection.module.css";
 
 export default function SplitSection() {
@@ -10,12 +13,7 @@ export default function SplitSection() {
     <section className={styles.section} id="audiences">
       <div className="container-wide">
         <Reveal className={styles.header}>
-          <span className={styles.eyebrow}>Two sides of one food map</span>
           <h2>Built for foodies and merchants.</h2>
-          <p>
-            The homepage should prove Hungry is not another static directory. It is a living bridge
-            between cravings and the businesses serving them.
-          </p>
         </Reveal>
 
         <div className={styles.grid}>
@@ -26,14 +24,25 @@ export default function SplitSection() {
                   src={audience.image.src}
                   alt={audience.image.alt}
                   fill
-                  sizes="(max-width: 768px) 100vw, 50vw"
+                  sizes="(max-width: 639px) 100vw, 50vw"
                 />
               </div>
               <div className={styles.cardContent}>
                 <span className={styles.cardEyebrow}>{audience.eyebrow}</span>
                 <h3>{audience.title}</h3>
                 <p>{audience.description}</p>
-                <Link href={audience.cta.href} className={styles.cardCta}>
+                <Link
+                  href={audience.cta.href}
+                  className={styles.cardCta}
+                  onClick={() =>
+                    trackWebsiteEvent("website_cta_clicked", {
+                      cta_label: audience.cta.label,
+                      cta_destination: audience.cta.href,
+                      cta_section: "audiences",
+                      audience: audience.title.toLowerCase(),
+                    })
+                  }
+                >
                   {audience.cta.label}
                   <ArrowUpRight size={18} />
                 </Link>

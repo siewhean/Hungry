@@ -7,6 +7,19 @@
   --color-bg-warm: #FFE9DA;
   --color-surface: #FFFFFF;
   --color-surface-warm: #FFF2E7;
+
+  /* Console/Merchant white overrides — used inside .consoleLayout scope */
+  --console-bg: #FFFFFF;
+  --console-bg-soft: #F4F6F8;
+  --console-bg-warm: #F9FAFB;
+  --console-surface: #FFFFFF;
+  --console-surface-raised: #FFFFFF;
+  --console-surface-tint: #FFF8F3;
+  --console-line: #DDE5ED;
+  --console-line-strong: #C6D1DD;
+  --console-nav-active: #F05B22;
+  --console-nav-hover: rgb(255 255 255 / 0.08);
+  --console-orange-light: #FFF0EB;
   --color-text-primary: #1A2E44;
   --color-text-secondary: #41566F;
   --color-text-muted: #6F7D8F;
@@ -15,6 +28,7 @@
   --color-plum-shadow: #251D2C;
   --color-accent: #F5A623;
   --color-success: #4F7E17;
+  --color-error: #B42318;
   --color-white: #FFFFFF;
   --color-border: #E7DED4;
   --color-border-strong: #D8C9BA;
@@ -23,12 +37,25 @@
   /* Typography */
   --font-heading: var(--font-nunito), sans-serif;
   --font-body: var(--font-nunito), sans-serif;
-  --font-mono: var(--font-dm-mono), monospace;
+  --font-mono: var(--font-body);
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
   --font-size-md: 1rem;
   --font-size-lg: 1.125rem;
   --font-size-xl: 1.35rem;
+  --button-font-family: var(--font-body);
+  --button-font-size: var(--font-size-lg);
+  --button-font-weight: 800;
+  --button-line-height: 1.1;
+  --button-letter-spacing: 0;
+  --button-min-height: 3.6rem;
+  --button-padding-block: var(--space-4);
+  --button-padding-inline: var(--space-8);
+  --button-gap: var(--space-2);
+  --button-radius: var(--radius-full);
+  --button-background: var(--color-primary);
+  --button-color: var(--color-white);
+  --button-border-color: transparent;
 
   /* Spacing */
   --space-1: 0.25rem;
@@ -67,9 +94,12 @@
   --shadow-lg: 0 24px 50px -30px rgb(26 46 68 / 0.36);
   --shadow-xl: 0 34px 80px -44px rgb(26 46 68 / 0.42);
   --shadow-float: 0 44px 90px -48px rgb(26 46 68 / 0.46);
+  --shadow-card: 0 18px 42px -34px rgb(16 37 58 / 0.42);
+  --shadow-control: 0 8px 18px -16px rgb(16 37 58 / 0.5);
 
   /* Motion */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-press: cubic-bezier(0.23, 1, 0.32, 1);
   --duration-fast: 180ms;
   --duration-medium: 320ms;
   --duration-slow: 720ms;

@@ -1,6 +1,6 @@
 # Hungry App Security Review Findings
 
-_Last updated: 2026-05-14_
+_Last updated: 2026-05-15_
 
 This document summarizes the security review findings and recommendations for the Hungry app repository. It is based on a static review of the repository, including Supabase migrations, Edge Functions, React Native app code, authentication/session storage, storage policies, and security-related documentation.
 
@@ -18,15 +18,16 @@ The app already has a solid security foundation:
 - Storage buckets have MIME and size limits.
 - Account deletion, content reports, and user blocks exist.
 
-The highest-risk remaining areas are:
+The highest-risk areas reviewed in this pass were:
 
-1. Ops/admin Edge Function access.
-2. Merchant verification status controls.
-3. Public/followed profile privacy.
-4. Media upload validation and external media URL handling.
-5. Public storage bucket review.
-6. Analytics privacy.
-7. Secret hygiene and service-role tooling.
+1. Ops/admin Edge Function access. Repo remediation added JWT auth, ops-admin allowlist, CORS allowlist, rate limiting, and audit logging.
+2. Merchant verification status controls. Repo remediation added admin-only decision guards and private evidence metadata guards.
+3. Public/followed profile privacy. Repo remediation restricts `user_profiles` direct reads to owners and exposes a safe `public_profiles` view.
+4. Media upload validation and external media URL handling. Repo remediation rejects non-local UGC media and validates magic bytes before signed upload.
+5. Analytics privacy. Repo remediation routes analytics, PostHog, and Sentry payloads through central scrubbers.
+6. Secret hygiene and service-role tooling. Repo remediation scopes CI secrets, pins workflow Actions, and guards service-role smoke scripts.
+
+Remaining release blockers are deployment/evidence tasks: apply the new Supabase migration, redeploy Edge Functions, rotate any previously exposed credentials, run linked Supabase smoke tests, and complete dashboard/store-console checks that cannot be proven from this repository alone.
 
 ## Severity key
 
@@ -41,7 +42,9 @@ The highest-risk remaining areas are:
 
 # Findings and recommendations
 
-## 1. Critical: Ops Edge Function uses service role, static API key, and wildcard CORS
+## 1. Critical: Ops Edge Function used service role, static API key, and wildcard CORS
+
+Status: remediated in repo on 2026-05-15 by `supabase/functions/ops-dishes-draft/index.ts` and `supabase/migrations/0038_app_security_hardening.sql`; applied to linked Supabase and redeployed on 2026-05-16. `app_ops_admins` still needs an explicit operator UUID before ops access can be used.
 
 ### Evidence
 
@@ -51,13 +54,7 @@ Reviewed file:
 supabase/functions/ops-dishes-draft/index.ts
 ```
 
-The function uses the Supabase service-role key and authorizes requests using a static `x-ops-api-key`. It also sets:
-
-```ts
-"Access-Control-Allow-Origin": "*"
-```
-
-The function can list draft dish rows and update draft review status.
+The previous function used service-role access behind static `x-ops-api-key` authorization and wildcard CORS. The current repo version requires a Supabase bearer token, checks `app_ops_admins`, uses `OPS_DISHES_DRAFT_ALLOWED_ORIGINS`, calls `app_can_make_ops_request`, and writes `app_ops_audit_events`.
 
 ### Risk
 
@@ -65,18 +62,13 @@ If the ops API key leaks, an attacker may be able to invoke a privileged service
 
 ### Recommendation
 
-Replace static API-key-only authorization with real admin authentication and authorization.
+Keep the repo controls and complete the remaining live authorization verification:
 
-Required changes:
-
-- Require Supabase Auth bearer token.
-- Verify the authenticated user is an approved admin/operator.
-- Remove wildcard CORS.
-- Allow only trusted admin origins.
-- Add audit logging for every list/review action.
-- Add rate limiting.
-- Ensure the ops API key is never bundled into the mobile app.
-- Consider moving ops functions behind a private admin backend or IP allowlist.
+- `0038_app_security_hardening.sql` applied on 2026-05-16.
+- `ops-dishes-draft` redeployed on 2026-05-16.
+- `OPS_DISHES_DRAFT_ALLOWED_ORIGINS` configured on 2026-05-16.
+- Populate `app_ops_admins` with explicit operators.
+- Confirm normal users and merchants receive 401/403.
 
 ### Suggested acceptance criteria
 
@@ -88,7 +80,9 @@ Required changes:
 
 ---
 
-## 2. Critical/High: Merchants may be able to self-verify
+## 2. Critical/High: Merchants could self-verify
+
+Status: remediated in repo on 2026-05-15 by `enforce_merchant_verification_decision_guard`; requires migration apply before production.
 
 ### Evidence
 
@@ -268,7 +262,9 @@ Also change signed upload behavior from `upsert: true` to `upsert: false` unless
 
 ---
 
-## 5. High/Medium: Arbitrary external media URLs can bypass upload controls
+## 5. High/Medium: Arbitrary external media URLs could bypass upload controls
+
+Status: remediated in repo on 2026-05-15 for review photos, post media, merchant dish gallery images, avatars, and merchant verification evidence uploads. Normal client media now must be local device media and pass MIME, size, and magic-byte validation before signed upload.
 
 ### Evidence
 
@@ -278,7 +274,7 @@ Reviewed file:
 src/lib/services/supabase/supabaseService.ts
 ```
 
-Some service code accepts non-local URLs as media and stores them directly rather than uploading them through the controlled media pipeline. For post media, external URLs can be stored with `storage_bucket: "external"` and `public_url: uri`.
+Previous service code accepted non-local URLs as media and stored them directly rather than uploading them through the controlled media pipeline. Current repo code rejects those inputs in the Supabase service layer.
 
 ### Risk
 
@@ -286,7 +282,7 @@ External media URLs can bypass file validation, malware checks, content-type res
 
 ### Recommendation
 
-Do not accept arbitrary external media URLs from normal users.
+Do not reintroduce arbitrary external media URLs from normal users.
 
 Use one of these models:
 
@@ -351,6 +347,8 @@ Recommended policy:
 ---
 
 ## 7. Medium: Merchant verification evidence storage is not clearly private enough
+
+Status: remediated in repo on 2026-05-15 with private `merchant-verification-evidence` storage policies plus `enforce_merchant_verification_evidence_guard`; requires migration apply and production bucket verification.
 
 ### Evidence
 
@@ -469,6 +467,8 @@ requireAdmin()
 
 ## 10. Medium: Analytics may collect sensitive taste/location data
 
+Status: remediated in repo on 2026-05-15 for analytics buffering, PostHog capture/identify, and Sentry event/breadcrumb payloads. Runtime verification still requires inspecting real production analytics/Sentry project settings.
+
 ### Evidence
 
 Reviewed file:
@@ -586,6 +586,8 @@ Recommended improvements:
 
 ## 13. Low/Medium: Tracked environment files are risky
 
+Status: partially remediated in repo. The current tree removes a tracked Sentry token from roadmap docs and keeps staged gitleaks coverage. Previously exposed credentials still require external rotation and, if desired, explicit approval for git-history cleanup.
+
 ### Evidence
 
 Reviewed files:
@@ -629,6 +631,8 @@ Recommended changes:
 ---
 
 ## 14. Low/Medium: Service-role debugging files should be isolated
+
+Status: remediated in repo on 2026-05-15 by requiring `HUNGRY_ALLOW_SERVICE_ROLE_SMOKE=1` and `HUNGRY_SMOKE_SUPABASE_SERVICE_ROLE_KEY`; scripts no longer read `.env.local` directly.
 
 ### Evidence
 
@@ -780,24 +784,26 @@ Sensitive or semi-sensitive data includes:
 
 Do not treat the app as production-security-ready until these are complete or explicitly accepted as risks:
 
-- [ ] Replace ops Edge Function static-key auth with real admin auth.
-- [ ] Restrict ops/admin CORS to trusted origins.
-- [ ] Add audit logs for ops/admin actions.
-- [ ] Prevent merchants from setting verification status to `verified`.
-- [ ] Move merchant verification evidence into a private bucket.
-- [ ] Split public profile data from private profile data.
-- [ ] Prevent public/followed reads from exposing email, taste vectors, dietary preferences, or private profile data.
-- [ ] Harden media uploads with magic-byte validation, EXIF stripping, re-encoding, and dimension checks.
-- [ ] Stop accepting arbitrary external media URLs from normal users.
+- [x] Replace ops Edge Function static-key auth with real admin auth in repo code.
+- [x] Restrict ops/admin CORS to trusted origins in repo code.
+- [x] Add audit logs for ops/admin actions in repo code.
+- [x] Prevent merchants from setting verification status to `verified` in repo code.
+- [x] Move merchant verification evidence into a private bucket in repo code.
+- [x] Split public profile data from private profile data in repo code.
+- [x] Prevent public/followed reads from exposing email, taste vectors, dietary preferences, or private profile data in repo code.
+- [ ] Harden media uploads with EXIF stripping, re-encoding, and dimension checks.
+- [x] Add MIME, size, and magic-byte validation for controlled uploads in repo code.
+- [x] Stop accepting arbitrary external media URLs from normal users in repo code.
 - [ ] Review all public buckets and make user-generated/private media private-by-default.
 - [ ] Replace broad `select("*")` queries with explicit fields or views.
 - [ ] Add merchant/admin route guards in the app.
 - [ ] Keep RLS/backend authorization as the source of truth.
-- [ ] Minimize analytics data sent to PostHog.
+- [x] Minimize and scrub analytics data sent to PostHog/Sentry in repo code.
 - [ ] Remove `@ts-nocheck` from security-sensitive Edge Functions.
-- [ ] Clean up tracked environment-file practices.
-- [ ] Move service-role debug scripts to local-only tooling.
-- [ ] Add RLS regression tests for user, merchant, admin, and storage access.
+- [ ] Clean up tracked environment-file history and rotate exposed credentials externally.
+- [x] Guard service-role debug scripts with explicit local smoke envs.
+- [x] Add static/source regression tests for user, merchant, admin, storage, CI, and analytics controls.
+- [ ] Add live linked Supabase multi-user RLS smoke tests for user, merchant, admin, and storage access.
 
 ---
 
@@ -805,7 +811,7 @@ Do not treat the app as production-security-ready until these are complete or ex
 
 ## PR 1: Lock down ops/admin access
 
-- Replace `x-ops-api-key` only auth.
+- Keep JWT/admin auth; do not reintroduce `x-ops-api-key` only auth.
 - Require authenticated admin user.
 - Restrict CORS.
 - Add audit logging.

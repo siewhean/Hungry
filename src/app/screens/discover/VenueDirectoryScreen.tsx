@@ -8,8 +8,10 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Button, Badge, EmptyState } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
+import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { SkiaFloorplanViewer } from "@/components/map/SkiaFloorplanViewer";
+import { FloorSelector } from "@/components/map/FloorSelector";
 import { MAXWELL_L1_FLOOR_PLAN } from "@/lib/geo/maxwell_floorplan";
 import { useUIStore } from "@/store/useUIStore";
 
@@ -18,9 +20,10 @@ type Props = NativeStackScreenProps<RootStackParamList, "VenueDirectory">;
 export function VenueDirectoryScreen({ route, navigation }: Props) {
   const { venueId: routeParamId } = route.params;
   const insets = useSafeAreaInsets();
-  const { palette, spacing, radii, shadows } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii, shadows } = useHungryTheme();
   const repository = getDataRepository();
   const showToast = useUIStore((state) => state.showToast);
+  const mapStatusDisclosure = getDataTrustDisclosure("mapStatus");
 
   const buildingId = useMemo(() => {
     if (getBuildingById(routeParamId)) {
@@ -84,7 +87,11 @@ export function VenueDirectoryScreen({ route, navigation }: Props) {
       <View
         style={[
           styles.header,
-          { paddingTop: insets.top + spacing[2], backgroundColor: palette.surface },
+          {
+            backgroundColor: palette.surface,
+            borderBottomColor: palette.border,
+            paddingTop: insets.top + spacing[2],
+          },
         ]}
       >
         <View style={styles.headerTop}>
@@ -105,36 +112,13 @@ export function VenueDirectoryScreen({ route, navigation }: Props) {
           <Badge label={building.type.replace("_", " ")} tone="info" />
         </View>
 
-        {/* Floor Selector */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={[styles.floorSelector, { paddingHorizontal: spacing[4] }]}
-        >
-          {floors.map((floor) => (
-            <Pressable
-              key={floor}
-              onPress={() => setSelectedFloor(floor)}
-              style={[
-                styles.floorChip,
-                {
-                  backgroundColor: selectedFloor === floor ? palette.orange : palette.bgSoft,
-                  borderRadius: radii.pill,
-                },
-              ]}
-            >
-              <AppText
-                variant="bodySmall"
-                style={{
-                  color: selectedFloor === floor ? palette.surface : palette.text,
-                  fontWeight: selectedFloor === floor ? "800" : "600",
-                }}
-              >
-                Level {floor.replace("L", "")}
-              </AppText>
-            </Pressable>
-          ))}
-        </ScrollView>
+        <View style={{ paddingHorizontal: spacing[4] }}>
+          <FloorSelector
+            floors={floors}
+            selectedFloor={selectedFloor}
+            onSelectFloor={setSelectedFloor}
+          />
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + spacing[8] }}>
@@ -142,7 +126,11 @@ export function VenueDirectoryScreen({ route, navigation }: Props) {
           <View
             style={[
               styles.infoCard,
-              { backgroundColor: palette.surface, borderRadius: radii.lg, ...shadows.card },
+              {
+                backgroundColor: palette.surface,
+                borderRadius: componentRadii.card,
+                ...shadows.card,
+              },
             ]}
           >
             <View style={{ flexDirection: "row", gap: spacing[2], alignItems: "center" }}>
@@ -152,7 +140,8 @@ export function VenueDirectoryScreen({ route, navigation }: Props) {
               </AppText>
             </View>
             <AppText variant="micro" tone="secondary">
-              Tap on any stall polygon to view details. Colors represent live opening status.
+              Tap on any stall polygon to view details. Colors represent{" "}
+              {mapStatusDisclosure.toLowerCase()}.
             </AppText>
           </View>
 
@@ -165,10 +154,10 @@ export function VenueDirectoryScreen({ route, navigation }: Props) {
           )}
 
           <View style={styles.legend}>
-            <LegendItem color="#10B981" label="Open" />
-            <LegendItem color="#F59E0B" label="Closing Soon" />
-            <LegendItem color="#EF4444" label="Closed" />
-            <LegendItem color="#E5E7EB" label="Non-Food" />
+            <LegendItem color={palette.statusFast} label="Open" />
+            <LegendItem color={palette.statusModerate} label="Closing Soon" />
+            <LegendItem color={palette.statusBusy} label="Closed" />
+            <LegendItem color={palette.border} label="Non-Food" />
           </View>
 
           <View style={{ gap: spacing[3] }}>
@@ -189,7 +178,11 @@ export function VenueDirectoryScreen({ route, navigation }: Props) {
                   }}
                   style={[
                     styles.stallRow,
-                    { backgroundColor: palette.surface, borderRadius: radii.md },
+                    {
+                      backgroundColor: palette.surface,
+                      borderColor: palette.border,
+                      borderRadius: radii.md,
+                    },
                   ]}
                 >
                   <View style={{ flex: 1 }}>
@@ -242,7 +235,6 @@ const styles = StyleSheet.create({
   header: {
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
   },
   headerTop: {
     flexDirection: "row",
@@ -263,13 +255,6 @@ const styles = StyleSheet.create({
     gap: 4,
     marginTop: 2,
   },
-  floorSelector: {
-    gap: 8,
-  },
-  floorChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
   infoCard: {
     padding: 12,
     gap: 4,
@@ -285,6 +270,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 12,
     borderWidth: 1,
-    borderColor: "#F3F4F6",
   },
 });

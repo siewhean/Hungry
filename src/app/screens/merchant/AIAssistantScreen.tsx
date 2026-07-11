@@ -14,7 +14,7 @@ import {
   Sparkles,
 } from "lucide-react-native";
 
-import { AppText, IconButton, Screen } from "@/components/ui";
+import { AppText, IconButton, Screen, EmptyState } from "@/components/ui";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
@@ -24,17 +24,23 @@ import type { AIBusinessInsight } from "@/types/domain";
 type MerchantNavigation = BottomTabNavigationProp<MerchantTabParamList>;
 
 export function AIAssistantScreen() {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const navigation = useNavigation<MerchantNavigation>();
   const activeOutlet = useMerchantStore(getActiveOutlet);
 
   const [insights, setInsights] = useState<AIBusinessInsight[]>([]);
   const [weeklySummary, setWeeklySummary] = useState<AIBusinessInsight | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const loadInsights = useCallback(async () => {
-    if (!activeOutlet) return;
     setIsLoading(true);
+    setError(null);
+    if (!activeOutlet) {
+      setError("No active outlet selected for AI insights.");
+      setIsLoading(false);
+      return;
+    }
     try {
       const data = await getHungryService().merchant.getAIInsights(activeOutlet.id);
       setInsights(data.filter((i) => i.type !== "weekly_summary" && !i.isDismissed));
@@ -43,6 +49,7 @@ export function AIAssistantScreen() {
       setWeeklySummary(summary);
     } catch (e) {
       console.error(e);
+      setError(e instanceof Error ? e.message : "Failed to load AI insights.");
     } finally {
       setIsLoading(false);
     }
@@ -51,6 +58,22 @@ export function AIAssistantScreen() {
   useEffect(() => {
     void loadInsights();
   }, [loadInsights]);
+
+  if (error) {
+    return (
+      <Screen title="AI Assistant">
+        <EmptyState
+          title="Unable to load AI assistant"
+          body="We could not load your AI assistant data."
+          icon={<X size={40} color={palette.error} />}
+          errorMessage={error}
+          sendErrorContext="AI assistant"
+          ctaLabel="Retry"
+          onPress={loadInsights}
+        />
+      </Screen>
+    );
+  }
 
   const handleDismiss = (id: string) => {
     setInsights((prev) => prev.filter((i) => i.id !== id));
@@ -96,8 +119,7 @@ export function AIAssistantScreen() {
     <Screen title="AI Assistant">
       <View style={{ gap: spacing[6], width: "100%" }}>
         <AppText variant="body" tone="muted" style={{ paddingHorizontal: spacing[1] }}>
-          AI-powered insights to help you optimize your menu, attract more customers, and boost
-          sales.
+          AI-assisted insights to help you review menu, photo, demand, and promotion opportunities.
         </AppText>
 
         {weeklySummary && (
@@ -107,7 +129,7 @@ export function AIAssistantScreen() {
               {
                 backgroundColor: palette.orangeLight,
                 borderColor: palette.orange,
-                borderRadius: radii.lg,
+                borderRadius: componentRadii.card,
                 padding: spacing[5] || 20,
               },
             ]}
@@ -120,7 +142,13 @@ export function AIAssistantScreen() {
                 marginBottom: spacing[3],
               }}
             >
-              <View style={{ backgroundColor: palette.orange, padding: 6, borderRadius: radii.sm }}>
+              <View
+                style={{
+                  backgroundColor: palette.orange,
+                  padding: 6,
+                  borderRadius: componentRadii.iconButton,
+                }}
+              >
                 <BarChart2 size={16} color={palette.white} />
               </View>
               <AppText variant="bodySmallBold" style={{ color: palette.orange }}>
@@ -148,7 +176,11 @@ export function AIAssistantScreen() {
             <View
               style={[
                 styles.emptyContainer,
-                { borderColor: palette.border, borderRadius: radii.xl, padding: spacing[8] },
+                {
+                  borderColor: palette.border,
+                  borderRadius: componentRadii.card,
+                  padding: spacing[8],
+                },
               ]}
             >
               <CheckCircle2 size={48} color={palette.success} />
@@ -173,7 +205,7 @@ export function AIAssistantScreen() {
                     {
                       backgroundColor: palette.surface,
                       borderColor: palette.border,
-                      borderRadius: radii.lg,
+                      borderRadius: componentRadii.card,
                       padding: spacing[4],
                     },
                   ]}
@@ -198,7 +230,7 @@ export function AIAssistantScreen() {
                         style={{
                           backgroundColor: palette.bgSoft,
                           padding: 8,
-                          borderRadius: radii.md,
+                          borderRadius: componentRadii.card,
                         }}
                       >
                         {getInsightIcon(insight.type)}
@@ -249,7 +281,11 @@ export function AIAssistantScreen() {
         </View>
 
         <View
-          style={{ padding: spacing[4], backgroundColor: palette.bgSoft, borderRadius: radii.md }}
+          style={{
+            padding: spacing[4],
+            backgroundColor: palette.bgSoft,
+            borderRadius: componentRadii.card,
+          }}
         >
           <AppText variant="micro" tone="muted" style={{ textAlign: "center" }}>
             AI insights are generated automatically based on your stall&apos;s data. These are

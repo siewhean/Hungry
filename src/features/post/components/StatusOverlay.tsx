@@ -1,9 +1,11 @@
 import React, { useEffect } from "react";
-import { View, StyleSheet, ActivityIndicator } from "react-native";
+import { Alert, Clipboard, Share, StyleSheet, View, ActivityIndicator } from "react-native";
 import { CheckCircle2, AlertCircle, X, Calendar, Save } from "lucide-react-native";
 import { AppText, Button, IconButton } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
+import { publishComposerPost } from "../publishing";
 import { useComposerStore } from "../useComposerStore";
+import { useMerchantStore } from "@/store/useMerchantStore";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface StatusOverlayProps {
@@ -11,11 +13,51 @@ interface StatusOverlayProps {
 }
 
 export function StatusOverlay({ onFinish }: StatusOverlayProps) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const publishingState = useComposerStore((state) => state.publishingState);
+  const publishingError = useComposerStore((state) => state.publishingError);
   const setPublishingState = useComposerStore((state) => state.setPublishingState);
+  const setPublishingError = useComposerStore((state) => state.setPublishingError);
+  const lastPublishRequest = useComposerStore((state) => state.lastPublishRequest);
   const reset = useComposerStore((state) => state.reset);
+  const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
+  const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
+  const isUserMode = !isMerchantMode && !isDeveloperMode;
+  const retryPublish = async () => {
+    if (!lastPublishRequest) {
+      setPublishingError("No publish request was found. Please review the post and try again.");
+      return;
+    }
+
+    setPublishingError(null);
+    setPublishingState("posting");
+    try {
+      await publishComposerPost(lastPublishRequest);
+      setPublishingState("success");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "An unexpected error occurred while publishing your post. Please try again.";
+      setPublishingError(errorMessage);
+      setPublishingState("error");
+    }
+  };
+  const shareErrorReport = async () => {
+    const report = `Hungry Post Composer Error\nState: ${publishingState}\nError: ${
+      publishingError || "Unable to publish post."
+    }`;
+    try {
+      await Clipboard.setString(report);
+      await Share.share({ message: report, title: "Hungry Post Composer Error" });
+    } catch {
+      Alert.alert(
+        "Error report",
+        "Unable to open sharing options. Error report copied to clipboard.",
+      );
+    }
+  };
 
   useEffect(() => {
     if (publishingState === "scheduled") {
@@ -42,9 +84,10 @@ export function StatusOverlay({ onFinish }: StatusOverlayProps) {
             styles.toast,
             {
               backgroundColor: palette.surface,
-              borderRadius: radii.md,
+              borderRadius: componentRadii.card,
               padding: spacing.lg,
               borderColor: palette.border,
+              shadowColor: palette.mediaBackdrop,
             },
           ]}
         >
@@ -52,7 +95,7 @@ export function StatusOverlay({ onFinish }: StatusOverlayProps) {
           <View style={{ flex: 1, gap: spacing.sm }}>
             <AppText variant="bodySmallBold">Post Scheduled!</AppText>
             <AppText variant="micro" tone="secondary">
-              Your post will go live at the set time.
+              Your schedule time has been saved to this composer.
             </AppText>
           </View>
         </View>
@@ -65,13 +108,14 @@ export function StatusOverlay({ onFinish }: StatusOverlayProps) {
     publishingState === "uploading" ||
     publishingState === "processing" ||
     publishingState === "ai_processing";
+  const isReviewOnlySuccess = lastPublishRequest?.publishMode === "review";
 
   return (
     <View
       style={[
         StyleSheet.absoluteFill,
         {
-          backgroundColor: "rgba(0,0,0,0.7)",
+          backgroundColor: palette.detailImageOverlay,
           zIndex: 1000,
           alignItems: "center",
           justifyContent: "center",
@@ -82,7 +126,11 @@ export function StatusOverlay({ onFinish }: StatusOverlayProps) {
       <View
         style={[
           styles.card,
-          { backgroundColor: palette.surface, borderRadius: radii.xl, padding: spacing.xxl },
+          {
+            backgroundColor: palette.surface,
+            borderRadius: componentRadii.card,
+            padding: spacing.xxl,
+          },
         ]}
       >
         {isProcessing ? (
@@ -95,12 +143,16 @@ export function StatusOverlay({ onFinish }: StatusOverlayProps) {
                   : publishingState === "uploading"
                     ? "Uploading Media..."
                     : publishingState === "ai_processing"
-                      ? "AI Creator Suite..."
+                      ? isUserMode
+                        ? "Processing..."
+                        : "AI Creator Suite..."
                       : "Processing Media..."}
               </AppText>
               <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
                 {publishingState === "ai_processing"
-                  ? "Our AI is working its magic to make your post stand out."
+                  ? isUserMode
+                    ? "Your post is being processed."
+                    : "Our AI is working its magic to make your post stand out."
                   : "Hold tight, we're making your food look amazing for the community."}
               </AppText>
             </View>
@@ -109,13 +161,15 @@ export function StatusOverlay({ onFinish }: StatusOverlayProps) {
           <View style={styles.content}>
             <CheckCircle2 size={60} color={palette.success} />
             <View style={{ alignItems: "center", gap: spacing.sm }}>
-              <AppText variant="h2">Shared!</AppText>
+              <AppText variant="h2">{isReviewOnlySuccess ? "Review saved" : "Shared!"}</AppText>
               <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
-                Your content is now live. Get ready for the cravings to start.
+                {isReviewOnlySuccess
+                  ? "Your review is saved to your profile and the dish details."
+                  : "Your content is now live. Get ready for the cravings to start."}
               </AppText>
             </View>
             <Button
-              label="View Post"
+              label={isReviewOnlySuccess ? "Done" : "View Post"}
               variant="primary"
               fullWidth
               onPress={() => {
@@ -156,15 +210,19 @@ export function StatusOverlay({ onFinish }: StatusOverlayProps) {
             <View style={{ alignItems: "center", gap: spacing.sm }}>
               <AppText variant="h3">Something went wrong</AppText>
               <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
-                We couldn&apos;t publish your post. Please check your connection and try again.
+                {publishingError ||
+                  "We couldn&apos;t publish your post. Please check your connection and try again."}
               </AppText>
             </View>
             <Button
               label="Try Again"
               variant="primary"
               fullWidth
-              onPress={() => setPublishingState("posting")}
+              onPress={() => {
+                void retryPublish();
+              }}
             />
+            <Button label="Send error" variant="secondary" fullWidth onPress={shareErrorReport} />
             <Button
               label="Cancel"
               variant="ghost"
@@ -213,7 +271,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     borderWidth: 1,
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,

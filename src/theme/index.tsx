@@ -23,7 +23,11 @@ import {
 import { useUIStore } from "@/store/useUIStore";
 import {
   colors,
+  componentCornerCurve,
+  componentRadii,
   componentSizes,
+  contrastRatios,
+  fontScaling,
   motion,
   opacity,
   radii,
@@ -34,7 +38,7 @@ import {
   zIndex,
 } from "./tokens";
 
-type HungryTheme = {
+export type HungryTheme = {
   colorScheme: "light" | "dark";
   theme: Theme;
   palette: (typeof colors)[keyof typeof colors];
@@ -46,6 +50,10 @@ type HungryTheme = {
   motion: typeof motion;
   zIndex: typeof zIndex;
   componentSizes: typeof componentSizes;
+  fontScaling: typeof fontScaling;
+  componentRadii: typeof componentRadii;
+  componentCornerCurve: typeof componentCornerCurve;
+  contrastRatios: typeof contrastRatios;
   opacity: typeof opacity;
   fontsLoaded: boolean;
 };
@@ -163,6 +171,10 @@ export function HungryThemeProvider({ children }: PropsWithChildren) {
       motion,
       zIndex,
       componentSizes,
+      fontScaling,
+      componentRadii,
+      componentCornerCurve,
+      contrastRatios,
       opacity,
       fontsLoaded: nunitoLoaded && monoLoaded && frauncesLoaded,
     }),

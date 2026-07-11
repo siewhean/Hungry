@@ -11,15 +11,14 @@
 import { useState, useMemo } from "react";
 import { FlatList, Modal, Pressable, ScrollView, View, Alert } from "react-native";
 import { X, Search, Compass, Heart, Plus, ShieldAlert, Sparkles } from "lucide-react-native";
-import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 
-import { AppText, Badge, Card, EmptyState, Input } from "@/components/ui";
+import { AccessibleImage, AppText, Badge, Card, EmptyState, Input } from "@/components/ui";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
-import type { SearchCategory, VenueSummary, DishDetail } from "@/types/domain";
+import type { SearchCategory, VenueSummary, DishDetail, DietaryFlag } from "@/types/domain";
 
 const CATEGORIES: SearchCategory[] = [
   "local favourites",
@@ -82,7 +81,7 @@ function VenueRow({
     >
       <View style={{ position: "relative" }}>
         {hero?.imageUrl ? (
-          <Image
+          <AccessibleImage
             source={{ uri: hero.imageUrl }}
             style={{
               width: 56,
@@ -92,6 +91,7 @@ function VenueRow({
               borderColor: palette.orange,
             }}
             contentFit="cover"
+            accessibilityLabel={`${hero.name} photo`}
           />
         ) : (
           <View
@@ -169,7 +169,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
 
   // Group dietary summary
   const groupDietaryRestrictions = useMemo(() => {
-    const all = new Set<string>();
+    const all = new Set<DietaryFlag>();
     members.forEach((m) => m.dietaryPreferences?.forEach((p) => all.add(p)));
     return Array.from(all);
   }, [members]);
@@ -187,7 +187,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
     // Conflict detection
     if (groupDietaryRestrictions.length > 0 && venueDish) {
       const conflicts = groupDietaryRestrictions.filter(
-        (pref) => !venueDish.dietaryFlags.includes(pref as any),
+        (pref) => !venueDish.dietaryFlags.includes(pref),
       );
 
       if (conflicts.length > 0) {
@@ -284,14 +284,22 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
   ];
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+      accessibilityViewIsModal
+    >
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Close add option sheet"
+        accessibilityHint="Dismisses the option picker"
         style={{ flex: 1, backgroundColor: palette.overlay }}
         onPress={onClose}
       />
       <View
+        accessibilityViewIsModal
         style={{
           backgroundColor: palette.bg,
           borderTopLeftRadius: radii.xxl,

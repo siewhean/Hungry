@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type RefObject } from "react";
+import { useCallback, useEffect, useMemo, useState, type RefObject } from "react";
 import { Pressable, View, type TextInput } from "react-native";
 import {
   BottomSheetBackdrop,
@@ -7,16 +7,17 @@ import {
   BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
 import { MessageCircle, MessageCircleMore, X } from "lucide-react-native";
-
-const CommentIcon = MessageCircle ?? MessageCircleMore;
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppText, Avatar, EmptyState, Input } from "@/components/ui";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import type { Bite } from "@/lib/services/types";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSocialStore, type SocialComment, type SocialReply } from "@/store/useSocialStore";
 import { useHungryTheme } from "@/theme";
+
+const CommentIcon = MessageCircle ?? MessageCircleMore;
 
 interface BiteCommentsSheetProps {
   activeBite: Bite | null;
@@ -31,16 +32,22 @@ export function BiteCommentsSheet({
   innerRef,
   onDismiss,
 }: BiteCommentsSheetProps) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const profile = useProfileStore((state) => state.profile);
   const commentsByPostId = useSocialStore((state) => state.commentsByPostId);
   const repliesByCommentId = useSocialStore((state) => state.repliesByCommentId);
   const addComment = useSocialStore((state) => state.addComment);
   const addReply = useSocialStore((state) => state.addReply);
+  const loadCommentsForPost = useSocialStore((state) => state.loadCommentsForPost);
 
   const [draftComment, setDraftComment] = useState("");
   const [activeReplyCommentId, setActiveReplyCommentId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!activeBite?.id) return;
+    void loadCommentsForPost(activeBite.id);
+  }, [activeBite?.id, loadCommentsForPost]);
 
   const commentsForActiveBite = useMemo(() => {
     if (!activeBite) {
@@ -65,6 +72,7 @@ export function BiteCommentsSheet({
       const newReply: SocialReply = {
         id: `reply-${Date.now()}`,
         parentCommentId: activeReplyCommentId,
+        userId: profile.id,
         authorName: profile.displayName,
         authorAvatarUrl: profile.avatarUrl,
         text: draftComment.trim(),
@@ -76,6 +84,7 @@ export function BiteCommentsSheet({
     } else {
       const newComment: SocialComment = {
         id: `comment-${Date.now()}`,
+        userId: profile.id,
         authorName: profile.displayName,
         authorAvatarUrl: profile.avatarUrl,
         text: draftComment.trim(),
@@ -88,12 +97,18 @@ export function BiteCommentsSheet({
     setDraftComment("");
   }, [activeBite, activeReplyCommentId, addComment, addReply, draftComment, profile]);
 
+  if (!FEATURE_FLAGS.commentsEnabled) {
+    return null;
+  }
+
   return (
     <BottomSheetModal
       ref={innerRef}
       snapPoints={["50%", "88%"]}
-      index={0}
+      enableDynamicSizing={false}
       enablePanDownToClose
+      accessibilityLabel="Bite comments"
+      accessibilityViewIsModal
       onDismiss={handleDismiss}
       backdropComponent={(props) => (
         <BottomSheetBackdrop
@@ -102,6 +117,9 @@ export function BiteCommentsSheet({
           disappearsOnIndex={-1}
           opacity={0.5}
           pressBehavior="close"
+          accessibilityRole="button"
+          accessibilityLabel="Close comments"
+          accessibilityHint="Dismisses the bite comments sheet"
         />
       )}
       backgroundStyle={{ backgroundColor: palette.surface }}
@@ -124,7 +142,7 @@ export function BiteCommentsSheet({
                 style={{
                   alignItems: "center",
                   backgroundColor: palette.bgSoft,
-                  borderRadius: radii.md,
+                  borderRadius: componentRadii.card,
                   flexDirection: "row",
                   justifyContent: "space-between",
                   paddingHorizontal: spacing[3],
@@ -138,7 +156,12 @@ export function BiteCommentsSheet({
                       ?.authorName ?? "comment"}
                   </AppText>
                 </AppText>
-                <Pressable onPress={() => setActiveReplyCommentId(null)}>
+                <Pressable
+                  onPress={() => setActiveReplyCommentId(null)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cancel reply"
+                  accessibilityHint="Stops replying to the selected comment"
+                >
                   <X size={14} color={palette.textMuted} />
                 </Pressable>
               </View>
@@ -150,8 +173,10 @@ export function BiteCommentsSheet({
                   placeholder={activeReplyCommentId ? "Write a reply..." : "Add a comment..."}
                   value={draftComment}
                   onChangeText={setDraftComment}
-                  multiline
-                  style={{ maxHeight: 100 }}
+                  multiline={false}
+                  numberOfLines={1}
+                  textAlignVertical="center"
+                  style={{ maxHeight: 44, minHeight: 44 }}
                 />
               </View>
               <Pressable
@@ -174,20 +199,16 @@ export function BiteCommentsSheet({
     >
       <View
         style={{
-          alignItems: "center",
-          borderBottomWidth: 1,
-          borderBottomColor: palette.border,
-          paddingVertical: spacing[3],
+          paddingTop: spacing[1],
+          paddingBottom: spacing[3],
         }}
-      >
-        <AppText variant="h3">Comments</AppText>
-      </View>
+      />
       <BottomSheetScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingBottom: spacing[24] + spacing[8] + insets.bottom,
           paddingHorizontal: spacing[3],
-          paddingVertical: spacing[4],
+          paddingTop: spacing[2],
         }}
       >
         {commentsForActiveBite.length ? (

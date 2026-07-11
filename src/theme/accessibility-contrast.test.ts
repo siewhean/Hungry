@@ -1,0 +1,130 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import { colors, contrastRatios } from "@/theme/tokens";
+import { getBadgeToneStyles, type BadgeTone } from "@/components/ui/badgeTones";
+
+type HexColor = `#${string}`;
+type RgbaColor = `rgba(${number}, ${number}, ${number}, ${number})`;
+
+function parseHex(color: string): [number, number, number] {
+  assert.match(color, /^#[0-9a-fA-F]{6}$/);
+  return [1, 3, 5].map((index) => Number.parseInt(color.slice(index, index + 2), 16)) as [
+    number,
+    number,
+    number,
+  ];
+}
+
+function luminance(color: HexColor): number {
+  const [r, g, b] = parseHex(color).map((channel) => {
+    const value = channel / 255;
+    return value <= 0.03928 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function contrast(foreground: HexColor, background: HexColor): number {
+  const lighter = Math.max(luminance(foreground), luminance(background));
+  const darker = Math.min(luminance(foreground), luminance(background));
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function parseRgba(color: string): [number, number, number, number] {
+  const match = color.match(/^rgba\((\d+),\s*(\d+),\s*(\d+),\s*(0?\.\d+|1(?:\.0)?)\)$/);
+  assert.ok(match, `Expected rgba color, got ${color}`);
+  return [Number(match[1]), Number(match[2]), Number(match[3]), Number(match[4])];
+}
+
+function compositeRgbaOverBackground(foreground: RgbaColor, background: HexColor): HexColor {
+  const [r, g, b, alpha] = parseRgba(foreground);
+  const [bgR, bgG, bgB] = parseHex(background);
+  const channelToHex = (value: number) =>
+    Math.round(value).toString(16).padStart(2, "0").toUpperCase();
+  return `#${channelToHex(r * alpha + bgR * (1 - alpha))}${channelToHex(
+    g * alpha + bgG * (1 - alpha),
+  )}${channelToHex(b * alpha + bgB * (1 - alpha))}`;
+}
+
+function roundedContrast(foreground: HexColor, background: HexColor): number {
+  return Number(contrast(foreground, background).toFixed(2));
+}
+
+const badgeTones: BadgeTone[] = [
+  "orange",
+  "amber",
+  "success",
+  "warning",
+  "error",
+  "info",
+  "neutral",
+];
+const badgeRatioKey = (tone: BadgeTone, mode: "light" | "dark") => {
+  const label = tone.charAt(0).toUpperCase() + tone.slice(1);
+  return `badge${label}TextOn${mode === "light" ? "Bg" : "Surface"}` as const;
+};
+
+const computedContrastRatios = {
+  light: {
+    textOnBg: roundedContrast(colors.light.text, colors.light.bg),
+    textSecondaryOnBg: roundedContrast(colors.light.textSecondary, colors.light.bg),
+    textMutedOnBg: roundedContrast(colors.light.textMuted, colors.light.bg),
+    accentTextOnBg: roundedContrast(colors.light.accentText, colors.light.bg),
+    accentTextOnOrangeLight: roundedContrast(colors.light.accentText, colors.light.orangeLight),
+    textOnOrangeControl: roundedContrast(colors.light.textOnPrimary, colors.light.orangeControl),
+    textOnBrandOrange: roundedContrast(colors.light.textOnOrange, colors.light.orange),
+    statusFastOnBg: roundedContrast(colors.light.statusFast, colors.light.bg),
+    statusModerateOnBg: roundedContrast(colors.light.statusModerate, colors.light.bg),
+    statusBusyOnBg: roundedContrast(colors.light.statusBusy, colors.light.bg),
+    successTextOnSuccessSoft: roundedContrast(colors.light.successText, colors.light.successSoft),
+    warningTextOnWarningSoft: roundedContrast(colors.light.warningText, colors.light.warningSoft),
+    errorTextOnErrorSoft: roundedContrast(colors.light.errorText, colors.light.errorSoft),
+    infoTextOnInfoSoft: roundedContrast(colors.light.infoText, colors.light.infoSoft),
+    ...Object.fromEntries(
+      badgeTones.map((tone) => {
+        const styles = getBadgeToneStyles(colors.light, tone);
+        return [
+          badgeRatioKey(tone, "light"),
+          roundedContrast(styles.text as HexColor, styles.bg as HexColor),
+        ];
+      }),
+    ),
+  },
+  dark: {
+    textOnBg: roundedContrast(colors.dark.text, colors.dark.bg),
+    textSecondaryOnBg: roundedContrast(colors.dark.textSecondary, colors.dark.bg),
+    textMutedOnBg: roundedContrast(colors.dark.textMuted, colors.dark.bg),
+    textMutedOnSurface: roundedContrast(colors.dark.textMuted, colors.dark.surface),
+    accentTextOnBg: roundedContrast(colors.dark.accentText, colors.dark.bg),
+    textOnOrangeControl: roundedContrast(colors.dark.textOnPrimary, colors.dark.orangeControl),
+    textOnBrandOrange: roundedContrast(colors.dark.textOnOrange, colors.dark.orange),
+    statusFastOnBg: roundedContrast(colors.dark.statusFast, colors.dark.bg),
+    statusModerateOnBg: roundedContrast(colors.dark.statusModerate, colors.dark.bg),
+    statusBusyOnBg: roundedContrast(colors.dark.statusBusy, colors.dark.bg),
+    successTextOnBg: roundedContrast(colors.dark.successText, colors.dark.bg),
+    warningTextOnBg: roundedContrast(colors.dark.warningText, colors.dark.bg),
+    errorTextOnBg: roundedContrast(colors.dark.errorText, colors.dark.bg),
+    infoTextOnBg: roundedContrast(colors.dark.infoText, colors.dark.bg),
+    ...Object.fromEntries(
+      badgeTones.map((tone) => {
+        const styles = getBadgeToneStyles(colors.dark, tone);
+        const background = styles.bg.startsWith("rgba(")
+          ? compositeRgbaOverBackground(styles.bg as RgbaColor, colors.dark.surface)
+          : (styles.bg as HexColor);
+        return [badgeRatioKey(tone, "dark"), roundedContrast(styles.text as HexColor, background)];
+      }),
+    ),
+  },
+} as const;
+
+test("documented Hungry theme text pairs meet WCAG AA contrast", () => {
+  for (const [mode, ratios] of Object.entries(computedContrastRatios)) {
+    for (const [pair, ratio] of Object.entries(ratios)) {
+      assert.ok(ratio >= 4.5, `${mode}.${pair} ratio must meet AA`);
+    }
+  }
+});
+
+test("theme exposes computed contrast ratios for audit traceability", () => {
+  assert.deepEqual(contrastRatios, computedContrastRatios);
+});

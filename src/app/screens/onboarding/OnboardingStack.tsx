@@ -5,19 +5,22 @@ import { CuisineSelectionScreen } from "./CuisineSelectionScreen";
 import { FoodSelectionScreen } from "./FoodSelectionScreen";
 import { LocationPermissionScreen } from "./LocationPermissionScreen";
 import { ManualLocationPickerScreen } from "./ManualLocationPickerScreen";
+import { OnboardingAuthScreen } from "./OnboardingAuthScreen";
 import { OnboardingIntro1Screen } from "./OnboardingIntro1Screen";
 import { OnboardingIntro2Screen } from "./OnboardingIntro2Screen";
 import { OnboardingIntro3Screen } from "./OnboardingIntro3Screen";
 import { TasteQuizScreen } from "./TasteQuizScreen";
 import { TasteProfileLoadingScreen } from "./TasteProfileLoadingScreen";
 import { TasteProfileResultScreen } from "./TasteProfileResultScreen";
+import { WelcomeScreen } from "./WelcomeScreen";
 export type { OnboardingStackParamList } from "@/app/navigation/navigationTypes";
 
 const Stack = createNativeStackNavigator<OnboardingStackParamList>();
 
 export function OnboardingStack() {
   return (
-    <Stack.Navigator initialRouteName="OnboardingIntro1" screenOptions={{ headerShown: false }}>
+    <Stack.Navigator initialRouteName="OnboardingWelcome" screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="OnboardingWelcome" component={WelcomeScreen} />
       <Stack.Screen name="OnboardingIntro1" component={OnboardingIntro1Screen} />
       <Stack.Screen name="OnboardingIntro2" component={OnboardingIntro2Screen} />
       <Stack.Screen name="OnboardingIntro3" component={OnboardingIntro3Screen} />
@@ -29,6 +32,7 @@ export function OnboardingStack() {
       <Stack.Screen name="TasteProfileResult" component={TasteProfileResultScreen} />
       <Stack.Screen name="LocationPermission" component={LocationPermissionScreen} />
       <Stack.Screen name="ManualLocationPicker" component={ManualLocationPickerScreen} />
+      <Stack.Screen name="OnboardingAuth" component={OnboardingAuthScreen} />
     </Stack.Navigator>
   );
 }

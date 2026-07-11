@@ -5,22 +5,43 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { useHungryTheme } from "@/theme";
 import { AppText, Button, EmptyState, Screen, IconButton, Input, Card } from "@/components/ui";
+import { confirmGalleryAccess, isGalleryPermissionGranted } from "@/lib/permissions/gallery";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import type { LocationPrivacy } from "@/types/domain";
 
 type Props = NativeStackScreenProps<MerchantTabParamList, "HomeBasedVerification">;
+type PickedEvidenceAsset = { uri?: string };
+type ImagePickerModule = {
+  MediaTypeOptions: { Images: unknown };
+  requestMediaLibraryPermissionsAsync: () => Promise<{ granted?: boolean; status?: string }>;
+  launchImageLibraryAsync: (options: Record<string, unknown>) => Promise<{
+    canceled: boolean;
+    assets?: PickedEvidenceAsset[];
+  }>;
+};
+
+function loadImagePickerModule(): ImagePickerModule | null {
+  try {
+    return require("expo-image-picker") as ImagePickerModule;
+  } catch {
+    return null;
+  }
+}
 
 export function HomeBasedVerificationScreen({ navigation }: Props) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const setAccount = useMerchantStore((state) => state.setAccount);
   const activeOutlet = useMerchantStore(getActiveOutlet);
 
   const [displayName, setDisplayName] = useState(activeOutlet?.name || "");
   const [privacy, setPrivacy] = useState<LocationPrivacy>("approximate");
+  const [photoUris, setPhotoUris] = useState<string[]>([]);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [safetyChecked, setSafetyChecked] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const photosAttached = photoUris.length > 0;
 
   if (!activeOutlet) {
     return (
@@ -28,14 +49,63 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
         <EmptyState
           title="No outlet selected"
           body="Choose an outlet to begin home-based verification."
+          errorMessage="No active outlet was found for home-based verification."
+          sendErrorContext="Home-based verification"
           icon={<Home color={palette.textMuted} size={36} />}
         />
       </Screen>
     );
   }
 
+  const handleAttachPhotos = async () => {
+    setPhotoError(null);
+    try {
+      const imagePicker = loadImagePickerModule();
+      if (!imagePicker) {
+        setPhotoError("Media picker is unavailable in this app build.");
+        return;
+      }
+
+      const shouldRequestPermission = await confirmGalleryAccess({
+        title: "Allow gallery access",
+        message:
+          "Hungry needs access to your photo library to upload photos for verification evidence.",
+        confirmLabel: "Allow",
+        cancelLabel: "Not now",
+      });
+
+      if (!shouldRequestPermission) {
+        return;
+      }
+
+      const permission = await imagePicker.requestMediaLibraryPermissionsAsync();
+      if (!isGalleryPermissionGranted(permission)) {
+        setPhotoError("Photos permission is required to attach verification evidence.");
+        return;
+      }
+
+      const result = await imagePicker.launchImageLibraryAsync({
+        allowsEditing: false,
+        allowsMultipleSelection: true,
+        mediaTypes: imagePicker.MediaTypeOptions.Images,
+        quality: 0.82,
+        selectionLimit: 4,
+      });
+
+      if (result.canceled || !result.assets?.length) {
+        return;
+      }
+
+      setPhotoUris(
+        result.assets.map((asset) => asset.uri).filter((uri): uri is string => Boolean(uri)),
+      );
+    } catch {
+      setPhotoError("Unable to open the photo library right now.");
+    }
+  };
+
   const handleSubmit = async () => {
-    if (!displayName.trim() || !safetyChecked) return;
+    if (!displayName.trim() || !photosAttached || !safetyChecked) return;
 
     setIsSubmitting(true);
     try {
@@ -45,11 +115,12 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
         locationPrivacy: privacy,
       });
 
-      // Then submit the verification request
-      await getHungryService().merchant.submitVerification(activeOutlet.id, {
-        method: "home_based_declaration",
-        fileUrl: "mock-url://home-based-photos",
-      });
+      for (const fileUrl of photoUris) {
+        await getHungryService().merchant.submitVerification(activeOutlet.id, {
+          method: "home_based_declaration",
+          fileUrl,
+        });
+      }
 
       const updatedAccount = await getHungryService().merchant.getMerchantAccount();
       if (updatedAccount) setAccount(updatedAccount);
@@ -139,34 +210,65 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
         >
           Menu & Food Photos
         </AppText>
-        <Card
-          style={[
-            {
-              alignItems: "center",
-              justifyContent: "center",
-              padding: spacing[8],
-              borderWidth: 1,
-              borderStyle: "dashed",
-              marginTop: spacing[2],
-            },
-            { borderColor: palette.border },
-          ]}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={
+            photosAttached
+              ? "Home-based verification photos attached"
+              : "Attach menu and food photos"
+          }
+          accessibilityState={{ selected: photosAttached }}
+          onPress={() => void handleAttachPhotos()}
         >
-          <Camera size={32} color={palette.textSecondary} />
-          <AppText style={{ color: palette.orange, marginTop: spacing[2], fontWeight: "bold" }}>
-            Tap to Upload
-          </AppText>
-          <AppText
-            variant="micro"
-            style={{
-              color: palette.textSecondary,
-              marginTop: 4,
-              textAlign: "center",
-            }}
+          <Card
+            style={[
+              {
+                alignItems: "center",
+                justifyContent: "center",
+                padding: spacing[8],
+                borderWidth: 1,
+                borderStyle: "dashed",
+                marginTop: spacing[2],
+              },
+              {
+                borderColor: photosAttached ? palette.success : palette.border,
+                backgroundColor: photosAttached ? palette.successSoft : palette.surface,
+              },
+            ]}
           >
-            Provide at least 2 photos of your food and 1 photo of your menu/price list.
+            {photosAttached ? (
+              <CheckCircle2 size={32} color={palette.success} />
+            ) : (
+              <Camera size={32} color={palette.textSecondary} />
+            )}
+            <AppText
+              style={{
+                color: photosAttached ? palette.success : palette.orange,
+                marginTop: spacing[2],
+                fontWeight: "bold",
+              }}
+            >
+              {photosAttached
+                ? `${photoUris.length} photo${photoUris.length === 1 ? "" : "s"} attached`
+                : "Attach photos"}
+            </AppText>
+            <AppText
+              variant="micro"
+              style={{
+                color: palette.textSecondary,
+                marginTop: 4,
+                textAlign: "center",
+              }}
+            >
+              Provide at least 2 photos of your food and 1 photo of your menu/price list.
+            </AppText>
+          </Card>
+        </Pressable>
+        {photoError ? (
+          <AppText variant="micro" style={{ color: palette.error, marginTop: spacing[1] }}>
+            {photoError}
           </AppText>
-        </Card>
+        ) : null}
 
         <AppText
           variant="h3"
@@ -219,7 +321,7 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
           label="Submit Verification"
           onPress={handleSubmit}
           loading={isSubmitting}
-          disabled={!displayName.trim() || !safetyChecked || isSubmitting}
+          disabled={!displayName.trim() || !photosAttached || !safetyChecked || isSubmitting}
           style={{ width: "100%" }}
         />
       </View>
@@ -239,7 +341,7 @@ function PrivacyOption({
   selected: boolean;
   onSelect: () => void;
 }) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii } = useHungryTheme();
 
   return (
     <Pressable onPress={onSelect}>
@@ -249,7 +351,7 @@ function PrivacyOption({
           {
             borderColor: selected ? palette.orange : palette.border,
             backgroundColor: selected ? palette.orangeLight : palette.surface,
-            borderRadius: radii.md,
+            borderRadius: componentRadii.card,
           },
         ]}
       >

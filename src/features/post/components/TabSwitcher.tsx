@@ -7,7 +7,7 @@ import { useHungryTheme } from "@/theme";
 import { useComposerStore, ComposerTab } from "../useComposerStore";
 
 export function TabSwitcher() {
-  const { palette, spacing, semanticSpacing, radii, shadows } = useHungryTheme();
+  const { componentRadii, palette, spacing, semanticSpacing, shadows } = useHungryTheme();
   const activeTab = useComposerStore((state) => state.activeTab);
   const setActiveTab = useComposerStore((state) => state.setActiveTab);
 
@@ -26,7 +26,7 @@ export function TabSwitcher() {
       <View
         style={[
           styles.inner,
-          { backgroundColor: palette.bgSoft, borderRadius: radii.pill, padding: 4 },
+          { backgroundColor: palette.bgSoft, borderRadius: componentRadii.button, padding: 4 },
         ]}
       >
         <View
@@ -36,12 +36,15 @@ export function TabSwitcher() {
               left: activeTab === "post" ? 4 : "50%",
               width: "48%",
               backgroundColor: palette.surface,
-              borderRadius: radii.pill,
+              borderRadius: componentRadii.button,
               ...shadows.card,
             },
           ]}
         />
         <Pressable
+          accessibilityRole="tab"
+          accessibilityLabel="Post tab"
+          accessibilityState={{ selected: activeTab === "post" }}
           style={styles.tab}
           onPress={() => {
             void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -59,6 +62,9 @@ export function TabSwitcher() {
           </AppText>
         </Pressable>
         <Pressable
+          accessibilityRole="tab"
+          accessibilityLabel="Review tab"
+          accessibilityState={{ selected: activeTab === "review" }}
           style={styles.tab}
           onPress={() => {
             void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

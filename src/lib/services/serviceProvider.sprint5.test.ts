@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   getServiceProvider,
   resetServiceProvider,
+  setExcelServiceProvider,
   setMockServiceProvider,
   setSupabaseServiceProvider,
 } from "@/lib/services/serviceProvider";
@@ -26,6 +27,10 @@ supabaseModeTest("service provider resolves supabase mode from HUNGRY_DATA_SOURC
   process.env.HUNGRY_DATA_SOURCE = "mock";
   resetServiceProvider();
   assert.equal(getServiceProvider().mode, "mock");
+
+  process.env.HUNGRY_DATA_SOURCE = "excel";
+  resetServiceProvider();
+  assert.equal(getServiceProvider().mode, "excel");
 
   process.env.HUNGRY_DATA_SOURCE = previousDataSource;
   process.env.EXPO_PUBLIC_HUNGRY_DATA_SOURCE = previousPublicDataSource;
@@ -72,6 +77,16 @@ test("service provider can be forced into supabase mode for user mode", () => {
 
   setSupabaseServiceProvider();
   assert.equal(getServiceProvider().mode, "supabase");
+
+  resetServiceProvider();
+});
+
+test("service provider can be forced into Excel mode without eagerly loading the catalog", () => {
+  setMockServiceProvider();
+  assert.equal(getServiceProvider().mode, "mock");
+
+  setExcelServiceProvider();
+  assert.equal(getServiceProvider().mode, "excel");
 
   resetServiceProvider();
 });

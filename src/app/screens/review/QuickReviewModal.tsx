@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, type ComponentProps } from "react";
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from "@gorhom/bottom-sheet";
 
 import { useUIStore } from "@/store/useUIStore";
@@ -22,8 +22,16 @@ export function QuickReviewModal() {
   }, [payload]);
 
   const renderBackdrop = useCallback(
-    (props: any) => (
-      <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.5} />
+    (props: ComponentProps<typeof BottomSheetBackdrop>) => (
+      <BottomSheetBackdrop
+        {...props}
+        disappearsOnIndex={-1}
+        appearsOnIndex={0}
+        opacity={0.5}
+        accessibilityRole="button"
+        accessibilityLabel="Close quick review"
+        accessibilityHint="Dismisses the quick review sheet"
+      />
     ),
     [],
   );
@@ -36,6 +44,8 @@ export function QuickReviewModal() {
       snapPoints={snapPoints}
       backdropComponent={renderBackdrop}
       onDismiss={hideQuickReview}
+      accessibilityLabel="Quick review"
+      accessibilityViewIsModal
       backgroundStyle={{ backgroundColor: palette.surface }}
       handleIndicatorStyle={{ backgroundColor: palette.border }}
     >

@@ -17,14 +17,17 @@ import { AppText, Input, Card, Badge, IconButton, Button, Dialog } from "@/compo
 import { useHungryTheme } from "@/theme";
 import { useComposerStore } from "../useComposerStore";
 import { spacing, semanticSpacing } from "@/theme/tokens";
+import { useMerchantStore } from "@/store/useMerchantStore";
 
 export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
-  const { palette, radii, shadows, spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, shadows, spacing } = useHungryTheme();
   const postCaption = useComposerStore((state) => state.postCaption);
   const reviewCaption = useComposerStore((state) => state.reviewCaption);
   const setCaption = useComposerStore((state) => state.setCaption);
   const useSameCaption = useComposerStore((state) => state.useSameCaption);
   const setUseSameCaption = useComposerStore((state) => state.setUseSameCaption);
+  const showFoodContextOverlay = useComposerStore((state) => state.showFoodContextOverlay);
+  const setShowFoodContextOverlay = useComposerStore((state) => state.setShowFoodContextOverlay);
   const musicId = useComposerStore((state) => state.musicId);
   const selectedTrackName = useComposerStore((state) => state.selectedTrackName);
   const selectedTrackArtist = useComposerStore((state) => state.selectedTrackArtist);
@@ -32,6 +35,11 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
   const setIsSponsored = useComposerStore((state) => state.setIsSponsored);
   const setShowPreview = useComposerStore((state) => state.setShowPreview);
   const isBusinessMode = useComposerStore((state) => state.isBusinessMode);
+  const ctaButton = useComposerStore((state) => state.ctaButton);
+  const setCTA = useComposerStore((state) => state.setCTA);
+  const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
+  const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
+  const shouldShowBusinessFeatures = isBusinessMode && (isMerchantMode || isDeveloperMode);
 
   const [dialogConfig, setDialogConfig] = useState<{
     visible: boolean;
@@ -60,7 +68,7 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
           editable={!useSameCaption}
           style={{
             backgroundColor: palette.surface,
-            borderRadius: radii.lg,
+            borderRadius: componentRadii.input,
             opacity: useSameCaption ? 0.6 : 1,
             minHeight: 120,
           }}
@@ -73,7 +81,7 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
               styles.syncBar,
               {
                 backgroundColor: palette.orangeLight,
-                borderRadius: radii.md,
+                borderRadius: componentRadii.card,
                 marginTop: semanticSpacing.componentGap,
                 paddingHorizontal: semanticSpacing.screenEdge,
                 paddingVertical: semanticSpacing.inlineGaps,
@@ -94,6 +102,43 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
         )}
       </View>
 
+      <View
+        style={[
+          styles.overlayToggleRow,
+          {
+            backgroundColor: palette.surface,
+            borderColor: palette.border,
+            borderRadius: componentRadii.card,
+            paddingHorizontal: spacing.xl,
+            paddingVertical: spacing.md,
+          },
+        ]}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.lg, flex: 1 }}>
+          <Eye size={20} color={showFoodContextOverlay ? palette.orange : palette.text} />
+          <View style={{ flex: 1 }}>
+            <AppText
+              variant="bodySmallBold"
+              style={{ color: showFoodContextOverlay ? palette.orange : palette.text }}
+            >
+              Dish title on post
+            </AppText>
+            <AppText variant="micro" tone="secondary" style={{ marginTop: 2 }}>
+              Food title and stall name
+            </AppText>
+          </View>
+        </View>
+        <Switch
+          value={showFoodContextOverlay}
+          onValueChange={setShowFoodContextOverlay}
+          trackColor={{ false: palette.border, true: palette.orange }}
+          thumbColor={palette.white}
+          accessibilityLabel="Show food title and stall name on post"
+          accessibilityHint="Adds or removes the bottom-left label on post media"
+          style={{ transform: [{ scaleX: 0.82 }, { scaleY: 0.82 }] }}
+        />
+      </View>
+
       {/* Music Section */}
       <Pressable
         onPress={onOpenMusic}
@@ -101,7 +146,7 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
           styles.interactiveRow,
           {
             backgroundColor: pressed ? palette.surfaceRaised : palette.surface,
-            borderRadius: radii.lg,
+            borderRadius: componentRadii.button,
             paddingHorizontal: spacing.xl,
             paddingVertical: spacing.lg,
           },
@@ -134,7 +179,7 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
       </Pressable>
 
       {/* Business Features */}
-      {isBusinessMode && (
+      {shouldShowBusinessFeatures && (
         <View style={styles.section}>
           <View
             style={{
@@ -150,12 +195,14 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
 
           <View style={{ gap: semanticSpacing.inlineGaps }}>
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${isSponsored ? "Disable" : "Enable"} sponsored label`}
               onPress={() => setIsSponsored(!isSponsored)}
               style={[
                 styles.toggleRow,
                 {
                   backgroundColor: isSponsored ? palette.orangeLight : palette.bgSoft,
-                  borderRadius: radii.md,
+                  borderRadius: componentRadii.card,
                   paddingHorizontal: semanticSpacing.componentGap,
                   paddingVertical: semanticSpacing.inlineGaps,
                 },
@@ -171,18 +218,20 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
             </Pressable>
 
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Add CTA Button"
               onPress={() => {
                 setDialogConfig({
                   visible: true,
-                  title: "CTA Selector",
-                  message: "Choose 'Order Now', 'View Menu', or 'Book Table'.",
+                  title: "Choose CTA",
+                  message: "Select the action shown on this post.",
                 });
               }}
               style={[
                 styles.toggleRow,
                 {
                   backgroundColor: palette.bgSoft,
-                  borderRadius: radii.md,
+                  borderRadius: componentRadii.card,
                   paddingHorizontal: semanticSpacing.componentGap,
                   paddingVertical: semanticSpacing.inlineGaps,
                 },
@@ -197,7 +246,7 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
                 }}
               >
                 <AppText variant="micro" tone="muted">
-                  None
+                  {ctaButton ?? "None"}
                 </AppText>
                 <ChevronRight size={14} color={palette.textMuted} />
               </View>
@@ -212,7 +261,12 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
           title={dialogConfig.title}
           message={dialogConfig.message}
           onClose={() => setDialogConfig(null)}
-          buttons={[{ text: "OK", style: "default", onPress: () => setDialogConfig(null) }]}
+          buttons={[
+            { text: "Order Now", style: "default", onPress: () => setCTA("Order Now") },
+            { text: "View Menu", style: "default", onPress: () => setCTA("View Menu") },
+            { text: "Book Table", style: "default", onPress: () => setCTA("Book Table") },
+            { text: "Remove CTA", style: "cancel", onPress: () => setCTA(null) },
+          ]}
         />
       )}
     </View>
@@ -234,6 +288,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     borderWidth: 1,
     borderColor: "transparent",
+  },
+  overlayToggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderWidth: 1,
   },
   toggleRow: {
     flexDirection: "row",

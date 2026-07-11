@@ -18,6 +18,65 @@ export interface HomeFeedBundle {
   socialFeed: HomeFeedItem[];
 }
 
+export interface HomeFeedOptions {
+  followedAuthors?: Record<string, boolean>;
+  followedUserIds?: Record<string, boolean>;
+  refreshSeed?: number;
+}
+
+const HOME_FEED_BUNDLE_CACHE_TTL_MS = 5_000;
+const homeFeedBundleCache = new Map<
+  string,
+  { createdAt: number; promise: Promise<HomeFeedBundle> }
+>();
+const repositoryCacheIds = new WeakMap<object, number>();
+let nextRepositoryCacheId = 1;
+
+function getRepositoryCacheId(repository: object) {
+  const cachedId = repositoryCacheIds.get(repository);
+  if (cachedId) {
+    return cachedId;
+  }
+  const id = nextRepositoryCacheId;
+  nextRepositoryCacheId += 1;
+  repositoryCacheIds.set(repository, id);
+  return id;
+}
+
+function sortedEnabledKeys(record?: Record<string, boolean>) {
+  return Object.keys(record ?? {})
+    .filter((key) => record?.[key])
+    .sort();
+}
+
+function getProfileTasteKey(profile: UserProfile) {
+  return Object.entries(profile.tasteVector)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([key, value]) => `${key}:${value}`)
+    .join("|");
+}
+
+export function getHomeFeedBundleCacheKey(
+  profile: UserProfile,
+  options?: HomeFeedOptions,
+  repository = getDataRepository(),
+) {
+  return JSON.stringify({
+    dietary: [...profile.dietaryPreferences].sort(),
+    followedAuthors: sortedEnabledKeys(options?.followedAuthors),
+    followedUserIds: sortedEnabledKeys(options?.followedUserIds),
+    profileId: profile.id,
+    repository: getRepositoryCacheId(repository),
+    refreshSeed: options?.refreshSeed ?? 0,
+    taste: getProfileTasteKey(profile),
+    tasteProfile: profile.tasteProfile?.neophiliaIndex ?? null,
+  });
+}
+
+export function clearHomeFeedBundleCache() {
+  homeFeedBundleCache.clear();
+}
+
 function rankHomeFeedItems(items: HomeFeedItem[], profile: UserProfile): HomeFeedItem[] {
   const candidateDishes = items.map((item) => item.dishes[0]).filter(Boolean) as DishDetail[];
   const ranked = runRecommendationPipeline(candidateDishes, {
@@ -35,8 +94,40 @@ function rankHomeFeedItems(items: HomeFeedItem[], profile: UserProfile): HomeFee
   });
 }
 
-async function buildHomeFeedItems(profile: UserProfile): Promise<HomeFeedItem[]> {
-  const repository = getDataRepository();
+function isFollowedPost(item: HomeFeedItem, options?: HomeFeedOptions) {
+  if (item.authorId && options?.followedUserIds?.[item.authorId]) {
+    return true;
+  }
+  return Boolean(options?.followedAuthors?.[item.authorName]);
+}
+
+function rotateFeedGroup(items: HomeFeedItem[], refreshSeed = 0) {
+  if (refreshSeed <= 0 || items.length <= 1) {
+    return items;
+  }
+  const offset = refreshSeed % items.length;
+  return [...items.slice(offset), ...items.slice(0, offset)];
+}
+
+function orderHomeSocialFeed(
+  items: HomeFeedItem[],
+  now: number,
+  options?: HomeFeedOptions,
+): HomeFeedItem[] {
+  const recencySorted = [...items].sort(
+    (left, right) => getPostTime(right, now) - getPostTime(left, now),
+  );
+  const followed = recencySorted.filter((item) => isFollowedPost(item, options));
+  const unfollowed = recencySorted.filter((item) => !isFollowedPost(item, options));
+  const refreshSeed = options?.refreshSeed ?? 0;
+
+  return [...rotateFeedGroup(followed, refreshSeed), ...rotateFeedGroup(unfollowed, refreshSeed)];
+}
+
+async function buildHomeFeedItems(
+  profile: UserProfile,
+  repository = getDataRepository(),
+): Promise<HomeFeedItem[]> {
   const postsById = new Map<string, StallPost>();
   for (const post of await listSharedStallPosts(repository)) {
     postsById.set(post.id, post);
@@ -102,24 +193,55 @@ function getPostTime(post: StallPost, now = Date.now()): number {
   return 0;
 }
 
-export async function getHomeSocialFeed(profile: UserProfile): Promise<HomeFeedItem[]> {
-  return (await getHomeFeedBundle(profile)).socialFeed;
+export async function getHomeSocialFeed(
+  profile: UserProfile,
+  options?: HomeFeedOptions,
+): Promise<HomeFeedItem[]> {
+  return (await getHomeFeedBundle(profile, options)).socialFeed;
 }
 
 export async function getHomeFeed(profile: UserProfile): Promise<HomeFeedSection[]> {
   return (await getHomeFeedBundle(profile)).sections;
 }
 
-export async function getHomeFeedBundle(profile: UserProfile): Promise<HomeFeedBundle> {
-  const allPosts = await buildHomeFeedItems(profile);
-  const now = Date.now();
-  const socialFeed = [...allPosts].sort(
-    (left, right) => getPostTime(right, now) - getPostTime(left, now),
-  );
+export async function getHomeFeedBundle(
+  profile: UserProfile,
+  options?: HomeFeedOptions,
+): Promise<HomeFeedBundle> {
+  const repository = getDataRepository();
+  const cacheKey = getHomeFeedBundleCacheKey(profile, options, repository);
+  const cached = homeFeedBundleCache.get(cacheKey);
+  const cacheAgeMs = cached ? Date.now() - cached.createdAt : Number.POSITIVE_INFINITY;
+  if (cached && cacheAgeMs < HOME_FEED_BUNDLE_CACHE_TTL_MS) {
+    return cached.promise;
+  }
 
-  // 1. Fastest Near You (Shortest distance)
-  const fastest = [...allPosts]
-    .sort((a, b) => a.venue.buildingId.localeCompare(b.venue.buildingId)) // Mock distance logic
+  const promise = buildHomeFeedBundle(profile, options, repository);
+  homeFeedBundleCache.set(cacheKey, {
+    createdAt: Date.now(),
+    promise,
+  });
+
+  try {
+    return await promise;
+  } catch (error) {
+    homeFeedBundleCache.delete(cacheKey);
+    throw error;
+  }
+}
+
+async function buildHomeFeedBundle(
+  profile: UserProfile,
+  options?: HomeFeedOptions,
+  repository = getDataRepository(),
+): Promise<HomeFeedBundle> {
+  const allPosts = await buildHomeFeedItems(profile, repository);
+  const now = Date.now();
+  const socialFeed = orderHomeSocialFeed(allPosts, now, options);
+
+  // 1. Nearby picks use the current repository order without implying live wait-time data.
+  const nearbyPicks = [...allPosts]
+    .sort((a, b) => a.venue.buildingId.localeCompare(b.venue.buildingId))
     .slice(0, 5);
 
   // 2. Comfort Food / Heavy Rich (Taste-based)
@@ -139,7 +261,7 @@ export async function getHomeFeedBundle(profile: UserProfile): Promise<HomeFeedB
   return {
     socialFeed,
     sections: [
-      { title: "Fastest Near You", items: fastest },
+      { title: "Nearby picks", items: nearbyPicks },
       { title: "Comfort Food / Rich & Savory", items: comfort },
       { title: "Top Rated by Community", items: topRated },
     ],

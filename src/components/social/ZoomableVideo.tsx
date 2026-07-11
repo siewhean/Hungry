@@ -8,21 +8,29 @@ import { runOnJS } from "react-native-reanimated";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "../ui";
 
+const EDGE_FAST_FORWARD_FRACTION = 0.2;
+
 type ZoomableVideoProps = {
   uri: string;
+  accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
 };
 
-export function ZoomableVideo({ uri, style }: ZoomableVideoProps) {
-  const { palette } = useHungryTheme();
+export function ZoomableVideo({ uri, accessibilityLabel, style }: ZoomableVideoProps) {
+  const { componentRadii, palette } = useHungryTheme();
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
   const [isFastForwarding, setIsFastForwarding] = useState(false);
+  const [videoWidth, setVideoWidth] = useState(0);
   const player = useVideoPlayer(uri, (videoPlayer) => {
     videoPlayer.loop = true;
     videoPlayer.muted = true;
     videoPlayer.play();
   });
+
+  useEffect(() => {
+    player.loop = true;
+  }, [player]);
 
   useEffect(() => {
     player.muted = isMuted;
@@ -37,6 +45,19 @@ export function ZoomableVideo({ uri, style }: ZoomableVideoProps) {
     player.pause();
   }, [isPlaying, player]);
 
+  useEffect(() => {
+    const replaySubscription = player.addListener("playToEnd", () => {
+      if (!isPlaying) {
+        return;
+      }
+
+      player.currentTime = 0;
+      player.play();
+    });
+
+    return () => replaySubscription.remove();
+  }, [isPlaying, player]);
+
   const handleTogglePlay = () => {
     setIsPlaying((current) => !current);
   };
@@ -45,7 +66,15 @@ export function ZoomableVideo({ uri, style }: ZoomableVideoProps) {
     setIsMuted((current) => !current);
   };
 
-  const startFastForward = () => {
+  const startFastForward = (touchX: number) => {
+    const leftEdge = videoWidth * EDGE_FAST_FORWARD_FRACTION;
+    const rightEdge = videoWidth * (1 - EDGE_FAST_FORWARD_FRACTION);
+    const isEdgeHold = videoWidth > 0 && (touchX <= leftEdge || touchX >= rightEdge);
+
+    if (!isEdgeHold) {
+      return;
+    }
+
     player.playbackRate = 2.0;
     setIsFastForwarding(true);
   };
@@ -57,8 +86,8 @@ export function ZoomableVideo({ uri, style }: ZoomableVideoProps) {
 
   const videoLongPress = Gesture.LongPress()
     .minDuration(300)
-    .onStart(() => {
-      runOnJS(startFastForward)();
+    .onStart((event) => {
+      runOnJS(startFastForward)(event.x);
     })
     .onEnd(() => {
       runOnJS(stopFastForward)();
@@ -76,9 +105,23 @@ export function ZoomableVideo({ uri, style }: ZoomableVideoProps) {
   const videoGestures = Gesture.Exclusive(videoLongPress, videoTap);
 
   return (
-    <View style={[styles.container, style]}>
+    <View
+      onLayout={(event) => {
+        setVideoWidth(event.nativeEvent.layout.width);
+      }}
+      style={[styles.container, { backgroundColor: palette.mediaBackdrop }, style]}
+    >
       <GestureDetector gesture={videoGestures}>
-        <View style={StyleSheet.absoluteFill}>
+        <View
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel={accessibilityLabel ?? "Post video"}
+          accessibilityHint="Double tap to pause or play. Long press the left or right edge to play at 2x speed."
+          accessibilityValue={{ text: isPlaying ? "Playing" : "Paused" }}
+          onAccessibilityTap={handleTogglePlay}
+          onMagicTap={handleTogglePlay}
+          style={StyleSheet.absoluteFill}
+        >
           <VideoView
             player={player}
             style={StyleSheet.absoluteFill}
@@ -95,14 +138,30 @@ export function ZoomableVideo({ uri, style }: ZoomableVideoProps) {
       ) : null}
 
       {isFastForwarding ? (
-        <View pointerEvents="none" style={styles.fastForwardIndicator}>
+        <View
+          pointerEvents="none"
+          style={[
+            styles.fastForwardIndicator,
+            { backgroundColor: palette.mediaScrim, borderRadius: componentRadii.button },
+          ]}
+        >
           <AppText variant="h3" style={{ color: palette.white, fontWeight: "900" }}>
             2x Speed
           </AppText>
         </View>
       ) : null}
 
-      <Pressable onPress={handleToggleMute} style={styles.muteButton}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={isMuted ? "Unmute video" : "Mute video"}
+        accessibilityHint={isMuted ? "Turns on video sound" : "Turns off video sound"}
+        accessibilityState={{ selected: !isMuted }}
+        onPress={handleToggleMute}
+        style={[
+          styles.muteButton,
+          { backgroundColor: palette.mediaScrimSoft, borderRadius: componentRadii.iconButton },
+        ]}
+      >
         {isMuted ? (
           <VolumeX color={palette.white} size={20} />
         ) : (
@@ -115,7 +174,6 @@ export function ZoomableVideo({ uri, style }: ZoomableVideoProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#000",
     overflow: "hidden",
   },
   centerIcon: {
@@ -129,8 +187,6 @@ const styles = StyleSheet.create({
   },
   fastForwardIndicator: {
     alignSelf: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
-    borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 8,
     position: "absolute",
@@ -139,8 +195,6 @@ const styles = StyleSheet.create({
   },
   muteButton: {
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.4)",
-    borderRadius: 18,
     bottom: 12,
     height: 36,
     justifyContent: "center",

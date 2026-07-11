@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { View } from "react-native";
+import { Alert, Clipboard, Share, View } from "react-native";
 import { Info } from "lucide-react-native";
 
 import { useHungryTheme } from "@/theme";
@@ -12,11 +12,44 @@ interface EmptyStateProps {
   icon?: ReactNode;
   ctaLabel?: string;
   onPress?: () => void;
+  errorMessage?: string;
+  sendErrorLabel?: string;
+  sendErrorContext?: string;
+  onSendError?: () => void;
 }
 
-export function EmptyState({ title, body, icon, ctaLabel, onPress }: EmptyStateProps) {
+export function EmptyState({
+  title,
+  body,
+  icon,
+  ctaLabel,
+  onPress,
+  errorMessage,
+  sendErrorLabel,
+  sendErrorContext,
+  onSendError,
+}: EmptyStateProps) {
   const { spacing, palette } = useHungryTheme();
   const renderIcon = icon ?? <Info size={34} color={palette.textSecondary} />;
+  const reportContext = sendErrorContext ?? "Hungry screen";
+  const resolvedOnSendError = onSendError
+    ? onSendError
+    : errorMessage
+      ? async () => {
+          const payload = `${reportContext}\n${title}\n${errorMessage}`;
+          try {
+            await Clipboard.setString(payload);
+          } catch {}
+          try {
+            await Share.share({ message: payload, title: "Hungry App Error Report" });
+          } catch {
+            Alert.alert(
+              "Error report",
+              "Unable to open sharing options. Error text copied to clipboard.",
+            );
+          }
+        }
+      : undefined;
 
   return (
     <View
@@ -35,7 +68,19 @@ export function EmptyState({ title, body, icon, ctaLabel, onPress }: EmptyStateP
       <AppText tone="secondary" style={{ textAlign: "center" }}>
         {body}
       </AppText>
+      {errorMessage ? (
+        <AppText tone="muted" variant="bodySmall" style={{ textAlign: "center" }}>
+          {errorMessage}
+        </AppText>
+      ) : null}
       {ctaLabel ? <Button label={ctaLabel} onPress={onPress} /> : null}
+      {resolvedOnSendError ? (
+        <Button
+          label={sendErrorLabel ?? "Send error"}
+          variant="secondary"
+          onPress={resolvedOnSendError}
+        />
+      ) : null}
     </View>
   );
 }

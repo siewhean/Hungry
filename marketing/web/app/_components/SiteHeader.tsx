@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { isActiveSiteHref, mainNavLinks, siteBrand, siteLayout, waitlistLink } from "./footerData";
+import { HungryWordmark } from "../../components/HungryWordmark";
 
 type SiteHeaderProps = {
   activeHref?: string;
@@ -10,17 +11,17 @@ type SiteHeaderProps = {
 export function SiteHeader({ activeHref, className = "" }: SiteHeaderProps) {
   return (
     <nav
-      className={`sticky top-0 z-50 border-b border-hungry-border bg-white font-display ${className}`}
-    >
+        className={`sticky top-0 z-50 border-b border-hungry-border bg-white font-display ${className}`}
+      >
       <div
         className={`relative mx-auto flex ${siteLayout.navHeight} ${siteLayout.maxWidth} items-center justify-between ${siteLayout.xPadding}`}
       >
         <Link
           aria-label="Hungry home"
-          className="text-2xl font-extrabold tracking-tight text-hungry-orange transition-colors hover:text-hungry-orange-dark md:text-3xl"
+          className="inline-flex items-center"
           href={siteBrand.href}
         >
-          {siteBrand.label}
+          <HungryWordmark />
         </Link>
 
         <div

@@ -3,11 +3,18 @@ import { Pressable, ScrollView, View } from "react-native";
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import type { CompositeScreenProps } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Image } from "expo-image";
 
 import type { MainTabParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
 import { getReadsFeed } from "@/features/reads/feed";
-import { AppText, Badge, Card, FeedErrorBoundary, FeedStateView, Screen } from "@/components/ui";
+import {
+  AccessibleImage,
+  AppText,
+  Badge,
+  Card,
+  FeedErrorBoundary,
+  FeedStateView,
+  Screen,
+} from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import type { BlogPost } from "@/types/domain";
 
@@ -27,13 +34,16 @@ export function ReadsFeedScreen({ navigation }: Props) {
   const { palette, spacing, radii, shadows } = useHungryTheme();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [feedState, setFeedState] = useState<"loading" | "ready" | "error">("loading");
+  const [feedError, setFeedError] = useState("");
 
   const loadPosts = useCallback(() => {
     setFeedState("loading");
     try {
       setPosts(getReadsFeed());
+      setFeedError("");
       setFeedState("ready");
-    } catch {
+    } catch (error) {
+      setFeedError(error instanceof Error ? error.message : "Unable to load review feed.");
       setFeedState("error");
     }
   }, []);
@@ -65,6 +75,8 @@ export function ReadsFeedScreen({ navigation }: Props) {
             state="error"
             title="Unable to load reviews"
             body="Please try again."
+            errorMessage={feedError}
+            errorContext="Reads feed"
             ctaLabel="Retry"
             onPress={loadPosts}
           />
@@ -105,11 +117,13 @@ export function ReadsFeedScreen({ navigation }: Props) {
             {posts.map((post) => (
               <Pressable
                 key={post.id}
+                accessibilityRole="button"
+                accessibilityLabel={`Open story ${post.title}`}
                 onPress={() => navigation.navigate("BlogPost", { postId: post.id })}
               >
                 <Card>
                   <View style={{ flexDirection: "row", gap: spacing[3] }}>
-                    <Image
+                    <AccessibleImage
                       source={{ uri: post.imageUrl }}
                       style={{
                         width: 80,
@@ -117,6 +131,7 @@ export function ReadsFeedScreen({ navigation }: Props) {
                         borderRadius: radii.sm,
                       }}
                       contentFit="cover"
+                      decorative
                     />
                     <View style={{ flex: 1, gap: spacing[1] }}>
                       <AppText variant="micro" tone="accent" style={{ textTransform: "uppercase" }}>
@@ -178,6 +193,8 @@ export function ReadsFeedScreen({ navigation }: Props) {
               {posts.map((post) => (
                 <Pressable
                   key={`focus-${post.id}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open story ${post.title}`}
                   onPress={() => navigation.navigate("BlogPost", { postId: post.id })}
                   style={{
                     width: 260,
@@ -187,7 +204,7 @@ export function ReadsFeedScreen({ navigation }: Props) {
                     backgroundColor: palette.navy,
                   }}
                 >
-                  <Image
+                  <AccessibleImage
                     source={{ uri: post.imageUrl }}
                     style={{
                       width: "100%",
@@ -195,6 +212,7 @@ export function ReadsFeedScreen({ navigation }: Props) {
                       position: "absolute",
                       opacity: 0.4,
                     }}
+                    decorative
                     contentFit="cover"
                   />
                   <View
@@ -272,10 +290,12 @@ export function ReadsFeedScreen({ navigation }: Props) {
             {posts.slice(0, 1).map((post) => (
               <Pressable
                 key={`latest-${post.id}`}
+                accessibilityRole="button"
+                accessibilityLabel={`Open story ${post.title}`}
                 onPress={() => navigation.navigate("BlogPost", { postId: post.id })}
               >
                 <Card>
-                  <Image
+                  <AccessibleImage
                     source={{ uri: post.imageUrl }}
                     style={{
                       width: "100%",
@@ -283,6 +303,7 @@ export function ReadsFeedScreen({ navigation }: Props) {
                       borderRadius: radii.sm,
                     }}
                     contentFit="cover"
+                    decorative
                   />
                   <View style={{ gap: spacing[1] }}>
                     <AppText variant="h3">{post.title}</AppText>

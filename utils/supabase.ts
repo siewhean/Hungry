@@ -1,15 +1,7 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createClient } from "@supabase/supabase-js";
+export { getSupabaseClient, isSupabaseConfigured } from "@/lib/services/supabase/client";
 
-export const supabase = createClient(
-  process.env.EXPO_PUBLIC_SUPABASE_URL!,
-  process.env.EXPO_PUBLIC_SUPABASE_KEY!,
-  {
-    auth: {
-      storage: AsyncStorage,
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: false,
-    },
-  },
-);
+import { getSupabaseClient } from "@/lib/services/supabase/client";
+
+// Backward-compatible export for older imports. New code should prefer
+// getSupabaseClient() so missing configuration can be handled explicitly.
+export const supabase = getSupabaseClient();

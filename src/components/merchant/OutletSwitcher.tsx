@@ -6,9 +6,10 @@ import { ChevronDown, Store, CheckCircle2 } from "lucide-react-native";
 import { useHungryTheme } from "@/theme";
 import { AppText, BottomSheet } from "@/components/ui";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
+import { formatBusinessType } from "@/features/merchant/merchantReadiness";
 
 export const OutletSwitcher: React.FC = () => {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing } = useHungryTheme();
   const bottomSheetRef = useRef<BottomSheetModal>(null);
   const account = useMerchantStore((state) => state.account);
   const activeOutlet = useMerchantStore(getActiveOutlet);
@@ -25,6 +26,9 @@ export const OutletSwitcher: React.FC = () => {
       <TouchableOpacity
         activeOpacity={0.7}
         onPress={handlePresentModalPress}
+        accessibilityRole="button"
+        accessibilityLabel={`Switch outlet, current outlet ${activeOutlet.name}`}
+        accessibilityHint="Opens the outlet switcher"
         style={[
           {
             flexDirection: "row",
@@ -35,20 +39,26 @@ export const OutletSwitcher: React.FC = () => {
           },
           {
             backgroundColor: palette.surface,
-            borderRadius: radii.pill,
+            borderRadius: componentRadii.button,
             borderWidth: 1,
             borderColor: palette.border,
+            maxWidth: "100%",
+            flexShrink: 1,
           },
         ]}
       >
         <Store size={14} color={palette.orange} />
-        <AppText variant="bodySmallBold" numberOfLines={1} style={{ maxWidth: 140 }}>
+        <AppText variant="bodySmallBold" numberOfLines={2} style={{ flexShrink: 1 }}>
           {activeOutlet.name}
         </AppText>
         <ChevronDown size={14} color={palette.textMuted} />
       </TouchableOpacity>
 
-      <BottomSheet ref={bottomSheetRef} snapPoints={["40%", "60%"]}>
+      <BottomSheet
+        ref={bottomSheetRef}
+        snapPoints={["40%", "60%"]}
+        accessibilityLabel="Switch outlet"
+      >
         <View style={{ gap: spacing[4], paddingBottom: spacing[6] }}>
           <View style={{ marginBottom: spacing[2] }}>
             <AppText variant="h2">Switch Outlet</AppText>
@@ -65,6 +75,10 @@ export const OutletSwitcher: React.FC = () => {
                     setActiveOutlet(outlet.id);
                     bottomSheetRef.current?.dismiss();
                   }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${isActive ? "Current outlet" : "Switch to outlet"} ${outlet.name}`}
+                  accessibilityHint="Changes the active merchant outlet"
+                  accessibilityState={{ selected: isActive }}
                   style={({ pressed }) => [
                     {
                       flexDirection: "row",
@@ -78,7 +92,7 @@ export const OutletSwitcher: React.FC = () => {
                           ? palette.bgSoft
                           : palette.surface,
                       borderColor: isActive ? palette.orange : palette.border,
-                      borderRadius: radii.lg,
+                      borderRadius: componentRadii.card,
                       borderWidth: 1,
                       padding: spacing[4],
                     },
@@ -98,7 +112,7 @@ export const OutletSwitcher: React.FC = () => {
                         {outlet.name}
                       </AppText>
                       <AppText variant="micro" tone={isActive ? "accent" : "secondary"}>
-                        {outlet.businessType.replace("_", " ")}
+                        {formatBusinessType(outlet.businessType)}
                         {outlet.unitNumber ? ` · ${outlet.unitNumber}` : ""}
                       </AppText>
                     </View>

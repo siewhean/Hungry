@@ -13,6 +13,7 @@ import { ChevronRight } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText } from "@/components/ui";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { getHomeBitesFeed } from "@/features/home/bites";
 import type { Bite } from "@/lib/services/types";
 import { useHungryTheme } from "@/theme";
@@ -43,6 +44,7 @@ export function BitesCarousel({
   const biteData = bites?.length ? bites : fallbackBites;
   const cardWidth = Math.max(300, screenWidth - spacing[4] * 2);
   const snapInterval = cardWidth + spacing[3];
+  const commentsEnabled = FEATURE_FLAGS.commentsEnabled;
 
   useEffect(() => {
     if (bites?.length) {
@@ -59,22 +61,25 @@ export function BitesCarousel({
         bite={item}
         width={cardWidth}
         liked={Boolean(likedBites[item.id])}
-        commented={Boolean(commentedBites[item.id])}
+        commented={commentsEnabled && Boolean(commentedBites[item.id])}
         onToggleLike={() =>
           setLikedBites((current) => ({
             ...current,
             [item.id]: !current[item.id],
           }))
         }
-        onCommentPress={() =>
-          setCommentedBites((current) => ({
-            ...current,
-            [item.id]: !current[item.id],
-          }))
+        onCommentPress={
+          commentsEnabled
+            ? () =>
+                setCommentedBites((current) => ({
+                  ...current,
+                  [item.id]: !current[item.id],
+                }))
+            : undefined
         }
       />
     ),
-    [cardWidth, commentedBites, likedBites],
+    [cardWidth, commentedBites, commentsEnabled, likedBites],
   );
 
   return (

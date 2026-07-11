@@ -1,5 +1,5 @@
 import * as Linking from "expo-linking";
-import { useCallback, useEffect, useMemo, type ComponentType } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import {
   NavigationContainer,
@@ -20,20 +20,17 @@ import { FloatingToast } from "@/components/ui";
 import { UserProfileScreen } from "@/app/screens/profile/UserProfileScreen";
 
 import { useSessionStore } from "@/store/useSessionStore";
+import { useMerchantStore } from "@/store/useMerchantStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
 import { SwipeableTabNavigator } from "./SwipeableTabNavigator";
 import { createRootLinking } from "./linking";
-import * as CredEarnedToastModule from "@/components/gamification/CredEarnedToast";
-
-const CredEarnedToastComponent =
-  (CredEarnedToastModule as { CredEarnedToast?: ComponentType }).CredEarnedToast ??
-  (CredEarnedToastModule as { default?: ComponentType }).default;
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
+const isMockE2eDataSource = process.env.EXPO_PUBLIC_HUNGRY_E2E_DATA_SOURCE === "mock";
 
 type RootRouteName = keyof RootStackParamList;
 type MainTabRouteName = keyof MainTabParamList;
@@ -51,7 +48,6 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "DishDetail",
   "DishDetailV2",
   "SearchHome",
-  "SearchHomeV2",
   "SearchResults",
   "BrowseDishes",
   "BrowseStalls",
@@ -78,13 +74,9 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "EditProfile",
   "SplashV2",
   "DesignGallery",
-  "ReviewFeedV2",
   "PostComposerV2",
-  "DiscoverV2",
-  "SearchHomeV2",
   "StallDetailV2",
   "BuildingDrillDownV2",
-  "QuickReviewV2",
   "VenueDirectory",
   "StoryViewer",
   "AddStory",
@@ -92,6 +84,8 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "MissionsScreen",
   "CollectionList",
   "CollectionDetail",
+  "PortfolioPublicView",
+  "AdminPortfolioFlags",
   "Offline",
   "NotFound",
   "UserProfile",
@@ -112,12 +106,12 @@ const PROTECTED_ROOT_ROUTES = new Set<RootRouteName>([
   "ReviewHistory",
   "Settings",
   "ReviewStack",
-  "QuickReviewV2",
   "AddStory",
   "MusicSelection",
   "MerchantClaimExplainer",
   "PassportScreen",
   "MissionsScreen",
+  "AdminPortfolioFlags",
 ]);
 
 function isMainTabRouteName(value: string): value is MainTabRouteName {
@@ -251,14 +245,6 @@ const loadNotFoundScreen = () =>
   (
     require("@/app/screens/detail/NotFoundScreen") as typeof import("@/app/screens/detail/NotFoundScreen")
   ).NotFoundScreen;
-const loadDiscoverHomeScreenV2 = () =>
-  (
-    require("@/app/screens/discover/DiscoverHomeScreenV2") as typeof import("@/app/screens/discover/DiscoverHomeScreenV2")
-  ).DiscoverHomeScreenV2;
-const loadDishSearchScreenV2 = () =>
-  (
-    require("@/app/screens/search/DishSearchScreenV2") as typeof import("@/app/screens/search/DishSearchScreenV2")
-  ).DishSearchScreenV2;
 const loadStallDetailScreenV2 = () =>
   (
     require("@/app/screens/detail/StallDetailScreenV2") as typeof import("@/app/screens/detail/StallDetailScreenV2")
@@ -267,10 +253,6 @@ const loadBuildingDrillDownScreenV2 = () =>
   (
     require("@/app/screens/discover/BuildingDrillDownScreenV2") as typeof import("@/app/screens/discover/BuildingDrillDownScreenV2")
   ).BuildingDrillDownScreenV2;
-const loadQuickReviewSheetV2 = () =>
-  (
-    require("@/app/screens/review/QuickReviewSheetV2") as typeof import("@/app/screens/review/QuickReviewSheetV2")
-  ).QuickReviewSheetV2;
 const loadQuickBitesScreen = () =>
   (
     require("@/app/screens/discover/QuickBitesScreen") as typeof import("@/app/screens/discover/QuickBitesScreen")
@@ -285,10 +267,6 @@ const loadDesignGalleryScreen = () =>
 const loadMerchantTabs = () =>
   (require("@/app/navigation/MerchantTabs") as typeof import("@/app/navigation/MerchantTabs"))
     .MerchantTabs;
-const loadReviewFeedScreenV2 = () =>
-  (
-    require("@/app/screens/review/ReviewFeedScreenV2") as typeof import("@/app/screens/review/ReviewFeedScreenV2")
-  ).ReviewFeedScreenV2;
 const loadPostComposerScreenV2 = () =>
   (
     require("@/app/screens/post/PostComposerScreenV2") as typeof import("@/app/screens/post/PostComposerScreenV2")
@@ -326,6 +304,14 @@ const loadCollectionDetailScreen = () =>
   (
     require("@/app/screens/discover/CollectionDetailScreen") as typeof import("@/app/screens/discover/CollectionDetailScreen")
   ).CollectionDetailScreen;
+const loadPortfolioPublicViewScreen = () =>
+  (
+    require("@/app/screens/portfolio/PortfolioPublicViewScreen") as typeof import("@/app/screens/portfolio/PortfolioPublicViewScreen")
+  ).PortfolioPublicViewScreen;
+const loadAdminPortfolioFlagsScreen = () =>
+  (
+    require("@/app/screens/portfolio/AdminPortfolioFlagsScreen") as typeof import("@/app/screens/portfolio/AdminPortfolioFlagsScreen")
+  ).AdminPortfolioFlagsScreen;
 
 function BlogPostRouteScreen({
   navigation,
@@ -364,6 +350,8 @@ function GlobalScrollBackButton() {
     <View pointerEvents="box-none" style={styles.globalBackWrap}>
       <Pressable
         accessibilityRole="button"
+        accessibilityLabel="Go back"
+        accessibilityHint="Returns to the previous screen"
         onPress={() => {
           navigationRef.goBack();
           resetScrollBack();
@@ -411,6 +399,17 @@ function ReviewSuccessModalHost({ onOpenHistory }: { onOpenHistory: () => void }
   return <ReviewSuccessModal onOpenHistory={onOpenHistory} />;
 }
 
+function CredEarnedToastHost() {
+  if (!FEATURE_FLAGS.gamificationEnabled) {
+    return null;
+  }
+
+  const { CredEarnedToast } =
+    require("@/components/gamification/CredEarnedToast") as typeof import("@/components/gamification/CredEarnedToast");
+
+  return <CredEarnedToast />;
+}
+
 export function RootNavigator({ theme }: { theme: Theme }) {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const isAuthReady = useSessionStore((state) => state.isAuthReady);
@@ -418,11 +417,23 @@ export function RootNavigator({ theme }: { theme: Theme }) {
   const sessionExpired = useSessionStore((state) => state.sessionExpired);
   const dismissSessionExpiry = useSessionStore((state) => state.dismissSessionExpiry);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
+  const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
+  const isMerchantMode = useMerchantStore((state) => state.account !== null);
   const resetScrollBack = useUIStore((state) => state.resetScrollBack);
   const isOffline = useUIStore((state) => state.isOffline);
 
   const prefix = Linking.createURL("/");
-  const linking = useMemo(() => createRootLinking(prefix), [prefix]);
+  const linking = useMemo(
+    () =>
+      createRootLinking(prefix, () => {
+        const state = useSessionStore.getState();
+        return {
+          isAuthReady: state.isAuthReady,
+          isAuthenticated: state.isAuthenticated,
+        };
+      }),
+    [prefix],
+  );
 
   const navigateHome = useCallback(() => {
     const returnRoute = useSessionStore.getState().returnRoute;
@@ -484,11 +495,24 @@ export function RootNavigator({ theme }: { theme: Theme }) {
 
     const rootState = navigationRef.getRootState();
     const currentTopRoute = rootState.routes[rootState.index]?.name;
+    if (
+      __DEV__ &&
+      currentTopRoute === "DeveloperLauncher" &&
+      isAuthenticated &&
+      hasCompletedOnboarding &&
+      !isDeveloperMode &&
+      !isMerchantMode &&
+      !isMockE2eDataSource
+    ) {
+      navigateHome();
+      return;
+    }
+
     if (currentTopRoute === "AuthStack") {
       if (isAuthenticated && !hasCompletedOnboarding) {
         navigationRef.resetRoot({
           index: 0,
-          routes: [{ name: "OnboardingStack", params: { screen: "OnboardingIntro1" } }],
+          routes: [{ name: "OnboardingStack", params: { screen: "OnboardingWelcome" } }],
         });
         return;
       }
@@ -501,7 +525,14 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     if (currentTopRoute === "OnboardingStack" && hasCompletedOnboarding) {
       navigateHome();
     }
-  }, [hasCompletedOnboarding, isAuthenticated, isAuthReady, navigateHome]);
+  }, [
+    hasCompletedOnboarding,
+    isAuthenticated,
+    isAuthReady,
+    isDeveloperMode,
+    isMerchantMode,
+    navigateHome,
+  ]);
 
   useEffect(() => {
     if (!navigationRef.isReady()) {
@@ -615,10 +646,17 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen component={UserProfileScreen} name="UserProfile" />
           <RootStack.Screen getComponent={loadDishDetailScreenV2} name="DishDetail" />
           <RootStack.Screen getComponent={loadStallDetailScreen} name="StallDetail" />
-          <RootStack.Screen
-            getComponent={loadMerchantClaimExplainerScreen}
-            name="MerchantClaimExplainer"
-          />
+          {FEATURE_FLAGS.merchantClaimCtaEnabled ? (
+            <RootStack.Screen
+              getComponent={loadMerchantClaimExplainerScreen}
+              name="MerchantClaimExplainer"
+              options={{
+                presentation: "transparentModal",
+                animation: "fade",
+                contentStyle: { backgroundColor: "transparent" },
+              }}
+            />
+          ) : null}
           <RootStack.Screen component={BlogPostRouteScreen} name="BlogPost" />
           <RootStack.Screen getComponent={loadReviewStack} name="ReviewStack" />
           <RootStack.Screen getComponent={loadWheelStack} name="WheelStack" />
@@ -635,57 +673,82 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           ) : null}
           <RootStack.Screen getComponent={loadMusicSelectionScreen} name="MusicSelection" />
           <RootStack.Screen getComponent={loadDecideForMeResultScreen} name="DecideForMeResult" />
-          <RootStack.Screen getComponent={loadBuildingDrillDownScreen} name="BuildingDrillDown" />
+          {FEATURE_FLAGS.floorplansEnabled ? (
+            <RootStack.Screen getComponent={loadBuildingDrillDownScreen} name="BuildingDrillDown" />
+          ) : null}
           <RootStack.Screen getComponent={loadOfflineStateScreen} name="Offline" />
           <RootStack.Screen getComponent={loadNotFoundScreen} name="NotFound" />
           <RootStack.Screen getComponent={loadQuickBitesScreen} name="QuickBites" />
           {FEATURE_FLAGS.prototypeRoutesEnabled ? (
             <>
-              <RootStack.Screen getComponent={loadDiscoverHomeScreenV2} name="DiscoverV2" />
               <RootStack.Screen getComponent={loadDishDetailScreenV2} name="DishDetailV2" />
-              <RootStack.Screen getComponent={loadDishSearchScreenV2} name="SearchHomeV2" />
               <RootStack.Screen getComponent={loadStallDetailScreenV2} name="StallDetailV2" />
-              <RootStack.Screen
-                getComponent={loadBuildingDrillDownScreenV2}
-                name="BuildingDrillDownV2"
-              />
-              <RootStack.Screen getComponent={loadQuickReviewSheetV2} name="QuickReviewV2" />
+              {FEATURE_FLAGS.floorplansEnabled ? (
+                <>
+                  <RootStack.Screen
+                    getComponent={loadBuildingDrillDownScreenV2}
+                    name="BuildingDrillDownV2"
+                  />
+                  <RootStack.Screen getComponent={loadVenueDirectoryScreen} name="VenueDirectory" />
+                </>
+              ) : null}
               <RootStack.Screen getComponent={loadSplashScreenV2} name="SplashV2" />
               <RootStack.Screen getComponent={loadDesignGalleryScreen} name="DesignGallery" />
-              <RootStack.Screen getComponent={loadReviewFeedScreenV2} name="ReviewFeedV2" />
               <RootStack.Screen
                 getComponent={loadPostComposerScreenV2}
                 name="PostComposerV2"
                 options={{ gestureEnabled: false }}
               />
-              <RootStack.Screen getComponent={loadVenueDirectoryScreen} name="VenueDirectory" />
             </>
           ) : null}
           {FEATURE_FLAGS.merchantCentreEnabled ? (
             <RootStack.Screen getComponent={loadMerchantTabs} name="MerchantTabs" />
           ) : null}
-          <RootStack.Screen
-            getComponent={loadStoryViewerScreen}
-            name="StoryViewer"
-            options={{ presentation: "fullScreenModal", animation: "fade" }}
-          />
-          <RootStack.Screen
-            getComponent={loadAddStoryScreen}
-            name="AddStory"
-            options={{ presentation: "modal" }}
-          />
-          {/* Gamification */}
-          <RootStack.Screen getComponent={loadPassportScreen} name="PassportScreen" />
-          <RootStack.Screen getComponent={loadMissionsScreen} name="MissionsScreen" />
-          <RootStack.Screen getComponent={loadCollectionListScreen} name="CollectionList" />
-          <RootStack.Screen getComponent={loadCollectionDetailScreen} name="CollectionDetail" />
+          {FEATURE_FLAGS.storiesEnabled ? (
+            <>
+              <RootStack.Screen
+                getComponent={loadStoryViewerScreen}
+                name="StoryViewer"
+                options={{ presentation: "fullScreenModal", animation: "fade" }}
+              />
+              <RootStack.Screen
+                getComponent={loadAddStoryScreen}
+                name="AddStory"
+                options={{ presentation: "modal" }}
+              />
+            </>
+          ) : null}
+          {FEATURE_FLAGS.gamificationEnabled ? (
+            <>
+              <RootStack.Screen getComponent={loadPassportScreen} name="PassportScreen" />
+              <RootStack.Screen getComponent={loadMissionsScreen} name="MissionsScreen" />
+            </>
+          ) : null}
+          {FEATURE_FLAGS.collectionsEnabled ? (
+            <>
+              <RootStack.Screen getComponent={loadCollectionListScreen} name="CollectionList" />
+              <RootStack.Screen getComponent={loadCollectionDetailScreen} name="CollectionDetail" />
+            </>
+          ) : null}
+          {FEATURE_FLAGS.prototypeRoutesEnabled ? (
+            <>
+              <RootStack.Screen
+                getComponent={loadPortfolioPublicViewScreen}
+                name="PortfolioPublicView"
+              />
+              <RootStack.Screen
+                getComponent={loadAdminPortfolioFlagsScreen}
+                name="AdminPortfolioFlags"
+              />
+            </>
+          ) : null}
         </RootStack.Navigator>
       </NavigationContainer>
       <GlobalScrollBackButton />
       <QuickReviewModalHost />
       <ReviewSuccessModalHost onOpenHistory={() => navigationRef.navigate("ReviewHistory")} />
       <FloatingToast />
-      {CredEarnedToastComponent ? <CredEarnedToastComponent /> : null}
+      <CredEarnedToastHost />
     </>
   );
 }

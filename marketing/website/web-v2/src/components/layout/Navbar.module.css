@@ -9,25 +9,23 @@
 
 .navbar {
   height: var(--header-height);
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) minmax(0, max-content) minmax(max-content, 1fr);
   align-items: center;
-  justify-content: space-between;
+  justify-content: stretch;
   position: relative;
-  gap: var(--space-5);
+  column-gap: clamp(var(--space-3), 2.6vw, var(--space-6));
 }
 
 .logo {
   font-family: var(--font-heading);
-  font-weight: 800;
-  font-size: clamp(1.45rem, 2vw, 1.9rem);
+  font-weight: 900;
+  font-size: clamp(1.7rem, 2.4vw, 2.25rem);
   color: var(--color-primary);
   display: flex;
   align-items: center;
+  justify-self: start;
   min-width: max-content;
-}
-
-.logoText {
-  letter-spacing: 0;
 }
 
 .navLinks {
@@ -35,9 +33,11 @@
   align-items: center;
   justify-content: center;
   gap: clamp(var(--space-4), 3vw, var(--space-8));
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  justify-self: center;
+  min-width: 0;
+  max-width: 100%;
+  white-space: nowrap;
+  flex-wrap: nowrap;
 }
 
 .navLink {
@@ -55,7 +55,9 @@
 .actions {
   display: flex;
   align-items: center;
+  justify-self: end;
   gap: var(--space-4);
+  flex-shrink: 0;
 }
 
 .ctaButton {
@@ -80,31 +82,17 @@
 
 @media (max-width: 920px) {
   .navbar {
-    justify-content: center;
-    height: auto;
-    min-height: var(--header-height);
-    flex-wrap: wrap;
-    padding-top: var(--space-4);
-    padding-bottom: var(--space-4);
-  }
-
-  .logo {
-    margin-right: auto;
-  }
-
-  .actions {
-    margin-left: auto;
+    grid-template-columns: max-content minmax(0, 1fr) max-content;
+    column-gap: clamp(var(--space-3), 2vw, var(--space-5));
   }
 
   .navLinks {
-    order: 3;
-    width: 100%;
-    position: static;
-    transform: none;
+    padding-bottom: var(--space-1);
     overflow-x: auto;
-    justify-content: flex-start;
-    padding-top: var(--space-2);
+    overflow-y: hidden;
+    justify-content: center;
     scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
   }
 
   .navLinks::-webkit-scrollbar {
@@ -113,6 +101,19 @@
 }
 
 @media (max-width: 560px) {
+  .navbar {
+    grid-template-columns: minmax(0, 1fr) max-content;
+    column-gap: var(--space-2);
+  }
+
+  .logo {
+    font-size: 1.45rem;
+  }
+
+  .navLinks {
+    display: none;
+  }
+
   .ctaButton {
     padding: var(--space-2) var(--space-4);
     font-size: var(--font-size-sm);

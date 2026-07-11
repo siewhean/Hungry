@@ -20,16 +20,20 @@ import Animated, {
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "@/components/ui/AppText";
 import { useFoodCredStore } from "@/store/useFoodCredStore";
+import { resolveFoodCredLevel } from "@/constants/foodCredConfig";
 
 const AUTO_DISMISS_MS = 2500;
 
 export function CredEarnedToast() {
   const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
   const lastEarnedPoints = useFoodCredStore((s) => s.lastEarnedPoints);
-  const currentLevel = useFoodCredStore((s) => s.currentLevel());
+  const reduceMotion = useReduceMotion();
+  const totalPoints = useFoodCredStore((s) => s.totalPoints);
+  const currentLevel = resolveFoodCredLevel(totalPoints);
 
   // Track which "version" of the toast we're showing — a new non-zero value triggers show
   const lastShownRef = useRef(0);
@@ -40,12 +44,16 @@ export function CredEarnedToast() {
   useEffect(() => {
     if (!visible) return;
     lastShownRef.current = lastEarnedPoints;
+    if (reduceMotion) {
+      scale.value = 1;
+      return;
+    }
     scale.value = withSequence(
       withSpring(1.05, { damping: 10, stiffness: 250 }),
       withDelay(100, withSpring(1, { damping: 14, stiffness: 180 })),
     );
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  }, [visible, lastEarnedPoints, scale]);
+  }, [visible, lastEarnedPoints, reduceMotion, scale]);
 
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
@@ -54,33 +62,34 @@ export function CredEarnedToast() {
   return (
     <View pointerEvents="none" style={[styles.wrapper, { zIndex: zIndex.toast + 1 }]}>
       <Animated.View
-        entering={FadeInDown.duration(200).springify()}
-        exiting={FadeOutUp.duration(180).delay(AUTO_DISMISS_MS - 180)}
-        style={animStyle}
+        entering={reduceMotion ? undefined : FadeInDown.duration(200).springify()}
+        exiting={reduceMotion ? undefined : FadeOutUp.duration(180).delay(AUTO_DISMISS_MS - 180)}
       >
-        <View
-          style={[
-            shadows.floating,
-            styles.pill,
-            {
-              backgroundColor: palette.surface,
-              borderColor: palette.orange,
-              borderRadius: radii.pill,
-              borderWidth: 1.5,
-              paddingHorizontal: spacing[4],
-              paddingVertical: spacing[2],
-            },
-          ]}
-        >
-          <AppText
-            style={{ color: palette.orange, fontWeight: "700", fontSize: 15, lineHeight: 20 }}
+        <Animated.View style={animStyle}>
+          <View
+            style={[
+              shadows.floating,
+              styles.pill,
+              {
+                backgroundColor: palette.surface,
+                borderColor: palette.orange,
+                borderRadius: radii.pill,
+                borderWidth: 1.5,
+                paddingHorizontal: spacing[4],
+                paddingVertical: spacing[2],
+              },
+            ]}
           >
-            +{lastEarnedPoints} Food Cred
-          </AppText>
-          <AppText tone="muted" variant="micro" style={{ marginTop: 2 }}>
-            {currentLevel.name}
-          </AppText>
-        </View>
+            <AppText
+              style={{ color: palette.orange, fontWeight: "700", fontSize: 15, lineHeight: 20 }}
+            >
+              +{lastEarnedPoints} Food Cred
+            </AppText>
+            <AppText tone="muted" variant="micro" style={{ marginTop: 2 }}>
+              {currentLevel.name}
+            </AppText>
+          </View>
+        </Animated.View>
       </Animated.View>
     </View>
   );

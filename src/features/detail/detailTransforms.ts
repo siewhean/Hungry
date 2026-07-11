@@ -57,7 +57,7 @@ export function deriveStallCommunityReviews(dishes: DishDetail[]): StallCommunit
           rating: review.rating,
           text: review.text,
           createdAt: review.createdAt,
-          avatarUrl: AVATAR_POOL[avatarIndex],
+          avatarUrl: review.authorAvatarUrl ?? AVATAR_POOL[avatarIndex],
         } satisfies StallCommunityReview;
       }),
     )

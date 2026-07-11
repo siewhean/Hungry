@@ -35,3 +35,21 @@
   font-size: clamp(var(--font-size-md), 1.8vw, var(--font-size-xl));
   line-height: 1.55;
 }
+
+@media (max-width: 760px) {
+  .section {
+    padding: var(--space-12) 0;
+  }
+
+  .header {
+    margin-bottom: var(--space-8);
+  }
+
+  .eyebrow {
+    margin-bottom: var(--space-3);
+  }
+
+  .header h2 {
+    margin-bottom: var(--space-4);
+  }
+}

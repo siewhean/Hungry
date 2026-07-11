@@ -1,15 +1,17 @@
 import React from "react";
 import { View, StyleSheet, ScrollView, Pressable, Dimensions } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { X, Heart, MapPin } from "lucide-react-native";
-import { Image } from "expo-image";
-import { AppText, IconButton, HungryLogo, Badge } from "@/components/ui";
+import { AccessibleImage, AppText, IconButton, HungryLogo, Badge } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
+import { componentRadii } from "@/theme/tokens";
 import { useComposerStore } from "../useComposerStore";
+import { useMerchantStore } from "@/store/useMerchantStore";
 
 const { width: screenWidth } = Dimensions.get("window");
 
 export function LivePreviewSheet() {
-  const { palette, spacing, radii, shadows } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii, shadows } = useHungryTheme();
   const showPreview = useComposerStore((state) => state.showPreview);
   const setShowPreview = useComposerStore((state) => state.setShowPreview);
   const previewPlatform = useComposerStore((state) => state.previewPlatform);
@@ -19,22 +21,32 @@ export function LivePreviewSheet() {
   const reviewCaption = useComposerStore((state) => state.reviewCaption);
   const media = useComposerStore((state) => state.media);
   const location = useComposerStore((state) => state.location);
+  const foodTags = useComposerStore((state) => state.foodTags);
   const tasteTags = useComposerStore((state) => state.tasteTags);
   const rating = useComposerStore((state) => state.rating);
+  const showFoodContextOverlay = useComposerStore((state) => state.showFoodContextOverlay);
+  const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
+  const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
+  const isUserMode = !isMerchantMode && !isDeveloperMode;
+  const shouldShowTasteTags = !isUserMode;
 
   if (!showPreview) return null;
 
   const captionToDisplay = postCaption || reviewCaption || "No caption written yet...";
+  const overlayDishTitle = foodTags[0] ?? "Food title";
+  const overlayStallName = location?.name ?? "Stall name";
 
   return (
-    <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.9)", zIndex: 2000 }]}>
+    <View
+      style={[StyleSheet.absoluteFill, { backgroundColor: palette.mediaBackdrop, zIndex: 2000 }]}
+    >
       <View
         style={{
           flex: 1,
           marginTop: 60,
           backgroundColor: palette.bg,
-          borderTopLeftRadius: radii.xl,
-          borderTopRightRadius: radii.xl,
+          borderTopLeftRadius: componentRadii.card,
+          borderTopRightRadius: componentRadii.card,
         }}
       >
         {/* Header */}
@@ -107,7 +119,7 @@ export function LivePreviewSheet() {
                   style={{
                     width: 36,
                     height: 36,
-                    borderRadius: 18,
+                    borderRadius: componentRadii.iconButton,
                     backgroundColor: palette.orange,
                     alignItems: "center",
                     justifyContent: "center",
@@ -143,12 +155,13 @@ export function LivePreviewSheet() {
                     showsHorizontalScrollIndicator={false}
                     style={{ flex: 1 }}
                   >
-                    {media.map((item) => (
-                      <Image
+                    {media.map((item, index) => (
+                      <AccessibleImage
                         key={item.id}
                         source={item.uri}
                         style={{ width: screenWidth - 42, height: screenWidth - 42 }}
                         contentFit="cover"
+                        accessibilityLabel={`Preview media ${index + 1}`}
                       />
                     ))}
                   </ScrollView>
@@ -163,16 +176,47 @@ export function LivePreviewSheet() {
                       position: "absolute",
                       bottom: 12,
                       right: 12,
-                      backgroundColor: "rgba(0,0,0,0.5)",
+                      backgroundColor: palette.mediaScrim,
                       paddingHorizontal: 8,
                       paddingVertical: 4,
-                      borderRadius: 12,
+                      borderRadius: componentRadii.button,
                     }}
                   >
                     <AppText variant="micro" style={{ color: palette.white }}>
                       1/{media.length}
                     </AppText>
                   </View>
+                )}
+                {showFoodContextOverlay && (
+                  <>
+                    <LinearGradient
+                      colors={["transparent", palette.mediaScrimStrong]}
+                      pointerEvents="none"
+                      style={styles.foodContextScrim}
+                    />
+                    <View
+                      pointerEvents="none"
+                      style={[
+                        styles.foodContextOverlay,
+                        {
+                          bottom: spacing.md,
+                          left: spacing.md,
+                          right: media.length > 1 ? 72 : spacing.md,
+                        },
+                      ]}
+                    >
+                      <AppText variant="h3" style={{ color: palette.white }} numberOfLines={1}>
+                        {overlayDishTitle}
+                      </AppText>
+                      <AppText
+                        variant="micro"
+                        style={{ color: palette.inverseTextSecondary }}
+                        numberOfLines={1}
+                      >
+                        {overlayStallName}
+                      </AppText>
+                    </View>
+                  </>
                 )}
               </View>
 
@@ -196,7 +240,7 @@ export function LivePreviewSheet() {
                   {captionToDisplay}
                 </AppText>
 
-                {tasteTags.length > 0 && (
+                {shouldShowTasteTags && tasteTags.length > 0 && (
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
                     {tasteTags.map((tag) => (
                       <AppText key={tag} variant="micro" style={{ color: palette.orange }}>
@@ -208,7 +252,12 @@ export function LivePreviewSheet() {
               </View>
             </View>
           ) : (
-            <View style={[styles.instaPreview, { backgroundColor: palette.surface }]}>
+            <View
+              style={[
+                styles.instaPreview,
+                { backgroundColor: palette.surface, borderColor: palette.border },
+              ]}
+            >
               <View style={{ flexDirection: "row", alignItems: "center", padding: 10, gap: 8 }}>
                 <View
                   style={{
@@ -226,12 +275,13 @@ export function LivePreviewSheet() {
               <View style={{ width: "100%", aspectRatio: 1, backgroundColor: palette.bgSoft }}>
                 {media.length > 0 ? (
                   <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
-                    {media.map((item) => (
-                      <Image
+                    {media.map((item, index) => (
+                      <AccessibleImage
                         key={item.id}
                         source={item.uri}
                         style={{ width: screenWidth - 42, height: screenWidth - 42 }}
                         contentFit="cover"
+                        accessibilityLabel={`Preview media ${index + 1}`}
                       />
                     ))}
                   </ScrollView>
@@ -244,10 +294,10 @@ export function LivePreviewSheet() {
                       position: "absolute",
                       top: 12,
                       right: 12,
-                      backgroundColor: "rgba(0,0,0,0.7)",
+                      backgroundColor: palette.detailImageOverlay,
                       paddingHorizontal: 8,
                       paddingVertical: 4,
-                      borderRadius: 12,
+                      borderRadius: componentRadii.button,
                     }}
                   >
                     <AppText variant="micro" style={{ color: palette.white, fontSize: 10 }}>
@@ -263,7 +313,9 @@ export function LivePreviewSheet() {
                 </View>
                 <AppText style={{ fontSize: 13, color: palette.text }}>
                   <AppText style={{ fontWeight: "600" }}>your_account</AppText> {captionToDisplay}
-                  {tasteTags.map((tag) => ` #${tag.toLowerCase().replace(/\s+/g, "")}`).join("")}
+                  {shouldShowTasteTags
+                    ? tasteTags.map((tag) => ` #${tag.toLowerCase().replace(/\s+/g, "")}`).join("")
+                    : ""}
                 </AppText>
               </View>
             </View>
@@ -304,15 +356,25 @@ const styles = StyleSheet.create({
   },
   hungryPreview: {
     width: "100%",
-    borderRadius: 16,
+    borderRadius: componentRadii.card,
     borderWidth: 1,
     overflow: "hidden",
   },
   instaPreview: {
     width: "100%",
-    borderRadius: 8,
+    borderRadius: componentRadii.card,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "#efefee",
+  },
+  foodContextScrim: {
+    bottom: 0,
+    height: "42%",
+    left: 0,
+    position: "absolute",
+    right: 0,
+  },
+  foodContextOverlay: {
+    gap: 2,
+    position: "absolute",
   },
 });

@@ -6,7 +6,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppText } from "@/components/ui";
 import { HungryThemeProvider, useHungryTheme } from "@/theme";
 import { AppBody } from "@/app/AppBody";
-import { sanitizeSentryEvent } from "@/lib/analytics/privacy";
+import { sanitizeSentryBreadcrumb, sanitizeSentryEvent } from "@/lib/analytics/privacy";
 
 const appEnv =
   process.env.EXPO_PUBLIC_APP_ENV ??
@@ -26,6 +26,7 @@ if (shouldEnableSentry && !sentryInitialized && !globalForSentry.__hungrySentryI
     environment: appEnv,
     tracesSampleRate: appEnv === "production" ? 0.1 : 0,
     beforeSend: (event) => sanitizeSentryEvent(event),
+    beforeBreadcrumb: (breadcrumb) => sanitizeSentryBreadcrumb(breadcrumb),
   });
   sentryInitialized = true;
   globalForSentry.__hungrySentryInitialized = true;

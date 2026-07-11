@@ -1,0 +1,42 @@
+appId: ${APP_ID}
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    text: "Hungry, http://.*:8081"
+    optional: true
+- tapOn:
+    text: "Continue"
+    optional: true
+- tapOn:
+    text: "Close"
+    optional: true
+- runFlow:
+    when:
+      visible: "Enter URL manually"
+    commands:
+      - tapOn: "Enter URL manually"
+      - tapOn:
+          point: "50%,34%"
+      - inputText: "${METRO_URL}"
+      - tapOn: "Connect"
+- extendedWaitUntil:
+    visible: "Developer Launcher"
+    timeout: 60000
+- tapOn:
+    id: "dev-button-review"
+    optional: true
+- assertVisible:
+    text: "Review"
+    optional: true
+- back:
+    optional: true
+- tapOn:
+    id: "dev-section-toggle-post-composer-v2-settings"
+    optional: true
+- tapOn:
+    id: "dev-button-launch-v2-composer"
+    optional: true
+- assertVisible:
+    id: "post-composer-screen"
+    optional: true

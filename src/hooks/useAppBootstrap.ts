@@ -1,9 +1,18 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { setAnalyticsSink, trackAnalyticsEvent } from "@/lib/analytics";
-import { getConfiguredDataSource, getSupabaseClient } from "@/lib/services/supabase/client";
-import { getHungryService } from "@/lib/services/serviceProvider";
+import {
+  getConfiguredDataSource,
+  getSupabaseClient,
+  setConfiguredDataSource,
+} from "@/lib/services/supabase/client";
+import {
+  getHungryService,
+  setMockServiceProvider,
+  setSupabaseServiceProvider,
+} from "@/lib/services/serviceProvider";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
+import { useMerchantStore } from "@/store/useMerchantStore";
 import type { UserProfile } from "@/types/domain";
 
 function shouldEnablePostHogSink() {
@@ -23,11 +32,20 @@ function applyProfile(profile: UserProfile) {
   getProfileStoreState().applyProfile(profile);
 }
 
-function syncProfile(isAuthenticated: boolean) {
-  getProfileStoreState().syncProfile(isAuthenticated);
+function syncProfile(isAuthenticated: boolean, userId?: string | null) {
+  getProfileStoreState().syncProfile(isAuthenticated, userId);
 }
 
 type BrowserIdleHandle = number;
+type ApplyAuthStateFromSession = ReturnType<
+  typeof useSessionStore.getState
+>["applyAuthStateFromSession"];
+
+function isUuidLikeAuthUserId(value?: string | null): value is string {
+  return Boolean(
+    value?.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i),
+  );
+}
 
 function runAfterIdle(callback: () => void) {
   const requestIdle = globalThis.requestIdleCallback ?? null;
@@ -45,12 +63,35 @@ function runAfterIdle(callback: () => void) {
   return () => clearTimeout(timeout);
 }
 
+function preserveRestoredAuthState(applyAuthStateFromSession: ApplyAuthStateFromSession): boolean {
+  const restoredSession = useSessionStore.getState();
+  const userId = restoredSession.authenticatedUserId;
+  const isValidUuid = isUuidLikeAuthUserId(userId);
+
+  if (restoredSession.isAuthenticated && restoredSession.authenticatedUserId && isValidUuid) {
+    applyAuthStateFromSession({
+      isAuthenticated: true,
+      userId: restoredSession.authenticatedUserId,
+    });
+    return true;
+  }
+
+  return false;
+}
+
 export function useAppBootstrap() {
+  const hasHydrated = useSessionStore((state) => state.hasHydrated);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const authenticatedUserId = useSessionStore((state) => state.authenticatedUserId);
+  const authDataSource = useSessionStore((state) => state.authDataSource);
   const applyAuthStateFromSession = useSessionStore((state) => state.applyAuthStateFromSession);
   const markAuthReady = useSessionStore((state) => state.markAuthReady);
   const setOffline = useUIStore((state) => state.setOffline);
+  const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
+  const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
+  const isUserMode = !isDeveloperMode && !isMerchantMode;
   const previousAuth = useRef<boolean | undefined>(undefined);
+  const [isDataSourceReady, setIsDataSourceReady] = useState(false);
   const hasTrackedLaunch = useRef(false);
   const hasConfiguredAnalyticsSink = useRef(false);
 
@@ -95,7 +136,65 @@ export function useAppBootstrap() {
     setOffline(false);
   }, [setOffline]);
 
+  useLayoutEffect(() => {
+    if (!isUserMode) {
+      setIsDataSourceReady(false);
+      const restoredMockSession =
+        isAuthenticated &&
+        authenticatedUserId &&
+        (authDataSource === "mock" ||
+          (authDataSource !== "supabase" && !isUuidLikeAuthUserId(authenticatedUserId)));
+
+      if (restoredMockSession) {
+        setMockServiceProvider();
+      }
+      setIsDataSourceReady(true);
+      return;
+    }
+
+    const configuredDataSource = getConfiguredDataSource();
+    setIsDataSourceReady(false);
+
+    if (configuredDataSource === "mock") {
+      setMockServiceProvider();
+      syncProfile(isAuthenticated, authenticatedUserId);
+      setIsDataSourceReady(true);
+      return;
+    }
+
+    // Supabase-configured user mode uses live data instead of prior mock sessions.
+    const hasValidSupabaseAuth = isAuthenticated && isUuidLikeAuthUserId(authenticatedUserId);
+    setConfiguredDataSource("supabase");
+    setSupabaseServiceProvider();
+    if (isAuthenticated && !hasValidSupabaseAuth) {
+      applyAuthStateFromSession({ isAuthenticated: false });
+    }
+
+    // Ensure profile surface resolves against Supabase data immediately after
+    // provider swap, so user-mode entry screens do not briefly render
+    // legacy mock profiles.
+    syncProfile(hasValidSupabaseAuth, authenticatedUserId);
+
+    let active = true;
+    const { refreshSupabaseRepositoryCache } =
+      require("@/lib/services/supabase/supabaseRepository") as typeof import("@/lib/services/supabase/supabaseRepository");
+    void refreshSupabaseRepositoryCache()
+      .catch(() => undefined)
+      .finally(() => {
+        if (active) {
+          setIsDataSourceReady(true);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [authDataSource, applyAuthStateFromSession, authenticatedUserId, isAuthenticated, isUserMode]);
+
   useEffect(() => {
+    if (!hasHydrated) {
+      return;
+    }
+
     if (getConfiguredDataSource() !== "supabase") {
       markAuthReady();
       return;
@@ -114,64 +213,100 @@ export function useAppBootstrap() {
       .then(async ({ data }) => {
         if (!active) return;
         const user = data.session?.user;
-        applyAuthStateFromSession({
-          isAuthenticated: Boolean(user),
-          userId: user?.id ?? null,
-        });
-        if (user) {
-          try {
-            const profile = await getHungryService().profile.getProfile();
-            if (!active) return;
-            applyProfile(profile);
-          } catch {
-            // Keep the restored auth session even if profile hydration needs to retry later.
+        if (!user) {
+          if (preserveRestoredAuthState(applyAuthStateFromSession)) {
+            return;
           }
+          applyAuthStateFromSession({ isAuthenticated: false, userId: null });
+          return;
         }
+
+        try {
+          const profile = await getHungryService().profile.getProfile();
+          if (!active) return;
+          applyProfile(profile);
+        } catch {
+          // Keep the restored auth session even if profile hydration needs to retry later.
+        }
+        applyAuthStateFromSession({
+          isAuthenticated: true,
+          userId: user.id,
+        });
       })
       .catch(() => {
         if (!active) return;
-        // Network failures during bootstrap should not crash the app.
-        // Fall back to signed-out state and let auth screens retry explicitly.
+        // Network/storage failures during bootstrap should not force a logout
+        // when a prior local session was already restored. The next successful
+        // auth event will reconcile Supabase state; explicit sign-out still
+        // clears both Supabase tokens and the local session store.
+        if (preserveRestoredAuthState(applyAuthStateFromSession)) {
+          return;
+        }
+
         applyAuthStateFromSession({
           isAuthenticated: false,
           userId: null,
         });
       });
 
-    const { data: subscription } = client.auth.onAuthStateChange((_event, session) => {
+    const { data: subscription } = client.auth.onAuthStateChange((event, session) => {
       const user = session?.user;
-      applyAuthStateFromSession({
-        isAuthenticated: Boolean(user),
-        userId: user?.id ?? null,
-      });
-      if (!user) return;
+      if (!user) {
+        if (event !== "SIGNED_OUT" && preserveRestoredAuthState(applyAuthStateFromSession)) {
+          return;
+        }
+        applyAuthStateFromSession({ isAuthenticated: false, userId: null });
+        return;
+      }
+
       void getHungryService()
         .profile.getProfile()
         .then((profile) => {
           if (active) applyProfile(profile);
         })
-        .catch(() => undefined);
+        .catch(() => undefined)
+        .finally(() => {
+          if (!active) return;
+          applyAuthStateFromSession({
+            isAuthenticated: true,
+            userId: user.id,
+          });
+        });
     });
 
     return () => {
       active = false;
       subscription.subscription.unsubscribe();
     };
-  }, [applyAuthStateFromSession, markAuthReady]);
+  }, [applyAuthStateFromSession, hasHydrated, markAuthReady]);
 
   useEffect(() => {
+    const profileNeedsRepair =
+      isUserMode &&
+      getProfileStoreState().profile &&
+      !isUuidLikeAuthUserId(getProfileStoreState().profile.id) &&
+      getProfileStoreState().profile.id !== "guest-user";
+
     // Keep persisted profile customisations on cold start.
     // Only resync base profile when auth state actually changes.
     if (previousAuth.current === undefined) {
+      if (profileNeedsRepair) {
+        syncProfile(
+          isAuthenticated && isUuidLikeAuthUserId(authenticatedUserId),
+          authenticatedUserId,
+        );
+      }
       previousAuth.current = isAuthenticated;
       return;
     }
 
-    if (previousAuth.current === isAuthenticated) {
+    if (!profileNeedsRepair && previousAuth.current === isAuthenticated) {
       return;
     }
 
-    syncProfile(isAuthenticated);
+    syncProfile(isAuthenticated, authenticatedUserId);
     previousAuth.current = isAuthenticated;
-  }, [isAuthenticated]);
+  }, [authenticatedUserId, isAuthenticated]);
+
+  return isDataSourceReady;
 }

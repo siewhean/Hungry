@@ -4,10 +4,8 @@
  * Manages the current week's active missions and the user's progress on each.
  * Mission completion triggers Food Cred awards via useFoodCredStore.
  *
- * Production swap:
- *   1. Replace `loadMissions()` with Supabase query on `weekly_missions` + `user_mission_progress`.
- *   2. Replace `incrementProgress()` with a Supabase upsert + RPC for cred award.
- *   3. Weekly rotation handled by a DB cron job / Edge Function.
+ * Repository-backed: mock mode keeps local demo state, while Supabase mode
+ * reads `weekly_missions` / `user_mission_progress` and increments through RPC.
  */
 
 import { create } from "zustand";
@@ -61,7 +59,6 @@ export const useMissionStore = create<MissionState>()((set, get) => ({
     if (get().isLoaded) return;
 
     const repo = getDataRepository();
-    // Production swap: replace with Supabase queries
     const missions: WeeklyMission[] = (await repo.listActiveMissions?.()) ?? [];
 
     const progressList: UserMissionProgress[] =
@@ -83,6 +80,29 @@ export const useMissionStore = create<MissionState>()((set, get) => ({
   },
 
   incrementProgress: async (userId, missionType) => {
+    const repo = getDataRepository();
+    if (repo.incrementMissionProgress) {
+      await repo.incrementMissionProgress(userId, missionType);
+      const [missions, progressList, cred] = await Promise.all([
+        repo.listActiveMissions?.() ?? Promise.resolve(get().missions),
+        repo.listUserMissionProgress?.(userId) ?? Promise.resolve(Object.values(get().progressMap)),
+        repo.getUserFoodCred?.(userId) ?? Promise.resolve(null),
+      ]);
+      const progressMap: Record<string, UserMissionProgress> = {};
+      for (const progress of progressList) {
+        progressMap[progress.missionId] = progress;
+      }
+      set({ missions, progressMap, isLoaded: true });
+      if (cred) {
+        useFoodCredStore.setState({
+          totalPoints: cred.totalPoints,
+          levelIndex: cred.levelIndex,
+          isLoaded: true,
+        });
+      }
+      return;
+    }
+
     const { missions, progressMap } = get();
     const matchingMissions = missions.filter(
       (m) => m.missionType === missionType && !progressMap[m.id]?.completedAt,
@@ -131,8 +151,6 @@ export const useMissionStore = create<MissionState>()((set, get) => ({
     }
 
     set({ progressMap: newProgressMap });
-
-    // TODO (production): supabase.from('user_mission_progress').upsert(...)
   },
 
   _reset: () => set({ missions: [], progressMap: {}, isLoaded: false }),

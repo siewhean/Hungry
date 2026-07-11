@@ -13,6 +13,7 @@ export type PublishingState =
   | "ai_processing";
 
 export type ComposerTab = "post" | "review";
+export type PublishMode = "both" | "post" | "review";
 
 export interface MediaItem {
   id: string;
@@ -41,6 +42,7 @@ interface ComposerState {
   foodTags: string[];
   tasteTags: string[];
   useSameCaption: boolean;
+  showFoodContextOverlay: boolean;
 
   // Tab Specific Data
   reviewCaption: string;
@@ -58,10 +60,16 @@ interface ComposerState {
 
   // UI State
   publishingState: PublishingState;
+  publishingError: string | null;
   showPreview: boolean;
   previewPlatform: "hungry" | "instagram";
   editingMediaId: string | null;
   isAiProcessing: boolean;
+  lastPublishRequest: {
+    publishMode: PublishMode;
+    routeDishId?: string;
+    routeVenueId?: string;
+  } | null;
 
   // Actions
   addMedia: (items: MediaItem[]) => void;
@@ -69,6 +77,7 @@ interface ComposerState {
   updateMediaAdjustment: (id: string, adjustments: Partial<MediaItem["adjustments"]>) => void;
   setCaption: (text: string) => void;
   setUseSameCaption: (useSame: boolean) => void;
+  setShowFoodContextOverlay: (show: boolean) => void;
   toggleTag: (tag: string, type: "food" | "taste") => void;
   setRating: (rating: number) => void;
   setMusic: (
@@ -85,6 +94,8 @@ interface ComposerState {
   setShowPreview: (show: boolean) => void;
   setPreviewPlatform: (platform: "hungry" | "instagram") => void;
   setEditingMediaId: (id: string | null) => void;
+  setPublishingError: (message: string | null) => void;
+  setLastPublishRequest: (request: ComposerState["lastPublishRequest"]) => void;
   setScheduledTime: (date: Date | null) => void;
   setIsBusinessMode: (isBusiness: boolean) => void;
   setCTA: (cta: string | null) => void;
@@ -109,6 +120,7 @@ export const useComposerStore = create<ComposerState>((set, get) => ({
   foodTags: [],
   tasteTags: [],
   useSameCaption: false,
+  showFoodContextOverlay: true,
 
   reviewCaption: "",
   postCaption: "",
@@ -124,10 +136,12 @@ export const useComposerStore = create<ComposerState>((set, get) => ({
   isBusinessMode: false,
 
   publishingState: "empty",
+  publishingError: null,
   showPreview: false,
   previewPlatform: "hungry",
   editingMediaId: null,
   isAiProcessing: false,
+  lastPublishRequest: null,
 
   addMedia: (items) =>
     set((state) => ({ media: [...state.media, ...items], publishingState: "editing" })),
@@ -172,6 +186,7 @@ export const useComposerStore = create<ComposerState>((set, get) => ({
         reviewCaption: syncedCaption.slice(0, 500),
       };
     }),
+  setShowFoodContextOverlay: (showFoodContextOverlay) => set({ showFoodContextOverlay }),
   toggleTag: (tag, type) =>
     set((state) => {
       const field = type === "food" ? "foodTags" : "tasteTags";
@@ -198,6 +213,8 @@ export const useComposerStore = create<ComposerState>((set, get) => ({
   setShowPreview: (showPreview) => set({ showPreview }),
   setPreviewPlatform: (previewPlatform) => set({ previewPlatform }),
   setEditingMediaId: (editingMediaId) => set({ editingMediaId }),
+  setPublishingError: (publishingError) => set({ publishingError }),
+  setLastPublishRequest: (lastPublishRequest) => set({ lastPublishRequest }),
   setScheduledTime: (scheduledTime) => set({ scheduledTime }),
   setIsBusinessMode: (isBusinessMode) => set({ isBusinessMode }),
   setCTA: (ctaButton) => set({ ctaButton }),
@@ -256,6 +273,7 @@ export const useComposerStore = create<ComposerState>((set, get) => ({
       foodTags: [],
       tasteTags: [],
       useSameCaption: false,
+      showFoodContextOverlay: true,
       reviewCaption: "",
       postCaption: "",
       rating: 0,
@@ -269,5 +287,7 @@ export const useComposerStore = create<ComposerState>((set, get) => ({
       publishingState: "empty",
       showPreview: false,
       isAiProcessing: false,
+      publishingError: null,
+      lastPublishRequest: null,
     }),
 }));

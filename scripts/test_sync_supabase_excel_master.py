@@ -152,6 +152,8 @@ class IncrementalSyncTests(unittest.TestCase):
                 "business_id": "business-1",
                 "name": "Changed",
                 "logo_url": "https://cdn.example/new-logo.png",
+                "media_approved_for_display": True,
+                "media_rights_status": "operator_owned",
                 "planning_area": "Orchard",
             },
             previous_venues[1],
@@ -214,6 +216,8 @@ class IncrementalSyncTests(unittest.TestCase):
                 "business_id": "business-1",
                 "name": "Changed",
                 "logo_url": "https://cdn.example/new-logo.png",
+                "media_approved_for_display": True,
+                "media_rights_status": "operator_owned",
                 "updated_at": "2026-07-02T00:00:00Z",
             }
             changed_dish = {
@@ -221,6 +225,7 @@ class IncrementalSyncTests(unittest.TestCase):
                 "venue_id": "venue-1",
                 "name": "New Dish",
                 "menu_approved_for_display": True,
+                "menu_rights_status": "operator_owned",
                 "updated_at": "2026-07-02T00:00:00Z",
             }
 
@@ -285,6 +290,47 @@ class IncrementalSyncTests(unittest.TestCase):
                 self.assertEqual(preserved["Unrelated Sheet"]["B2"].value, "=1+1")
             finally:
                 preserved.close()
+
+    def test_sync_requires_approval_and_rights_and_preserves_verification_date(self) -> None:
+        row = sheet1_row(
+            **{
+                "Business ID": "business-1",
+                "Stall / Restaurant Name": "Venue",
+                "Last Verified Date": "2026-06-01",
+                "Image URL": "https://merchant.example/old.jpg",
+                "Menu Items": "Existing Dish",
+            }
+        )
+        venue = {
+            "id": "venue-1",
+            "business_id": "business-1",
+            "name": "Venue",
+            "last_verified_at": "2026-07-10T00:00:00Z",
+            "updated_at": "2026-07-10T00:00:00Z",
+            "media_approved_for_display": True,
+            "media_rights_status": "unverified",
+            "image_url": "https://merchant.example/new.jpg",
+            "logo_url": "https://merchant.example/logo.jpg",
+        }
+        dishes = {
+            "venue-1": [
+                {
+                    "name": "Unverified Dish",
+                    "menu_approved_for_display": True,
+                    "menu_rights_status": "unverified",
+                    "media_approved_for_display": True,
+                    "media_rights_status": "unverified",
+                    "image_url": "https://merchant.example/dish.jpg",
+                }
+            ]
+        }
+
+        updated, _stats = sync.update_sheet1_rows([row], [venue], dishes)
+
+        self.assertEqual(updated[0]["Last Verified Date"], "2026-06-01")
+        self.assertEqual(updated[0]["Image URL"], "https://merchant.example/old.jpg")
+        self.assertEqual(updated[0]["Menu Items"], "Existing Dish")
+        self.assertIsNone(updated[0]["Logo URL"])
 
     def test_state_does_not_advance_when_workbook_write_fails(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

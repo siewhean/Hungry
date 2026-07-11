@@ -5,7 +5,7 @@ import { useHungryTheme } from "@/theme";
 interface CardProps extends ViewProps {}
 
 export function Card({ children, style, ...props }: CardProps) {
-  const { palette, radii, shadows, spacing } = useHungryTheme();
+  const { componentCornerCurve, componentRadii, palette, shadows, spacing } = useHungryTheme();
 
   return (
     <View
@@ -15,7 +15,8 @@ export function Card({ children, style, ...props }: CardProps) {
           ...shadows.card,
           backgroundColor: palette.surface,
           borderColor: palette.border,
-          borderRadius: radii.lg,
+          borderRadius: componentRadii.card,
+          borderCurve: componentCornerCurve.borderCurve,
           padding: spacing[5],
           gap: spacing[4],
         },

@@ -2,6 +2,7 @@ import React from "react";
 import { View } from "react-native";
 import Svg, { Path, Circle } from "react-native-svg";
 import { useHungryTheme } from "@/theme";
+import { MASCOT_GRAPHIC_COLORS } from "@/constants/visualAssetColors";
 
 interface MascotProps {
   size?: number;
@@ -40,7 +41,10 @@ export function MascotGraphicV2({ size = 120, expression = "happy" }: MascotProp
           />
         )}
         {expression === "hungry" && (
-          <Path d="M28,48 L36,48 C36,48 36,54 32,54 C28,54 28,48 28,48 Z" fill="#FFBDBD" />
+          <Path
+            d="M28,48 L36,48 C36,48 36,54 32,54 C28,54 28,48 28,48 Z"
+            fill={MASCOT_GRAPHIC_COLORS.mouth}
+          />
         )}
         {expression === "thinking" && (
           <Path d="M28,50 L36,50" stroke="white" strokeWidth="2" strokeLinecap="round" />

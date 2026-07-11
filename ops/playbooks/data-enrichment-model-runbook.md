@@ -19,7 +19,6 @@ Install the pinned Python workbook dependencies once per environment:
 ```bash
 python3 -m pip install -r scripts/requirements-data-enrichment.txt
 ```
-
 ## Non-Negotiable Rules
 
 | Rule | Detail |

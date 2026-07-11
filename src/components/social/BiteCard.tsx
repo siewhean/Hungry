@@ -6,7 +6,6 @@
  */
 
 import { Pressable, View, StyleSheet } from "react-native";
-import { Image } from "expo-image";
 import { Bookmark, Heart, MessageCircle, MessageCircleMore } from "lucide-react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
@@ -18,7 +17,8 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 
-import { AppText } from "@/components/ui";
+import { AccessibleImage, AppText } from "@/components/ui";
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import type { Bite } from "@/lib/services/types";
 import { useHungryTheme } from "@/theme";
@@ -58,7 +58,8 @@ export function BiteCard({
   onToggleSave,
   onCommentPress,
 }: BiteCardProps) {
-  const { palette, radii, spacing, motion } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing, motion } = useHungryTheme();
+  const reduceMotion = useReduceMotion();
   const imageHeight = Math.round(width * 0.76);
 
   const heartScale = useSharedValue(0);
@@ -68,6 +69,10 @@ export function BiteCard({
   }));
 
   const playHeartAnimation = () => {
+    if (reduceMotion) {
+      heartScale.value = 0;
+      return;
+    }
     heartScale.value = withSequence(
       withSpring(1.5, { damping: 12, stiffness: 200 }),
       withDelay(500, withSpring(0)),
@@ -96,7 +101,7 @@ export function BiteCard({
           width,
           borderWidth: 1,
           borderColor: palette.border,
-          borderRadius: radii.md,
+          borderRadius: componentRadii.card,
           backgroundColor: palette.surfaceRaised,
           overflow: "hidden",
         }}
@@ -108,8 +113,9 @@ export function BiteCard({
           disabled={!openDishDetails}
         >
           <View style={{ flexDirection: "row" }}>
-            <Image
+            <AccessibleImage
               source={{ uri: bite.photoUrl }}
+              accessibilityLabel={`${bite.dishName} photo from ${bite.authorName}`}
               style={{ width: 72, height: 92 }}
               contentFit="cover"
             />
@@ -200,7 +206,7 @@ export function BiteCard({
     <View
       style={{
         width,
-        borderRadius: radii.lg,
+        borderRadius: componentRadii.card,
         overflow: "hidden",
         backgroundColor: palette.surface,
         borderWidth: 1,
@@ -230,8 +236,9 @@ export function BiteCard({
             backgroundColor: palette.surfaceRaised,
           }}
         >
-          <Image
+          <AccessibleImage
             source={{ uri: bite.photoUrl }}
+            accessibilityLabel={`${bite.dishName} photo from ${bite.authorName}`}
             style={{ width: "100%", height: imageHeight }}
             contentFit="contain"
             transition={200}
@@ -283,8 +290,9 @@ export function BiteCard({
                 backgroundColor: palette.surface,
               }}
             >
-              <Image
+              <AccessibleImage
                 source={{ uri: bite.authorAvatar || bite.photoUrl }}
+                accessibilityLabel={`Avatar of ${bite.authorName}`}
                 style={{ width: "100%", height: "100%" }}
                 contentFit="cover"
               />

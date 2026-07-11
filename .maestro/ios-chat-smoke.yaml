@@ -14,6 +14,28 @@ appId: ${APP_ID}
 - tapOn:
     text: "Close"
     optional: true
+- runFlow:
+    when:
+      visible: "Enter URL manually"
+    commands:
+      - tapOn: "Enter URL manually"
+      - tapOn:
+          point: "50%,34%"
+      - inputText: "${METRO_URL}"
+      - tapOn: "Connect"
+- extendedWaitUntil:
+    visible: "Continue"
+    timeout: 60000
+- tapOn: "Continue"
+- tapOn:
+    text: "Close"
+    optional: true
+- tapOn:
+    text: "Continue"
+    optional: true
+- tapOn:
+    text: "Close"
+    optional: true
 - extendedWaitUntil:
     visible: "Developer Launcher"
     timeout: 60000
@@ -23,7 +45,9 @@ appId: ${APP_ID}
     timeout: 3000
 - extendedWaitUntil:
     visible:
-      id: "activity-tab-updates"
+      id: "activity-tab-messages"
     timeout: 30000
-- assertNotVisible:
+- assertVisible:
     id: "activity-tab-messages"
+- assertVisible:
+    id: "activity-tab-updates"

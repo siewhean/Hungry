@@ -35,11 +35,6 @@
   align-items: center;
 }
 
-.logoText {
-  letter-spacing: 0;
-  color: var(--color-primary);
-}
-
 .tagline {
   color: color-mix(in srgb, var(--color-white) 74%, transparent);
   max-width: 19rem;
