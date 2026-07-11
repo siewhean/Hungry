@@ -157,9 +157,17 @@ assertContains("src/app/console/ConsoleRouteClient.tsx", '"x-hungry-csrf": "same
 assertNotContains("src/app/console/ConsoleRouteClient.tsx", "getConsolePrototypeFallback", "Console production client must not load prototype fallbacks");
 assertContains("src/app/console/notifications/page.tsx", "notFound()", "Unbacked console notifications route must stay hidden");
 assertContains("src/app/api/console/dataset/route.ts", "await requireConsoleApiAccess(request)", "Console dataset auth contract failed");
+assertContains("src/app/api/console/dataset/route.ts", "isConsoleAuthResponse(auth)", "Console dataset auth response contract failed");
 assertContains("src/app/api/console/dataset/route.ts", "await requireRateLimit(request", "Console dataset rate-limit contract failed");
 assertContains("src/app/api/console/me/route.ts", "await requireConsoleApiAccess(request)", "Console identity auth contract failed");
 assertContains("src/app/api/console/me/route.ts", "isConsoleAuthResponse(auth)", "Console identity auth response contract failed");
+assertContains("src/app/api/console/me/route.ts", "authMode: auth.authMode", "Console identity auth-mode allowlist contract failed");
+assertContains("src/app/api/console/me/route.ts", "email: auth.email", "Console identity email allowlist contract failed");
+assertContains("src/app/api/console/me/route.ts", "role: auth.role", "Console identity role allowlist contract failed");
+assertContains("src/app/api/console/me/route.ts", "status: auth.status", "Console identity status allowlist contract failed");
+assertNotContains("src/app/api/console/me/route.ts", "adminId:", "Console identity must not expose internal admin IDs");
+assertNotContains("src/app/api/console/me/route.ts", "userId:", "Console identity must not expose Supabase user IDs");
+assertNotContains("src/app/api/console/me/route.ts", "id: auth.id", "Console identity must not expose internal actor IDs");
 assertContains("src/app/api/console/team/route.ts", "await requireConsoleApiAccess(request)", "Console team auth contract failed");
 assertContains("src/app/api/console/team/route.ts", 'requireConsoleRole(auth, "admin")', "Console team admin role contract failed");
 assertContains("src/app/api/console/team/route.ts", "requireConsoleMutationProtection(request)", "Console team CSRF contract failed");
