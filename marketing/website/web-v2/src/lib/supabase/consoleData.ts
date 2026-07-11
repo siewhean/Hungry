@@ -78,6 +78,11 @@ function asString(value: unknown): string | undefined {
   return typeof value === "string" ? value : undefined;
 }
 
+function asRedactedEmail(value: unknown): string | undefined {
+  const email = asString(value);
+  return email ? redactEmail(email) : undefined;
+}
+
 function formatCount(value: number) {
   return new Intl.NumberFormat("en-SG").format(value);
 }
@@ -121,7 +126,7 @@ function recordFromRow(row: Row, options: {
     options.titleKeys?.map((key) => asString(row[key])).find(Boolean) ??
     asString(row.name) ??
     asString(row.display_name) ??
-    asString(row.email) ??
+    asRedactedEmail(row.email) ??
     id;
   const subtitle =
     options.subtitleKeys?.map((key) => asString(row[key])).find(Boolean) ??
@@ -305,8 +310,8 @@ async function getWaitlistDatasetRecords() {
         source: entry.source,
       },
       status: entry.establishmentType ?? entry.audience,
-      subtitle: entry.businessName ?? entry.email,
-      title: entry.name ?? entry.businessName ?? entry.email,
+      subtitle: entry.businessName ?? redactEmail(entry.email),
+      title: entry.name ?? entry.businessName ?? redactEmail(entry.email),
       updatedAt: entry.submittedAt,
     })),
   };
