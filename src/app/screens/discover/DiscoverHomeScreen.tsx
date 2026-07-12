@@ -1287,6 +1287,17 @@ export function DiscoverHomeScreen() {
     }
   }, [locationPermission, manualLocation, grantLocation]);
 
+  useEffect(() => {
+    const cancelWarmup = scheduleIdleWork(
+      () => {
+        preloadRoute(navigation, "BrowseDishes");
+      },
+      { timeout: 1_200, fallbackDelayMs: 500 },
+    );
+
+    return cancelWarmup;
+  }, [navigation, repository]);
+
   useEffect(
     () => () => {
       clearPopularFoodFilterSkeletonTimer();
@@ -2541,7 +2552,6 @@ export function DiscoverHomeScreen() {
               accessibilityLabel="Browse dishes"
               onPressIn={() => {
                 areaDishPool.slice(0, 6).forEach((dish) => prefetchDishDetail(dish.id, repository));
-                preloadRoute(navigation, "BrowseDishes");
               }}
               onPress={() => navigation.navigate("BrowseDishes")}
               style={[

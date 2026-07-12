@@ -20,6 +20,12 @@ test("Browse Stalls uses the active repository before showing empty state", () =
   assert.match(source, /browseIndex\.dishById\.get\(venue\.topDishId\)/);
   assert.match(source, /const BROWSE_GRID_HYDRATION_TIMEOUT_MS = 350/);
   assert.match(source, /scheduleIdleWork/);
+  assert.match(source, /<ActivityIndicator color=\{palette\.orange\}/);
+  assert.match(
+    source,
+    /const loadingLabel = mode === "dishes" \? "Preparing dishes" : "Preparing stalls"/,
+  );
+  assert.match(source, /accessibilityLabel=\{loadingLabel\}/);
   assert.match(source, /if \(!browseIndex \|\| shouldUseQueryScopedFeed\)/);
   assert.match(source, /const queryMatchedDishes = useMemo/);
   assert.match(source, /searchBrowseDishes\(browseIndex/);

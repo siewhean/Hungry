@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
+  ActivityIndicator,
   Easing,
   Pressable,
   StyleSheet,
@@ -198,23 +199,36 @@ const BROWSE_FILTER_OPTIONS = BROWSE_FILTERS.map((filter) => ({ id: filter, labe
 const BROWSE_GRID_HYDRATION_TIMEOUT_MS = 350;
 const BROWSE_GRID_HYDRATION_FALLBACK_DELAY_MS = 80;
 
-function BrowseGridLoadingState({ itemWidth }: { itemWidth: number }) {
-  const { spacing } = useHungryTheme();
+function BrowseGridLoadingState({
+  itemWidth,
+  mode,
+}: {
+  itemWidth: number;
+  mode: "dishes" | "stalls";
+}) {
+  const { palette, spacing } = useHungryTheme();
+  const loadingLabel = mode === "dishes" ? "Preparing dishes" : "Preparing stalls";
 
   return (
-    <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-      {Array.from({ length: 8 }).map((_, index) => (
-        <View
-          key={`browse-grid-skeleton-${index}`}
-          style={{
-            height: itemWidth * 1.35,
-            padding: spacing[1],
-            width: itemWidth,
-          }}
-        >
-          <Skeleton width="100%" height="100%" borderRadius={0} />
-        </View>
-      ))}
+    <View accessibilityLabel={loadingLabel} accessibilityRole="progressbar">
+      <View style={{ alignItems: "center", gap: spacing[2], paddingVertical: spacing[5] }}>
+        <ActivityIndicator color={palette.orange} />
+        <AppText tone="secondary">{loadingLabel}…</AppText>
+      </View>
+      <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+        {Array.from({ length: 8 }).map((_, index) => (
+          <View
+            key={`browse-grid-skeleton-${index}`}
+            style={{
+              height: itemWidth * 1.35,
+              padding: spacing[1],
+              width: itemWidth,
+            }}
+          >
+            <Skeleton width="100%" height="100%" borderRadius={0} />
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
@@ -844,7 +858,7 @@ function BrowseGridScreen({
             isBrowseDataReady ? (
               <EmptyState title="No matches found" body="Try another search or filter." />
             ) : (
-              <BrowseGridLoadingState itemWidth={itemWidth} />
+              <BrowseGridLoadingState itemWidth={itemWidth} mode={mode} />
             )
           }
         />
