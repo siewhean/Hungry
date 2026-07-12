@@ -1,4 +1,8 @@
-import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
+import type {
+  PostgrestError,
+  Session as SupabaseAuthSession,
+  SupabaseClient,
+} from "@supabase/supabase-js";
 import * as WebBrowser from "expo-web-browser";
 
 import { getFloorPlan } from "@/lib/geo/floorPlans";
@@ -508,14 +512,19 @@ async function getCurrentSupabaseUserId(): Promise<string | null> {
   }
 }
 
-async function ensureCurrentUserProfileRow(client: SupabaseClient): Promise<void> {
-  let sessionData;
-  try {
-    ({ data: sessionData } = await client.auth.getSession());
-  } catch {
-    return;
+async function ensureCurrentUserProfileRow(
+  client: SupabaseClient,
+  authenticatedUser?: SupabaseAuthSession["user"] | null,
+): Promise<void> {
+  let user = authenticatedUser ?? null;
+  if (!user) {
+    try {
+      const { data: sessionData } = await client.auth.getSession();
+      user = sessionData.session?.user ?? null;
+    } catch {
+      return;
+    }
   }
-  const user = sessionData.session?.user;
   if (!user?.id) return;
 
   const providerDisplayName = getDisplayNameFromUserMetadata(user.user_metadata);
@@ -761,12 +770,32 @@ async function toAppSession(client: SupabaseClient): Promise<Session | null> {
   if (!session?.user) return null;
   await ensureCurrentUserProfileRow(client);
   const profile = await fetchUserProfile(client, session.user.id, session.user.email ?? undefined);
+  return toAppSessionFromAuthSession(session, profile);
+}
+
+function provisionalProfileFromAuthSession(session: SupabaseAuthSession): UserProfile {
+  return {
+    ...DEFAULT_AUTH_PROFILE_BASE,
+    id: session.user.id,
+    displayName:
+      getDisplayNameFromUserMetadata(session.user.user_metadata) ??
+      DEFAULT_AUTH_PROFILE_BASE.displayName,
+    email: session.user.email ?? "",
+  };
+}
+
+function toAppSessionFromAuthSession(
+  session: SupabaseAuthSession,
+  profile: UserProfile,
+  profileReady?: Promise<UserProfile>,
+): Session {
   return {
     userId: session.user.id,
     accessToken: session.access_token,
     refreshToken: session.refresh_token,
     expiresAt: new Date(session.expires_at ? session.expires_at * 1000 : Date.now()).toISOString(),
     profile,
+    profileReady,
   };
 }
 
@@ -2488,17 +2517,29 @@ async function signInWithOAuthProvider(provider: "google" | "apple"): Promise<Se
   if (accessToken || refreshToken) {
     throw new Error("OAuth callback token fragments are not accepted.");
   } else if (code) {
-    const { error: exchangeError } = await client.auth.exchangeCodeForSession(code);
+    const { data: exchangeData, error: exchangeError } =
+      await client.auth.exchangeCodeForSession(code);
     if (exchangeError) throw exchangeError;
+    const exchangedSession = exchangeData.session;
+    if (!exchangedSession?.user) {
+      throw new Error("OAuth flow completed but no active session was found.");
+    }
+
+    // Authentication is complete at this point. Provisioning and reading the
+    // profile are non-critical and happen after the app shell is available.
+    // Keep this chain ordered so a new OAuth account cannot hydrate before its
+    // profile row has been created.
+    const profileReady = ensureCurrentUserProfileRow(client, exchangedSession.user).then(() =>
+      fetchUserProfile(client, exchangedSession.user.id, exchangedSession.user.email ?? undefined),
+    );
+    return toAppSessionFromAuthSession(
+      exchangedSession,
+      provisionalProfileFromAuthSession(exchangedSession),
+      profileReady,
+    );
   } else {
     throw new Error("OAuth callback did not include session credentials.");
   }
-
-  const session = await toAppSession(client);
-  if (!session) {
-    throw new Error("OAuth flow completed but no active session was found.");
-  }
-  return session;
 }
 
 function participantKey(participant: ChatParticipant): string {

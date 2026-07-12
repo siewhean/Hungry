@@ -501,6 +501,8 @@ export interface Session {
   refreshToken: string;
   expiresAt: string;
   profile: UserProfile;
+  /** Resolves after non-critical OAuth profile provisioning and hydration. */
+  profileReady?: Promise<UserProfile>;
 }
 
 export type AuthProvider = "email" | "google" | "apple";

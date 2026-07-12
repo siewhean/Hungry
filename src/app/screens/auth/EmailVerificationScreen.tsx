@@ -149,6 +149,7 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
                       return;
                     }
                     await applySignedInProfile(session.profile, {
+                      profileReady: session.profileReady,
                       onSyncWarning: () => {
                         showToast({
                           message:
