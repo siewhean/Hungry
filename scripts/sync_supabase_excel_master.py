@@ -8,6 +8,7 @@ workbook a reviewable master without changing the importer surface.
 from __future__ import annotations
 
 import argparse
+import errno
 import json
 import os
 import re
@@ -40,6 +41,10 @@ BAD_URL_PATTERNS = (
     "picsum.photos",
     "hungry-logo",
     "hungry-app-logo",
+    "food.grab.com/static/images/logo-grabfood",
+    "food.grab.com/static/images/quick-add",
+    "plus-white.svg",
+    "placeholder",
 )
 
 
@@ -781,6 +786,24 @@ def append_incremental_report(workbook: Any, report_rows: list[dict[str, Any]]) 
             set_openpyxl_cell(sheet.cell(row=row_number, column=headers[column]), report.get(column))
 
 
+def create_workbook_backup(workbook_path: Path, archive_dir: Path) -> tuple[Path | None, str]:
+    """Create a pre-sync backup, or explicitly skip only when the disk is full."""
+    stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
+    backup_path = archive_dir / f"{workbook_path.stem}.pre-master-sync-{stamp}{workbook_path.suffix}"
+    try:
+        archive_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(workbook_path, backup_path)
+    except OSError as exc:
+        if exc.errno != errno.ENOSPC:
+            raise
+        try:
+            backup_path.unlink(missing_ok=True)
+        except OSError as cleanup_exc:
+            raise OSError(f"Cannot remove partial low-disk backup {backup_path}: {cleanup_exc}") from cleanup_exc
+        return None, "skipped_low_disk"
+    return backup_path, "created"
+
+
 def write_incremental_workbook(
     source_path: Path,
     output_path: Path,
@@ -948,12 +971,19 @@ def main() -> int:
     for key, value in sorted(sync_stats.items()):
         report_rows.append({"metric": key, "value": value, "notes": ""})
 
+    backup_status = "disabled" if args.no_backup else "not_required"
     if args.output.resolve() == args.workbook.resolve() and not args.no_backup:
-        args.archive_dir.mkdir(parents=True, exist_ok=True)
-        stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
-        backup_path = args.archive_dir / f"{args.workbook.stem}.pre-master-sync-{stamp}{args.workbook.suffix}"
-        shutil.copy2(args.workbook, backup_path)
-        report_rows.append({"metric": "workbook_backup", "value": str(backup_path), "notes": "Pre-sync copy"})
+        backup_path, backup_status = create_workbook_backup(args.workbook, args.archive_dir)
+        if backup_path is not None:
+            report_rows.append({"metric": "workbook_backup", "value": str(backup_path), "notes": "Pre-sync copy"})
+        else:
+            report_rows.append(
+                {
+                    "metric": "workbook_backup",
+                    "value": backup_status,
+                    "notes": "Backup skipped because the archive filesystem reported ENOSPC; atomic workbook replacement remains enabled.",
+                }
+            )
 
     if incremental_active:
         write_stats = write_incremental_workbook(
@@ -999,6 +1029,7 @@ def main() -> int:
                 "changed_dishes": len(changed_dishes),
                 "deletions_reconciled": not incremental_active,
                 "grab_image_rows": len(grab_evidence),
+                "backup_status": backup_status,
                 "stats": sync_stats,
             },
             indent=2,

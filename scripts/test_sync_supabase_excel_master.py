@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import errno
 import json
 import sys
 import tempfile
@@ -25,6 +26,72 @@ def sheet1_row(**overrides: object) -> dict[str, object]:
 
 
 class IncrementalSyncTests(unittest.TestCase):
+    def test_backup_skips_partial_copy_only_on_enospc_and_preserves_workbook(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            workbook = root / "master.xlsx"
+            archive_dir = root / "archive"
+            original = b"valid workbook bytes"
+            workbook.write_bytes(original)
+
+            def fail_after_partial_copy(source: Path, destination: Path) -> None:
+                self.assertEqual(source, workbook)
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_bytes(b"partial backup")
+                raise OSError(errno.ENOSPC, "No space left on device")
+
+            with mock.patch.object(sync.shutil, "copy2", side_effect=fail_after_partial_copy):
+                backup_path, status = sync.create_workbook_backup(workbook, archive_dir)
+
+            self.assertIsNone(backup_path)
+            self.assertEqual(status, "skipped_low_disk")
+            self.assertEqual(workbook.read_bytes(), original)
+            self.assertEqual(list(archive_dir.iterdir()), [])
+
+    def test_full_sync_continues_after_enospc_backup_and_atomically_replaces_workbook(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            workbook = root / "master.xlsx"
+            archive_dir = root / "archive"
+            sync.write_master_workbook(
+                workbook,
+                [sheet1_row(**{"Business ID": "business-1", "Stall / Restaurant Name": "Before"})],
+                [],
+                [],
+                [],
+                [],
+            )
+            original = workbook.read_bytes()
+
+            argv = [
+                "sync_supabase_excel_master.py",
+                "--workbook",
+                str(workbook),
+                "--output",
+                str(workbook),
+                "--archive-dir",
+                str(archive_dir),
+            ]
+
+            with (
+                mock.patch.object(sys, "argv", argv),
+                mock.patch.object(sync, "require_supabase_env", return_value=("https://example.supabase.co", "secret")),
+                mock.patch.object(sync, "fetch_table", return_value=[]),
+                mock.patch.object(sync, "load_grab_image_evidence", return_value=[]),
+                mock.patch.object(sync.shutil, "copy2", side_effect=OSError(errno.ENOSPC, "No space left on device")),
+                mock.patch("builtins.print") as print_mock,
+            ):
+                self.assertEqual(sync.main(), 0)
+
+            self.assertNotEqual(workbook.read_bytes(), original)
+            self.assertEqual(list(archive_dir.iterdir()), [])
+            printed = json.loads(print_mock.call_args.args[0])
+            self.assertEqual(printed["backup_status"], "skipped_low_disk")
+            report = sync.load_cached_table_rows(workbook, "Cleanup Report", ["metric", "value", "notes"])
+            backup_report = next(row for row in report or [] if row["metric"] == "workbook_backup")
+            self.assertEqual(backup_report["value"], "skipped_low_disk")
+            self.assertIn("ENOSPC", backup_report["notes"])
+
     def test_cached_table_patch_reads_max_row_once_per_phase(self) -> None:
         workbook = Workbook()
         sheet = workbook.active

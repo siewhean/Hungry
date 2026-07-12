@@ -21,7 +21,9 @@
   adapters, direct platform resolution, weighted identity bands, and a bounded worker pool;
   Supabase-to-Excel sync supports timestamp/keyset incremental runs; Grab directory discovery,
   scheduled review/apply enrichment, non-consumer classification, and a structured 74-dish
-  cuisine/taste taxonomy are implemented. Independent QA passes the complete repo-local contract.
+  cuisine/taste taxonomy are implemented. 2026-07-13 full reconciliation confirmed the master workbook
+  cache matches Supabase at 119,232 venues and 156,010 dishes; the workbook validator reports 25,304
+  valid and 0 invalid source rows. Independent QA passes the complete repo-local contract.
   PR #32 is merged; review-mode variables/secrets and a branch-restricted
   `enrichment-production` environment are configured; migration `20260710130000` is live and the
   indexed incremental sync proof passes. Required-reviewer protection is blocked by the current
@@ -57,7 +59,9 @@
   worktree reconciliation is incomplete, Supabase Auth leaked-password dashboard proof is still
   open, and store-console/legal proof is still missing. Linked Supabase legacy RPC cleanup,
   app-owned Advisor cleanup, live data/RLS/social/
-  chat/OCR smokes, iOS prepared Maestro smoke, and local release rehearsal now pass.
+  chat/OCR smokes, iOS prepared Maestro smoke, and local release rehearsal now pass. 2026-07-12
+  adds live NetInfo-backed offline detection, a real retry action, non-blocking app-shell cache
+  warm-up, and Node 22.22.1 fail-closed main CI gates; native connectivity-loss smoke remains pending.
 
 - `TASKS-CLEANUP-01` — Complete. 2026-06-07 tasks folder cleanup kept canonical live
   ledgers at top level, removed generated junk and exact duplicates, moved domain docs into

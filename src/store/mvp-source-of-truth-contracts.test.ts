@@ -285,13 +285,14 @@ test("Search results route hydrates through the service before trusting reposito
   );
 });
 
-test("Supabase app readiness waits for public content cache hydration", () => {
+test("Supabase app readiness warms the legacy cache without blocking public routes", () => {
   const bootstrap = read("src/hooks/useAppBootstrap.ts");
   const repository = read("src/lib/services/supabase/supabaseRepository.ts");
 
   assert.match(bootstrap, /refreshSupabaseRepositoryCache/);
   assert.match(bootstrap, /setIsDataSourceReady\(false\)/);
-  assert.match(bootstrap, /finally\(\(\) => \{[\s\S]*setIsDataSourceReady\(true\)/);
+  assert.match(bootstrap, /setIsDataSourceReady\(true\);[\s\S]*void refreshSupabaseRepositoryCache\(\)/);
+  assert.doesNotMatch(bootstrap, /refreshSupabaseRepositoryCache\(\)[\s\S]{0,240}\.finally\(/);
   assert.match(repository, /let hydrationPromise: Promise<void> \| null = null/);
   assert.match(repository, /if \(hydrationPromise\) return hydrationPromise/);
 });

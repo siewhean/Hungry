@@ -1,3 +1,4 @@
+import NetInfo from "@react-native-community/netinfo";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { setAnalyticsSink, trackAnalyticsEvent } from "@/lib/analytics";
 import {
@@ -10,6 +11,7 @@ import {
   setMockServiceProvider,
   setSupabaseServiceProvider,
 } from "@/lib/services/serviceProvider";
+import { isNetworkOffline } from "@/lib/network/connectivity";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useMerchantStore } from "@/store/useMerchantStore";
@@ -131,9 +133,13 @@ export function useAppBootstrap() {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    // Keep bootstrap deterministic in local/dev runs.
-    // This avoids hard runtime dependency on optional NetInfo wiring.
-    setOffline(false);
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      // `null` means the native reachability probe has not resolved yet; do
+      // not show an offline screen until connectivity is known to be absent.
+      setOffline(isNetworkOffline(state));
+    });
+
+    return unsubscribe;
   }, [setOffline]);
 
   useLayoutEffect(() => {
@@ -175,19 +181,14 @@ export function useAppBootstrap() {
     // legacy mock profiles.
     syncProfile(hasValidSupabaseAuth, authenticatedUserId);
 
-    let active = true;
+    // Discovery/detail routes hydrate through bounded RPCs. Do not keep the
+    // app shell behind the legacy repository's broad cache refresh on a slow
+    // connection; it continues as a background warm-up for legacy readers.
+    setIsDataSourceReady(true);
     const { refreshSupabaseRepositoryCache } =
       require("@/lib/services/supabase/supabaseRepository") as typeof import("@/lib/services/supabase/supabaseRepository");
     void refreshSupabaseRepositoryCache()
-      .catch(() => undefined)
-      .finally(() => {
-        if (active) {
-          setIsDataSourceReady(true);
-        }
-      });
-    return () => {
-      active = false;
-    };
+      .catch(() => undefined);
   }, [authDataSource, applyAuthStateFromSession, authenticatedUserId, isAuthenticated, isUserMode]);
 
   useEffect(() => {
