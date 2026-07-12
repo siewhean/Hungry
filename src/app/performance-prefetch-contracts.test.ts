@@ -171,6 +171,7 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   assert.match(discover, /useDeferredValue\(activeDiscoverChipIds\)/);
   assert.match(discover, /renderLeftIcon=\{\(chip, isActive\) =>/);
   assert.match(discover, /prefetchBrowseResults\(item\.query, navigation/);
+  assert.match(discover, /scheduleIdleWork\([\s\S]*preloadRoute\(navigation, "BrowseDishes"\)/);
   assert.match(discover, /<PopularFoodStyleItem/);
   assert.match(searchResultsView, /const SearchResultRow = memo/);
   assert.match(searchResultsView, /<SearchResultRow dish=\{dish\}/);
