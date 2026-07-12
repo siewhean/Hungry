@@ -24,10 +24,13 @@ test("offline recovery retries NetInfo instead of pretending the connection retu
   assert.doesNotMatch(offlineScreen, /setOffline\(false\)/);
 });
 
-test("Supabase cache warm-up does not block app-shell readiness", () => {
+test("Supabase legacy cache warm-up is opt-in and never blocks app-shell readiness", () => {
   const cacheWarmupIndex = source.indexOf("void refreshSupabaseRepositoryCache()");
   const readyIndex = source.lastIndexOf("setIsDataSourceReady(true);", cacheWarmupIndex);
 
+  assert.match(source, /EXPO_PUBLIC_HUNGRY_LEGACY_CACHE_WARMUP === "1"/);
+  assert.match(source, /if \(shouldWarmLegacyRepositoryCache\(\)\)/);
   assert.ok(readyIndex >= 0 && readyIndex < cacheWarmupIndex);
+  assert.match(source, /runAfterIdle\(\(\) => \{[\s\S]*refreshSupabaseRepositoryCache\(\)/);
   assert.doesNotMatch(source, /refreshSupabaseRepositoryCache\(\)[\s\S]{0,240}\.finally\(/);
 });

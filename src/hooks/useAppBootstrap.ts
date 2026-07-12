@@ -65,6 +65,10 @@ function runAfterIdle(callback: () => void) {
   return () => clearTimeout(timeout);
 }
 
+function shouldWarmLegacyRepositoryCache() {
+  return process.env.EXPO_PUBLIC_HUNGRY_LEGACY_CACHE_WARMUP === "1";
+}
+
 function preserveRestoredAuthState(applyAuthStateFromSession: ApplyAuthStateFromSession): boolean {
   const restoredSession = useSessionStore.getState();
   const userId = restoredSession.authenticatedUserId;
@@ -181,13 +185,18 @@ export function useAppBootstrap() {
     // legacy mock profiles.
     syncProfile(hasValidSupabaseAuth, authenticatedUserId);
 
-    // Discovery/detail routes hydrate through bounded RPCs. Do not keep the
-    // app shell behind the legacy repository's broad cache refresh on a slow
-    // connection; it continues as a background warm-up for legacy readers.
+    // Discovery/detail routes hydrate through bounded RPCs. The legacy cache
+    // loads the whole catalog, so it is opt-in for diagnostics only and never
+    // starts work on the interactive application shell by default.
     setIsDataSourceReady(true);
-    const { refreshSupabaseRepositoryCache } =
-      require("@/lib/services/supabase/supabaseRepository") as typeof import("@/lib/services/supabase/supabaseRepository");
-    void refreshSupabaseRepositoryCache().catch(() => undefined);
+    if (shouldWarmLegacyRepositoryCache()) {
+      const cancelWarmup = runAfterIdle(() => {
+        const { refreshSupabaseRepositoryCache } =
+          require("@/lib/services/supabase/supabaseRepository") as typeof import("@/lib/services/supabase/supabaseRepository");
+        void refreshSupabaseRepositoryCache().catch(() => undefined);
+      });
+      return cancelWarmup;
+    }
   }, [authDataSource, applyAuthStateFromSession, authenticatedUserId, isAuthenticated, isUserMode]);
 
   useEffect(() => {
@@ -210,7 +219,7 @@ export function useAppBootstrap() {
 
     void client.auth
       .getSession()
-      .then(async ({ data }) => {
+      .then(({ data }) => {
         if (!active) return;
         const user = data.session?.user;
         if (!user) {
@@ -221,17 +230,19 @@ export function useAppBootstrap() {
           return;
         }
 
-        try {
-          const profile = await getHungryService().profile.getProfile();
-          if (!active) return;
-          applyProfile(profile);
-        } catch {
-          // Keep the restored auth session even if profile hydration needs to retry later.
-        }
         applyAuthStateFromSession({
           isAuthenticated: true,
           userId: user.id,
         });
+        const cancelProfileHydration = runAfterIdle(() => {
+          void getHungryService()
+            .profile.getProfile()
+            .then((profile) => {
+              if (active) applyProfile(profile);
+            })
+            .catch(() => undefined);
+        });
+        if (!active) cancelProfileHydration();
       })
       .catch(() => {
         if (!active) return;
@@ -259,19 +270,13 @@ export function useAppBootstrap() {
         return;
       }
 
-      void getHungryService()
-        .profile.getProfile()
-        .then((profile) => {
-          if (active) applyProfile(profile);
-        })
-        .catch(() => undefined)
-        .finally(() => {
-          if (!active) return;
-          applyAuthStateFromSession({
-            isAuthenticated: true,
-            userId: user.id,
-          });
-        });
+      applyAuthStateFromSession({
+        isAuthenticated: true,
+        userId: user.id,
+      });
+      // Interactive sign-in already applies the session profile (and may be
+      // merging guest preferences). Do not race that merge with a second
+      // stale server read; cold-session restoration above hydrates once idle.
     });
 
     return () => {

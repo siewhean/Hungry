@@ -37,7 +37,16 @@ test("Supabase auth responses hydrate the app profile store", () => {
   assert.match(profileHelper, /useProfileStore\.getState\(\)\.applyProfile\(mergedProfile\)/);
   assert.match(loginScreen, /applySignedInProfile\(session\.profile/);
   assert.match(signUpScreen, /applySignedInProfile\(session\.profile/);
-  assert.match(bootstrap, /getHungryService\(\)\.profile\.getProfile\(\)/);
+  assert.match(
+    bootstrap,
+    /runAfterIdle\(\(\) => \{[\s\S]*getHungryService\(\)\s*\.profile\.getProfile\(\)/,
+  );
+  assert.match(
+    bootstrap,
+    /applyAuthStateFromSession\(\{[\s\S]*isAuthenticated: true,[\s\S]*userId: user\.id,[\s\S]*\}\);[\s\S]*runAfterIdle/,
+  );
+  const authSubscription = bootstrap.slice(bootstrap.indexOf("client.auth.onAuthStateChange"));
+  assert.doesNotMatch(authSubscription, /getHungryService\(\)\s*\.profile\.getProfile\(\)/);
   assert.doesNotMatch(
     loginScreen,
     /await getHungryService\(\)\.auth\.signIn\(values\.email, values\.password\);\s*\n\s*\}/,

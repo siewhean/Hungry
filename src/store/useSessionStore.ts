@@ -7,6 +7,7 @@ import { getConfiguredDataSource, type HungryDataSource } from "@/lib/services/s
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useLocationStore } from "./useLocationStore";
 import { hungryPersistStorage } from "./persistStorage";
+import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 
 export interface PendingRoute {
   name: string;
@@ -174,18 +175,23 @@ export const useSessionStore = create<SessionState>()(
         }
         const syncedProfile = getProfileStoreState().profile;
         const profileId = syncedProfile?.id ?? "guest-user";
-        identifyPostHogUser(profileId, buildPostHogIdentityProperties());
-        if (shouldAuthenticate && (options?.trackSignInEvent ?? true)) {
-          trackAnalyticsEvent(
-            "sign_in_completed",
-            {
-              method: options?.authProvider ?? "email",
-              has_completed_onboarding: options?.completedOnboarding ?? false,
-              skipped_taste_quiz: options?.skippedTasteQuiz ?? false,
-            },
-            { userId: profileId },
-          );
-        }
+        scheduleIdleWork(
+          () => {
+            identifyPostHogUser(profileId, buildPostHogIdentityProperties());
+            if (options?.trackSignInEvent ?? true) {
+              trackAnalyticsEvent(
+                "sign_in_completed",
+                {
+                  method: options?.authProvider ?? "email",
+                  has_completed_onboarding: options?.completedOnboarding ?? false,
+                  skipped_taste_quiz: options?.skippedTasteQuiz ?? false,
+                },
+                { userId: profileId },
+              );
+            }
+          },
+          { fallbackDelayMs: 0 },
+        );
       },
       completeOnboarding: (skippedQuiz = false) => {
         set({
@@ -278,19 +284,23 @@ export const useSessionStore = create<SessionState>()(
 
           const profile = getProfileStoreState().profile;
           const profileId = session.userId ?? profile?.id ?? "guest-user";
-          identifyPostHogUser(profileId, buildPostHogIdentityProperties());
-
-          if (!currentlyAuthenticated) {
-            trackAnalyticsEvent(
-              "sign_in_completed",
-              {
-                method: "email",
-                has_completed_onboarding: session.completedOnboarding ?? false,
-                skipped_taste_quiz: session.skippedTasteQuiz ?? false,
-              },
-              { userId: profileId },
-            );
-          }
+          scheduleIdleWork(
+            () => {
+              identifyPostHogUser(profileId, buildPostHogIdentityProperties());
+              if (!currentlyAuthenticated) {
+                trackAnalyticsEvent(
+                  "sign_in_completed",
+                  {
+                    method: "email",
+                    has_completed_onboarding: session.completedOnboarding ?? false,
+                    skipped_taste_quiz: session.skippedTasteQuiz ?? false,
+                  },
+                  { userId: profileId },
+                );
+              }
+            },
+            { fallbackDelayMs: 0 },
+          );
           return;
         }
 

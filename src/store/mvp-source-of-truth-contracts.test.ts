@@ -285,19 +285,26 @@ test("Search results route hydrates through the service before trusting reposito
   );
 });
 
-test("Supabase app readiness warms the legacy cache without blocking public routes", () => {
+test("Supabase app readiness keeps the legacy cache opt-in and bounded away from public routes", () => {
   const bootstrap = read("src/hooks/useAppBootstrap.ts");
   const repository = read("src/lib/services/supabase/supabaseRepository.ts");
 
   assert.match(bootstrap, /refreshSupabaseRepositoryCache/);
+  assert.match(bootstrap, /EXPO_PUBLIC_HUNGRY_LEGACY_CACHE_WARMUP === "1"/);
+  assert.match(bootstrap, /if \(shouldWarmLegacyRepositoryCache\(\)\)/);
   assert.match(bootstrap, /setIsDataSourceReady\(false\)/);
   assert.match(
     bootstrap,
-    /setIsDataSourceReady\(true\);[\s\S]*void refreshSupabaseRepositoryCache\(\)/,
+    /setIsDataSourceReady\(true\);[\s\S]*if \(shouldWarmLegacyRepositoryCache\(\)\)/,
   );
   assert.doesNotMatch(bootstrap, /refreshSupabaseRepositoryCache\(\)[\s\S]{0,240}\.finally\(/);
   assert.match(repository, /let hydrationPromise: Promise<void> \| null = null/);
   assert.match(repository, /if \(hydrationPromise\) return hydrationPromise/);
+  assert.doesNotMatch(
+    repository,
+    /\/\/ Kick off hydration on module load[\s\S]*ensureHydrated\(\);/,
+  );
+  assert.match(repository, /const venueById = new Map/);
 });
 
 test("Supabase social feed/profile history do not treat persisted local posts as canonical", () => {

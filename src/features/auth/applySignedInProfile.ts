@@ -2,6 +2,7 @@ import { NEUTRAL_TASTE_PROFILE, NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
 import type { TasteKey, TasteProfile, TasteVector, UserProfile } from "@/types/domain";
 import { useProfileStore } from "@/store/useProfileStore";
+import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 
 const TASTE_KEYS: TasteKey[] = ["sweet", "spicy", "sour", "salty", "rich", "aromatic"];
 
@@ -35,7 +36,7 @@ function hasMeaningfulGuestDietaryPreferences(profile: UserProfile) {
   return profile.id === "guest-user" && profile.dietaryPreferences.length > 0;
 }
 
-export async function applySignedInProfile(
+export function applySignedInProfile(
   sessionProfile: UserProfile,
   options: { onSyncWarning?: () => void } = {},
 ) {
@@ -59,16 +60,17 @@ export async function applySignedInProfile(
     return;
   }
 
-  try {
-    await Promise.all([
-      shouldMergeTaste
-        ? getHungryService().profile.updateTasteProfile(guestTasteProfile)
-        : Promise.resolve(),
-      shouldMergeDietary
-        ? getHungryService().profile.updateDietaryPreferences(guestProfile.dietaryPreferences)
-        : Promise.resolve(),
-    ]);
-  } catch {
-    options.onSyncWarning?.();
-  }
+  scheduleIdleWork(
+    () => {
+      void Promise.all([
+        shouldMergeTaste
+          ? getHungryService().profile.updateTasteProfile(guestTasteProfile)
+          : Promise.resolve(),
+        shouldMergeDietary
+          ? getHungryService().profile.updateDietaryPreferences(guestProfile.dietaryPreferences)
+          : Promise.resolve(),
+      ]).catch(() => options.onSyncWarning?.());
+    },
+    { fallbackDelayMs: 0 },
+  );
 }
