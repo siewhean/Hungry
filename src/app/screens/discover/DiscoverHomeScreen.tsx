@@ -1458,10 +1458,11 @@ export function DiscoverHomeScreen() {
   // ─── Idle Pulse Animation (Psychological Nudge) ───────────────────────────
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const [isPulsing, setIsPulsing] = useState(false);
+  const isPulsingRef = useRef(false);
 
   const startPulse = useCallback(() => {
-    setIsPulsing(true);
+    if (isPulsingRef.current) return;
+    isPulsingRef.current = true;
     Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
@@ -1480,15 +1481,15 @@ export function DiscoverHomeScreen() {
 
   const resetIdleTimer = useCallback(() => {
     if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-    if (isPulsing) {
+    if (isPulsingRef.current) {
       pulseAnim.stopAnimation();
       pulseAnim.setValue(1);
-      setIsPulsing(false);
+      isPulsingRef.current = false;
     }
     idleTimerRef.current = setTimeout(() => {
       startPulse();
     }, 7000); // 7 seconds of inactivity
-  }, [isPulsing, pulseAnim, startPulse]);
+  }, [pulseAnim, startPulse]);
 
   useEffect(() => {
     resetIdleTimer();
@@ -1496,6 +1497,15 @@ export function DiscoverHomeScreen() {
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
     };
   }, [resetIdleTimer]);
+
+  useEffect(() => {
+    return () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      pulseAnim.stopAnimation();
+      pulseAnim.setValue(1);
+      isPulsingRef.current = false;
+    };
+  }, [pulseAnim]);
   const discoverScrollRef = useRef<ScrollView | null>(null);
   const discoverScrollOffsetYRef = useRef(0);
   const discoverScrollDirectionRef = useRef<"up" | "down" | null>(null);
