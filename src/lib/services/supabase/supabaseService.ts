@@ -2039,6 +2039,8 @@ function mapSupabaseDish(row: Row, venue?: Row, presentation?: DishPresentation)
     unitNumber: asString(venue?.unit_number) ?? "",
     floor: asString(venue?.floor) ?? "",
     name: asString(row.name) ?? "",
+    foodTypeTag: asString(row.food_type_tag),
+    cuisineTags: asStringArray(row.cuisine_tags),
     imageUrl,
     blurhash: asString(row.blurhash),
     distanceMeters: asNumber(row.distance_meters) ?? 0,

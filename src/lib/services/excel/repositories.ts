@@ -191,6 +191,7 @@ const dishes: DishDetail[] = catalog.dishes.map((row) => {
     floor: venue?.floor ?? "",
     name: asString(record.name),
     foodTypeTag: asString(record.foodTypeTag) || undefined,
+    cuisineTags: venue?.cuisineTags ?? [],
     imageUrl,
     distanceMeters: 0,
     rating: venue?.rating ?? 0,

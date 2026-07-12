@@ -52,6 +52,13 @@ import {
   getDishImageCandidates,
   type DiscoverCardImageCandidate,
 } from "@/features/discover/bites";
+import {
+  formatDiscoverDistance,
+  formatDiscoverPrice,
+  getDiscoverAvailabilityLabel,
+  getDishFallbackImageSource,
+  getEffectiveCuisineTags,
+} from "@/features/discover/presentation";
 import { dedupeNearestVenueCandidates } from "@/features/search/venueDedupe";
 import {
   prefetchDishDetail,
@@ -148,13 +155,6 @@ type DiscoverRepositoryLookup = Pick<
 const STALL_SHOWCASE_CARD_LIMIT = 30;
 const STALL_SHOWCASE_IMAGE_REPEAT_BUFFER = 2;
 const DISCOVER_AREA_RADIUS_METERS = 3000;
-const STALL_SHOWCASE_FALLBACK_IMAGES = [
-  POPULAR_LAKSA_GRAPHIC,
-  POPULAR_CHICKEN_RICE_GRAPHIC,
-  POPULAR_CHAR_KWAY_TEOW_GRAPHIC,
-  POPULAR_BAK_CHOR_MEE_GRAPHIC,
-] as const;
-
 function buildStallShowcaseCardsFromVenues(
   venues: VenueSummary[],
   repositoryLookup: Pick<DiscoverRepositoryLookup, "getDishById" | "listDishesByVenue">,
@@ -185,7 +185,7 @@ function buildStallShowcaseCardsFromVenues(
         heroDish,
         imageSource: image.imageUrl
           ? { uri: image.imageUrl }
-          : STALL_SHOWCASE_FALLBACK_IMAGES[heroIndex % STALL_SHOWCASE_FALLBACK_IMAGES.length],
+          : getDishFallbackImageSource(heroDish),
         products,
       };
     });
@@ -200,11 +200,7 @@ function extendStallShowcaseCards(
     return [];
   }
 
-  if (cards.length >= limit) {
-    return cards.slice(0, limit);
-  }
-
-  return Array.from({ length: limit }, (_, index) => cards[index % cards.length]);
+  return cards.slice(0, limit);
 }
 
 function getStallShowcaseImageSources(card: DiscoverStallShowcaseCard) {
@@ -250,6 +246,9 @@ function searchResultToDiscoverBite(result: SearchResult, index: number): Bite {
     authorAvatar: image.imageUrl,
     dishId: dish.id,
     dishName: dish.name,
+    foodTypeTag: dish.foodTypeTag,
+    cuisineTags: dish.cuisineTags,
+    dietaryFlags: dish.dietaryFlags,
     venueId: dish.venueId,
     venueName: dish.venueName,
     unitNumber: dish.unitNumber,
@@ -264,6 +263,8 @@ function searchResultToDiscoverBite(result: SearchResult, index: number): Bite {
     savedCount: Math.max(0, Math.floor(reviewCount / 4)),
     rating: normalizedRating,
     price: dish.price,
+    priceRange: dish.priceRange,
+    distanceMeters: dish.distanceMeters,
     expiresAt: new Date(new Date(createdAt).getTime() + 24 * 60 * 60 * 1000).toISOString(),
     createdAt,
   };
@@ -340,37 +341,8 @@ function DiscoverSearchPlaceholder() {
   );
 }
 
-function DiscoverDishImagePlaceholder({
-  accessibilityLabel,
-  iconSize,
-  style,
-}: {
-  accessibilityLabel: string;
-  iconSize: number;
-  style: StyleProp<ViewStyle>;
-}) {
-  const { palette } = useHungryTheme();
-
-  return (
-    <View
-      accessibilityRole="image"
-      accessibilityLabel={accessibilityLabel}
-      style={[
-        {
-          alignItems: "center",
-          backgroundColor: palette.surfaceRaised,
-          justifyContent: "center",
-          overflow: "hidden",
-        },
-        style,
-      ]}
-    >
-      <Utensils color={palette.orange} size={iconSize} />
-    </View>
-  );
-}
-
 function DiscoverBiteImage({ bite, height }: { bite: Bite; height: number }) {
+  const { palette, radii, spacing } = useHungryTheme();
   const imageUrls = useMemo(
     () =>
       [bite.photoUrl, ...(bite.mediaUrls ?? [])].filter(
@@ -406,11 +378,112 @@ function DiscoverBiteImage({ bite, height }: { bite: Bite; height: number }) {
   }
 
   return (
-    <DiscoverDishImagePlaceholder
-      accessibilityLabel={`${bite.dishName} photo unavailable`}
-      iconSize={36}
-      style={{ height, width: "100%" }}
-    />
+    <View style={{ height, width: "100%" }}>
+      <AccessibleImage
+        source={getDishFallbackImageSource({
+          cuisineTags: bite.cuisineTags,
+          foodTypeTag: bite.foodTypeTag,
+          name: bite.dishName,
+          venueName: bite.venueName,
+        })}
+        style={{ height, width: "100%" }}
+        contentFit="cover"
+        decorative
+      />
+      <View
+        style={{
+          backgroundColor: palette.imageLabelSurface,
+          borderRadius: radii.pill,
+          bottom: spacing[2],
+          left: spacing[2],
+          paddingHorizontal: spacing[1.5],
+          paddingVertical: spacing[0.5],
+          position: "absolute",
+        }}
+      >
+        <AppText variant="micro" style={{ color: palette.textOnDark, fontWeight: "900" }}>
+          REPRESENTATIVE
+        </AppText>
+      </View>
+    </View>
+  );
+}
+
+function DiscoverCuisineBadge({ bite }: { bite: Bite }) {
+  const { palette, radii, spacing } = useHungryTheme();
+  const cuisineTags = getEffectiveCuisineTags({
+    cuisineTags: bite.cuisineTags,
+    foodTypeTag: bite.foodTypeTag,
+    name: bite.dishName,
+    venueName: bite.venueName,
+  });
+  if (!cuisineTags.length) return null;
+
+  return (
+    <View
+      pointerEvents="none"
+      style={{
+        backgroundColor: palette.imageLabelSurface,
+        borderColor: palette.imageLabelBorder,
+        borderRadius: radii.pill,
+        borderWidth: 1,
+        paddingHorizontal: spacing[1.5],
+        paddingVertical: spacing[0.5],
+        position: "absolute",
+        right: spacing[2],
+        top: spacing[2],
+      }}
+    >
+      <AppText variant="micro" style={{ color: palette.textOnDark, fontWeight: "900" }}>
+        {cuisineTags.join(" · ")}
+      </AppText>
+    </View>
+  );
+}
+
+function getDiscoverBiteAccessibilityLabel(bite: Bite) {
+  const cuisine = getEffectiveCuisineTags({
+    cuisineTags: bite.cuisineTags,
+    foodTypeTag: bite.foodTypeTag,
+    name: bite.dishName,
+    venueName: bite.venueName,
+  });
+  const distance = formatDiscoverDistance(bite.distanceMeters);
+  return `Open ${bite.dishName} at ${bite.venueName}, ${[
+    ...cuisine,
+    formatDiscoverPrice(bite),
+    distance ? `${distance} away` : "distance unavailable",
+  ].join(", ")}`;
+}
+
+function DiscoverVenueMeta({ venue, topDish }: { venue: VenueSummary; topDish?: DishDetail }) {
+  const { palette, spacing } = useHungryTheme();
+  const cuisineTags = getEffectiveCuisineTags({
+    cuisineTags: [...(venue.cuisineTags ?? []), ...(topDish?.cuisineTags ?? [])],
+    foodTypeTag: topDish?.foodTypeTag,
+    name: topDish?.name,
+    venueName: venue.name,
+  });
+  const distance = formatDiscoverDistance(topDish?.distanceMeters);
+  const availability = getDiscoverAvailabilityLabel(venue);
+
+  return (
+    <View style={{ gap: spacing[0.5] }}>
+      <AppText
+        variant="bodySmall"
+        style={{ color: palette.text, fontWeight: "800" }}
+        numberOfLines={1}
+      >
+        {venue.name}
+      </AppText>
+      <AppText variant="micro" style={{ color: palette.textSecondary }} numberOfLines={1}>
+        {[...cuisineTags, distance ? `${distance} away` : undefined].filter(Boolean).join(" · ") ||
+          "Cuisine and distance unavailable"}
+      </AppText>
+      <AppText variant="micro" style={{ color: palette.textSecondary }} numberOfLines={1}>
+        {[venue.planningArea, venue.unitNumber, availability].filter(Boolean).join(" · ")}
+      </AppText>
+    </View>
   );
 }
 
@@ -1027,9 +1100,41 @@ function VerticalStallShowcaseSection({
                             variant="micro"
                             style={{ color: palette.textOnDark, fontWeight: "900" }}
                           >
-                            {isVenueOpenFromHours(card.venue.operatingHours, card.venue.isOpen)
-                              ? "OPEN"
-                              : "CLOSED"}
+                            {getDiscoverAvailabilityLabel({
+                              isOpen: isVenueOpenFromHours(
+                                card.venue.operatingHours,
+                                card.venue.isOpen,
+                              ),
+                              operatingHours: card.venue.operatingHours,
+                            }).toUpperCase()}
+                          </AppText>
+                        </View>
+                        <View
+                          style={{
+                            backgroundColor: palette.imageLabelSurface,
+                            borderColor: palette.imageLabelBorder,
+                            borderRadius: radii.pill,
+                            borderWidth: 1,
+                            paddingHorizontal: spacing[1.5],
+                            paddingVertical: spacing[0.5],
+                            position: "absolute",
+                            right: spacing[2],
+                            top: spacing[2],
+                          }}
+                        >
+                          <AppText
+                            variant="micro"
+                            style={{ color: palette.textOnDark, fontWeight: "900" }}
+                          >
+                            {getEffectiveCuisineTags({
+                              cuisineTags: [
+                                ...(card.venue.cuisineTags ?? []),
+                                ...(card.heroDish.cuisineTags ?? []),
+                              ],
+                              foodTypeTag: card.heroDish.foodTypeTag,
+                              name: card.heroDish.name,
+                              venueName: card.venue.name,
+                            })[0] ?? "CUISINE N/A"}
                           </AppText>
                         </View>
                         <View
@@ -1095,6 +1200,9 @@ function VerticalStallShowcaseSection({
                             >
                               {card.venue.planningArea ? `${card.venue.planningArea} · ` : ""}
                               {card.venue.unitNumber}
+                              {formatDiscoverDistance(card.heroDish.distanceMeters)
+                                ? ` · ${formatDiscoverDistance(card.heroDish.distanceMeters)}`
+                                : ""}
                             </AppText>
                           </View>
                           <ChevronRight color={palette.textMuted} size={16} />
@@ -1123,7 +1231,7 @@ function VerticalStallShowcaseSection({
                               marginLeft: spacing[1],
                             }}
                           >
-                            S${card.heroDish.price.toFixed(2)}
+                            {formatDiscoverPrice(card.heroDish)}
                           </AppText>
                         </View>
                       </View>
@@ -1948,6 +2056,10 @@ export function DiscoverHomeScreen() {
     );
 
     return [...nearestChainCards].sort((a, b) => {
+      const distanceDelta =
+        (a.topDish?.distanceMeters ?? Number.MAX_SAFE_INTEGER) -
+        (b.topDish?.distanceMeters ?? Number.MAX_SAFE_INTEGER);
+      if (distanceDelta !== 0) return distanceDelta;
       const bScore = (b.topDish?.rating ?? 0) * 100 + (b.topDish?.reviewCount ?? 0);
       const aScore = (a.topDish?.rating ?? 0) * 100 + (a.topDish?.reviewCount ?? 0);
       return bScore - aScore;
@@ -2262,23 +2374,18 @@ export function DiscoverHomeScreen() {
                 </AppText>
               )}
             </View>
-            {isUserMode ? null : (
-              <View style={{ marginTop: -spacing[0.5] }}>
-                <IconButton
-                  variant="ghost"
-                  accessibilityLabel="Open map view"
-                  size={spacing[8] + spacing[2.5]}
-                  onPressIn={() => preloadRoute(navigation, "DiscoverMap")}
-                  onPress={() => navigation.navigate("DiscoverMap")}
-                  icon={
-                    <MapPinned
-                      color={themeTints.isDark ? palette.white : palette.orange}
-                      size={20}
-                    />
-                  }
-                />
-              </View>
-            )}
+            <View style={{ marginTop: -spacing[0.5] }}>
+              <IconButton
+                variant="ghost"
+                accessibilityLabel="Open map view"
+                size={spacing[8] + spacing[2.5]}
+                onPressIn={() => preloadRoute(navigation, "DiscoverMap")}
+                onPress={() => navigation.navigate("DiscoverMap")}
+                icon={
+                  <MapPinned color={themeTints.isDark ? palette.white : palette.orange} size={20} />
+                }
+              />
+            </View>
           </View>
         </View>
 
@@ -2732,7 +2839,7 @@ export function DiscoverHomeScreen() {
                 <Pressable
                   key={`quick-${bite.id}`}
                   accessibilityRole="button"
-                  accessibilityLabel={`Quick bite: ${bite.dishName}`}
+                  accessibilityLabel={getDiscoverBiteAccessibilityLabel(bite)}
                   onPressIn={() => prefetchBiteCard(bite)}
                   onPress={() => openBiteDish(bite, "quick_bite_card")}
                   style={[
@@ -2748,6 +2855,7 @@ export function DiscoverHomeScreen() {
                   ]}
                 >
                   <DiscoverBiteImage bite={bite} height={discoverRailImageHeight} />
+                  <DiscoverCuisineBadge bite={bite} />
                   <View style={{ padding: spacing[3], gap: spacing[1] }}>
                     <AppText
                       variant="bodySmallBold"
@@ -2762,6 +2870,9 @@ export function DiscoverHomeScreen() {
                       numberOfLines={1}
                     >
                       {bite.venueName}
+                      {formatDiscoverDistance(bite.distanceMeters)
+                        ? ` · ${formatDiscoverDistance(bite.distanceMeters)}`
+                        : ""}
                     </AppText>
                     <View
                       style={{
@@ -2771,7 +2882,7 @@ export function DiscoverHomeScreen() {
                       }}
                     >
                       <AppText variant="price" style={{ color: palette.orange }}>
-                        S${bite.price.toFixed(2)}
+                        {formatDiscoverPrice(bite)}
                       </AppText>
                       <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
                         <Star color={palette.amber} size={12} fill={palette.amber} />
@@ -2842,7 +2953,7 @@ export function DiscoverHomeScreen() {
                 <Pressable
                   key={`trending-${bite.id}`}
                   accessibilityRole="button"
-                  accessibilityLabel={`Open ${bite.dishName} at ${bite.venueName}`}
+                  accessibilityLabel={getDiscoverBiteAccessibilityLabel(bite)}
                   onPressIn={() => prefetchBiteCard(bite)}
                   onPress={() => openBiteDish(bite, "trending_bite_card")}
                   style={[
@@ -2858,6 +2969,7 @@ export function DiscoverHomeScreen() {
                   ]}
                 >
                   <DiscoverBiteImage bite={bite} height={discoverRailImageHeight} />
+                  <DiscoverCuisineBadge bite={bite} />
                   <View style={{ padding: spacing[3], gap: spacing[1] }}>
                     <AppText
                       variant="bodySmallBold"
@@ -2872,6 +2984,9 @@ export function DiscoverHomeScreen() {
                       numberOfLines={1}
                     >
                       {bite.venueName}
+                      {formatDiscoverDistance(bite.distanceMeters)
+                        ? ` · ${formatDiscoverDistance(bite.distanceMeters)}`
+                        : ""}
                     </AppText>
                     <View
                       style={{
@@ -2881,7 +2996,7 @@ export function DiscoverHomeScreen() {
                       }}
                     >
                       <AppText variant="price" style={{ color: palette.orange }}>
-                        S${bite.price.toFixed(2)}
+                        {formatDiscoverPrice(bite)}
                       </AppText>
                       <View
                         style={{
@@ -2974,7 +3089,7 @@ export function DiscoverHomeScreen() {
                 <Pressable
                   key={`ec-${bite.id}`}
                   accessibilityRole="button"
-                  accessibilityLabel={`Editor's choice: ${bite.dishName}`}
+                  accessibilityLabel={getDiscoverBiteAccessibilityLabel(bite)}
                   onPressIn={() => prefetchBiteCard(bite)}
                   onPress={() => openBiteDish(bite, "editor_choice_bite_card")}
                   style={[
@@ -2990,6 +3105,7 @@ export function DiscoverHomeScreen() {
                   ]}
                 >
                   <DiscoverBiteImage bite={bite} height={discoverRailImageHeight} />
+                  <DiscoverCuisineBadge bite={bite} />
                   {/* Editor badge overlay */}
                   <View
                     style={{
@@ -3020,6 +3136,9 @@ export function DiscoverHomeScreen() {
                       numberOfLines={1}
                     >
                       {bite.venueName}
+                      {formatDiscoverDistance(bite.distanceMeters)
+                        ? ` · ${formatDiscoverDistance(bite.distanceMeters)}`
+                        : ""}
                     </AppText>
                     <View
                       style={{
@@ -3029,7 +3148,7 @@ export function DiscoverHomeScreen() {
                       }}
                     >
                       <AppText variant="price" style={{ color: palette.orange }}>
-                        S${bite.price.toFixed(2)}
+                        {formatDiscoverPrice(bite)}
                       </AppText>
                       <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
                         <Star color={palette.amber} size={12} fill={palette.amber} />
@@ -3116,7 +3235,7 @@ export function DiscoverHomeScreen() {
                 <Pressable
                   key={`budget-${bite.id}`}
                   accessibilityRole="button"
-                  accessibilityLabel={`Budget meal: ${bite.dishName} at S$${bite.price.toFixed(2)}`}
+                  accessibilityLabel={getDiscoverBiteAccessibilityLabel(bite)}
                   onPressIn={() => prefetchBiteCard(bite)}
                   onPress={() => openBiteDish(bite, "budget_bite_card")}
                   style={[
@@ -3132,6 +3251,7 @@ export function DiscoverHomeScreen() {
                   ]}
                 >
                   <DiscoverBiteImage bite={bite} height={discoverRailImageHeight} />
+                  <DiscoverCuisineBadge bite={bite} />
                   <View style={{ padding: spacing[3], gap: spacing[1] }}>
                     <AppText
                       variant="bodySmallBold"
@@ -3146,12 +3266,15 @@ export function DiscoverHomeScreen() {
                       numberOfLines={1}
                     >
                       {bite.venueName}
+                      {formatDiscoverDistance(bite.distanceMeters)
+                        ? ` · ${formatDiscoverDistance(bite.distanceMeters)}`
+                        : ""}
                     </AppText>
                     <AppText
                       variant="price"
                       style={{ color: palette.orange, fontWeight: "700", marginTop: spacing[0.5] }}
                     >
-                      S${bite.price.toFixed(2)}
+                      {formatDiscoverPrice(bite)}
                     </AppText>
                   </View>
                 </Pressable>
@@ -3229,7 +3352,7 @@ export function DiscoverHomeScreen() {
                   <Pressable
                     key={`night-${bite.id}`}
                     accessibilityRole="button"
-                    accessibilityLabel={`Late night option: ${bite.dishName}`}
+                    accessibilityLabel={getDiscoverBiteAccessibilityLabel(bite)}
                     onPressIn={() => prefetchBiteCard(bite)}
                     onPress={() => openBiteDish(bite, "late_night_bite_card")}
                     style={[
@@ -3245,6 +3368,7 @@ export function DiscoverHomeScreen() {
                     ]}
                   >
                     <DiscoverBiteImage bite={bite} height={discoverRailImageHeight} />
+                    <DiscoverCuisineBadge bite={bite} />
                     <View style={{ padding: spacing[3], gap: spacing[1] }}>
                       <AppText
                         variant="bodySmallBold"
@@ -3259,9 +3383,12 @@ export function DiscoverHomeScreen() {
                         numberOfLines={1}
                       >
                         {bite.venueName}
+                        {formatDiscoverDistance(bite.distanceMeters)
+                          ? ` · ${formatDiscoverDistance(bite.distanceMeters)}`
+                          : ""}
                       </AppText>
                       <AppText variant="price" style={{ color: palette.orange, fontWeight: "700" }}>
-                        S${bite.price.toFixed(2)}
+                        {formatDiscoverPrice(bite)}
                       </AppText>
                     </View>
                   </Pressable>
@@ -3291,18 +3418,17 @@ export function DiscoverHomeScreen() {
             <AppText variant="h2" style={{ color: themeTints.text }}>
               Stalls in {discoverLocationLabel}
             </AppText>
-            {isUserMode ? null : (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="View hawker centres on map"
-                onPressIn={() => preloadRoute(navigation, "DiscoverMap")}
-                onPress={() => navigation.navigate("DiscoverMap")}
-              >
-                <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
-                  VIEW MAP
-                </AppText>
-              </Pressable>
-            )}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="View hawker centres on map"
+              hitSlop={12}
+              onPressIn={() => preloadRoute(navigation, "DiscoverMap")}
+              onPress={() => navigation.navigate("DiscoverMap")}
+            >
+              <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
+                VIEW MAP
+              </AppText>
+            </Pressable>
           </View>
           <View style={{ gap: discoverContentGap }}>
             {showDiscoverFilterRailSkeleton ? (
@@ -3351,22 +3477,8 @@ export function DiscoverHomeScreen() {
                   ]}
                 >
                   <DiscoverStallThumbnail venue={venue} />
-                  <View style={{ flex: 1, gap: 2 }}>
-                    <AppText
-                      variant="bodySmall"
-                      style={{ fontWeight: "800", color: themeTints.text }}
-                      numberOfLines={1}
-                    >
-                      {venue.name}
-                    </AppText>
-                    <AppText
-                      variant="micro"
-                      style={{ color: themeTints.secondaryText }}
-                      numberOfLines={1}
-                    >
-                      {venue.planningArea ? `${venue.planningArea} · ` : ""}
-                      {venue.unitNumber} · {venue.operatingHours.split(" – ")[0]}
-                    </AppText>
+                  <View style={{ flex: 1 }}>
+                    <DiscoverVenueMeta venue={venue} topDish={topDish} />
                   </View>
                   <ChevronRight color={palette.textMuted} size={20} />
                 </Pressable>

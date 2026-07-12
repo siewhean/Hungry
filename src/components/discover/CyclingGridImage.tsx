@@ -6,11 +6,14 @@ import {
   View,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
+  type ImageSourcePropType,
   type StyleProp,
   type ViewStyle,
 } from "react-native";
 
 import { AccessibleImage } from "@/components/ui/AccessibleImage";
+import { AppText } from "@/components/ui/AppText";
+import { useHungryTheme } from "@/theme";
 
 const DEFAULT_CYCLE_MS = 4000;
 const AUTO_ADVANCE_SETTLE_MS = 520;
@@ -22,7 +25,9 @@ interface CyclingGridImageProps {
   startDelayMs?: number;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
+  fallbackImageSource?: ImageSourcePropType;
   onActiveIndexChange?: (index: number) => void;
+  onActiveImageChange?: (imageUrl?: string) => void;
 }
 
 export function CyclingGridImage({
@@ -32,8 +37,11 @@ export function CyclingGridImage({
   startDelayMs = 0,
   style,
   accessibilityLabel = "Featured food image",
+  fallbackImageSource,
   onActiveIndexChange,
+  onActiveImageChange,
 }: CyclingGridImageProps) {
+  const { palette, radii, spacing } = useHungryTheme();
   const containerRef = useRef<View | null>(null);
   const scrollRef = useRef<ScrollView | null>(null);
   const onActiveIndexChangeRef = useRef(onActiveIndexChange);
@@ -51,10 +59,15 @@ export function CyclingGridImage({
         .filter((image) => image.trim().length > 0 && !failedUrls.includes(image)),
     [failedUrls, imageSignature],
   );
+  const activeImage = safeImages[activeIndex] ?? safeImages[0];
 
   useEffect(() => {
     onActiveIndexChangeRef.current = onActiveIndexChange;
   }, [onActiveIndexChange]);
+
+  useEffect(() => {
+    onActiveImageChange?.(activeImage);
+  }, [activeImage, onActiveImageChange]);
 
   const commitIndex = useCallback(
     (nextIndex: number) => {
@@ -236,10 +249,37 @@ export function CyclingGridImage({
     });
   }, []);
 
-  const activeImage = safeImages[activeIndex] ?? safeImages[0];
-
   if (!activeImage) {
-    return <View style={[styles.container, style]} />;
+    return fallbackImageSource ? (
+      <View style={[styles.container, style]}>
+        <AccessibleImage
+          source={fallbackImageSource}
+          accessibilityLabel={`${accessibilityLabel} representative image`}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+        />
+        <View
+          style={{
+            backgroundColor: palette.imageLabelSurface,
+            borderRadius: radii.pill,
+            left: spacing[2],
+            paddingHorizontal: spacing[1.5],
+            paddingVertical: spacing[0.5],
+            position: "absolute",
+            top: spacing[12],
+          }}
+        >
+          <AppText variant="micro" style={{ color: palette.textOnDark, fontWeight: "900" }}>
+            REPRESENTATIVE
+          </AppText>
+        </View>
+      </View>
+    ) : (
+      <View
+        accessibilityLabel={`${accessibilityLabel} unavailable`}
+        style={[styles.container, style]}
+      />
+    );
   }
 
   return (

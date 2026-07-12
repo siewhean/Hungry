@@ -8,7 +8,7 @@ import {
   Animated,
   type ViewToken,
 } from "react-native";
-import { ArrowLeft, MapPinned, Heart, Utensils } from "lucide-react-native";
+import { ArrowLeft, MapPinned, Heart } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -50,6 +50,15 @@ import {
   getDiscoverBites,
   type DiscoverCollection,
 } from "@/features/discover/bites";
+import { isUsableDiscoverImageUrl } from "@/features/discover/bites";
+import {
+  formatDiscoverDistance,
+  formatDiscoverPrice,
+  getDishFallbackImageSource,
+  getEffectiveCuisineTags,
+  getUsableDiscoverImageFrames,
+  matchesDiscoverCategory,
+} from "@/features/discover/presentation";
 
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 type QuickBitesRoute = RouteProp<RootStackParamList, "QuickBites">;
@@ -59,32 +68,13 @@ type QuickBiteCycleFrame = {
   item: QuickBiteGridItem;
 };
 
-function QuickBiteImagePlaceholder({ height }: { height: number }) {
-  const { palette } = useHungryTheme();
-
-  return (
-    <View
-      accessibilityRole="image"
-      accessibilityLabel="Food photo unavailable"
-      style={{
-        alignItems: "center",
-        backgroundColor: palette.surfaceRaised,
-        height,
-        justifyContent: "center",
-        width: "100%",
-      }}
-    >
-      <Utensils color={palette.orange} size={28} />
-    </View>
-  );
-}
-
 function QuickBiteCarouselImage({ bite }: { bite: Bite }) {
+  const { palette, radii, spacing } = useHungryTheme();
   const imageUrls = useMemo(
     () =>
       [bite.photoUrl, ...(bite.mediaUrls ?? [])].filter(
         (imageUrl, index, imageUrls) =>
-          imageUrl.trim().length > 0 && imageUrls.indexOf(imageUrl) === index,
+          isUsableDiscoverImageUrl(imageUrl) && imageUrls.indexOf(imageUrl) === index,
       ),
     [bite.mediaUrls, bite.photoUrl],
   );
@@ -97,7 +87,36 @@ function QuickBiteCarouselImage({ bite }: { bite: Bite }) {
   }, [imageSignature]);
 
   if (!activeImageUrl) {
-    return <QuickBiteImagePlaceholder height={104} />;
+    return (
+      <View style={{ height: 104, width: "100%" }}>
+        <AccessibleImage
+          source={getDishFallbackImageSource({
+            cuisineTags: bite.cuisineTags,
+            foodTypeTag: bite.foodTypeTag,
+            name: bite.dishName,
+            venueName: bite.venueName,
+          })}
+          accessibilityLabel={`${bite.dishName} representative image`}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+        />
+        <View
+          style={{
+            backgroundColor: palette.imageLabelSurface,
+            borderRadius: radii.pill,
+            bottom: spacing[2],
+            left: spacing[2],
+            paddingHorizontal: spacing[1.5],
+            paddingVertical: spacing[0.5],
+            position: "absolute",
+          }}
+        >
+          <AppText variant="micro" style={{ color: palette.textOnDark, fontWeight: "900" }}>
+            REPRESENTATIVE
+          </AppText>
+        </View>
+      </View>
+    );
   }
 
   return (
@@ -127,7 +146,7 @@ function getQuickBiteCycleSlides(item: QuickBiteGridItem, items: QuickBiteGridIt
 function getQuickBiteImageUrls(item: Bite) {
   return [item.photoUrl, ...(item.mediaUrls ?? [])].filter(
     (imageUrl, index, imageUrls) =>
-      imageUrl.trim().length > 0 && imageUrls.indexOf(imageUrl) === index,
+      isUsableDiscoverImageUrl(imageUrl) && imageUrls.indexOf(imageUrl) === index,
   );
 }
 
@@ -157,20 +176,36 @@ function QuickBiteGridCard({
   const { palette } = useHungryTheme();
   const slides = useMemo(() => getQuickBiteCycleSlides(item, allItems), [allItems, item]);
   const cycleFrames = useMemo(() => getQuickBiteCycleFrames(slides), [slides]);
+  const usableCycleFrames = useMemo(
+    () => getUsableDiscoverImageFrames(cycleFrames, isUsableDiscoverImageUrl),
+    [cycleFrames],
+  );
   const [activeIndex, setActiveIndex] = useState(0);
-  const activeSlide = cycleFrames[activeIndex]?.item ?? slides[activeIndex] ?? item;
+  const [activeImageUrl, setActiveImageUrl] = useState<string>();
+  const activeSlide =
+    usableCycleFrames.find((frame) => frame.imageUrl === activeImageUrl)?.item ??
+    usableCycleFrames[activeIndex]?.item ??
+    slides[activeIndex] ??
+    item;
   const handleActiveIndexChange = useCallback((nextIndex: number) => {
     setActiveIndex(nextIndex);
   }, []);
+  const handleActiveImageChange = useCallback((imageUrl?: string) => {
+    setActiveImageUrl(imageUrl);
+  }, []);
 
   useEffect(() => {
-    if (activeIndex >= Math.max(cycleFrames.length, slides.length)) {
+    if (activeIndex >= Math.max(usableCycleFrames.length, slides.length)) {
       setActiveIndex(0);
     }
-  }, [activeIndex, cycleFrames.length, slides.length]);
+  }, [activeIndex, slides.length, usableCycleFrames.length]);
 
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Open ${activeSlide.dishName} at ${activeSlide.venueName}, ${formatDiscoverPrice(
+        activeSlide,
+      )}, ${formatDiscoverDistance(activeSlide.distance) ?? "distance unavailable"}`}
       onPressIn={() => onPrefetch(activeSlide)}
       onPress={() => onOpen(activeSlide)}
       style={{
@@ -182,13 +217,19 @@ function QuickBiteGridCard({
         borderColor: palette.border,
       }}
     >
-      <QuickBiteImagePlaceholder height={itemWidth * 1.35} />
       <CyclingGridImage
-        images={cycleFrames.map((frame) => frame.imageUrl)}
+        images={usableCycleFrames.map((frame) => frame.imageUrl)}
+        fallbackImageSource={getDishFallbackImageSource({
+          cuisineTags: activeSlide.cuisineTags,
+          foodTypeTag: activeSlide.foodTypeTag,
+          name: activeSlide.dishName,
+          venueName: activeSlide.venueName,
+        })}
         cycleMs={CYCLING_GRID_IMAGE_INTERVAL_MS}
         isAutoCycleActive={isAutoCycleActive}
         startDelayMs={(index % 4) * 350}
         onActiveIndexChange={handleActiveIndexChange}
+        onActiveImageChange={handleActiveImageChange}
         style={StyleSheet.absoluteFill}
       />
       <LinearGradient
@@ -202,8 +243,23 @@ function QuickBiteGridCard({
           <AppText
             variant="micro"
             style={{ color: palette.white, fontWeight: "700", fontSize: 10 }}
+            numberOfLines={1}
           >
             {activeSlide.authorName}
+          </AppText>
+        </View>
+        <View style={[styles.cuisineBadge, { backgroundColor: palette.imageLabelSurface }]}>
+          <AppText
+            variant="micro"
+            style={{ color: palette.textOnDark, fontSize: 9, fontWeight: "900" }}
+            numberOfLines={1}
+          >
+            {getEffectiveCuisineTags({
+              cuisineTags: activeSlide.cuisineTags,
+              foodTypeTag: activeSlide.foodTypeTag,
+              name: activeSlide.dishName,
+              venueName: activeSlide.venueName,
+            })[0] ?? "Cuisine unavailable"}
           </AppText>
         </View>
         <View style={{ flex: 1 }} />
@@ -214,25 +270,39 @@ function QuickBiteGridCard({
         >
           {activeSlide.dishName}
         </AppText>
-        <View style={styles.metaRow}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
-            <MapPinned size={10} color={palette.white} />
-            <AppText
-              variant="micro"
-              style={{ color: palette.white, fontWeight: "600", fontSize: 10 }}
-            >
-              {activeSlide.distance}m
-            </AppText>
+        <View style={styles.metaBlock}>
+          <View style={styles.metaRow}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
+              <MapPinned size={10} color={palette.white} />
+              <AppText
+                variant="micro"
+                style={{ color: palette.white, fontWeight: "600", fontSize: 10 }}
+              >
+                {formatDiscoverDistance(activeSlide.distance) ?? "—"}
+              </AppText>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+              <Heart
+                size={10}
+                color={palette.white}
+                fill={palette.white}
+                style={{ opacity: 0.8 }}
+              />
+              <AppText
+                variant="micro"
+                style={{ color: palette.white, fontWeight: "700", fontSize: 10 }}
+              >
+                {activeSlide.cravingCount}
+              </AppText>
+            </View>
           </View>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
-            <Heart size={10} color={palette.white} fill={palette.white} style={{ opacity: 0.8 }} />
-            <AppText
-              variant="micro"
-              style={{ color: palette.white, fontWeight: "700", fontSize: 10 }}
-            >
-              {activeSlide.cravingCount}
-            </AppText>
-          </View>
+          <AppText
+            variant="micro"
+            style={{ color: palette.white, fontSize: 10, fontWeight: "900", textAlign: "right" }}
+            numberOfLines={1}
+          >
+            {formatDiscoverPrice(activeSlide)}
+          </AppText>
         </View>
       </View>
     </Pressable>
@@ -389,13 +459,18 @@ export function QuickBitesScreen() {
   const filteredBites = useMemo(() => {
     const list = collectionBites
       .filter((bite) => {
-        const cuisine = selectedCuisine.toLowerCase();
-        const matchesCuisine =
-          cuisine === "all" ||
-          bite.caption.toLowerCase().includes(cuisine) ||
-          bite.dishName.toLowerCase().includes(cuisine);
-
-        return matchesCuisine;
+        return matchesDiscoverCategory(
+          {
+            cuisineTags: bite.cuisineTags,
+            dietaryFlags: bite.dietaryFlags,
+            foodTypeTag: bite.foodTypeTag,
+            name: bite.dishName,
+            spicyLevel: bite.tasteStamp.spicy,
+            tasteTags: bite.tags,
+            venueName: bite.venueName,
+          },
+          selectedCuisine,
+        );
       })
       .map((bite) => {
         return { ...bite, distance: getDiscoverBiteDistance(bite) };
@@ -457,7 +532,9 @@ export function QuickBitesScreen() {
               <Pressable
                 key={`carousel-${bite.id}`}
                 accessibilityRole="button"
-                accessibilityLabel={`Open ${bite.dishName} at ${bite.venueName}`}
+                accessibilityLabel={`Open ${bite.dishName} at ${bite.venueName}, ${formatDiscoverPrice(
+                  bite,
+                )}, ${formatDiscoverDistance(bite.distanceMeters) ?? "distance unavailable"}`}
                 onPressIn={() => prefetchBiteRoute(bite)}
                 onPress={() => navigation.navigate("DishDetail", { dishId: bite.dishId })}
                 style={[
@@ -476,9 +553,12 @@ export function QuickBitesScreen() {
                   </AppText>
                   <AppText variant="micro" tone="secondary" numberOfLines={1}>
                     {bite.venueName}
+                    {formatDiscoverDistance(bite.distanceMeters)
+                      ? ` · ${formatDiscoverDistance(bite.distanceMeters)}`
+                      : ""}
                   </AppText>
                   <AppText variant="price" style={{ color: palette.orange }}>
-                    S${bite.price.toFixed(2)}
+                    {formatDiscoverPrice(bite)}
                   </AppText>
                 </View>
               </Pressable>
@@ -625,10 +705,20 @@ const styles = StyleSheet.create({
     width: 72,
   },
   cardContent: { ...StyleSheet.absoluteFillObject, padding: 10, justifyContent: "flex-end" },
+  cuisineBadge: {
+    borderRadius: 12,
+    maxWidth: "34%",
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    position: "absolute",
+    right: 8,
+    top: 8,
+  },
   authorBadge: {
     position: "absolute",
     top: 8,
     left: 8,
+    maxWidth: "58%",
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
@@ -636,7 +726,8 @@ const styles = StyleSheet.create({
     paddingRight: 8,
     borderRadius: 12,
   },
-  metaRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  metaBlock: { gap: 2 },
+  metaRow: { flexDirection: "row", gap: 12, alignItems: "center" },
   carouselCard: {
     borderWidth: 1,
     overflow: "hidden",

@@ -315,6 +315,9 @@ export interface Bite {
   authorAvatar?: string;
   dishId: string;
   dishName: string;
+  foodTypeTag?: string;
+  cuisineTags?: string[];
+  dietaryFlags?: DietaryFlag[];
   venueId: string;
   venueName: string;
   unitNumber: string;
@@ -339,6 +342,8 @@ export interface Bite {
   savedCount: number;
   rating: number;
   price: number;
+  priceRange?: string;
+  distanceMeters?: number;
   expiresAt: string; // ISO 8601 — Bites expire after 7 days
   createdAt: string;
 }

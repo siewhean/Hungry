@@ -214,7 +214,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /id: string/);
   assert.match(discover, /imageSource: ImageSourcePropType/);
   assert.match(discover, /const STALL_SHOWCASE_CARD_LIMIT = 30/);
-  assert.match(discover, /const STALL_SHOWCASE_FALLBACK_IMAGES = \[/);
+  assert.doesNotMatch(discover, /const STALL_SHOWCASE_FALLBACK_IMAGES = \[/);
   assert.match(discover, /function buildStallShowcaseCardsFromVenues/);
   assert.match(discover, /repositoryLookup: Pick<DiscoverRepositoryLookup/);
   assert.match(
@@ -226,15 +226,9 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /return heroCandidates\.map\(\(heroDish, heroIndex\) =>/);
   assert.match(discover, /const image = getDiscoverCardImage\(\[/);
   assert.match(discover, /\.\.\.getDishImageCandidates\(heroDish\)/);
-  assert.match(
-    discover,
-    /STALL_SHOWCASE_FALLBACK_IMAGES\[heroIndex % STALL_SHOWCASE_FALLBACK_IMAGES\.length\]/,
-  );
+  assert.match(discover, /getDishFallbackImageSource\(heroDish\)/);
   assert.match(discover, /function extendStallShowcaseCards/);
-  assert.match(
-    discover,
-    /Array\.from\(\{ length: limit \}, \(_, index\) => cards\[index % cards\.length\]\)/,
-  );
+  assert.match(discover, /return cards\.slice\(0, limit\)/);
   assert.match(discover, /function VerticalStallShowcaseSection/);
   assert.match(discover, /const unfilteredStallShowcaseCards = useMemo/);
   assert.match(discover, /const stallShowcaseCards = useMemo/);
@@ -551,7 +545,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /S\$\{bite\.price\.toFixed\(2\)\}[\s\S]*<Star color=\{palette\.amber\} size=\{12\} fill=\{palette\.amber\} \/>[\s\S]*\{bite\.rating\.toFixed\(1\)\}/,
+    /\{formatDiscoverPrice\(bite\)\}[\s\S]*<Star color=\{palette\.amber\} size=\{12\} fill=\{palette\.amber\} \/>[\s\S]*\{bite\.rating\.toFixed\(1\)\}/,
   );
   assert.match(
     discover,
@@ -594,16 +588,12 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     discover,
     /const shouldShowPopularFoodSkeleton =[\s\S]*showPopularFoodSkeleton \|\| showPopularFoodFilterSkeleton \|\| showInitialDiscoverSkeleton/,
   );
-  assert.match(discover, /function DiscoverDishImagePlaceholder\(/);
-  assert.match(discover, /backgroundColor: palette\.surfaceRaised/);
-  assert.match(discover, /<Utensils color=\{palette\.orange\} size=\{iconSize\} \/>/);
+  assert.doesNotMatch(discover, /function DiscoverDishImagePlaceholder\(/);
   assert.match(discover, /function DiscoverBiteImage\(\{ bite, height \}/);
   assert.match(discover, /\[bite\.photoUrl, \.\.\.\(bite\.mediaUrls \?\? \[\]\)\]/);
   assert.match(discover, /source=\{\{ uri: activeImageUrl \}\}/);
-  assert.match(
-    discover,
-    /<DiscoverDishImagePlaceholder[\s\S]*accessibilityLabel=\{`\$\{bite\.dishName\} photo unavailable`\}/,
-  );
+  assert.match(discover, /source=\{getDishFallbackImageSource\(\{/);
+  assert.match(discover, /REPRESENTATIVE/);
   assert.match(discover, /<DiscoverBiteImage bite=\{bite\} height=\{discoverRailImageHeight\} \/>/);
   assert.match(discover, /function DiscoverStallThumbnail\(/);
   assert.match(discover, /import \{ StallLogoMark \} from "@\/components\/stall\/StallLogoMark"/);
@@ -943,8 +933,11 @@ test("Quick Bites contract: empty-state icon is not clipped", () => {
   assert.match(quickBites, /export const COLLECTION_COPY/);
   assert.match(quickBites, /getDiscoverBites/);
   assert.match(quickBites, /function getQuickBiteCycleFrames/);
-  assert.match(quickBites, /images=\{cycleFrames\.map\(\(frame\) => frame\.imageUrl\)\}/);
-  assert.match(quickBites, /const activeSlide = cycleFrames\[activeIndex\]\?\.item/);
+  assert.match(quickBites, /images=\{usableCycleFrames\.map\(\(frame\) => frame\.imageUrl\)\}/);
+  assert.match(
+    quickBites,
+    /usableCycleFrames\.find\(\(frame\) => frame\.imageUrl === activeImageUrl\)\?\.item/,
+  );
   assert.match(discoverBites, /export function getDiscoverBiteCollection/);
   assert.match(discoverBites, /export function syncBiteWithDish/);
   assert.match(discoverBites, /dishName: dish\.name/);

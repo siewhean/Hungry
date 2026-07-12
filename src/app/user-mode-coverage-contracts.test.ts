@@ -177,7 +177,7 @@ test("home feed post cards cover carousel media, captions, comments, reactions, 
   );
 });
 
-test("discover and search keep user mode map-free while browse grids open matching dish details", () => {
+test("discover and search expose FDO map access while browse grids open matching dish details", () => {
   const discover = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
   const quickBites = readRepoFile("src/app/screens/discover/QuickBitesScreen.tsx");
   const searchResults = readRepoFile("src/app/screens/search/SearchResultsScreen.tsx");
@@ -188,7 +188,7 @@ test("discover and search keep user mode map-free while browse grids open matchi
     discover,
     [
       /const isUserMode = !isDeveloperMode && !isMerchantMode/,
-      /\{isUserMode \? null : \(/,
+      /VIEW MAP/,
       /navigation\.navigate\("StallDetail", \{ venueId: venue\.id \}\)/,
       /navigation\.navigate\("MapZoomedIn", \{[\s\S]*buildingId: venue\.buildingId/,
       /navigation\.navigate\("BrowseStalls"\)/,
@@ -228,7 +228,7 @@ test("discover and search keep user mode map-free while browse grids open matchi
     [
       /title: dish\.name,[\s\S]*imageUrl: dish\.imageUrl,[\s\S]*dish,/,
       /title: topDish\.name,[\s\S]*imageUrl: topDish\.imageUrl,[\s\S]*dish: topDish/,
-      /images=\{slides\.map\(\(slide\) => slide\.imageUrl\)\}/,
+      /getUsableDiscoverImageFrames\(slides, isUsableDiscoverImageUrl\)/,
       /\{activeSlide\.title\}/,
       /navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dish\.id \}\)/,
       /navigation\.navigate\("DishDetail", \{ dishId: dish\.id \}\)/,

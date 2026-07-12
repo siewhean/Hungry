@@ -64,6 +64,8 @@ test("Two-column image grids cycle images every four seconds with page-scoped sl
   assert.match(cyclingImage, /const onActiveIndexChangeRef = useRef\(onActiveIndexChange\)/);
   assert.match(cyclingImage, /onActiveIndexChangeRef\.current = onActiveIndexChange/);
   assert.match(cyclingImage, /onActiveIndexChangeRef\.current\?\.\(normalizedIndex\)/);
+  assert.match(cyclingImage, /onActiveImageChange\?\.\(activeImage\)/);
+  assert.match(cyclingImage, /REPRESENTATIVE/);
   assert.match(cyclingImage, /measureInWindow/);
   assert.match(cyclingImage, /isFullyVisible/);
   assert.match(cyclingImage, /onMomentumScrollEnd=\{handleScrollEnd\}/);
@@ -71,6 +73,7 @@ test("Two-column image grids cycle images every four seconds with page-scoped sl
   assert.match(cyclingImage, /onScrollEndDrag=\{handleScrollEndDrag\}/);
 
   assert.match(quickBites, /getQuickBiteCycleSlides/);
+  assert.match(quickBites, /getUsableDiscoverImageFrames\(cycleFrames, isUsableDiscoverImageUrl\)/);
   assert.match(quickBites, /candidate\.venueId !== item\.venueId/);
   assert.match(quickBites, /itemVisiblePercentThreshold: 100/);
   assert.match(quickBites, /fullyVisibleBiteIds\.has\(item\.id\)/);
@@ -84,6 +87,7 @@ test("Two-column image grids cycle images every four seconds with page-scoped sl
   );
 
   assert.match(browseGrid, /getCrossStallBrowseSlides/);
+  assert.match(browseGrid, /getUsableDiscoverImageFrames\(slides, isUsableDiscoverImageUrl\)/);
   assert.match(browseGrid, /candidate\.dish\.venueId !== item\.dish\.venueId/);
   assert.match(browseGrid, /getStallBrowseSlides/);
   assert.match(browseGrid, /itemVisiblePercentThreshold: 100/);

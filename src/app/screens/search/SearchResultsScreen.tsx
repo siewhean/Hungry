@@ -23,6 +23,14 @@ import {
   CyclingGridImage,
   CYCLING_GRID_IMAGE_INTERVAL_MS,
 } from "@/components/discover/CyclingGridImage";
+import {
+  formatDiscoverDistance,
+  formatDiscoverPrice,
+  getDishFallbackImageSource,
+  getEffectiveCuisineTags,
+  getUsableDiscoverImageFrames,
+} from "@/features/discover/presentation";
+import { isUsableDiscoverImageUrl } from "@/features/discover/bites";
 import { SearchResultsView } from "@/components/discover/SearchResultsView";
 import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
@@ -110,21 +118,48 @@ function BrowseGridCard({
 }) {
   const { palette } = useHungryTheme();
   const [activeIndex, setActiveIndex] = useState(0);
-  const activeSlide = slides[activeIndex] ?? item;
+  const [activeImageUrl, setActiveImageUrl] = useState<string>();
+  const usableSlides = useMemo(
+    () => getUsableDiscoverImageFrames(slides, isUsableDiscoverImageUrl),
+    [slides],
+  );
+  const activeSlide =
+    usableSlides.find((slide) => slide.imageUrl === activeImageUrl) ??
+    usableSlides[activeIndex] ??
+    slides[activeIndex] ??
+    item;
+  const cuisineTags = getEffectiveCuisineTags({
+    cuisineTags: [
+      ...(activeSlide.dish.cuisineTags ?? []),
+      ...(activeSlide.venue?.cuisineTags ?? []),
+    ],
+    foodTypeTag: activeSlide.dish.foodTypeTag,
+    name: activeSlide.dish.name,
+    venueName: activeSlide.venueName,
+  });
+  const distanceLabel = formatDiscoverDistance(activeSlide.distanceMeters);
+  const priceLabel = formatDiscoverPrice(activeSlide.dish);
   const handleActiveIndexChange = useCallback((nextIndex: number) => {
     setActiveIndex(nextIndex);
   }, []);
+  const handleActiveImageChange = useCallback((imageUrl?: string) => {
+    setActiveImageUrl(imageUrl);
+  }, []);
 
   useEffect(() => {
-    if (activeIndex >= slides.length) {
+    if (activeIndex >= Math.max(usableSlides.length, 1)) {
       setActiveIndex(0);
     }
-  }, [activeIndex, slides.length]);
+  }, [activeIndex, usableSlides.length]);
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Open ${activeSlide.title}`}
+      accessibilityLabel={`Open ${activeSlide.title} at ${activeSlide.venueName}, ${[
+        ...cuisineTags,
+        priceLabel,
+        distanceLabel ? `${distanceLabel} away` : "distance unavailable",
+      ].join(", ")}`}
       onPressIn={() => onPrefetch(activeSlide)}
       onPress={() => onOpen(activeSlide)}
       style={{
@@ -138,11 +173,18 @@ function BrowseGridCard({
       }}
     >
       <CyclingGridImage
-        images={slides.map((slide) => slide.imageUrl)}
+        images={usableSlides.map((slide) => slide.imageUrl)}
+        fallbackImageSource={getDishFallbackImageSource({
+          cuisineTags,
+          foodTypeTag: activeSlide.dish.foodTypeTag,
+          name: activeSlide.dish.name,
+          venueName: activeSlide.venueName,
+        })}
         cycleMs={CYCLING_GRID_IMAGE_INTERVAL_MS}
         isAutoCycleActive={isAutoCycleActive}
         startDelayMs={(index % 4) * 350}
         onActiveIndexChange={handleActiveIndexChange}
+        onActiveImageChange={handleActiveImageChange}
         style={StyleSheet.absoluteFill}
       />
       <LinearGradient
@@ -161,6 +203,15 @@ function BrowseGridCard({
             {activeSlide.authorName}
           </AppText>
         </View>
+        <View style={[browseStyles.cuisineBadge, { backgroundColor: palette.imageLabelSurface }]}>
+          <AppText
+            variant="micro"
+            style={{ color: palette.textOnDark, fontSize: 9, fontWeight: "900" }}
+            numberOfLines={1}
+          >
+            {cuisineTags[0] ?? "Cuisine unavailable"}
+          </AppText>
+        </View>
         <View style={{ flex: 1 }} />
         <AppText
           variant="bodySmallBold"
@@ -169,25 +220,34 @@ function BrowseGridCard({
         >
           {activeSlide.title}
         </AppText>
-        <View style={browseStyles.metaRow}>
-          <View style={{ alignItems: "center", flexDirection: "row", gap: 2 }}>
-            <MapPinned color={palette.white} size={10} />
-            <AppText
-              variant="micro"
-              style={{ color: palette.white, fontSize: 10, fontWeight: "600" }}
-            >
-              {Math.round(activeSlide.distanceMeters)}m
-            </AppText>
+        <View style={browseStyles.metaBlock}>
+          <View style={browseStyles.metaRow}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 2 }}>
+              <MapPinned color={palette.white} size={10} />
+              <AppText
+                variant="micro"
+                style={{ color: palette.white, fontSize: 10, fontWeight: "600" }}
+              >
+                {distanceLabel ?? "—"}
+              </AppText>
+            </View>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 3 }}>
+              <MessageCircle color={palette.white} size={10} style={{ opacity: 0.82 }} />
+              <AppText
+                variant="micro"
+                style={{ color: palette.white, fontSize: 10, fontWeight: "700" }}
+              >
+                {activeSlide.reviewCount}
+              </AppText>
+            </View>
           </View>
-          <View style={{ alignItems: "center", flexDirection: "row", gap: 3 }}>
-            <MessageCircle color={palette.white} size={10} style={{ opacity: 0.82 }} />
-            <AppText
-              variant="micro"
-              style={{ color: palette.white, fontSize: 10, fontWeight: "700" }}
-            >
-              {activeSlide.reviewCount}
-            </AppText>
-          </View>
+          <AppText
+            variant="micro"
+            style={{ color: palette.white, fontSize: 10, fontWeight: "900", textAlign: "right" }}
+            numberOfLines={1}
+          >
+            {priceLabel}
+          </AppText>
         </View>
       </View>
     </Pressable>
@@ -513,6 +573,15 @@ function BrowseGridScreen({
         item.dish.name,
         item.dish.tasteTags.join(" "),
         item.dish.dietaryFlags.join(" "),
+        item.dish.foodTypeTag,
+        ...(item.dish.cuisineTags ?? []),
+        ...(item.venue?.cuisineTags ?? []),
+        ...getEffectiveCuisineTags({
+          cuisineTags: [...(item.dish.cuisineTags ?? []), ...(item.venue?.cuisineTags ?? [])],
+          foodTypeTag: item.dish.foodTypeTag,
+          name: item.dish.name,
+          venueName: item.venueName,
+        }),
       ]
         .join(" ")
         .toLowerCase();
@@ -520,7 +589,7 @@ function BrowseGridScreen({
       const matchesFilter =
         filter === "all" ||
         searchText.includes(filter) ||
-        (filter === "local" && searchText.includes("singapore")) ||
+        (filter === "halal" && item.dish.dietaryFlags.includes("halal")) ||
         (filter === "spicy" && item.dish.tasteVector.spicy >= 6);
 
       return matchesSearch && matchesFilter;
@@ -874,6 +943,7 @@ const browseStyles = StyleSheet.create({
     flexDirection: "row",
     gap: 6,
     left: 8,
+    maxWidth: "58%",
     padding: 4,
     paddingRight: 8,
     position: "absolute",
@@ -881,7 +951,17 @@ const browseStyles = StyleSheet.create({
   },
   backButton: { alignItems: "center", height: 40, justifyContent: "center", width: 32 },
   cardContent: { ...StyleSheet.absoluteFillObject, justifyContent: "flex-end", padding: 10 },
-  metaRow: { alignItems: "center", flexDirection: "row", justifyContent: "space-between" },
+  cuisineBadge: {
+    borderRadius: 12,
+    maxWidth: "34%",
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    position: "absolute",
+    right: 8,
+    top: 8,
+  },
+  metaBlock: { gap: 2 },
+  metaRow: { alignItems: "center", flexDirection: "row", gap: 12 },
   searchRow: { alignItems: "center", flexDirection: "row", gap: 12, zIndex: 30 },
   titleRow: { alignItems: "center", flexDirection: "row", gap: 12, marginBottom: 10 },
   inlineSearchLauncher: {

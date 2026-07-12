@@ -210,6 +210,7 @@ function mapVenue(row: Row): VenueSummary {
     buildingName: toString(row.building_name) || undefined,
     address: toString(row.address) || undefined,
     postalCode: toString(row.postal_code) || undefined,
+    cuisineTags: toStringArray(row.cuisine_tags),
   };
 }
 
@@ -224,6 +225,8 @@ function mapDish(row: Row, venue?: VenueSummary, presentation?: DishPresentation
     unitNumber: venue?.unitNumber ?? "",
     floor: venue?.floor ?? "",
     name: toString(row.name),
+    foodTypeTag: toString(row.food_type_tag) || undefined,
+    cuisineTags: toStringArray(row.cuisine_tags),
     imageUrl,
     blurhash: toString(row.blurhash) || undefined,
     distanceMeters: toNumber(row.distance_meters),
@@ -273,7 +276,7 @@ function mapRpcDish(row: Row): DishDetail {
     isOpen: toBool(row.is_open, false),
     liveCrowd: (toString(row.live_crowd) as VenueSummary["liveCrowd"]) || undefined,
     topDishId: "",
-    operatingHours: "",
+    operatingHours: toString(row.operating_hours),
     closureNotice: undefined,
     deliveryLinks: [],
   };
@@ -322,6 +325,7 @@ function mapRpcVenue(row: Row): VenueSummary {
     buildingName: toString(row.building_name, toString(building.name)) || undefined,
     address: toString(row.address, toString(building.address)) || undefined,
     postalCode: toString(row.postal_code, toString(building.postalCode)) || undefined,
+    cuisineTags: toStringArray(row.cuisine_tags),
   };
 }
 
@@ -345,13 +349,14 @@ function mapDiscoveryFeedVenue(row: Row): VenueSummary {
     isOpen: toBool(row.is_open, false),
     liveCrowd: undefined,
     topDishId: toString(row.top_dish_id),
-    operatingHours: "",
+    operatingHours: toString(row.operating_hours),
     closureNotice: undefined,
     deliveryLinks: [],
     planningArea: toString(row.planning_area) || undefined,
     imageUrl: toString(row.venue_image_url) || toString(row.building_image_url) || undefined,
     logoUrl: toString(row.venue_logo_url, toString(row.logo_url)) || undefined,
     buildingName: toString(row.building_name) || undefined,
+    cuisineTags: toStringArray(row.cuisine_tags),
   };
 }
 
@@ -380,9 +385,11 @@ function mapDiscoveryFeedDish(row: Row, venue: VenueSummary): DishDetail | undef
       rating_avg: row.top_dish_rating,
       review_count: row.top_dish_review_count,
       price: row.top_dish_price,
-      price_range: "",
+      price_range: row.top_dish_price_range,
       live_crowd: row.live_crowd,
-      taste_tags: row.cuisine_tags,
+      taste_tags: row.top_dish_taste_tags,
+      cuisine_tags: row.top_dish_cuisine_tags ?? row.cuisine_tags,
+      food_type_tag: row.top_dish_food_type_tag,
       must_order: true,
       availability_flags: [],
     },
@@ -848,13 +855,16 @@ export async function searchDishesViaRpc(
 export async function listDiscoveryFeedByLocationViaRpc(
   request: DiscoveryLocationFeedRequest,
 ): Promise<DiscoveryLocationFeed | undefined> {
-  const rows = await rpcRows("get_discovery_feed_by_location", {
+  const args = {
     p_area_name: request.areaName?.trim() || null,
     p_lat: request.lat ?? null,
     p_lng: request.lng ?? null,
     p_radius_meters: request.radiusMeters ?? null,
     p_limit: request.limit ?? null,
-  });
+  };
+  const rows =
+    (await rpcRows("get_discovery_card_feed_by_location", args)) ??
+    (await rpcRows("get_discovery_feed_by_location", args));
   if (!rows) return undefined;
 
   const venues = rows.map(mapDiscoveryFeedVenue);

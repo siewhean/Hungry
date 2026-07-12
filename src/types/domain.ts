@@ -141,6 +141,8 @@ export interface VenueSummary {
   buildingName?: string;
   address?: string;
   postalCode?: string;
+  /** Canonical source cuisine labels, for example Singaporean, Western, or Japanese. */
+  cuisineTags?: string[];
 }
 
 export type UserStallSubmissionStatus =
@@ -214,6 +216,8 @@ export interface DishSummary {
   floor: string;
   name: string;
   foodTypeTag?: string;
+  /** Canonical cuisine labels; kept separate from sensory tasteTags. */
+  cuisineTags?: string[];
   imageUrl: string;
   blurhash?: string;
   distanceMeters: number;

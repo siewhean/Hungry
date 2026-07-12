@@ -196,6 +196,9 @@ function dishToBite(dish: DishDetail, post: StallPost | undefined, index: number
     authorAvatar: post?.authorAvatarUrl ?? image.imageUrl,
     dishId: dish.id,
     dishName: dish.name,
+    foodTypeTag: dish.foodTypeTag,
+    cuisineTags: dish.cuisineTags,
+    dietaryFlags: dish.dietaryFlags,
     venueId: dish.venueId,
     venueName: dish.venueName,
     unitNumber: dish.unitNumber,
@@ -210,6 +213,8 @@ function dishToBite(dish: DishDetail, post: StallPost | undefined, index: number
     savedCount: Math.floor(dish.reviewCount / 4),
     rating: dish.rating,
     price: dish.price,
+    priceRange: dish.priceRange,
+    distanceMeters: dish.distanceMeters,
     expiresAt: new Date(new Date(createdAt).getTime() + 24 * 60 * 60 * 1000).toISOString(),
     createdAt,
   };
@@ -278,10 +283,15 @@ export function syncBiteWithDish(
     buildingId: dish.buildingId,
     dishId: dish.id,
     dishName: dish.name,
+    foodTypeTag: dish.foodTypeTag,
+    cuisineTags: dish.cuisineTags,
+    dietaryFlags: dish.dietaryFlags,
     photoUrl: image.imageUrl,
     mediaUrls: image.candidateUrls,
     imageSourceType: image.imageSourceType,
     price: dish.price,
+    priceRange: dish.priceRange,
+    distanceMeters: dish.distanceMeters,
     rating: dish.rating,
     unitNumber: dish.unitNumber,
     venueId: dish.venueId,
@@ -293,7 +303,7 @@ export function getDiscoverBiteDistance(
   bite: Bite,
   repository: DataRepository = getDataRepository(),
 ) {
-  return repository.getDishById(bite.dishId)?.distanceMeters ?? 0;
+  return bite.distanceMeters ?? repository.getDishById(bite.dishId)?.distanceMeters ?? 0;
 }
 
 export function getDiscoverBiteCollection(

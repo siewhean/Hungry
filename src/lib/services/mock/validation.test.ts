@@ -75,7 +75,7 @@ test("validateFixtureBundle can enforce strict top-dish references", () => {
   const result = validateFixtureBundle(
     {
       buildings,
-      venues,
+      venues: [{ ...venues[0], topDishId: "missing-top-dish" }, ...venues.slice(1)],
       dishes,
       stallPosts,
       blogPosts,
