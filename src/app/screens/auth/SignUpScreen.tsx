@@ -58,6 +58,7 @@ export function SignUpScreen({ navigation }: Props) {
           return;
         }
         await applySignedInProfile(session.profile, {
+          profileReady: session.profileReady,
           onSyncWarning: () =>
             showToast({
               message:
@@ -141,6 +142,7 @@ export function SignUpScreen({ navigation }: Props) {
           session = await service.auth.signInWithApple();
         }
         await applySignedInProfile(session.profile, {
+          profileReady: session.profileReady,
           onSyncWarning: () =>
             showToast({
               message: "Signed in, but your taste profile could not sync. Try updating it later.",

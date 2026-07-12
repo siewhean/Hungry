@@ -38,7 +38,7 @@ function hasMeaningfulGuestDietaryPreferences(profile: UserProfile) {
 
 export function applySignedInProfile(
   sessionProfile: UserProfile,
-  options: { onSyncWarning?: () => void } = {},
+  options: { onSyncWarning?: () => void; profileReady?: Promise<UserProfile> } = {},
 ) {
   const profileState = useProfileStore.getState();
   const guestProfile = profileState.profile;
@@ -56,7 +56,7 @@ export function applySignedInProfile(
 
   useProfileStore.getState().applyProfile(mergedProfile);
 
-  if (getServiceProvider().mode === "mock" || (!shouldMergeTaste && !shouldMergeDietary)) {
+  if (getServiceProvider().mode === "mock") {
     return;
   }
 
@@ -69,7 +69,15 @@ export function applySignedInProfile(
         shouldMergeDietary
           ? getHungryService().profile.updateDietaryPreferences(guestProfile.dietaryPreferences)
           : Promise.resolve(),
-      ]).catch(() => options.onSyncWarning?.());
+      ])
+        .catch(() => options.onSyncWarning?.())
+        .then(() => options.profileReady ?? getHungryService().profile.getProfile())
+        .then((profile) => {
+          if (useProfileStore.getState().profile.id === sessionProfile.id) {
+            useProfileStore.getState().applyProfile(profile);
+          }
+        })
+        .catch(() => undefined);
     },
     { fallbackDelayMs: 0 },
   );

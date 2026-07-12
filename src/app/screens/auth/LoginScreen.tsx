@@ -46,6 +46,7 @@ export function LoginScreen({ navigation }: Props) {
       if (getConfiguredDataSource() === "supabase") {
         const session = await getHungryService().auth.signIn(values.email, values.password);
         await applySignedInProfile(session.profile, {
+          profileReady: session.profileReady,
           onSyncWarning: () =>
             showToast({
               message: "Signed in, but your taste profile could not sync. Try updating it later.",
@@ -113,6 +114,7 @@ export function LoginScreen({ navigation }: Props) {
           session = await service.auth.signInWithApple();
         }
         await applySignedInProfile(session.profile, {
+          profileReady: session.profileReady,
           onSyncWarning: () =>
             showToast({
               message: "Signed in, but your taste profile could not sync. Try updating it later.",
