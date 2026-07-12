@@ -117,6 +117,22 @@ test("native activity smoke exposes the audited direct-message tab", () => {
   );
 });
 
+test("native guest and location flows seed the mock session before entering Home", () => {
+  for (const flowPath of [
+    ".maestro/ios-guest-browse-smoke.yaml",
+    ".maestro/android-guest-browse-smoke.yaml",
+    ".maestro/ios-location-denied-smoke.yaml",
+  ]) {
+    const flow = read(flowPath);
+    assert.match(flow, /scrollUntilVisible:\n\s+element:\n\s+id: "dev-section-toggle-session-presets"/);
+    assert.match(flow, /scrollUntilVisible:\n\s+element:\n\s+id: "dev-button-home"/);
+    assert.match(flow, /id: "dev-section-toggle-session-presets"/);
+    assert.match(flow, /id: "dev-button-auth-onboard"/);
+    assert.match(flow, /id: "dev-button-home"/);
+    assert.doesNotMatch(flow, /id: "dev-button-user"/);
+  }
+});
+
 test("native media picker smoke reaches the post composer gallery entry point", () => {
   const flow = read(".maestro/ios-media-picker-permission.yaml");
   const composer = read("src/app/screens/post/PostComposerScreenV2.tsx");
