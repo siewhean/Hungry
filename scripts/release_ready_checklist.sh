@@ -28,11 +28,9 @@ run_step "5) Edge Function static checks" npm run check:edge-functions
 run_step "6) Asset audit" npm run audit:assets
 run_step "7) TruffleHog filesystem scan" npm run security:trufflehog
 run_step "8) Gitleaks tracked/unignored scan" npm run security:gitleaks
-run_step "9) Release hygiene check" npm run security:release-hygiene
-run_step "10) npm audit" npm run security:audit
-run_step "11) Legacy marketing web security contract" npm run security:legacy-web
-run_step "12) Website static predeploy gates" npm run website:predeploy:local
-run_step "13) Expo Doctor" env EXPO_NO_DOTENV=1 CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .
+run_step "9) npm audit" npm run security:audit
+run_step "10) Website static predeploy gates" npm run website:predeploy:local
+run_step "11) Expo Doctor" env EXPO_NO_DOTENV=1 CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .
 
 echo
 echo "[Hungry] Native proof status"

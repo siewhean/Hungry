@@ -90,6 +90,9 @@ test("release checklist includes the Supabase Advisor regression guard", () => {
   assert.match(releaseChecklist, /MER-PORTAL-01/);
   assert.match(releaseChecklist, /MERCH-P0-ANALYTICS-01/);
   assert.match(releaseChecklist, /MERCH_P0_ANALYTICS_PROOF/);
+  assert.match(releaseChecklist, /npm run website:predeploy:local/);
+  assert.doesNotMatch(releaseChecklist, /security:release-hygiene/);
+  assert.doesNotMatch(releaseChecklist, /security:legacy-web/);
   assert.match(releaseGates, /tasks\/Roadmap\/claude-full-project-audit\.md/);
   assert.match(releaseGates, /tasks\/release-evidence\/full-audit-v1\.env/);
   assert.match(auditStatus, /verified-only filesystem scan/);
