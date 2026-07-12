@@ -291,7 +291,10 @@ test("Supabase app readiness warms the legacy cache without blocking public rout
 
   assert.match(bootstrap, /refreshSupabaseRepositoryCache/);
   assert.match(bootstrap, /setIsDataSourceReady\(false\)/);
-  assert.match(bootstrap, /setIsDataSourceReady\(true\);[\s\S]*void refreshSupabaseRepositoryCache\(\)/);
+  assert.match(
+    bootstrap,
+    /setIsDataSourceReady\(true\);[\s\S]*void refreshSupabaseRepositoryCache\(\)/,
+  );
   assert.doesNotMatch(bootstrap, /refreshSupabaseRepositoryCache\(\)[\s\S]{0,240}\.finally\(/);
   assert.match(repository, /let hydrationPromise: Promise<void> \| null = null/);
   assert.match(repository, /if \(hydrationPromise\) return hydrationPromise/);

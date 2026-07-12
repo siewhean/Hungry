@@ -187,8 +187,7 @@ export function useAppBootstrap() {
     setIsDataSourceReady(true);
     const { refreshSupabaseRepositoryCache } =
       require("@/lib/services/supabase/supabaseRepository") as typeof import("@/lib/services/supabase/supabaseRepository");
-    void refreshSupabaseRepositoryCache()
-      .catch(() => undefined);
+    void refreshSupabaseRepositoryCache().catch(() => undefined);
   }, [authDataSource, applyAuthStateFromSession, authenticatedUserId, isAuthenticated, isUserMode]);
 
   useEffect(() => {

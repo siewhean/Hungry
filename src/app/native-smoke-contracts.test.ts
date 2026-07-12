@@ -124,7 +124,10 @@ test("native guest and location flows seed the mock session before entering Home
     ".maestro/ios-location-denied-smoke.yaml",
   ]) {
     const flow = read(flowPath);
-    assert.match(flow, /scrollUntilVisible:\n\s+element:\n\s+id: "dev-section-toggle-session-presets"/);
+    assert.match(
+      flow,
+      /scrollUntilVisible:\n\s+element:\n\s+id: "dev-section-toggle-session-presets"/,
+    );
     assert.match(flow, /scrollUntilVisible:\n\s+element:\n\s+id: "dev-button-home"/);
     assert.match(flow, /id: "dev-section-toggle-session-presets"/);
     assert.match(flow, /id: "dev-button-auth-onboard"/);
