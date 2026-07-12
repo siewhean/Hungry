@@ -175,6 +175,20 @@ test("protected actions preserve return routes before auth", () => {
 
   assert.match(rootNavigator, /setReturnRoute\(/);
   assert.match(rootNavigator, /navigationRef\.resetRoot\(\{[\s\S]*name: "AuthStack"/);
+  const rootReturnRestore = rootNavigator.slice(
+    rootNavigator.indexOf("else if (isRootRouteName(returnRoute))"),
+    rootNavigator.indexOf("} else {", rootNavigator.indexOf("else if (isRootRouteName(returnRoute))")),
+  );
+  assert.match(rootReturnRestore, /index: 1/);
+  assert.match(rootReturnRestore, /name: "MainTabs", params: \{ screen: "Home" \}/);
+  assert.match(rootReturnRestore, /name: returnRoute/);
+  const parameterizedRootReturnRestore = rootNavigator.slice(
+    rootNavigator.indexOf("else if (isRootRouteName(returnRoute.name))"),
+    rootNavigator.indexOf("} else {", rootNavigator.indexOf("else if (isRootRouteName(returnRoute.name))")),
+  );
+  assert.match(parameterizedRootReturnRestore, /index: 1/);
+  assert.match(parameterizedRootReturnRestore, /name: "MainTabs", params: \{ screen: "Home" \}/);
+  assert.match(parameterizedRootReturnRestore, /name: returnRoute\.name, params: returnRoute\.params/);
   assert.match(
     tabs,
     /const composerRoute = FEATURE_FLAGS\.prototypeRoutesEnabled \? "PostComposerV2" : "Post"/,

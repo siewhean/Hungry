@@ -455,8 +455,11 @@ export function RootNavigator({ theme }: { theme: Theme }) {
         });
       } else if (isRootRouteName(returnRoute)) {
         navigationRef.resetRoot({
-          index: 0,
-          routes: [{ name: returnRoute }],
+          index: 1,
+          routes: [
+            { name: "MainTabs", params: { screen: "Home" } },
+            { name: returnRoute },
+          ],
         });
       } else {
         navigationRef.resetRoot({
@@ -466,8 +469,11 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       }
     } else if (isRootRouteName(returnRoute.name)) {
       navigationRef.resetRoot({
-        index: 0,
-        routes: [{ name: returnRoute.name, params: returnRoute.params }],
+        index: 1,
+        routes: [
+          { name: "MainTabs", params: { screen: "Home" } },
+          { name: returnRoute.name, params: returnRoute.params },
+        ],
       });
     } else {
       navigationRef.resetRoot({
