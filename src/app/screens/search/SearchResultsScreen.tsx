@@ -783,6 +783,7 @@ function BrowseGridScreen({
                   >
                     <TextInput
                       ref={searchInputRef}
+                      accessibilityLabel="Search browse results"
                       autoCorrect={false}
                       onBlur={hideSearch}
                       onChangeText={setSearchQuery}
@@ -790,6 +791,7 @@ function BrowseGridScreen({
                       placeholder={searchPlaceholder}
                       placeholderTextColor={palette.textMuted}
                       returnKeyType="search"
+                      testID="browse-results-search-input"
                       style={[
                         browseStyles.textInput,
                         { color: palette.text, textAlignVertical: "center" },

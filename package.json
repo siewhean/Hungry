@@ -61,6 +61,8 @@
     "smoke:native:ios:chat:prepared": "node scripts/prepare-maestro-smoke.mjs ios-chat",
     "smoke:native:ios:media": "node scripts/run-maestro-smoke.mjs ios-media",
     "smoke:native:ios:media:prepared": "node scripts/prepare-maestro-smoke.mjs ios-media",
+    "smoke:native:ios:interactions": "node scripts/run-maestro-smoke.mjs ios-interactions",
+    "smoke:native:ios:interactions:prepared": "node scripts/prepare-maestro-smoke.mjs ios-interactions",
     "smoke:native:android": "node scripts/run-maestro-smoke.mjs android",
     "smoke:native:android:launch": "node scripts/run-maestro-smoke.mjs android-launch",
     "smoke:native:android:guest": "node scripts/run-maestro-smoke.mjs android-guest",
