@@ -61,7 +61,19 @@
   app-owned Advisor cleanup, live data/RLS/social/
   chat/OCR smokes, iOS prepared Maestro smoke, and local release rehearsal now pass. 2026-07-12
   adds live NetInfo-backed offline detection, a real retry action, non-blocking app-shell cache
-  warm-up, and Node 22.22.1 fail-closed main CI gates; native connectivity-loss smoke remains pending.
+  warm-up, and Node 22.22.1 fail-closed main CI gates. 2026-07-13 locally closes the two High/P1
+  direct-order-write findings through `ORDER-INTEGRITY-01`; linked migration and live role-matrix
+  proof remain pending. Native connectivity-loss smoke also remains pending.
+
+- `ORDER-INTEGRITY-01` — Repo-local complete; linked apply and live role-matrix smoke pending.
+  Findings `b016-c001` and `b016-c002` allowed authenticated customers to create terminal-state
+  orders with attacker-chosen totals and rewrite merchant-managed order fields. Additive migration
+  `20260713120000_order_write_integrity_hardening.sql` removes direct customer insert/update
+  policies and revokes write privileges from public app roles while preserving owner reads and
+  trusted service access. Source contracts, read-only smoke SQL, static audit parsing, typecheck,
+  lint, formatting, and 585 source tests pass. No linked Supabase migration or production write was
+  performed; public launch remains No-Go until owner-authorized staging apply and live role-matrix
+  proof, the remaining scan findings, and external release evidence are closed.
 
 - `TASKS-CLEANUP-01` — Complete. 2026-06-07 tasks folder cleanup kept canonical live
   ledgers at top level, removed generated junk and exact duplicates, moved domain docs into

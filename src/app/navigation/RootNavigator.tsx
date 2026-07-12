@@ -456,10 +456,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       } else if (isRootRouteName(returnRoute)) {
         navigationRef.resetRoot({
           index: 1,
-          routes: [
-            { name: "MainTabs", params: { screen: "Home" } },
-            { name: returnRoute },
-          ],
+          routes: [{ name: "MainTabs", params: { screen: "Home" } }, { name: returnRoute }],
         });
       } else {
         navigationRef.resetRoot({

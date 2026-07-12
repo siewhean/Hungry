@@ -61,22 +61,30 @@ const storageBuckets = [];
 
 for (const migration of migrations) {
   const source = migration.sql;
-  for (const match of source.matchAll(/create\s+table\s+(?:if\s+not\s+exists\s+)?(?:(public)\.)?("?[\w]+"?)/gi)) {
+  for (const match of source.matchAll(
+    /create\s+table\s+(?:if\s+not\s+exists\s+)?(?:(public)\.)?("?[\w]+"?)/gi,
+  )) {
     createTableMatches.push({
       table: match[2].replaceAll('"', ""),
       file: migration.file,
       line: lineNumber(source, match.index ?? 0),
     });
   }
-  for (const match of source.matchAll(/alter\s+table\s+(?:if\s+exists\s+)?(?:(public)\.)?("?[\w]+"?)\s+enable\s+row\s+level\s+security/gi)) {
+  for (const match of source.matchAll(
+    /alter\s+table\s+(?:if\s+exists\s+)?(?:(public)\.)?("?[\w]+"?)\s+enable\s+row\s+level\s+security/gi,
+  )) {
     rlsEnabled.push(match[2].replaceAll('"', ""));
   }
-  for (const match of source.matchAll(/drop\s+policy\s+if\s+exists\s+"?([^"\n]+?)"?\s+on\s+("?[\w]+"?)\s*;/gi)) {
+  for (const match of source.matchAll(
+    /drop\s+policy\s+if\s+exists\s+"?([^"\n]+?)"?\s+on\s+(?:"?public"?\.)?("?[\w]+"?)\s*;/gi,
+  )) {
     const name = match[1].trim();
     const table = match[2].replaceAll('"', "");
     activePolicies.delete(`${table}:${name}`);
   }
-  for (const match of source.matchAll(/create\s+policy\s+"?([^"\n]+?)"?\s+on\s+("?[\w]+"?)[\s\S]*?;/gi)) {
+  for (const match of source.matchAll(
+    /create\s+policy\s+"?([^"\n]+?)"?\s+on\s+(?:"?public"?\.)?("?[\w]+"?)[\s\S]*?;/gi,
+  )) {
     const statement = match[0];
     const roleMatch = statement.match(/\bto\s+([^(\n]+?)(?:\s+using|\s+with\s+check|\s*$)/i);
     const commandMatch = statement.match(/\bfor\s+(all|select|insert|update|delete)\b/i);
@@ -92,7 +100,9 @@ for (const migration of migrations) {
     policies.push(policy);
     activePolicies.set(`${policy.table}:${policy.name}`, policy);
   }
-  for (const match of source.matchAll(/create\s+or\s+replace\s+function\s+public\.("?[\w]+"?)\s*\(([\s\S]*?)\)[\s\S]*?;/gi)) {
+  for (const match of source.matchAll(
+    /create\s+or\s+replace\s+function\s+public\.("?[\w]+"?)\s*\(([\s\S]*?)\)[\s\S]*?;/gi,
+  )) {
     const statement = match[0];
     if (/security\s+definer/i.test(statement)) {
       securityDefinerFunctions.push({
@@ -103,7 +113,9 @@ for (const migration of migrations) {
       });
     }
   }
-  for (const match of source.matchAll(/grant\s+([\s\S]*?)\s+on\s+(?:function|table)\s+([\s\S]*?)\s+to\s+([^;]+);/gi)) {
+  for (const match of source.matchAll(
+    /grant\s+([\s\S]*?)\s+on\s+(?:function|table)\s+([\s\S]*?)\s+to\s+([^;]+);/gi,
+  )) {
     grants.push({
       privileges: match[1].trim().replace(/\s+/g, " "),
       object: match[2].trim().replace(/\s+/g, " "),
@@ -189,6 +201,14 @@ const report = {
   },
   policies: {
     count: effectivePolicies.length,
+    active: effectivePolicies.map(({ name, table, command, roles, file, line }) => ({
+      name,
+      table,
+      command,
+      roles,
+      file,
+      line,
+    })),
     anonWritePolicies: anonWritePolicies.map(({ name, table, command, roles, file, line }) => ({
       name,
       table,
