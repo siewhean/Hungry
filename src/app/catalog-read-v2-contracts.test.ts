@@ -45,6 +45,16 @@ test("raw catalog migration preserves a separate authenticated release lane", ()
   assert.match(migration, /expires_at = now\(\) \+ interval '24 hours'/);
   assert.match(migration, /catalog_raw_require_authenticated/);
   assert.match(migration, /set status = 'failed'[\s\S]*return v_release_id/);
+  assert.equal(
+    [...migration.matchAll(/cursor_row as \([\s\S]*?where exists \(select 1 from tail\)/g)].length,
+    2,
+    "both page RPCs must build their cursor from the final visible row",
+  );
+  assert.equal(
+    [...migration.matchAll(/jsonb_agg\([\s\S]*?order by[\s\S]*?p_sort = 'nearby'/g)].length,
+    2,
+    "both page RPCs must preserve their stable page order in JSON",
+  );
   assert.match(migration, /security definer/);
   assert.match(migration, /catalog_raw_venue_cards enable row level security/);
   assert.match(

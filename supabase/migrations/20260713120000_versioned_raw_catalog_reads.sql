@@ -332,10 +332,31 @@ begin
       case when p_sort not in ('nearby', 'relevance') then c.review_count end desc,
       c.id asc
     limit v_limit + 1
-  ), visible as (select * from page limit v_limit), tail as (select * from page offset v_limit limit 1)
-  select coalesce(jsonb_agg(to_jsonb(visible) - 'listing_location' - 'computed_distance' - 'relevance'), '[]'::jsonb), count(*)::integer
-  into v_items, v_count from visible;
-  select public.catalog_raw_cursor(jsonb_build_object('release_id', v_release, 'fingerprint', v_fingerprint, 'id', id, 'distance', computed_distance, 'review_count', review_count, 'score', case when p_sort = 'nearby' then computed_distance else case when p_sort = 'relevance' then relevance else rating::double precision end end)) into v_next from tail;
+  ), visible as (select * from page limit v_limit), tail as (select * from page offset v_limit limit 1), cursor_row as (
+    select * from visible
+    where exists (select 1 from tail)
+    order by
+      case when p_sort = 'nearby' then computed_distance end desc,
+      case when p_sort = 'relevance' then relevance end asc,
+      case when p_sort not in ('nearby', 'relevance') then rating end asc,
+      case when p_sort not in ('nearby', 'relevance') then review_count end asc,
+      id desc
+    limit 1
+  )
+  select
+    coalesce(jsonb_agg(
+      to_jsonb(visible) - 'listing_location' - 'computed_distance' - 'relevance'
+      order by
+        case when p_sort = 'nearby' then computed_distance end asc,
+        case when p_sort = 'relevance' then relevance end desc,
+        case when p_sort not in ('nearby', 'relevance') then rating end desc,
+        case when p_sort not in ('nearby', 'relevance') then review_count end desc,
+        id asc
+    ), '[]'::jsonb),
+    count(*)::integer,
+    (select public.catalog_raw_cursor(jsonb_build_object('release_id', v_release, 'fingerprint', v_fingerprint, 'id', id, 'distance', computed_distance, 'review_count', review_count, 'score', case when p_sort = 'nearby' then computed_distance else case when p_sort = 'relevance' then relevance else rating::double precision end end)) from cursor_row)
+  into v_items, v_count, v_next
+  from visible;
   return jsonb_build_object('items', v_items, 'next_cursor', v_next, 'release_id', v_release,
     'totals', (select jsonb_build_object('venues', venue_total, 'dishes', dish_total) from public.catalog_releases where id = v_release));
 end;
@@ -378,9 +399,32 @@ begin
       or (p_sort = 'relevance' and (c.relevance < (v_cursor->>'score')::double precision or (c.relevance = (v_cursor->>'score')::double precision and (lower(c.name) > v_cursor->>'name' or (lower(c.name) = v_cursor->>'name' and c.id > v_cursor->>'id')))))
       or (p_sort not in ('nearby', 'relevance') and (c.quality_rating < (v_cursor->>'score')::numeric or (c.quality_rating = (v_cursor->>'score')::numeric and (c.quality_review_count < (v_cursor->>'review_count')::integer or (c.quality_review_count = (v_cursor->>'review_count')::integer and (lower(c.name) > v_cursor->>'name' or (lower(c.name) = v_cursor->>'name' and c.id > v_cursor->>'id')))))))
     order by case when p_sort = 'nearby' then c.computed_distance end asc, case when p_sort = 'relevance' then c.relevance end desc, case when p_sort not in ('nearby', 'relevance') then c.quality_rating end desc, case when p_sort not in ('nearby', 'relevance') then c.quality_review_count end desc, lower(c.name) asc, c.id asc limit v_limit + 1
-  ), visible as (select * from page limit v_limit), tail as (select * from page offset v_limit limit 1)
-  select coalesce(jsonb_agg(to_jsonb(visible) - 'listing_location' - 'computed_distance' - 'relevance'), '[]'::jsonb) into v_items from visible;
-  select public.catalog_raw_cursor(jsonb_build_object('release_id', v_release, 'fingerprint', v_fingerprint, 'id', id, 'name', lower(name), 'distance', computed_distance, 'review_count', quality_review_count, 'score', case when p_sort = 'nearby' then computed_distance else case when p_sort = 'relevance' then relevance else quality_rating::double precision end end)) into v_next from tail;
+  ), visible as (select * from page limit v_limit), tail as (select * from page offset v_limit limit 1), cursor_row as (
+    select * from visible
+    where exists (select 1 from tail)
+    order by
+      case when p_sort = 'nearby' then computed_distance end desc,
+      case when p_sort = 'relevance' then relevance end asc,
+      case when p_sort not in ('nearby', 'relevance') then quality_rating end asc,
+      case when p_sort not in ('nearby', 'relevance') then quality_review_count end asc,
+      lower(name) desc,
+      id desc
+    limit 1
+  )
+  select
+    coalesce(jsonb_agg(
+      to_jsonb(visible) - 'listing_location' - 'computed_distance' - 'relevance'
+      order by
+        case when p_sort = 'nearby' then computed_distance end asc,
+        case when p_sort = 'relevance' then relevance end desc,
+        case when p_sort not in ('nearby', 'relevance') then quality_rating end desc,
+        case when p_sort not in ('nearby', 'relevance') then quality_review_count end desc,
+        lower(name) asc,
+        id asc
+    ), '[]'::jsonb),
+    (select public.catalog_raw_cursor(jsonb_build_object('release_id', v_release, 'fingerprint', v_fingerprint, 'id', id, 'name', lower(name), 'distance', computed_distance, 'review_count', quality_review_count, 'score', case when p_sort = 'nearby' then computed_distance else case when p_sort = 'relevance' then relevance else quality_rating::double precision end end)) from cursor_row)
+  into v_items, v_next
+  from visible;
   return jsonb_build_object('items', v_items, 'next_cursor', v_next, 'release_id', v_release, 'totals', (select jsonb_build_object('venues', venue_total, 'dishes', dish_total) from public.catalog_releases where id = v_release));
 end;
 $$;
