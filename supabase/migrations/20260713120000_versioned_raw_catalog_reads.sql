@@ -322,7 +322,7 @@ begin
         c.rating < (v_cursor->>'score')::numeric
         or (c.rating = (v_cursor->>'score')::numeric and (
           c.review_count < coalesce((v_cursor->>'review_count')::integer, 0)
-          or (c.review_count = coalesce((v_cursor->>'review_count')::integer, 0) and c.id > v_cursor->>'id)
+          or (c.review_count = coalesce((v_cursor->>'review_count')::integer, 0) and c.id > v_cursor->>'id')
         ))
       ))
     order by

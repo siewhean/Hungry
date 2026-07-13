@@ -53,6 +53,7 @@ test("raw catalog migration preserves a separate authenticated release lane", ()
   );
   assert.match(migration, /p_sort = 'relevance'/);
   assert.match(migration, /c\.cuisine_tags && p_cuisine_tags/);
+  assert.doesNotMatch(migration, /->>'id\)/);
   assert.match(
     migration,
     /grant execute on function public\.catalog_raw_dishes_page[\s\S]+to authenticated/,
