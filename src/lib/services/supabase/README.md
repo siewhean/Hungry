@@ -5,20 +5,20 @@ This directory contains the Sprint 5 Supabase scaffolding used by `serviceProvid
 ## Files
 
 - `client.ts`: guarded Supabase client + data source mode resolver.
-- `supabaseRepository.ts`: `DataRepository` implementation (11 sync methods) with cache-backed live Supabase refresh and mock fallback.
+- `supabaseRepository.ts`: `DataRepository` implementation (11 sync methods) with cache-backed live Supabase refresh.
 - `supabaseService.ts`: `HungryService` implementation that composes `supabaseRepository` plus Supabase auth/reviews/profile/social/content operations.
 
 ## Runtime Behavior
 
-- `HUNGRY_DATA_SOURCE=mock` -> provider uses mock service/repository.
-- `HUNGRY_DATA_SOURCE=supabase` -> provider uses Supabase adapters.
-- If Supabase env vars are missing or a query fails, adapters fall back to mock-safe behavior and do not throw into UI call sites.
+- Consumer builds always use Supabase adapters.
+- `mock` and `excel` modes are explicit developer/test overrides only; released builds ignore them.
+- If Supabase env vars are missing, bootstrap completes signed out rather than substituting fixture data.
 
 ## Required Env
 
 - `EXPO_PUBLIC_SUPABASE_URL`
 - `EXPO_PUBLIC_SUPABASE_ANON_KEY`
-- `HUNGRY_DATA_SOURCE=mock|supabase`
+- `EXPO_PUBLIC_HUNGRY_DATA_SOURCE=supabase`
 
 ## Deferred TODO Anchors
 

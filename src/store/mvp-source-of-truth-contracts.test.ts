@@ -96,7 +96,9 @@ test("EAS release profiles set explicit MVP feature-flag environments", () => {
   assert.equal(eas.build.development?.env?.EXPO_PUBLIC_APP_ENV, "development");
   assert.equal(eas.build.preview?.env?.EXPO_PUBLIC_APP_ENV, "staging");
   assert.equal(eas.build.production?.env?.EXPO_PUBLIC_APP_ENV, "production");
-  assert.equal(eas.build.production?.env?.HUNGRY_DATA_SOURCE, "supabase");
+  assert.equal(eas.build.development?.env?.EXPO_PUBLIC_HUNGRY_DATA_SOURCE, "supabase");
+  assert.equal(eas.build.preview?.env?.EXPO_PUBLIC_HUNGRY_DATA_SOURCE, "supabase");
+  assert.equal(eas.build.production?.env?.EXPO_PUBLIC_HUNGRY_DATA_SOURCE, "supabase");
 });
 
 test("production Post route publishes through the canonical composer service path", () => {

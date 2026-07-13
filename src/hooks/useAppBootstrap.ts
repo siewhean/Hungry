@@ -212,6 +212,7 @@ export function useAppBootstrap() {
     const client = getSupabaseClient();
     if (!client) {
       applyAuthStateFromSession({ isAuthenticated: false });
+      markAuthReady();
       return;
     }
 

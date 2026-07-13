@@ -116,7 +116,8 @@ export function setServiceProvider(provider: ServiceProvider): void {
 
 export function setMockServiceProvider(): void {
   setConfiguredDataSource("mock");
-  activeProvider = createMockProvider();
+  activeProvider =
+    getConfiguredDataSource() === "mock" ? createMockProvider() : createSupabaseProvider();
 }
 
 export function setSupabaseServiceProvider(): void {
@@ -126,7 +127,8 @@ export function setSupabaseServiceProvider(): void {
 
 export function setExcelServiceProvider(): void {
   setConfiguredDataSource("excel");
-  activeProvider = createExcelProvider();
+  activeProvider =
+    getConfiguredDataSource() === "excel" ? createExcelProvider() : createSupabaseProvider();
 }
 
 export function resetServiceProvider(): void {

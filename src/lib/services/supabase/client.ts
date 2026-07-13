@@ -16,6 +16,9 @@ let configuredDataSourceOverride: HungryDataSource | null = null;
 let cachedClient: SupabaseClient | null | undefined;
 
 export function getConfiguredDataSource(): HungryDataSource {
+  const appEnvironment = process.env.EXPO_PUBLIC_APP_ENV?.trim().toLowerCase();
+  const isReleasedBuild = appEnvironment === "staging" || appEnvironment === "production";
+  if (isReleasedBuild) return "supabase";
   if (configuredDataSourceOverride) {
     return configuredDataSourceOverride;
   }
@@ -23,12 +26,10 @@ export function getConfiguredDataSource(): HungryDataSource {
   const privateSource = process.env.HUNGRY_DATA_SOURCE?.trim().toLowerCase();
   const publicSource = process.env.EXPO_PUBLIC_HUNGRY_DATA_SOURCE?.trim().toLowerCase();
   const explicit = e2eSource || privateSource || publicSource;
-  // If explicitly set, honour supported local and remote sources. Unknown values
-  // stay on the safe mock fallback rather than connecting to Supabase implicitly.
+  // Consumer builds are Supabase-only. Test/developer overrides remain explicit
+  // so fixture data can never appear because configuration was absent or invalid.
   if (explicit === "supabase" || explicit === "excel" || explicit === "mock") return explicit;
-  if (explicit) return "mock";
-  // If not explicitly set but credentials are present, prefer supabase automatically.
-  return SUPABASE_URL.length > 0 && SUPABASE_ANON_KEY.length > 0 ? "supabase" : "mock";
+  return "supabase";
 }
 
 export function setConfiguredDataSource(override?: HungryDataSource): void {
