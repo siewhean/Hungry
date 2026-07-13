@@ -4,8 +4,10 @@
     "paths": {
       "@/*": ["./src/*"],
       "react-native": ["./src/test/reactNativeStub"],
-      "react-native/*": ["./src/test/reactNativeStub"]
+      "react-native/*": ["./src/test/reactNativeStub"],
+      "@react-native-async-storage/async-storage": ["./src/test/asyncStorageStub"],
+      "expo-web-browser": ["./src/test/expoWebBrowserStub"],
+      "posthog-react-native": ["./src/test/posthogStub"]
     }
   }
 }
-

@@ -35,13 +35,14 @@ test("session/profile stores bind temporary Supabase auth profiles to the real s
   assert.match(sessionStore, /isInvalidSupabaseAuthState[\s\S]*isAuthenticated: false/);
   assert.doesNotMatch(sessionStore, /syncProfile\(true\)/);
 
-  const sessionHydrationIndex = bootstrap.indexOf(
-    "const profile = await getHungryService().profile.getProfile()",
+  const providerIndex = bootstrap.indexOf("setSupabaseServiceProvider();");
+  const profileSyncIndex = bootstrap.indexOf(
+    "syncProfile(hasValidSupabaseAuth, authenticatedUserId);",
   );
-  const authApplyIndex = bootstrap.indexOf(
-    "applyAuthStateFromSession({\n          isAuthenticated: true",
+  assert.ok(providerIndex >= 0, "bootstrap should select the Supabase provider");
+  assert.ok(
+    profileSyncIndex > providerIndex,
+    "bootstrap should sync the UUID-bound profile after swap",
   );
-  assert.ok(sessionHydrationIndex >= 0, "bootstrap should hydrate Supabase profile first");
-  assert.ok(authApplyIndex > sessionHydrationIndex, "bootstrap should apply auth after hydration");
   assert.doesNotMatch(bootstrap, /syncProfile\(isAuthenticated\);/);
 });
