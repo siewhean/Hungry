@@ -44,6 +44,7 @@ test("raw catalog migration preserves a separate authenticated release lane", ()
   assert.match(migration, /catalog_releases/);
   assert.match(migration, /expires_at = now\(\) \+ interval '24 hours'/);
   assert.match(migration, /catalog_raw_require_authenticated/);
+  assert.match(migration, /set status = 'failed'[\s\S]*return v_release_id/);
   assert.match(migration, /security definer/);
   assert.match(migration, /catalog_raw_venue_cards enable row level security/);
   assert.match(
@@ -88,4 +89,10 @@ test("V2 discovery entry points do not warm the legacy browse index and map pass
   assert.match(map, /openOnly: mapFilters\.openNow/);
   assert.match(map, /onMarkerPress=\{shouldUseCatalogReadV2 \? handleRawMarkerPress : undefined\}/);
   assert.match(map, /candidate\.kind === "venue" \? "stall" : candidate\.kind/);
+});
+
+test("catalog release publisher fails when count validation does not activate a release", () => {
+  const publisher = read("scripts/publish-catalog-raw-release.mjs");
+  assert.match(publisher, /result\.rows\?\.\[0\]\?\.status !== "active"/);
+  assert.match(publisher, /process\.exitCode = 1/);
 });

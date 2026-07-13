@@ -253,7 +253,7 @@ begin
   if (p_expected_venues is not null and v_venue_total <> p_expected_venues)
      or (p_expected_dishes is not null and v_dish_total <> p_expected_dishes) then
     update public.catalog_releases set status = 'failed', venue_total = v_venue_total, dish_total = v_dish_total where id = v_release_id;
-    raise exception 'catalog release count mismatch: venues %, dishes %', v_venue_total, v_dish_total;
+    return v_release_id;
   end if;
 
   update public.catalog_releases
