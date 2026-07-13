@@ -1160,6 +1160,8 @@ export function DiscoverHomeScreen() {
   const isTabSwipeLockedRef = useRef(false);
   const popularFoodFilterSkeletonTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const repository = getDataRepository();
+  const shouldUseCatalogReadV2 =
+    FEATURE_FLAGS.catalogReadV2 && getServiceProvider().mode === "supabase";
   const repositoryLookup = useMemo<DiscoverRepositoryLookup>(() => {
     const dishById = new Map<string, DishDetail | undefined>();
     const dishesByVenue = new Map<string, DishDetail[]>();
@@ -1319,8 +1321,11 @@ export function DiscoverHomeScreen() {
   );
 
   useEffect(() => {
+    if (shouldUseCatalogReadV2) {
+      return;
+    }
     void refreshPopularNearby();
-  }, [refreshPopularNearby]);
+  }, [refreshPopularNearby, shouldUseCatalogReadV2]);
   const updateSearchQuery = useSearchStore((state) => state.updateQuery);
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
   const searchBarWidth = useMemo(

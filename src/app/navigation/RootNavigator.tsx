@@ -46,6 +46,7 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "StallDetail",
   "MerchantClaimExplainer",
   "DishDetail",
+  "CatalogRawDetail",
   "DishDetailV2",
   "SearchHome",
   "SearchResults",
@@ -109,6 +110,7 @@ const PROTECTED_ROOT_ROUTES = new Set<RootRouteName>([
   "AddStory",
   "MusicSelection",
   "MerchantClaimExplainer",
+  "CatalogRawDetail",
   "PassportScreen",
   "MissionsScreen",
   "AdminPortfolioFlags",
@@ -191,6 +193,10 @@ const loadDishDetailScreenV2 = () =>
   (
     require("@/app/screens/detail/DishDetailScreenV2") as typeof import("@/app/screens/detail/DishDetailScreenV2")
   ).DishDetailScreenV2;
+const loadCatalogRawDetailScreen = () =>
+  (
+    require("@/app/screens/catalog/CatalogRawDetailScreen") as typeof import("@/app/screens/catalog/CatalogRawDetailScreen")
+  ).CatalogRawDetailScreen;
 const loadStallDetailScreen = () =>
   (
     require("@/app/screens/detail/StallDetailScreen") as typeof import("@/app/screens/detail/StallDetailScreen")
@@ -456,10 +462,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       } else if (isRootRouteName(returnRoute)) {
         navigationRef.resetRoot({
           index: 1,
-          routes: [
-            { name: "MainTabs", params: { screen: "Home" } },
-            { name: returnRoute },
-          ],
+          routes: [{ name: "MainTabs", params: { screen: "Home" } }, { name: returnRoute }],
         });
       } else {
         navigationRef.resetRoot({
@@ -651,6 +654,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen getComponent={loadSettingsScreen} name="Settings" />
           <RootStack.Screen component={UserProfileScreen} name="UserProfile" />
           <RootStack.Screen getComponent={loadDishDetailScreenV2} name="DishDetail" />
+          <RootStack.Screen getComponent={loadCatalogRawDetailScreen} name="CatalogRawDetail" />
           <RootStack.Screen getComponent={loadStallDetailScreen} name="StallDetail" />
           {FEATURE_FLAGS.merchantClaimCtaEnabled ? (
             <RootStack.Screen

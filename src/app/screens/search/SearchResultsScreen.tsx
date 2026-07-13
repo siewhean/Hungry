@@ -18,7 +18,15 @@ import { FlashList } from "@shopify/flash-list";
 import { LinearGradient } from "expo-linear-gradient";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Avatar, EmptyState, FilterChipRail, Screen, Skeleton } from "@/components/ui";
+import {
+  AccessibleImage,
+  AppText,
+  Avatar,
+  EmptyState,
+  FilterChipRail,
+  Screen,
+  Skeleton,
+} from "@/components/ui";
 import {
   CyclingGridImage,
   CYCLING_GRID_IMAGE_INTERVAL_MS,
@@ -46,10 +54,21 @@ import {
   type BrowseIndex,
 } from "@/features/search/browseIndex";
 import { dedupeNearestVenueCandidates } from "@/features/search/venueDedupe";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import {
+  getCatalogRawService,
+  getDataRepository,
+  getServiceProvider,
+} from "@/lib/services/serviceProvider";
+import type {
+  CatalogPageRequest,
+  CatalogRawDishCard,
+  CatalogRawVenueCard,
+} from "@/lib/services/catalog";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
+import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail, VenueSummary } from "@/types/domain";
 
@@ -196,6 +215,9 @@ function BrowseGridCard({
 
 const BROWSE_FILTERS = ["All", "Local", "Halal", "Japanese", "Western", "Noodles", "Rice", "Spicy"];
 const BROWSE_FILTER_OPTIONS = BROWSE_FILTERS.map((filter) => ({ id: filter, label: filter }));
+const RAW_BROWSE_FILTER_OPTIONS = BROWSE_FILTER_OPTIONS.filter((option) =>
+  ["All", "Halal", "Japanese", "Western", "Noodles", "Rice"].includes(option.id),
+);
 const BROWSE_GRID_HYDRATION_TIMEOUT_MS = 350;
 const BROWSE_GRID_HYDRATION_FALLBACK_DELAY_MS = 80;
 
@@ -233,7 +255,324 @@ function BrowseGridLoadingState({
   );
 }
 
-function BrowseGridScreen({
+type RawCatalogItem = CatalogRawDishCard | CatalogRawVenueCard;
+
+function rawCatalogRequest(
+  mode: "dishes" | "stalls",
+  query: string,
+  selectedFilter: string,
+  coordinate: { latitude: number; longitude: number },
+  cursor?: string,
+): CatalogPageRequest {
+  const filter = selectedFilter.toLowerCase();
+  return {
+    query: query.trim() || undefined,
+    coordinate,
+    radiusMeters: query.trim() ? undefined : 3_000,
+    cursor,
+    limit: 24,
+    sort: query.trim() ? "relevance" : "nearby",
+    dietaryFlags: filter === "halal" ? ["halal"] : [],
+    cuisineTags: ["japanese", "western", "noodles", "rice"].includes(filter) ? [filter] : [],
+    openOnly: mode === "stalls" && filter === "local",
+  };
+}
+
+function RawCatalogCard({
+  item,
+  itemWidth,
+  mode,
+  onPress,
+}: {
+  item: RawCatalogItem;
+  itemWidth: number;
+  mode: "dishes" | "stalls";
+  onPress: () => void;
+}) {
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
+  const isDish = mode === "dishes";
+  const imageUrl =
+    item.imageUrl ?? ("representativeDish" in item ? item.representativeDish?.imageUrl : undefined);
+  const title = isDish ? (item as CatalogRawDishCard).name : (item as CatalogRawVenueCard).name;
+  const subtitle = isDish
+    ? (item as CatalogRawDishCard).venueName
+    : ((item as CatalogRawVenueCard).representativeDish?.name ?? "Menu details available");
+  const price = isDish ? (item as CatalogRawDishCard).price : undefined;
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Open ${title}`}
+      onPress={onPress}
+      style={{ padding: spacing[1], width: itemWidth }}
+    >
+      <View
+        style={{
+          backgroundColor: palette.surface,
+          borderColor: palette.border,
+          borderRadius: componentRadii.card,
+          borderWidth: 1,
+          minHeight: itemWidth * 1.25,
+          overflow: "hidden",
+        }}
+      >
+        <View style={{ backgroundColor: palette.bgSoft, height: itemWidth * 0.7 }}>
+          {imageUrl ? (
+            <AccessibleImage
+              source={{ uri: imageUrl }}
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+              accessibilityLabel={`${title} image`}
+            />
+          ) : (
+            <View style={{ alignItems: "center", flex: 1, justifyContent: "center" }}>
+              <AppText tone="muted" variant="micro">
+                Image unavailable
+              </AppText>
+            </View>
+          )}
+          {item.verificationStatus !== "approved" ? (
+            <View
+              style={{
+                backgroundColor: palette.surface,
+                borderRadius: radii.pill,
+                left: spacing[2],
+                paddingHorizontal: spacing[2],
+                paddingVertical: spacing[1],
+                position: "absolute",
+                top: spacing[2],
+              }}
+            >
+              <AppText variant="micro" style={{ color: palette.textMuted, fontSize: 10 }}>
+                {item.verificationStatus === "verified" ? "Source verified" : "Unverified"}
+              </AppText>
+            </View>
+          ) : null}
+        </View>
+        <View style={{ gap: spacing[1], padding: spacing[2] }}>
+          <AppText numberOfLines={2} variant="bodyBold">
+            {title}
+          </AppText>
+          <AppText numberOfLines={1} tone="secondary" variant="micro">
+            {subtitle}
+          </AppText>
+          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+            <AppText tone="muted" variant="micro">
+              {item.distanceMeters !== undefined
+                ? `${Math.round(item.distanceMeters)} m`
+                : "Singapore"}
+            </AppText>
+            {price !== undefined ? (
+              <AppText style={{ color: palette.orange }} variant="price">
+                S${price.toFixed(2)}
+              </AppText>
+            ) : null}
+          </View>
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
+function RawCatalogBrowseGrid({
+  initialFoodTypeTag,
+  initialSearchQuery = "",
+  mode,
+}: {
+  initialFoodTypeTag?: string;
+  initialSearchQuery?: string;
+  mode: "dishes" | "stalls";
+}) {
+  const navigation = useNavigation<RootNavigation>();
+  const { palette, spacing } = useHungryTheme();
+  const { width } = useWindowDimensions();
+  const currentLocation = useLocationStore((state) => state.currentLocation);
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
+  const initialRawFilter = RAW_BROWSE_FILTER_OPTIONS.find(
+    (option) => option.id.toLowerCase() === initialFoodTypeTag?.toLowerCase(),
+  )?.id;
+  const [selectedFilter, setSelectedFilter] = useState(initialRawFilter ?? "All");
+  const [items, setItems] = useState<RawCatalogItem[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | undefined>();
+  const [releaseId, setReleaseId] = useState<string | undefined>();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const requestVersion = useRef(0);
+  const releaseIdRef = useRef<string | undefined>(undefined);
+  const service = getCatalogRawService();
+  const itemWidth = width / 2;
+
+  const loadPage = useCallback(
+    async (cursor?: string, append = false) => {
+      if (!service || !isAuthenticated) return;
+      const version = requestVersion.current;
+      if (append) setIsLoadingMore(true);
+      else setIsLoading(true);
+      setError(null);
+      try {
+        const request = rawCatalogRequest(
+          mode,
+          searchQuery,
+          selectedFilter,
+          currentLocation,
+          cursor,
+        );
+        request.releaseId = cursor ? releaseIdRef.current : undefined;
+        const page =
+          mode === "dishes" ? await service.listDishes(request) : await service.listVenues(request);
+        if (requestVersion.current !== version) return;
+        setItems((current) => (append ? [...current, ...page.items] : page.items));
+        setNextCursor(page.nextCursor);
+        releaseIdRef.current = page.releaseId || undefined;
+        setReleaseId(releaseIdRef.current);
+      } catch (loadError) {
+        if (requestVersion.current === version) {
+          setError(loadError instanceof Error ? loadError.message : "Could not load the catalog.");
+          if (!append) setItems([]);
+        }
+      } finally {
+        if (requestVersion.current === version) {
+          setIsLoading(false);
+          setIsLoadingMore(false);
+        }
+      }
+    },
+    [currentLocation, isAuthenticated, mode, searchQuery, selectedFilter, service],
+  );
+
+  useEffect(() => {
+    requestVersion.current += 1;
+    releaseIdRef.current = undefined;
+    setReleaseId(undefined);
+    const timer = setTimeout(
+      () => {
+        void loadPage();
+      },
+      searchQuery.trim() ? 250 : 0,
+    );
+    return () => clearTimeout(timer);
+  }, [loadPage]);
+
+  if (!isAuthenticated) {
+    return (
+      <Screen scroll={false}>
+        <EmptyState
+          title="Sign in to browse the full directory"
+          body="The complete Hungry catalog is available after you sign in."
+        />
+      </Screen>
+    );
+  }
+
+  return (
+    <Screen scroll={false} fullWidth style={{ backgroundColor: palette.bg }}>
+      <View style={{ flex: 1, backgroundColor: palette.bg }}>
+        <View
+          style={{ gap: spacing[3], paddingHorizontal: spacing[4], paddingVertical: spacing[3] }}
+        >
+          <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              onPress={() => navigation.goBack()}
+            >
+              <ArrowLeft color={palette.text} size={24} />
+            </Pressable>
+            <TextInput
+              accessibilityLabel={`Search ${mode}`}
+              autoCorrect={false}
+              onChangeText={setSearchQuery}
+              placeholder={mode === "dishes" ? "Search all dishes" : "Search all stalls"}
+              placeholderTextColor={palette.textMuted}
+              style={[
+                browseStyles.textInput,
+                {
+                  backgroundColor: palette.surface,
+                  borderColor: palette.border,
+                  borderRadius: 18,
+                  borderWidth: 1,
+                  color: palette.text,
+                  height: 48,
+                  paddingHorizontal: spacing[3],
+                },
+              ]}
+              value={searchQuery}
+            />
+          </View>
+          <FilterChipRail
+            options={RAW_BROWSE_FILTER_OPTIONS}
+            selectedId={selectedFilter}
+            onSelect={setSelectedFilter}
+          />
+        </View>
+        <FlashList
+          data={items}
+          // @ts-ignore FlashList v2 supports this runtime prop but its bundled type omits it.
+          estimatedItemSize={itemWidth * 1.25}
+          keyExtractor={(item) => item.id}
+          numColumns={2}
+          onEndReached={() => {
+            if (nextCursor && !isLoadingMore && !isLoading) void loadPage(nextCursor, true);
+          }}
+          onEndReachedThreshold={0.6}
+          renderItem={({ item }) => (
+            <RawCatalogCard
+              item={item}
+              itemWidth={itemWidth}
+              mode={mode}
+              onPress={() =>
+                navigation.navigate("CatalogRawDetail", {
+                  kind: mode === "dishes" ? "dish" : "venue",
+                  id: item.id,
+                  releaseId,
+                })
+              }
+            />
+          )}
+          ListEmptyComponent={
+            isLoading ? (
+              <BrowseGridLoadingState itemWidth={itemWidth} mode={mode} />
+            ) : error ? (
+              <EmptyState
+                title="Catalog unavailable"
+                body={error}
+                ctaLabel="Retry"
+                onPress={() => void loadPage()}
+              />
+            ) : (
+              <EmptyState title="No matches found" body="Try another search or filter." />
+            )
+          }
+          ListFooterComponent={
+            isLoadingMore ? (
+              <View style={{ paddingVertical: spacing[4] }}>
+                <ActivityIndicator color={palette.orange} />
+              </View>
+            ) : null
+          }
+        />
+      </View>
+    </Screen>
+  );
+}
+
+function BrowseGridScreen(props: {
+  initialFoodTypeTag?: string;
+  mode: "dishes" | "stalls";
+  initialSearchQuery?: string;
+}) {
+  const shouldUseCatalogReadV2 =
+    FEATURE_FLAGS.catalogReadV2 && getServiceProvider().mode === "supabase";
+  return shouldUseCatalogReadV2 ? (
+    <RawCatalogBrowseGrid {...props} />
+  ) : (
+    <LegacyBrowseGridScreen {...props} />
+  );
+}
+
+function LegacyBrowseGridScreen({
   initialFoodTypeTag,
   mode,
   initialSearchQuery = "",
@@ -913,6 +1252,29 @@ export function BrowseStallsScreen() {
 }
 
 export function SearchResultsScreen() {
+  const route = useRoute<SearchResultsRoute>();
+  const storedQuery = useSearchStore((state) => state.filters.query);
+  const selectedCategories = useSearchStore((state) => state.filters.categories);
+  const storedCatalogCategory = selectedCategories.find((category) =>
+    ["noodles", "rice"].includes(category),
+  );
+  const shouldUseCatalogReadV2 =
+    FEATURE_FLAGS.catalogReadV2 && getServiceProvider().mode === "supabase";
+
+  if (shouldUseCatalogReadV2) {
+    return (
+      <RawCatalogBrowseGrid
+        mode={route.params?.browseMode ?? "dishes"}
+        initialFoodTypeTag={route.params?.foodTypeTag ?? storedCatalogCategory}
+        initialSearchQuery={route.params?.initialQuery ?? storedQuery}
+      />
+    );
+  }
+
+  return <LegacySearchResultsScreen />;
+}
+
+function LegacySearchResultsScreen() {
   const route = useRoute<SearchResultsRoute>();
   const navigation = useNavigation<RootNavigation>();
   const { profile, filters } = useSearchData();
