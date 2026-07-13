@@ -6,6 +6,15 @@
 
 ## Current Focus
 
+- `CATALOG-RAW-READS-01` — Implemented repo-local; production activation is blocked by a linked
+  source-count mismatch. Adds versioned full-catalog projections and authenticated,
+  cursor-paged dish/venue/detail/menu/map RPCs behind `catalogReadV2` (default off). Search, Browse,
+  map viewport, chips, loading/error states, and raw provenance labels use bounded session memory only;
+  V2 no longer warms the legacy client-wide catalog index. Linked preflight on 2026-07-14 found
+  `119,232 / 156,323`, so the required `119,232 / 156,010` publish gate correctly refuses activation.
+  Reconcile the 313-dish drift or explicitly approve a revised target before applying the migration,
+  publishing the release, running linked smoke SQL, and verifying production P95/native feedback.
+
 - `MAIN-FDO-RECONCILE-01` — Done. Reconciled `frontend-design-overhaul` onto the current `main`
   baseline with the FDO UI/UX and Passport implementation authoritative. Restored selected
   nonvisual safety fixes and added the lazy Excel repository/provider path. Published the
