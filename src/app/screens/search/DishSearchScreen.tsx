@@ -15,6 +15,8 @@ import {
   Screen,
 } from "@/components/ui";
 import { getDiscoverStallCollections, useSearchData } from "@/features/search/search";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { getServiceProvider } from "@/lib/services/serviceProvider";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
@@ -45,7 +47,13 @@ export function DishSearchScreen() {
   const toggleCategory = useSearchStore((state) => state.toggleCategory);
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
   const [searchText, setSearchText] = useState("");
-  const collections = getDiscoverStallCollections(profile, filters.query).slice(0, 4);
+  const shouldUseCatalogReadV2 =
+    FEATURE_FLAGS.catalogReadV2 && getServiceProvider().mode === "supabase";
+  // Search results own the raw, paged catalog request. Keeping this landing
+  // screen empty of local recommendations avoids a whole-catalog hydration.
+  const collections = shouldUseCatalogReadV2
+    ? []
+    : getDiscoverStallCollections(profile, filters.query).slice(0, 4);
   const entryY = useRef(new Animated.Value(-28)).current;
   const entryOpacity = useRef(new Animated.Value(0)).current;
   const suggestedDish = collections[0]?.topDishes[0];

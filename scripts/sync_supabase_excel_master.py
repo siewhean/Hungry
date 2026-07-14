@@ -8,6 +8,7 @@ workbook a reviewable master without changing the importer surface.
 from __future__ import annotations
 
 import argparse
+import errno
 import json
 import os
 import re
@@ -22,6 +23,7 @@ from urllib import error, parse, request
 import xlsxwriter
 from openpyxl import load_workbook
 
+from data_display_policy import display_authorized
 from validate_excel_workbook import DEFAULT_WORKBOOK, EXPECTED_COLUMNS, clean, dedupe_key
 
 
@@ -39,6 +41,10 @@ BAD_URL_PATTERNS = (
     "picsum.photos",
     "hungry-logo",
     "hungry-app-logo",
+    "food.grab.com/static/images/logo-grabfood",
+    "food.grab.com/static/images/quick-add",
+    "plus-white.svg",
+    "placeholder",
 )
 
 
@@ -271,10 +277,14 @@ def choose_venue(current: dict[str, Any] | None, candidate: dict[str, Any]) -> d
         return candidate
 
     def score(row: dict[str, Any]) -> tuple[int, int, int, str]:
+        media_authorized = display_authorized(
+            row.get("media_approved_for_display"),
+            row.get("media_rights_status"),
+        )
         return (
-            1 if is_good_url(row.get("logo_url")) else 0,
-            1 if row.get("media_approved_for_display") else 0,
-            1 if is_good_url(row.get("image_url")) else 0,
+            1 if media_authorized and is_good_url(row.get("logo_url")) else 0,
+            1 if media_authorized else 0,
+            1 if media_authorized and is_good_url(row.get("image_url")) else 0,
             clean(row.get("updated_at")),
         )
 
@@ -463,6 +473,9 @@ def update_sheet1_row(
     match_type: str,
 ) -> dict[str, Any]:
     out = {column: row.get(column) for column in EXPECTED_COLUMNS}
+    # A cache refresh is not source verification. Preserve the source date even
+    # when the matching Supabase venue has a newer last_verified_at/updated_at.
+    out["Last Verified Date"] = row.get("Last Verified Date")
     out["Coverage Status"] = normalize_coverage_status(out.get("Coverage Status"))
     stats[f"match_{match_type}"] += 1
 
@@ -478,13 +491,17 @@ def update_sheet1_row(
     if not venue:
         return out
 
-    if is_good_url(venue.get("logo_url")):
+    venue_media_authorized = display_authorized(
+        venue.get("media_approved_for_display"),
+        venue.get("media_rights_status"),
+    )
+    if venue_media_authorized and is_good_url(venue.get("logo_url")):
         out["Logo URL"] = venue.get("logo_url")
         stats["filled_logo_url"] += 1
     else:
         out["Logo URL"] = None
 
-    if venue.get("media_approved_for_display") and is_good_url(venue.get("image_url")):
+    if venue_media_authorized and is_good_url(venue.get("image_url")):
         out["Image URL"] = venue.get("image_url")
         stats["filled_approved_venue_image_url"] += 1
 
@@ -503,14 +520,29 @@ def update_sheet1_row(
     approved_images = [
         dish.get("image_url")
         for dish in venue_dishes
-        if dish.get("media_approved_for_display")
-        and dish.get("menu_approved_for_display")
+        if display_authorized(
+            dish.get("media_approved_for_display"),
+            dish.get("media_rights_status"),
+        )
+        and display_authorized(
+            dish.get("menu_approved_for_display"),
+            dish.get("menu_rights_status"),
+        )
         and is_good_url(dish.get("image_url"))
     ]
     if approved_images:
         out["Dishes Image URL"] = approved_images[0]
         stats["filled_approved_dish_image_url"] += 1
-    menu_items = format_menu_items([dish for dish in venue_dishes if dish.get("menu_approved_for_display")])
+    menu_items = format_menu_items(
+        [
+            dish
+            for dish in venue_dishes
+            if display_authorized(
+                dish.get("menu_approved_for_display"),
+                dish.get("menu_rights_status"),
+            )
+        ]
+    )
     if menu_items:
         out["Menu Items"] = menu_items
         stats["updated_menu_items_from_supabase"] += 1
@@ -754,6 +786,24 @@ def append_incremental_report(workbook: Any, report_rows: list[dict[str, Any]]) 
             set_openpyxl_cell(sheet.cell(row=row_number, column=headers[column]), report.get(column))
 
 
+def create_workbook_backup(workbook_path: Path, archive_dir: Path) -> tuple[Path | None, str]:
+    """Create a pre-sync backup, or explicitly skip only when the disk is full."""
+    stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
+    backup_path = archive_dir / f"{workbook_path.stem}.pre-master-sync-{stamp}{workbook_path.suffix}"
+    try:
+        archive_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(workbook_path, backup_path)
+    except OSError as exc:
+        if exc.errno != errno.ENOSPC:
+            raise
+        try:
+            backup_path.unlink(missing_ok=True)
+        except OSError as cleanup_exc:
+            raise OSError(f"Cannot remove partial low-disk backup {backup_path}: {cleanup_exc}") from cleanup_exc
+        return None, "skipped_low_disk"
+    return backup_path, "created"
+
+
 def write_incremental_workbook(
     source_path: Path,
     output_path: Path,
@@ -921,12 +971,19 @@ def main() -> int:
     for key, value in sorted(sync_stats.items()):
         report_rows.append({"metric": key, "value": value, "notes": ""})
 
+    backup_status = "disabled" if args.no_backup else "not_required"
     if args.output.resolve() == args.workbook.resolve() and not args.no_backup:
-        args.archive_dir.mkdir(parents=True, exist_ok=True)
-        stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
-        backup_path = args.archive_dir / f"{args.workbook.stem}.pre-master-sync-{stamp}{args.workbook.suffix}"
-        shutil.copy2(args.workbook, backup_path)
-        report_rows.append({"metric": "workbook_backup", "value": str(backup_path), "notes": "Pre-sync copy"})
+        backup_path, backup_status = create_workbook_backup(args.workbook, args.archive_dir)
+        if backup_path is not None:
+            report_rows.append({"metric": "workbook_backup", "value": str(backup_path), "notes": "Pre-sync copy"})
+        else:
+            report_rows.append(
+                {
+                    "metric": "workbook_backup",
+                    "value": backup_status,
+                    "notes": "Backup skipped because the archive filesystem reported ENOSPC; atomic workbook replacement remains enabled.",
+                }
+            )
 
     if incremental_active:
         write_stats = write_incremental_workbook(
@@ -972,6 +1029,7 @@ def main() -> int:
                 "changed_dishes": len(changed_dishes),
                 "deletions_reconciled": not incremental_active,
                 "grab_image_rows": len(grab_evidence),
+                "backup_status": backup_status,
                 "stats": sync_stats,
             },
             indent=2,

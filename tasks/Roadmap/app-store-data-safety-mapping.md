@@ -1,6 +1,6 @@
 # App Store Data Safety Mapping
 
-Updated: 2026-06-21  
+Updated: 2026-06-21
 Verdict: **No-Go until owner/legal verifies store-console answers against this matrix.**
 
 | Data type | Collected? | Shared/processed by | Purpose | Required/optional | User control | Store disclosure |

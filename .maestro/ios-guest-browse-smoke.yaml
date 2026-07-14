@@ -26,8 +26,23 @@ appId: ${APP_ID}
 - extendedWaitUntil:
     visible: "Developer Launcher"
     timeout: 60000
+- scrollUntilVisible:
+    element:
+      id: "dev-section-toggle-session-presets"
+    direction: DOWN
 - tapOn:
-    id: "dev-button-user"
+    id: "dev-section-toggle-session-presets"
+- tapOn:
+    id: "dev-button-auth-onboard"
+- extendedWaitUntil:
+    visible: "Developer Launcher"
+    timeout: 30000
+- scrollUntilVisible:
+    element:
+      id: "dev-button-home"
+    direction: DOWN
+- tapOn:
+    id: "dev-button-home"
 - extendedWaitUntil:
     visible: "Home"
     timeout: 30000

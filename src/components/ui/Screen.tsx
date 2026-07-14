@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from "re
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
-import { useHungryTheme } from "@/theme";
+import { useHungryTheme, type HungryTheme } from "@/theme";
 import { AppHeader } from "./AppHeader";
 
 interface ScreenProps {
@@ -110,7 +110,7 @@ export function Screen({
   );
 }
 
-const createStyles = (spacing: any) =>
+const createStyles = (spacing: HungryTheme["spacing"]) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,

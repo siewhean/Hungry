@@ -24,7 +24,7 @@ export function Skeleton({ width = "100%", height, borderRadius, style }: Skelet
   const resolvedRadius = borderRadius ?? componentRadii.card;
 
   useEffect(() => {
-    Animated.loop(
+    const animation = Animated.loop(
       Animated.sequence([
         Animated.timing(opacity, {
           toValue: opacityTokens.skeletonMax,
@@ -37,7 +37,13 @@ export function Skeleton({ width = "100%", height, borderRadius, style }: Skelet
           useNativeDriver: true,
         }),
       ]),
-    ).start();
+    );
+    animation.start();
+
+    return () => {
+      animation.stop();
+      opacity.stopAnimation();
+    };
   }, [motion.skeleton, opacity, opacityTokens.skeletonMax, opacityTokens.skeletonMin]);
 
   return (

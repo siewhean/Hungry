@@ -1,6 +1,6 @@
 # Hungry App Performance Optimisation Plan
 
-**Project:** Hungry mobile app  
+**Project:** Hungry mobile app
 **Focus:** Faster discovery filtering, bottom navigation responsiveness, Popular Right Now navigation, back-button responsiveness, skeleton loading, prefetching, and perceived performance.
 
 ---

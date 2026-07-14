@@ -1,7 +1,7 @@
 # Claude Prompt — Full App Integration Architecture Plan
 
-> **Branch:** `frontend-design-overhaul`  
-> **Purpose:** Ask Claude to audit and plan how every feature in Hungry should be integrated together, with shared identity, database persistence, cross-user visibility, local settings boundaries, and no standalone/unconnected screens.  
+> **Branch:** `frontend-design-overhaul`
+> **Purpose:** Ask Claude to audit and plan how every feature in Hungry should be integrated together, with shared identity, database persistence, cross-user visibility, local settings boundaries, and no standalone/unconnected screens.
 > **Use this prompt with Claude.**
 
 ---

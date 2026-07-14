@@ -1,7 +1,12 @@
 import { Image as ExpoImage } from "expo-image";
 
 import { getBrowseIndex, searchBrowseDishes } from "@/features/search/browseIndex";
-import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import {
+  getDataRepository,
+  getHungryService,
+  getServiceProvider,
+} from "@/lib/services/serviceProvider";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import type { DataRepository } from "@/lib/services/types";
 import type { StallPost } from "@/types/domain";
@@ -105,6 +110,9 @@ export function prefetchImages(uris: (string | null | undefined)[], limit = 6) {
 }
 
 export function prefetchDishDetail(dishId?: string | null, repository?: DataRepository) {
+  if (FEATURE_FLAGS.catalogReadV2 && getServiceProvider().mode === "supabase") {
+    return;
+  }
   if (!dishId || prefetchedDishDetails.has(dishId) || scheduledDishDetails.has(dishId)) {
     return;
   }
@@ -133,6 +141,9 @@ export function prefetchDishDetail(dishId?: string | null, repository?: DataRepo
 }
 
 export function prefetchStallDetail(venueId?: string | null, repository?: DataRepository) {
+  if (FEATURE_FLAGS.catalogReadV2 && getServiceProvider().mode === "supabase") {
+    return;
+  }
   if (!venueId || prefetchedStallDetails.has(venueId) || scheduledStallDetails.has(venueId)) {
     return;
   }
@@ -210,6 +221,18 @@ export function prefetchBrowseResults(
   const normalizedQuery = query.trim();
   const browseMode = options?.browseMode ?? "stalls";
   const limit = options?.limit ?? 8;
+
+  // Catalog V2 is server-paged. Never warm the legacy index in that lane: it
+  // would hydrate the entire Supabase catalog before the destination renders.
+  if (FEATURE_FLAGS.catalogReadV2 && getServiceProvider().mode === "supabase") {
+    if (navigation && normalizedQuery) {
+      preloadRoute(navigation, "SearchResults", {
+        browseMode,
+        initialQuery: normalizedQuery,
+      });
+    }
+    return;
+  }
   const key = `${browseMode}:${normalizedQuery.toLowerCase()}:${limit}`;
 
   if (scheduledBrowseResultPrefetches.has(key)) {

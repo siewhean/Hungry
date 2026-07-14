@@ -515,7 +515,14 @@ export function QuickBitesScreen() {
         ]}
       >
         <View style={styles.titleRow}>
-          <Pressable onPress={() => navigation.goBack()} style={styles.backBtn} hitSlop={12}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            accessibilityHint="Returns to the previous screen"
+            onPress={() => navigation.goBack()}
+            style={styles.backBtn}
+            hitSlop={12}
+          >
             <ArrowLeft color={palette.text} size={24} />
           </Pressable>
           <AppText variant="h2" style={{ flex: 1 }}>

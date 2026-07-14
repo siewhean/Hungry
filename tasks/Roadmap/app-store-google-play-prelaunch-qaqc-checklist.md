@@ -1,8 +1,8 @@
 # Hungry App Store + Google Play Pre-Launch QA/QC Checklist
 
-> Scope: Hungry mobile app, Expo/React Native app shell, Supabase-backed features, public web/e2e app surface, Playwright tests, Maestro/native smoke, security, prefetching, privacy, UGC, App Store Review, and Google Play policy readiness.  
-> Branch context: `frontend-design-overhaul`  
-> Status rule: **No production release until every P0 gate passes.**  
+> Scope: Hungry mobile app, Expo/React Native app shell, Supabase-backed features, public web/e2e app surface, Playwright tests, Maestro/native smoke, security, prefetching, privacy, UGC, App Store Review, and Google Play policy readiness.
+> Branch context: `frontend-design-overhaul`
+> Status rule: **No production release until every P0 gate passes.**
 > Use this file as the pre-launch checklist and as the instruction document for Codex.
 
 ---

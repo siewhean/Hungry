@@ -653,6 +653,7 @@ async function refreshCache(force = false): Promise<void> {
         mappedVenues = (venuesResult.data as unknown as Row[]).map(mapVenue);
         cachedVenues = mappedVenues;
       }
+      const venueById = new Map(mappedVenues.map((venue) => [venue.id, venue]));
       if (Array.isArray(dishesResult.data) && !dishesResult.error) {
         const imageRows =
           Array.isArray(dishImagesResult.data) && !dishImagesResult.error
@@ -681,7 +682,7 @@ async function refreshCache(force = false): Promise<void> {
           .map((row) =>
             mapDish(
               row,
-              mappedVenues.find((venue) => venue.id === toString(row.venue_id)),
+              venueById.get(toString(row.venue_id)),
               presentationByDishId.get(toString(row.id)),
             ),
           );
@@ -700,15 +701,15 @@ async function refreshCache(force = false): Promise<void> {
             ? (postMediaResult.data as unknown as Row[])
             : [];
         const mediaByPostId = groupRowsByStringKey(postMediaRows, "post_id");
+        const dishById = new Map(cachedDishes.map((dish) => [dish.id, dish]));
+        const buildingById = new Map(cachedBuildings.map((building) => [building.id, building]));
         const postStallPosts = postRows.map((row) => {
-          const venue = mappedVenues.find((item) => item.id === toString(row.venue_id));
-          const dish = cachedDishes.find((item) => item.id === toString(row.dish_id));
-          const building = cachedBuildings.find(
-            (item) =>
-              item.id === toString(row.building_id) ||
-              item.id === venue?.buildingId ||
-              item.id === dish?.buildingId,
-          );
+          const venue = venueById.get(toString(row.venue_id));
+          const dish = dishById.get(toString(row.dish_id));
+          const building =
+            buildingById.get(toString(row.building_id)) ??
+            buildingById.get(venue?.buildingId ?? "") ??
+            buildingById.get(dish?.buildingId ?? "");
           return mapPostRowToStallPost(
             row,
             mediaByPostId.get(toString(row.id)) ?? [],
@@ -1245,9 +1246,6 @@ const supabaseRepositoryImpl: DataRepository = {
     if (error) throw error;
   },
 };
-
-// Kick off hydration on module load for low-latency first read.
-ensureHydrated();
 
 export function invalidateSupabaseRepositoryCache(): void {
   hydrated = false;

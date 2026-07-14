@@ -17,6 +17,7 @@ const FLOW_MAP = {
   "ios-review-post": [".maestro/ios-review-post-smoke.yaml"],
   "ios-chat": [".maestro/ios-chat-smoke.yaml"],
   "ios-media": [".maestro/ios-media-picker-permission.yaml"],
+  "ios-interactions": [".maestro/ios-discovery-search-smoke.yaml"],
   ios: [
     ".maestro/ios-app-launch-smoke.yaml",
     ".maestro/ios-guest-browse-smoke.yaml",
@@ -25,6 +26,7 @@ const FLOW_MAP = {
     ".maestro/ios-media-picker-permission.yaml",
     ".maestro/ios-review-post-smoke.yaml",
     ".maestro/ios-chat-smoke.yaml",
+    ".maestro/ios-discovery-search-smoke.yaml",
   ],
   "android-launch": [".maestro/android-app-launch-smoke.yaml"],
   "android-guest": [".maestro/android-guest-browse-smoke.yaml"],
@@ -42,6 +44,7 @@ const FLOW_MAP = {
     ".maestro/ios-media-picker-permission.yaml",
     ".maestro/ios-review-post-smoke.yaml",
     ".maestro/ios-chat-smoke.yaml",
+    ".maestro/ios-discovery-search-smoke.yaml",
     ".maestro/android-app-launch-smoke.yaml",
     ".maestro/android-guest-browse-smoke.yaml",
     ".maestro/android-media-permission-smoke.yaml",

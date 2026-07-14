@@ -1,7 +1,7 @@
 # App Store Submission QC Report
 
-Updated: 2026-06-21  
-Market: Singapore  
+Updated: 2026-06-21
+Market: Singapore
 Status: **No-Go**
 
 ## ASO Draft

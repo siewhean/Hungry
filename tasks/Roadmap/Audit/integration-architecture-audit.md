@@ -1,8 +1,8 @@
 # Hungry — Integration Architecture Audit
 
-> **Branch:** `frontend-design-overhaul`  
-> **Date:** 2026-05-27  
-> **Scope:** Full data-flow audit across stores, services, database, and screens  
+> **Branch:** `frontend-design-overhaul`
+> **Date:** 2026-05-27
+> **Scope:** Full data-flow audit across stores, services, database, and screens
 > **Auditor:** Independent principal engineer review
 
 ---
@@ -379,7 +379,7 @@ addActivityUpdate: (update) => {
 
 **Problem:** `HungryService.communitySafety` interface exists at [types.ts:756-761](file:///Users/Siew%20Hean/Documents/GitHub/Hungry/src/lib/services/types.ts#L756-L761) with `reportContent()`, `blockUser()`, `hidePost()`, `unhidePost()`. But:
 - `content_reports` table: needs verification whether it exists in migrations
-- `blocked_users` table: needs verification  
+- `blocked_users` table: needs verification
 - Block enforcement: not wired — a blocked user can still appear in feeds, comments, and chat
 
 **Fix:**

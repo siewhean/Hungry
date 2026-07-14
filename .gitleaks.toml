@@ -1,0 +1,9 @@
+title = "Hungry gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Deterministic Singapore Food Agency venue identifiers in the generated Excel catalog"
+regexTarget = "secret"
+regexes = ['''^ven-SFA-[A-Z0-9]+$''']

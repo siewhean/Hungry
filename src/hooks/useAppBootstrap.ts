@@ -1,3 +1,4 @@
+import NetInfo from "@react-native-community/netinfo";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { setAnalyticsSink, trackAnalyticsEvent } from "@/lib/analytics";
 import {
@@ -10,6 +11,7 @@ import {
   setMockServiceProvider,
   setSupabaseServiceProvider,
 } from "@/lib/services/serviceProvider";
+import { isNetworkOffline } from "@/lib/network/connectivity";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useMerchantStore } from "@/store/useMerchantStore";
@@ -61,6 +63,10 @@ function runAfterIdle(callback: () => void) {
 
   const timeout = setTimeout(callback, 0);
   return () => clearTimeout(timeout);
+}
+
+function shouldWarmLegacyRepositoryCache() {
+  return process.env.EXPO_PUBLIC_HUNGRY_LEGACY_CACHE_WARMUP === "1";
 }
 
 function preserveRestoredAuthState(applyAuthStateFromSession: ApplyAuthStateFromSession): boolean {
@@ -131,9 +137,13 @@ export function useAppBootstrap() {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    // Keep bootstrap deterministic in local/dev runs.
-    // This avoids hard runtime dependency on optional NetInfo wiring.
-    setOffline(false);
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      // `null` means the native reachability probe has not resolved yet; do
+      // not show an offline screen until connectivity is known to be absent.
+      setOffline(isNetworkOffline(state));
+    });
+
+    return unsubscribe;
   }, [setOffline]);
 
   useLayoutEffect(() => {
@@ -175,19 +185,18 @@ export function useAppBootstrap() {
     // legacy mock profiles.
     syncProfile(hasValidSupabaseAuth, authenticatedUserId);
 
-    let active = true;
-    const { refreshSupabaseRepositoryCache } =
-      require("@/lib/services/supabase/supabaseRepository") as typeof import("@/lib/services/supabase/supabaseRepository");
-    void refreshSupabaseRepositoryCache()
-      .catch(() => undefined)
-      .finally(() => {
-        if (active) {
-          setIsDataSourceReady(true);
-        }
+    // Discovery/detail routes hydrate through bounded RPCs. The legacy cache
+    // loads the whole catalog, so it is opt-in for diagnostics only and never
+    // starts work on the interactive application shell by default.
+    setIsDataSourceReady(true);
+    if (shouldWarmLegacyRepositoryCache()) {
+      const cancelWarmup = runAfterIdle(() => {
+        const { refreshSupabaseRepositoryCache } =
+          require("@/lib/services/supabase/supabaseRepository") as typeof import("@/lib/services/supabase/supabaseRepository");
+        void refreshSupabaseRepositoryCache().catch(() => undefined);
       });
-    return () => {
-      active = false;
-    };
+      return cancelWarmup;
+    }
   }, [authDataSource, applyAuthStateFromSession, authenticatedUserId, isAuthenticated, isUserMode]);
 
   useEffect(() => {
@@ -203,6 +212,7 @@ export function useAppBootstrap() {
     const client = getSupabaseClient();
     if (!client) {
       applyAuthStateFromSession({ isAuthenticated: false });
+      markAuthReady();
       return;
     }
 
@@ -210,7 +220,7 @@ export function useAppBootstrap() {
 
     void client.auth
       .getSession()
-      .then(async ({ data }) => {
+      .then(({ data }) => {
         if (!active) return;
         const user = data.session?.user;
         if (!user) {
@@ -221,17 +231,19 @@ export function useAppBootstrap() {
           return;
         }
 
-        try {
-          const profile = await getHungryService().profile.getProfile();
-          if (!active) return;
-          applyProfile(profile);
-        } catch {
-          // Keep the restored auth session even if profile hydration needs to retry later.
-        }
         applyAuthStateFromSession({
           isAuthenticated: true,
           userId: user.id,
         });
+        const cancelProfileHydration = runAfterIdle(() => {
+          void getHungryService()
+            .profile.getProfile()
+            .then((profile) => {
+              if (active) applyProfile(profile);
+            })
+            .catch(() => undefined);
+        });
+        if (!active) cancelProfileHydration();
       })
       .catch(() => {
         if (!active) return;
@@ -259,19 +271,13 @@ export function useAppBootstrap() {
         return;
       }
 
-      void getHungryService()
-        .profile.getProfile()
-        .then((profile) => {
-          if (active) applyProfile(profile);
-        })
-        .catch(() => undefined)
-        .finally(() => {
-          if (!active) return;
-          applyAuthStateFromSession({
-            isAuthenticated: true,
-            userId: user.id,
-          });
-        });
+      applyAuthStateFromSession({
+        isAuthenticated: true,
+        userId: user.id,
+      });
+      // Interactive sign-in already applies the session profile (and may be
+      // merging guest preferences). Do not race that merge with a second
+      // stale server read; cold-session restoration above hydrates once idle.
     });
 
     return () => {

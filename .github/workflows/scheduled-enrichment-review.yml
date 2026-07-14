@@ -6,13 +6,18 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "Review creates evidence only; apply updates existing rows after protected-environment approval"
+        description: "Review creates evidence only; apply is manual-only and updates existing rows"
         required: true
         default: review
         type: choice
         options:
           - review
           - apply
+      approval:
+        description: "Apply mode requires the exact confirmation APPLY_EXISTING_ROWS"
+        required: false
+        default: ""
+        type: string
       limit:
         description: "Venue limit (review maximum 25; apply maximum 10)"
         required: true
@@ -39,7 +44,7 @@ jobs:
   review:
     if: >-
       (github.event_name == 'workflow_dispatch' && inputs.mode == 'review') ||
-      (github.event_name == 'schedule' && vars.HUNGRY_SCHEDULED_ENRICHMENT_MODE != 'apply')
+      github.event_name == 'schedule'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
@@ -58,7 +63,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
@@ -73,9 +78,9 @@ jobs:
         run: >-
           node scripts/run-scheduled-enrichment-review.mjs
           --mode=review
-          --limit=${ENRICHMENT_LIMIT}
-          --workers=${ENRICHMENT_WORKERS}
-          --output-dir=${RUNNER_TEMP}/scheduled-enrichment
+          --limit="${ENRICHMENT_LIMIT}"
+          --workers="${ENRICHMENT_WORKERS}"
+          --output-dir="${RUNNER_TEMP}/scheduled-enrichment"
 
       - name: Upload review evidence
         if: always()
@@ -92,18 +97,32 @@ jobs:
           echo "Scheduled enrichment review failed. Inspect the uploaded run summary."
           exit 1
 
+  reject-unconfirmed-apply:
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      inputs.mode == 'apply' &&
+      (inputs.approval != 'APPLY_EXISTING_ROWS' || github.actor != github.repository_owner)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reject unconfirmed apply request
+        run: |
+          echo "Apply mode requires the exact approval phrase APPLY_EXISTING_ROWS."
+          exit 1
+
   apply:
     if: >-
-      (github.event_name == 'workflow_dispatch' && inputs.mode == 'apply') ||
-      (github.event_name == 'schedule' && vars.HUNGRY_SCHEDULED_ENRICHMENT_MODE == 'apply')
+      github.event_name == 'workflow_dispatch' &&
+      inputs.mode == 'apply' &&
+      inputs.approval == 'APPLY_EXISTING_ROWS' &&
+      github.actor == github.repository_owner
     runs-on: ubuntu-latest
     timeout-minutes: 90
     environment:
       name: enrichment-production
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-      ENRICHMENT_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.limit || vars.HUNGRY_SCHEDULED_ENRICHMENT_LIMIT || '10' }}
-      ENRICHMENT_WORKERS: ${{ github.event_name == 'workflow_dispatch' && inputs.workers || vars.HUNGRY_SCHEDULED_ENRICHMENT_WORKERS || '2' }}
+      ENRICHMENT_LIMIT: ${{ inputs.limit }}
+      ENRICHMENT_WORKERS: ${{ inputs.workers }}
       HUNGRY_SUPABASE_IMPORT_URL: ${{ secrets.HUNGRY_SUPABASE_IMPORT_URL }}
       HUNGRY_SUPABASE_IMPORT_SERVICE_ROLE_KEY: ${{ secrets.HUNGRY_SUPABASE_IMPORT_SERVICE_ROLE_KEY }}
       EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
@@ -117,7 +136,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
@@ -132,9 +151,9 @@ jobs:
         run: >-
           node scripts/run-scheduled-enrichment-review.mjs
           --mode=apply
-          --limit=${ENRICHMENT_LIMIT}
-          --workers=${ENRICHMENT_WORKERS}
-          --output-dir=${RUNNER_TEMP}/scheduled-enrichment
+          --limit="${ENRICHMENT_LIMIT}"
+          --workers="${ENRICHMENT_WORKERS}"
+          --output-dir="${RUNNER_TEMP}/scheduled-enrichment"
 
       - name: Upload apply evidence
         if: always()

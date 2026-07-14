@@ -6,7 +6,7 @@
       <stop offset="50%" stop-color="#e3f2fd" />
       <stop offset="100%" stop-color="#bbdefb" />
     </radialGradient>
-    
+
     <!-- Guilloche Pattern (simplified for SVG) -->
     <pattern id="guilloche" width="100" height="100" patternUnits="userSpaceOnUse">
       <path d="M 0 50 Q 25 0, 50 50 T 100 50" fill="none" stroke="#90caf9" stroke-width="0.5" opacity="0.6"/>
@@ -14,7 +14,7 @@
       <circle cx="50" cy="50" r="40" fill="none" stroke="#ce93d8" stroke-width="0.5" opacity="0.4"/>
       <circle cx="50" cy="50" r="20" fill="none" stroke="#90caf9" stroke-width="0.5" opacity="0.4"/>
     </pattern>
-    
+
     <!-- Page Fold Shadow -->
     <linearGradient id="pageFold" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#000000" stop-opacity="0.1" />
@@ -25,7 +25,7 @@
       <stop offset="98%" stop-color="#000000" stop-opacity="0.0" />
       <stop offset="100%" stop-color="#000000" stop-opacity="0.1" />
     </linearGradient>
-    
+
     <!-- Drop Shadow for UI Card -->
     <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
       <feDropShadow dx="0" dy="10" stdDeviation="15" flood-opacity="0.1" />
@@ -36,24 +36,24 @@
   <rect width="800" height="1000" fill="url(#passportBg)" />
   <rect width="800" height="1000" fill="url(#guilloche)" />
   <rect width="800" height="1000" fill="url(#pageFold)" />
-  
+
   <!-- UI Card Header (Glassmorphism look) -->
   <g filter="url(#shadow)">
     <rect x="50" y="50" width="700" height="220" rx="30" fill="#ffffff" fill-opacity="0.8" stroke="#ffffff" stroke-width="2" />
     <circle cx="120" cy="160" r="50" fill="#e0e0e0" />
     <!-- User Avatar Placeholder -->
     <path d="M120 135 A 20 20 0 1 0 120 175 A 20 20 0 1 0 120 135 M 90 200 C 90 180, 150 180, 150 200" fill="#9e9e9e" stroke="none" />
-    
+
     <text x="200" y="110" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#757575" letter-spacing="2">DIGITAL PASSPORT</text>
     <text x="200" y="150" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="32" font-weight="bold" fill="#212121">Alex Traveler</text>
     <text x="200" y="180" font-family="'Courier New', Courier, monospace" font-size="18" fill="#616161">ID: P-982-451-XX</text>
-    
+
     <!-- Global Stats -->
     <rect x="580" y="90" width="120" height="100" rx="15" fill="#f5f5f5" />
     <text x="640" y="130" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="36" font-weight="bold" text-anchor="middle" fill="#1976d2">24</text>
     <text x="640" y="160" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#757575">STAMPS</text>
   </g>
-  
+
   <!-- Stamp Previews (Using the SVGs scaled down / rotated) -->
   <!-- NRT Japan Stamp -->
   <g transform="translate(100, 350) rotate(-15) scale(0.8)">
@@ -66,7 +66,7 @@
     <text x="150" y="220" font-family="'Courier New'" font-size="26" font-weight="bold" text-anchor="middle" fill="#d32f2f" opacity="0.8">16.MAY.2026</text>
     <text x="150" y="260" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" letter-spacing="2" fill="#d32f2f" opacity="0.8">TEMPORARY VISITOR</text>
   </g>
-  
+
   <!-- JFK USA Stamp -->
   <g transform="translate(450, 480) rotate(10) scale(0.9)">
     <ellipse cx="175" cy="125" rx="160" ry="110" fill="none" stroke="#1976d2" stroke-width="5" opacity="0.8" />
@@ -77,7 +77,7 @@
     <text x="175" y="170" font-family="'Courier New'" font-size="28" font-weight="bold" text-anchor="middle" fill="#1976d2" opacity="0.8">JFK AIRPORT</text>
     <text x="175" y="210" font-family="Arial" font-size="22" font-weight="bold" text-anchor="middle" fill="#1976d2" opacity="0.8">MAY 16 2026</text>
   </g>
-  
+
   <!-- LHR UK Stamp -->
   <g transform="translate(150, 680) rotate(-5) scale(0.85)">
     <rect x="15" y="15" width="290" height="190" rx="20" fill="none" stroke="#4a148c" stroke-width="6" opacity="0.85" />

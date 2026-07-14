@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import errno
 import json
 import sys
 import tempfile
@@ -25,6 +26,72 @@ def sheet1_row(**overrides: object) -> dict[str, object]:
 
 
 class IncrementalSyncTests(unittest.TestCase):
+    def test_backup_skips_partial_copy_only_on_enospc_and_preserves_workbook(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            workbook = root / "master.xlsx"
+            archive_dir = root / "archive"
+            original = b"valid workbook bytes"
+            workbook.write_bytes(original)
+
+            def fail_after_partial_copy(source: Path, destination: Path) -> None:
+                self.assertEqual(source, workbook)
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_bytes(b"partial backup")
+                raise OSError(errno.ENOSPC, "No space left on device")
+
+            with mock.patch.object(sync.shutil, "copy2", side_effect=fail_after_partial_copy):
+                backup_path, status = sync.create_workbook_backup(workbook, archive_dir)
+
+            self.assertIsNone(backup_path)
+            self.assertEqual(status, "skipped_low_disk")
+            self.assertEqual(workbook.read_bytes(), original)
+            self.assertEqual(list(archive_dir.iterdir()), [])
+
+    def test_full_sync_continues_after_enospc_backup_and_atomically_replaces_workbook(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            workbook = root / "master.xlsx"
+            archive_dir = root / "archive"
+            sync.write_master_workbook(
+                workbook,
+                [sheet1_row(**{"Business ID": "business-1", "Stall / Restaurant Name": "Before"})],
+                [],
+                [],
+                [],
+                [],
+            )
+            original = workbook.read_bytes()
+
+            argv = [
+                "sync_supabase_excel_master.py",
+                "--workbook",
+                str(workbook),
+                "--output",
+                str(workbook),
+                "--archive-dir",
+                str(archive_dir),
+            ]
+
+            with (
+                mock.patch.object(sys, "argv", argv),
+                mock.patch.object(sync, "require_supabase_env", return_value=("https://example.supabase.co", "secret")),
+                mock.patch.object(sync, "fetch_table", return_value=[]),
+                mock.patch.object(sync, "load_grab_image_evidence", return_value=[]),
+                mock.patch.object(sync.shutil, "copy2", side_effect=OSError(errno.ENOSPC, "No space left on device")),
+                mock.patch("builtins.print") as print_mock,
+            ):
+                self.assertEqual(sync.main(), 0)
+
+            self.assertNotEqual(workbook.read_bytes(), original)
+            self.assertEqual(list(archive_dir.iterdir()), [])
+            printed = json.loads(print_mock.call_args.args[0])
+            self.assertEqual(printed["backup_status"], "skipped_low_disk")
+            report = sync.load_cached_table_rows(workbook, "Cleanup Report", ["metric", "value", "notes"])
+            backup_report = next(row for row in report or [] if row["metric"] == "workbook_backup")
+            self.assertEqual(backup_report["value"], "skipped_low_disk")
+            self.assertIn("ENOSPC", backup_report["notes"])
+
     def test_cached_table_patch_reads_max_row_once_per_phase(self) -> None:
         workbook = Workbook()
         sheet = workbook.active
@@ -152,6 +219,8 @@ class IncrementalSyncTests(unittest.TestCase):
                 "business_id": "business-1",
                 "name": "Changed",
                 "logo_url": "https://cdn.example/new-logo.png",
+                "media_approved_for_display": True,
+                "media_rights_status": "operator_owned",
                 "planning_area": "Orchard",
             },
             previous_venues[1],
@@ -214,6 +283,8 @@ class IncrementalSyncTests(unittest.TestCase):
                 "business_id": "business-1",
                 "name": "Changed",
                 "logo_url": "https://cdn.example/new-logo.png",
+                "media_approved_for_display": True,
+                "media_rights_status": "operator_owned",
                 "updated_at": "2026-07-02T00:00:00Z",
             }
             changed_dish = {
@@ -221,6 +292,7 @@ class IncrementalSyncTests(unittest.TestCase):
                 "venue_id": "venue-1",
                 "name": "New Dish",
                 "menu_approved_for_display": True,
+                "menu_rights_status": "operator_owned",
                 "updated_at": "2026-07-02T00:00:00Z",
             }
 
@@ -285,6 +357,47 @@ class IncrementalSyncTests(unittest.TestCase):
                 self.assertEqual(preserved["Unrelated Sheet"]["B2"].value, "=1+1")
             finally:
                 preserved.close()
+
+    def test_sync_requires_approval_and_rights_and_preserves_verification_date(self) -> None:
+        row = sheet1_row(
+            **{
+                "Business ID": "business-1",
+                "Stall / Restaurant Name": "Venue",
+                "Last Verified Date": "2026-06-01",
+                "Image URL": "https://merchant.example/old.jpg",
+                "Menu Items": "Existing Dish",
+            }
+        )
+        venue = {
+            "id": "venue-1",
+            "business_id": "business-1",
+            "name": "Venue",
+            "last_verified_at": "2026-07-10T00:00:00Z",
+            "updated_at": "2026-07-10T00:00:00Z",
+            "media_approved_for_display": True,
+            "media_rights_status": "unverified",
+            "image_url": "https://merchant.example/new.jpg",
+            "logo_url": "https://merchant.example/logo.jpg",
+        }
+        dishes = {
+            "venue-1": [
+                {
+                    "name": "Unverified Dish",
+                    "menu_approved_for_display": True,
+                    "menu_rights_status": "unverified",
+                    "media_approved_for_display": True,
+                    "media_rights_status": "unverified",
+                    "image_url": "https://merchant.example/dish.jpg",
+                }
+            ]
+        }
+
+        updated, _stats = sync.update_sheet1_rows([row], [venue], dishes)
+
+        self.assertEqual(updated[0]["Last Verified Date"], "2026-06-01")
+        self.assertEqual(updated[0]["Image URL"], "https://merchant.example/old.jpg")
+        self.assertEqual(updated[0]["Menu Items"], "Existing Dish")
+        self.assertIsNone(updated[0]["Logo URL"])
 
     def test_state_does_not_advance_when_workbook_write_fails(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -402,8 +515,34 @@ class IncrementalSyncTests(unittest.TestCase):
             / "supabase/migrations/20260710130000_enrichment_incremental_sync_indexes.sql"
         ).read_text(encoding="utf-8")
         normalized = " ".join(migration.lower().split())
+        self.assertIn("alter table public.venues add column if not exists updated_at", normalized)
+        self.assertIn("alter table public.dishes add column if not exists updated_at", normalized)
+        self.assertIn("create trigger trg_venues_updated_at", normalized)
+        self.assertIn("create trigger trg_dishes_updated_at", normalized)
         self.assertIn("on public.venues (updated_at, id)", normalized)
         self.assertIn("on public.dishes (updated_at, id)", normalized)
+
+    def test_live_followup_replays_cursor_triggers_and_preserves_merchant_guards(self) -> None:
+        migration = (
+            Path(__file__).resolve().parents[1]
+            / "supabase/migrations/20260710133000_enrichment_cursor_live_followup.sql"
+        ).read_text(encoding="utf-8")
+        normalized = " ".join(migration.lower().split())
+        self.assertIn("add column if not exists updated_at", normalized)
+        self.assertIn("create trigger trg_venues_updated_at", normalized)
+        self.assertIn("create trigger trg_dishes_updated_at", normalized)
+        self.assertIn("current_user in ('postgres', 'supabase_admin', 'service_role')", normalized)
+        self.assertIn("if auth.uid() is null then raise exception 'authentication required'", normalized)
+
+    def test_known_source_scan_has_a_guarded_partial_index(self) -> None:
+        migration = (
+            Path(__file__).resolve().parents[1]
+            / "supabase/migrations/20260710163000_enrichment_known_source_index.sql"
+        ).read_text(encoding="utf-8")
+        normalized = " ".join(migration.lower().split())
+        self.assertIn("column_name = 'menu_source_url'", normalized)
+        self.assertIn("create index if not exists idx_venues_known_menu_source_id", normalized)
+        self.assertIn("on public.venues (id) where menu_source_url is not null", normalized)
 
 
 if __name__ == "__main__":

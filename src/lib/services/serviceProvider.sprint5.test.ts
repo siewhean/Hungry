@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   getServiceProvider,
   resetServiceProvider,
+  setExcelServiceProvider,
   setMockServiceProvider,
   setSupabaseServiceProvider,
 } from "@/lib/services/serviceProvider";
@@ -26,6 +27,10 @@ supabaseModeTest("service provider resolves supabase mode from HUNGRY_DATA_SOURC
   process.env.HUNGRY_DATA_SOURCE = "mock";
   resetServiceProvider();
   assert.equal(getServiceProvider().mode, "mock");
+
+  process.env.HUNGRY_DATA_SOURCE = "excel";
+  resetServiceProvider();
+  assert.equal(getServiceProvider().mode, "excel");
 
   process.env.HUNGRY_DATA_SOURCE = previousDataSource;
   process.env.EXPO_PUBLIC_HUNGRY_DATA_SOURCE = previousPublicDataSource;
@@ -66,12 +71,41 @@ test("service provider can be forced into mock mode for developer shortcuts", ()
   resetServiceProvider();
 });
 
+test("released builds reject forced mock and Excel provider switches", () => {
+  const previousEnvironment = process.env.EXPO_PUBLIC_APP_ENV;
+  process.env.EXPO_PUBLIC_APP_ENV = "production";
+  resetServiceProvider();
+
+  setMockServiceProvider();
+  assert.equal(getServiceProvider().mode, "supabase");
+
+  setExcelServiceProvider();
+  assert.equal(getServiceProvider().mode, "supabase");
+
+  if (previousEnvironment === undefined) {
+    delete process.env.EXPO_PUBLIC_APP_ENV;
+  } else {
+    process.env.EXPO_PUBLIC_APP_ENV = previousEnvironment;
+  }
+  resetServiceProvider();
+});
+
 test("service provider can be forced into supabase mode for user mode", () => {
   setMockServiceProvider();
   assert.equal(getServiceProvider().mode, "mock");
 
   setSupabaseServiceProvider();
   assert.equal(getServiceProvider().mode, "supabase");
+
+  resetServiceProvider();
+});
+
+test("service provider can be forced into Excel mode without eagerly loading the catalog", () => {
+  setMockServiceProvider();
+  assert.equal(getServiceProvider().mode, "mock");
+
+  setExcelServiceProvider();
+  assert.equal(getServiceProvider().mode, "excel");
 
   resetServiceProvider();
 });

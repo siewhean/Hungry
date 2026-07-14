@@ -6,7 +6,8 @@
     "runtimeVersion": "0.1.0",
     "icon": "./assets/images/Logo/hungry_logo_icon_transparent.png",
     "updates": {
-      "enabled": false
+      "enabled": true,
+      "url": "https://u.expo.dev/6d724772-04c3-4823-91bc-a1f7604c9f15"
     },
     "orientation": "portrait",
     "scheme": "hungry",

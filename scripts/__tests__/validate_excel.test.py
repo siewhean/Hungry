@@ -39,9 +39,11 @@ def valid_row(**overrides):
 
 
 class ValidateExcelWorkbookTest(unittest.TestCase):
-    def test_expected_columns_include_google_and_menu_fields(self):
+    def test_expected_columns_include_google_menu_and_sync_fields(self):
         self.assertIn("Google Place ID", EXPECTED_COLUMNS)
         self.assertIn("Menu Items", EXPECTED_COLUMNS)
+        self.assertIn("Area", EXPECTED_COLUMNS)
+        self.assertIn("Logo URL", EXPECTED_COLUMNS)
 
     def test_valid_row_has_no_errors(self):
         row = valid_row()

@@ -40,4 +40,6 @@ test("deep link state rejects unsafe params and redirects protected links after 
 
   authState = { isAuthReady: true, isAuthenticated: true };
   assert.equal(getStateFromPath("dish/<script>alert(1)</script>"), undefined);
+  assert.equal(getStateFromPath("dish/"), undefined);
+  assert.equal(getStateFromPath("venue/"), undefined);
 });

@@ -1,0 +1,71 @@
+appId: ${APP_ID}
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    text: "Hungry, http://.*:8081"
+    optional: true
+- tapOn:
+    text: "Hungry"
+    optional: true
+- tapOn:
+    text: "Continue"
+    optional: true
+- tapOn:
+    text: "Close"
+    optional: true
+- runFlow:
+    when:
+      visible: "Enter URL manually"
+    commands:
+      - tapOn: "Enter URL manually"
+      - tapOn:
+          point: "50%,34%"
+      - inputText: "${METRO_URL}"
+      - tapOn: "Connect"
+- extendedWaitUntil:
+    visible: "Developer Launcher"
+    timeout: 60000
+- scrollUntilVisible:
+    element:
+      id: "dev-section-toggle-session-presets"
+    direction: DOWN
+- tapOn:
+    id: "dev-section-toggle-session-presets"
+- tapOn:
+    id: "dev-button-auth-onboard"
+- extendedWaitUntil:
+    visible: "Developer Launcher"
+    timeout: 30000
+- scrollUntilVisible:
+    element:
+      id: "dev-button-discover"
+    direction: DOWN
+- tapOn:
+    id: "dev-button-discover"
+- extendedWaitUntil:
+    visible: "Discover"
+    timeout: 30000
+- tapOn:
+    text: "Search dishes, stalls, or hawker centres"
+- extendedWaitUntil:
+    visible: "Search"
+    timeout: 30000
+- tapOn: "Noodles"
+- tapOn:
+    text: "Search dishes, stalls, or hawker centres"
+- inputText: "Laksa"
+- tapOn: "View search results"
+- extendedWaitUntil:
+    visible: "Dishes"
+    timeout: 30000
+- tapOn: "Search"
+- extendedWaitUntil:
+    visible:
+      id: "browse-results-search-input"
+    timeout: 10000
+- inputText: "Laksa"
+- tapOn:
+    text: "Clear browse search"
+- tapOn: "Spicy"
+- assertVisible: "Dishes"

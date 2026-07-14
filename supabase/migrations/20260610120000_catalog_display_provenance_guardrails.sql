@@ -146,6 +146,17 @@ $$;
 
 -- App-facing discovery feed: keep venue identity visible, but only expose
 -- approved menu items and approved images.
+-- PostgreSQL cannot change an OUT-parameter row type through CREATE OR REPLACE.
+-- Drop the previous five-argument signature so clean migration replays can
+-- install the guarded return shape below.
+drop function if exists public.get_discovery_feed_by_location(
+  text,
+  double precision,
+  double precision,
+  integer,
+  integer
+);
+
 create or replace function public.get_discovery_feed_by_location(
   p_area_name text default null,
   p_lat double precision default null,

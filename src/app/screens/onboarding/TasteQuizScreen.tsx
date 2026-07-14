@@ -9,6 +9,9 @@ import {
   View,
   useWindowDimensions,
   Easing,
+  type ListRenderItemInfo,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Check, ChevronRight, Search } from "lucide-react-native";
@@ -454,7 +457,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                   paddingTop: spacing[2],
                 }}
                 ItemSeparatorComponent={() => <View style={{ width: CARD_GAP }} />}
-                getItemLayout={(_: any, index: number) => ({
+                getItemLayout={(_: ArrayLike<number> | null | undefined, index: number) => ({
                   index,
                   length: SNAP_INTERVAL,
                   offset: SNAP_INTERVAL * index,
@@ -480,7 +483,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                 onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: quizScrollX } } }], {
                   useNativeDriver: true,
                 })}
-                onMomentumScrollEnd={(event: any) => {
+                onMomentumScrollEnd={(event: NativeSyntheticEvent<NativeScrollEvent>) => {
                   const index = Math.max(
                     0,
                     Math.min(2, Math.round(event.nativeEvent.contentOffset.x / SNAP_INTERVAL)),
@@ -504,7 +507,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                     }));
                   }
                 }}
-                renderItem={({ item: index }: any) => {
+                renderItem={({ item: index }: ListRenderItemInfo<number>) => {
                   const isSelected = snappedIndex === index;
                   const dimOpacity = quizScrollX.interpolate({
                     inputRange: [

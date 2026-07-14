@@ -80,12 +80,12 @@ function LineChart({ points }: { points: number[] }) {
     const relativeX = e.clientX - rect.left;
     const pctX = relativeX / rect.width;
     const viewBoxX = pctX * w;
-    
+
     const idx = Math.min(points.length - 1, Math.max(0, Math.round(viewBoxX / step)));
-    
+
     const activeX = idx * step;
     const activeY = h - (points[idx] / max) * h;
-    
+
     const tooltipX = (activeX / w) * rect.width;
     const tooltipY = (activeY / h) * rect.height - 38;
 

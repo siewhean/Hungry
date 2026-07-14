@@ -1,6 +1,6 @@
 # App UGC Moderation QC Report
 
-Updated: 2026-06-21  
+Updated: 2026-06-21
 Status: **No-Go for full-platform release until live UGC moderation smoke passes.**
 
 ## UGC Surfaces
@@ -25,4 +25,3 @@ Status: **No-Go for full-platform release until live UGC moderation smoke passes
 - Live multi-user UGC smoke not attached.
 - Admin moderation queue live proof not attached.
 - App Store/Play review notes for UGC moderation not finalized.
-

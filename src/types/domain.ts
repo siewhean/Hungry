@@ -213,6 +213,7 @@ export interface DishSummary {
   unitNumber: string;
   floor: string;
   name: string;
+  foodTypeTag?: string;
   imageUrl: string;
   blurhash?: string;
   distanceMeters: number;
@@ -391,6 +392,7 @@ export interface SearchFilters {
   longitude?: number;
   areaName?: string;
   cuisineTags?: string[];
+  foodTypeTag?: string;
   maxPrice?: number;
   openOnly?: boolean;
 }

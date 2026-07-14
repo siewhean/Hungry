@@ -1,7 +1,7 @@
 # Hungry Advanced Features — Implementation Phases After MVP
 
-> Branch context: `frontend-design-overhaul`  
-> Purpose: Sequence advanced features **only after the MVP works end-to-end**.  
+> Branch context: `frontend-design-overhaul`
+> Purpose: Sequence advanced features **only after the MVP works end-to-end**.
 > Rule: No advanced feature should be production-enabled until it is database-backed, tested, moderated where needed, and integrated into the core app architecture.
 
 ---

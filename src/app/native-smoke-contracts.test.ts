@@ -38,6 +38,14 @@ test("native Maestro smoke scripts are skip-safe and target the Hungry app id", 
     packageJson,
     /"smoke:native:ios:media": "node scripts\/run-maestro-smoke\.mjs ios-media"/,
   );
+  assert.match(
+    packageJson,
+    /"smoke:native:ios:interactions": "node scripts\/run-maestro-smoke\.mjs ios-interactions"/,
+  );
+  assert.match(
+    packageJson,
+    /"smoke:native:ios:interactions:prepared": "node scripts\/prepare-maestro-smoke\.mjs ios-interactions"/,
+  );
   assert.match(runner, /HUNGRY_NATIVE_APP_ID/);
   assert.match(runner, /HUNGRY_MAESTRO_REQUIRED/);
   assert.match(runner, /DEFAULT_METRO_STATUS_URLS = \[/);
@@ -61,6 +69,11 @@ test("native Maestro smoke scripts are skip-safe and target the Hungry app id", 
   assert.match(runner, /mkdtempSync/);
   assert.match(runner, /\.maestro\/ios-chat-smoke\.yaml/);
   assert.match(runner, /\.maestro\/ios-media-picker-permission\.yaml/);
+  assert.match(runner, /\.maestro\/ios-discovery-search-smoke\.yaml/);
+  assert.match(
+    runner,
+    /all: \[[\s\S]*\.maestro\/ios-discovery-search-smoke\.yaml[\s\S]*\.maestro\/android-app-launch-smoke\.yaml/,
+  );
   assert.match(preparedRunner, /HUNGRY_NATIVE_SMOKE_CACHE_DIR/);
   assert.match(preparedRunner, /\/private\/tmp\/hungry-native-smoke-tools/);
   assert.match(preparedRunner, /hungry-native-smoke-tools/);
@@ -72,6 +85,24 @@ test("native Maestro smoke scripts are skip-safe and target the Hungry app id", 
   assert.match(preparedRunner, /MAESTRO_CLI_NO_ANALYTICS/);
   assert.match(metroConfig, /HUNGRY_METRO_USE_WATCHMAN/);
   assert.match(metroConfig, /config\.resolver\.useWatchman = false/);
+});
+
+test("native interaction smoke covers discovery search, chips, and browse search controls", () => {
+  const flow = read(".maestro/ios-discovery-search-smoke.yaml");
+  const quickBites = read("src/app/screens/discover/QuickBitesScreen.tsx");
+  const searchResults = read("src/app/screens/search/SearchResultsScreen.tsx");
+
+  assert.match(flow, /id: "dev-button-discover"/);
+  assert.match(flow, /text: "Search dishes, stalls, or hawker centres"/);
+  assert.match(flow, /tapOn: "Noodles"/);
+  assert.match(flow, /inputText: "Laksa"/);
+  assert.match(flow, /tapOn: "View search results"/);
+  assert.match(flow, /id: "browse-results-search-input"/);
+  assert.match(flow, /text: "Clear browse search"/);
+  assert.match(flow, /tapOn: "Spicy"/);
+  assert.match(quickBites, /accessibilityLabel="Go back"/);
+  assert.match(searchResults, /accessibilityLabel="Search browse results"/);
+  assert.match(searchResults, /testID="browse-results-search-input"/);
 });
 
 test("native activity smoke exposes the audited direct-message tab", () => {
@@ -115,6 +146,25 @@ test("native activity smoke exposes the audited direct-message tab", () => {
     activity,
     /FEATURE_FLAGS\.directMessagesEnabled\s+\?\s+\["messages", "updates"\]\s+:\s+\["updates"\]/,
   );
+});
+
+test("native guest and location flows seed the mock session before entering Home", () => {
+  for (const flowPath of [
+    ".maestro/ios-guest-browse-smoke.yaml",
+    ".maestro/android-guest-browse-smoke.yaml",
+    ".maestro/ios-location-denied-smoke.yaml",
+  ]) {
+    const flow = read(flowPath);
+    assert.match(
+      flow,
+      /scrollUntilVisible:\n\s+element:\n\s+id: "dev-section-toggle-session-presets"/,
+    );
+    assert.match(flow, /scrollUntilVisible:\n\s+element:\n\s+id: "dev-button-home"/);
+    assert.match(flow, /id: "dev-section-toggle-session-presets"/);
+    assert.match(flow, /id: "dev-button-auth-onboard"/);
+    assert.match(flow, /id: "dev-button-home"/);
+    assert.doesNotMatch(flow, /id: "dev-button-user"/);
+  }
 });
 
 test("native media picker smoke reaches the post composer gallery entry point", () => {

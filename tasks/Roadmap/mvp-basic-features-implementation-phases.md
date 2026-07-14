@@ -1,7 +1,7 @@
 # Hungry MVP — Basic Features Implementation Phases
 
-> Branch context: `frontend-design-overhaul`  
-> Purpose: Get the **basic MVP** working end-to-end before continuing advanced features.  
+> Branch context: `frontend-design-overhaul`
+> Purpose: Get the **basic MVP** working end-to-end before continuing advanced features.
 > Principle: Every MVP feature must be connected to the same app architecture and source of truth. No standalone mock islands in production.
 
 ---

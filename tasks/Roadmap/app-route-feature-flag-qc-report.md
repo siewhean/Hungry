@@ -1,6 +1,6 @@
 # App Route Feature Flag QC Report
 
-Updated: 2026-06-21  
+Updated: 2026-06-21
 Status: **Repo-local contracts in place; external native/deep-link proof pending.**
 
 ## Production Rule
@@ -30,4 +30,3 @@ Production must not expose advanced surfaces unless the feature is launch-approv
 - Native deep-link attempts from installed iOS/Android builds.
 - Notification payload route-open attempts for protected/disabled routes.
 - Store build generated with `EXPO_PUBLIC_APP_ENV=production`.
-

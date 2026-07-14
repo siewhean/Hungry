@@ -63,6 +63,42 @@ test("getConfiguredDataSource lets E2E public source override local dotenv defau
   restoreEnv("EXPO_PUBLIC_HUNGRY_DATA_SOURCE", previousPublic);
 });
 
+test("released builds stay on Supabase even when a mock or Excel override is injected", () => {
+  const previousEnvironment = process.env.EXPO_PUBLIC_APP_ENV;
+  const previousE2e = process.env.EXPO_PUBLIC_HUNGRY_E2E_DATA_SOURCE;
+  const previousPrivate = process.env.HUNGRY_DATA_SOURCE;
+  const previousPublic = process.env.EXPO_PUBLIC_HUNGRY_DATA_SOURCE;
+
+  process.env.EXPO_PUBLIC_APP_ENV = "production";
+  process.env.EXPO_PUBLIC_HUNGRY_E2E_DATA_SOURCE = "mock";
+  process.env.HUNGRY_DATA_SOURCE = "excel";
+  process.env.EXPO_PUBLIC_HUNGRY_DATA_SOURCE = "mock";
+  assert.equal(getConfiguredDataSource(), "supabase");
+
+  restoreEnv("EXPO_PUBLIC_APP_ENV", previousEnvironment);
+  restoreEnv("EXPO_PUBLIC_HUNGRY_E2E_DATA_SOURCE", previousE2e);
+  restoreEnv("HUNGRY_DATA_SOURCE", previousPrivate);
+  restoreEnv("EXPO_PUBLIC_HUNGRY_DATA_SOURCE", previousPublic);
+});
+
+test("missing Supabase credentials do not silently select mock data", () => {
+  const previousEnvironment = process.env.EXPO_PUBLIC_APP_ENV;
+  const previousE2e = process.env.EXPO_PUBLIC_HUNGRY_E2E_DATA_SOURCE;
+  const previousPrivate = process.env.HUNGRY_DATA_SOURCE;
+  const previousPublic = process.env.EXPO_PUBLIC_HUNGRY_DATA_SOURCE;
+
+  process.env.EXPO_PUBLIC_APP_ENV = "production";
+  process.env.EXPO_PUBLIC_HUNGRY_E2E_DATA_SOURCE = "";
+  process.env.HUNGRY_DATA_SOURCE = "";
+  process.env.EXPO_PUBLIC_HUNGRY_DATA_SOURCE = "";
+  assert.equal(getConfiguredDataSource(), "supabase");
+
+  restoreEnv("EXPO_PUBLIC_APP_ENV", previousEnvironment);
+  restoreEnv("EXPO_PUBLIC_HUNGRY_E2E_DATA_SOURCE", previousE2e);
+  restoreEnv("HUNGRY_DATA_SOURCE", previousPrivate);
+  restoreEnv("EXPO_PUBLIC_HUNGRY_DATA_SOURCE", previousPublic);
+});
+
 test("Supabase client persists auth sessions through secure storage with PKCE enabled", () => {
   const source = read("src/lib/services/supabase/client.ts");
 

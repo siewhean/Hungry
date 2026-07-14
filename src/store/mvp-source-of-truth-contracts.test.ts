@@ -96,7 +96,9 @@ test("EAS release profiles set explicit MVP feature-flag environments", () => {
   assert.equal(eas.build.development?.env?.EXPO_PUBLIC_APP_ENV, "development");
   assert.equal(eas.build.preview?.env?.EXPO_PUBLIC_APP_ENV, "staging");
   assert.equal(eas.build.production?.env?.EXPO_PUBLIC_APP_ENV, "production");
-  assert.equal(eas.build.production?.env?.HUNGRY_DATA_SOURCE, "supabase");
+  assert.equal(eas.build.development?.env?.EXPO_PUBLIC_HUNGRY_DATA_SOURCE, "supabase");
+  assert.equal(eas.build.preview?.env?.EXPO_PUBLIC_HUNGRY_DATA_SOURCE, "supabase");
+  assert.equal(eas.build.production?.env?.EXPO_PUBLIC_HUNGRY_DATA_SOURCE, "supabase");
 });
 
 test("production Post route publishes through the canonical composer service path", () => {
@@ -285,15 +287,26 @@ test("Search results route hydrates through the service before trusting reposito
   );
 });
 
-test("Supabase app readiness waits for public content cache hydration", () => {
+test("Supabase app readiness keeps the legacy cache opt-in and bounded away from public routes", () => {
   const bootstrap = read("src/hooks/useAppBootstrap.ts");
   const repository = read("src/lib/services/supabase/supabaseRepository.ts");
 
   assert.match(bootstrap, /refreshSupabaseRepositoryCache/);
+  assert.match(bootstrap, /EXPO_PUBLIC_HUNGRY_LEGACY_CACHE_WARMUP === "1"/);
+  assert.match(bootstrap, /if \(shouldWarmLegacyRepositoryCache\(\)\)/);
   assert.match(bootstrap, /setIsDataSourceReady\(false\)/);
-  assert.match(bootstrap, /finally\(\(\) => \{[\s\S]*setIsDataSourceReady\(true\)/);
+  assert.match(
+    bootstrap,
+    /setIsDataSourceReady\(true\);[\s\S]*if \(shouldWarmLegacyRepositoryCache\(\)\)/,
+  );
+  assert.doesNotMatch(bootstrap, /refreshSupabaseRepositoryCache\(\)[\s\S]{0,240}\.finally\(/);
   assert.match(repository, /let hydrationPromise: Promise<void> \| null = null/);
   assert.match(repository, /if \(hydrationPromise\) return hydrationPromise/);
+  assert.doesNotMatch(
+    repository,
+    /\/\/ Kick off hydration on module load[\s\S]*ensureHydrated\(\);/,
+  );
+  assert.match(repository, /const venueById = new Map/);
 });
 
 test("Supabase social feed/profile history do not treat persisted local posts as canonical", () => {

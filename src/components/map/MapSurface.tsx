@@ -44,6 +44,7 @@ interface MapSurfaceProps extends PropsWithChildren {
   onMarkerPress?: (markerId: string) => void;
   onMapPress?: (coordinate: Coordinate) => void;
   onZoomChange?: (zoom: number) => void;
+  onViewportChange?: (viewport: { centerCoordinate: Coordinate; zoom: number }) => void;
   cameraPadding?: {
     paddingTop?: number;
     paddingBottom?: number;
@@ -416,6 +417,7 @@ export function MapSurface({
   onMarkerPress,
   onMapPress,
   onZoomChange,
+  onViewportChange,
   cameraPadding,
 }: MapSurfaceProps) {
   const { palette } = useHungryTheme();
@@ -486,8 +488,19 @@ export function MapSurface({
           onMapPress?.({ latitude, longitude });
         }}
         onRegionDidChange={(feature) => {
-          if (onZoomChange) {
-            onZoomChange(feature.properties.zoomLevel);
+          const properties = feature.properties as unknown as {
+            center?: [number, number];
+            zoomLevel?: number;
+          };
+          const zoom = properties.zoomLevel;
+          if (typeof zoom === "number") onZoomChange?.(zoom);
+          if (
+            typeof zoom === "number" &&
+            Array.isArray(properties.center) &&
+            properties.center.length === 2
+          ) {
+            const [longitude, latitude] = properties.center;
+            onViewportChange?.({ centerCoordinate: { latitude, longitude }, zoom });
           }
         }}
       >

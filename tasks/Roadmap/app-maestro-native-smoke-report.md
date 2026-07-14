@@ -1,6 +1,6 @@
 # App Maestro Native Smoke Report
 
-Updated: 2026-06-21  
+Updated: 2026-06-21
 Status: **Scaffolded; device/simulator execution pending.**
 
 ## Flow Coverage

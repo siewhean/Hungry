@@ -1,6 +1,6 @@
 # App Prefetch QC Report
 
-Updated: 2026-06-21  
+Updated: 2026-06-21
 Status: **Repo-local contracts exist; native performance proof pending.**
 
 ## Requirements
@@ -24,4 +24,3 @@ Status: **Repo-local contracts exist; native performance proof pending.**
 
 - Low-end Android memory/network observation.
 - Native tap-latency smoke after app is installed.
-

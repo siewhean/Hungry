@@ -19,6 +19,7 @@ const Tab = createMaterialTopTabNavigator<MainTabParamList>();
 const MAIN_TAB_PRELOAD_DISTANCE = 3;
 const MAIN_TAB_WARMUP_TIMEOUT_MS = 350;
 const MAIN_TAB_WARMUP_FALLBACK_DELAY_MS = 120;
+const MAIN_TAB_INTENT_WARMUP_FALLBACK_DELAY_MS = 0;
 
 type TabScreenComponent = React.ComponentType<object>;
 
@@ -71,6 +72,13 @@ function warmMainTabRoute(routeName?: string) {
     ? mainTabScreenLoaderByRouteName[routeName as keyof MainTabParamList]
     : undefined;
   loader?.load();
+}
+
+function scheduleMainTabRouteWarmup(routeName?: string) {
+  return scheduleIdleWork(() => warmMainTabRoute(routeName), {
+    timeout: MAIN_TAB_WARMUP_TIMEOUT_MS,
+    fallbackDelayMs: MAIN_TAB_INTENT_WARMUP_FALLBACK_DELAY_MS,
+  });
 }
 
 function TabScreenLoadingPlaceholder() {
@@ -286,7 +294,9 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
             preloadRoute(rootNavigation, composerRoute);
             return;
           }
-          warmMainTabRoute(routeName);
+          // Module loading is synchronous in React Native. Keep it off the
+          // touch-down path so switching tabs always responds immediately.
+          scheduleMainTabRouteWarmup(routeName);
         };
 
         const Icon = item.icon;

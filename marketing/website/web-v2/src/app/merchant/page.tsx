@@ -119,11 +119,11 @@ function MiniBarChart({ data, range }: { data: number[]; range: string }) {
     const svgEl = e.currentTarget.ownerSVGElement;
     if (!svgEl) return;
     const svgRect = svgEl.getBoundingClientRect();
-    
+
     // Position tooltip relative to the SVG container
     const x = rect.left - svgRect.left + rect.width / 2;
     const y = rect.top - svgRect.top - 36;
-    
+
     setHoveredIndex(idx);
     setTooltipPos({ x, y, val });
   };
@@ -369,12 +369,12 @@ export default function MerchantDashboard() {
           { label: "Profile Views", value: analytics.profileViews.toLocaleString(), trend: "Synced from app events", up: true, icon: <Eye size={18} color="var(--color-primary)" /> },
           { label: "Menu Items", value: menuStats.total.toString(), trend: `${menuStats.available} available · ${menuStats.soldOut} sold out`, up: true, icon: <PenSquare size={18} color="var(--color-primary)" /> },
           { label: "Reviews", value: analytics.reviewCount.toString(), trend: "From Hungry reviews", up: true, icon: <Star size={18} color="var(--color-primary)" /> },
-          { 
-            label: "Verification", 
-            value: isVerified ? "Verified" : "Unverified", 
-            trend: isVerified ? "Since Mar 2024" : "Action required!", 
-            up: isVerified, 
-            icon: isVerified ? <CheckCircle size={18} color="var(--color-success)" /> : <ShieldCheck size={18} color="var(--color-error)" /> 
+          {
+            label: "Verification",
+            value: isVerified ? "Verified" : "Unverified",
+            trend: isVerified ? "Since Mar 2024" : "Action required!",
+            up: isVerified,
+            icon: isVerified ? <CheckCircle size={18} color="var(--color-success)" /> : <ShieldCheck size={18} color="var(--color-error)" />
           },
         ].map((k) => (
           <div key={k.label} className={styles.kpiCard}>

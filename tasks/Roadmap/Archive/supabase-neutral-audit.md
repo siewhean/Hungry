@@ -1,6 +1,6 @@
 # Neutral Supabase + Store Release Audit
 
-Evidence date: May 18, 2026.  
+Evidence date: May 18, 2026.
 Scope: repo-local only. No live Supabase project reads and no production database mutations. Repo docs were treated as claims and checked against code, migrations, config, tests, smoke SQL, Edge Functions, env templates, and CI.
 
 External standards checked:
@@ -21,8 +21,8 @@ External standards checked:
 
 ## 1. Executive Summary
 
-Overall Supabase integration grade: C+.  
-Store-release readiness grade: D.  
+Overall Supabase integration grade: C+.
+Store-release readiness grade: D.
 Production readiness verdict: No-Go for public App Store / Google Play launch. The database foundation is broad and mostly RLS-aware, but account deletion, privacy disclosures, UGC safety coverage, Supabase bootstrap behavior, and several backend hardening gaps must be closed before public release.
 
 Top 10 risks:

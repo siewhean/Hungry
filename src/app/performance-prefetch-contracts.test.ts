@@ -41,6 +41,9 @@ test("root navigation keeps heavy routes lazy-loaded", () => {
   assert.match(tabs, /function scheduleMainTabScreensWarmup/);
   assert.match(tabs, /function TabScreenLoadingPlaceholder/);
   assert.match(tabs, /function warmMainTabRoute/);
+  assert.match(tabs, /function scheduleMainTabRouteWarmup/);
+  assert.match(tabs, /MAIN_TAB_INTENT_WARMUP_FALLBACK_DELAY_MS = 0/);
+  assert.match(tabs, /scheduleMainTabRouteWarmup\(routeName\)/);
   assert.match(tabs, /onPressIn=\{onPressIn\}/);
   assert.doesNotMatch(tabs, /ActivityIndicator/);
   assert.doesNotMatch(tabs, /preloadRoute\(navigation, route\.name\)/);
@@ -168,6 +171,7 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   assert.match(discover, /useDeferredValue\(activeDiscoverChipIds\)/);
   assert.match(discover, /renderLeftIcon=\{\(chip, isActive\) =>/);
   assert.match(discover, /prefetchBrowseResults\(item\.query, navigation/);
+  assert.match(discover, /scheduleIdleWork\([\s\S]*preloadRoute\(navigation, "BrowseDishes"\)/);
   assert.match(discover, /<PopularFoodStyleItem/);
   assert.match(searchResultsView, /const SearchResultRow = memo/);
   assert.match(searchResultsView, /<SearchResultRow dish=\{dish\}/);

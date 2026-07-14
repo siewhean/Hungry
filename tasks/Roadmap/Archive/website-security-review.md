@@ -1,7 +1,7 @@
 # Hungry Website Security Review
 
-Reviewed: 2026-06-01 (Asia/Singapore)  
-Scope: `marketing/website/web-v2` working tree, including public pages, merchant portal, Hungry Console, API routes, Supabase server helpers, headers, dependencies, and local runtime checks.  
+Reviewed: 2026-06-01 (Asia/Singapore)
+Scope: `marketing/website/web-v2` working tree, including public pages, merchant portal, Hungry Console, API routes, Supabase server helpers, headers, dependencies, and local runtime checks.
 Production: not touched.
 
 ## Executive Summary

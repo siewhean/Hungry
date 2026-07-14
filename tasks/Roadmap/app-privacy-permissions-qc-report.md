@@ -1,6 +1,6 @@
 # App Privacy Permissions QC Report
 
-Updated: 2026-06-21  
+Updated: 2026-06-21
 Status: **Partial / No-Go for store submission.**
 
 ## Permission Review
@@ -25,4 +25,3 @@ Status: **Partial / No-Go for store submission.**
 
 - Store forms must match final binary permissions.
 - Legal approval for privacy policy and account deletion is external.
-

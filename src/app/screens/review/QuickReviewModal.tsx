@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, type ComponentProps } from "react";
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from "@gorhom/bottom-sheet";
 
 import { useUIStore } from "@/store/useUIStore";
@@ -22,7 +22,7 @@ export function QuickReviewModal() {
   }, [payload]);
 
   const renderBackdrop = useCallback(
-    (props: any) => (
+    (props: ComponentProps<typeof BottomSheetBackdrop>) => (
       <BottomSheetBackdrop
         {...props}
         disappearsOnIndex={-1}

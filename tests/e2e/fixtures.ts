@@ -21,7 +21,13 @@ function isKnownNonCriticalIssue(issue: PageIssue) {
     url.includes("us-assets.i.posthog.com") ||
     url.includes("i.posthog.com") ||
     url.includes("/symbolicate") ||
-    url.endsWith(".map")
+    url.endsWith(".map") ||
+    // Expo Web cancels root requests while resetAppState reloads the app.
+    // Chromium reports those intentional cancellations as ERR_ABORTED, even
+    // when it does not classify the request as a navigation. A cancellation
+    // is not an application resource failure; failed responses, scripts,
+    // XHR, fetches, and every other request error remain visible below.
+    (issue.type === "requestfailed" && message === "net::ERR_ABORTED")
   );
 }
 

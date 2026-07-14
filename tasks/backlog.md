@@ -6,18 +6,45 @@
 
 ## Current Focus
 
+- `CATALOG-RAW-READS-01` — Linked Supabase release active for the reconciled
+  `119,232 / 156,351` raw snapshot. Adds versioned full-catalog projections and authenticated,
+  cursor-paged dish/venue/detail/menu/map RPCs behind `catalogReadV2` (default off). Search, Browse,
+  map viewport, chips, loading/error states, and raw provenance labels use bounded session memory only;
+  V2 no longer warms the legacy client-wide catalog index. Linked preflight on 2026-07-14 found
+  `119,232 / 156,351`; reconciliation found unique IDs and required venue/price data, while retaining raw duplicate
+  candidates and two blank-name rows as instructed. Apply the migration, publish the release, run linked smoke SQL,
+  publish-time source. The active release is `68cd0682-1655-4ceb-bd53-043309c9aafb` with `119,232 / 156,351` cards.
+  Next: merge the production build configuration, issue an OTA/native release with `catalogReadV2=1`, and complete authenticated-device smoke.
+
+- `MAIN-FDO-RECONCILE-01` — Done. Reconciled `frontend-design-overhaul` onto the current `main`
+  baseline with the FDO UI/UX and Passport implementation authoritative. Restored selected
+  nonvisual safety fixes and added the lazy Excel repository/provider path. Published the
+  deterministic reconciled workbook and rights-safe generated catalog after identity-first
+  deduplication, conflict/orphan quarantine, and display-approval validation. No live Supabase
+  writes were performed. Local code, data, dependency, security, and iOS runtime gates pass;
+  independent final QA returned no findings. PR #38 passed quality, security, Supabase Preview,
+  Vercel, and merchant catalog E2E checks and is merged to `main` at `19d79fd39`.
+
 - `DATA-ENRICH-ROADMAP-01` — Done. 2026-07-10 completed the audited R1–R14 enrichment
   roadmap: pending backfills were applied; checkpointed/batched writes and provenance-safe chain
   propagation are in place; the core scraper now uses shared Grab/Oddle/Foodpanda/Deliveroo
   adapters, direct platform resolution, weighted identity bands, and a bounded worker pool;
   Supabase-to-Excel sync supports timestamp/keyset incremental runs; Grab directory discovery,
   scheduled review/apply enrichment, non-consumer classification, and a structured 74-dish
-  cuisine/taste taxonomy are implemented. Independent QA passes the complete repo-local contract.
+  cuisine/taste taxonomy are implemented. 2026-07-13 full reconciliation confirmed the master workbook
+  cache matches Supabase at 119,232 venues and 156,010 dishes; the workbook validator reports 25,304
+  valid and 0 invalid source rows. Independent QA passes the complete repo-local contract.
   PR #32 is merged; review-mode variables/secrets and a branch-restricted
   `enrichment-production` environment are configured; migration `20260710130000` is live and the
   indexed incremental sync proof passes. Required-reviewer protection is blocked by the current
   GitHub billing plan. Production writes remain disabled while default-branch workflow activation,
   an approval control, live platform, scheduled apply, and cleanup-apply evidence are pending.
+
+  Default-branch follow-up: the review-only workflow is now active on `main` with Node 22 and the
+  guarded known-source query index. Review run `29079626399` completed `review_ready` with zero
+  actionable rows and no writes or inserts. Scheduled apply remains disabled; manual apply still
+  requires the repository owner, exact `APPLY_EXISTING_ROWS` confirmation, the `main` environment
+  branch policy, and the independent write-enable secret, which remains absent.
 
 - `PAGE-QAQC-01` — Repo-local multi-agent page QA/QC loop complete; external proof pending.
   2026-06-24 refreshed the canonical page-agent plan/reports, shared Playwright helper, page-agent
@@ -42,7 +69,9 @@
   worktree reconciliation is incomplete, Supabase Auth leaked-password dashboard proof is still
   open, and store-console/legal proof is still missing. Linked Supabase legacy RPC cleanup,
   app-owned Advisor cleanup, live data/RLS/social/
-  chat/OCR smokes, iOS prepared Maestro smoke, and local release rehearsal now pass.
+  chat/OCR smokes, iOS prepared Maestro smoke, and local release rehearsal now pass. 2026-07-12
+  adds live NetInfo-backed offline detection, a real retry action, non-blocking app-shell cache
+  warm-up, and Node 22.22.1 fail-closed main CI gates; native connectivity-loss smoke remains pending.
 
 - `TASKS-CLEANUP-01` — Complete. 2026-06-07 tasks folder cleanup kept canonical live
   ledgers at top level, removed generated junk and exact duplicates, moved domain docs into

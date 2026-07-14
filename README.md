@@ -121,9 +121,9 @@ To override these locally, you can use `.env.development` or modify the constant
 | Reads (feature-flagged)             | Done                                                                                       |
 | Offline + NotFound states           | Done                                                                                       |
 | Marketing launch kit                | Done                                                                                       |
-| Excel Ingestion & ETL Migration     | Done                                                                                       |
+| Excel Ingestion & ETL Migration     | Done — reconciled workbook and rights-safe runtime catalog published                       |
 | Typecheck                           | Passing                                                                                    |
-| Expo Doctor                         | Blocked by known `app.json` + dynamic `app.config.js` coexistence warning; rerun before RC |
+| Expo Doctor                         | Passing (18/18)                                                                            |
 | Agent harness docs                  | Done                                                                                       |
 | Unit tests                          | Passing (`npm test`)                                                                       |
 | Playwright E2E                      | Passing when run with localhost access; Codex sandbox TCP bind needs elevated/local shell  |
@@ -157,7 +157,8 @@ To override these locally, you can use `.env.development` or modify the constant
 - Mock discovery data now includes a broader set of Singapore hawker centres and food courts with expanded stall/dish coverage
 - Maps now include a Figma-shaped `Maps` tab, a real `MapZoomedIn` route, and polygon-based building directory layouts (including Wisma and JEM mall-style floor overlays with vertical level switching).
 - **Design Specifications** — Comprehensive visual, UX, and accessibility specs for all remaining backlog items are now available in `docs/audit/`. These serve as the authoritative implementation guide for Batch 1–8.
-- Current MVP status: local source gates pass for the MVP production baseline. Production flags hide advanced/social/gamification/merchant surfaces; signed-out cold starts show Login; protected actions route to Login with return routes; profile, favourites, reviews, search/detail, and public post reads/writes use Supabase service paths where applicable; Excel workbook ingestion (35,909 rows) is fully validated and staged, and promotion ETL migration is verified locally. Fresh iOS simulator prepared native smoke passes, linked legacy payment/order RPC execute grants are revoked for anon/authenticated, app-owned Supabase Advisor cleanup is applied, and live Supabase data/RLS/social/chat/OCR smokes pass. Remaining blockers are external: Android EAS preview APK artifact exists, but Android install/device smoke, Play/internal-track proof, Android production proof, iOS EAS/TestFlight credentials, Sentry DSN/project proof, store-console/legal approvals, pushed CI evidence, and dirty-worktree reconciliation remain pending; see `tasks/verification.md`.
+- Current MVP status: the `frontend-design-overhaul` UI/UX, including its Passport design, is reconciled onto the main integration line. The canonical workbook contains 4,273 display-safe venues and 22,042 rights-authorized dishes in the generated runtime catalog; conflicting, orphaned, generic, reference-only, and unapproved rows remain quarantined or excluded rather than promoted. Typecheck, lint, format, 574 source tests (572 pass, 2 credential-gated skips), Expo Doctor 18/18, dependency/security checks, data validation, and an iOS simulator bundle/runtime smoke pass. Remaining launch blockers are external release evidence: Android install/device and store-track proof, iOS EAS/TestFlight credentials, Sentry/project proof, and store-console/legal approvals; see `tasks/verification.md`.
+- Full raw-catalog reads are implemented behind the disabled-by-default `catalogReadV2` flag. The flag may be enabled only after the linked Supabase migration, count-validated release publish, authenticated/anonymous smoke, and production-volume latency proof documented in `tasks/backlog.md`.
 
 ## Commands
 

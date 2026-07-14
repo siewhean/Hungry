@@ -2,9 +2,10 @@ import type { TasteVector } from "@/types/domain";
 import { getConfiguredDataSource, setConfiguredDataSource } from "@/lib/services/supabase/client";
 import { similarityScore } from "@/lib/ai/similarityScore";
 import type { DataRepository, HungryService } from "@/lib/services/types";
+import type { catalogRawService } from "@/lib/services/catalog";
 
 export interface ServiceProvider {
-  mode: "mock" | "supabase";
+  mode: "mock" | "supabase" | "excel";
   service: HungryService;
   repository: DataRepository;
   similarityScore: (left: TasteVector, right: TasteVector) => number;
@@ -57,8 +58,43 @@ function createSupabaseProvider(): ServiceProvider {
   };
 }
 
+function createExcelProvider(): ServiceProvider {
+  // Match the Supabase provider's lazy loading so choosing mock or Supabase
+  // never parses the large generated Excel catalog.
+  let cachedService: HungryService | null = null;
+  let cachedRepository: DataRepository | null = null;
+
+  const loadModules = () => {
+    if (cachedService && cachedRepository) return;
+
+    const { excelRepository } =
+      require("@/lib/services/excel/repositories") as typeof import("@/lib/services/excel/repositories");
+    const { excelService } =
+      require("@/lib/services/excel/excelService") as typeof import("@/lib/services/excel/excelService");
+
+    cachedRepository = excelRepository;
+    cachedService = excelService;
+  };
+
+  return {
+    mode: "excel",
+    get service() {
+      loadModules();
+      return cachedService as HungryService;
+    },
+    get repository() {
+      loadModules();
+      return cachedRepository as DataRepository;
+    },
+    similarityScore,
+  };
+}
+
 function createProviderFromEnv(): ServiceProvider {
-  return getConfiguredDataSource() === "supabase" ? createSupabaseProvider() : createMockProvider();
+  const dataSource = getConfiguredDataSource();
+  if (dataSource === "supabase") return createSupabaseProvider();
+  if (dataSource === "excel") return createExcelProvider();
+  return createMockProvider();
 }
 
 let activeProvider: ServiceProvider | null = null;
@@ -81,12 +117,19 @@ export function setServiceProvider(provider: ServiceProvider): void {
 
 export function setMockServiceProvider(): void {
   setConfiguredDataSource("mock");
-  activeProvider = createMockProvider();
+  activeProvider =
+    getConfiguredDataSource() === "mock" ? createMockProvider() : createSupabaseProvider();
 }
 
 export function setSupabaseServiceProvider(): void {
   setConfiguredDataSource("supabase");
   activeProvider = createSupabaseProvider();
+}
+
+export function setExcelServiceProvider(): void {
+  setConfiguredDataSource("excel");
+  activeProvider =
+    getConfiguredDataSource() === "excel" ? createExcelProvider() : createSupabaseProvider();
 }
 
 export function resetServiceProvider(): void {
@@ -96,6 +139,17 @@ export function resetServiceProvider(): void {
 
 export function getHungryService(): HungryService {
   return getActiveProvider().service;
+}
+
+/**
+ * Authenticated, release-versioned catalog reads. This deliberately has no
+ * mock/Excel fallback: callers must render the online error state instead.
+ */
+export function getCatalogRawService(): typeof catalogRawService | null {
+  if (getActiveProvider().mode !== "supabase") return null;
+  const { catalogRawService: service } =
+    require("@/lib/services/catalog") as typeof import("@/lib/services/catalog");
+  return service;
 }
 
 export function getDataRepository(): DataRepository {

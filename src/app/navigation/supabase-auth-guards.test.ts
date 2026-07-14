@@ -32,12 +32,38 @@ test("Supabase auth responses hydrate the app profile store", () => {
   const loginScreen = read("src/app/screens/auth/LoginScreen.tsx");
   const signUpScreen = read("src/app/screens/auth/SignUpScreen.tsx");
   const bootstrap = read("src/hooks/useAppBootstrap.ts");
+  const supabaseService = read("src/lib/services/supabase/supabaseService.ts");
 
   assert.match(profileStore, /applyProfile: \(profile: UserProfile\) => void/);
   assert.match(profileHelper, /useProfileStore\.getState\(\)\.applyProfile\(mergedProfile\)/);
   assert.match(loginScreen, /applySignedInProfile\(session\.profile/);
   assert.match(signUpScreen, /applySignedInProfile\(session\.profile/);
-  assert.match(bootstrap, /getHungryService\(\)\.profile\.getProfile\(\)/);
+  assert.match(
+    bootstrap,
+    /runAfterIdle\(\(\) => \{[\s\S]*getHungryService\(\)\s*\.profile\.getProfile\(\)/,
+  );
+  assert.match(
+    bootstrap,
+    /applyAuthStateFromSession\(\{[\s\S]*isAuthenticated: true,[\s\S]*userId: user\.id,[\s\S]*\}\);[\s\S]*runAfterIdle/,
+  );
+  const authSubscription = bootstrap.slice(bootstrap.indexOf("client.auth.onAuthStateChange"));
+  assert.doesNotMatch(authSubscription, /getHungryService\(\)\s*\.profile\.getProfile\(\)/);
+  assert.match(supabaseService, /exchangeCodeForSession\(code\)/);
+  assert.match(supabaseService, /provisionalProfileFromAuthSession\(exchangedSession\)/);
+  assert.match(supabaseService, /const profileReady = ensureCurrentUserProfileRow\(/);
+  assert.match(
+    supabaseService,
+    /\.then\(\(\) =>\s*fetchUserProfile\(client, exchangedSession\.user\.id/,
+  );
+  const oauthHandler = supabaseService.slice(
+    supabaseService.indexOf("async function signInWithOAuthProvider"),
+    supabaseService.indexOf("function participantKey"),
+  );
+  assert.doesNotMatch(oauthHandler, /await toAppSession\(client\)/);
+  assert.match(
+    profileHelper,
+    /options\.profileReady \?\? getHungryService\(\)\.profile\.getProfile\(\)/,
+  );
   assert.doesNotMatch(
     loginScreen,
     /await getHungryService\(\)\.auth\.signIn\(values\.email, values\.password\);\s*\n\s*\}/,

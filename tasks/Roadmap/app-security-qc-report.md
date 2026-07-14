@@ -1,6 +1,6 @@
 # App Security QC Report
 
-Updated: 2026-06-21  
+Updated: 2026-06-21
 Status: **No-Go until live and external proof is attached.**
 
 ## Repo-Side Checks

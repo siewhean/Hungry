@@ -1,6 +1,6 @@
 # App File Cleanup Inventory
 
-Updated: 2026-06-21  
+Updated: 2026-06-21
 Scope: `frontend-design-overhaul` prelaunch review for App Store and Google Play.
 
 ## Inventory Summary
@@ -39,4 +39,3 @@ Tracked files inspected by path ownership: 1,515.
 ## Current No-Delete Rule
 
 No unique app/runtime file should be deleted in this pass. Only exact local junk and proven unreferenced generated files are safe to remove after `rg` import/reference checks and `npm run audit:assets`.
-

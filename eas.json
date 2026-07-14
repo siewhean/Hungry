@@ -10,7 +10,7 @@
       "channel": "development",
       "env": {
         "EXPO_PUBLIC_APP_ENV": "development",
-        "HUNGRY_DATA_SOURCE": "mock"
+        "EXPO_PUBLIC_HUNGRY_DATA_SOURCE": "supabase"
       }
     },
     "preview": {
@@ -18,14 +18,15 @@
       "channel": "staging",
       "env": {
         "EXPO_PUBLIC_APP_ENV": "staging",
-        "HUNGRY_DATA_SOURCE": "supabase"
+        "EXPO_PUBLIC_HUNGRY_DATA_SOURCE": "supabase"
       }
     },
     "production": {
       "channel": "production",
       "env": {
         "EXPO_PUBLIC_APP_ENV": "production",
-        "HUNGRY_DATA_SOURCE": "supabase"
+        "EXPO_PUBLIC_HUNGRY_DATA_SOURCE": "supabase",
+        "EXPO_PUBLIC_CATALOG_READ_V2": "1"
       }
     }
   },

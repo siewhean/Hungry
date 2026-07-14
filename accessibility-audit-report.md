@@ -1,8 +1,8 @@
 # Accessibility Audit Report — Hungry App
 
-**Date:** May 25, 2026  
-**Auditor:** Claude (Opus 4.7)  
-**Scope:** React Native mobile app UI components and screens  
+**Date:** May 25, 2026
+**Auditor:** Claude (Opus 4.7)
+**Scope:** React Native mobile app UI components and screens
 **Standards:** WCAG 2.1 Level AA
 
 ---
@@ -501,6 +501,6 @@ The Hungry app now has a **stronger source-level accessibility foundation** with
 
 ---
 
-**Audit completed:** May 25, 2026  
-**Auditor:** Claude (Opus 4.7)  
+**Audit completed:** May 25, 2026
+**Auditor:** Claude (Opus 4.7)
 **Contact:** For questions about this audit, refer to WCAG 2.1 documentation or accessibility testing resources listed above.

@@ -36,6 +36,16 @@ test("release secrets are scoped to EAS steps, not install or workflow scope", (
   assert.match(easJob, /npx --yes eas-cli@18\.12\.3 build/);
 });
 
+test("main CI uses the pinned Node runtime and fails closed for required release proof", () => {
+  const ci = read(".github/workflows/ci.yml");
+
+  assert.equal(ci.match(/node-version: 22\.22\.1/g)?.length, 2);
+  assert.match(ci, /Supabase credentials missing on main; failing closed\./);
+  assert.match(ci, /EXPO_TOKEN missing on main; failing closed\./);
+  assert.doesNotMatch(ci, /skipping EAS account validation/);
+  assert.doesNotMatch(ci, /skipping EAS build gate/);
+});
+
 test("security workflow keeps dependency, gitleaks, and trufflehog gates", () => {
   const security = read(".github/workflows/security.yml");
   const packageJson = read("package.json");
@@ -80,6 +90,9 @@ test("release checklist includes the Supabase Advisor regression guard", () => {
   assert.match(releaseChecklist, /MER-PORTAL-01/);
   assert.match(releaseChecklist, /MERCH-P0-ANALYTICS-01/);
   assert.match(releaseChecklist, /MERCH_P0_ANALYTICS_PROOF/);
+  assert.match(releaseChecklist, /npm run website:predeploy:local/);
+  assert.doesNotMatch(releaseChecklist, /security:release-hygiene/);
+  assert.doesNotMatch(releaseChecklist, /security:legacy-web/);
   assert.match(releaseGates, /tasks\/Roadmap\/claude-full-project-audit\.md/);
   assert.match(releaseGates, /tasks\/release-evidence\/full-audit-v1\.env/);
   assert.match(auditStatus, /verified-only filesystem scan/);

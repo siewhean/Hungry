@@ -1,6 +1,6 @@
 # App Final Prelaunch Go / No-Go
 
-Updated: 2026-06-21  
+Updated: 2026-06-21
 Final status: **No-Go**
 
 ## Store-Readiness Repo-Side Status

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, forwardRef, type ReactNode } from "react";
+import { useCallback, useMemo, forwardRef, type ComponentProps, type ReactNode } from "react";
 import { StyleSheet } from "react-native";
 import {
   BottomSheetModal,
@@ -32,7 +32,7 @@ export const BottomSheet = forwardRef<BottomSheetModal, BottomSheetProps>(
     const snapPoints = customSnapPoints || defaultSnapPoints;
 
     const renderBackdrop = useCallback(
-      (props: any) => (
+      (props: ComponentProps<typeof BottomSheetBackdrop>) => (
         <BottomSheetBackdrop
           {...props}
           disappearsOnIndex={-1}

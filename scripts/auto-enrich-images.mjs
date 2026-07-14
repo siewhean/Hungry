@@ -12,7 +12,7 @@ import { resolveDirectPlatformUrl } from "./lib/platform-resolvers.mjs";
 import { scoreVenueIdentity } from "./lib/venue-identity.mjs";
 
 const require = createRequire(import.meta.url);
-const XLSX = require("xlsx");
+const ExcelJS = require("exceljs");
 const { imageSize } = require("image-size");
 
 loadProjectEnv();
@@ -1817,9 +1817,10 @@ async function fetchKnownSourceVenues(limit) {
     );
 }
 
-function fetchKnownSourceVenuesFromWorkbook(limit, workbookPath = "data/Hungry F&B Database.xlsx") {
+async function fetchKnownSourceVenuesFromWorkbook(limit, workbookPath = "data/Hungry F&B Database.xlsx") {
     console.log(`  [offline] Falling back to known-source venues from ${workbookPath} (limit=${limit})`);
-    const workbook = XLSX.readFile(workbookPath);
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.readFile(workbookPath);
     const rows = sheetRows(workbook, "Supabase Venues");
     return rows
         .map((row) => ({
@@ -1838,14 +1839,35 @@ function fetchKnownSourceVenuesFromWorkbook(limit, workbookPath = "data/Hungry F
 }
 
 function sheetRows(workbook, sheetName) {
-    const sheet = workbook.Sheets[sheetName];
+    const sheet = workbook.getWorksheet(sheetName);
     if (!sheet) return [];
-    return XLSX.utils.sheet_to_json(sheet, { defval: null });
+    const headers = sheet.getRow(1).values.slice(1).map((value) => cleanText(value));
+    const rows = [];
+    for (let rowNumber = 2; rowNumber <= sheet.rowCount; rowNumber += 1) {
+        const row = sheet.getRow(rowNumber);
+        const record = {};
+        for (let columnIndex = 0; columnIndex < headers.length; columnIndex += 1) {
+            const header = headers[columnIndex];
+            if (!header) continue;
+            const value = row.getCell(columnIndex + 1).value;
+            if (value && typeof value === "object") {
+                if ("result" in value) record[header] = value.result;
+                else if ("text" in value) record[header] = value.text;
+                else if ("richText" in value) record[header] = value.richText.map((part) => part.text).join("");
+                else record[header] = value;
+            } else {
+                record[header] = value ?? null;
+            }
+        }
+        rows.push(record);
+    }
+    return rows;
 }
 
 async function fetchOfflineVenueGroup(venueId, workbookPath, sourceUrl) {
     console.log(`  [offline] Loading venue ${venueId} from ${workbookPath}`);
-    const workbook = XLSX.readFile(workbookPath);
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.readFile(workbookPath);
     const venues = sheetRows(workbook, "Supabase Venues");
     const dishes = sheetRows(workbook, "Supabase Dishes");
     const venueRow = venues.find((row) => cleanText(row.id) === venueId);
@@ -1902,7 +1924,7 @@ async function fetchMissingDishVenueGroups() {
             const { data, error } = await fetchKnownSourceVenues(venueScanLimit);
             if (error) {
                 console.log(`  [db] Known-source venue scan failed: ${error.message}. Trying workbook fallback.`);
-                venues.push(...fetchKnownSourceVenuesFromWorkbook(runOptions.limit));
+                venues.push(...await fetchKnownSourceVenuesFromWorkbook(runOptions.limit));
             } else {
                 venues.push(...(data ?? []));
             }
