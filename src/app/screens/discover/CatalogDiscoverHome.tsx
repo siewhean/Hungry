@@ -1,7 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { useCallback, useRef, useState } from "react";
+import { Pressable, RefreshControl, ScrollView, View } from "react-native";
 import { MapPinned, Search, Utensils } from "lucide-react-native";
-import { useNavigation, type CompositeNavigationProp } from "@react-navigation/native";
+import {
+  useFocusEffect,
+  useNavigation,
+  type CompositeNavigationProp,
+} from "@react-navigation/native";
 import type { MaterialTopTabNavigationProp } from "@react-navigation/material-top-tabs";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
@@ -9,6 +13,8 @@ import type { MainTabParamList, RootStackParamList } from "@/app/navigation/navi
 import { AccessibleImage, AppText, EmptyState, Skeleton } from "@/components/ui";
 import type {
   CatalogPageRequest,
+  CatalogDiscoverSectionId,
+  CatalogDiscoverSections,
   CatalogRawDishCard,
   CatalogRawVenueCard,
 } from "@/lib/services/catalog";
@@ -31,31 +37,6 @@ const FILTERS: readonly { id: CatalogFilter; label: string }[] = [
   { id: "value", label: "Value" },
 ];
 
-function rawRequest(
-  filter: CatalogFilter,
-  coordinate: { latitude: number; longitude: number },
-): CatalogPageRequest {
-  return {
-    coordinate,
-    radiusMeters: 3_000,
-    limit: 24,
-    sort: "nearby",
-    dietaryFlags: filter === "halal" ? ["halal"] : [],
-    cuisineTags: filter === "japanese" || filter === "western" ? [filter] : [],
-    maxPrice: filter === "value" ? 8 : undefined,
-  };
-}
-
-function uniqueDishes(items: CatalogRawDishCard[]) {
-  const seen = new Set<string>();
-  return items.filter((item) => {
-    const key = `${item.venueId}:${item.name.trim().toLocaleLowerCase()}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
 function CatalogDiscoverSkeleton() {
   const { radii, spacing } = useHungryTheme();
   return (
@@ -75,7 +56,15 @@ function CatalogDiscoverSkeleton() {
   );
 }
 
-function RawDishCard({ item, releaseId }: { item: CatalogRawDishCard; releaseId?: string }) {
+function RawDishCard({
+  item,
+  releaseId,
+  sectionLabel,
+}: {
+  item: CatalogRawDishCard;
+  releaseId?: string;
+  sectionLabel: string;
+}) {
   const navigation = useNavigation<RootNavigation>();
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
   return (
@@ -128,6 +117,21 @@ function RawDishCard({ item, releaseId }: { item: CatalogRawDishCard; releaseId?
               </AppText>
             </View>
           ) : null}
+          <View
+            style={{
+              backgroundColor: palette.orange,
+              borderRadius: radii.pill,
+              bottom: spacing[2],
+              paddingHorizontal: spacing[2],
+              paddingVertical: spacing[1],
+              position: "absolute",
+              right: spacing[2],
+            }}
+          >
+            <AppText style={{ color: palette.textInverse }} variant="micro">
+              {sectionLabel}
+            </AppText>
+          </View>
         </View>
         <View style={{ gap: spacing[1], minHeight: 94, padding: spacing[2] }}>
           <AppText numberOfLines={2} variant="bodyBold">
@@ -221,14 +225,18 @@ export function CatalogDiscoverHome() {
   const coordinate = useLocationStore((state) => state.currentLocation);
   const service = getCatalogRawService();
   const [filter, setFilter] = useState<CatalogFilter>("all");
-  const [dishes, setDishes] = useState<CatalogRawDishCard[]>([]);
+  const [sections, setSections] = useState<CatalogDiscoverSections["sections"]>({
+    nearby: [],
+    budget: [],
+    late_night: [],
+    editors_choice: [],
+  });
   const [venues, setVenues] = useState<CatalogRawVenueCard[]>([]);
   const [releaseId, setReleaseId] = useState<string | undefined>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const requestVersion = useRef(0);
-
-  const request = useMemo(() => rawRequest(filter, coordinate), [coordinate, filter]);
+  const rotationCounter = useRef(0);
   const load = useCallback(async () => {
     if (!service) {
       setError("The catalog service is unavailable.");
@@ -236,41 +244,65 @@ export function CatalogDiscoverHome() {
       return;
     }
     const version = ++requestVersion.current;
+    const rotationSeed = `${Date.now()}-${++rotationCounter.current}`;
     setLoading(true);
     setError(null);
     try {
-      const [dishPage, venuePage] = await Promise.all([
-        service.listDishes(request),
-        service.listVenues({ ...request, limit: 24 }),
-      ]);
+      const discoverSections = await service.getDiscoverSections({
+        rotationSeed,
+        limitPerSection: 8,
+        dietaryFlags: filter === "halal" ? ["halal"] : [],
+        cuisineTags: filter === "japanese" || filter === "western" ? [filter] : [],
+        maxPrice: filter === "value" ? 8 : undefined,
+      });
       if (version !== requestVersion.current) return;
-      setDishes(uniqueDishes(dishPage.items));
-      setVenues(venuePage.items);
-      setReleaseId(dishPage.releaseId || venuePage.releaseId || undefined);
+      setSections(discoverSections.sections);
+      setReleaseId(discoverSections.releaseId || undefined);
+      // Venue rows are supplementary. A slow venue page must never hide the
+      // already-loaded tagged dish sections behind a whole-screen error.
+      void service
+        .listVenues({
+          coordinate,
+          radiusMeters: 3_000,
+          limit: 24,
+          sort: "nearby",
+          dietaryFlags: filter === "halal" ? ["halal"] : [],
+          cuisineTags: filter === "japanese" || filter === "western" ? [filter] : [],
+          maxPrice: filter === "value" ? 8 : undefined,
+        })
+        .then((venuePage) => {
+          if (version === requestVersion.current) setVenues(venuePage.items);
+        })
+        .catch(() => {
+          if (version === requestVersion.current) setVenues([]);
+        });
     } catch (loadError) {
       if (version !== requestVersion.current) return;
-      setDishes([]);
+      setSections({ nearby: [], budget: [], late_night: [], editors_choice: [] });
       setVenues([]);
       setError(loadError instanceof Error ? loadError.message : "Could not load the catalog.");
     } finally {
       if (version === requestVersion.current) setLoading(false);
     }
-  }, [request, service]);
+  }, [coordinate, filter, service]);
 
-  useEffect(() => {
-    void load();
-    return () => {
-      requestVersion.current += 1;
-    };
-  }, [load]);
+  useFocusEffect(
+    useCallback(() => {
+      void load();
+      return () => {
+        requestVersion.current += 1;
+      };
+    }, [load]),
+  );
 
   const openBrowse = useCallback(
     (browseMode: "dishes" | "stalls") => navigation.navigate("SearchResults", { browseMode }),
     [navigation],
   );
 
-  if (loading && !dishes.length && !venues.length) return <CatalogDiscoverSkeleton />;
-  if (error && !dishes.length && !venues.length) {
+  const hasDishes = Object.values(sections).some((items) => items.length > 0);
+  if (loading && !hasDishes && !venues.length) return <CatalogDiscoverSkeleton />;
+  if (error && !hasDishes && !venues.length) {
     return (
       <EmptyState
         title="Catalog unavailable"
@@ -280,7 +312,7 @@ export function CatalogDiscoverHome() {
       />
     );
   }
-  if (!dishes.length && !venues.length) {
+  if (!hasDishes && !venues.length) {
     const hasFilter = filter !== "all";
     return (
       <EmptyState
@@ -296,6 +328,13 @@ export function CatalogDiscoverHome() {
 
   return (
     <ScrollView
+      refreshControl={
+        <RefreshControl
+          refreshing={loading}
+          onRefresh={() => void load()}
+          tintColor={palette.orange}
+        />
+      }
       contentContainerStyle={{
         gap: spacing[5],
         paddingBottom: spacing[12],
@@ -415,27 +454,49 @@ export function CatalogDiscoverHome() {
         </Pressable>
       </View>
 
-      <View style={{ gap: spacing[3] }}>
-        <View
-          style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}
-        >
-          <AppText variant="h3">Nearby dishes</AppText>
-          <Pressable accessibilityRole="button" onPress={() => openBrowse("dishes")}>
-            <AppText style={{ color: palette.orange }} variant="bodyBold">
-              See all
-            </AppText>
-          </Pressable>
-        </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: spacing[3] }}
-        >
-          {dishes.slice(0, 8).map((item) => (
-            <RawDishCard key={item.id} item={item} releaseId={releaseId} />
-          ))}
-        </ScrollView>
-      </View>
+      {(
+        [
+          ["nearby", "Discover dishes", "Discover"],
+          ["budget", "Budget picks", "Budget"],
+          ["late_night", "Late night", "Late night"],
+          ["editors_choice", "Editor's Choice", "Editor's Choice"],
+        ] as const
+      ).map(([sectionId, title, badge]) => {
+        const items = sections[sectionId as CatalogDiscoverSectionId];
+        if (!items.length) return null;
+        return (
+          <View key={sectionId} style={{ gap: spacing[3] }}>
+            <View
+              style={{
+                alignItems: "center",
+                flexDirection: "row",
+                justifyContent: "space-between",
+              }}
+            >
+              <AppText variant="h3">{title}</AppText>
+              <Pressable accessibilityRole="button" onPress={() => openBrowse("dishes")}>
+                <AppText style={{ color: palette.orange }} variant="bodyBold">
+                  See all
+                </AppText>
+              </Pressable>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: spacing[3] }}
+            >
+              {items.map((item) => (
+                <RawDishCard
+                  key={`${sectionId}-${item.id}`}
+                  item={item}
+                  releaseId={releaseId}
+                  sectionLabel={badge}
+                />
+              ))}
+            </ScrollView>
+          </View>
+        );
+      })}
 
       <View style={{ gap: spacing[2] }}>
         <View

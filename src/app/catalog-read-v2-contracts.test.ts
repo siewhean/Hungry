@@ -95,8 +95,8 @@ test("V2 discovery entry points do not warm the legacy browse index and map pass
     discoverHome,
     /return shouldUseCatalogReadV2 \? <CatalogDiscoverHome \/> : <LegacyDiscoverHomeScreen \/>;/,
   );
-  assert.match(catalogDiscoverHome, /service\.listDishes\(request\)/);
-  assert.match(catalogDiscoverHome, /service\.listVenues\(\{ \.\.\.request, limit: 24 \}\)/);
+  assert.match(catalogDiscoverHome, /service\.getDiscoverSections/);
+  assert.match(catalogDiscoverHome, /service\.listVenues\(/);
   assert.match(catalogDiscoverHome, /radiusMeters: 3_000/);
   assert.match(catalogDiscoverHome, /limit: 24/);
   assert.match(catalogDiscoverHome, /CatalogRawDetail/);
@@ -113,6 +113,39 @@ test("V2 discovery entry points do not warm the legacy browse index and map pass
   assert.match(map, /openOnly: mapFilters\.openNow/);
   assert.match(map, /onMarkerPress=\{shouldUseCatalogReadV2 \? handleRawMarkerPress : undefined\}/);
   assert.match(map, /candidate\.kind === "venue" \? "stall" : candidate\.kind/);
+});
+
+test("V2 Discover sections are tagged, bounded, and rotated by the server", () => {
+  const catalog = read("src/lib/services/catalog/index.ts");
+  const discover = read("src/app/screens/discover/CatalogDiscoverHome.tsx");
+  const migration = read(
+    "supabase/migrations/20260715033000_catalog_raw_dynamic_discover_sections.sql",
+  );
+  assert.match(catalog, /sectionTags: asStringArray\(row\.section_tags\)/);
+  assert.match(catalog, /catalog_raw_discover_sections/);
+  assert.match(discover, /getDiscoverSections/);
+  assert.match(discover, /rotationSeed/);
+  assert.match(discover, /useFocusEffect/);
+  assert.match(discover, /RefreshControl/);
+  assert.match(discover, /dietaryFlags: filter === "halal"/);
+  assert.match(discover, /cuisineTags: filter === "japanese"/);
+  assert.match(discover, /Budget picks/);
+  assert.match(discover, /Late night/);
+  assert.match(discover, /Editor's Choice/);
+  assert.match(migration, /'nearby'/);
+  assert.match(migration, /price <= 8/);
+  assert.match(migration, /is_featured/);
+  assert.match(migration, /catalog_raw_discover_sections/);
+  assert.match(migration, /p_limit_per_section integer default 8/);
+  assert.match(migration, /catalog_raw_excluded_venues/);
+  assert.doesNotMatch(migration, /where is_open/);
+  const hardening = read(
+    "supabase/migrations/20260715040000_catalog_raw_dynamic_sections_hardening.sql",
+  );
+  assert.match(hardening, /revoke all on function public\.catalog_raw_rebuild_dish_section_tags/);
+  assert.match(hardening, /p_cuisine_tags text\[\]/);
+  assert.match(hardening, /tags\.rotation_bucket >= v_bucket/);
+  assert.match(hardening, /tags\.rotation_bucket < v_bucket/);
 });
 
 test("raw map excludes non-consumer venues at the RPC boundary", () => {

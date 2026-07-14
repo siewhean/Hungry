@@ -58,6 +58,7 @@ export interface CatalogRawDishCard {
   reviewCount?: number;
   cuisineTags: string[];
   dietaryFlags: string[];
+  sectionTags: string[];
   isOpen?: boolean;
   verificationStatus: CatalogVerificationStatus;
   menuRightsStatus: string;
@@ -65,6 +66,24 @@ export interface CatalogRawDishCard {
   menuSourceUrl?: string;
   mediaSourceUrl?: string;
   updatedAt?: string;
+}
+
+export type CatalogDiscoverSectionId = "nearby" | "budget" | "late_night" | "editors_choice";
+
+export interface CatalogDiscoverSectionsRequest {
+  coordinate?: CatalogCoordinate;
+  radiusMeters?: number;
+  rotationSeed: string;
+  releaseId?: string;
+  limitPerSection?: number;
+  cuisineTags?: string[];
+  dietaryFlags?: string[];
+  maxPrice?: number;
+}
+
+export interface CatalogDiscoverSections {
+  releaseId: string;
+  sections: Record<CatalogDiscoverSectionId, CatalogRawDishCard[]>;
 }
 
 export interface CatalogRawVenueCard {
@@ -204,6 +223,7 @@ function mapDishCard(value: unknown): CatalogRawDishCard {
     reviewCount: asNumber(row.review_count),
     cuisineTags: asStringArray(row.cuisine_tags),
     dietaryFlags: asStringArray(row.dietary_flags),
+    sectionTags: asStringArray(row.section_tags),
     isOpen: asBoolean(row.is_open),
     verificationStatus: verificationStatus(row.verification_status),
     menuRightsStatus: asString(row.menu_rights_status) ?? "unverified",
@@ -351,6 +371,38 @@ export const catalogRawService = {
     if (cached) return cached;
     const page = mapPage(await callRawRpc("catalog_raw_dishes_page", args), mapDishCard);
     return writeCache(pageCache, key, page, PAGE_TTL_MS);
+  },
+
+  async getDiscoverSections(
+    request: CatalogDiscoverSectionsRequest,
+  ): Promise<CatalogDiscoverSections> {
+    const row = asRecord(
+      await callRawRpc("catalog_raw_discover_sections", {
+        p_lat: request.coordinate?.latitude ?? null,
+        p_lng: request.coordinate?.longitude ?? null,
+        p_radius_meters: request.radiusMeters ?? 3_000,
+        p_rotation_seed: request.rotationSeed,
+        p_release_id: request.releaseId ?? null,
+        p_limit_per_section: request.limitPerSection ?? 8,
+        p_cuisine_tags: request.cuisineTags ?? [],
+        p_dietary_flags: request.dietaryFlags ?? [],
+        p_max_price: request.maxPrice ?? null,
+      }),
+    );
+    const sections = asRecord(row.sections);
+    const ids: CatalogDiscoverSectionId[] = ["nearby", "budget", "late_night", "editors_choice"];
+    return {
+      releaseId: asString(row.release_id) ?? "",
+      sections: ids.reduce<Record<CatalogDiscoverSectionId, CatalogRawDishCard[]>>(
+        (result, sectionId) => {
+          result[sectionId] = Array.isArray(sections[sectionId])
+            ? sections[sectionId].map(mapDishCard)
+            : [];
+          return result;
+        },
+        { nearby: [], budget: [], late_night: [], editors_choice: [] },
+      ),
+    };
   },
 
   async listVenues(request: CatalogPageRequest): Promise<CatalogPage<CatalogRawVenueCard>> {
