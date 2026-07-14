@@ -12,7 +12,7 @@
     "eas:channel:production": "npx --yes eas-cli@18.12.3 channel:create production --non-interactive || true",
     "update:preview": "npx --yes eas-cli@18.12.3 update --channel preview --message \"${npm_config_msg:-preview update}\"",
     "update:production": "npx --yes eas-cli@18.12.3 update --channel production --message \"${npm_config_msg:-production update}\"",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "node --stack_size=10000 ./node_modules/typescript/bin/tsc --noEmit",
     "test": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test $(find src -name '*.test.ts' -print)",
     "test:e2e": "playwright test",
     "test:e2e:merchant-catalog": "playwright test tests/e2e/merchant-catalog.spec.ts --project=chromium",

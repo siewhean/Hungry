@@ -92,6 +92,7 @@ import type {
   VenueSummary,
 } from "@/types/domain";
 import { isVenueOpenFromHours } from "@/utils/stallStatus";
+import { CatalogDiscoverHome } from "./CatalogDiscoverHome";
 
 type DiscoverChipId = "dietary" | "spicy" | "halal" | "late" | "cheap";
 
@@ -1155,6 +1156,12 @@ function HalalLogoIcon({ color }: { color: string }) {
 }
 
 export function DiscoverHomeScreen() {
+  const shouldUseCatalogReadV2 =
+    FEATURE_FLAGS.catalogReadV2 && getServiceProvider().mode === "supabase";
+  return shouldUseCatalogReadV2 ? <CatalogDiscoverHome /> : <LegacyDiscoverHomeScreen />;
+}
+
+function LegacyDiscoverHomeScreen() {
   const navigation = useNavigation<RootNavigation>();
   const route = useRoute();
   const isTabSwipeLockedRef = useRef(false);

@@ -14,7 +14,11 @@
   `119,232 / 156,351`; reconciliation found unique IDs and required venue/price data, while retaining raw duplicate
   candidates and two blank-name rows as instructed. Apply the migration, publish the release, run linked smoke SQL,
   publish-time source. The active release is `68cd0682-1655-4ceb-bd53-043309c9aafb` with `119,232 / 156,351` cards.
-  Next: merge the production build configuration, issue an OTA/native release with `catalogReadV2=1`, and complete authenticated-device smoke.
+  Discover V2 uses a release-snapshotted, server-tagged section RPC (`nearby`, `budget`, `late_night`,
+  `editors_choice`) with bounded venue rows; every non-excluded dish has `nearby`, Budget is price-verified,
+  Late Night uses published closing hours, and Editor's Choice uses the editorial source flag. Fresh rotation
+  seeds are sent on focus and pull-to-refresh. Next: issue an OTA/native release with `catalogReadV2=1` and
+  complete authenticated-device smoke.
 
 - `MAIN-FDO-RECONCILE-01` — Done. Reconciled `frontend-design-overhaul` onto the current `main`
   baseline with the FDO UI/UX and Passport implementation authoritative. Restored selected
