@@ -128,7 +128,7 @@ function RawDishCard({
               right: spacing[2],
             }}
           >
-            <AppText style={{ color: palette.textInverse }} variant="micro">
+            <AppText style={{ color: palette.textOnOrange }} variant="micro">
               {sectionLabel}
             </AppText>
           </View>
@@ -260,8 +260,7 @@ export function CatalogDiscoverHome() {
       setReleaseId(discoverSections.releaseId || undefined);
       // Venue rows are supplementary. A slow venue page must never hide the
       // already-loaded tagged dish sections behind a whole-screen error.
-      void service
-        .listVenues({
+      void service.listVenues({
           coordinate,
           radiusMeters: 3_000,
           limit: 24,
@@ -403,7 +402,7 @@ export function CatalogDiscoverHome() {
               }}
             >
               <AppText
-                style={{ color: active ? palette.textInverse : palette.text }}
+                style={{ color: active ? palette.textOnOrange : palette.text }}
                 variant="bodyBold"
               >
                 {option.label}
