@@ -9,12 +9,12 @@
 - `CATALOG-RAW-READS-01` — Linked Supabase release active for the reconciled
   `119,232 / 156,351` raw snapshot. Adds versioned full-catalog projections and authenticated,
   cursor-paged dish/venue/detail/menu/map RPCs behind `catalogReadV2` (default off). Search, Browse,
-  map viewport, chips, loading/error states, and raw provenance labels use bounded session memory only;
+  Discover, map viewport, chips, loading/error states, and raw provenance labels use bounded session memory only;
   V2 no longer warms the legacy client-wide catalog index. Linked preflight on 2026-07-14 found
   `119,232 / 156,351`; reconciliation found unique IDs and required venue/price data, while retaining raw duplicate
   candidates and two blank-name rows as instructed. Apply the migration, publish the release, run linked smoke SQL,
   publish-time source. The active release is `68cd0682-1655-4ceb-bd53-043309c9aafb` with `119,232 / 156,351` cards.
-  Next: merge the production build configuration, issue an OTA/native release with `catalogReadV2=1`, and complete authenticated-device smoke.
+  Discover V2 now makes only two cancellable 24-card raw reads, navigates directly to raw details/Browse, and never starts the legacy discovery feed or repository hydration. Non-consumer exclusions now cover map markers too. Next: issue an OTA/native release with `catalogReadV2=1` and complete authenticated-device smoke.
 
 - `MAIN-FDO-RECONCILE-01` — Done. Reconciled `frontend-design-overhaul` onto the current `main`
   baseline with the FDO UI/UX and Passport implementation authoritative. Restored selected

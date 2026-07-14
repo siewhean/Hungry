@@ -78,6 +78,7 @@ test("V2 discovery entry points do not warm the legacy browse index and map pass
   const prefetch = read("src/features/navigation/prefetch.ts");
   const searchHome = read("src/app/screens/search/DishSearchScreen.tsx");
   const discoverHome = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const catalogDiscoverHome = read("src/app/screens/discover/CatalogDiscoverHome.tsx");
   const map = read("src/app/screens/discover/HomeMapScreen.tsx");
   assert.match(prefetch, /FEATURE_FLAGS\.catalogReadV2[\s\S]*return;/);
   assert.match(
@@ -92,7 +93,19 @@ test("V2 discovery entry points do not warm the legacy browse index and map pass
   assert.doesNotMatch(searchHome, /FEATURE_FLAGS\.catalogReadV2 && isAuthenticated/);
   assert.match(
     discoverHome,
-    /if \(shouldUseCatalogReadV2\) \{\s*return;\s*\}[\s\S]*refreshPopularNearby/,
+    /return shouldUseCatalogReadV2 \? <CatalogDiscoverHome \/> : <LegacyDiscoverHomeScreen \/>;/,
+  );
+  assert.match(catalogDiscoverHome, /service\.listDishes\(request\)/);
+  assert.match(catalogDiscoverHome, /service\.listVenues\(\{ \.\.\.request, limit: 24 \}\)/);
+  assert.match(catalogDiscoverHome, /radiusMeters: 3_000/);
+  assert.match(catalogDiscoverHome, /limit: 24/);
+  assert.match(catalogDiscoverHome, /CatalogRawDetail/);
+  assert.match(catalogDiscoverHome, /requestVersion/);
+  assert.match(catalogDiscoverHome, /No nearby matches/);
+  assert.doesNotMatch(catalogDiscoverHome, /initialFilter: initialFilter as never/);
+  assert.doesNotMatch(
+    catalogDiscoverHome,
+    /getHungryService|getDataRepository|listDiscoveryFeedByLocation|getBrowseIndex|DishDetail/,
   );
   assert.doesNotMatch(discoverHome, /FEATURE_FLAGS\.catalogReadV2 && isAuthenticated/);
   assert.match(map, /onViewportChange/);
@@ -100,6 +113,13 @@ test("V2 discovery entry points do not warm the legacy browse index and map pass
   assert.match(map, /openOnly: mapFilters\.openNow/);
   assert.match(map, /onMarkerPress=\{shouldUseCatalogReadV2 \? handleRawMarkerPress : undefined\}/);
   assert.match(map, /candidate\.kind === "venue" \? "stall" : candidate\.kind/);
+});
+
+test("raw map excludes non-consumer venues at the RPC boundary", () => {
+  const migration = read("supabase/migrations/20260715020000_catalog_raw_map_exclusion.sql");
+  assert.match(migration, /catalog_raw_map_view/);
+  assert.match(migration, /catalog_raw_excluded_venues/);
+  assert.match(migration, /where e\.venue_id = id/);
 });
 
 test("catalog release publisher fails when count validation does not activate a release", () => {
