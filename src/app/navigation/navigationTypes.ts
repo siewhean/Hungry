@@ -100,6 +100,7 @@ export type RootStackParamList = {
   StallDetail: { venueId?: string; id?: string };
   MerchantClaimExplainer: undefined;
   DishDetail: { dishId?: string; id?: string };
+  CatalogRawDetail: { kind: "dish" | "venue"; id: string; releaseId?: string };
   DishDetailV2: { dishId?: string; id?: string };
   SearchHome: undefined;
   SearchResults:

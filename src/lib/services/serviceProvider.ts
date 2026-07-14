@@ -2,6 +2,7 @@ import type { TasteVector } from "@/types/domain";
 import { getConfiguredDataSource, setConfiguredDataSource } from "@/lib/services/supabase/client";
 import { similarityScore } from "@/lib/ai/similarityScore";
 import type { DataRepository, HungryService } from "@/lib/services/types";
+import type { catalogRawService } from "@/lib/services/catalog";
 
 export interface ServiceProvider {
   mode: "mock" | "supabase";
@@ -96,6 +97,17 @@ export function resetServiceProvider(): void {
 
 export function getHungryService(): HungryService {
   return getActiveProvider().service;
+}
+
+/**
+ * Authenticated, release-versioned catalog reads. This deliberately has no
+ * mock/Excel fallback: callers must render the online error state instead.
+ */
+export function getCatalogRawService(): typeof catalogRawService | null {
+  if (getActiveProvider().mode !== "supabase") return null;
+  const { catalogRawService: service } =
+    require("@/lib/services/catalog") as typeof import("@/lib/services/catalog");
+  return service;
 }
 
 export function getDataRepository(): DataRepository {
