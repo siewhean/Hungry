@@ -1,6 +1,6 @@
 # Web-v2 Lighthouse receipt — 2026-07-16
 
-Candidate branch: `codex/order-integrity-hardening`
+Candidate implementation commit: `b1e1151614eda3c2347d75775431cdbf498bdfe4` on `codex/order-integrity-hardening`
 
 Command:
 
