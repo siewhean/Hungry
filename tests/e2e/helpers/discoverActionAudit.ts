@@ -54,7 +54,7 @@ export async function runDecideForMeActionAudit(page: Page, testInfo: TestInfo) 
   ).toBeVisible();
   await expect(
     page
-      .getByText(/^S\$\d+\.\d{2}$/)
+      .getByText(/^S\$\d+\.\d{2}(?: – S\$\d+\.\d{2})?$/)
       .filter({ visible: true })
       .first(),
   ).toBeVisible();
@@ -91,7 +91,13 @@ export async function runWheelActionAudit(page: Page, testInfo: TestInfo) {
   await openDiscover(page);
 
   const wheel = page.getByRole("button", { name: "Open hungry wheel" });
+  const wheelLabel = wheel.getByText("Hungry Wheel", { exact: true });
   await wheel.scrollIntoViewIfNeeded();
+  await expect(wheelLabel).toBeVisible();
+  expect(
+    await wheelLabel.evaluate((element) => element.scrollWidth <= element.clientWidth),
+    "Hungry Wheel label should fit without horizontal truncation",
+  ).toBe(true);
   await wheel.click();
   await expect(
     page.getByText("Hungry Wheel", { exact: true }).filter({ visible: true }).first(),
@@ -135,6 +141,12 @@ export async function runWheelActionAudit(page: Page, testInfo: TestInfo) {
   await expect(
     page.getByText("WINNER", { exact: true }).filter({ visible: true }).first(),
   ).toBeVisible({ timeout: 12_000 });
+  await expect(
+    page
+      .getByText("REPRESENTATIVE · NOT EXACT PHOTO", { exact: true })
+      .filter({ visible: true })
+      .first(),
+  ).toBeVisible();
   await expect(page.getByRole("button", { name: "View Stall Details" })).toBeVisible();
   await assertRenderedImagesAreHealthy(page);
   await captureVisualEvidence(page, testInfo, "wheel-winner");

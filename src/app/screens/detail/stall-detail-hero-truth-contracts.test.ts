@@ -21,3 +21,10 @@ test("stall detail discloses and recovers to its representative hero", () => {
   assert.match(source, /REPRESENTATIVE/);
   assert.match(source, /representative hero image/);
 });
+
+test("stall detail allows the full venue name to wrap in its identity card", () => {
+  assert.match(
+    source,
+    /<AppText variant="h2" numberOfLines=\{2\} style=\{\{ flexShrink: 1 \}\}>\s*\{venue\.name\}/,
+  );
+});

@@ -1333,7 +1333,7 @@ export function DiscoverHomeScreen() {
   const decisionCardPadding = spacing[2];
   const decisionCardIconSize = 36;
   const decisionCardIconGraphicSize = 19;
-  const decisionCardLabelFontSize = Math.max(15, typography.bodySmallBold.fontSize + 1);
+  const decisionCardLabelFontSize = typography.bodySmallBold.fontSize;
   const decisionCardLabelLineHeight = decisionCardLabelFontSize + spacing[1];
   const decisionCardLabelMaxWidth = Math.max(
     76,

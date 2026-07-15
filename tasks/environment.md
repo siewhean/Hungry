@@ -142,7 +142,7 @@ Configured in: `tsconfig.json` + `babel.config.js`
 
 | Constraint             | Detail                                                                                                                                                                                            |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Mock-first local data  | Default local app mode uses `src/lib/services/mock/data.ts`; Supabase-backed integrations are staged behind `HUNGRY_DATA_SOURCE=supabase` and release smoke gates                                 |
+| Mock-first local data  | Default local app mode uses `src/lib/services/mock/data.ts`; native bundles use `EXPO_PUBLIC_HUNGRY_DATA_SOURCE`, and production requires `supabase` plus valid public credentials and release smoke gates |
 | Service boundary       | App screens/features must use `getDataRepository()` or `getHungryService()`; do not call Supabase, fixtures, or network clients directly from UI code                                             |
 | Backend posture        | Supabase schema, RLS, storage, Edge Functions, and smoke scripts exist for staged/release integrations; production behavior still requires the documented live smoke credentials and device gates |
 | Web posture            | Consumer app target is iOS + Android; marketing website work lives under `marketing/website/web-v2/` and should remain separate from mobile release claims                                        |

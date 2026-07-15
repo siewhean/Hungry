@@ -17,7 +17,9 @@ type ExcelCatalog = {
   metadata: {
     sourceRows: number;
     buildingCount: number;
+    locatedBuildingCount: number;
     venueCount: number;
+    locatedVenueCount: number;
     dishCount: number;
   };
   buildingColumns: string[];
@@ -28,8 +30,12 @@ type ExcelCatalog = {
   dishes: unknown[][];
 };
 
+type ExcelBuilding = Omit<BuildingSummary, "coordinate"> & {
+  coordinate?: Coordinate;
+};
+
 type ExcelVenue = VenueSummary & {
-  coordinate: Coordinate;
+  coordinate?: Coordinate;
   rating: number;
   reviewCount: number;
   cuisineTags: string[];
@@ -85,6 +91,18 @@ function asNumber(value: unknown, fallback = 0): number {
   return Number.isFinite(number) ? number : fallback;
 }
 
+function asOptionalNumber(value: unknown): number | undefined {
+  if (value === "" || value === null || value === undefined) return undefined;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : undefined;
+}
+
+function coordinateFromRecord(record: Record<string, unknown>): Coordinate | undefined {
+  const latitude = asOptionalNumber(record.latitude);
+  const longitude = asOptionalNumber(record.longitude);
+  return latitude === undefined || longitude === undefined ? undefined : { latitude, longitude };
+}
+
 function asBoolean(value: unknown): boolean {
   return value === true || value === "true";
 }
@@ -126,16 +144,13 @@ function distanceFrom(
   return calculateDistanceMeters(source, target);
 }
 
-const buildings: BuildingSummary[] = catalog.buildings.map((row) => {
+const buildings: ExcelBuilding[] = catalog.buildings.map((row) => {
   const record = asRecord(catalog.buildingColumns, row);
   return {
     id: asString(record.id),
     name: asString(record.name),
     type: asString(record.type) as BuildingSummary["type"],
-    coordinate: {
-      latitude: asNumber(record.latitude, 1.3521),
-      longitude: asNumber(record.longitude, 103.8198),
-    },
+    coordinate: coordinateFromRecord(record),
     floors: asStringArray(record.floors),
     venueCount: asNumber(record.venueCount),
     isClosedToday: asBoolean(record.isClosedToday),
@@ -164,10 +179,7 @@ const venues: ExcelVenue[] = catalog.venues.map((row) => {
     buildingName: asString(record.buildingName) || undefined,
     address: asString(record.address) || undefined,
     postalCode: asString(record.postalCode) || undefined,
-    coordinate: {
-      latitude: asNumber(record.latitude, 1.3521),
-      longitude: asNumber(record.longitude, 103.8198),
-    },
+    coordinate: coordinateFromRecord(record),
     rating: asNumber(record.rating),
     reviewCount: asNumber(record.reviewCount),
     cuisineTags: asStringArray(record.cuisineTags),
@@ -283,7 +295,9 @@ function filterDishes(filters: SearchFilters, tasteProfile: TasteVector): DishDe
       return false;
     }
     const distanceMeters = distanceFrom(currentLocation, venue?.coordinate);
-    if (distanceMeters !== undefined && distanceMeters > filters.radius) return false;
+    if (currentLocation && (distanceMeters === undefined || distanceMeters > filters.radius)) {
+      return false;
+    }
     return true;
   });
 
@@ -329,7 +343,9 @@ function filterDishes(filters: SearchFilters, tasteProfile: TasteVector): DishDe
 export const excelRepository: DataRepository = {
   ...dataRepositoryMock,
   listBuildings(): BuildingSummary[] {
-    return buildings;
+    return buildings.filter((building): building is BuildingSummary =>
+      Boolean(building.coordinate),
+    );
   },
   listVenuesByBuilding(buildingId: string): VenueSummary[] {
     return venuesByBuildingId.get(buildingId) ?? [];
@@ -373,13 +389,18 @@ export const excelRepository: DataRepository = {
       tasteProfile,
     ).filter((dish) => !(options.excludeDishIds ?? []).includes(dish.id));
 
+    const hasLocation =
+      typeof options.latitude === "number" && typeof options.longitude === "number";
+
     return (
       results[0] ??
-      [...dishes].sort(
-        (left, right) =>
-          similarityScore(right.tasteVector, tasteProfile) -
-          similarityScore(left.tasteVector, tasteProfile),
-      )[0]
+      (hasLocation
+        ? undefined
+        : [...dishes].sort(
+            (left, right) =>
+              similarityScore(right.tasteVector, tasteProfile) -
+              similarityScore(left.tasteVector, tasteProfile),
+          )[0])
     );
   },
 };

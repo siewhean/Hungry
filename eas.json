@@ -5,27 +5,38 @@
   },
   "build": {
     "development": {
-      "developmentClient": true,
       "distribution": "internal",
       "channel": "development",
+      "environment": "development",
+      "android": {
+        "credentialsSource": "remote"
+      },
       "env": {
         "EXPO_PUBLIC_APP_ENV": "development",
-        "HUNGRY_DATA_SOURCE": "mock"
+        "EXPO_PUBLIC_HUNGRY_DATA_SOURCE": "mock"
       }
     },
     "preview": {
       "distribution": "internal",
       "channel": "staging",
+      "environment": "preview",
+      "android": {
+        "credentialsSource": "remote"
+      },
       "env": {
         "EXPO_PUBLIC_APP_ENV": "staging",
-        "HUNGRY_DATA_SOURCE": "supabase"
+        "EXPO_PUBLIC_HUNGRY_DATA_SOURCE": "supabase"
       }
     },
     "production": {
       "channel": "production",
+      "environment": "production",
+      "android": {
+        "credentialsSource": "remote"
+      },
       "env": {
         "EXPO_PUBLIC_APP_ENV": "production",
-        "HUNGRY_DATA_SOURCE": "supabase"
+        "EXPO_PUBLIC_HUNGRY_DATA_SOURCE": "supabase"
       }
     }
   },

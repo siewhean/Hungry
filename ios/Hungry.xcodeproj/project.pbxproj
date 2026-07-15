@@ -147,7 +147,6 @@
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
 				6812790F3A6C4DFBA2F23C94 /* Upload Debug Symbols to Sentry */,
 				E9696F01F23A15DDF13A245D /* [CP] Embed Pods Frameworks */,
-				66E2B0A8767640828F33E30D /* [Expo Dev Launcher] Strip Local Network Keys for Release */,
 			);
 			buildRules = (
 			);
@@ -220,7 +219,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e\n\nif [ -f \"$PODS_ROOT/../.xcode.env\" ]; then\n  . \"$PODS_ROOT/../.xcode.env\"\nfi\nif [ -f \"$PODS_ROOT/../.xcode.env.local\" ]; then\n  . \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\nif [ -z \"${PROJECT_DIR:-}\" ] && [ -n \"${PODS_ROOT:-}\" ]; then\n  PROJECT_DIR=\"$(dirname \"$PODS_ROOT\")\"\nfi\n\nif [ -z \"${NODE_BINARY:-}\" ] || [ ! -x \"$(command -v \"$NODE_BINARY\" 2>/dev/null || echo '')\" ]; then\n  if [ -x \"/usr/local/bin/node\" ]; then\n    NODE_BINARY=\"/usr/local/bin/node\"\n  elif [ -x \"/opt/homebrew/bin/node\" ]; then\n    NODE_BINARY=\"/opt/homebrew/bin/node\"\n  else\n    NODE_BINARY=\"$(command -v node || true)\"\n  fi\nfi\n\nif [ -z \"$NODE_BINARY\" ]; then\n  NODE_BINARY=\"/usr/bin/env node\"\nfi\n\n: \"${ENTRY_FILE:=index.ts}\"\n\nREACT_NATIVE_XCODE_SH=\"$(\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'\")\"\nif [ -z \"$REACT_NATIVE_XCODE_SH\" ] || [ ! -f \"$REACT_NATIVE_XCODE_SH\" ]; then\n  echo \"❌ Unable to locate react-native xcode script.\"\n  echo \"NODE_BINARY=$NODE_BINARY\"\n  exit 1\nfi\nSENTRY_XCODE_SH=\"$(\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('@sentry/react-native/package.json')) + '/scripts/sentry-xcode.sh'\")\"\n\nif [ \"$CONFIGURATION\" = \"Debug\" ] || [ \"$PLATFORM_NAME\" = \"iphonesimulator\" ]; then\n  /bin/sh \"$REACT_NATIVE_XCODE_SH\"\n  exit 0\nfi\n\nif [ -n \"$SENTRY_XCODE_SH\" ] && [ -f \"$SENTRY_XCODE_SH\" ]; then\n  /bin/sh \"$SENTRY_XCODE_SH\" \"$REACT_NATIVE_XCODE_SH\"\nelse\n  /bin/sh \"$REACT_NATIVE_XCODE_SH\"\nfi\n";
+			shellScript = "set -e\n\nif [ -f \"$PODS_ROOT/../.xcode.env\" ]; then\n  . \"$PODS_ROOT/../.xcode.env\"\nfi\nif [ -f \"$PODS_ROOT/../.xcode.env.local\" ]; then\n  . \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\nPINNED_NODE_VERSION=\"22.22.1\"\nPINNED_NVM_NODE=\"$HOME/.nvm/versions/node/v$PINNED_NODE_VERSION/bin/node\"\nif [ -x \"$PINNED_NVM_NODE\" ]; then\n  NODE_BINARY=\"$PINNED_NVM_NODE\"\nfi\n\nif [ -z \"${PROJECT_DIR:-}\" ] && [ -n \"${PODS_ROOT:-}\" ]; then\n  PROJECT_DIR=\"$(dirname \"$PODS_ROOT\")\"\nfi\n\nif [ -z \"${NODE_BINARY:-}\" ] || [ ! -x \"$(command -v \"$NODE_BINARY\" 2>/dev/null || echo '')\" ]; then\n  if [ -x \"/usr/local/bin/node\" ]; then\n    NODE_BINARY=\"/usr/local/bin/node\"\n  elif [ -x \"/opt/homebrew/bin/node\" ]; then\n    NODE_BINARY=\"/opt/homebrew/bin/node\"\n  else\n    NODE_BINARY=\"$(command -v node || true)\"\n  fi\nfi\n\nif [ -z \"$NODE_BINARY\" ]; then\n  NODE_BINARY=\"/usr/bin/env node\"\nfi\n\nNODE_VERSION=\"$(\"$NODE_BINARY\" --version 2>/dev/null | sed 's/^v//')\"\nif [ \"$NODE_VERSION\" != \"$PINNED_NODE_VERSION\" ]; then\n  echo \"❌ Hungry iOS builds require Node $PINNED_NODE_VERSION; found ${NODE_VERSION:-unknown}.\"\n  exit 1\nfi\n\nexport NODE_BINARY\nexport ENTRY_FILE=\"${ENTRY_FILE:-index.ts}\"\n\nREACT_NATIVE_XCODE_SH=\"$(\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'\")\"\nif [ -z \"$REACT_NATIVE_XCODE_SH\" ] || [ ! -f \"$REACT_NATIVE_XCODE_SH\" ]; then\n  echo \"❌ Unable to locate react-native xcode script.\"\n  echo \"NODE_BINARY=$NODE_BINARY\"\n  exit 1\nfi\nSENTRY_XCODE_SH=\"$(\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('@sentry/react-native/package.json')) + '/scripts/sentry-xcode.sh'\")\"\n\nif [ \"$CONFIGURATION\" = \"Debug\" ] || [ \"$PLATFORM_NAME\" = \"iphonesimulator\" ]; then\n  /bin/sh \"$REACT_NATIVE_XCODE_SH\"\n  exit 0\nfi\n\n# Sentry's disabled-upload branch invokes the RN script through sh -c without\n# preserving quoted paths. Run the RN script directly for local verification.\nif [ \"${SENTRY_DISABLE_AUTO_UPLOAD:-false}\" = \"true\" ]; then\n  /bin/sh \"$REACT_NATIVE_XCODE_SH\"\nelif [ -n \"$SENTRY_XCODE_SH\" ] && [ -f \"$SENTRY_XCODE_SH\" ]; then\n  /bin/sh \"$SENTRY_XCODE_SH\" \"$REACT_NATIVE_XCODE_SH\"\nelse\n  /bin/sh \"$REACT_NATIVE_XCODE_SH\"\nfi\n";
 		};
 		08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -267,21 +266,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-Hungry/expo-configure-project.sh\"\n";
-		};
-		66E2B0A8767640828F33E30D /* [Expo Dev Launcher] Strip Local Network Keys for Release */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "[Expo Dev Launcher] Strip Local Network Keys for Release";
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/expo-dev-launcher-strip-local-network-keys.stamp",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# Strip dev-launcher-specific local network permission keys from non-Debug builds\n# This only removes _expo._tcp Bonjour services and the dev-launcher usage description.\n# Other Bonjour services and custom descriptions are preserved for production use.\n\nif [ \"$CONFIGURATION\" != \"Debug\" ]; then\n  PLIST_PATH=\"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\"\n  if [ -f \"$PLIST_PATH\" ]; then\n    # Check if NSBonjourServices exists\n    if /usr/libexec/PlistBuddy -c \"Print :NSBonjourServices\" \"$PLIST_PATH\" >/dev/null 2>&1; then\n      # Get the count of services\n      COUNT=$(/usr/libexec/PlistBuddy -c \"Print :NSBonjourServices\" \"$PLIST_PATH\" 2>/dev/null | grep \"^    \" | wc -l | tr -d ' ')\n\n      # Remove _expo._tcp\n      for ((i=COUNT-1; i>=0; i--)); do\n        SERVICE=$(/usr/libexec/PlistBuddy -c \"Print :NSBonjourServices:$i\" \"$PLIST_PATH\" 2>/dev/null || echo \"\")\n        if echo \"$SERVICE\" | grep -q \"_expo._tcp\"; then\n          /usr/libexec/PlistBuddy -c \"Delete :NSBonjourServices:$i\" \"$PLIST_PATH\" 2>/dev/null || true\n        fi\n      done\n\n      # If the array is now empty, remove it entirely\n      REMAINING=$(/usr/libexec/PlistBuddy -c \"Print :NSBonjourServices\" \"$PLIST_PATH\" 2>/dev/null | grep \"^    \" | wc -l | tr -d ' ')\n      if [ \"$REMAINING\" -eq \"0\" ]; then\n        /usr/libexec/PlistBuddy -c \"Delete :NSBonjourServices\" \"$PLIST_PATH\" 2>/dev/null || true\n      fi\n    fi\n\n    # Only delete the description if it matches the dev-launcher default text\n    DESC=$(/usr/libexec/PlistBuddy -c \"Print :NSLocalNetworkUsageDescription\" \"$PLIST_PATH\" 2>/dev/null || echo \"\")\n    if echo \"$DESC\" | grep -q \"Expo Dev Launcher\"; then\n      /usr/libexec/PlistBuddy -c \"Delete :NSLocalNetworkUsageDescription\" \"$PLIST_PATH\" 2>/dev/null || true\n    fi\n  fi\nfi\n\ntouch \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 		};
 		6812790F3A6C4DFBA2F23C94 /* Upload Debug Symbols to Sentry */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -410,7 +394,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 94R58J6LA2;
 				GCC_TREAT_WARNINGS_AS_ERRORS = NO;
-				INFOPLIST_FILE = Hungry/Info.plist;
+				INFOPLIST_FILE = "Hungry/Info-Release.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

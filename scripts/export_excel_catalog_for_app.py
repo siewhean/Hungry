@@ -25,8 +25,8 @@ from validate_excel_workbook import DEFAULT_WORKBOOK, clean, dedupe_key
 
 
 DEFAULT_OUTPUT = Path("src/lib/services/excel/excelCatalog.generated.json")
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 MAX_MENU_ITEMS_PER_VENUE = 0
-DEFAULT_COORDINATE = {"latitude": 1.3521, "longitude": 103.8198}
 BAD_IMAGE_HOSTS = (
     "images.unsplash.com",
     "source.unsplash.com",
@@ -37,6 +37,30 @@ BAD_IMAGE_HOSTS = (
     "plus-white.svg",
     "placeholder",
 )
+
+AMBIGUOUS_VENUE_IDENTITY_NAMES = frozenset(
+    {
+        "n a",
+        "na",
+        "nil",
+        "nil non applicable",
+        "none",
+        "non applicable",
+        "not applicable",
+        "tbc",
+        "tbd",
+        "unknown",
+    }
+)
+
+
+def portable_workbook_identifier(workbook_path: Path) -> str:
+    """Return a deterministic source label without leaking the build machine path."""
+    resolved_path = workbook_path.resolve()
+    try:
+        return resolved_path.relative_to(REPOSITORY_ROOT).as_posix()
+    except ValueError:
+        return workbook_path.name
 
 BUILDING_COLUMNS = [
     "id",
@@ -352,6 +376,18 @@ def normalize_lookup_key(value: Any) -> str:
     if text is None:
         return ""
     return re.sub(r"[^a-z0-9]+", " ", str(text).lower()).strip()
+
+
+def venue_identity_quarantine_reason(value: Any) -> str | None:
+    """Return a deterministic reason when a name is unsafe to show as a venue identity."""
+
+    normalized = normalize_lookup_key(value)
+    if normalized in AMBIGUOUS_VENUE_IDENTITY_NAMES:
+        return "ambiguous_placeholder_name"
+    compact = re.sub(r"[^a-z0-9]", "", normalized)
+    if len(compact) <= 2:
+        return "ambiguous_short_name"
+    return None
 
 
 def venue_family_key(value: Any) -> str:
@@ -714,6 +750,23 @@ def validate_generated_catalog(
         venue_id = text_value(venue, "id")
         building_id = text_value(venue, "buildingId")
         top_dish_id = text_value(venue, "topDishId")
+        identity_reason = venue_identity_quarantine_reason(venue.get("name"))
+        if identity_reason:
+            errors.append(
+                _validation_error(
+                    "invalid_generated_venue_identity",
+                    f"{venue_id}: {identity_reason}",
+                )
+            )
+        latitude = number_value(venue, "latitude")
+        longitude = number_value(venue, "longitude")
+        if (latitude is None) != (longitude is None):
+            errors.append(
+                _validation_error(
+                    "partial_generated_venue_coordinate",
+                    venue_id,
+                )
+            )
         if building_id not in building_ids:
             errors.append(_validation_error("orphan_venue_building", f"{venue_id} -> {building_id or '<blank>'}"))
         if top_dish_id and top_dish_id not in dish_ids:
@@ -734,6 +787,15 @@ def validate_generated_catalog(
             errors.append(_validation_error("placeholder_generated_media", f"dish {dish_id} imageUrl"))
     for building in buildings:
         hero_dish_id = text_value(building, "heroDishId")
+        latitude = number_value(building, "latitude")
+        longitude = number_value(building, "longitude")
+        if (latitude is None) != (longitude is None):
+            errors.append(
+                _validation_error(
+                    "partial_generated_building_coordinate",
+                    text_value(building, "id"),
+                )
+            )
         if hero_dish_id and hero_dish_id not in dish_ids:
             errors.append(
                 _validation_error(
@@ -784,6 +846,9 @@ def build_catalog(rows: list[dict[str, Any]], workbook_path: Path, max_menu_item
     represented_business_ids: set[str] = set()
     represented_venue_families: set[str] = set()
     represented_venue_keys: set[str] = set()
+    quarantined_source_venue_ids: set[str] = set()
+    quarantined_venue_families: set[str] = set()
+    venue_identity_quarantine: list[dict[str, Any]] = []
     supabase_dishes_by_venue: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)
     for dish_row in supabase_dishes:
         if not display_authorized(
@@ -808,6 +873,20 @@ def build_catalog(rows: list[dict[str, Any]], workbook_path: Path, max_menu_item
         name = text_value(row, "Stall / Restaurant Name") or text_value(row, "Google Display Name")
         if not name:
             continue
+        identity_reason = venue_identity_quarantine_reason(name)
+        if identity_reason:
+            matched_venue_id = text_value(matched_venue_row, "id")
+            if matched_venue_id:
+                quarantined_source_venue_ids.add(matched_venue_id)
+            venue_identity_quarantine.append(
+                {
+                    "source": "Sheet1",
+                    "sourceRef": f"row:{row_number}",
+                    "name": name,
+                    "reason": identity_reason,
+                }
+            )
+            continue
         raw_business_id = text_value(row, "Business ID")
         business_id = normalize_lookup_key(raw_business_id)
         if business_id:
@@ -829,11 +908,18 @@ def build_catalog(rows: list[dict[str, Any]], workbook_path: Path, max_menu_item
         building_id = "excel-building-" + slugify(building_key_source, f"row-{row_number}")
         venue_seed = text_value(row, "Business ID") or text_value(row, "Licence No") or f"{name}|{postal}|{unit_number}|{row_number}"
         venue_id = "excel-venue-" + slugify(venue_seed, f"row-{row_number}")
-        latitude = number_value(row, "Latitude") or number_value(row, "Google Latitude")
-        longitude = number_value(row, "Longitude") or number_value(row, "Google Longitude")
+        latitude = number_value(row, "Latitude")
+        if latitude is None:
+            latitude = number_value(row, "Google Latitude")
+        longitude = number_value(row, "Longitude")
+        if longitude is None:
+            longitude = number_value(row, "Google Longitude")
+        if latitude is None or longitude is None:
+            latitude = None
+            longitude = None
         coordinate = {
-            "latitude": latitude if latitude is not None else DEFAULT_COORDINATE["latitude"],
-            "longitude": longitude if longitude is not None else DEFAULT_COORDINATE["longitude"],
+            "latitude": latitude,
+            "longitude": longitude,
         }
         supabase_venue_row = matched_venue_row
         venue_media_authorized = display_authorized(
@@ -984,6 +1070,13 @@ def build_catalog(rows: list[dict[str, Any]], workbook_path: Path, max_menu_item
                 "logoUrl": logo_url,
             }
         else:
+            if (
+                buildings_by_key[building_id].get("latitude") is None
+                and coordinate["latitude"] is not None
+                and coordinate["longitude"] is not None
+            ):
+                buildings_by_key[building_id]["latitude"] = coordinate["latitude"]
+                buildings_by_key[building_id]["longitude"] = coordinate["longitude"]
             floors = buildings_by_key[building_id]["floors"]
             if floor not in floors:
                 floors.append(floor)
@@ -991,6 +1084,19 @@ def build_catalog(rows: list[dict[str, Any]], workbook_path: Path, max_menu_item
     def supabase_venue_sort_key(row: dict[str, Any]) -> tuple[str, int]:
         source_venue_id = text_value(row, "id")
         return (venue_family_key(source_venue_id), 1 if source_venue_id.startswith("ven-") else 0)
+
+    valid_identity_venue_families = {
+        venue_family_key(text_value(row, "id"))
+        for row in supabase_venues
+        if text_value(row, "id")
+        and text_value(row, "name")
+        and venue_identity_quarantine_reason(text_value(row, "name")) is None
+        and display_authorized(
+            row_value(row, "menu_approved_for_display"),
+            row_value(row, "menu_rights_status"),
+        )
+        and supabase_dishes_by_venue.get(text_value(row, "id"), [])
+    }
 
     for row in sorted(supabase_venues, key=supabase_venue_sort_key):
         source_venue_id = text_value(row, "id")
@@ -1000,7 +1106,11 @@ def build_catalog(rows: list[dict[str, Any]], workbook_path: Path, max_menu_item
             row_value(row, "menu_rights_status"),
         ):
             continue
+        if source_venue_id in quarantined_source_venue_ids:
+            continue
         source_venue_family = venue_family_key(source_venue_id)
+        if source_venue_family in quarantined_venue_families:
+            continue
         business_id = normalize_lookup_key(text_value(row, "business_id"))
         business_family = venue_family_key(text_value(row, "business_id"))
         unit_number = text_value(row, "unit_number") or "-"
@@ -1018,6 +1128,19 @@ def build_catalog(rows: list[dict[str, Any]], workbook_path: Path, max_menu_item
         approved_dish_rows = supabase_dishes_by_venue.get(source_venue_id, [])
         if not approved_dish_rows:
             continue
+        identity_reason = venue_identity_quarantine_reason(name)
+        if identity_reason:
+            venue_identity_quarantine.append(
+                {
+                    "source": "Supabase Venues",
+                    "sourceRef": f"id:{source_venue_id}",
+                    "name": name,
+                    "reason": identity_reason,
+                }
+            )
+            if source_venue_family not in valid_identity_venue_families:
+                quarantined_venue_families.add(source_venue_family)
+            continue
 
         area = title_case_area(text_value(row, "planning_area"))
         floor = text_value(row, "floor") or (
@@ -1032,9 +1155,12 @@ def build_catalog(rows: list[dict[str, Any]], workbook_path: Path, max_menu_item
         venue_id = source_venue_id
         latitude = number_value(row, "latitude")
         longitude = number_value(row, "longitude")
+        if latitude is None or longitude is None:
+            latitude = None
+            longitude = None
         coordinate = {
-            "latitude": latitude if latitude is not None else DEFAULT_COORDINATE["latitude"],
-            "longitude": longitude if longitude is not None else DEFAULT_COORDINATE["longitude"],
+            "latitude": latitude,
+            "longitude": longitude,
         }
         venue_media_authorized = display_authorized(
             row_value(row, "media_approved_for_display"),
@@ -1141,6 +1267,13 @@ def build_catalog(rows: list[dict[str, Any]], workbook_path: Path, max_menu_item
                 "logoUrl": logo_url,
             }
         else:
+            if (
+                buildings_by_key[building_id].get("latitude") is None
+                and coordinate["latitude"] is not None
+                and coordinate["longitude"] is not None
+            ):
+                buildings_by_key[building_id]["latitude"] = coordinate["latitude"]
+                buildings_by_key[building_id]["longitude"] = coordinate["longitude"]
             floors = buildings_by_key[building_id]["floors"]
             if floor not in floors:
                 floors.append(floor)
@@ -1153,15 +1286,35 @@ def build_catalog(rows: list[dict[str, Any]], workbook_path: Path, max_menu_item
     validate_generated_catalog(building_rows, venues, dishes)
 
     workbook_bytes = workbook_path.read_bytes()
+    quarantine_by_reason: defaultdict[str, int] = defaultdict(int)
+    for entry in venue_identity_quarantine:
+        quarantine_by_reason[entry["reason"]] += 1
+    venue_identity_quarantine.sort(
+        key=lambda entry: (entry["source"], entry["sourceRef"], entry["name"], entry["reason"])
+    )
+    located_venue_count = sum(
+        1
+        for venue in venues
+        if number_value(venue, "latitude") is not None
+        and number_value(venue, "longitude") is not None
+    )
+    located_building_count = sum(
+        1
+        for building in building_rows
+        if number_value(building, "latitude") is not None
+        and number_value(building, "longitude") is not None
+    )
     return {
         "metadata": {
             "generatedAt": generated_at,
-            "sourceWorkbook": str(workbook_path),
+            "sourceWorkbook": portable_workbook_identifier(workbook_path),
             "sourceSha256": hashlib.sha256(workbook_bytes).hexdigest(),
             "sourceRows": len(rows),
             "maxMenuItemsPerVenue": max_menu_items,
             "buildingCount": len(buildings_by_key),
+            "locatedBuildingCount": located_building_count,
             "venueCount": len(venues),
+            "locatedVenueCount": located_venue_count,
             "dishCount": len(dishes),
             "dishImageCount": sum(1 for dish in dishes if dish.get("imageUrl")),
             "dishImagesFromDishColumn": dish_images_from_dish_column,
@@ -1171,6 +1324,9 @@ def build_catalog(rows: list[dict[str, Any]], workbook_path: Path, max_menu_item
             "sourceDirectImageRows": source_image_evidence["directRows"],
             "sourceImageEvidenceDishKeys": len(source_images_by_dish),
             "sourceImageEvidenceStallKeys": len(source_images_by_stall),
+            "venueIdentityQuarantineCount": len(venue_identity_quarantine),
+            "venueIdentityQuarantineByReason": dict(sorted(quarantine_by_reason.items())),
+            "venueIdentityQuarantine": venue_identity_quarantine,
         },
         "buildingColumns": BUILDING_COLUMNS,
         "buildings": compact_rows(building_rows, BUILDING_COLUMNS),

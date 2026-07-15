@@ -1,0 +1,3 @@
+# Synthetic minimal JWT fixtures used to prove anon acceptance and service-role rejection.
+src/lib/services/supabase/client.test.ts:jwt:121
+src/lib/services/supabase/client.test.ts:jwt:128

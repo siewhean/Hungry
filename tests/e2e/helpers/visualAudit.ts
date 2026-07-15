@@ -14,12 +14,21 @@ async function settleVisuals(page: Page) {
     );
   });
   await page.waitForTimeout(250);
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      }),
+  );
 }
 
 export async function captureVisualEvidence(page: Page, testInfo: TestInfo, name: string) {
   await settleVisuals(page);
   const path = testInfo.outputPath(`${name}.png`);
-  await page.screenshot({ animations: "disabled", path });
+  // React Native Web transforms can be painted as black compositor tiles when
+  // Chromium force-finishes them via `animations: "disabled"`. Capture a
+  // settled live frame instead; the double RAF above keeps evidence stable.
+  await page.screenshot({ animations: "allow", caret: "hide", path });
   await testInfo.attach(name, { contentType: "image/png", path });
 }
 

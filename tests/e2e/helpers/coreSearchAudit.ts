@@ -34,11 +34,25 @@ export async function runCoreSearchAudit(page: Page, testInfo: TestInfo) {
     name: "Open Tian Tian Chicken Rice stall details",
   });
   await expect(openStall).toBeVisible();
+  await expect(
+    page
+      .getByText("REPRESENTATIVE · NOT EXACT PHOTO", { exact: true })
+      .filter({ visible: true })
+      .first(),
+  ).toBeVisible();
+  await expect(
+    page.getByText("No source-backed description is available for this dish yet.", {
+      exact: true,
+    }).first(),
+  ).toBeVisible();
   await captureVisualEvidence(page, testInfo, "search-dish-detail");
 
   await openStall.click();
   await expect(
     page.getByText("Save this stall", { exact: true }).filter({ visible: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Tian Tian Chicken Rice", { exact: true }).filter({ visible: true }).first(),
   ).toBeVisible();
   await assertRenderedImagesAreHealthy(page);
   await captureVisualEvidence(page, testInfo, "search-stall-detail");

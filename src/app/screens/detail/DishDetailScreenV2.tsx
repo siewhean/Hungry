@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
-import type { ColorValue } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+} from "react-native";
+import type { ColorValue, StyleProp, ViewStyle } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -21,7 +28,8 @@ import {
 } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { buildDishGallery } from "@/features/detail/detailTransforms";
+import { getDishHeroSelection } from "@/features/detail/dishHeroPresentation";
+import { getDishFallbackImageSource } from "@/features/discover/presentation";
 import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore, getTasteSimilarityWithDish } from "@/store/useProfileStore";
@@ -191,6 +199,74 @@ function getSignatureDishes(currentDish: DishDetail, venueDishes: DishDetail[]) 
   return Array.from(byId.values()).slice(0, 4);
 }
 
+function DishDetailMedia({
+  dish,
+  disclosurePosition = "top",
+  style,
+}: {
+  dish: DishDetail;
+  disclosurePosition?: "top" | "bottom";
+  style?: StyleProp<ViewStyle>;
+}) {
+  const { palette, radii, spacing } = useHungryTheme();
+  const selection = useMemo(() => getDishHeroSelection(dish), [dish]);
+  const [sourceImageFailed, setSourceImageFailed] = useState(false);
+  const sourceImageUrl = selection.kind === "dish" ? selection.imageUrl : "";
+  const showSourceImage = Boolean(sourceImageUrl) && !sourceImageFailed;
+
+  useEffect(() => {
+    setSourceImageFailed(false);
+  }, [dish.id, selection.kind, sourceImageUrl]);
+
+  return (
+    <View style={[{ overflow: "hidden" }, style]}>
+      <AccessibleImage
+        source={
+          showSourceImage
+            ? { uri: sourceImageUrl }
+            : getDishFallbackImageSource({
+                cuisineTags: dish.cuisineTags,
+                foodTypeTag: dish.foodTypeTag,
+                name: dish.name,
+                venueName: dish.venueName,
+              })
+        }
+        contentFit="cover"
+        cachePolicy="memory-disk"
+        transition={120}
+        onError={showSourceImage ? () => setSourceImageFailed(true) : undefined}
+        style={StyleSheet.absoluteFill}
+        accessibilityLabel={
+          showSourceImage
+            ? `${dish.name} dish photo`
+            : `Representative food image for ${dish.name}; not an exact photo of this dish`
+        }
+      />
+      {!showSourceImage ? (
+        <View
+          pointerEvents="none"
+          style={{
+            backgroundColor: palette.imageLabelSurface,
+            borderRadius: radii.pill,
+            left: spacing[2],
+            paddingHorizontal: spacing[2],
+            paddingVertical: spacing[1],
+            position: "absolute",
+            ...(disclosurePosition === "bottom" ? { bottom: spacing[12] } : { top: spacing[2] }),
+          }}
+        >
+          <AppText
+            variant="micro"
+            style={{ color: palette.textOnDark, fontSize: 9, fontWeight: "900" }}
+          >
+            REPRESENTATIVE · NOT EXACT PHOTO
+          </AppText>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 export function DishDetailScreenV2({ navigation, route }: Props) {
   const repository = getDataRepository();
   const dishId = route.params?.dishId ?? route.params?.id ?? "";
@@ -228,8 +304,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const [hasLoadedVenueDetail, setHasLoadedVenueDetail] = useState(Boolean(cachedVenue));
   const venue = hydratedVenue ?? cachedVenue;
 
-  const gallery = useMemo(() => (dish ? buildDishGallery(dish) : []), [dish]);
-  const heroImage = gallery[0] ?? dish?.imageUrl;
+  const heroSelection = useMemo(() => (dish ? getDishHeroSelection(dish) : null), [dish]);
   const tasteMatch = useMemo(
     () => (dish ? getTasteSimilarityWithDish(profile, dish) : 0),
     [dish, profile],
@@ -397,7 +472,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     postId: "",
     title: dish.name,
     subtitle: `${venue.name} · ${venue.unitNumber}`,
-    imageUrl: gallery[0] ?? dish.imageUrl,
+    imageUrl: heroSelection?.kind === "dish" ? heroSelection.imageUrl : "",
     authorName: profile.displayName,
     message: `${dish.name} at ${venue.name}. ${formatBasePrice(dish.price)}. ${tasteMatch}% taste match.`,
     link: canonicalDishUrl,
@@ -526,34 +601,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             contentContainerStyle={{ paddingBottom: insets.bottom + 104 }}
           >
             <View style={{ height: heroHeight }}>
-              {heroImage ? (
-                <AccessibleImage
-                  source={{ uri: heroImage }}
-                  contentFit="cover"
-                  style={{ flex: 1 }}
-                  accessibilityLabel={`${dish.name} photo`}
-                />
-              ) : (
-                <View
-                  accessibilityRole="image"
-                  accessibilityLabel={`${dish.name} photo unavailable`}
-                  style={{
-                    alignItems: "center",
-                    backgroundColor: palette.surfaceRaised,
-                    flex: 1,
-                    justifyContent: "center",
-                    padding: spacing[6],
-                  }}
-                >
-                  <Utensils color={palette.orange} size={44} />
-                  <AppText variant="h2" style={{ marginTop: spacing[3], textAlign: "center" }}>
-                    {dish.name}
-                  </AppText>
-                  <AppText tone="secondary" style={{ marginTop: spacing[1], textAlign: "center" }}>
-                    {venue.name}
-                  </AppText>
-                </View>
-              )}
+              <DishDetailMedia dish={dish} disclosurePosition="bottom" style={{ flex: 1 }} />
               <LinearGradient
                 colors={heroGradientColors}
                 locations={[0, 0.58, 1]}
@@ -652,9 +700,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   style={{ fontStyle: "italic", lineHeight: 26 }}
                 >
                   {dish.description ??
-                    `${dish.name} is served by ${venue.name}${
-                      dish.tasteTags.length > 0 ? ` with ${dish.tasteTags.join(", ")} notes.` : "."
-                    }`}
+                    "No source-backed description is available for this dish yet."}
                 </AppText>
               </View>
 
@@ -832,12 +878,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         width: signatureGridItemWidth,
                       }}
                     >
-                      <AccessibleImage
-                        source={{ uri: item.imageUrl }}
-                        contentFit="cover"
-                        style={{ flex: 1 }}
-                        decorative
-                      />
+                      <DishDetailMedia dish={item} style={{ flex: 1 }} />
                       <LinearGradient
                         colors={["transparent", palette.detailImageOverlay]}
                         style={{

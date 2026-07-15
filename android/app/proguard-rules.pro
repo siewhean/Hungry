@@ -11,4 +11,15 @@
 -keep class com.swmansion.reanimated.** { *; }
 -keep class com.facebook.react.turbomodule.** { *; }
 
+# Preserve source locations and runtime metadata used by Sentry symbolication,
+# Expo module discovery, and Mapbox/React Native reflection. Each dependency
+# supplies its own consumer rules; these attributes keep those rules effective
+# without broadly disabling R8 optimization for the dependency packages.
+-keepattributes SourceFile,LineNumberTable,Signature,*Annotation*,InnerClasses,EnclosingMethod
+
+# Native entry points can be reached from JNI rather than Java call sites.
+-keepclasseswithmembernames,includedescriptorclasses class * {
+    native <methods>;
+}
+
 # Add any project specific keep options here:

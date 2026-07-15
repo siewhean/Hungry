@@ -202,9 +202,12 @@ test("prefetch layer warms images, data, and route modules without blocking navi
     search,
     /navigation\.navigate\("DishDetail", \{ dishId: dish\.id \}\);[\s\S]*scheduleIdleWork\([\s\S]*rememberSearch\(filters\.query\)/,
   );
-  assert.match(search, /const browsePostIndexes = useMemo/);
-  assert.match(search, /postByDishId\.get\(dish\.id\)/);
-  assert.match(search, /postByVenueId\.get\(venue\.id\)/);
+  assert.match(
+    search,
+    /const stallIdentityImageUrl =\s*activeSlide\.venue\?\.logoUrl \?\? activeSlide\.venue\?\.imageUrl/,
+  );
+  assert.match(search, /isAutoCycleActive=\{false\}/);
+  assert.doesNotMatch(search, /browsePostIndexes|postByDishId|postByVenueId/);
   assert.doesNotMatch(search, /stallPosts\.find/);
   assert.doesNotMatch(search, /results\.slice\(0, 8\)\.forEach/);
   assert.doesNotMatch(search, /filteredFeedItems\.slice\(0, 8\)\.forEach/);

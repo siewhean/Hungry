@@ -504,10 +504,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /const decisionCardInnerGap = spacing\[2\]/);
   assert.match(discover, /const decisionCardPadding = spacing\[2\]/);
   assert.match(discover, /const decisionCardIconSize = 36/);
-  assert.match(
-    discover,
-    /const decisionCardLabelFontSize = Math\.max\(15, typography\.bodySmallBold\.fontSize \+ 1\)/,
-  );
+  assert.match(discover, /const decisionCardLabelFontSize = typography\.bodySmallBold\.fontSize/);
   assert.match(discover, /const decisionCardLabelMaxWidth = Math\.max\(/);
   assert.match(
     discover,
@@ -719,6 +716,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /height: "100%"/);
   assert.match(discover, /justifyContent: "center"/);
   assert.match(discover, /adjustsFontSizeToFit[\s\S]*minimumFontScale=\{0\.88\}/);
+  assert.match(discover, /const decisionCardLabelFontSize = typography\.bodySmallBold\.fontSize/);
   assert.match(discover, /maxWidth: decisionCardLabelMaxWidth/);
   assert.match(discover, /textAlign: "center"/);
   assert.match(discover, /numberOfLines=\{1\}/);
@@ -898,7 +896,10 @@ test("Discover V1 contract: browse cards open the image-feed browse mode", () =>
     searchResults,
     /<LinearGradient[\s\S]*palette\.mediaGradientMid[\s\S]*palette\.detailImageOverlay/,
   );
-  assert.match(searchResults, /<Avatar uri=\{activeSlide\.authorAvatarUrl\}/);
+  assert.match(
+    searchResults,
+    /<Avatar uri=\{stallIdentityImageUrl\} name=\{activeSlide\.venueName\}/,
+  );
   assert.match(
     searchResults,
     /navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dish\.id \}\)/,

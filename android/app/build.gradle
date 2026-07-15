@@ -68,6 +68,31 @@ react {
  */
 def enableMinifyInReleaseBuilds = (findProperty('android.enableMinifyInReleaseBuilds') ?: false).toBoolean()
 
+def releaseSigningValues = [
+    storeFile: findProperty('HUNGRY_RELEASE_STORE_FILE') ?: System.getenv('HUNGRY_RELEASE_STORE_FILE'),
+    storePassword: findProperty('HUNGRY_RELEASE_STORE_PASSWORD') ?: System.getenv('HUNGRY_RELEASE_STORE_PASSWORD'),
+    keyAlias: findProperty('HUNGRY_RELEASE_KEY_ALIAS') ?: System.getenv('HUNGRY_RELEASE_KEY_ALIAS'),
+    keyPassword: findProperty('HUNGRY_RELEASE_KEY_PASSWORD') ?: System.getenv('HUNGRY_RELEASE_KEY_PASSWORD'),
+]
+def releaseSigningValueCount = releaseSigningValues.values().count { value -> value != null && value.toString().trim() }
+def hasExplicitReleaseSigning = releaseSigningValueCount == releaseSigningValues.size()
+def injectedSigningProperties = [
+    'android.injected.signing.store.file',
+    'android.injected.signing.store.password',
+    'android.injected.signing.key.alias',
+    'android.injected.signing.key.password',
+]
+def hasInjectedReleaseSigning = injectedSigningProperties.every { propertyName ->
+    def value = findProperty(propertyName)
+    value != null && value.toString().trim()
+}
+// EAS Build restores credentials.json and injects eas-build.gradle immediately
+// before Gradle runs. Require all three markers so a generic CI=1 build cannot
+// bypass release-signing validation.
+def hasEasReleaseSigning = System.getenv('EAS_BUILD') == 'true' &&
+    file('eas-build.gradle').exists() &&
+    rootProject.file('../credentials.json').exists()
+
 /**
  * The preferred build flavor of JavaScriptCore (JSC)
  *
@@ -114,15 +139,29 @@ packagingOptions {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        if (hasExplicitReleaseSigning) {
+            release {
+                storeFile file(releaseSigningValues.storeFile)
+                storePassword releaseSigningValues.storePassword
+                keyAlias releaseSigningValues.keyAlias
+                keyPassword releaseSigningValues.keyPassword
+                enableV1Signing true
+                enableV2Signing true
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            // EAS remote credentials arrive through Android's injected signing
+            // properties. Local/CI builds can instead provide the four
+            // HUNGRY_RELEASE_* Gradle properties or environment variables.
+            // Never fall back to the repository debug keystore.
+            if (hasExplicitReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
             def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
             shrinkResources enableShrinkResources.toBoolean()
             minifyEnabled enableMinifyInReleaseBuilds
@@ -139,6 +178,30 @@ packagingOptions {
     }
     androidResources {
         ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~'
+    }
+}
+
+gradle.taskGraph.whenReady { graph ->
+    def releaseArtifactRequested = graph.allTasks.any { task ->
+        task.path == ':app:assembleRelease' ||
+            task.path == ':app:bundleRelease' ||
+            task.path == ':app:packageRelease' ||
+            task.path == ':app:packageReleaseBundle'
+    }
+    if (!releaseArtifactRequested) return
+
+    if (releaseSigningValueCount > 0 && !hasExplicitReleaseSigning) {
+        throw new GradleException(
+            'Partial Hungry Android release signing configuration. Provide all four ' +
+                'HUNGRY_RELEASE_STORE_FILE, HUNGRY_RELEASE_STORE_PASSWORD, ' +
+                'HUNGRY_RELEASE_KEY_ALIAS, and HUNGRY_RELEASE_KEY_PASSWORD values.'
+        )
+    }
+    if (!hasExplicitReleaseSigning && !hasInjectedReleaseSigning && !hasEasReleaseSigning) {
+        throw new GradleException(
+            'Hungry Android release signing is not configured. Use EAS remote credentials ' +
+                'or provide the four HUNGRY_RELEASE_* Gradle properties/environment variables.'
+        )
     }
 }
 

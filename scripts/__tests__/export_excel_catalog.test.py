@@ -18,8 +18,10 @@ from export_excel_catalog_for_app import (  # noqa: E402
     CatalogValidationError,
     build_catalog,
     load_sheet_rows,
+    portable_workbook_identifier,
     validate_export_inputs,
     validate_generated_catalog,
+    venue_identity_quarantine_reason,
 )
 
 
@@ -78,23 +80,164 @@ def dish_row(**overrides: object) -> dict[str, object]:
     return row
 
 
-def write_workbook(path: Path, source: dict[str, object], venue: dict[str, object], dish: dict[str, object]) -> None:
+def write_workbook(
+    path: Path,
+    source: dict[str, object],
+    venue: dict[str, object] | list[dict[str, object]],
+    dish: dict[str, object] | list[dict[str, object]],
+) -> None:
     workbook = Workbook()
     sheet = workbook.active
     sheet.title = "Sheet1"
     source_headers = [key for key in source if not key.startswith("_")]
     sheet.append(source_headers)
     sheet.append([source.get(header) for header in source_headers])
-    for sheet_name, row in (("Supabase Venues", venue), ("Supabase Dishes", dish)):
+    for sheet_name, value in (("Supabase Venues", venue), ("Supabase Dishes", dish)):
+        rows = value if isinstance(value, list) else [value]
+        row = rows[0]
         target = workbook.create_sheet(sheet_name)
         headers = [key for key in row if not key.startswith("_")]
         target.append(headers)
-        target.append([row.get(header) for header in headers])
+        for item in rows:
+            target.append([item.get(header) for header in headers])
     workbook.save(path)
     workbook.close()
 
 
 class ExportExcelCatalogTest(unittest.TestCase):
+    def test_source_workbook_identifier_never_exposes_an_absolute_path(self) -> None:
+        repository_workbook = ROOT / "data" / "Hungry F&B Database.xlsx"
+        self.assertEqual(
+            portable_workbook_identifier(repository_workbook),
+            "data/Hungry F&B Database.xlsx",
+        )
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            external_workbook = Path(temporary_directory) / "external.xlsx"
+            identifier = portable_workbook_identifier(external_workbook)
+            self.assertEqual(identifier, "external.xlsx")
+            self.assertFalse(Path(identifier).is_absolute())
+
+    def test_missing_coordinates_remain_missing_instead_of_using_a_centroid(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "missing-coordinate.xlsx"
+            write_workbook(
+                path,
+                source_row(Latitude="", Longitude=""),
+                venue_row(),
+                dish_row(),
+            )
+
+            catalog = build_catalog(load_sheet_rows(path), path, 0)
+
+        venue_latitude = catalog["venueColumns"].index("latitude")
+        venue_longitude = catalog["venueColumns"].index("longitude")
+        building_latitude = catalog["buildingColumns"].index("latitude")
+        building_longitude = catalog["buildingColumns"].index("longitude")
+        self.assertEqual(catalog["venues"][0][venue_latitude], "")
+        self.assertEqual(catalog["venues"][0][venue_longitude], "")
+        self.assertEqual(catalog["buildings"][0][building_latitude], "")
+        self.assertEqual(catalog["buildings"][0][building_longitude], "")
+
+    def test_ambiguous_venue_identity_is_reported_and_excluded_from_runtime_catalog(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "ambiguous-identity.xlsx"
+            write_workbook(
+                path,
+                source_row(**{"Stall / Restaurant Name": "ng"}),
+                venue_row(name="ng"),
+                dish_row(),
+            )
+
+            catalog = build_catalog(load_sheet_rows(path), path, 0)
+            repeated_catalog = build_catalog(load_sheet_rows(path), path, 0)
+
+        self.assertEqual(catalog["metadata"]["venueCount"], 0)
+        self.assertEqual(catalog["metadata"]["dishCount"], 0)
+        self.assertEqual(catalog["metadata"]["venueIdentityQuarantineCount"], 1)
+        self.assertEqual(
+            catalog["metadata"]["venueIdentityQuarantineByReason"],
+            {"ambiguous_short_name": 1},
+        )
+        self.assertEqual(
+            catalog["metadata"]["venueIdentityQuarantine"][0],
+            {
+                "source": "Sheet1",
+                "sourceRef": "row:2",
+                "name": "ng",
+                "reason": "ambiguous_short_name",
+            },
+        )
+        self.assertEqual(catalog, repeated_catalog)
+
+    def test_placeholder_and_short_identity_rules_are_explicit(self) -> None:
+        self.assertEqual(
+            venue_identity_quarantine_reason("NIL/NON APPLICABLE"),
+            "ambiguous_placeholder_name",
+        )
+        self.assertEqual(
+            venue_identity_quarantine_reason("NON APPLICABLE"),
+            "ambiguous_placeholder_name",
+        )
+        self.assertEqual(venue_identity_quarantine_reason("ng"), "ambiguous_short_name")
+        self.assertIsNone(venue_identity_quarantine_reason("NG Ah Sio Bak Kut Teh"))
+
+    def test_valid_family_variant_wins_over_an_ambiguous_duplicate(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "family-identity.xlsx"
+            write_workbook(
+                path,
+                source_row(),
+                [
+                    venue_row(),
+                    venue_row(
+                        _row_number=3,
+                        id="SFA-FAMILY-1",
+                        business_id="invalid-family-business",
+                        name="NIL",
+                    ),
+                    venue_row(
+                        _row_number=4,
+                        id="ven-SFA-FAMILY-1",
+                        business_id="valid-family-business",
+                        name="Real Family Stall",
+                    ),
+                ],
+                [
+                    dish_row(),
+                    dish_row(
+                        _row_number=3,
+                        id="dish-invalid-family",
+                        venue_id="SFA-FAMILY-1",
+                        name="Invalid Family Dish",
+                    ),
+                    dish_row(
+                        _row_number=4,
+                        id="dish-valid-family",
+                        venue_id="ven-SFA-FAMILY-1",
+                        name="Valid Family Dish",
+                        price=6,
+                    ),
+                ],
+            )
+
+            catalog = build_catalog(load_sheet_rows(path), path, 0)
+
+        venue_name_index = catalog["venueColumns"].index("name")
+        names = [row[venue_name_index] for row in catalog["venues"]]
+        self.assertIn("Real Family Stall", names)
+        self.assertNotIn("NIL", names)
+        self.assertEqual(catalog["metadata"]["venueIdentityQuarantineCount"], 1)
+        self.assertEqual(
+            catalog["metadata"]["venueIdentityQuarantine"][0],
+            {
+                "source": "Supabase Venues",
+                "sourceRef": "id:SFA-FAMILY-1",
+                "name": "NIL",
+                "reason": "ambiguous_placeholder_name",
+            },
+        )
+
     def test_safe_build_uses_cache_authorization_and_ignores_sheet1_media(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / "safe.xlsx"
@@ -204,6 +347,42 @@ class ExportExcelCatalogTest(unittest.TestCase):
 
         with self.assertRaisesRegex(CatalogValidationError, "non_positive_generated_dish_price"):
             validate_generated_catalog(buildings, venues, dishes)
+
+    def test_generated_integrity_rejects_ambiguous_identity_and_partial_coordinate(self) -> None:
+        buildings = [
+            {
+                "id": "building-1",
+                "heroDishId": "dish-1",
+                "latitude": 1.3,
+                "longitude": None,
+            }
+        ]
+        venues = [
+            {
+                "id": "venue-1",
+                "name": "NIL",
+                "buildingId": "building-1",
+                "topDishId": "dish-1",
+                "latitude": None,
+                "longitude": 103.8,
+            }
+        ]
+        dishes = [
+            {
+                "id": "dish-1",
+                "venueId": "venue-1",
+                "buildingId": "building-1",
+                "price": 5,
+            }
+        ]
+
+        with self.assertRaises(CatalogValidationError) as raised:
+            validate_generated_catalog(buildings, venues, dishes)
+
+        message = str(raised.exception)
+        self.assertIn("invalid_generated_venue_identity", message)
+        self.assertIn("partial_generated_venue_coordinate", message)
+        self.assertIn("partial_generated_building_coordinate", message)
 
 
 if __name__ == "__main__":

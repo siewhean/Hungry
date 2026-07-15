@@ -8,7 +8,6 @@ import {
   TextInput,
   View,
   useWindowDimensions,
-  type ViewToken,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
@@ -19,10 +18,7 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Avatar, EmptyState, FilterChipRail, Screen, Skeleton } from "@/components/ui";
-import {
-  CyclingGridImage,
-  CYCLING_GRID_IMAGE_INTERVAL_MS,
-} from "@/components/discover/CyclingGridImage";
+import { CyclingGridImage } from "@/components/discover/CyclingGridImage";
 import {
   formatDiscoverDistance,
   formatDiscoverPrice,
@@ -69,8 +65,6 @@ type BrowseFeedItem = {
   title: string;
   venueName: string;
   imageUrl: string;
-  authorName: string;
-  authorAvatarUrl: string;
   distanceMeters: number;
   reviewCount: number;
   dish: DishDetail;
@@ -101,16 +95,12 @@ function getStallBrowseSlides(item: BrowseFeedItem, venueDishes: DishDetail[]) {
 }
 
 function BrowseGridCard({
-  index,
-  isAutoCycleActive,
   item,
   itemWidth,
   onOpen,
   onPrefetch,
   slides,
 }: {
-  index: number;
-  isAutoCycleActive: boolean;
   item: BrowseFeedItem;
   itemWidth: number;
   onOpen: (item: BrowseFeedItem) => void;
@@ -140,12 +130,19 @@ function BrowseGridCard({
   });
   const distanceLabel = formatDiscoverDistance(activeSlide.distanceMeters);
   const priceLabel = formatDiscoverPrice(activeSlide.dish);
+  const stallIdentityImageUrl =
+    activeSlide.venue?.logoUrl ?? activeSlide.venue?.imageUrl ?? activeSlide.dish.imageUrl;
   const handleActiveIndexChange = useCallback((nextIndex: number) => {
     setActiveIndex(nextIndex);
   }, []);
   const handleActiveImageChange = useCallback((imageUrl?: string) => {
     setActiveImageUrl(imageUrl);
   }, []);
+
+  useEffect(() => {
+    setActiveIndex(0);
+    setActiveImageUrl(undefined);
+  }, [item.id]);
 
   useEffect(() => {
     if (activeIndex >= Math.max(usableSlides.length, 1)) {
@@ -181,9 +178,7 @@ function BrowseGridCard({
           name: activeSlide.dish.name,
           venueName: activeSlide.venueName,
         })}
-        cycleMs={CYCLING_GRID_IMAGE_INTERVAL_MS}
-        isAutoCycleActive={isAutoCycleActive}
-        startDelayMs={(index % 4) * 350}
+        isAutoCycleActive={false}
         onActiveIndexChange={handleActiveIndexChange}
         onActiveImageChange={handleActiveImageChange}
         style={StyleSheet.absoluteFill}
@@ -194,14 +189,16 @@ function BrowseGridCard({
         style={StyleSheet.absoluteFill}
       />
       <View pointerEvents="none" style={browseStyles.cardContent}>
-        <View style={[browseStyles.authorBadge, { backgroundColor: palette.mediaScrimSoft }]}>
-          <Avatar uri={activeSlide.authorAvatarUrl} name={activeSlide.authorName} size={18} />
+        <View
+          style={[browseStyles.stallIdentityBadge, { backgroundColor: palette.mediaScrimSoft }]}
+        >
+          <Avatar uri={stallIdentityImageUrl} name={activeSlide.venueName} size={18} />
           <AppText
             variant="micro"
             style={{ color: palette.white, fontSize: 10, fontWeight: "700" }}
             numberOfLines={1}
           >
-            {activeSlide.authorName}
+            {activeSlide.venueName}
           </AppText>
         </View>
         <View style={[browseStyles.cuisineBadge, { backgroundColor: palette.imageLabelSurface }]}>
@@ -311,9 +308,6 @@ function BrowseGridScreen({
   const [searchLauncherLeft, setSearchLauncherLeft] = useState(0);
   const [backControlLimit, setBackControlLimit] = useState(spacing[4] + 32);
   const [selectedFilter, setSelectedFilter] = useState("All");
-  const [fullyVisibleFeedItemIds, setFullyVisibleFeedItemIds] = useState<Set<string>>(
-    () => new Set(),
-  );
   const searchInputRef = useRef<TextInput | null>(null);
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const normalizedFoodTypeTag = initialFoodTypeTag?.trim().toLowerCase() ?? "";
@@ -558,39 +552,22 @@ function BrowseGridScreen({
   }, [allVenues, areaVenues, browseIndex, shouldUseQueryScopedFeed]);
 
   const isDishGrid = mode === "dishes";
-  const browsePostIndexes = useMemo(() => {
-    const emptyPostByDishId = new Map<string, BrowseIndex["stallPosts"][number]>();
-    const emptyPostByVenueId = new Map<string, BrowseIndex["stallPosts"][number]>();
-
-    return {
-      postByDishId: browseIndex?.postByDishId ?? emptyPostByDishId,
-      postByVenueId: browseIndex?.postByVenueId ?? emptyPostByVenueId,
-    };
-  }, [browseIndex]);
   const feedItems = useMemo<BrowseFeedItem[]>(() => {
     if (!isBrowseDataReady) {
       return [];
     }
 
-    const { postByDishId, postByVenueId } = browsePostIndexes;
-
     if (shouldUseQueryScopedFeed) {
       if (isDishGrid) {
-        return queryMatchedDishes.map((dish) => {
-          const post = postByDishId.get(dish.id) ?? postByVenueId.get(dish.venueId);
-
-          return {
-            id: `dish-${dish.id}`,
-            title: dish.name,
-            venueName: dish.venueName,
-            imageUrl: dish.imageUrl,
-            authorName: post?.authorName ?? dish.venueName,
-            authorAvatarUrl: post?.authorAvatarUrl ?? dish.imageUrl,
-            distanceMeters: dish.distanceMeters,
-            reviewCount: dish.reviewCount,
-            dish,
-          };
-        });
+        return queryMatchedDishes.map((dish) => ({
+          id: `dish-${dish.id}`,
+          title: dish.name,
+          venueName: dish.venueName,
+          imageUrl: dish.imageUrl,
+          distanceMeters: dish.distanceMeters,
+          reviewCount: dish.reviewCount,
+          dish,
+        }));
       }
 
       const topDishByVenue = new Map<string, DishDetail>();
@@ -603,15 +580,11 @@ function BrowseGridScreen({
 
       const stallItems = Array.from(topDishByVenue.values()).map((topDish) => {
         const venue = browseIndex?.venueById.get(topDish.venueId);
-        const post = postByVenueId.get(topDish.venueId) ?? postByDishId.get(topDish.id);
-
         return {
           id: `stall-${topDish.venueId}`,
           title: topDish.name,
           venueName: venue?.name ?? topDish.venueName,
           imageUrl: topDish.imageUrl,
-          authorName: post?.authorName ?? venue?.name ?? topDish.venueName,
-          authorAvatarUrl: post?.authorAvatarUrl ?? topDish.imageUrl,
           distanceMeters: topDish.distanceMeters,
           reviewCount: topDish.reviewCount,
           dish: topDish,
@@ -627,21 +600,15 @@ function BrowseGridScreen({
     }
 
     if (isDishGrid) {
-      return browseDishes.map((dish) => {
-        const post = postByDishId.get(dish.id) ?? postByVenueId.get(dish.venueId);
-
-        return {
-          id: `dish-${dish.id}`,
-          title: dish.name,
-          venueName: dish.venueName,
-          imageUrl: dish.imageUrl,
-          authorName: post?.authorName ?? dish.venueName,
-          authorAvatarUrl: post?.authorAvatarUrl ?? dish.imageUrl,
-          distanceMeters: dish.distanceMeters,
-          reviewCount: dish.reviewCount,
-          dish,
-        };
-      });
+      return browseDishes.map((dish) => ({
+        id: `dish-${dish.id}`,
+        title: dish.name,
+        venueName: dish.venueName,
+        imageUrl: dish.imageUrl,
+        distanceMeters: dish.distanceMeters,
+        reviewCount: dish.reviewCount,
+        dish,
+      }));
     }
 
     const buildStallItems = (
@@ -660,15 +627,11 @@ function BrowseGridScreen({
           return [];
         }
 
-        const post = postByVenueId.get(venue.id) ?? postByDishId.get(topDish.id);
-
         return {
           id: `stall-${venue.id}`,
           title: topDish.name,
           venueName: venue.name,
           imageUrl: topDish.imageUrl,
-          authorName: post?.authorName ?? venue.name,
-          authorAvatarUrl: post?.authorAvatarUrl ?? topDish.imageUrl,
           distanceMeters: topDish.distanceMeters,
           reviewCount: topDish.reviewCount,
           dish: topDish,
@@ -683,7 +646,6 @@ function BrowseGridScreen({
     );
   }, [
     browseDishes,
-    browsePostIndexes,
     browseVenues,
     browseIndex,
     isBrowseDataReady,
@@ -703,7 +665,6 @@ function BrowseGridScreen({
       const searchText = [
         item.title,
         item.venueName,
-        item.authorName,
         item.dish.name,
         item.dish.tasteTags.join(" "),
         item.dish.dietaryFlags.join(" "),
@@ -731,18 +692,6 @@ function BrowseGridScreen({
 
     return filtered.length || query ? filtered : feedItems;
   }, [feedItems, isBrowseDataReady, searchQuery, selectedFilter]);
-  const fullTileViewabilityConfig = useRef({ itemVisiblePercentThreshold: 100 }).current;
-  const handleFullyVisibleFeedItemsChanged = useRef(
-    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
-      setFullyVisibleFeedItemIds(
-        new Set(
-          viewableItems
-            .filter((token) => token.isViewable && token.item)
-            .map((token) => (token.item as BrowseFeedItem).id),
-        ),
-      );
-    },
-  ).current;
   useEffect(() => {
     if (!isBrowseDataReady) {
       return;
@@ -853,7 +802,7 @@ function BrowseGridScreen({
   }, [searchRevealProgress]);
 
   const renderBrowseItem = useCallback(
-    ({ item, index }: { item: BrowseFeedItem; index: number }) => {
+    ({ item }: { item: BrowseFeedItem }) => {
       const slides =
         mode === "stalls" && item.venue?.id
           ? getStallBrowseSlides(
@@ -864,8 +813,6 @@ function BrowseGridScreen({
 
       return (
         <BrowseGridCard
-          index={index}
-          isAutoCycleActive={fullyVisibleFeedItemIds.has(item.id)}
           item={item}
           itemWidth={itemWidth}
           slides={slides}
@@ -897,7 +844,6 @@ function BrowseGridScreen({
     [
       browseIndex,
       filteredFeedItems,
-      fullyVisibleFeedItemIds,
       itemWidth,
       mode,
       navigation,
@@ -1050,8 +996,6 @@ function BrowseGridScreen({
           data={filteredFeedItems}
           renderItem={renderBrowseItem}
           keyExtractor={(item) => item.id}
-          onViewableItemsChanged={handleFullyVisibleFeedItemsChanged}
-          viewabilityConfig={fullTileViewabilityConfig}
           // @ts-ignore FlashList v2 runtime supports this prop but its bundled RN type omits it.
           estimatedItemSize={220}
           numColumns={numColumns}
@@ -1080,7 +1024,7 @@ function BrowseGridScreen({
 }
 
 const browseStyles = StyleSheet.create({
-  authorBadge: {
+  stallIdentityBadge: {
     alignItems: "center",
     borderRadius: 12,
     flexDirection: "row",

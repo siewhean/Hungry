@@ -17,7 +17,7 @@ import { MapPin, Navigation, Trophy, RotateCcw, CheckCircle2 } from "lucide-reac
 import { LinearGradient } from "expo-linear-gradient";
 
 import { AccessibleImage, AppText, Button } from "@/components/ui";
-import { getHungryService } from "@/lib/services/serviceProvider";
+import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
 import { useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
 import type { WheelStackParamList } from "./WheelStack";
@@ -30,6 +30,7 @@ export function WheelResultModal({ navigation, route }: Props) {
   const { componentRadii, palette, spacing, radii, shadows, motion } = useHungryTheme();
   const { winnerEntryId } = route.params;
   const hungryService = getHungryService();
+  const isMockDataSource = getServiceProvider().mode === "mock";
 
   const party = useWheelStore((s) => s.party);
   const entries = useWheelStore((s) => s.entries);
@@ -155,7 +156,9 @@ export function WheelResultModal({ navigation, route }: Props) {
               source={{ uri: heroDish?.imageUrl ?? winnerEntry?.imageUrl }}
               style={StyleSheet.absoluteFill}
               contentFit="cover"
-              accessibilityLabel={`${heroDish?.name ?? winnerEntry?.label ?? "Winning stall"} photo`}
+              accessibilityLabel={`${heroDish?.name ?? winnerEntry?.label ?? "Winning stall"}${
+                isMockDataSource ? " representative image" : " photo"
+              }`}
             />
           ) : (
             <View
@@ -173,6 +176,24 @@ export function WheelResultModal({ navigation, route }: Props) {
             colors={[palette.mediaScrimSoft, "transparent", palette.mediaScrimStrong]}
             style={StyleSheet.absoluteFill}
           />
+          {isMockDataSource && (heroDish?.imageUrl || winnerEntry?.imageUrl) ? (
+            <View
+              pointerEvents="none"
+              style={{
+                backgroundColor: palette.imageLabelSurface,
+                borderRadius: radii.pill,
+                bottom: spacing[3],
+                left: spacing[4],
+                paddingHorizontal: spacing[2],
+                paddingVertical: spacing[1],
+                position: "absolute",
+              }}
+            >
+              <AppText variant="micro" style={{ color: palette.textOnDark, fontWeight: "900" }}>
+                REPRESENTATIVE · NOT EXACT PHOTO
+              </AppText>
+            </View>
+          ) : null}
         </View>
 
         {/* Content */}

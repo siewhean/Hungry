@@ -95,8 +95,10 @@ async function searchVenuesByLocation(request: VenueLocationSearchRequest) {
         .includes(query);
     })
     .filter((venue) => {
-      if (!currentLocation || !request.radiusMeters) return true;
-      return venueDistanceMeters(venue.id, currentLocation) <= request.radiusMeters;
+      if (!currentLocation) return true;
+      const distanceMeters = venueDistanceMeters(venue.id, currentLocation);
+      if (distanceMeters === Number.MAX_SAFE_INTEGER) return false;
+      return !request.radiusMeters || distanceMeters <= request.radiusMeters;
     })
     .sort((left, right) => {
       const leftDistance = venueDistanceMeters(left.id, currentLocation);
@@ -189,13 +191,12 @@ export const excelService: HungryService = {
       const dishes = excelRepository.listPopularNearby();
       return currentLocation
         ? dishes
-            .map((dish) => ({
-              ...dish,
-              distanceMeters:
-                venueDistanceMeters(dish.venueId, currentLocation) === Number.MAX_SAFE_INTEGER
-                  ? dish.distanceMeters
-                  : venueDistanceMeters(dish.venueId, currentLocation),
-            }))
+            .flatMap((dish) => {
+              const distanceMeters = venueDistanceMeters(dish.venueId, currentLocation);
+              return distanceMeters === Number.MAX_SAFE_INTEGER
+                ? []
+                : [{ ...dish, distanceMeters }];
+            })
             .sort((left, right) => left.distanceMeters - right.distanceMeters)
             .slice(0, 80)
         : dishes;

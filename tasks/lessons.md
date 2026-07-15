@@ -126,3 +126,5 @@
 - Developer Launcher mock-auth presets must set developer/mock mode after any `clearSession()` call; clearing the session also clears account-scoped merchant/developer state.
 - Web E2E for non-map flows should force the mock map branch and keep Mapbox lazy-loaded; a live token or top-level Mapbox import can crash unrelated composer/feed tests before assertions run.
 - Mock cross-account E2E identities should be deterministic per email, and profile sync should preserve an already-hydrated matching profile id; time-based mock user ids and broad profile rehydration can make ownership/follow assertions unstable.
+- In React Native Web screenshot audits, Playwright's `animations: "disabled"` can force-finish transforms into black compositor rectangles; settle with animation frames and inspect the pixels before treating the artifact as an app defect.
+- Native release scripts must be exercised from the real workspace path. Wrapper commands that interpolate a path containing spaces can fail even when Debug succeeds, so verify the generic-device Release bundle phase from the actual checkout location.

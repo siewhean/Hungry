@@ -90,13 +90,27 @@ test("MVP settings split keeps device-only preferences in local UI storage", () 
 
 test("EAS release profiles set explicit MVP feature-flag environments", () => {
   const eas = JSON.parse(read("eas.json")) as {
-    build: Record<string, { env?: Record<string, string> }>;
+    build: Record<
+      string,
+      {
+        env?: Record<string, string>;
+        environment?: string;
+        android?: { credentialsSource?: string };
+      }
+    >;
   };
 
   assert.equal(eas.build.development?.env?.EXPO_PUBLIC_APP_ENV, "development");
   assert.equal(eas.build.preview?.env?.EXPO_PUBLIC_APP_ENV, "staging");
   assert.equal(eas.build.production?.env?.EXPO_PUBLIC_APP_ENV, "production");
-  assert.equal(eas.build.production?.env?.HUNGRY_DATA_SOURCE, "supabase");
+  assert.equal(eas.build.preview?.environment, "preview");
+  assert.equal(eas.build.production?.environment, "production");
+  assert.equal(eas.build.preview?.android?.credentialsSource, "remote");
+  assert.equal(eas.build.production?.android?.credentialsSource, "remote");
+  assert.equal(eas.build.development?.env?.EXPO_PUBLIC_HUNGRY_DATA_SOURCE, "mock");
+  assert.equal(eas.build.preview?.env?.EXPO_PUBLIC_HUNGRY_DATA_SOURCE, "supabase");
+  assert.equal(eas.build.production?.env?.EXPO_PUBLIC_HUNGRY_DATA_SOURCE, "supabase");
+  assert.equal(eas.build.production?.env?.HUNGRY_DATA_SOURCE, undefined);
 });
 
 test("production Post route publishes through the canonical composer service path", () => {

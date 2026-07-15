@@ -15,8 +15,26 @@ test("Excel repository exposes workbook-scale local venues and dishes", () => {
   assert.ok(metadata.sourceRows > 0);
   assert.ok(metadata.venueCount > 4_000);
   assert.ok(metadata.dishCount > 20_000);
-  assert.equal(excelRepository.listBuildings().length, metadata.buildingCount);
+  assert.equal(excelRepository.listBuildings().length, metadata.locatedBuildingCount);
+  assert.ok(metadata.locatedBuildingCount < metadata.buildingCount);
+  assert.ok(metadata.locatedVenueCount < metadata.venueCount);
+  assert.ok(
+    excelRepository.listBuildings().every((building) => {
+      const { latitude, longitude } = building.coordinate;
+      return Number.isFinite(latitude) && Number.isFinite(longitude);
+    }),
+  );
   assert.ok(excelRepository.listPopularNearby().length > 0);
+});
+
+test("Excel location-aware recommendations do not fall back to unscoped dishes", () => {
+  const result = excelRepository.getDecideForMe(NEUTRAL_TASTE_VECTOR, {
+    latitude: 0,
+    longitude: 0,
+    radiusMeters: 1,
+  });
+
+  assert.equal(result, undefined);
 });
 
 test("Excel repository exposes only rights-authorized workbook images to app dishes", () => {

@@ -536,12 +536,16 @@ test("Taste recommendation contract: core surfaces use shared ranking and explic
   assert.doesNotMatch(decideSource, /dish: nextDish,[\s\S]*buttonId: "try_another_pick"/);
 });
 
-test("Sprint 9 screen contract: routed dish detail uses gallery-backed share flow", () => {
+test("Sprint 9 screen contract: routed dish detail uses source-backed share flow", () => {
   const source = read("src/app/screens/detail/DishDetailScreenV2.tsx");
   const navigatorSource = read("src/app/navigation/RootNavigator.tsx");
 
   assert.match(source, /const repository = getDataRepository\(\)/);
-  assert.match(source, /buildDishGallery\(dish\)/);
+  assert.match(source, /getDishHeroSelection\(dish\)/);
+  assert.match(
+    source,
+    /imageUrl: heroSelection\?\.kind === "dish" \? heroSelection\.imageUrl : ""/,
+  );
   assert.match(source, /const canonicalDishUrl = `https:\/\/hungry\.sg\/dish\/\$\{dish\.id\}`/);
   assert.match(source, /ReviewShareSheet/);
   assert.match(source, /shareSheetRef\.current\?\.present\(\)/);
@@ -562,7 +566,8 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
     source,
     /type Props = NativeStackScreenProps<RootStackParamList, "DishDetail" \| "DishDetailV2">/,
   );
-  assert.match(source, /buildDishGallery\(dish\)/);
+  assert.match(source, /<DishDetailMedia dish=\{dish\} disclosurePosition="bottom"/);
+  assert.match(source, /REPRESENTATIVE · NOT EXACT PHOTO/);
   assert.match(source, /function formatBasePrice\(price: number\)/);
   assert.match(source, /formatBasePrice\(dish\.price\)/);
   assert.match(source, /fontSize: 28, lineHeight: 34/);

@@ -61,7 +61,7 @@ test("Browse image-grid cards use the same dish image and destination as dish de
   assert.doesNotMatch(source, /navigation\.navigate\("StallDetail"/);
 });
 
-test("Two-column image grids cycle images every four seconds with page-scoped slide sets", () => {
+test("Browse grids keep a stable selection while dedicated media surfaces may auto-cycle", () => {
   const cyclingImage = read("src/components/discover/CyclingGridImage.tsx");
   const quickBites = read("src/app/screens/discover/QuickBitesScreen.tsx");
   const browseGrid = read("src/app/screens/search/SearchResultsScreen.tsx");
@@ -99,8 +99,9 @@ test("Two-column image grids cycle images every four seconds with page-scoped sl
   assert.match(browseGrid, /getUsableDiscoverImageFrames\(slides, isUsableDiscoverImageUrl\)/);
   assert.match(browseGrid, /candidate\.dish\.venueId !== item\.dish\.venueId/);
   assert.match(browseGrid, /getStallBrowseSlides/);
-  assert.match(browseGrid, /itemVisiblePercentThreshold: 100/);
-  assert.match(browseGrid, /fullyVisibleFeedItemIds\.has\(item\.id\)/);
+  assert.match(browseGrid, /isAutoCycleActive=\{false\}/);
+  assert.doesNotMatch(browseGrid, /fullyVisibleFeedItemIds/);
+  assert.doesNotMatch(browseGrid, /cycleMs=\{CYCLING_GRID_IMAGE_INTERVAL_MS\}/);
   assert.match(browseGrid, /browseIndex\?\.sortedDishesByVenueId\.get\(item\.venue\.id\)/);
   assert.match(
     browseGrid,
@@ -110,4 +111,17 @@ test("Two-column image grids cycle images every four seconds with page-scoped sl
   assert.match(stallDetail, /getStallDishCycleSlides/);
   assert.match(stallDetail, /<StallMenuDishCard/);
   assert.match(stallDetail, /navigation\.navigate\("DishDetail", \{ dishId: activeDish\.id \}\)/);
+});
+
+test("Browse cards identify the stall rather than a social author", () => {
+  const source = read("src/app/screens/search/SearchResultsScreen.tsx");
+
+  assert.match(source, /name=\{activeSlide\.venueName\}/);
+  assert.match(source, /\{activeSlide\.venueName\}/);
+  assert.match(
+    source,
+    /activeSlide\.venue\?\.logoUrl \?\? activeSlide\.venue\?\.imageUrl \?\? activeSlide\.dish\.imageUrl/,
+  );
+  assert.doesNotMatch(source, /post\?\.authorName/);
+  assert.doesNotMatch(source, /post\?\.authorAvatarUrl/);
 });

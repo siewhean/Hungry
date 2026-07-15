@@ -103,6 +103,16 @@ export async function startOnboardedMockSession(
   await gotoLauncher(page);
   await clickDevButton(page, authPresetLabel(account), "Session presets");
   await expect(page.getByText("Authenticated").first()).toBeVisible();
+  const sessionToast = page
+    .getByText("Session → Fully authenticated", { exact: true })
+    .filter({ visible: true });
+  const sessionToastAppeared = await sessionToast
+    .waitFor({ state: "visible", timeout: 2_000 })
+    .then(() => true)
+    .catch(() => false);
+  if (sessionToastAppeared) {
+    await expect(sessionToast).toHaveCount(0, { timeout: 10_000 });
+  }
 }
 
 export async function createEmailAccountFromScratch(page: Page, prefix: string) {

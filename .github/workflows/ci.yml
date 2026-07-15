@@ -186,7 +186,8 @@ jobs:
           fi
           npx --yes eas-cli@18.12.3 whoami --non-interactive
 
-      - name: Trigger EAS build gates
+      - name: Build and wait for EAS native gates
+        timeout-minutes: 120
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
@@ -197,4 +198,6 @@ jobs:
             echo "EXPO_TOKEN missing on main; failing closed."
             exit 1
           fi
-          npx --yes eas-cli@18.12.3 build --platform all --profile preview --non-interactive --no-wait
+          # Waiting is intentional: a queued build is not release evidence.
+          # The job must fail if either native artifact fails to build or sign.
+          npx --yes eas-cli@18.12.3 build --platform all --profile preview --non-interactive

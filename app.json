@@ -21,7 +21,6 @@
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Hungry uses your location to rank nearby dishes and map results.",
         "NSCameraUsageDescription": "Hungry uses your camera to take photos of your meals for reviews.",
-        "NSMicrophoneUsageDescription": "Hungry uses your microphone to record audio for videos.",
         "NSPhotoLibraryUsageDescription": "Hungry accesses your photo library so you can attach photos to reviews and profile.",
         "NSPhotoLibraryAddUsageDescription": "Hungry saves shared dish images to your photo library when you choose to download them.",
         "ITSAppUsesNonExemptEncryption": false,
@@ -47,12 +46,6 @@
       "typedRoutes": false
     },
     "plugins": [
-      [
-        "expo-dev-client",
-        {
-          "launchMode": "most-recent"
-        }
-      ],
       "expo-font",
       "expo-web-browser",
       "expo-location",
@@ -71,13 +64,13 @@
           "organization": "hungry-3z"
         }
       ],
-      "expo-audio",
       "expo-video",
       [
         "expo-image-picker",
         {
           "photosPermission": "Hungry accesses your photo library so you can attach photos to reviews and profile.",
-          "cameraPermission": "Hungry uses your camera to take photos of your meals for reviews."
+          "cameraPermission": "Hungry uses your camera to take photos of your meals for reviews.",
+          "microphonePermission": false
         }
       ]
     ],

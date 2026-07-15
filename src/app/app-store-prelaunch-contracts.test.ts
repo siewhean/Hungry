@@ -118,7 +118,7 @@ test("production Expo config strips development-only and unjustified native capa
   assert.equal("UIBackgroundModes" in infoPlist, false);
 });
 
-test("development Expo config keeps dev-client support for local simulator work", () => {
+test("development Expo config uses the standard native runtime without dev-client", () => {
   const loadConfig = require("../../app.config.js") as () => { plugins?: unknown[] };
   const developmentConfig = withEnv(
     { EXPO_PUBLIC_APP_ENV: "development", NODE_ENV: "development" },
@@ -128,7 +128,57 @@ test("development Expo config keeps dev-client support for local simulator work"
     Array.isArray(plugin) ? plugin[0] : plugin,
   );
 
-  assert.equal(pluginNames.includes("expo-dev-client"), true);
+  assert.equal(pluginNames.includes("expo-dev-client"), false);
+});
+
+test("production dependency graph excludes unused audio and developer runtimes", () => {
+  const packageJson = readRepoFile("package.json");
+  const appJson = readRepoFile("app.json");
+  const reviewExports = readRepoFile("src/components/review/index.ts");
+
+  assert.doesNotMatch(packageJson, /"expo-audio"|"expo-dev-client"/);
+  assert.doesNotMatch(appJson, /"expo-audio"|"expo-dev-client"/);
+  assert.doesNotMatch(reviewExports, /MusicPicker/);
+});
+
+test("iOS Release bundling pins Node and exports the TypeScript entrypoint", () => {
+  const podfile = readRepoFile("ios/Podfile");
+  const project = readRepoFile("ios/Hungry.xcodeproj/project.pbxproj");
+
+  for (const source of [podfile, project]) {
+    assert.match(source, /PINNED_NODE_VERSION(?:=|=\\\")\"?22\.22\.1/);
+    assert.match(source, /export ENTRY_FILE(?:=|=\\\")\"?\$\{ENTRY_FILE:-index\.ts\}/);
+    assert.match(source, /Hungry iOS builds require Node/);
+  }
+});
+
+test("iOS Release uses a dedicated production permission plist", () => {
+  const project = readRepoFile("ios/Hungry.xcodeproj/project.pbxproj");
+  const releasePlist = readRepoFile("ios/Hungry/Info-Release.plist");
+
+  assert.match(project, /Release[\s\S]*INFOPLIST_FILE = "Hungry\/Info-Release\.plist"/);
+  assert.doesNotMatch(project, /Strip Local Network Keys for Release/);
+  for (const forbiddenKey of [
+    "DEV_CLIENT_TRY_TO_LAUNCH_LAST_BUNDLE",
+    "NSBonjourServices",
+    "NSLocalNetworkUsageDescription",
+    "NSLocationAlwaysUsageDescription",
+    "NSLocationAlwaysAndWhenInUseUsageDescription",
+    "NSMicrophoneUsageDescription",
+    "NSFaceIDUsageDescription",
+    "UIBackgroundModes",
+  ]) {
+    assert.equal(releasePlist.includes(`<key>${forbiddenKey}</key>`), false);
+  }
+});
+
+test("Metro resolves the TypeScript path alias in native production bundles", () => {
+  const metroConfig = readRepoFile("metro.config.js");
+
+  assert.match(metroConfig, /moduleName\.startsWith\("@\/"\)/);
+  assert.match(metroConfig, /path\.resolve\(__dirname, "src", moduleName\.slice\(2\)\)/);
+  assert.match(metroConfig, /upstreamResolveRequest/);
+  assert.match(metroConfig, /context\.resolveRequest/);
 });
 
 test("native smoke runner exposes iOS and Android prelaunch flows", () => {

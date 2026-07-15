@@ -9,6 +9,7 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { useHungryTheme } from "@/theme";
 import { useComposerStore } from "@/features/post/useComposerStore";
 import { useMerchantStore } from "@/store/useMerchantStore";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 
 // Components
 import { ComposerHeader } from "@/features/post/components/ComposerHeader";
@@ -127,7 +128,10 @@ export function PostComposerScreenV2({ navigation, route }: Props) {
 
         {/* Tab Specific Content (Caption, Music, etc.) */}
         {activeTab === "post" ? (
-          <PostTab onOpenMusic={() => musicModalRef.current?.present()} />
+          <PostTab
+            richMediaEnabled={FEATURE_FLAGS.reviewRichMediaEnabled}
+            onOpenMusic={() => musicModalRef.current?.present()}
+          />
         ) : (
           <ReviewTab />
         )}
@@ -231,7 +235,7 @@ export function PostComposerScreenV2({ navigation, route }: Props) {
       <StatusOverlay onFinish={finishAndReturnToHomeFeed} />
       <LivePreviewSheet />
       <MediaEditor mediaId={editingMediaId} onClose={() => setEditingMediaId(null)} />
-      <MusicSearchModal innerRef={musicModalRef} />
+      {FEATURE_FLAGS.reviewRichMediaEnabled ? <MusicSearchModal innerRef={musicModalRef} /> : null}
       <LocationSearchModal innerRef={locationModalRef} />
       <CollaboratorModal innerRef={collaboratorModalRef} />
 

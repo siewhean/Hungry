@@ -19,7 +19,13 @@ import { useComposerStore } from "../useComposerStore";
 import { spacing, semanticSpacing } from "@/theme/tokens";
 import { useMerchantStore } from "@/store/useMerchantStore";
 
-export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
+export function PostTab({
+  onOpenMusic,
+  richMediaEnabled = false,
+}: {
+  onOpenMusic?: () => void;
+  richMediaEnabled?: boolean;
+}) {
   const { componentRadii, palette, radii, shadows, spacing } = useHungryTheme();
   const postCaption = useComposerStore((state) => state.postCaption);
   const reviewCaption = useComposerStore((state) => state.reviewCaption);
@@ -139,44 +145,48 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
         />
       </View>
 
-      {/* Music Section */}
-      <Pressable
-        onPress={onOpenMusic}
-        style={({ pressed }) => [
-          styles.interactiveRow,
-          {
-            backgroundColor: pressed ? palette.surfaceRaised : palette.surface,
-            borderRadius: componentRadii.button,
-            paddingHorizontal: spacing.xl,
-            paddingVertical: spacing.lg,
-          },
-        ]}
-      >
-        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.lg, flex: 1 }}>
-          <Music size={20} color={musicId ? palette.orange : palette.text} />
-          <View style={{ flex: 1 }}>
-            <AppText variant="bodyBold" style={{ color: musicId ? palette.orange : palette.text }}>
-              {musicId ? "Background Music" : "Add Music"}
-            </AppText>
-            {musicId && (
-              <AppText variant="micro" tone="secondary" style={{ marginTop: 2 }}>
-                {`${selectedTrackName} • ${selectedTrackArtist}`}
+      {richMediaEnabled ? (
+        <Pressable
+          onPress={onOpenMusic}
+          style={({ pressed }) => [
+            styles.interactiveRow,
+            {
+              backgroundColor: pressed ? palette.surfaceRaised : palette.surface,
+              borderRadius: componentRadii.button,
+              paddingHorizontal: spacing.xl,
+              paddingVertical: spacing.lg,
+            },
+          ]}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.lg, flex: 1 }}>
+            <Music size={20} color={musicId ? palette.orange : palette.text} />
+            <View style={{ flex: 1 }}>
+              <AppText
+                variant="bodyBold"
+                style={{ color: musicId ? palette.orange : palette.text }}
+              >
+                {musicId ? "Background Music" : "Add Music"}
               </AppText>
-            )}
+              {musicId && (
+                <AppText variant="micro" tone="secondary" style={{ marginTop: 2 }}>
+                  {`${selectedTrackName} • ${selectedTrackArtist}`}
+                </AppText>
+              )}
+            </View>
           </View>
-        </View>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing["2"] }}>
-          {musicId && (
-            <IconButton
-              icon={<X size={14} color={palette.textMuted} />}
-              accessibilityLabel="Remove music"
-              onPress={() => useComposerStore.getState().setMusic(null)}
-              style={{ width: 24, height: 24, padding: 0 }}
-            />
-          )}
-          <ChevronRight size={18} color={palette.textMuted} style={{ marginLeft: spacing.md }} />
-        </View>
-      </Pressable>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing["2"] }}>
+            {musicId && (
+              <IconButton
+                icon={<X size={14} color={palette.textMuted} />}
+                accessibilityLabel="Remove music"
+                onPress={() => useComposerStore.getState().setMusic(null)}
+                style={{ width: 24, height: 24, padding: 0 }}
+              />
+            )}
+            <ChevronRight size={18} color={palette.textMuted} style={{ marginLeft: spacing.md }} />
+          </View>
+        </Pressable>
+      ) : null}
 
       {/* Business Features */}
       {shouldShowBusinessFeatures && (

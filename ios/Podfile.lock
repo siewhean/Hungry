@@ -3,12 +3,12 @@ PODS:
   - DoubleConversion (1.1.6)
   - EASClient (55.0.5):
     - ExpoModulesCore
-  - EXConstants (55.0.16):
+  - EXConstants (55.0.17):
     - ExpoModulesCore
   - EXJSONUtils (55.0.2)
-  - EXManifests (55.0.18):
+  - EXManifests (55.0.19):
     - ExpoModulesCore
-  - Expo (55.0.27):
+  - Expo (55.0.28):
     - boost
     - DoubleConversion
     - ExpoModulesCore
@@ -39,197 +39,17 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - expo-dev-client (55.0.36):
-    - EXManifests
-    - expo-dev-launcher
-    - expo-dev-menu
-    - expo-dev-menu-interface
-    - EXUpdatesInterface
-  - expo-dev-launcher (55.0.37):
-    - boost
-    - DoubleConversion
-    - EXManifests
-    - expo-dev-launcher/Main (= 55.0.37)
-    - expo-dev-menu
-    - expo-dev-menu-interface
+  - ExpoAsset (55.0.18):
     - ExpoModulesCore
-    - EXUpdatesInterface
-    - fast_float
-    - fmt
-    - glog
-    - hermes-engine
-    - RCT-Folly
-    - RCT-Folly/Fabric
-    - RCTRequired
-    - RCTTypeSafety
-    - React-Core
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-ImageManager
-    - React-jsi
-    - React-jsinspector
-    - React-NativeModulesApple
-    - React-RCTAppDelegate
-    - React-RCTFabric
-    - React-renderercss
-    - React-rendererdebug
-    - React-utils
-    - ReactAppDependencyProvider
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - SocketRocket
-    - Yoga
-  - expo-dev-launcher/Main (55.0.37):
-    - boost
-    - DoubleConversion
-    - EXManifests
-    - expo-dev-launcher/Unsafe
-    - expo-dev-menu
-    - expo-dev-menu-interface
-    - ExpoModulesCore
-    - EXUpdatesInterface
-    - fast_float
-    - fmt
-    - glog
-    - hermes-engine
-    - RCT-Folly
-    - RCT-Folly/Fabric
-    - RCTRequired
-    - RCTTypeSafety
-    - React-Core
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-ImageManager
-    - React-jsi
-    - React-jsinspector
-    - React-NativeModulesApple
-    - React-RCTAppDelegate
-    - React-RCTFabric
-    - React-renderercss
-    - React-rendererdebug
-    - React-utils
-    - ReactAppDependencyProvider
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - SocketRocket
-    - Yoga
-  - expo-dev-launcher/Unsafe (55.0.37):
-    - boost
-    - DoubleConversion
-    - EXManifests
-    - expo-dev-menu
-    - expo-dev-menu-interface
-    - ExpoModulesCore
-    - EXUpdatesInterface
-    - fast_float
-    - fmt
-    - glog
-    - hermes-engine
-    - RCT-Folly
-    - RCT-Folly/Fabric
-    - RCTRequired
-    - RCTTypeSafety
-    - React-Core
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-ImageManager
-    - React-jsi
-    - React-jsinspector
-    - React-NativeModulesApple
-    - React-RCTAppDelegate
-    - React-RCTFabric
-    - React-renderercss
-    - React-rendererdebug
-    - React-utils
-    - ReactAppDependencyProvider
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - SocketRocket
-    - Yoga
-  - expo-dev-menu (55.0.31):
-    - boost
-    - DoubleConversion
-    - expo-dev-menu/Main (= 55.0.31)
-    - fast_float
-    - fmt
-    - glog
-    - hermes-engine
-    - RCT-Folly
-    - RCT-Folly/Fabric
-    - RCTRequired
-    - RCTTypeSafety
-    - React-Core
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-ImageManager
-    - React-jsi
-    - React-NativeModulesApple
-    - React-RCTFabric
-    - React-renderercss
-    - React-rendererdebug
-    - React-utils
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - SocketRocket
-    - Yoga
-  - expo-dev-menu-interface (55.0.2)
-  - expo-dev-menu/Main (55.0.31):
-    - boost
-    - DoubleConversion
-    - EXManifests
-    - expo-dev-menu-interface
-    - ExpoModulesCore
-    - fast_float
-    - fmt
-    - glog
-    - hermes-engine
-    - RCT-Folly
-    - RCT-Folly/Fabric
-    - RCTRequired
-    - RCTTypeSafety
-    - React-Core
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-ImageManager
-    - React-jsi
-    - React-jsinspector
-    - React-NativeModulesApple
-    - React-RCTFabric
-    - React-renderercss
-    - React-rendererdebug
-    - React-utils
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - SocketRocket
-    - Yoga
-  - ExpoAsset (55.0.17):
-    - ExpoModulesCore
-  - ExpoAudio (55.0.15):
-    - ExpoModulesCore
-  - ExpoCrypto (55.0.16):
+  - ExpoCrypto (55.0.17):
     - ExpoModulesCore
   - ExpoDomWebView (55.0.6):
     - ExpoModulesCore
-  - ExpoFileSystem (55.0.23):
+  - ExpoFileSystem (55.0.24):
     - ExpoModulesCore
   - ExpoFont (55.0.8):
     - ExpoModulesCore
-  - ExpoHaptics (55.0.15):
+  - ExpoHaptics (55.0.16):
     - ExpoModulesCore
   - ExpoImage (55.0.11):
     - ExpoModulesCore
@@ -238,17 +58,17 @@ PODS:
     - SDWebImageAVIFCoder (~> 0.11.0)
     - SDWebImageSVGCoder (~> 1.7.0)
     - SDWebImageWebPCoder (~> 0.14.6)
-  - ExpoImagePicker (55.0.21):
+  - ExpoImagePicker (55.0.22):
     - ExpoModulesCore
   - ExpoKeepAwake (55.0.8):
     - ExpoModulesCore
-  - ExpoLinearGradient (55.0.15):
+  - ExpoLinearGradient (55.0.16):
     - ExpoModulesCore
   - ExpoLinking (55.0.16):
     - ExpoModulesCore
-  - ExpoLocation (55.1.11):
+  - ExpoLocation (55.1.12):
     - ExpoModulesCore
-  - ExpoLogBox (55.0.12):
+  - ExpoLogBox (55.0.13):
     - React-Core
   - ExpoModulesCore (55.0.25):
     - boost
@@ -286,14 +106,14 @@ PODS:
     - React-Core
     - React-runtimescheduler
     - ReactCommon
-  - ExpoSecureStore (55.0.15):
+  - ExpoSecureStore (55.0.16):
     - ExpoModulesCore
-  - ExpoVideo (55.0.18):
+  - ExpoVideo (55.0.19):
     - ExpoModulesCore
-  - ExpoWebBrowser (55.0.17):
+  - ExpoWebBrowser (55.0.18):
     - ExpoModulesCore
   - EXStructuredHeaders (55.0.2)
-  - EXUpdates (55.0.25):
+  - EXUpdates (55.0.26):
     - boost
     - DoubleConversion
     - EASClient
@@ -3503,14 +3323,9 @@ DEPENDENCIES:
   - EXJSONUtils (from `../node_modules/expo-json-utils/ios`)
   - EXManifests (from `../node_modules/expo-manifests/ios`)
   - Expo (from `../node_modules/expo`)
-  - expo-dev-client (from `../node_modules/expo-dev-client/ios`)
-  - expo-dev-launcher (from `../node_modules/expo-dev-launcher`)
-  - expo-dev-menu (from `../node_modules/expo-dev-menu`)
-  - expo-dev-menu-interface (from `../node_modules/expo-dev-menu-interface/ios`)
   - ExpoAsset (from `../node_modules/expo-asset/ios`)
-  - ExpoAudio (from `../node_modules/expo-audio/ios`)
   - ExpoCrypto (from `../node_modules/expo-crypto/ios`)
-  - "ExpoDomWebView (from `../node_modules/@expo/dom-webview/ios`)"
+  - "ExpoDomWebView (from `../node_modules/expo/node_modules/@expo/log-box/node_modules/@expo/dom-webview/ios`)"
   - ExpoFileSystem (from `../node_modules/expo/node_modules/expo-file-system/ios`)
   - ExpoFont (from `../node_modules/expo-font/ios`)
   - ExpoHaptics (from `../node_modules/expo-haptics/ios`)
@@ -3654,22 +3469,12 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-manifests/ios"
   Expo:
     :path: "../node_modules/expo"
-  expo-dev-client:
-    :path: "../node_modules/expo-dev-client/ios"
-  expo-dev-launcher:
-    :path: "../node_modules/expo-dev-launcher"
-  expo-dev-menu:
-    :path: "../node_modules/expo-dev-menu"
-  expo-dev-menu-interface:
-    :path: "../node_modules/expo-dev-menu-interface/ios"
   ExpoAsset:
     :path: "../node_modules/expo-asset/ios"
-  ExpoAudio:
-    :path: "../node_modules/expo-audio/ios"
   ExpoCrypto:
     :path: "../node_modules/expo-crypto/ios"
   ExpoDomWebView:
-    :path: "../node_modules/@expo/dom-webview/ios"
+    :path: "../node_modules/expo/node_modules/@expo/log-box/node_modules/@expo/dom-webview/ios"
   ExpoFileSystem:
     :path: "../node_modules/expo/node_modules/expo-file-system/ios"
   ExpoFont:
@@ -3890,41 +3695,36 @@ SPEC CHECKSUMS:
   boost: 7e761d76ca2ce687f7cc98e698152abd03a18f90
   DoubleConversion: cb417026b2400c8f53ae97020b2be961b59470cb
   EASClient: 414b26bae592cf8db64aa60461aff9d84ebbd944
-  EXConstants: 255fd9f72f94bfccaed1d161edac04a552baa8d9
+  EXConstants: dd0b0af9c628c00bc5ce556964210c4465ac9ffe
   EXJSONUtils: 04bc3807d351331a5fe154ce1da596ec15d99169
-  EXManifests: dbe9ab95b592bd75588bde030aeaba57db62e948
-  Expo: 520f1cdc7d07dd5d5b0d304f092234a065224f7a
-  expo-dev-client: 5742461bdd7b0723098aedfb782b7c1bf639d313
-  expo-dev-launcher: fff73e6ba32d836c0c60b108ac6d0c2f5aaa2159
-  expo-dev-menu: bca79d948b5b1cb55ce1abd16a4d800fdcfe04df
-  expo-dev-menu-interface: 833795f4c98a674d36cbc12b11b21756c38e01e8
-  ExpoAsset: 9d035bcc19d8688e9ddb2c579c50c8f83824188e
-  ExpoAudio: f127d12f04cd60c15bb1e10aeea7e2860b84d601
-  ExpoCrypto: 99b9a778f48350b11b514e5062e26a0ec209df6e
+  EXManifests: 5bcb234b5a4221ae5d11169afcd1836bc50b879d
+  Expo: 74925fc7ae01b83bfa279f0728a7af052f1ed4d2
+  ExpoAsset: 5f5b3905cf09f567a66d43870e07c8e60ac468cc
+  ExpoCrypto: 60378601fbd5a2762cbfbdc56906ed1aafa82d94
   ExpoDomWebView: 317a0d188cfdb850fc6fd2a43a2fc132dfd171ee
-  ExpoFileSystem: 725c9e912d91b3df2b474052ca6745b0d54cb0e5
+  ExpoFileSystem: 2e9515a04c0e4143f2a728d773389d315e2d50da
   ExpoFont: 21550be2946ea5bbf50f1a20b31facd19ba4150c
-  ExpoHaptics: 6eec14a73ece92f798b9e3099e5e22508cb08c51
+  ExpoHaptics: 16ee35ebbcec735977308379fa4039c161f364c8
   ExpoImage: eeba1f2a1c6f89ba079e832dfef2b29a5ed1d8ca
-  ExpoImagePicker: b196ac5579b9fe28acc36fae58c7a86f201fd20a
+  ExpoImagePicker: b3cf1f47cb75b49bf328fb991024d7f26b502f98
   ExpoKeepAwake: 45e456e29335bbd400554646a2f29e628c24072e
-  ExpoLinearGradient: 5d25eea186a32f0883d0f8c67046e80d2e444c6e
+  ExpoLinearGradient: 13c409e8a045bd618daa8b5fcb3df9193722106b
   ExpoLinking: abf95031c60f85361943f4f72942db0bc41e0f1b
-  ExpoLocation: c742dc9e12af2d3b030ce0146e2145d43215c700
-  ExpoLogBox: 81d123959f6f1fc9926e4298bbc439c31b1b07ad
+  ExpoLocation: f134ca146e1d86658fcd29311d69be2b1acecc41
+  ExpoLogBox: 87ffef2b3ae204b602748ab4020eb1cc5454a6d6
   ExpoModulesCore: c762c92a2034927578943ead805e9d2066ed08df
   ExpoModulesJSI: 52db434b6c7f626a4613974b2bd05f9816c07224
-  ExpoSecureStore: dee92e798176a74234c820953beb49236f2bb0f0
-  ExpoVideo: 5df93a3a7f981aba065cc23e59191976f75826eb
-  ExpoWebBrowser: c6b3111c4753150314adc73ff9e95dd2e362d1d1
+  ExpoSecureStore: 267fc7f3d7a4b9163fc12445acf3db4fa5c87b7a
+  ExpoVideo: 397d990a5bfe8b27fa0ca42df63bcf8d2390bd37
+  ExpoWebBrowser: 1018c67e8370e523b4f30c4be249fd32d23a76ca
   EXStructuredHeaders: 93ad4f31a2eec124428675e28aca11de243ee1e4
-  EXUpdates: 866fd12132c40cf30752c2a0a840a5e87a00b949
+  EXUpdates: 490c6f0530b20e65d3e63cce0f196e0ba0c874b9
   EXUpdatesInterface: 33cfb4116f9ddd0ee1732484248495d4fece9744
   fast_float: b32c788ed9c6a8c584d114d0047beda9664e7cc6
   FBLazyVector: 06b1c8278e6e1b31ef68e9e14c296b7872e79e48
   fmt: 530618a01105dae0fa3a2f27c81ae11fa8f67eac
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
-  hermes-engine: e4b86e0c9674e7ba6c11ea0c87aafb723fd785d7
+  hermes-engine: 07a4d4773db059e3a6b55cd079fc926a136d9f90
   libavif: 5f8e715bea24debec477006f21ef9e95432e254d
   libdav1d: 23581a4d8ec811ff171ed5e2e05cd27bad64c39f
   libwebp: 02b23773aedb6ff1fd38cec7a77b81414c6842a8
@@ -4025,6 +3825,6 @@ SPEC CHECKSUMS:
   Turf: c9eb11a65d96af58cac523460fd40fec5061b081
   Yoga: 4dd0433f3d9834c293a902bc630518110a7b50c8
 
-PODFILE CHECKSUM: f61bc3cc51d9e0f8b7647ad119ab94c468fac76c
+PODFILE CHECKSUM: d5e06db12c030f0aa9d05e86adce4eebe0a52dcb
 
 COCOAPODS: 1.16.1

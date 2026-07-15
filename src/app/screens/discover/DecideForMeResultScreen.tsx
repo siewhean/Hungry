@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Animated,
   Easing,
+  Platform,
   View,
   StyleSheet,
   Pressable,
@@ -419,7 +420,7 @@ export function DecideForMeResultScreen() {
 
       <Animated.ScrollView
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== "web",
         })}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
@@ -450,7 +451,7 @@ export function DecideForMeResultScreen() {
                 paddingHorizontal: spacing[2],
                 paddingVertical: spacing[1],
                 position: "absolute",
-                top: insets.top + spacing[5],
+                bottom: spacing[12],
               }}
             >
               <AppText variant="micro" style={{ color: palette.textOnDark, fontWeight: "900" }}>

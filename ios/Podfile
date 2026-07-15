@@ -187,6 +187,12 @@ target 'Hungry' do
               . "$PODS_ROOT/../.xcode.env.local"
             fi
 
+            PINNED_NODE_VERSION="22.22.1"
+            PINNED_NVM_NODE="$HOME/.nvm/versions/node/v$PINNED_NODE_VERSION/bin/node"
+            if [ -x "$PINNED_NVM_NODE" ]; then
+              NODE_BINARY="$PINNED_NVM_NODE"
+            fi
+
             if [ -z "${PROJECT_DIR:-}" ] && [ -n "${PODS_ROOT:-}" ]; then
               PROJECT_DIR="$(dirname "$PODS_ROOT")"
             fi
@@ -205,7 +211,14 @@ target 'Hungry' do
               NODE_BINARY="/usr/bin/env node"
             fi
 
-            : "${ENTRY_FILE:=index.ts}"
+            NODE_VERSION="$("$NODE_BINARY" --version 2>/dev/null | sed 's/^v//')"
+            if [ "$NODE_VERSION" != "$PINNED_NODE_VERSION" ]; then
+              echo "❌ Hungry iOS builds require Node $PINNED_NODE_VERSION; found ${NODE_VERSION:-unknown}."
+              exit 1
+            fi
+
+            export NODE_BINARY
+            export ENTRY_FILE="${ENTRY_FILE:-index.ts}"
 
             REACT_NATIVE_XCODE_SH="$("$NODE_BINARY" --print "require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'")"
             if [ -z "$REACT_NATIVE_XCODE_SH" ] || [ ! -f "$REACT_NATIVE_XCODE_SH" ]; then
@@ -220,7 +233,13 @@ target 'Hungry' do
               exit 0
             fi
 
-            if [ -n "$SENTRY_XCODE_SH" ] && [ -f "$SENTRY_XCODE_SH" ]; then
+            # Sentry's disabled-upload branch invokes the RN script through
+            # `sh -c` without preserving quoted paths. Run the RN script
+            # directly when uploads are explicitly disabled (for example,
+            # local unsigned release verification).
+            if [ "${SENTRY_DISABLE_AUTO_UPLOAD:-false}" = "true" ]; then
+              /bin/sh "$REACT_NATIVE_XCODE_SH"
+            elif [ -n "$SENTRY_XCODE_SH" ] && [ -f "$SENTRY_XCODE_SH" ]; then
               /bin/sh "$SENTRY_XCODE_SH" "$REACT_NATIVE_XCODE_SH"
             else
               /bin/sh "$REACT_NATIVE_XCODE_SH"

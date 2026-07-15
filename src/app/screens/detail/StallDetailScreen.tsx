@@ -928,7 +928,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
               >
                 <StallLogoMark logoUrl={venue.logoUrl} name={venue.name} />
                 <View style={{ flex: 1, gap: spacing[1] }}>
-                  <AppText variant="h2" numberOfLines={1}>
+                  <AppText variant="h2" numberOfLines={2} style={{ flexShrink: 1 }}>
                     {venue.name}
                   </AppText>
                   <AppText
