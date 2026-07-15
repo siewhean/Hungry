@@ -1,7 +1,7 @@
 # Hungry Full Production-Readiness Audit and Feature Grade Matrix
 
 Date: 2026-07-15
-Implementation candidate: `b1e1151614eda3c2347d75775431cdbf498bdfe4` on `codex/order-integrity-hardening`; final independent QA/QC returned `No findings`
+Implementation candidate: `fa9f2ac5633da74cfa695cbacbf4c4cc7c030cdd` on `codex/order-integrity-hardening`; final independent QA/QC returned `No findings`
 Scope: consumer mobile app, production-disabled mobile surfaces, `marketing/website/web-v2`, Supabase and catalog data, store-layout editor, legacy/support tooling, release operations
 Standards: OWASP MASVS, OWASP ASVS 5.0, WCAG 2.2 AA, Core Web Vitals, React Native release performance practices, Apple App Review Guidelines, Google Play policies
 

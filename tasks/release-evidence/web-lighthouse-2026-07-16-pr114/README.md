@@ -1,6 +1,6 @@
 # Web-v2 PR-114 Lighthouse follow-up — 2026-07-16
 
-Candidate branch: `codex/order-integrity-hardening` (implementation commit pending)
+Candidate implementation commit: `fa9f2ac5633da74cfa695cbacbf4c4cc7c030cdd` on `codex/order-integrity-hardening`
 
 The production build was served locally on macOS and audited three times per route with Chromium headless and Lighthouse's default mobile throttling:
 
