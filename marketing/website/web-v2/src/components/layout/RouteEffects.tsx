@@ -1,28 +1,10 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import {
-  WEBSITE_PREFETCH_ROUTES,
-  getPrefetchStats,
-  recordPrefetchAttempt,
-  recordPrefetchHit,
-  recordPrefetchMiss,
-  recordPrefetchRouteAttempt,
-  recordPrefetchRouteComplete,
-  recordPrefetchRouteError,
-  recordPrefetchRouteHit,
-  recordPrefetchRouteMiss,
-  shouldPrefetchRoute,
-  shouldSkipRoutePrefetch,
-} from "@/lib/performance/prefetch";
-
-const prefetchedRoutes = new Set<string>();
-let prefetchBootstrapped = false;
+import { usePathname } from "next/navigation";
 
 export function RouteEffects() {
   const pathname = usePathname();
-  const router = useRouter();
   const previousPathnameRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -32,103 +14,6 @@ export function RouteEffects() {
     }
     previousPathnameRef.current = currentPathname;
   }, [pathname]);
-
-  useEffect(() => {
-    if (prefetchBootstrapped || !shouldPrefetchRoute(pathname)) {
-      return;
-    }
-
-    if (shouldSkipRoutePrefetch(pathname)) {
-      return;
-    }
-
-    const prefetchRoutes = () => {
-      prefetchBootstrapped = true;
-
-      WEBSITE_PREFETCH_ROUTES.forEach((route) => {
-        if (prefetchedRoutes.has(route)) {
-          if (process.env.NODE_ENV === "development") {
-            recordPrefetchHit();
-            recordPrefetchRouteHit(route);
-          }
-          return;
-        }
-
-        if (process.env.NODE_ENV === "development") {
-          recordPrefetchMiss();
-          recordPrefetchRouteMiss(route);
-          console.debug(`[Performance] Prefetch warm: ${route}`);
-        }
-
-        prefetchedRoutes.add(route);
-        recordPrefetchAttempt();
-        recordPrefetchRouteAttempt(route);
-
-        const start = globalThis.performance?.now() ?? Date.now();
-        if (typeof router.prefetch === "function") {
-          let prefetchResult: unknown;
-          try {
-            prefetchResult = router.prefetch(route);
-          } catch {
-            recordPrefetchRouteError(route);
-            if (process.env.NODE_ENV === "development") {
-              console.debug(`[Performance] Prefetch skipped: ${route}`);
-            }
-            return;
-          }
-
-          Promise.resolve(prefetchResult)
-            .then(() => {
-              const duration = Math.round((globalThis.performance?.now() ?? Date.now()) - start);
-              recordPrefetchRouteComplete(route, duration);
-            })
-            .catch(() => {
-              recordPrefetchRouteError(route);
-              if (process.env.NODE_ENV === "development") {
-                console.debug(`[Performance] Prefetch skipped: ${route}`);
-              }
-            });
-        } else if (process.env.NODE_ENV === "development") {
-          console.debug(`[Performance] Prefetch unavailable for route: ${route}`);
-        }
-      });
-
-      if (process.env.NODE_ENV === "development") {
-        const stats = getPrefetchStats();
-        (window as unknown as { __hungryWebsitePrefetch?: unknown }).__hungryWebsitePrefetch = {
-          ...stats,
-          routeStats: stats.routeStats,
-        };
-        console.debug("[Performance] Prefetch stats", stats);
-      }
-    };
-
-    let idleHandle: number | undefined;
-    let timer: number | undefined;
-
-    const schedulePrefetch = () => {
-      timer = window.setTimeout(() => {
-        if (typeof window.requestIdleCallback === "function") {
-          idleHandle = window.requestIdleCallback(prefetchRoutes, { timeout: 3000 });
-          return;
-        }
-
-        prefetchRoutes();
-      }, 1500);
-    };
-
-    if (document.readyState === "complete") {
-      schedulePrefetch();
-    } else {
-      window.addEventListener("load", schedulePrefetch, { once: true });
-    }
-
-    return () => {
-      window.removeEventListener("load", schedulePrefetch);
-      if (timer !== undefined) window.clearTimeout(timer);
-      if (idleHandle !== undefined) window.cancelIdleCallback(idleHandle);
-    };
-  }, [pathname, router]);
 
   return null;
 }

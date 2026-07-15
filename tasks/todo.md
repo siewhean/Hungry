@@ -601,6 +601,12 @@ All items completed. Verification evidence in session log:
 
 ---
 
+## 2026-07-16 Production-Readiness Follow-Up
+
+- [ ] **PR-114 — Public web LCP <=2.5 seconds.** Second hardening pass preserves the FDO layout and raises three-run median Lighthouse performance to 93-97, but median LCP remains 2.509-3.189 seconds. The 2,500 ms gate now fails closed; continue client-shell/Home server-split work and obtain deployed p75 CWV before closing.
+
+---
+
 ## Cross-Cutting: Ongoing Responsibilities
 
 | Agent      | Standing Responsibility                                                                                                             |

@@ -23,7 +23,12 @@ const consolePassword =
   "";
 const outputDir =
   process.env.HUNGRY_LIGHTHOUSE_OUTPUT_DIR || join(tmpdir(), "hungry-web-v2-lighthouse");
+const maxLcpMs = Number(process.env.HUNGRY_LIGHTHOUSE_MAX_LCP_MS || "2500");
 const failures = [];
+
+if (!Number.isFinite(maxLcpMs) || maxLcpMs <= 0) {
+  throw new Error("HUNGRY_LIGHTHOUSE_MAX_LCP_MS must be a positive number.");
+}
 
 const defaultThresholds = {
   accessibility: 0.9,
@@ -130,10 +135,19 @@ function runLighthouse(route) {
     }
   }
 
+  const lcpMs = report.audits?.["largest-contentful-paint"]?.numericValue;
+  if (!Number.isFinite(lcpMs)) {
+    failures.push(`${route}: Lighthouse LCP is unavailable.`);
+  } else if (lcpMs > maxLcpMs) {
+    failures.push(
+      `${route}: Lighthouse LCP ${Math.round(lcpMs)} ms exceeds ${Math.round(maxLcpMs)} ms.`,
+    );
+  }
+
   console.log(
     `${route}: Lighthouse ${Object.entries(scores)
       .map(([category, score]) => `${category} ${Math.round(score * 100)}`)
-      .join(", ")}`,
+      .join(", ")}, LCP ${Number.isFinite(lcpMs) ? `${Math.round(lcpMs)} ms` : "unavailable"}`,
   );
 }
 

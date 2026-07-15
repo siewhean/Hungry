@@ -130,6 +130,7 @@ export default function Hero() {
             <Link
               href={hero.primaryCta.href}
               className={styles.primaryCta}
+              prefetch={false}
               onClick={() =>
                 trackWebsiteEvent("website_cta_clicked", {
                   cta_label: hero.primaryCta.label,
@@ -144,6 +145,7 @@ export default function Hero() {
             <Link
               href={hero.secondaryCta.href}
               className={styles.secondaryCta}
+              prefetch={false}
               onClick={() =>
                 trackWebsiteEvent("website_cta_clicked", {
                   cta_label: hero.secondaryCta.label,

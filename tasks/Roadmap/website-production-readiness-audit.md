@@ -12,6 +12,8 @@ All P0 blockers resolved. All static predeploy gates pass.
 
 **2026-07-16 runtime follow-up:** the post-hardening production build passes the configured Lighthouse category-score thresholds at performance 85-99, accessibility 94-96, best practices 96, and SEO 100. Lighthouse LCP is 2.0-3.9 seconds, so three of four public routes miss the <=2.5-second lab target; the 0.14-2.29-second raw trace subpart totals are diagnostic only. TBT is 30-110 ms and CLS is 0. Browser-enabled predeploy, 74-link crawl, keyboard traversal, and disabled Merchant Portal fail-closed checks pass. Canonical raw reports and reviewed zero-console-error screenshots are stored in `tasks/release-evidence/web-lighthouse-2026-07-16/` and `tasks/release-evidence/web-visual-2026-07-16/`. PR-114, deployed p75 CWV, authenticated merchant/admin proof, and manual screen-reader proof remain open release gates.
 
+**2026-07-16 PR-114 follow-up:** above-fold Foodies content now renders in server HTML, launch-time route prefetch is removed, the pure phone mockup is server-renderable, and nonfunctional mobile compositor hints are disabled. Three cold runs per public route improve median category performance to 93-97 and reduce median Lighthouse LCP to 3.189 s (`/`), 2.803 s (`/for-foodies`), 2.725 s (`/for-merchants`), and 2.509 s (`/join-waitlist`). Every median still exceeds 2.5 s, so the Lighthouse script now enforces 2,500 ms and fails closed. Raw reports are stored in `tasks/release-evidence/web-lighthouse-2026-07-16-pr114/`; PR-114 and deployed p75 CWV remain open.
+
 | Gate | Status |
 |---|---|
 | TypeScript (`tsc --noEmit`) | ✅ 0 errors |

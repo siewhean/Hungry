@@ -1,6 +1,6 @@
 # App File Cleanup Inventory
 
-Updated: 2026-07-15
+Updated: 2026-07-16
 Scope: reconciled FDO production-readiness candidate.
 
 ## Inventory Summary
@@ -39,6 +39,7 @@ Tracked files inspected by path ownership: 1,515.
 | Disabled social, gamification, Wheel, Reads, merchant, prototype code | retain-disabled | Roadmap work remains behind production route/entry-point flags; disabled status alone is not deletion evidence. |
 | Mock/Excel service modules | retain pending bundle proof | Provider entrypoints still need production Metro reachability evidence before data or implementations can be archived. |
 | Duplicate Discover imagery | consolidate only after reference/bundle audit | FDO visuals and representative-dish mappings are protected until asset references and screenshot parity prove an exact replacement. |
+| `marketing/website/web-v2/src/lib/performance/prefetch.ts` | delete | Launch-time route warming was removed after measured pre-LCP RSC contention. `rg` finds zero remaining importers, and web lint/type/build/bundle/browser contracts pass without the module. |
 
 ## Current No-Delete Rule
 

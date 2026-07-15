@@ -48,7 +48,7 @@ export default function ForFoodies() {
       <section className={styles.hero}>
         <div className="container-wide">
           <div className={styles.heroGrid}>
-            <Reveal className={styles.heroCopy}>
+            <div className={styles.heroCopy}>
               <span className={styles.eyebrow}>For Singapore foodies</span>
               <h1>Decide what to eat with less guessing.</h1>
               <p>
@@ -67,7 +67,7 @@ export default function ForFoodies() {
                 <Link
                   href="/join-waitlist?audience=foodie"
                   className={styles.primaryCta}
-                  prefetch
+                  prefetch={false}
                 >
                   Join Waitlist
                   <ArrowRight aria-hidden size={19} />
@@ -75,18 +75,18 @@ export default function ForFoodies() {
                 <Link
                   href="/join-waitlist?audience=merchant"
                   className={styles.secondaryCta}
-                  prefetch
+                  prefetch={false}
                 >
                   For Merchants
                 </Link>
               </div>
-            </Reveal>
+            </div>
 
-            <Reveal className={styles.phonePanel} delay={0.1}>
+            <div className={styles.phonePanel}>
               <div className={styles.phoneFrame}>
                 <DiscoveryPhoneMockup />
               </div>
-            </Reveal>
+            </div>
           </div>
         </div>
       </section>
