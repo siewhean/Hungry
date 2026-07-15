@@ -4,7 +4,10 @@ import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 
 const baseUrl = process.env.WEBSITE_BASE_URL || "http://127.0.0.1:3000";
-const routes = (process.env.HUNGRY_LIGHTHOUSE_ROUTES || "/,/for-foodies,/for-merchants,/join-waitlist,/merchant/login")
+const merchantPortalEnabled = process.env.HUNGRY_MERCHANT_PORTAL_ENABLED === "1";
+const defaultRoutes = ["/", "/for-foodies", "/for-merchants", "/join-waitlist"];
+if (merchantPortalEnabled) defaultRoutes.push("/merchant/login");
+const routes = (process.env.HUNGRY_LIGHTHOUSE_ROUTES || defaultRoutes.join(","))
   .split(",")
   .map((route) => route.trim())
   .filter(Boolean);
@@ -18,7 +21,8 @@ const consolePassword =
   process.env.HUNGRY_CONSOLE_PASSWORD?.trim() ||
   process.env.HUNGRY_CONSOLE_BASIC_AUTH_PASSWORD?.trim() ||
   "";
-const outputDir = process.env.HUNGRY_LIGHTHOUSE_OUTPUT_DIR || join(tmpdir(), "hungry-web-v2-lighthouse");
+const outputDir =
+  process.env.HUNGRY_LIGHTHOUSE_OUTPUT_DIR || join(tmpdir(), "hungry-web-v2-lighthouse");
 const failures = [];
 
 const defaultThresholds = {
@@ -42,7 +46,10 @@ function basicAuthorization(username, password) {
 }
 
 function headersForRoute(route) {
-  if (route.startsWith("/merchant") && !["/merchant/login", "/merchant/signup", "/merchant/forgot-password"].includes(route)) {
+  if (
+    route.startsWith("/merchant") &&
+    !["/merchant/login", "/merchant/signup", "/merchant/forgot-password"].includes(route)
+  ) {
     if (!merchantAccessToken) return undefined;
     return { Cookie: `hungry_merchant_access_token=${encodeURIComponent(merchantAccessToken)}` };
   }
@@ -64,7 +71,12 @@ function thresholdsForRoute(route) {
 
 function runLighthouse(route) {
   const headers = headersForRoute(route);
-  const requiresAuth = route.startsWith("/console") || (route.startsWith("/merchant") && route !== "/merchant/login" && route !== "/merchant/signup" && route !== "/merchant/forgot-password");
+  const requiresAuth =
+    route.startsWith("/console") ||
+    (route.startsWith("/merchant") &&
+      route !== "/merchant/login" &&
+      route !== "/merchant/signup" &&
+      route !== "/merchant/forgot-password");
 
   if (requiresAuth && !headers) {
     if (requireAuthenticated) {
@@ -104,12 +116,17 @@ function runLighthouse(route) {
   const report = JSON.parse(readFileSync(outputPath, "utf8"));
   const thresholds = thresholdsForRoute(route);
   const scores = Object.fromEntries(
-    Object.entries(thresholds).map(([category]) => [category, report.categories?.[category]?.score ?? 0]),
+    Object.entries(thresholds).map(([category]) => [
+      category,
+      report.categories?.[category]?.score ?? 0,
+    ]),
   );
 
   for (const [category, minimum] of Object.entries(thresholds)) {
     if (scores[category] < minimum) {
-      failures.push(`${route}: ${category} score ${Math.round(scores[category] * 100)} is below ${Math.round(minimum * 100)}.`);
+      failures.push(
+        `${route}: ${category} score ${Math.round(scores[category] * 100)} is below ${Math.round(minimum * 100)}.`,
+      );
     }
   }
 

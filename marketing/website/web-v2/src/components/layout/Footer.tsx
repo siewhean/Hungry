@@ -8,7 +8,7 @@ export default function Footer() {
     <footer className={styles.footerWrapper}>
       <div className={`container-wide ${styles.footer}`}>
         <div className={styles.brandInfo}>
-          <Link href="/" className={styles.logo} prefetch>
+          <Link href="/" className={styles.logo} prefetch={false}>
             <HungryWordmark />
           </Link>
           <p className={styles.tagline}>
@@ -20,7 +20,7 @@ export default function Footer() {
           <div className={styles.linkGroup}>
             <h4 className={styles.linkGroupTitle}>Legal</h4>
             {footerLinks.legal.map((link) => (
-              <Link href={link.href} className={styles.link} key={link.label} prefetch>
+              <Link href={link.href} className={styles.link} key={link.label} prefetch={false}>
                 {link.label}
               </Link>
             ))}
@@ -28,7 +28,7 @@ export default function Footer() {
           <div className={styles.linkGroup}>
             <h4 className={styles.linkGroupTitle}>Discover</h4>
             {footerLinks.discover.map((link) => (
-              <Link href={link.href} className={styles.link} key={link.label} prefetch>
+              <Link href={link.href} className={styles.link} key={link.label} prefetch={false}>
                 {link.label}
               </Link>
             ))}
@@ -36,7 +36,7 @@ export default function Footer() {
           <div className={styles.linkGroup}>
             <h4 className={styles.linkGroupTitle}>Connect</h4>
             {footerLinks.connect.map((link) => (
-              <Link href={link.href} className={styles.link} key={link.label} prefetch>
+              <Link href={link.href} className={styles.link} key={link.label} prefetch={false}>
                 {link.label}
               </Link>
             ))}

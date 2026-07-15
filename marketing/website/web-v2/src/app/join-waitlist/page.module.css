@@ -5,7 +5,11 @@
 .hero {
   align-items: center;
   background:
-    radial-gradient(circle at 18% 14%, color-mix(in srgb, var(--color-orange-light) 74%, transparent), transparent 32%),
+    radial-gradient(
+      circle at 18% 14%,
+      color-mix(in srgb, var(--color-orange-light) 74%, transparent),
+      transparent 32%
+    ),
     linear-gradient(180deg, var(--color-bg) 0%, var(--color-white) 100%);
   border-bottom: 1px solid var(--color-border);
   display: grid;
@@ -224,7 +228,8 @@ select.input {
   min-height: 3.5rem;
   gap: var(--space-3);
   padding: 0 var(--space-7);
-  transition: transform var(--duration-fast) var(--ease-out),
+  transition:
+    transform var(--duration-fast) var(--ease-out),
     box-shadow var(--duration-fast) var(--ease-out),
     background-color var(--duration-fast) var(--ease-out);
 }
@@ -300,6 +305,18 @@ select.input {
 
   .heroCopy {
     max-width: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .tabButton {
+    gap: var(--space-1) !important;
+    padding-inline: var(--space-2) !important;
+  }
+
+  .tabButton span {
+    font-size: 0.95rem !important;
+    white-space: nowrap;
   }
 }
 

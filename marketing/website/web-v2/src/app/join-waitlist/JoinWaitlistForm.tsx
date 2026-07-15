@@ -34,23 +34,23 @@ const businessTypeOptions: readonly { label: string; value: BusinessType }[] = [
   { label: "Others", value: "other" },
 ];
 
-const audienceCopy: Record<Audience, { title: string; description: string; button: string; success: string }> =
-  {
-    foodie: {
-      title: "Join as a foodie",
-      description:
-        "Get an email when Hungry opens for early food discovery in Singapore.",
-      button: "Join foodie waitlist",
-      success: "You are on the foodie waitlist. We will email you when early access opens.",
-    },
-    merchant: {
-      title: "Join as a merchant",
-      description:
-        "Get an email when Merchant Mode opens for Singapore food businesses.",
-      button: "Join merchant waitlist",
-      success: "You are on the merchant waitlist. We will email you when Merchant Mode opens.",
-    },
-  };
+const audienceCopy: Record<
+  Audience,
+  { title: string; description: string; button: string; success: string }
+> = {
+  foodie: {
+    title: "Join as a foodie",
+    description: "Get an email when Hungry opens for early food discovery in Singapore.",
+    button: "Join foodie waitlist",
+    success: "You are on the foodie waitlist. We will email you when early access opens.",
+  },
+  merchant: {
+    title: "Join as a merchant",
+    description: "Get an email when Merchant Mode opens for Singapore food businesses.",
+    button: "Join merchant waitlist",
+    success: "You are on the merchant waitlist. We will email you when Merchant Mode opens.",
+  },
+};
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -177,7 +177,7 @@ export default function JoinWaitlistForm({ initialAudience }: JoinWaitlistFormPr
               <p className={styles.successMessage} role="status">
                 {selectedCopy.success}
               </p>
-              <Link href="/" className={styles.secondaryCta}>
+              <Link href="/" className={styles.secondaryCta} prefetch={false}>
                 Go back to home page
               </Link>
             </div>
@@ -234,10 +234,7 @@ export default function JoinWaitlistForm({ initialAudience }: JoinWaitlistFormPr
                 );
               })}
             </div>
-            <div
-              className={styles.cardContent}
-              role="tabpanel"
-            >
+            <div className={styles.cardContent} role="tabpanel">
               <h2>{selectedCopy.title}</h2>
               <p>{selectedCopy.description}</p>
               <form className={styles.form} onSubmit={handleSubmit}>
@@ -393,7 +390,7 @@ export default function JoinWaitlistForm({ initialAudience }: JoinWaitlistFormPr
 
                 <div className={styles.fieldMeta}>
                   We will only email you about the list you selected.{" "}
-                  <Link href="/privacy" className={styles.privacyLink}>
+                  <Link href="/privacy" className={styles.privacyLink} prefetch={false}>
                     Privacy Policy
                   </Link>
                   .

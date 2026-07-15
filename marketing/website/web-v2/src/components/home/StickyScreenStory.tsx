@@ -17,67 +17,83 @@ const storyScreens: readonly DiscoveryPhoneMockupScreen[] = [
   "review-feed",
 ];
 
-export function StickyScreenStory({
-  screens,
-  animateContent = false,
-}: StickyScreenStoryProps) {
+export function StickyScreenStory({ screens, animateContent = false }: StickyScreenStoryProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const stepRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
     let cleanup: (() => void) | undefined;
+    let observer: IntersectionObserver | undefined;
     let cancelled = false;
 
-    void Promise.all([import("gsap"), import("gsap/ScrollTrigger")]).then(
-      ([gsapModule, scrollTriggerModule]) => {
-        if (cancelled) return;
+    const initializeStory = () => {
+      void Promise.all([import("gsap"), import("gsap/ScrollTrigger")]).then(
+        ([gsapModule, scrollTriggerModule]) => {
+          if (cancelled) return;
 
-        const gsap = gsapModule.default;
-        const ScrollTrigger = scrollTriggerModule.ScrollTrigger;
-        gsap.registerPlugin(ScrollTrigger);
+          const gsap = gsapModule.default;
+          const ScrollTrigger = scrollTriggerModule.ScrollTrigger;
+          gsap.registerPlugin(ScrollTrigger);
 
-        const updateActiveStep = () => {
-          const viewportAnchor = window.innerHeight * 0.52;
-          let closestIndex = 0;
-          let closestDistance = Number.POSITIVE_INFINITY;
+          const updateActiveStep = () => {
+            const viewportAnchor = window.innerHeight * 0.52;
+            let closestIndex = 0;
+            let closestDistance = Number.POSITIVE_INFINITY;
 
-          stepRefs.current.forEach((step, index) => {
-            if (!step) return;
+            stepRefs.current.forEach((step, index) => {
+              if (!step) return;
 
-            const rect = step.getBoundingClientRect();
-            const stepAnchor = rect.top + rect.height * 0.42;
-            const distance = Math.abs(stepAnchor - viewportAnchor);
+              const rect = step.getBoundingClientRect();
+              const stepAnchor = rect.top + rect.height * 0.42;
+              const distance = Math.abs(stepAnchor - viewportAnchor);
 
-            if (distance < closestDistance) {
-              closestDistance = distance;
-              closestIndex = index;
-            }
-          });
+              if (distance < closestDistance) {
+                closestDistance = distance;
+                closestIndex = index;
+              }
+            });
 
-          setActiveIndex((current) => (current === closestIndex ? current : closestIndex));
-        };
+            setActiveIndex((current) => (current === closestIndex ? current : closestIndex));
+          };
 
-        const ctx = gsap.context(() => {
-          ScrollTrigger.create({
-            trigger: rootRef.current,
-            start: "top bottom",
-            end: "bottom top",
-            onEnter: updateActiveStep,
-            onEnterBack: updateActiveStep,
-            onUpdate: updateActiveStep,
-            onRefresh: updateActiveStep,
-          });
+          const ctx = gsap.context(() => {
+            ScrollTrigger.create({
+              trigger: rootRef.current,
+              start: "top bottom",
+              end: "bottom top",
+              onEnter: updateActiveStep,
+              onEnterBack: updateActiveStep,
+              onUpdate: updateActiveStep,
+              onRefresh: updateActiveStep,
+            });
 
-          updateActiveStep();
-        }, rootRef);
+            updateActiveStep();
+          }, rootRef);
 
-        cleanup = () => ctx.revert();
-      },
-    );
+          cleanup = () => ctx.revert();
+        },
+      );
+    };
+
+    const root = rootRef.current;
+    if (!root || typeof IntersectionObserver === "undefined") {
+      initializeStory();
+    } else {
+      observer = new IntersectionObserver(
+        (entries) => {
+          if (!entries.some((entry) => entry.isIntersecting)) return;
+          observer?.disconnect();
+          initializeStory();
+        },
+        { rootMargin: "400px 0px" },
+      );
+      observer.observe(root);
+    }
 
     return () => {
       cancelled = true;
+      observer?.disconnect();
       cleanup?.();
     };
   }, [screens.length]);

@@ -1,0 +1,24 @@
+{
+  "baseUrl": "http://127.0.0.1:3012",
+  "capturedAt": "2026-07-15T18:47:05.461Z",
+  "viewports": {
+    "desktop": [
+      1440,
+      1000
+    ],
+    "mobile": [
+      390,
+      844
+    ]
+  },
+  "desktopHeroVisibleAfterMs": 1000,
+  "productStoryControls": 4,
+  "consoleOrPageErrors": [],
+  "visualReview": "Pass: FDO hero is complete within one second; mobile story copy is unobscured; waitlist tabs remain single-line.",
+  "sha256": {
+    "home-desktop.png": "a1da34e2ca16508cb3f980a5b0dd2104a2781df47544d7029b81d6393470960a",
+    "home-mobile.png": "2cbe0c1925ba7e0388e174c87804a4441f3eb7ab51c9114e79ca3b30082c9937",
+    "product-story-mobile.png": "4a6478073ee4a701652a0c9362f8d4063965e9d0701fa82d2d640f5f96ecf9c8",
+    "join-waitlist-mobile.png": "daa5ad35a75ca11b59982448977838dd9607b2be2a942ee7965d1cefea1a6f53"
+  }
+}

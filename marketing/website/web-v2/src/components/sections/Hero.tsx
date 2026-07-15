@@ -15,7 +15,8 @@ export default function Hero() {
 
   useEffect(() => {
     const shouldReduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (shouldReduceMotion) return undefined;
+    const shouldUseStaticMobileHero = window.matchMedia("(max-width: 760px)").matches;
+    if (shouldReduceMotion || shouldUseStaticMobileHero) return undefined;
 
     let cleanup: (() => void) | undefined;
     let cancelled = false;
@@ -35,31 +36,32 @@ export default function Hero() {
             .fromTo(
               `.${styles.eyebrow}`,
               { autoAlpha: 0, y: 14 },
-              { autoAlpha: 1, y: 0, duration: 0.5 },
+              { autoAlpha: 1, y: 0, duration: 0.35 },
+              0,
             )
             .fromTo(
               `.${styles.headlineLine}`,
               { yPercent: 110 },
-              { yPercent: 0, duration: 0.88, stagger: 0.12 },
-              "-=0.1",
+              { yPercent: 0, duration: 0.6, stagger: 0.08 },
+              0.04,
             )
             .fromTo(
               `.${styles.copyReveal}`,
               { autoAlpha: 0, y: 22 },
-              { autoAlpha: 1, y: 0, duration: 0.68, stagger: 0.08 },
-              "-=0.35",
+              { autoAlpha: 1, y: 0, duration: 0.45, stagger: 0.05 },
+              0.16,
             )
             .fromTo(
               `.${styles.visualLayer}`,
               { autoAlpha: 0, y: 46, scale: 0.96 },
-              { autoAlpha: 1, y: 0, scale: 1, duration: 0.82, stagger: 0.08 },
-              "-=0.62",
+              { autoAlpha: 1, y: 0, scale: 1, duration: 0.6, stagger: 0.05 },
+              0.12,
             )
             .fromTo(
               `.${styles.floatChip}`,
               { autoAlpha: 0, y: 18, scale: 0.94 },
-              { autoAlpha: 1, y: 0, scale: 1, duration: 0.52, stagger: 0.06 },
-              "-=0.34",
+              { autoAlpha: 1, y: 0, scale: 1, duration: 0.4, stagger: 0.04 },
+              0.3,
             );
 
           gsap.to(`.${styles.parallaxSlow}`, {
@@ -104,7 +106,8 @@ export default function Hero() {
           aria-hidden="true"
           className={`${styles.atmosphereImage} ${styles.parallaxSlow}`}
           fill
-          priority
+          preload
+          fetchPriority="high"
           sizes="100vw"
         />
         <div className={styles.atmosphereVeil} />
@@ -116,9 +119,7 @@ export default function Hero() {
           <h1 className={styles.headline}>
             {hero.lines.map((line) => (
               <span className={styles.lineMask} key={line}>
-                <span className={styles.headlineLine}>
-                  {line}
-                </span>
+                <span className={styles.headlineLine}>{line}</span>
               </span>
             ))}
           </h1>

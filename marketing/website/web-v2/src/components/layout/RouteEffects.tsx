@@ -103,13 +103,31 @@ export function RouteEffects() {
       }
     };
 
-    if (typeof window.requestIdleCallback === "function") {
-      const handle = window.requestIdleCallback(prefetchRoutes, { timeout: 900 });
-      return () => window.cancelIdleCallback(handle);
+    let idleHandle: number | undefined;
+    let timer: number | undefined;
+
+    const schedulePrefetch = () => {
+      timer = window.setTimeout(() => {
+        if (typeof window.requestIdleCallback === "function") {
+          idleHandle = window.requestIdleCallback(prefetchRoutes, { timeout: 3000 });
+          return;
+        }
+
+        prefetchRoutes();
+      }, 1500);
+    };
+
+    if (document.readyState === "complete") {
+      schedulePrefetch();
+    } else {
+      window.addEventListener("load", schedulePrefetch, { once: true });
     }
 
-    const timer = window.setTimeout(prefetchRoutes, 200);
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.removeEventListener("load", schedulePrefetch);
+      if (timer !== undefined) window.clearTimeout(timer);
+      if (idleHandle !== undefined) window.cancelIdleCallback(idleHandle);
+    };
   }, [pathname, router]);
 
   return null;

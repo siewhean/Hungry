@@ -11,7 +11,7 @@ export const metadata = routeMetadata("/");
 
 export default function Home() {
   return (
-    <main>
+    <main className="homePage">
       <Hero />
       <SplitSection />
       <LocalGuide />

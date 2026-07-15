@@ -1,4 +1,4 @@
-@import '../styles/tokens.css';
+@import "../styles/tokens.css";
 
 * {
   box-sizing: border-box;
@@ -16,6 +16,11 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.homePage > section:not(:first-child) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 56rem;
 }
 
 html {
@@ -73,17 +78,18 @@ select {
 }
 
 :where(
-  button,
-  [role="button"],
-  a[class*="Button"],
-  a[class*="button"],
-  a[class*="Btn"],
-  a[class*="btn"],
-  a[class*="Cta"],
-  a[class*="cta"],
-  a[class*="Action"],
-  a[class*="action"]
-) :where(span, strong) {
+    button,
+    [role="button"],
+    a[class*="Button"],
+    a[class*="button"],
+    a[class*="Btn"],
+    a[class*="btn"],
+    a[class*="Cta"],
+    a[class*="cta"],
+    a[class*="Action"],
+    a[class*="action"]
+  )
+  :where(span, strong) {
   font-family: var(--button-font-family) !important;
   font-size: var(--button-font-size) !important;
   font-weight: var(--button-font-weight) !important;
@@ -91,7 +97,12 @@ select {
   letter-spacing: var(--button-letter-spacing) !important;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-heading);
   font-weight: 700;
   line-height: 1.2;

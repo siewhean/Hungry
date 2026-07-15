@@ -10,7 +10,7 @@ type SamePageLinkProps = LinkProps &
   };
 
 function hrefToString(href: LinkProps["href"]) {
-  return typeof href === "string" ? href : href.pathname ?? "/";
+  return typeof href === "string" ? href : (href.pathname ?? "/");
 }
 
 function getHrefPath(href: string) {
@@ -40,7 +40,7 @@ export function SamePageLink({ children, href, onClick, ...props }: SamePageLink
   };
 
   return (
-    <Link href={href} onClick={handleClick} {...props}>
+    <Link href={href} onClick={handleClick} prefetch={false} {...props}>
       {children}
     </Link>
   );

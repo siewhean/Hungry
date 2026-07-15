@@ -287,7 +287,9 @@
   }
 
   .step {
-    min-height: 40svh;
+    min-height: 92svh;
+    justify-content: flex-start;
+    padding-top: calc(min(52svh, 430px) + var(--space-6));
   }
 }
 

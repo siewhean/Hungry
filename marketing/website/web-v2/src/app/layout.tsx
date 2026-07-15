@@ -11,13 +11,7 @@ import "./globals.css";
 
 const nunito = localFont({
   variable: "--font-nunito",
-  src: [
-    { path: "./fonts/Nunito_400Regular.ttf", weight: "400", style: "normal" },
-    { path: "./fonts/Nunito_500Medium.ttf", weight: "500", style: "normal" },
-    { path: "./fonts/Nunito_600SemiBold.ttf", weight: "600", style: "normal" },
-    { path: "./fonts/Nunito_700Bold.ttf", weight: "700", style: "normal" },
-    { path: "./fonts/Nunito_800ExtraBold.ttf", weight: "800", style: "normal" },
-  ],
+  src: [{ path: "./fonts/Nunito-Variable.woff2", weight: "200 900", style: "normal" }],
 });
 
 export const metadata: Metadata = {
@@ -61,9 +55,9 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: "/hungry_logo_icon_transparent.png",
-    shortcut: "/hungry_logo_icon_transparent.png",
-    apple: "/hungry_logo_icon_transparent.png",
+    icon: { url: "/favicon-32.png", type: "image/png", sizes: "32x32" },
+    shortcut: { url: "/favicon-32.png", type: "image/png", sizes: "32x32" },
+    apple: { url: "/apple-touch-icon.png", type: "image/png", sizes: "180x180" },
   },
 };
 
@@ -74,15 +68,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang={siteConfig.language} className={nunito.variable} data-scroll-behavior="smooth">
-      <head>
-        <link rel="icon" href="/hungry_logo_icon_transparent.png" type="image/png" sizes="32x32" />
-        <link rel="shortcut icon" href="/hungry_logo_icon_transparent.png" type="image/png" sizes="16x16" />
-        <link rel="apple-touch-icon" href="/hungry_logo_icon_transparent.png" />
-        <link rel="preconnect" href="https://images.unsplash.com" />
-      </head>
       <body>
         <JsonLd data={hungryJsonLd} />
-        <Analytics />
+        {process.env.VERCEL === "1" ? <Analytics /> : null}
         <AppLayoutWrapper
           publicHeader={
             <>

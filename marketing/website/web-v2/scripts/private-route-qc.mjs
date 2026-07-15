@@ -1,5 +1,6 @@
 const baseUrl = process.env.WEBSITE_BASE_URL || "http://127.0.0.1:3000";
 const requireAuthenticatedProof = process.env.HUNGRY_REQUIRE_PRIVATE_ROUTE_QC === "1";
+const merchantPortalEnabled = process.env.HUNGRY_MERCHANT_PORTAL_ENABLED === "1";
 const merchantAccessToken = process.env.HUNGRY_MERCHANT_ACCESS_TOKEN?.trim() || "";
 const consoleUsername =
   process.env.HUNGRY_CONSOLE_USERNAME?.trim() ||
@@ -52,8 +53,14 @@ async function expectRedirect(path, expectedLocationPart) {
     response.status >= 300 && response.status < 400,
     `${path}: expected redirect, got status ${response.status}`,
   );
-  expect(location.includes(expectedLocationPart), `${path}: expected redirect to ${expectedLocationPart}, got ${location}`);
-  expect(hasPrivateHeaders(response), `${path}: expected no-store/noindex headers on private redirect.`);
+  expect(
+    location.includes(expectedLocationPart),
+    `${path}: expected redirect to ${expectedLocationPart}, got ${location}`,
+  );
+  expect(
+    hasPrivateHeaders(response),
+    `${path}: expected no-store/noindex headers on private redirect.`,
+  );
 }
 
 async function expectJsonDenied(path, expectedStatuses = [401, 403, 503]) {
@@ -62,7 +69,10 @@ async function expectJsonDenied(path, expectedStatuses = [401, 403, 503]) {
     expectedStatuses.includes(response.status),
     `${path}: expected denied JSON status ${expectedStatuses.join("/")}, got ${response.status}`,
   );
-  expect(hasPrivateHeaders(response), `${path}: expected no-store/noindex headers on private API denial.`);
+  expect(
+    hasPrivateHeaders(response),
+    `${path}: expected no-store/noindex headers on private API denial.`,
+  );
 }
 
 function authHeaders(cookiesOrHeaders) {
@@ -76,8 +86,14 @@ async function expectPageOk(path, cookiesOrHeaders) {
   const response = await request(path, {
     headers,
   });
-  expect(response.status === 200, `${path}: expected authenticated page status 200, got ${response.status}`);
-  expect(hasPrivateHeaders(response), `${path}: expected no-store/noindex headers on authenticated private page.`);
+  expect(
+    response.status === 200,
+    `${path}: expected authenticated page status 200, got ${response.status}`,
+  );
+  expect(
+    hasPrivateHeaders(response),
+    `${path}: expected no-store/noindex headers on authenticated private page.`,
+  );
 }
 
 async function expectApiOk(path, cookiesOrHeaders) {
@@ -88,8 +104,14 @@ async function expectApiOk(path, cookiesOrHeaders) {
       ...headers,
     },
   });
-  expect(response.status === 200, `${path}: expected authenticated API status 200, got ${response.status}`);
-  expect(hasPrivateHeaders(response), `${path}: expected no-store/noindex headers on authenticated private API.`);
+  expect(
+    response.status === 200,
+    `${path}: expected authenticated API status 200, got ${response.status}`,
+  );
+  expect(
+    hasPrivateHeaders(response),
+    `${path}: expected no-store/noindex headers on authenticated private API.`,
+  );
 }
 
 async function expectDeniedWithInvalidBasic(path) {
@@ -103,28 +125,39 @@ async function expectDeniedWithInvalidBasic(path) {
     response.status === 401,
     `${path}: expected invalid Basic Auth denial, got ${response.status}`,
   );
-  expect(hasPrivateHeaders(response), `${path}: expected no-store/noindex headers on non-admin denial.`);
+  expect(
+    hasPrivateHeaders(response),
+    `${path}: expected no-store/noindex headers on non-admin denial.`,
+  );
   expect(
     response.headers.get("www-authenticate")?.includes("Basic"),
     `${path}: expected Basic Auth challenge on invalid credentials.`,
   );
 }
 
-await expectRedirect("/merchant", "/merchant/login");
-await expectRedirect("/merchant/menu", "/merchant/login");
+if (merchantPortalEnabled) {
+  await expectRedirect("/merchant", "/merchant/login");
+  await expectRedirect("/merchant/menu", "/merchant/login");
+  await expectJsonDenied("/api/merchant/session", [401]);
+  await expectJsonDenied("/api/merchant/overview", [401]);
+} else {
+  await expectJsonDenied("/merchant", [503]);
+  await expectJsonDenied("/merchant/menu", [503]);
+  await expectJsonDenied("/api/merchant/session", [503]);
+  await expectJsonDenied("/api/merchant/overview", [503]);
+}
+
 await expectJsonDenied("/console", [401, 503]);
 await expectJsonDenied("/console/waitlist", [401, 503]);
-await expectJsonDenied("/api/merchant/session", [401]);
-await expectJsonDenied("/api/merchant/overview", [401]);
 await expectJsonDenied("/api/console/waitlist", [401, 503]);
 
-if (merchantAccessToken) {
+if (merchantPortalEnabled && merchantAccessToken) {
   const merchantCookies = { hungry_merchant_access_token: merchantAccessToken };
   await expectPageOk("/merchant", merchantCookies);
   await expectPageOk("/merchant/menu", merchantCookies);
   await expectApiOk("/api/merchant/session", merchantCookies);
   await expectApiOk("/api/merchant/overview", merchantCookies);
-} else if (requireAuthenticatedProof) {
+} else if (merchantPortalEnabled && requireAuthenticatedProof) {
   failures.push("HUNGRY_MERCHANT_ACCESS_TOKEN is required when HUNGRY_REQUIRE_PRIVATE_ROUTE_QC=1.");
 }
 
@@ -147,10 +180,14 @@ if (failures.length > 0) {
 }
 
 console.log("Private route QC passed: unauthenticated merchant/console access is denied.");
-if (merchantAccessToken) {
+if (!merchantPortalEnabled) {
+  console.log("Merchant route/API fail-closed QC passed: HUNGRY_MERCHANT_PORTAL_ENABLED is not 1.");
+} else if (merchantAccessToken) {
   console.log("Authenticated merchant route/API QC passed.");
 } else {
-  console.log("Authenticated merchant route/API QC skipped: HUNGRY_MERCHANT_ACCESS_TOKEN is not set.");
+  console.log(
+    "Authenticated merchant route/API QC skipped: HUNGRY_MERCHANT_ACCESS_TOKEN is not set.",
+  );
 }
 if (consoleUsername && consolePassword) {
   console.log("Authenticated console route/API QC passed.");
