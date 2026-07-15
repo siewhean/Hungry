@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+
+# Husky owns core.hooksPath, so forward pre-push uploads to Git LFS explicitly.
+git lfs pre-push "$@"

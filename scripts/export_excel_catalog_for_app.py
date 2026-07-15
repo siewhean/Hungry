@@ -723,6 +723,9 @@ def validate_generated_catalog(
                 errors.append(_validation_error("placeholder_generated_media", f"venue {venue_id} {field}"))
     for dish in dishes:
         dish_id = text_value(dish, "id")
+        price = number_value(dish, "price")
+        if price is None or price <= 0:
+            errors.append(_validation_error("non_positive_generated_dish_price", dish_id))
         if text_value(dish, "venueId") not in venue_ids:
             errors.append(_validation_error("orphan_generated_dish_venue", dish_id))
         if text_value(dish, "buildingId") not in building_ids:
@@ -746,6 +749,13 @@ def validate_generated_catalog(
 
 def build_catalog(rows: list[dict[str, Any]], workbook_path: Path, max_menu_items: int) -> dict[str, Any]:
     workbook = load_workbook(workbook_path, read_only=True, data_only=True)
+    workbook_modified_at = workbook.properties.modified or workbook.properties.created
+    if workbook_modified_at is None:
+        generated_at = datetime(1970, 1, 1, tzinfo=timezone.utc).isoformat()
+    else:
+        if workbook_modified_at.tzinfo is None:
+            workbook_modified_at = workbook_modified_at.replace(tzinfo=timezone.utc)
+        generated_at = workbook_modified_at.astimezone(timezone.utc).isoformat()
     try:
         missing_cache_sheets = [
             name for name in ("Supabase Venues", "Supabase Dishes") if name not in workbook.sheetnames
@@ -910,6 +920,8 @@ def build_catalog(rows: list[dict[str, Any]], workbook_path: Path, max_menu_item
                 if supabase_price is not None and supabase_price > 0:
                     price = supabase_price
                     price_range = text_value(supabase_dish_row, "price_range") or f"S${price:.2f}"
+            if price is None or price <= 0:
+                continue
             dish = {
                 "id": dish_id,
                 "venueId": venue_id,
@@ -1043,6 +1055,8 @@ def build_catalog(rows: list[dict[str, Any]], workbook_path: Path, max_menu_item
         for index, dish_row in enumerate(approved_dish_rows):
             dish_name = text_value(dish_row, "name")
             price = number_value(dish_row, "price") or 0.0
+            if not dish_name or price <= 0:
+                continue
             price_range = text_value(dish_row, "price_range") or (f"S${price:.2f}" if price > 0 else "")
             dish_image_url = (
                 good_url(row_value(dish_row, "image_url"))
@@ -1141,7 +1155,7 @@ def build_catalog(rows: list[dict[str, Any]], workbook_path: Path, max_menu_item
     workbook_bytes = workbook_path.read_bytes()
     return {
         "metadata": {
-            "generatedAt": datetime.now(timezone.utc).isoformat(),
+            "generatedAt": generated_at,
             "sourceWorkbook": str(workbook_path),
             "sourceSha256": hashlib.sha256(workbook_bytes).hexdigest(),
             "sourceRows": len(rows),

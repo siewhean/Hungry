@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useEffect, useMemo, useState } from "react";
-import { View } from "react-native";
+import { ActivityIndicator, View } from "react-native";
 
 import { AppText, Button, Card, EmptyState } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
@@ -10,7 +10,7 @@ import {
   getServiceProvider,
 } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
-import type { Review } from "@/types/domain";
+import type { DishDetail, Review } from "@/types/domain";
 import { isDishDetail } from "./profileGuards";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import type { ProfileStackParamList } from "./ProfileStack";
@@ -21,9 +21,12 @@ export function ReviewHistoryScreen({ navigation }: Props) {
   const profile = useProfileStore((state) => state.profile);
   const reviewEntries = useProfileStore((state) => state.reviewEntries);
   const repository = getDataRepository();
+  const service = getHungryService();
   const serviceProviderMode = getServiceProvider().mode;
   const [remoteReviews, setRemoteReviews] = useState<Review[]>([]);
+  const [remoteDishesById, setRemoteDishesById] = useState<Record<string, DishDetail>>({});
   const [remoteLoadFailed, setRemoteLoadFailed] = useState(false);
+  const [isRemoteLoading, setIsRemoteLoading] = useState(serviceProviderMode === "supabase");
   const mockHistory = useMemo(
     () =>
       profile.reviewedDishIds.map((dishId) => repository.getDishById(dishId)).filter(isDishDetail),
@@ -33,17 +36,20 @@ export function ReviewHistoryScreen({ navigation }: Props) {
     () =>
       remoteReviews.map((review) => ({
         review,
-        dish: review.dishId ? repository.getDishById(review.dishId) : undefined,
+        dish: review.dishId ? remoteDishesById[review.dishId] : undefined,
       })),
-    [remoteReviews, repository],
+    [remoteDishesById, remoteReviews],
   );
 
   useEffect(() => {
     let active = true;
     setRemoteLoadFailed(false);
+    setIsRemoteLoading(serviceProviderMode === "supabase");
 
     if (serviceProviderMode === "mock") {
       setRemoteReviews([]);
+      setRemoteDishesById({});
+      setIsRemoteLoading(false);
       return () => {
         active = false;
       };
@@ -51,26 +57,44 @@ export function ReviewHistoryScreen({ navigation }: Props) {
 
     if (!profile.id || profile.id === "guest-user") {
       setRemoteReviews([]);
+      setRemoteDishesById({});
+      setIsRemoteLoading(false);
       return () => {
         active = false;
       };
     }
 
-    void getHungryService()
-      .reviews.getUserReviews(profile.id)
-      .then((reviews) => {
-        if (active) setRemoteReviews(reviews);
+    void service.reviews
+      .getUserReviews(profile.id)
+      .then(async (reviews) => {
+        const dishIds = Array.from(
+          new Set(reviews.flatMap((review) => (review.dishId ? [review.dishId] : []))),
+        );
+        const dishes = await service.discovery.getDishes(dishIds);
+        if (!active) return;
+        setRemoteReviews(reviews);
+        setRemoteDishesById(
+          Object.fromEntries(
+            dishes
+              .filter((dish): dish is DishDetail => Boolean(dish))
+              .map((dish) => [dish.id, dish]),
+          ),
+        );
       })
       .catch(() => {
         if (!active) return;
         setRemoteReviews([]);
+        setRemoteDishesById({});
         setRemoteLoadFailed(true);
+      })
+      .finally(() => {
+        if (active) setIsRemoteLoading(false);
       });
 
     return () => {
       active = false;
     };
-  }, [profile.id, serviceProviderMode]);
+  }, [profile.id, service, serviceProviderMode]);
 
   const historyItems =
     serviceProviderMode === "supabase"
@@ -93,7 +117,11 @@ export function ReviewHistoryScreen({ navigation }: Props) {
       title="Review history"
       subtitle="Submitted reviews stay visible in your profile."
     >
-      {hasHistory ? (
+      {isRemoteLoading ? (
+        <View accessibilityLabel="Loading review history" accessibilityRole="progressbar">
+          <ActivityIndicator />
+        </View>
+      ) : hasHistory ? (
         historyItems.map(({ review, dish }) => {
           const entry = dish ? reviewEntries[dish.id] : undefined;
           const tags = review?.tags ?? entry?.tags ?? [];

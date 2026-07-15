@@ -41,6 +41,7 @@ export function EditProfileScreen({ navigation }: Props) {
   const [email, setEmail] = useState(profile.email);
   const [avatarUri, setAvatarUri] = useState<string | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
+  const [isRequestingPasswordReset, setIsRequestingPasswordReset] = useState(false);
   const avatarPreviewUri = avatarUri ?? profile.avatarUrl;
   const avatarSize = spacing[20];
   const avatarInitials = useMemo(
@@ -100,12 +101,27 @@ export function EditProfileScreen({ navigation }: Props) {
     showToast({ message: "Profile photo updated.", tone: "success" });
   };
 
-  const handleChangePassword = () => {
-    const rootNavigation = getRootNavigation(navigation);
-    rootNavigation.navigate("AuthStack", {
-      screen: "ResetPassword",
-      params: { email, code: "profile-settings" },
-    });
+  const handleChangePassword = async () => {
+    const accountEmail = profile.email.trim();
+    if (!accountEmail || isRequestingPasswordReset) {
+      return;
+    }
+
+    setIsRequestingPasswordReset(true);
+    try {
+      await getHungryService().auth.forgotPassword(accountEmail);
+      showToast({
+        message: `Password reset email sent to ${accountEmail}.`,
+        tone: "success",
+      });
+    } catch {
+      showToast({
+        message: "Could not send a password reset email right now.",
+        tone: "error",
+      });
+    } finally {
+      setIsRequestingPasswordReset(false);
+    }
   };
 
   return (
@@ -183,7 +199,13 @@ export function EditProfileScreen({ navigation }: Props) {
             onChangeText={setEmail}
           />
           <Pressable
-            onPress={handleChangePassword}
+            accessibilityRole="button"
+            accessibilityLabel="Change password"
+            accessibilityState={{ busy: isRequestingPasswordReset }}
+            disabled={isRequestingPasswordReset}
+            onPress={() => {
+              void handleChangePassword();
+            }}
             style={{
               flexDirection: "row",
               justifyContent: "space-between",
@@ -191,7 +213,9 @@ export function EditProfileScreen({ navigation }: Props) {
               paddingVertical: spacing[2],
             }}
           >
-            <AppText style={{ fontWeight: "600" }}>Change Password</AppText>
+            <AppText style={{ fontWeight: "600" }}>
+              {isRequestingPasswordReset ? "Sending reset email…" : "Change Password"}
+            </AppText>
             <ChevronRight size={18} color={palette.textMuted} />
           </Pressable>
         </View>

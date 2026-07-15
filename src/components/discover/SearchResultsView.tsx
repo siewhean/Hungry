@@ -1,30 +1,30 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Animated,
-  Easing,
-  Pressable,
-  StyleSheet,
-  TextInput,
-  View,
-  useWindowDimensions,
-} from "react-native";
-import { Search, X, SlidersHorizontal, Star } from "lucide-react-native";
+import { memo, useCallback, useEffect, useState } from "react";
+import { Pressable, TextInput, View } from "react-native";
+import { ArrowLeft, MapPinned, Search, SlidersHorizontal, Star, X } from "lucide-react-native";
 import { FlashList } from "@shopify/flash-list";
 
 import { AccessibleImage, AppText, EmptyState, Skeleton } from "@/components/ui";
+import { isUsableDiscoverImageUrl } from "@/features/discover/bites";
+import {
+  formatDiscoverDistance,
+  formatDiscoverPrice,
+  getDishFallbackImageSource,
+  getEffectiveCuisineTags,
+} from "@/features/discover/presentation";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail } from "@/types/domain";
 
-type FilterTab = "All" | "Dishes";
-
 interface SearchResultsViewProps {
   query: string;
+  onBack: () => void;
   onQueryChange: (query: string) => void;
   onClear: () => void;
   onSubmitQuery?: (query: string) => void;
   onTasteFilterPress: () => void;
   results: DishDetail[];
   isLoading?: boolean;
+  errorMessage?: string | null;
+  onRetry?: () => void;
   onResultPressIn?: (dish: DishDetail) => void;
   onResultPress: (dish: DishDetail) => void;
 }
@@ -63,6 +63,16 @@ const SearchResultRow = memo(function SearchResultRow({
   onPressIn,
 }: SearchResultRowProps) {
   const { palette, radii, spacing } = useHungryTheme();
+  const cuisineTags = getEffectiveCuisineTags(dish);
+  const distanceLabel = formatDiscoverDistance(dish.distanceMeters);
+  const priceLabel = formatDiscoverPrice(dish);
+  const hasUsableImage = isUsableDiscoverImageUrl(dish.imageUrl);
+  const [remoteImageFailed, setRemoteImageFailed] = useState(false);
+  const showRemoteImage = hasUsableImage && !remoteImageFailed;
+
+  useEffect(() => {
+    setRemoteImageFailed(false);
+  }, [dish.id, dish.imageUrl]);
 
   const handlePressIn = useCallback(() => {
     onPressIn?.(dish);
@@ -75,23 +85,79 @@ const SearchResultRow = memo(function SearchResultRow({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Open ${dish.name}`}
+      accessibilityLabel={`Open ${dish.name} at ${dish.venueName}, ${[
+        ...cuisineTags,
+        priceLabel,
+        distanceLabel ? `${distanceLabel} away` : "distance unavailable",
+      ].join(", ")}`}
       onPressIn={handlePressIn}
       onPress={handlePress}
       style={{ flexDirection: "row", gap: spacing[3] }}
     >
-      <AccessibleImage
-        source={{ uri: dish.imageUrl }}
-        accessibilityLabel={`${dish.name} from ${dish.venueName}`}
-        style={{ width: 80, height: 80, borderRadius: radii.md }}
-        contentFit="cover"
-        cachePolicy="memory-disk"
-        transition={120}
-      />
+      <View style={{ width: 88, height: 88, borderRadius: radii.md, overflow: "hidden" }}>
+        <AccessibleImage
+          source={
+            showRemoteImage
+              ? { uri: dish.imageUrl }
+              : getDishFallbackImageSource({
+                  cuisineTags: dish.cuisineTags,
+                  foodTypeTag: dish.foodTypeTag,
+                  name: dish.name,
+                  venueName: dish.venueName,
+                })
+          }
+          accessibilityLabel={`${dish.name} from ${dish.venueName}${
+            showRemoteImage ? "" : " representative image"
+          }`}
+          onError={showRemoteImage ? () => setRemoteImageFailed(true) : undefined}
+          style={{ width: 88, height: 88 }}
+          contentFit="cover"
+          cachePolicy="memory-disk"
+          transition={120}
+        />
+        {!showRemoteImage ? (
+          <View
+            style={{
+              backgroundColor: palette.imageLabelSurface,
+              bottom: spacing[1],
+              left: spacing[1],
+              paddingHorizontal: spacing[1],
+              paddingVertical: spacing[0.5],
+              position: "absolute",
+            }}
+          >
+            <AppText
+              variant="micro"
+              style={{ color: palette.textOnDark, fontSize: 8, fontWeight: "900" }}
+            >
+              REPRESENTATIVE
+            </AppText>
+          </View>
+        ) : null}
+      </View>
       <View style={{ flex: 1, justifyContent: "center", gap: spacing[1] }}>
         <AppText variant="bodyBold" numberOfLines={1}>
           {dish.name}
         </AppText>
+        <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
+          <AppText variant="micro" tone="secondary" numberOfLines={1} style={{ flex: 1 }}>
+            {dish.venueName}
+          </AppText>
+          {cuisineTags[0] ? (
+            <View
+              style={{
+                backgroundColor: palette.orangeLight,
+                borderRadius: radii.pill,
+                paddingHorizontal: spacing[1.5],
+                paddingVertical: spacing[0.5],
+              }}
+            >
+              <AppText variant="micro" style={{ color: palette.orangeText, fontWeight: "800" }}>
+                {cuisineTags[0]}
+              </AppText>
+            </View>
+          ) : null}
+        </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
           <Star color={palette.amber} fill={palette.amber} size={14} />
           <AppText variant="micro" style={{ fontWeight: "700" }}>
@@ -100,10 +166,16 @@ const SearchResultRow = memo(function SearchResultRow({
           <AppText variant="micro" tone="secondary">
             ({dish.reviewCount})
           </AppText>
+          {distanceLabel ? (
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 2 }}>
+              <MapPinned color={palette.textMuted} size={12} />
+              <AppText variant="micro" tone="secondary">
+                {distanceLabel}
+              </AppText>
+            </View>
+          ) : null}
         </View>
-        <AppText style={{ color: palette.orange, fontWeight: "800" }}>
-          S${dish.price.toFixed(2)}
-        </AppText>
+        <AppText style={{ color: palette.orange, fontWeight: "800" }}>{priceLabel}</AppText>
       </View>
     </Pressable>
   );
@@ -111,42 +183,19 @@ const SearchResultRow = memo(function SearchResultRow({
 
 export function SearchResultsView({
   query,
+  onBack,
   onQueryChange,
   onClear,
   onSubmitQuery,
   onTasteFilterPress,
   results,
   isLoading = false,
+  errorMessage,
+  onRetry,
   onResultPressIn,
   onResultPress,
 }: SearchResultsViewProps) {
   const { palette, radii, spacing, shadows } = useHungryTheme();
-  const { width: screenWidth } = useWindowDimensions();
-  const [activeTab, setActiveTab] = useState<FilterTab>("All");
-  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-  const searchInputRef = useRef<TextInput | null>(null);
-  const searchRevealProgress = useRef(new Animated.Value(0)).current;
-  const searchBarWidth = useMemo(
-    () => Math.max(screenWidth - spacing[4] * 2, 240),
-    [screenWidth, spacing],
-  );
-  const searchIconSize = 56;
-  const searchEntryWidth = searchRevealProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, searchBarWidth],
-    extrapolate: "clamp",
-  });
-  const searchInputOpacity = searchRevealProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
-    extrapolate: "clamp",
-  });
-  const searchInputScale = searchRevealProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.85, 1],
-    extrapolate: "clamp",
-  });
-  const TABS: FilterTab[] = ["All", "Dishes"];
   const renderResult = useCallback(
     ({ item: dish }: { item: DishDetail }) => (
       <SearchResultRow dish={dish} onPressIn={onResultPressIn} onPress={onResultPress} />
@@ -158,185 +207,71 @@ export function SearchResultsView({
     ? "Try another dish or taste filter."
     : "Search for a dish, stall, or craving.";
 
-  const revealSearch = useCallback(() => {
-    if (isSearchExpanded) return;
-    setIsSearchExpanded(true);
-    searchRevealProgress.stopAnimation();
-    searchRevealProgress.setValue(0);
-    Animated.timing(searchRevealProgress, {
-      toValue: 1,
-      duration: 340,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start(() => {
-      searchInputRef.current?.focus();
-    });
-  }, [isSearchExpanded, searchRevealProgress]);
-
-  const hideSearch = useCallback(() => {
-    if (!isSearchExpanded) {
-      return;
-    }
-
-    searchRevealProgress.stopAnimation(() =>
-      Animated.timing(searchRevealProgress, {
-        toValue: 0,
-        duration: 260,
-        easing: Easing.in(Easing.cubic),
-        useNativeDriver: false,
-      }).start(() => {
-        setIsSearchExpanded(false);
-        searchInputRef.current?.blur();
-      }),
-    );
-  }, [isSearchExpanded, searchRevealProgress]);
-
-  useEffect(() => {
-    return () => {
-      searchRevealProgress.stopAnimation();
-      searchRevealProgress.setValue(0);
-    };
-  }, [searchRevealProgress]);
-
   return (
-    <View style={{ flex: 1, backgroundColor: palette.bg, position: "relative" }}>
-      {isSearchExpanded ? (
+    <View style={{ flex: 1, backgroundColor: palette.bg }}>
+      <View
+        style={{
+          alignItems: "center",
+          flexDirection: "row",
+          gap: spacing[2],
+          paddingHorizontal: spacing[4],
+          paddingVertical: spacing[2],
+        }}
+      >
         <Pressable
+          accessibilityLabel="Go back"
           accessibilityRole="button"
-          accessibilityLabel="Dismiss search"
-          onPress={hideSearch}
-          style={searchResultsStyles.searchDismissOverlay}
-        />
-      ) : null}
-      <View style={{ paddingHorizontal: spacing[4], paddingVertical: spacing[2] }}>
+          hitSlop={12}
+          onPress={onBack}
+          style={{ alignItems: "center", height: 56, justifyContent: "center", width: 40 }}
+        >
+          <ArrowLeft color={palette.text} size={24} />
+        </Pressable>
         <View
           style={{
             alignItems: "center",
-            position: "relative",
-            width: isSearchExpanded ? searchBarWidth : searchIconSize,
-            zIndex: 30,
+            backgroundColor: palette.surface,
+            borderColor: palette.orange,
+            borderRadius: radii.pill,
+            borderWidth: 1,
+            flex: 1,
+            flexDirection: "row",
+            gap: spacing[2],
+            height: 56,
+            paddingHorizontal: spacing[3],
+            ...shadows.card,
           }}
         >
-          <View
+          <Search color={palette.orange} size={20} />
+          <TextInput
+            accessibilityLabel="Search results"
+            value={query}
+            onChangeText={onQueryChange}
+            onSubmitEditing={() => onSubmitQuery?.(query)}
+            placeholder="Search dishes, stalls, or your cravings"
+            placeholderTextColor={palette.textMuted}
+            returnKeyType="search"
             style={{
-              width: searchBarWidth,
+              color: palette.text,
+              flex: 1,
+              fontFamily: "Nunito_400Regular",
+              fontSize: 16,
               height: 56,
-              alignItems: "center",
-              justifyContent: "flex-start",
-              flexDirection: "row",
+              padding: 0,
+              textAlignVertical: "center",
             }}
-          >
+          />
+          {query.length > 0 ? (
             <Pressable
+              onPress={onClear}
               accessibilityRole="button"
-              accessibilityLabel="Search"
-              onPress={isSearchExpanded ? hideSearch : revealSearch}
-              style={{
-                width: searchIconSize,
-                height: 56,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
+              accessibilityLabel="Clear search"
+              hitSlop={8}
             >
-              <Search color={palette.orange} size={20} />
+              <X color={palette.textMuted} size={20} />
             </Pressable>
-          </View>
-
-          {isSearchExpanded ? (
-            <Animated.View
-              pointerEvents="auto"
-              style={{
-                position: "absolute",
-                right: 0,
-                top: 0,
-                height: 56,
-                borderRadius: radii.pill,
-                overflow: "hidden",
-                width: searchEntryWidth,
-                backgroundColor: palette.surface,
-                borderWidth: 1,
-                borderColor: palette.orange,
-                ...shadows.card,
-                flexDirection: "row",
-                alignItems: "center",
-                gap: spacing[2],
-                paddingHorizontal: spacing[3],
-              }}
-            >
-              <Animated.View
-                style={{
-                  flex: 1,
-                  opacity: searchInputOpacity,
-                  transform: [{ scale: searchInputScale }],
-                }}
-              >
-                <TextInput
-                  ref={searchInputRef}
-                  value={query}
-                  onChangeText={onQueryChange}
-                  onSubmitEditing={() => onSubmitQuery?.(query)}
-                  onBlur={hideSearch}
-                  placeholder="Search dishes, stalls, or your cravings"
-                  placeholderTextColor={palette.textMuted}
-                  returnKeyType="search"
-                  style={{
-                    color: palette.text,
-                    fontFamily: "Nunito_400Regular",
-                    fontSize: 16,
-                    height: 56,
-                    padding: 0,
-                    textAlignVertical: "center",
-                  }}
-                />
-              </Animated.View>
-              <Animated.View style={{ opacity: searchInputOpacity }}>
-                {query.length > 0 ? (
-                  <Pressable
-                    onPress={onClear}
-                    accessibilityRole="button"
-                    accessibilityLabel="Clear search"
-                  >
-                    <X color={palette.textMuted} size={20} />
-                  </Pressable>
-                ) : null}
-              </Animated.View>
-            </Animated.View>
           ) : null}
         </View>
-      </View>
-
-      <View
-        style={{
-          flexDirection: "row",
-          paddingHorizontal: spacing[4],
-          borderBottomWidth: 1,
-          borderBottomColor: palette.border,
-        }}
-      >
-        {TABS.map((tab) => {
-          const isActive = activeTab === tab;
-          return (
-            <Pressable
-              key={tab}
-              onPress={() => setActiveTab(tab)}
-              style={{
-                marginRight: spacing[6],
-                paddingVertical: spacing[3],
-                borderBottomWidth: 2,
-                borderBottomColor: isActive ? palette.orange : "transparent",
-              }}
-            >
-              <AppText
-                variant="bodySmall"
-                style={{
-                  fontWeight: isActive ? "800" : "600",
-                  color: isActive ? palette.text : palette.textSecondary,
-                }}
-              >
-                {tab}
-              </AppText>
-            </Pressable>
-          );
-        })}
       </View>
 
       <View style={{ paddingHorizontal: spacing[4], paddingTop: spacing[4] }}>
@@ -371,8 +306,12 @@ export function SearchResultsView({
           ListEmptyComponent={
             <EmptyState
               icon={<Search size={34} color={palette.orange} />}
-              title={emptyTitle}
-              body={emptyBody}
+              title={errorMessage ? "Unable to search right now" : emptyTitle}
+              body={errorMessage ? "Check your connection and try again." : emptyBody}
+              ctaLabel={errorMessage ? "Retry" : undefined}
+              onPress={errorMessage ? onRetry : undefined}
+              errorMessage={errorMessage ?? undefined}
+              sendErrorContext={errorMessage ? "Dish search results" : undefined}
             />
           }
           // @ts-ignore FlashList v2 runtime supports this prop but its bundled RN type omits it.
@@ -384,11 +323,3 @@ export function SearchResultsView({
     </View>
   );
 }
-
-const searchResultsStyles = StyleSheet.create({
-  searchDismissOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "transparent",
-    zIndex: 20,
-  },
-});

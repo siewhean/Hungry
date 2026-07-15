@@ -1,7 +1,7 @@
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { biteToStallPost } from "@/lib/services/postTransforms";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
-import type { DataRepository } from "@/lib/services/types";
+import type { DataRepository, HungryService } from "@/lib/services/types";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -44,21 +44,25 @@ function resolveVenueFromLocation(repository: DataRepository, locationName?: str
   });
 }
 
-function resolvePublishTarget(
+async function resolvePublishTarget(
   repository: DataRepository,
+  service: HungryService,
   options: PublishComposerPostOptions,
-): ResolvedPublishTarget {
+): Promise<ResolvedPublishTarget> {
   const state = useComposerStore.getState();
   const routeVenue = options.routeVenueId
-    ? repository.getVenueById(options.routeVenueId)
+    ? await service.discovery.getVenue(options.routeVenueId)
     : undefined;
   const locationVenue = resolveVenueFromLocation(repository, state.location?.name);
   const venue = routeVenue ?? locationVenue;
 
-  const routeDish = options.routeDishId ? repository.getDishById(options.routeDishId) : undefined;
-  const venueDish = venue ? repository.listDishesByVenue(venue.id)[0] : undefined;
+  const routeDish = options.routeDishId
+    ? await service.discovery.getDish(options.routeDishId)
+    : undefined;
+  const venueDish = venue ? (await service.discovery.listDishesByVenue(venue.id))[0] : undefined;
   const dish = routeDish ?? venueDish;
-  const resolvedVenue = venue ?? (dish ? repository.getVenueById(dish.venueId) : undefined);
+  const resolvedVenue =
+    venue ?? (dish ? await service.discovery.getVenue(dish.venueId) : undefined);
 
   if (!dish || !resolvedVenue) {
     throw new Error("Choose a dish or location before publishing.");
@@ -95,7 +99,7 @@ export async function publishComposerPost(options: PublishComposerPostOptions) {
     useSessionStore.getState().isAuthenticated && storedProfile.id === guestProfile.id
       ? repository.getProfile(true)
       : storedProfile;
-  const { dish, venue } = resolvePublishTarget(repository, options);
+  const { dish, venue } = await resolvePublishTarget(repository, service, options);
   const shouldPublishPost = options.publishMode === "both" || options.publishMode === "post";
   const shouldSubmitReview =
     options.publishMode === "review" ||

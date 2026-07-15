@@ -111,6 +111,7 @@ class ExportExcelCatalogTest(unittest.TestCase):
             )
 
             catalog = build_catalog(load_sheet_rows(path), path, 0)
+            repeated_catalog = build_catalog(load_sheet_rows(path), path, 0)
 
         venue_image_index = catalog["venueColumns"].index("imageUrl")
         dish_image_index = catalog["dishColumns"].index("imageUrl")
@@ -118,6 +119,7 @@ class ExportExcelCatalogTest(unittest.TestCase):
         self.assertEqual(catalog["metadata"]["dishCount"], 1)
         self.assertEqual(catalog["venues"][0][venue_image_index], "")
         self.assertEqual(catalog["dishes"][0][dish_image_index], "")
+        self.assertEqual(catalog, repeated_catalog)
 
     def test_preflight_rejects_each_unsafe_input_class(self) -> None:
         cases = {
@@ -187,6 +189,21 @@ class ExportExcelCatalogTest(unittest.TestCase):
         self.assertIn("duplicate_generated_venue_id", message)
         self.assertIn("orphan_generated_dish_venue", message)
         self.assertIn("orphan_building_hero_dish", message)
+
+    def test_generated_integrity_rejects_non_positive_dish_price(self) -> None:
+        buildings = [{"id": "building-1", "heroDishId": "dish-1"}]
+        venues = [{"id": "venue-1", "buildingId": "building-1", "topDishId": "dish-1"}]
+        dishes = [
+            {
+                "id": "dish-1",
+                "venueId": "venue-1",
+                "buildingId": "building-1",
+                "price": 0,
+            }
+        ]
+
+        with self.assertRaisesRegex(CatalogValidationError, "non_positive_generated_dish_price"):
+            validate_generated_catalog(buildings, venues, dishes)
 
 
 if __name__ == "__main__":

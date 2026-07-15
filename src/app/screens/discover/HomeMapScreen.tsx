@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -32,6 +33,7 @@ import {
   AccessibleImage,
   AppText,
   Button,
+  EmptyState,
   FilterChipRail,
   FeedErrorBoundary,
   ExpandableSearchLauncher,
@@ -42,16 +44,31 @@ import {
   singaporeBuildings,
   toSummary,
 } from "@/lib/geo/singaporeBuildings";
+import { isUsableDiscoverImageUrl } from "@/features/discover/bites";
+import {
+  formatDiscoverDistance,
+  formatDiscoverPrice,
+  getDishFallbackImageSource,
+  getEffectiveCuisineTags,
+} from "@/features/discover/presentation";
 import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { getDataRepository, getServiceProvider } from "@/lib/services/serviceProvider";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useHungryTheme } from "@/theme";
-import type { DishDetail } from "@/types/domain";
+import type { DishDetail, VenueSummary } from "@/types/domain";
 
 const DEFAULT_BUILDING_ID = "hc-maxwell";
 type HomeMapFilterId = "nearMe" | "hawkerOnly" | "topRated" | "openNow";
+
+function normalizeBuildingIdentity(value?: string): string {
+  return (value ?? "")
+    .toLowerCase()
+    .replace(/^(?:building|hc)-/, "")
+    .replace(/\b(?:food centre|hawker centre|market)\b/g, "")
+    .replace(/[^a-z0-9]/g, "");
+}
 
 const HOME_MAP_FILTER_OPTIONS: readonly { id: HomeMapFilterId; label: string }[] = [
   { id: "nearMe", label: "Near me" },
@@ -117,8 +134,52 @@ function CrowdIndicator({ level }: { level?: "low" | "medium" | "high" }) {
   );
 }
 
+function HomeMapDishImage({ dish }: { dish: DishDetail }) {
+  const { palette, radii, spacing } = useHungryTheme();
+  const [remoteImageFailed, setRemoteImageFailed] = useState(false);
+  const showRemoteImage = isUsableDiscoverImageUrl(dish.imageUrl) && !remoteImageFailed;
+
+  useEffect(() => {
+    setRemoteImageFailed(false);
+  }, [dish.id, dish.imageUrl]);
+
+  return (
+    <View style={StyleSheet.absoluteFill}>
+      <AccessibleImage
+        source={showRemoteImage ? { uri: dish.imageUrl } : getDishFallbackImageSource(dish)}
+        style={StyleSheet.absoluteFill}
+        contentFit="cover"
+        cachePolicy="memory-disk"
+        transition={120}
+        onError={showRemoteImage ? () => setRemoteImageFailed(true) : undefined}
+        accessibilityLabel={`${dish.name}${showRemoteImage ? " photo" : " representative image"}`}
+      />
+      {!showRemoteImage ? (
+        <View
+          pointerEvents="none"
+          style={{
+            backgroundColor: palette.imageLabelSurface,
+            borderRadius: radii.pill,
+            bottom: spacing[2],
+            left: spacing[2],
+            paddingHorizontal: spacing[1.5],
+            paddingVertical: spacing[0.5],
+            position: "absolute",
+          }}
+        >
+          <AppText variant="micro" style={{ color: palette.textOnDark, fontWeight: "900" }}>
+            REPRESENTATIVE
+          </AppText>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 export function HomeMapScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const serviceProvider = getServiceProvider();
+  const isSupabaseDataSource = serviceProvider.mode === "supabase";
   const repository = getDataRepository();
   const insets = useSafeAreaInsets();
   const { componentRadii, palette, radii, shadows, spacing, zIndex } = useHungryTheme();
@@ -138,6 +199,54 @@ export function HomeMapScreen() {
   const highlightedStallVenueId = useDiscoveryStore((state) => state.highlightedStallVenueId);
   const mapFilters = useDiscoveryStore((state) => state.mapFilters);
   const toggleMapFilter = useDiscoveryStore((state) => state.toggleMapFilter);
+  const [scopedVenues, setScopedVenues] = useState<VenueSummary[]>([]);
+  const [scopedDishes, setScopedDishes] = useState<DishDetail[]>([]);
+  const [mapLoadStatus, setMapLoadStatus] = useState<"loading" | "ready" | "empty" | "error">(
+    isSupabaseDataSource ? "loading" : "ready",
+  );
+  const [mapLoadError, setMapLoadError] = useState<string | null>(null);
+  const [mapLoadAttempt, setMapLoadAttempt] = useState(0);
+
+  useEffect(() => {
+    if (!isSupabaseDataSource) {
+      setMapLoadStatus("ready");
+      setMapLoadError(null);
+      return undefined;
+    }
+    let active = true;
+    setMapLoadStatus("loading");
+    setMapLoadError(null);
+    void serviceProvider.service.discovery
+      .listDiscoveryFeedByLocation({
+        lat: currentLocation.latitude,
+        lng: currentLocation.longitude,
+        radiusMeters: 5000,
+        limit: 100,
+      })
+      .then((feed) => {
+        if (!active) return;
+        if (!feed) throw new Error("Nearby map data is temporarily unavailable.");
+        setScopedVenues(feed.venues);
+        setScopedDishes(feed.results.map((result) => result.dish));
+        setMapLoadStatus(feed.venues.length || feed.results.length ? "ready" : "empty");
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        setMapLoadStatus("error");
+        setMapLoadError(
+          error instanceof Error ? error.message : "Nearby map data is temporarily unavailable.",
+        );
+      });
+    return () => {
+      active = false;
+    };
+  }, [
+    currentLocation.latitude,
+    currentLocation.longitude,
+    isSupabaseDataSource,
+    mapLoadAttempt,
+    serviceProvider.service,
+  ]);
 
   const activeBuildingRecord = useMemo(() => {
     const nameMatch = selectedBuilding?.name
@@ -157,13 +266,59 @@ export function HomeMapScreen() {
     });
   }, [activeBuildingRecord, currentLocation]);
 
-  const areaPopularDishes = useMemo(() => {
+  const unfilteredAreaDishes = useMemo(() => {
+    if (isSupabaseDataSource) return scopedDishes;
     const allVenues = visibleBuildings.flatMap((b) => repository.listVenuesByBuilding(b.id));
     return allVenues
       .map((v) => repository.getDishById(v.topDishId))
-      .filter((d): d is DishDetail => !!d)
-      .slice(0, 10);
-  }, [repository, visibleBuildings]);
+      .filter((d): d is DishDetail => !!d);
+  }, [isSupabaseDataSource, repository, scopedDishes, visibleBuildings]);
+  const unfilteredNearbyVenues = useMemo(
+    () =>
+      isSupabaseDataSource
+        ? scopedVenues
+        : visibleBuildings.flatMap((building) => repository.listVenuesByBuilding(building.id)),
+    [isSupabaseDataSource, repository, scopedVenues, visibleBuildings],
+  );
+  const hasScopedMapData = scopedVenues.length > 0 || scopedDishes.length > 0;
+  const dishByVenueId = useMemo(
+    () => new Map(unfilteredAreaDishes.map((dish) => [dish.venueId, dish])),
+    [unfilteredAreaDishes],
+  );
+  const isHawkerVenue = useCallback((venue: VenueSummary) => {
+    const building = singaporeBuildings.find(
+      (candidate) =>
+        normalizeBuildingIdentity(candidate.id) === normalizeBuildingIdentity(venue.buildingId) ||
+        normalizeBuildingIdentity(candidate.name) === normalizeBuildingIdentity(venue.buildingName),
+    );
+    return building?.type === "hawker_centre";
+  }, []);
+  const nearbyVenues = useMemo(
+    () =>
+      unfilteredNearbyVenues.filter((venue) => {
+        const topDish = dishByVenueId.get(venue.id);
+        if (mapFilters.nearMe && (!topDish || topDish.distanceMeters > 2000)) return false;
+        if (mapFilters.hawkerOnly && !isHawkerVenue(venue)) return false;
+        if (mapFilters.topRated && (!topDish || topDish.rating < 4)) return false;
+        if (mapFilters.openNow && !venue.isOpen) return false;
+        return true;
+      }),
+    [dishByVenueId, isHawkerVenue, mapFilters, unfilteredNearbyVenues],
+  );
+  const areaPopularDishes = useMemo(
+    () =>
+      unfilteredAreaDishes
+        .filter((dish) => {
+          const venue = unfilteredNearbyVenues.find((candidate) => candidate.id === dish.venueId);
+          if (mapFilters.nearMe && dish.distanceMeters > 2000) return false;
+          if (mapFilters.hawkerOnly && (!venue || !isHawkerVenue(venue))) return false;
+          if (mapFilters.topRated && dish.rating < 4) return false;
+          if (mapFilters.openNow && !venue?.isOpen) return false;
+          return true;
+        })
+        .slice(0, 10),
+    [isHawkerVenue, mapFilters, unfilteredAreaDishes, unfilteredNearbyVenues],
+  );
 
   const [currentZoom, setCurrentZoom] = useState(highlightedStallVenueId ? 17.1 : 15.5);
   const [displayMode, setDisplayMode] = useState<"carousel" | "list">("carousel");
@@ -242,7 +397,10 @@ export function HomeMapScreen() {
   }, [displayMode]);
 
   const markers = useMemo<MapSurfaceMarker[]>(() => {
-    const bMarkers = visibleBuildings.map((b) => ({
+    const markerBuildings = mapFilters.hawkerOnly
+      ? visibleBuildings.filter((building) => building.type === "hawker_centre")
+      : visibleBuildings;
+    const bMarkers = markerBuildings.map((b) => ({
       id: b.id,
       label: b.name.replace(" Food Centre", ""),
       coordinate: b.coordinate,
@@ -250,7 +408,17 @@ export function HomeMapScreen() {
       type: b.type,
     }));
     if (currentZoom > 16.5) {
-      const venues = repository.listVenuesByBuilding(activeBuildingRecord.id);
+      const venues = (
+        isSupabaseDataSource
+          ? scopedVenues.filter(
+              (venue) =>
+                normalizeBuildingIdentity(venue.buildingId) ===
+                  normalizeBuildingIdentity(activeBuildingRecord.id) ||
+                normalizeBuildingIdentity(venue.buildingName) ===
+                  normalizeBuildingIdentity(activeBuildingRecord.name),
+            )
+          : repository.listVenuesByBuilding(activeBuildingRecord.id)
+      ).filter((venue) => nearbyVenues.some((candidate) => candidate.id === venue.id));
       const stallMarkers = venues.map((v, index) => {
         const latitudeOffset = ((index % 7) - 3) * 0.00007;
         const longitudeOffset = ((Math.floor(index / 7) % 7) - 3) * 0.00007;
@@ -275,6 +443,10 @@ export function HomeMapScreen() {
     currentZoom,
     activeBuildingRecord,
     highlightedStallVenueId,
+    isSupabaseDataSource,
+    scopedVenues,
+    mapFilters.hawkerOnly,
+    nearbyVenues,
   ]);
 
   const cameraPadding = useMemo(
@@ -308,6 +480,62 @@ export function HomeMapScreen() {
           }
         />
       </FeedErrorBoundary>
+
+      {isSupabaseDataSource && mapLoadStatus !== "ready" ? (
+        <View
+          style={{
+            left: spacing[4],
+            position: "absolute",
+            right: spacing[4],
+            top: insets.top + 150,
+            zIndex: zIndex.overlay,
+          }}
+        >
+          {mapLoadStatus === "loading" ? (
+            <View
+              accessibilityRole="progressbar"
+              accessibilityLabel="Loading nearby stalls and dishes for the map"
+              style={{
+                alignItems: "center",
+                backgroundColor: palette.surface,
+                borderColor: palette.border,
+                borderRadius: radii.lg,
+                borderWidth: 1,
+                gap: spacing[2],
+                padding: spacing[4],
+                ...shadows.card,
+              }}
+            >
+              <ActivityIndicator color={palette.orange} size="small" />
+              <AppText variant="bodySmall" tone="secondary">
+                {hasScopedMapData
+                  ? "Refreshing nearby map results…"
+                  : "Loading nearby stalls and dishes…"}
+              </AppText>
+            </View>
+          ) : mapLoadStatus === "error" ? (
+            <EmptyState
+              title="Nearby map data unavailable"
+              body={
+                hasScopedMapData
+                  ? "Showing the last loaded results. Retry for current nearby stalls and dishes."
+                  : "The map is still available, but current stalls and dishes could not be loaded."
+              }
+              ctaLabel="Try again"
+              onPress={() => setMapLoadAttempt((attempt) => attempt + 1)}
+              errorMessage={mapLoadError ?? undefined}
+              sendErrorContext="Home map nearby catalog"
+            />
+          ) : (
+            <EmptyState
+              title="No nearby stalls or dishes"
+              body="The map loaded successfully, but this area has no catalog results yet. Try again or move the map to another area."
+              ctaLabel="Retry nearby"
+              onPress={() => setMapLoadAttempt((attempt) => attempt + 1)}
+            />
+          )}
+        </View>
+      ) : null}
 
       <View
         {...edgeBackPanResponder.panHandlers}
@@ -497,46 +725,44 @@ export function HomeMapScreen() {
             <AppText variant="h2" style={{ marginBottom: spacing[2] }}>
               Nearby Stalls
             </AppText>
-            {visibleBuildings
-              .flatMap((b) => repository.listVenuesByBuilding(b.id))
-              .map((venue) => (
-                <Pressable
-                  key={venue.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Open ${venue.name} stall details`}
-                  onPress={() => navigation.navigate("StallDetail", { venueId: venue.id })}
-                  style={{
-                    backgroundColor: palette.bgSoft,
-                    borderRadius: radii.md,
-                    padding: spacing[3],
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: spacing[3],
-                    borderWidth: 1,
-                    borderColor: palette.border,
-                  }}
-                >
-                  <View style={{ flex: 1, gap: spacing[1] }}>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <AppText variant="h3">{venue.name}</AppText>
-                      <CrowdIndicator level={venue.liveCrowd} />
-                    </View>
-                    <AppText variant="micro" tone="secondary">
-                      {venue.floor} {venue.unitNumber} · {venue.operatingHours}
-                    </AppText>
-                    <AppText variant="micro" tone="muted">
-                      {mapStatusDisclosure}
-                    </AppText>
+            {nearbyVenues.map((venue) => (
+              <Pressable
+                key={venue.id}
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${venue.name} stall details`}
+                onPress={() => navigation.navigate("StallDetail", { venueId: venue.id })}
+                style={{
+                  backgroundColor: palette.bgSoft,
+                  borderRadius: radii.md,
+                  padding: spacing[3],
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: spacing[3],
+                  borderWidth: 1,
+                  borderColor: palette.border,
+                }}
+              >
+                <View style={{ flex: 1, gap: spacing[1] }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <AppText variant="h3">{venue.name}</AppText>
+                    <CrowdIndicator level={venue.liveCrowd} />
                   </View>
-                  <ChevronRight size={16} color={palette.orange} />
-                </Pressable>
-              ))}
+                  <AppText variant="micro" tone="secondary">
+                    {venue.floor} {venue.unitNumber} · {venue.operatingHours}
+                  </AppText>
+                  <AppText variant="micro" tone="muted">
+                    {mapStatusDisclosure}
+                  </AppText>
+                </View>
+                <ChevronRight size={16} color={palette.orange} />
+              </Pressable>
+            ))}
           </ScrollView>
         ) : (
           <Animated.View
@@ -562,60 +788,75 @@ export function HomeMapScreen() {
                 paddingHorizontal: spacing[4],
               }}
             >
-              {areaPopularDishes.map((dish) => (
-                <Pressable
-                  key={dish.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Preview ${dish.name} at ${dish.venueName}`}
-                  onPress={() => handleCardPress(dish)}
-                  style={[
-                    {
-                      backgroundColor: palette.surface,
-                      borderRadius: componentRadii.card,
-                      overflow: "hidden",
-                      width: 320,
-                    },
-                    shadows.floating,
-                  ]}
-                >
-                  <View style={{ height: 160 }}>
-                    <AnimatedReanimated.View style={StyleSheet.absoluteFill}>
-                      <AccessibleImage
-                        source={{ uri: dish.imageUrl }}
-                        style={StyleSheet.absoluteFill}
-                        contentFit="cover"
-                        accessibilityLabel={`${dish.name} photo`}
-                      />
-                    </AnimatedReanimated.View>
-                    {dish.liveCrowd && (
-                      <View style={{ position: "absolute", top: 12, right: 12 }}>
-                        <CrowdIndicator level={dish.liveCrowd} />
+              {areaPopularDishes.map((dish) => {
+                const cuisineTags = getEffectiveCuisineTags(dish);
+                const distanceLabel = formatDiscoverDistance(dish.distanceMeters);
+                const priceLabel = formatDiscoverPrice(dish);
+
+                return (
+                  <Pressable
+                    key={dish.id}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Preview ${dish.name} at ${dish.venueName}, ${[
+                      ...cuisineTags,
+                      priceLabel,
+                      distanceLabel ? `${distanceLabel} away` : "distance unavailable",
+                    ].join(", ")}`}
+                    onPress={() => handleCardPress(dish)}
+                    style={[
+                      {
+                        backgroundColor: palette.surface,
+                        borderRadius: componentRadii.card,
+                        overflow: "hidden",
+                        width: 320,
+                      },
+                      shadows.floating,
+                    ]}
+                  >
+                    <View style={{ height: 160 }}>
+                      <AnimatedReanimated.View style={StyleSheet.absoluteFill}>
+                        <HomeMapDishImage dish={dish} />
+                      </AnimatedReanimated.View>
+                      {dish.liveCrowd && (
+                        <View style={{ position: "absolute", top: 12, right: 12 }}>
+                          <CrowdIndicator level={dish.liveCrowd} />
+                        </View>
+                      )}
+                    </View>
+                    <View style={{ padding: spacing[3], gap: spacing[1] }}>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <AppText style={{ fontWeight: "800", flex: 1 }} numberOfLines={1}>
+                          {dish.name}
+                        </AppText>
+                        <AppText
+                          variant="price"
+                          numberOfLines={1}
+                          style={{
+                            color: palette.orange,
+                            fontWeight: "800",
+                            marginLeft: spacing[2],
+                          }}
+                        >
+                          {priceLabel}
+                        </AppText>
                       </View>
-                    )}
-                  </View>
-                  <View style={{ padding: spacing[3], gap: spacing[1] }}>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      <AppText style={{ fontWeight: "800", flex: 1 }} numberOfLines={1}>
-                        {dish.name}
+                      <AppText variant="micro" tone="secondary">
+                        {[dish.venueName, ...cuisineTags, distanceLabel]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </AppText>
-                      <AppText style={{ color: palette.orange, fontWeight: "800" }}>
-                        S${Math.round(dish.price)}
+                      <AppText variant="micro" tone="muted">
+                        {mapStatusDisclosure}
                       </AppText>
                     </View>
-                    <AppText variant="micro" tone="secondary">
-                      {dish.venueName}
-                    </AppText>
-                    <AppText variant="micro" tone="muted">
-                      {mapStatusDisclosure}
-                    </AppText>
-                  </View>
-                </Pressable>
-              ))}
+                  </Pressable>
+                );
+              })}
             </ScrollView>
           </Animated.View>
         )}

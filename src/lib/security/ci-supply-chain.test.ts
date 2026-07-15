@@ -10,7 +10,11 @@ function read(relativePath: string): string {
 }
 
 test("GitHub Actions are SHA-pinned and least-privilege", () => {
-  for (const workflow of [".github/workflows/ci.yml", ".github/workflows/security.yml"]) {
+  for (const workflow of [
+    ".github/workflows/ci.yml",
+    ".github/workflows/security.yml",
+    ".github/workflows/scheduled-enrichment-review.yml",
+  ]) {
     const source = read(workflow);
     assert.match(source, /permissions:\n\s+contents: read/);
 
@@ -38,12 +42,70 @@ test("release secrets are scoped to EAS steps, not install or workflow scope", (
 
 test("main CI uses the pinned Node runtime and fails closed for required release proof", () => {
   const ci = read(".github/workflows/ci.yml");
+  const security = read(".github/workflows/security.yml");
+  const enrichment = read(".github/workflows/scheduled-enrichment-review.yml");
 
-  assert.equal(ci.match(/node-version: 22\.22\.1/g)?.length, 2);
+  for (const [source, expectedCount] of [
+    [ci, 4],
+    [security, 1],
+    [enrichment, 2],
+  ] as const) {
+    const nodeVersions = [...source.matchAll(/^\s*node-version:\s*([^\s#]+)\s*$/gm)].map(
+      (match) => match[1],
+    );
+    assert.equal(nodeVersions.length, expectedCount);
+    assert.deepEqual(new Set(nodeVersions), new Set(["22.22.1"]));
+  }
   assert.match(ci, /Supabase credentials missing on main; failing closed\./);
   assert.match(ci, /EXPO_TOKEN missing on main; failing closed\./);
   assert.doesNotMatch(ci, /skipping EAS account validation/);
   assert.doesNotMatch(ci, /skipping EAS build gate/);
+});
+
+test("CI fails closed on web-v2 and store-layout-editor quality gates", () => {
+  const ci = read(".github/workflows/ci.yml");
+  const webJob = ci.slice(
+    ci.indexOf("  web-v2-quality-gates:"),
+    ci.indexOf("  store-layout-editor-quality-gates:"),
+  );
+  const layoutJob = ci.slice(
+    ci.indexOf("  store-layout-editor-quality-gates:"),
+    ci.indexOf("  eas-build-gate:"),
+  );
+
+  assert.match(webJob, /web-v2-quality-gates:/);
+  assert.match(webJob, /working-directory: marketing\/website\/web-v2/);
+  assert.match(webJob, /cache-dependency-path: marketing\/website\/web-v2\/package-lock\.json/);
+  assert.match(webJob, /Install web-v2 dependencies\s*\n\s*run: npm ci/);
+  assert.match(webJob, /Website dependency audit\s*\n\s*run: npm audit --audit-level=moderate/);
+  assert.match(webJob, /Website lint\s*\n\s*run: npm run lint/);
+  assert.match(webJob, /Website typecheck\s*\n\s*run: npm exec -- tsc --noEmit/);
+  assert.match(webJob, /Website production build\s*\n\s*run: npm run build/);
+  assert.match(webJob, /Website bundle budget\s*\n\s*run: npm run bundle:budget/);
+  assert.match(webJob, /Website static security contracts\s*\n\s*run: npm run security:audit/);
+  const websiteStaticStep = webJob.slice(webJob.indexOf("- name: Website SEO static validation"));
+  for (const script of [
+    "routes:inventory",
+    "seo:validate",
+    "seo:sitemap",
+    "seo:structured-data",
+    "legal:validate",
+    "a11y:contracts",
+  ]) {
+    assert.match(websiteStaticStep, new RegExp(`npm run ${script.replace(":", "\\:")}`));
+  }
+  assert.doesNotMatch(webJob, /skip|continue-on-error/i);
+
+  assert.match(layoutJob, /store-layout-editor-quality-gates:/);
+  assert.match(layoutJob, /working-directory: store-layout-editor/);
+  assert.match(layoutJob, /cache-dependency-path: store-layout-editor\/package-lock\.json/);
+  assert.match(layoutJob, /Install store-layout-editor dependencies\s*\n\s*run: npm ci/);
+  assert.match(layoutJob, /Store layout editor full check\s*\n\s*run: npm run check/);
+  assert.doesNotMatch(layoutJob, /skip|continue-on-error/i);
+  assert.match(
+    ci,
+    /needs: \[quality-gates, web-v2-quality-gates, store-layout-editor-quality-gates\]/,
+  );
 });
 
 test("security workflow keeps dependency, gitleaks, and trufflehog gates", () => {

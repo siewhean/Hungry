@@ -26,8 +26,17 @@ test("Browse Stalls uses the active repository before showing empty state", () =
     /const loadingLabel = mode === "dishes" \? "Preparing dishes" : "Preparing stalls"/,
   );
   assert.match(source, /accessibilityLabel=\{loadingLabel\}/);
-  assert.match(source, /if \(!browseIndex \|\| shouldUseQueryScopedFeed\)/);
+  assert.match(source, /resolveBrowseGridDataState/);
+  assert.match(
+    source,
+    /if \(isSupabaseDataSource\) \{\s+if \(shouldUseQueryScopedFeed\) \{\s+return \(\) => \{\s+active = false;/,
+  );
   assert.match(source, /const queryMatchedDishes = useMemo/);
+  assert.match(source, /if \(!shouldUseQueryScopedFeed\)/);
+  assert.match(
+    source,
+    /const queryMatchedDishes = useMemo\(\(\) => \{[\s\S]*if \(isSupabaseDataSource\) \{\s+return scopedQueryDishes \?\? \[\];/,
+  );
   assert.match(source, /searchBrowseDishes\(browseIndex/);
   assert.match(source, /const buildStallItems =/);
   assert.match(

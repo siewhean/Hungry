@@ -42,8 +42,9 @@ Database-backed waitlist, Console, and Merchant Portal routes require the shared
 - `NEXT_PUBLIC_SUPABASE_URL` or `EXPO_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, or the Expo public anon key equivalents
 - `SUPABASE_SERVICE_ROLE_KEY` or `HUNGRY_SUPABASE_SERVICE_ROLE_KEY` for Console reads/admin writes and waitlist upserts
-- `HUNGRY_CONSOLE_USERNAME` and `HUNGRY_CONSOLE_PASSWORD` for Console access. Store these as deployment secrets and local `.env.local` values only; never commit real credentials. Console pages and `/api/console/*` fail closed when either value is missing.
-- Optional durable rate limiting uses an Upstash Redis REST-compatible store:
+- Named Supabase admin bearer tokens are the primary Console API authentication path. Basic Auth is break-glass only: set `HUNGRY_CONSOLE_BREAK_GLASS_ENABLED=1` together with `HUNGRY_CONSOLE_USERNAME` and `HUNGRY_CONSOLE_PASSWORD`. Store credentials as deployment secrets or local `.env.local` values only; never commit real credentials. Console pages fail closed when break-glass access is disabled or incomplete.
+- Merchant pages and `/api/merchant/*` fail closed with `503` in production unless `HUNGRY_MERCHANT_PORTAL_ENABLED=1` is explicitly set.
+- Durable production rate limiting uses an Upstash Redis REST-compatible store. Set `HUNGRY_RATE_LIMIT_MODE=redis`; local/test defaults to `memory` and can opt into Redis explicitly:
   - `HUNGRY_RATE_LIMIT_REDIS_REST_URL` / `HUNGRY_RATE_LIMIT_REDIS_REST_TOKEN`
   - or `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`
   - Without those values, route limits fall back to an in-memory process-local guard for local development only.

@@ -8,6 +8,7 @@ import type {
   VenueLocationSearchRequest,
 } from "@/lib/services/types";
 import { hungryService as mockHungryService } from "@/lib/services/mock/mockService";
+import { getBoundedUniqueDishDetailIds } from "@/lib/services/readSafety";
 import type { Coordinate, DishDetail, SearchFilters, TasteVector } from "@/types/domain";
 import {
   excelRepository,
@@ -173,6 +174,12 @@ export const excelService: HungryService = {
     },
     async getDish(id) {
       return excelRepository.getDishById(id);
+    },
+    async getDishes(ids) {
+      const uniqueIds = getBoundedUniqueDishDetailIds(ids);
+      return uniqueIds
+        .map((id) => excelRepository.getDishById(id))
+        .filter((dish): dish is DishDetail => Boolean(dish));
     },
     async listDishesByVenue(venueId) {
       return excelRepository.listDishesByVenue(venueId);

@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Animated,
   Easing,
-  Linking,
   View,
   StyleSheet,
   Pressable,
@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Sparkles, ChevronLeft, Shuffle, MapPin, Star } from "lucide-react-native";
+import { Sparkles, ChevronLeft, Shuffle } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -19,16 +19,16 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { AccessibleImage, AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
 import { findBuildingById } from "@/features/discovery/discovery";
+import { isUsableDiscoverImageUrl } from "@/features/discover/bites";
+import { formatDiscoverPrice, getDishFallbackImageSource } from "@/features/discover/presentation";
 import { blendedMatchScore, TASTE_LABELS } from "@/lib/ai/tasteEngine";
-import { getDataRepository } from "@/lib/services/serviceProvider";
-import type { DataRepository } from "@/lib/services/types";
-import { useCartStore } from "@/store/useCartStore";
+import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
-import { useOrderStore } from "@/store/useOrderStore";
+import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
-import type { DietaryFlag, DishDetail, TasteVector } from "@/types/domain";
+import type { DishDetail, TasteVector, VenueSummary } from "@/types/domain";
 import { TASTE_DIMENSIONS } from "@/constants/taste";
 
 function TasteMiniBar({
@@ -120,28 +120,11 @@ function AnimatedMatchBadge({ percent }: { percent: number }) {
 }
 
 const RADIUS_STEPS_METERS = [500, 1000, 2000, 4000];
+const DECIDE_RESULT_LIMIT = 20;
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
 function nextRadius(currentRadius: number) {
   return RADIUS_STEPS_METERS.find((value) => value > currentRadius);
-}
-
-function getCandidates(
-  repository: DataRepository,
-  tasteVector: TasteVector,
-  dietaryFlags: DietaryFlag[],
-  radius: number,
-) {
-  return repository.searchDishes(
-    {
-      query: "",
-      categories: [],
-      dietaryFlags,
-      tasteValues: tasteVector,
-      radius,
-    },
-    tasteVector,
-  );
 }
 
 function getNextDistinctDish(candidates: DishDetail[], currentDishId?: string, currentIndex = 0) {
@@ -164,55 +147,130 @@ function getNextDistinctDish(candidates: DishDetail[], currentDishId?: string, c
 
 export function DecideForMeResultScreen() {
   const navigation = useNavigation<RootNavigation>();
-  const repository = getDataRepository();
+  const service = getHungryService();
+  const serviceProviderMode = getServiceProvider().mode;
   const { palette, spacing, radii, shadows } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const profile = useProfileStore((state) => state.profile);
+  const currentLocation = useLocationStore((state) => state.currentLocation);
+  const recommendationContextRef = useRef({
+    dietaryPreferences: profile.dietaryPreferences,
+    latitude: currentLocation.latitude,
+    longitude: currentLocation.longitude,
+    tasteVector: profile.tasteVector,
+  });
+  const recommendationContext = recommendationContextRef.current;
   const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
-  const selectedDish = useDiscoveryStore((state) => state.decideForMe);
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
   const showToast = useUIStore((state) => state.showToast);
-  const addItemToCart = useCartStore((state) => state.addItem);
-  const setActiveOrder = useOrderStore((state) => state.setActiveOrder);
   const [searchRadius, setSearchRadius] = useState(500);
   const [resultIndex, setResultIndex] = useState(0);
+  const [candidates, setCandidates] = useState<DishDetail[]>([]);
+  const [venue, setVenue] = useState<VenueSummary>();
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [requestRevision, setRequestRevision] = useState(0);
+  const [remoteImageFailed, setRemoteImageFailed] = useState(false);
+  const hasRecordedInitialPickRef = useRef(false);
 
   const scrollY = useRef(new Animated.Value(0)).current;
 
-  const candidates = useMemo(
-    () => getCandidates(repository, profile.tasteVector, profile.dietaryPreferences, searchRadius),
-    [profile.dietaryPreferences, profile.tasteVector, repository, searchRadius],
-  );
+  useEffect(() => {
+    let active = true;
+    setIsLoading(true);
+    setLoadError(null);
+    setCandidates([]);
+    setResultIndex(0);
+    void service.discovery
+      .searchDishes(
+        {
+          query: "",
+          categories: [],
+          dietaryFlags: recommendationContext.dietaryPreferences,
+          tasteValues: recommendationContext.tasteVector,
+          radius: searchRadius,
+          latitude: recommendationContext.latitude,
+          longitude: recommendationContext.longitude,
+        },
+        recommendationContext.tasteVector,
+      )
+      .then((results) => {
+        if (!active) return;
+        const nextCandidates = results.slice(0, DECIDE_RESULT_LIMIT).map((result) => result.dish);
+        setCandidates(nextCandidates);
+        const firstDish = nextCandidates[0];
+        if (firstDish) {
+          setDecideForMe(firstDish);
+          if (!hasRecordedInitialPickRef.current) {
+            hasRecordedInitialPickRef.current = true;
+            recordTasteInteraction({
+              type: "food_button_click",
+              surface: "decide",
+              dish: firstDish,
+              buttonId: "decide_for_me",
+            });
+          }
+        }
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        setLoadError(
+          error instanceof Error ? error.message : "Recommendations are temporarily unavailable.",
+        );
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [
+    recommendationContext,
+    recordTasteInteraction,
+    requestRevision,
+    searchRadius,
+    service,
+    setDecideForMe,
+  ]);
+
+  const dish = candidates[resultIndex];
 
   useEffect(() => {
-    if (!candidates.length) {
-      setResultIndex(0);
-      if (selectedDish) {
-        setDecideForMe(undefined);
-      }
-      return;
-    }
+    setRemoteImageFailed(false);
+  }, [dish?.id, dish?.imageUrl]);
 
-    if (selectedDish) {
-      const selectedIndex = candidates.findIndex((dish) => dish.id === selectedDish.id);
-      if (selectedIndex >= 0) {
-        setResultIndex(selectedIndex);
-        return;
-      }
+  useEffect(() => {
+    let active = true;
+    if (!dish) {
+      setVenue(undefined);
+      return undefined;
     }
-
-    setResultIndex((current) => Math.min(current, candidates.length - 1));
-    const nextDish = candidates[Math.min(resultIndex, candidates.length - 1)];
-    if (nextDish && nextDish.id !== selectedDish?.id) {
-      setDecideForMe(nextDish);
-    }
-  }, [candidates, resultIndex, selectedDish, setDecideForMe]);
-
-  const dish = candidates[resultIndex] ?? selectedDish;
+    void service.discovery
+      .getVenue(dish.venueId)
+      .then((nextVenue) => {
+        if (active) setVenue(nextVenue);
+      })
+      .catch(() => {
+        if (active) setVenue(undefined);
+      });
+    return () => {
+      active = false;
+    };
+  }, [dish, service]);
   const match = dish
-    ? Math.round(blendedMatchScore(profile.tasteVector, dish.tasteVector) * 100)
+    ? Math.round(blendedMatchScore(recommendationContext.tasteVector, dish.tasteVector) * 100)
     : 0;
+  const showSourceBackedImage =
+    serviceProviderMode === "supabase" &&
+    isUsableDiscoverImageUrl(dish?.imageUrl) &&
+    !remoteImageFailed;
+  const venueLabel = dish
+    ? [venue?.name?.trim() || dish.venueName.trim(), venue?.unitNumber?.trim()]
+        .filter(Boolean)
+        .join(" · ")
+    : "";
 
   const HERO_HEIGHT = screenWidth * 1.1;
 
@@ -242,6 +300,10 @@ export function DecideForMeResultScreen() {
       return;
     }
     setSearchRadius(target);
+  };
+
+  const retrySearch = () => {
+    setRequestRevision((revision) => revision + 1);
   };
 
   const handleTryAnother = () => {
@@ -276,51 +338,45 @@ export function DecideForMeResultScreen() {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
   };
 
-  const handleAddToCart = () => {
-    if (!dish) {
-      return;
-    }
-
-    addItemToCart({ dishId: dish.id });
-    recordTasteInteraction({
-      type: "food_button_click",
-      surface: "decide",
-      dish,
-      buttonId: "add_to_cart",
-    });
-    setActiveOrder({
-      id: `order-${Date.now()}`,
-      venueId: dish.venueId,
-      totalAmount: dish.price,
-      status: "draft",
-      createdAt: new Date().toISOString(),
-    });
-    showToast({
-      message: `${dish.name} added to cart.`,
-      tone: "success",
-    });
-  };
-
   if (!dish) {
     const upcomingRadius = nextRadius(searchRadius);
     return (
       <Screen title="Recommended for you" subtitle="No matching dish for current filters yet.">
-        <EmptyState
-          title="No match found"
-          body={`No dish fits your current filters within ${(searchRadius / 1000).toFixed(1)} km.`}
-        />
-        {upcomingRadius ? (
-          <Button
-            label={`Expand radius to ${(upcomingRadius / 1000).toFixed(1)} km`}
-            onPress={expandRadius}
-          />
-        ) : null}
-        <Button label="Back to Discover" onPress={() => navigation.navigate("SearchHome")} />
+        {isLoading ? (
+          <View
+            accessibilityLabel="Loading recommendations"
+            accessibilityRole="progressbar"
+            style={{ alignItems: "center", gap: spacing[3], paddingVertical: spacing[8] }}
+          >
+            <ActivityIndicator color={palette.orange} />
+            <AppText variant="body" tone="secondary">
+              Finding your best nearby match…
+            </AppText>
+          </View>
+        ) : (
+          <>
+            <EmptyState
+              title={loadError ? "Recommendations unavailable" : "No match found"}
+              body={
+                loadError ??
+                `No dish fits your current filters within ${(searchRadius / 1000).toFixed(1)} km.`
+              }
+            />
+            {loadError ? (
+              <Button label="Try again" onPress={retrySearch} />
+            ) : upcomingRadius ? (
+              <Button
+                label={`Expand radius to ${(upcomingRadius / 1000).toFixed(1)} km`}
+                onPress={expandRadius}
+              />
+            ) : null}
+            <Button label="Back to Discover" onPress={() => navigation.navigate("SearchHome")} />
+          </>
+        )}
       </Screen>
     );
   }
 
-  const venue = repository.getVenueById(dish.venueId);
   const building = findBuildingById(dish.buildingId);
   const tasteDims: { key: keyof TasteVector; label: string }[] = [
     { key: "sweet", label: "Sweet" },
@@ -333,7 +389,9 @@ export function DecideForMeResultScreen() {
   const sortedDims = tasteDims
     .map((dimension) => ({
       ...dimension,
-      diff: Math.abs(profile.tasteVector[dimension.key] - dish.tasteVector[dimension.key]),
+      diff: Math.abs(
+        recommendationContext.tasteVector[dimension.key] - dish.tasteVector[dimension.key],
+      ),
     }))
     .sort((left, right) => left.diff - right.diff);
   const topMatch = sortedDims[0];
@@ -370,11 +428,36 @@ export function DecideForMeResultScreen() {
         {/* Parallax Hero */}
         <Animated.View style={[styles.heroContainer, { height: HERO_HEIGHT }, heroStyle]}>
           <AccessibleImage
-            source={{ uri: dish.imageUrl }}
+            source={
+              showSourceBackedImage ? { uri: dish.imageUrl } : getDishFallbackImageSource(dish)
+            }
             style={StyleSheet.absoluteFill}
             contentFit="cover"
-            accessibilityLabel={`${dish.name} photo`}
+            cachePolicy="memory-disk"
+            transition={120}
+            onError={showSourceBackedImage ? () => setRemoteImageFailed(true) : undefined}
+            accessibilityLabel={`${dish.name}${
+              showSourceBackedImage ? " photo" : " representative image"
+            }`}
           />
+          {!showSourceBackedImage ? (
+            <View
+              pointerEvents="none"
+              style={{
+                backgroundColor: palette.imageLabelSurface,
+                borderRadius: radii.pill,
+                left: spacing[4],
+                paddingHorizontal: spacing[2],
+                paddingVertical: spacing[1],
+                position: "absolute",
+                top: insets.top + spacing[5],
+              }}
+            >
+              <AppText variant="micro" style={{ color: palette.textOnDark, fontWeight: "900" }}>
+                REPRESENTATIVE
+              </AppText>
+            </View>
+          ) : null}
           <LinearGradient
             colors={["transparent", palette.mediaScrimSubtle, palette.bg]}
             style={StyleSheet.absoluteFill}
@@ -392,11 +475,13 @@ export function DecideForMeResultScreen() {
             </View>
             <AppText variant="displayBold">{dish.name}</AppText>
             <AppText variant="h2" tone="secondary" style={{ color: palette.orange }}>
-              S${dish.price.toFixed(2)}
+              {formatDiscoverPrice(dish)}
             </AppText>
-            <AppText variant="bodyLarge" tone="secondary">
-              {venue?.name} · {venue?.unitNumber}
-            </AppText>
+            {venueLabel ? (
+              <AppText variant="bodyLarge" tone="secondary">
+                {venueLabel}
+              </AppText>
+            ) : null}
           </View>
 
           {/* Why this dish? */}
@@ -427,7 +512,7 @@ export function DecideForMeResultScreen() {
                 <TasteMiniBar
                   key={dimension.key}
                   label={TASTE_LABELS[dimension.key]}
-                  userVal={profile.tasteVector[dimension.key]}
+                  userVal={recommendationContext.tasteVector[dimension.key]}
                   dishVal={dish.tasteVector[dimension.key]}
                   accentColor={palette.orange}
                 />
@@ -438,8 +523,7 @@ export function DecideForMeResultScreen() {
           <View style={{ gap: spacing[2] }}>
             <AppText variant="h3">Description</AppText>
             <AppText variant="body" tone="secondary" style={{ lineHeight: 24 }}>
-              {dish.description ||
-                "A flavorful local specialty recommended specifically for your current taste profile and proximity."}
+              {dish.description || "No source-backed description is available for this dish yet."}
             </AppText>
           </View>
 
@@ -466,20 +550,6 @@ export function DecideForMeResultScreen() {
           </View>
         </View>
       </Animated.ScrollView>
-
-      {/* Action Dock */}
-      <View
-        style={[
-          styles.actionDock,
-          {
-            backgroundColor: palette.surfaceTranslucent,
-            borderTopColor: palette.inverseSurfaceBarely,
-            paddingBottom: Math.max(insets.bottom, spacing[4]),
-          },
-        ]}
-      >
-        <Button label="Add to cart" style={{ flex: 1 }} onPress={handleAddToCart} />
-      </View>
     </View>
   );
 }
@@ -504,13 +574,5 @@ const styles = StyleSheet.create({
   heroContainer: {
     width: "100%",
     overflow: "hidden",
-  },
-  actionDock: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 16,
-    borderTopWidth: 1,
   },
 });

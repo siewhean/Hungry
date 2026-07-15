@@ -59,13 +59,16 @@ export async function requireConsoleApiAccess(request: NextRequest): Promise<Con
   }
 
   const configured = result.configured;
+  const breakGlassDisabled = result.reason === "disabled";
   const status = configured ? 401 : 503;
   const response = NextResponse.json(
     {
       configured,
       error: configured
         ? "Console username and password are required."
-        : "Console username and password are not configured.",
+        : breakGlassDisabled
+          ? "Console Basic Auth break-glass access is disabled. Use a named Supabase admin bearer token."
+          : "Console Basic Auth break-glass credentials are not configured.",
     },
     { status },
   );

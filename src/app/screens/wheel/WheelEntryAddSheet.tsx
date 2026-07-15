@@ -8,17 +8,25 @@
  *   4. Favourites — from profile favourite dish IDs
  */
 
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { FlatList, Modal, Pressable, ScrollView, View, Alert } from "react-native";
 import { X, Search, Compass, Heart, Plus, ShieldAlert, Sparkles } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 
-import { AccessibleImage, AppText, Badge, Card, EmptyState, Input } from "@/components/ui";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { AccessibleImage, AppText, Badge, EmptyState, FeedStateView, Input } from "@/components/ui";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useLocationStore } from "@/store/useLocationStore";
 import { useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
-import type { SearchCategory, VenueSummary, DishDetail, DietaryFlag } from "@/types/domain";
+import { TASTE_DIMENSIONS } from "@/constants/taste";
+import type {
+  SearchCategory,
+  VenueSummary,
+  DishDetail,
+  DietaryFlag,
+  TasteVector,
+} from "@/types/domain";
 
 const CATEGORIES: SearchCategory[] = [
   "local favourites",
@@ -29,37 +37,34 @@ const CATEGORIES: SearchCategory[] = [
 ];
 
 type Tab = "search" | "random" | "category" | "favourites";
+type CatalogLoadState = "idle" | "loading" | "ready" | "error";
 
 interface Props {
   visible: boolean;
   onClose: () => void;
 }
 
-function calculateMatchScore(dish: DishDetail | undefined, userTaste: any): number {
+function calculateMatchScore(dish: DishDetail | undefined, userTaste: TasteVector): number {
   if (!dish || !userTaste) return 0;
-  let score = 0;
-  const keys = Object.keys(userTaste) as (keyof typeof userTaste)[];
-  keys.forEach((key) => {
-    const dishVal = (dish.tasteVector as any)[key] || 0;
-    const userVal = userTaste[key] || 0;
-    score += dishVal * userVal;
-  });
-  return score;
+  return TASTE_DIMENSIONS.reduce(
+    (score, { key }) => score + dish.tasteVector[key] * userTaste[key],
+    0,
+  );
 }
 
 function VenueRow({
   venue,
+  heroDish,
   onAdd,
   matchScore = 0,
 }: {
   venue: VenueSummary;
+  heroDish?: DishDetail;
   onAdd: () => void;
   matchScore?: number;
 }) {
   const { palette, spacing, radii } = useHungryTheme();
-  const repository = getDataRepository();
-  const dishes = repository.listDishesByVenue(venue.id);
-  const hero = dishes[0];
+  const hero = heroDish;
   const isHighMatch = matchScore > 120;
 
   return (
@@ -165,7 +170,8 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
   const entries = useWheelStore((s) => s.entries);
   const members = useWheelStore((s) => s.members);
   const profile = useProfileStore((s) => s.profile);
-  const repository = getDataRepository();
+  const currentLocation = useLocationStore((state) => state.currentLocation);
+  const hungryService = getHungryService();
 
   // Group dietary summary
   const groupDietaryRestrictions = useMemo(() => {
@@ -177,12 +183,67 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
   const [tab, setTab] = useState<Tab>("search");
   const [query, setQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<SearchCategory | null>(null);
+  const [catalogDishes, setCatalogDishes] = useState<DishDetail[]>([]);
+  const [catalogVenues, setCatalogVenues] = useState<VenueSummary[]>([]);
+  const [catalogLoadState, setCatalogLoadState] = useState<CatalogLoadState>("idle");
+  const [catalogRequestKey, setCatalogRequestKey] = useState(0);
 
   const addedVenueIds = new Set(entries.map((e) => e.venueId));
 
+  const dishByVenueId = useMemo(
+    () => new Map(catalogDishes.map((dish) => [dish.venueId, dish])),
+    [catalogDishes],
+  );
+
+  useEffect(() => {
+    if (!visible) {
+      setCatalogLoadState("idle");
+      return undefined;
+    }
+    let active = true;
+    setCatalogLoadState("loading");
+    void hungryService.discovery
+      .listDiscoveryFeedByLocation({
+        lat: currentLocation.latitude,
+        lng: currentLocation.longitude,
+        radiusMeters: 3000,
+        limit: 100,
+      })
+      .then((feed) => {
+        if (!active) return;
+        if (!feed) {
+          setCatalogVenues([]);
+          setCatalogDishes([]);
+          setCatalogLoadState("error");
+          return;
+        }
+        setCatalogVenues(feed.venues);
+        setCatalogDishes(feed.results.map((result) => result.dish));
+        setCatalogLoadState("ready");
+      })
+      .catch(() => {
+        if (!active) return;
+        setCatalogVenues([]);
+        setCatalogDishes([]);
+        setCatalogLoadState("error");
+      });
+    return () => {
+      active = false;
+    };
+  }, [
+    catalogRequestKey,
+    currentLocation.latitude,
+    currentLocation.longitude,
+    hungryService,
+    visible,
+  ]);
+
+  function retryCatalogLoad() {
+    setCatalogRequestKey((requestKey) => requestKey + 1);
+  }
+
   function addVenue(venue: VenueSummary) {
-    const dishes = repository.listDishesByVenue(venue.id);
-    const venueDish = dishes[0];
+    const venueDish = dishByVenueId.get(venue.id);
 
     // Conflict detection
     if (groupDietaryRestrictions.length > 0 && venueDish) {
@@ -216,12 +277,10 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
   }
 
   function addRandom() {
-    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    const all = repository
-      .listBuildings()
-      .flatMap((b) => repository.listVenuesByBuilding(b.id))
-      .filter((v) => !addedVenueIds.has(v.id));
+    if (catalogLoadState !== "ready") return;
+    const all = allVenues.filter((venue) => !addedVenueIds.has(venue.id));
     if (all.length === 0) return;
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     const pick = all[Math.floor(Math.random() * all.length)];
     addVenue(pick);
   }
@@ -229,20 +288,13 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
   // ── Venue list for search + category ─────────────────────────────────────
 
   const allVenues = useMemo(() => {
-    return repository
-      .listBuildings()
-      .flatMap((b) =>
-        repository.listVenuesByBuilding(b.id).map((v) => ({
-          ...v,
-          buildingId: b.id,
-          matchScore: calculateMatchScore(
-            repository.listDishesByVenue(v.id)[0],
-            profile.tasteVector,
-          ),
-        })),
-      )
+    return catalogVenues
+      .map((venue) => ({
+        ...venue,
+        matchScore: calculateMatchScore(dishByVenueId.get(venue.id), profile.tasteVector),
+      }))
       .sort((a, b) => b.matchScore - a.matchScore);
-  }, [profile.tasteVector, repository]);
+  }, [catalogVenues, dishByVenueId, profile.tasteVector]);
 
   const searchResults = useMemo(
     () =>
@@ -256,25 +308,26 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
     () =>
       tab === "category" && selectedCategory
         ? allVenues.filter((v) => {
-            const dishes = repository.listDishesByVenue(v.id);
-            return dishes.some((d) => d.tasteTags.includes(selectedCategory));
+            return dishByVenueId.get(v.id)?.tasteTags.includes(selectedCategory);
           })
         : [],
-    [allVenues, tab, selectedCategory, repository],
+    [allVenues, dishByVenueId, tab, selectedCategory],
   );
 
   const favouriteVenues = useMemo(
     () =>
       tab === "favourites" && profile
         ? profile.favouriteDishIds
-            .map((dishId) => repository.getDishById(dishId))
+            .map((dishId) => catalogDishes.find((dish) => dish.id === dishId))
             .filter(Boolean)
             .map((dish) => allVenues.find((v) => v.id === dish!.venueId))
             .filter((v): v is (typeof allVenues)[0] & { matchScore: number } => v !== undefined)
             .filter((v, i, arr) => arr.findIndex((x) => x.id === v.id) === i)
         : [],
-    [allVenues, tab, profile, repository],
+    [allVenues, catalogDishes, tab, profile],
   );
+
+  const hasRandomOption = allVenues.some((venue) => !addedVenueIds.has(venue.id));
 
   const tabs: { id: Tab; label: string; icon: any }[] = [
     { id: "search", label: "Search", icon: <Search size={14} /> },
@@ -371,6 +424,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                 key={t.id}
                 accessibilityRole="button"
                 accessibilityLabel={`Switch to ${t.label} tab`}
+                accessibilityState={{ selected: tab === t.id }}
                 onPress={() => {
                   setTab(t.id);
                   void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -417,7 +471,36 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
 
         {/* Tab content */}
         <View style={{ flex: 1 }}>
-          {tab === "search" && (
+          {catalogLoadState === "idle" || catalogLoadState === "loading" ? (
+            <View
+              accessibilityRole="progressbar"
+              accessibilityLabel="Loading nearby stalls"
+              accessibilityLiveRegion="polite"
+              style={{ flex: 1 }}
+            >
+              <FeedStateView state="loading" loadingMessage="Loading nearby stalls..." />
+            </View>
+          ) : catalogLoadState === "error" ? (
+            <View accessibilityLiveRegion="assertive" style={{ flex: 1 }}>
+              <FeedStateView
+                state="error"
+                title="Unable to load nearby stalls"
+                body="Check your connection, then try again."
+                ctaLabel="Try again"
+                onPress={retryCatalogLoad}
+              />
+            </View>
+          ) : catalogVenues.length === 0 ? (
+            <View style={{ flex: 1, justifyContent: "center", paddingHorizontal: spacing[3] }}>
+              <EmptyState
+                title="No nearby stalls available"
+                body="Refresh to check for options near your current location."
+                ctaLabel="Refresh stalls"
+                onPress={retryCatalogLoad}
+                icon={<Compass size={40} color={palette.textMuted} />}
+              />
+            </View>
+          ) : tab === "search" ? (
             <>
               <View
                 style={{
@@ -439,6 +522,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                 renderItem={({ item }) => (
                   <VenueRow
                     venue={item}
+                    heroDish={dishByVenueId.get(item.id)}
                     onAdd={() => addVenue(item)}
                     matchScore={item.matchScore}
                   />
@@ -468,9 +552,9 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                 }
               />
             </>
-          )}
+          ) : null}
 
-          {tab === "random" && (
+          {catalogLoadState === "ready" && catalogVenues.length > 0 && tab === "random" && (
             <View
               style={{
                 padding: spacing[8],
@@ -502,6 +586,13 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Pick a random stall for me"
+                accessibilityHint={
+                  hasRandomOption
+                    ? "Adds one nearby stall to the wheel"
+                    : "All nearby stalls are already on the wheel"
+                }
+                accessibilityState={{ disabled: !hasRandomOption }}
+                disabled={!hasRandomOption}
                 onPress={addRandom}
                 style={({ pressed }) => [
                   {
@@ -511,6 +602,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                     paddingHorizontal: spacing[8],
                     paddingVertical: spacing[4],
                     borderRadius: radii.pill,
+                    opacity: hasRandomOption ? 1 : 0.5,
                     transform: [{ translateY: pressed ? 1 : 0 }],
                     ...shadows.card,
                   },
@@ -526,10 +618,15 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                   Pick for Me
                 </AppText>
               </Pressable>
+              {!hasRandomOption && (
+                <AppText tone="secondary" variant="bodySmall" style={{ textAlign: "center" }}>
+                  All nearby stalls are already on this wheel.
+                </AppText>
+              )}
             </View>
           )}
 
-          {tab === "category" && (
+          {catalogLoadState === "ready" && catalogVenues.length > 0 && tab === "category" && (
             <>
               <View
                 style={{
@@ -584,6 +681,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                 renderItem={({ item }) => (
                   <VenueRow
                     venue={item}
+                    heroDish={dishByVenueId.get(item.id)}
                     onAdd={() => addVenue(item)}
                     matchScore={item.matchScore}
                   />
@@ -604,12 +702,17 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
             </>
           )}
 
-          {tab === "favourites" && (
+          {catalogLoadState === "ready" && catalogVenues.length > 0 && tab === "favourites" && (
             <FlatList
               data={favouriteVenues}
               keyExtractor={(v) => v.id}
               renderItem={({ item }) => (
-                <VenueRow venue={item} onAdd={() => addVenue(item)} matchScore={item.matchScore} />
+                <VenueRow
+                  venue={item}
+                  heroDish={dishByVenueId.get(item.id)}
+                  onAdd={() => addVenue(item)}
+                  matchScore={item.matchScore}
+                />
               )}
               contentContainerStyle={{ paddingBottom: 40 }}
               ListEmptyComponent={

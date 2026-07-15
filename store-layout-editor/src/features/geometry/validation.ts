@@ -1,8 +1,10 @@
 import type { GeometryWarning, Point, StoreShape } from "../../types/layout";
 
+const GEOMETRY_EPSILON = 1e-6;
+
 function orientation(a: Point, b: Point, c: Point): number {
   const value = (b.y - a.y) * (c.x - b.x) - (b.x - a.x) * (c.y - b.y);
-  if (Math.abs(value) < 1e-6) {
+  if (Math.abs(value) < GEOMETRY_EPSILON) {
     return 0;
   }
   return value > 0 ? 1 : 2;
@@ -10,11 +12,15 @@ function orientation(a: Point, b: Point, c: Point): number {
 
 function onSegment(a: Point, b: Point, c: Point): boolean {
   return (
-    b.x <= Math.max(a.x, c.x) &&
-    b.x >= Math.min(a.x, c.x) &&
-    b.y <= Math.max(a.y, c.y) &&
-    b.y >= Math.min(a.y, c.y)
+    b.x <= Math.max(a.x, c.x) + GEOMETRY_EPSILON &&
+    b.x >= Math.min(a.x, c.x) - GEOMETRY_EPSILON &&
+    b.y <= Math.max(a.y, c.y) + GEOMETRY_EPSILON &&
+    b.y >= Math.min(a.y, c.y) - GEOMETRY_EPSILON
   );
+}
+
+function pointOnSegment(point: Point, start: Point, end: Point): boolean {
+  return orientation(start, end, point) === 0 && onSegment(start, point, end);
 }
 
 function segmentsIntersect(
@@ -48,7 +54,22 @@ function segmentsIntersect(
   return false;
 }
 
-function pointInPolygon(point: Point, polygon: Point[]): boolean {
+function segmentsProperlyIntersect(p1: Point, q1: Point, p2: Point, q2: Point): boolean {
+  const o1 = orientation(p1, q1, p2);
+  const o2 = orientation(p1, q1, q2);
+  const o3 = orientation(p2, q2, p1);
+  const o4 = orientation(p2, q2, q1);
+
+  return o1 !== 0 && o2 !== 0 && o3 !== 0 && o4 !== 0 && o1 !== o2 && o3 !== o4;
+}
+
+function pointInPolygonStrict(point: Point, polygon: Point[]): boolean {
+  for (let i = 0; i < polygon.length; i += 1) {
+    if (pointOnSegment(point, polygon[i], polygon[(i + 1) % polygon.length])) {
+      return false;
+    }
+  }
+
   let inside = false;
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
     const xi = polygon[i].x;
@@ -65,6 +86,43 @@ function pointInPolygon(point: Point, polygon: Point[]): boolean {
     }
   }
   return inside;
+}
+
+function signedPolygonArea(points: Point[]): number {
+  return points.reduce((area, point, index) => {
+    const next = points[(index + 1) % points.length];
+    return area + point.x * next.y - next.x * point.y;
+  }, 0) / 2;
+}
+
+function interiorEdgeSamples(polygon: Point[]): Point[] {
+  const area = signedPolygonArea(polygon);
+  if (Math.abs(area) <= GEOMETRY_EPSILON) {
+    return [];
+  }
+
+  const xs = polygon.map((point) => point.x);
+  const ys = polygon.map((point) => point.y);
+  const scale = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys), 1);
+  const direction = area > 0 ? 1 : -1;
+
+  return polygon.flatMap((start, index) => {
+    const end = polygon[(index + 1) % polygon.length];
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const length = Math.hypot(dx, dy);
+    if (length <= GEOMETRY_EPSILON) {
+      return [];
+    }
+
+    const offset = Math.min(scale * 1e-5, length * 1e-4);
+    const sample = {
+      x: (start.x + end.x) / 2 + direction * (-dy / length) * offset,
+      y: (start.y + end.y) / 2 + direction * (dx / length) * offset,
+    };
+
+    return pointInPolygonStrict(sample, polygon) ? [sample] : [];
+  });
 }
 
 export function hasSelfIntersection(points: Point[]): boolean {
@@ -104,13 +162,23 @@ export function polygonsOverlap(a: Point[], b: Point[]): boolean {
     for (let j = 0; j < b.length; j += 1) {
       const b1 = b[j];
       const b2 = b[(j + 1) % b.length];
-      if (segmentsIntersect(a1, a2, b1, b2)) {
+      if (segmentsProperlyIntersect(a1, a2, b1, b2)) {
         return true;
       }
     }
   }
 
-  return pointInPolygon(a[0], b) || pointInPolygon(b[0], a);
+  if (a.some((point) => pointInPolygonStrict(point, b))) {
+    return true;
+  }
+  if (b.some((point) => pointInPolygonStrict(point, a))) {
+    return true;
+  }
+
+  return (
+    interiorEdgeSamples(a).some((point) => pointInPolygonStrict(point, b)) ||
+    interiorEdgeSamples(b).some((point) => pointInPolygonStrict(point, a))
+  );
 }
 
 export function validateShapes(shapes: StoreShape[]): GeometryWarning[] {

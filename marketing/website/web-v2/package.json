@@ -2,6 +2,9 @@
   "name": "web-v2",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "22.22.1"
+  },
   "scripts": {
     "clean": "rm -rf .next",
     "dev:clean": "rm -rf .next && rm -f .next/lock && WATCHPACK_POLLING=true NEXT_DISABLE_SWC=1 node ./node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port 3000",
@@ -24,7 +27,7 @@
     "seo:validate": "node scripts/seo-ai-readiness-check.mjs",
     "seo:sitemap": "node scripts/validate-sitemap.mjs",
     "seo:structured-data": "node scripts/validate-structured-data.mjs",
-    "security:audit": "node scripts/security-route-contracts.mjs"
+    "security:audit": "node scripts/security-route-contracts.mjs && node --experimental-strip-types --test src/lib/security/clientIp.test.mjs src/lib/security/redisPipeline.test.mjs"
   },
   "dependencies": {
     "framer-motion": "^12.38.0",

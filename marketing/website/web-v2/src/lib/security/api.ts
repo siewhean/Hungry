@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { resolveClientIp } from "./clientIp";
+import { parseRedisRateLimitPipeline } from "./redisPipeline";
+
 type RateLimitOptions = {
   key: string;
   limit: number;
@@ -20,21 +23,19 @@ const RATE_LIMIT_REDIS_TOKEN =
   process.env.HUNGRY_RATE_LIMIT_REDIS_REST_TOKEN?.trim() ||
   process.env.UPSTASH_REDIS_REST_TOKEN?.trim() ||
   "";
-
-// Basic IPv4 and IPv6 pattern — rejects crafted keys like "scope:attacker"
-const SAFE_IP_RE = /^[0-9a-fA-F:.]{2,45}$/;
-
-function sanitizeIp(raw: string | null | undefined): string {
-  if (!raw) return "unknown";
-  const first = raw.split(",")[0]?.trim() ?? "";
-  return SAFE_IP_RE.test(first) ? first : "unknown";
-}
+const IS_DEPLOYED_PRODUCTION =
+  process.env.NODE_ENV === "production" &&
+  [process.env.HUNGRY_DEPLOY_ENV, process.env.VERCEL_ENV]
+    .map((value) => value?.trim().toLowerCase())
+    .some((value) => value === "production");
+const RATE_LIMIT_MODE =
+  process.env.HUNGRY_RATE_LIMIT_MODE?.trim().toLowerCase() ||
+  (IS_DEPLOYED_PRODUCTION ? "redis" : "memory");
 
 function getClientIp(request: NextRequest) {
-  return (
-    sanitizeIp(request.headers.get("x-forwarded-for")) ||
-    sanitizeIp(request.headers.get("x-real-ip")) ||
-    "unknown"
+  return resolveClientIp(
+    request.headers.get("x-forwarded-for"),
+    request.headers.get("x-real-ip"),
   );
 }
 
@@ -68,6 +69,16 @@ function rateLimitResponse(resetAt: number) {
   );
 }
 
+function rateLimitUnavailableResponse() {
+  return NextResponse.json(
+    { error: "Request protection is temporarily unavailable. Please try again shortly." },
+    {
+      headers: { "Retry-After": "30" },
+      status: 503,
+    },
+  );
+}
+
 function requireInMemoryRateLimit(options: RateLimitOptions) {
   const now = Date.now();
   const bucket = rateLimitBuckets.get(options.key);
@@ -86,7 +97,9 @@ function requireInMemoryRateLimit(options: RateLimitOptions) {
 }
 
 async function requireRedisRateLimit(options: RateLimitOptions) {
-  if (!RATE_LIMIT_REDIS_URL || !RATE_LIMIT_REDIS_TOKEN) return null;
+  if (!RATE_LIMIT_REDIS_URL || !RATE_LIMIT_REDIS_TOKEN) {
+    throw new Error("Durable rate limit store is not configured.");
+  }
 
   const key = `hungry:web:${options.key}`;
   const windowSeconds = Math.max(1, Math.ceil(options.windowMs / 1000));
@@ -101,6 +114,7 @@ async function requireRedisRateLimit(options: RateLimitOptions) {
       "Content-Type": "application/json",
     },
     method: "POST",
+    signal: AbortSignal.timeout(2_000),
   });
 
   if (!response.ok) {
@@ -112,15 +126,15 @@ async function requireRedisRateLimit(options: RateLimitOptions) {
     throw new Error("Rate limit store returned empty response.");
   }
 
-  let payload: { result?: unknown }[];
+  let payload: unknown;
   try {
-    payload = JSON.parse(text) as { result?: unknown }[];
+    payload = JSON.parse(text) as unknown;
   } catch {
     throw new Error("Rate limit store returned malformed JSON response.");
   }
 
-  const count = Number(payload[0]?.result);
-  if (Number.isFinite(count) && count > options.limit) {
+  const count = parseRedisRateLimitPipeline(payload);
+  if (count > options.limit) {
     return rateLimitResponse(Date.now() + options.windowMs);
   }
 
@@ -128,13 +142,24 @@ async function requireRedisRateLimit(options: RateLimitOptions) {
 }
 
 export async function requireRateLimit(_request: NextRequest, options: RateLimitOptions) {
-  try {
-    const durableResult = await requireRedisRateLimit(options);
-    if (durableResult) return durableResult;
-    if (RATE_LIMIT_REDIS_URL && RATE_LIMIT_REDIS_TOKEN) return null;
-  } catch (error) {
-    console.warn("Durable rate limit check failed; using in-memory fallback.", error);
+  if (IS_DEPLOYED_PRODUCTION && RATE_LIMIT_MODE !== "redis") {
+    console.error("Rate limiting denied: deployed production requires HUNGRY_RATE_LIMIT_MODE=redis.");
+    return rateLimitUnavailableResponse();
   }
 
-  return requireInMemoryRateLimit(options);
+  if (RATE_LIMIT_MODE === "memory") {
+    return requireInMemoryRateLimit(options);
+  }
+
+  if (RATE_LIMIT_MODE !== "redis") {
+    console.error("Rate limiting denied: HUNGRY_RATE_LIMIT_MODE must be redis or memory.");
+    return rateLimitUnavailableResponse();
+  }
+
+  try {
+    return await requireRedisRateLimit(options);
+  } catch (error) {
+    console.error("Durable rate limit check failed closed.", error);
+    return rateLimitUnavailableResponse();
+  }
 }

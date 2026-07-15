@@ -28,6 +28,7 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
   AccessibleImage,
   AppText,
+  Avatar,
   EmptyState,
   FeedErrorBoundary,
   Button,
@@ -39,6 +40,7 @@ import {
 } from "@/components/ui";
 import { StallLogoMark } from "@/components/stall/StallLogoMark";
 import { deriveStallCommunityReviews } from "@/features/detail/detailTransforms";
+import { getStallHeroSelection } from "@/features/detail/stallHeroPresentation";
 import {
   hasPendingClaimForProfile,
   submitClaimFromStall,
@@ -71,6 +73,10 @@ import {
   CyclingGridImage,
   CYCLING_GRID_IMAGE_INTERVAL_MS,
 } from "@/components/discover/CyclingGridImage";
+import {
+  formatDiscoverDistance,
+  getDishFallbackImageSource,
+} from "@/features/discover/presentation";
 import { CustomerPromotionCard } from "@/components/promotion/CustomerPromotionCard";
 import type { DishDetail, MerchantPromotion } from "@/types/domain";
 import {
@@ -288,6 +294,32 @@ export function StallDetailScreen({ navigation, route }: Props) {
     hydratedDishes ?? (serviceProviderMode === "supabase" ? EMPTY_DISHES : cachedDishes);
   const dishIdsKey = useMemo(() => dishes.map((dish) => dish.id).join("|"), [dishes]);
   const leadDish = dishes[0];
+  const heroFallbackSource = useMemo(
+    () => ({
+      cuisineTags: leadDish?.cuisineTags ?? venue?.cuisineTags,
+      foodTypeTag: leadDish?.foodTypeTag,
+      name: leadDish?.name ?? venue?.name,
+      venueName: venue?.name,
+    }),
+    [leadDish?.cuisineTags, leadDish?.foodTypeTag, leadDish?.name, venue?.cuisineTags, venue?.name],
+  );
+  const heroSelection = useMemo(
+    () =>
+      getStallHeroSelection({
+        venueImageUrl: venue?.imageUrl,
+        fallback: heroFallbackSource,
+      }),
+    [heroFallbackSource, venue?.imageUrl],
+  );
+  const authorizedVenueHeroUrl =
+    heroSelection.kind === "venue" ? heroSelection.imageUrl : undefined;
+  const [venueHeroFailed, setVenueHeroFailed] = useState(false);
+  const showAuthorizedVenueHero = Boolean(authorizedVenueHeroUrl && !venueHeroFailed);
+  const representativeHeroSource = getDishFallbackImageSource(heroFallbackSource);
+
+  useEffect(() => {
+    setVenueHeroFailed(false);
+  }, [authorizedVenueHeroUrl, venueId]);
 
   const profile = useProfileStore((state) => state.profile);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
@@ -338,15 +370,16 @@ export function StallDetailScreen({ navigation, route }: Props) {
       postId: "",
       title: venue?.name ?? "Stall",
       subtitle: `${buildingLocation.name ?? "Hungry"} · ${venue?.unitNumber ?? ""}`.trim(),
-      imageUrl: leadDish?.imageUrl ?? "",
+      imageUrl: showAuthorizedVenueHero ? (authorizedVenueHeroUrl ?? "") : "",
       authorName: profile.displayName,
       message: `Check out ${venue?.name ?? "this stall"} at ${buildingLocation.name ?? "Hungry"}!`,
       link: `https://hungry.sg/stall/${venue?.id ?? ""}`,
     };
   }, [
     buildingLocation.name,
-    leadDish?.imageUrl,
     profile.displayName,
+    authorizedVenueHeroUrl,
+    showAuthorizedVenueHero,
     venue?.id,
     venue?.name,
     venue?.unitNumber,
@@ -555,11 +588,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
     );
   }
 
-  const distanceLabel = leadDish
-    ? leadDish.distanceMeters > 1000
-      ? `${(leadDish.distanceMeters / 1000).toFixed(1)}km away`
-      : `${leadDish.distanceMeters}m away`
-    : null;
+  const formattedDistance = formatDiscoverDistance(leadDish?.distanceMeters);
+  const distanceLabel = formattedDistance ? `${formattedDistance} away` : null;
   const isVenueOpen = isVenueOpenFromHours(venue.operatingHours, venue.isOpen);
   const operatingStatusLabel = isVenueOpen ? "Open now" : (venue.closureNotice ?? "Closed now");
   const weeklyOperatingHours = formatWeeklyOperatingHours(venue.operatingHours);
@@ -643,6 +673,10 @@ export function StallDetailScreen({ navigation, route }: Props) {
   };
 
   const submitReviewReply = (reviewId: string) => {
+    if (!FEATURE_FLAGS.commentsEnabled) {
+      return;
+    }
+
     if (!requireAuthForProtectedAction("Sign in to reply to this review.")) {
       return;
     }
@@ -842,11 +876,37 @@ export function StallDetailScreen({ navigation, route }: Props) {
               }}
             >
               <AccessibleImage
-                source={{ uri: leadDish?.imageUrl }}
+                source={
+                  showAuthorizedVenueHero
+                    ? { uri: authorizedVenueHeroUrl }
+                    : representativeHeroSource
+                }
                 style={StyleSheet.absoluteFill}
                 contentFit="cover"
-                accessibilityLabel={`${venue.name} hero dish photo`}
+                cachePolicy="memory-disk"
+                onError={showAuthorizedVenueHero ? () => setVenueHeroFailed(true) : undefined}
+                accessibilityLabel={`${venue.name} ${
+                  showAuthorizedVenueHero ? "storefront photo" : "representative hero image"
+                }`}
               />
+              {!showAuthorizedVenueHero ? (
+                <View
+                  pointerEvents="none"
+                  style={{
+                    backgroundColor: palette.imageLabelSurface,
+                    borderRadius: radii.pill,
+                    bottom: spacing[3],
+                    left: spacing[3],
+                    paddingHorizontal: spacing[2],
+                    paddingVertical: spacing[1],
+                    position: "absolute",
+                  }}
+                >
+                  <AppText variant="micro" style={{ color: palette.textOnDark, fontWeight: "900" }}>
+                    REPRESENTATIVE
+                  </AppText>
+                </View>
+              ) : null}
             </View>
 
             <View
@@ -871,7 +931,12 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   <AppText variant="h2" numberOfLines={1}>
                     {venue.name}
                   </AppText>
-                  <AppText variant="bodyLarge" tone="secondary" numberOfLines={1}>
+                  <AppText
+                    variant="bodyLarge"
+                    tone="secondary"
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
+                  >
                     {[
                       foodCentreLocation || buildingLocation.name || "Food Centre",
                       venue.unitNumber,
@@ -1084,15 +1149,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                           gap: spacing[3],
                         }}
                       >
-                        <AccessibleImage
-                          source={{ uri: review.avatarUrl }}
-                          style={{
-                            borderRadius: radii.pill,
-                            height: 40,
-                            width: 40,
-                          }}
-                          accessibilityLabel={`Avatar of ${review.authorName}`}
-                        />
+                        <Avatar uri={review.avatarUrl} name={review.authorName} size={40} />
                         <View style={{ flex: 1 }}>
                           <AppText style={{ fontWeight: "700" }}>{review.authorName}</AppText>
                           <View
@@ -1123,36 +1180,39 @@ export function StallDetailScreen({ navigation, route }: Props) {
                         {review.text}
                       </AppText>
 
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          marginTop: spacing[2],
-                        }}
-                      >
-                        <Pressable
-                          accessibilityRole="button"
-                          accessibilityLabel={`Reply to review by ${review.authorName}`}
-                          onPress={() =>
-                            setActiveReplyReviewId((current) =>
-                              current === review.id ? null : review.id,
-                            )
-                          }
+                      {FEATURE_FLAGS.commentsEnabled ? (
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            marginTop: spacing[2],
+                          }}
                         >
-                          <AppText variant="micro" tone="accent">
-                            Reply
-                          </AppText>
-                        </Pressable>
-                        {(localRepliesByReviewId[review.id]?.length ?? 0) > 0 ? (
-                          <AppText variant="micro" tone="muted">
-                            {localRepliesByReviewId[review.id]?.length} repl
-                            {(localRepliesByReviewId[review.id]?.length ?? 0) === 1 ? "y" : "ies"}
-                          </AppText>
-                        ) : null}
-                      </View>
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel={`Reply to review by ${review.authorName}`}
+                            onPress={() =>
+                              setActiveReplyReviewId((current) =>
+                                current === review.id ? null : review.id,
+                              )
+                            }
+                          >
+                            <AppText variant="micro" tone="accent">
+                              Reply
+                            </AppText>
+                          </Pressable>
+                          {(localRepliesByReviewId[review.id]?.length ?? 0) > 0 ? (
+                            <AppText variant="micro" tone="muted">
+                              {localRepliesByReviewId[review.id]?.length} repl
+                              {(localRepliesByReviewId[review.id]?.length ?? 0) === 1 ? "y" : "ies"}
+                            </AppText>
+                          ) : null}
+                        </View>
+                      ) : null}
 
-                      {(localRepliesByReviewId[review.id] ?? []).length > 0 ? (
+                      {FEATURE_FLAGS.commentsEnabled &&
+                      (localRepliesByReviewId[review.id] ?? []).length > 0 ? (
                         <View
                           style={{
                             gap: spacing[2],
@@ -1184,7 +1244,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                         </View>
                       ) : null}
 
-                      {activeReplyReviewId === review.id ? (
+                      {FEATURE_FLAGS.commentsEnabled && activeReplyReviewId === review.id ? (
                         <View
                           style={{
                             gap: spacing[2],

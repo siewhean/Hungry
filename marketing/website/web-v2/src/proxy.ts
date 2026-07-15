@@ -6,6 +6,9 @@ import {
 } from "@/lib/security/consoleBasicAuth";
 
 const MERCHANT_ACCESS_COOKIE = "hungry_merchant_access_token";
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
+const MERCHANT_PORTAL_ENABLED =
+  !IS_PRODUCTION || process.env.HUNGRY_MERCHANT_PORTAL_ENABLED === "1";
 
 const merchantAuthRoutes = new Set([
   "/merchant/forgot-password",
@@ -48,10 +51,13 @@ function consoleBasicAuthDenied(request: NextRequest) {
   if (result.valid) return null;
 
   const configured = result.configured;
+  const breakGlassDisabled = result.reason === "disabled";
   const status = configured ? 401 : 503;
   const message = configured
     ? "Console username and password are required."
-    : "Console username and password are not configured.";
+    : breakGlassDisabled
+      ? "Console Basic Auth break-glass access is disabled."
+      : "Console Basic Auth break-glass credentials are not configured.";
   const response = wantsJson(request)
     ? NextResponse.json({ configured, error: message }, { status })
     : new NextResponse(message, { status });
@@ -63,8 +69,24 @@ function consoleBasicAuthDenied(request: NextRequest) {
   return applyPrivateResponseHeaders(response);
 }
 
+function unavailableResponse(request: NextRequest, message: string) {
+  const response =
+    wantsJson(request) || request.nextUrl.pathname.startsWith("/api/")
+      ? NextResponse.json({ error: message }, { status: 503 })
+      : new NextResponse(message, { status: 503 });
+
+  return applyPrivateResponseHeaders(response);
+}
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (
+    !MERCHANT_PORTAL_ENABLED &&
+    (pathname.startsWith("/merchant") || pathname.startsWith("/api/merchant"))
+  ) {
+    return unavailableResponse(request, "Merchant Portal is not enabled for this deployment.");
+  }
 
   if (pathname.startsWith("/merchant") && !merchantAuthRoutes.has(pathname)) {
     const hasMerchantSession = Boolean(request.cookies.get(MERCHANT_ACCESS_COOKIE)?.value);
@@ -74,7 +96,11 @@ export function proxy(request: NextRequest) {
     }
   }
 
-  if (pathname.startsWith("/console") || pathname.startsWith("/api/console")) {
+  const hasConsoleBearer =
+    pathname.startsWith("/api/console") &&
+    request.headers.get("authorization")?.trim().toLowerCase().startsWith("bearer ");
+
+  if ((pathname.startsWith("/console") || pathname.startsWith("/api/console")) && !hasConsoleBearer) {
     const denied = consoleBasicAuthDenied(request);
     if (denied) return denied;
   }

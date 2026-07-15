@@ -46,6 +46,7 @@ test("production feature flags keep public-launch P0 experimental surfaces disab
 
   assert.equal(flags.directMessagesEnabled, false);
   assert.equal(flags.commentsEnabled, false);
+  assert.equal(flags.reviewRichMediaEnabled, false);
   assert.equal(flags.oauthProvidersEnabled, false);
   assert.equal(flags.floorplansEnabled, false);
   assert.equal(flags.gamificationEnabled, false);

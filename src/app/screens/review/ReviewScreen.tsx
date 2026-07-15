@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
-import { View, Pressable, ScrollView, FlatList, StyleSheet } from "react-native";
+import { useEffect, useState } from "react";
+import { View, Pressable, FlatList, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Search, MapPin, ChevronRight, Check, Music } from "lucide-react-native";
+import { Search, MapPin, ChevronRight, Music } from "lucide-react-native";
 
 import {
   AccessibleImage,
@@ -12,58 +12,132 @@ import {
   Screen,
   Badge,
   ChipGroup,
+  EmptyState,
   FeedErrorBoundary,
 } from "@/components/ui";
 import { MediaPicker, StarRating } from "@/components/review";
 import { TRENDING_MUSIC } from "@/features/review/musicData";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { REVIEW_TAGS } from "@/constants/taste";
-import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useMerchantStore } from "@/store/useMerchantStore";
+import { useLocationStore } from "@/store/useLocationStore";
 import { useHungryTheme } from "@/theme";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { REVIEW_TEXT_MAX_LENGTH } from "@/lib/security/inputSanitization";
 import type { ReviewStackParamList } from "@/app/navigation/navigationTypes";
+import type { DishDetail, VenueSummary } from "@/types/domain";
 
 type Props = NativeStackScreenProps<ReviewStackParamList, "ReviewMain">;
 
 export function ReviewScreen({ navigation, route }: Props) {
-  const repository = getDataRepository();
+  const hungryService = getHungryService();
   const { palette, radii, spacing, shadows } = useHungryTheme();
   const rootNavigation = navigation.getParent()?.getParent();
   const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
   const isUserMode = !isMerchantMode && !isDeveloperMode;
+  const reviewRichMediaEnabled = FEATURE_FLAGS.reviewRichMediaEnabled;
 
   // Store state
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const draft = useReviewDraftStore((state) => state.draft);
   const actions = useReviewDraftStore();
+  const profile = useProfileStore((state) => state.profile);
+  const currentLocation = useLocationStore((state) => state.currentLocation);
 
   // Local state
   const [query, setQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const [selectedDish, setSelectedDish] = useState<DishDetail | undefined>();
+  const [selectedVenue, setSelectedVenue] = useState<VenueSummary | undefined>();
+  const [pickerDishes, setPickerDishes] = useState<DishDetail[]>([]);
+  const [pickerStatus, setPickerStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [pickerLoadAttempt, setPickerLoadAttempt] = useState(0);
 
-  // Derived data
-  const selectedDish = useMemo(
-    () => repository.getDishById(draft.selectedDishId || ""),
-    [repository, draft.selectedDishId],
-  );
-  const selectedVenue = useMemo(
-    () => repository.getVenueById(draft.selectedVenueId || ""),
-    [repository, draft.selectedVenueId],
-  );
+  useEffect(() => {
+    let active = true;
+    if (!draft.selectedDishId) {
+      setSelectedDish(undefined);
+      setSelectedVenue(undefined);
+      return () => {
+        active = false;
+      };
+    }
 
-  const venues = repository
-    .listBuildings()
-    .flatMap((building) => repository.listVenuesByBuilding(building.id))
-    .filter((venue) =>
-      `${venue.name} ${venue.unitNumber}`.toLowerCase().includes(query.trim().toLowerCase()),
-    );
+    void hungryService.discovery
+      .getDish(draft.selectedDishId)
+      .then(async (dish) => {
+        if (!active) return;
+        setSelectedDish(dish);
+        if (!dish) {
+          setSelectedVenue(undefined);
+          return;
+        }
+        const venue = await hungryService.discovery.getVenue(dish.venueId);
+        if (active) setSelectedVenue(venue);
+      })
+      .catch(() => {
+        if (!active) return;
+        setSelectedDish(undefined);
+        setSelectedVenue(undefined);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [draft.selectedDishId, hungryService]);
+
+  useEffect(() => {
+    if (!isSearching) return undefined;
+    let active = true;
+    setPickerStatus("loading");
+    const timer = setTimeout(() => {
+      void hungryService.discovery
+        .searchDishes(
+          {
+            query: query.trim(),
+            categories: [],
+            dietaryFlags: profile.dietaryPreferences,
+            tasteValues: profile.tasteVector,
+            radius: 100000,
+            latitude: currentLocation.latitude,
+            longitude: currentLocation.longitude,
+            openOnly: false,
+          },
+          profile.tasteVector,
+        )
+        .then((results) => {
+          if (!active) return;
+          setPickerDishes(results.map((result) => result.dish));
+          setPickerStatus("ready");
+        })
+        .catch(() => {
+          if (!active) return;
+          setPickerDishes([]);
+          setPickerStatus("error");
+        });
+    }, 180);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [
+    currentLocation.latitude,
+    currentLocation.longitude,
+    hungryService,
+    isSearching,
+    profile.dietaryPreferences,
+    profile.tasteVector,
+    pickerLoadAttempt,
+    query,
+  ]);
 
   useEffect(() => {
     if (route.params?.dishId && route.params?.venueId) {
@@ -88,9 +162,15 @@ export function ReviewScreen({ navigation, route }: Props) {
       dishName: selectedDish.name,
       venueName: selectedVenue?.name ?? "",
       pointsEarned:
-        25 + draft.selectedTags.length * 5 + draft.photos.length * 10 + (draft.videoUri ? 20 : 0),
+        25 +
+        draft.selectedTags.length * 5 +
+        draft.photos.length * 10 +
+        (reviewRichMediaEnabled && draft.videoUri ? 20 : 0),
       xpEarned:
-        25 + draft.selectedTags.length * 5 + draft.photos.length * 10 + (draft.videoUri ? 20 : 0),
+        25 +
+        draft.selectedTags.length * 5 +
+        draft.photos.length * 10 +
+        (reviewRichMediaEnabled && draft.videoUri ? 20 : 0),
       tagCount: draft.selectedTags.length,
       rating: draft.rating,
     };
@@ -104,6 +184,7 @@ export function ReviewScreen({ navigation, route }: Props) {
         text: draft.text.trim(),
         tags: draft.selectedTags,
         photos: draft.photos,
+        recommend: draft.recommend,
       });
 
       useProfileStore.getState().addReviewedDish(selectedDish.id);
@@ -117,9 +198,9 @@ export function ReviewScreen({ navigation, route }: Props) {
       trackAnalyticsEvent("review_submitted", {
         dish_id: selectedDish.id,
         venue_id: selectedDish.venueId,
-        media_count: draft.photos.length + (draft.videoUri ? 1 : 0),
-        has_music: !!draft.musicId,
-        filter_id: draft.filterId,
+        media_count: draft.photos.length + (reviewRichMediaEnabled && draft.videoUri ? 1 : 0),
+        has_music: reviewRichMediaEnabled && Boolean(draft.musicId),
+        filter_id: reviewRichMediaEnabled ? draft.filterId : undefined,
       });
 
       useUIStore.getState().showToast({ message: "Review posted!", tone: "success" });
@@ -150,6 +231,7 @@ export function ReviewScreen({ navigation, route }: Props) {
             photos={draft.photos}
             videoUri={draft.videoUri}
             filterId={draft.filterId}
+            richMediaEnabled={reviewRichMediaEnabled}
             onAddPhoto={actions.addPhoto}
             onRemovePhoto={actions.removePhoto}
             onSetVideo={actions.setVideoUri}
@@ -157,53 +239,55 @@ export function ReviewScreen({ navigation, route }: Props) {
           />
 
           {/* 2. Music Picker (Navigation Button) */}
-          <View style={{ gap: spacing[3] }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-              <Music size={18} color={palette.orange} />
-              <AppText variant="h3">Music</AppText>
-            </View>
+          {reviewRichMediaEnabled ? (
+            <View style={{ gap: spacing[3] }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+                <Music size={18} color={palette.orange} />
+                <AppText variant="h3">Music</AppText>
+              </View>
 
-            {draft.musicId ? (
-              <Card
-                style={{
-                  padding: spacing[3],
-                  backgroundColor: palette.orangeLight,
-                  borderColor: palette.orange,
-                }}
-              >
-                <View
+              {draft.musicId ? (
+                <Card
                   style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
+                    padding: spacing[3],
+                    backgroundColor: palette.orangeLight,
+                    borderColor: palette.orange,
                   }}
                 >
-                  <View style={{ flex: 1 }}>
-                    <AppText variant="bodyBold">
-                      {TRENDING_MUSIC.find((m) => m.id === draft.musicId)?.title ??
-                        "Selected Track"}
-                    </AppText>
-                    <AppText variant="micro" tone="secondary">
-                      {TRENDING_MUSIC.find((m) => m.id === draft.musicId)?.artist ?? "Artist"}
-                    </AppText>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <AppText variant="bodyBold">
+                        {TRENDING_MUSIC.find((m) => m.id === draft.musicId)?.title ??
+                          "Selected Track"}
+                      </AppText>
+                      <AppText variant="micro" tone="secondary">
+                        {TRENDING_MUSIC.find((m) => m.id === draft.musicId)?.artist ?? "Artist"}
+                      </AppText>
+                    </View>
+                    <Button
+                      label="Change"
+                      variant="ghost"
+                      size="sm"
+                      onPress={() => navigation.navigate("MusicSelection" as any)}
+                    />
                   </View>
-                  <Button
-                    label="Change"
-                    variant="ghost"
-                    size="sm"
-                    onPress={() => navigation.navigate("MusicSelection" as any)}
-                  />
-                </View>
-              </Card>
-            ) : (
-              <Button
-                label="Add Music"
-                variant="secondary"
-                onPress={() => navigation.navigate("MusicSelection" as any)}
-                leftIcon={<Music size={18} color={palette.text} />}
-              />
-            )}
-          </View>
+                </Card>
+              ) : (
+                <Button
+                  label="Add Music"
+                  variant="secondary"
+                  onPress={() => navigation.navigate("MusicSelection" as any)}
+                  leftIcon={<Music size={18} color={palette.text} />}
+                />
+              )}
+            </View>
+          ) : null}
 
           {/* 3. Location & Food Selection */}
           <View style={{ gap: spacing[3] }}>
@@ -320,7 +404,7 @@ export function ReviewScreen({ navigation, route }: Props) {
               }}
             >
               <Input
-                placeholder="Search stalls..."
+                placeholder="Search dishes or stalls..."
                 value={query}
                 onChangeText={setQuery}
                 style={{ flex: 1 }}
@@ -330,42 +414,56 @@ export function ReviewScreen({ navigation, route }: Props) {
             </View>
 
             <FlatList
-              data={venues}
+              data={pickerDishes}
               keyExtractor={(item) => item.id}
-              renderItem={({ item }) => {
-                const dishes = repository.listDishesByVenue(item.id);
-                return (
-                  <Pressable
-                    onPress={() => {
-                      if (dishes[0]) {
-                        actions.selectDish(item.id, dishes[0].id);
-                        setIsSearching(false);
-                      }
-                    }}
+              ListEmptyComponent={
+                pickerStatus === "loading" ? (
+                  <AppText tone="secondary" style={{ textAlign: "center", padding: spacing[6] }}>
+                    Loading nearby dishes…
+                  </AppText>
+                ) : pickerStatus === "error" ? (
+                  <EmptyState
+                    title="Unable to load dishes"
+                    body="Check your connection or try another search."
+                    ctaLabel="Retry"
+                    onPress={() => setPickerLoadAttempt((attempt) => attempt + 1)}
+                  />
+                ) : (
+                  <EmptyState title="No dishes found" body="Try another dish or stall name." />
+                )
+              }
+              renderItem={({ item }) => (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Select ${item.name} at ${item.venueName}`}
+                  onPress={() => {
+                    actions.selectDish(item.venueId, item.id);
+                    setSelectedDish(item);
+                    setIsSearching(false);
+                  }}
+                  style={{
+                    paddingVertical: spacing[3],
+                    borderBottomWidth: 1,
+                    borderBottomColor: palette.border,
+                  }}
+                >
+                  <View
                     style={{
-                      paddingVertical: spacing[3],
-                      borderBottomWidth: 1,
-                      borderBottomColor: palette.border,
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
                     }}
                   >
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <View>
-                        <AppText style={{ fontWeight: "600" }}>{item.name}</AppText>
-                        <AppText variant="bodySmall" tone="secondary">
-                          {item.unitNumber}
-                        </AppText>
-                      </View>
-                      <ChevronRight size={18} color={palette.textMuted} />
+                    <View style={{ flex: 1 }}>
+                      <AppText style={{ fontWeight: "600" }}>{item.name}</AppText>
+                      <AppText variant="bodySmall" tone="secondary">
+                        {item.venueName} · {item.priceRange}
+                      </AppText>
                     </View>
-                  </Pressable>
-                );
-              }}
+                    <ChevronRight size={18} color={palette.textMuted} />
+                  </View>
+                </Pressable>
+              )}
             />
           </View>
         </View>

@@ -263,11 +263,14 @@ export const useWheelStore = create<WheelState>((set, get) => ({
 
   triggerSpin() {
     const { party, entries, _channel } = get();
-    if (!party || !_channel) return;
+    if (!party || !_channel || party.status !== "lobby") return;
 
-    const seed = Math.random();
-    const startedAt = Date.now();
     const activeEntryIds = entries.filter((e) => !e.isEliminated).map((e) => e.id);
+    if (activeEntryIds.length < 2) return;
+
+    const seed = Math.floor(Math.random() * activeEntryIds.length);
+    const winnerEntryId = activeEntryIds[seed];
+    const startedAt = Date.now();
 
     _channel.broadcast({
       type: "spin_triggered",
@@ -283,9 +286,25 @@ export const useWheelStore = create<WheelState>((set, get) => ({
             status: "spinning",
             spinSeed: seed,
             spinStartedAt: startedAt,
+            winnerEntryId,
           }
         : null,
     }));
+
+    setTimeout(() => {
+      const currentParty = get().party;
+      if (
+        currentParty?.id !== party.id ||
+        currentParty.status !== "spinning" ||
+        currentParty.spinSeed !== seed
+      ) {
+        return;
+      }
+
+      const resolution: WheelChannelEvent = { type: "party_resolved", winnerEntryId };
+      get()._onEvent(resolution);
+      _channel.broadcast(resolution);
+    }, party.spinDurationMs);
   },
 
   // ── leaveParty ──────────────────────────────────────────────────────────────

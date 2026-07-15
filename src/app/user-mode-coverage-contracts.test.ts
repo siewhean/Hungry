@@ -219,7 +219,7 @@ test("discover and search expose FDO map access while browse grids open matching
     [
       /dishById\.set\(dish\.id, dish\)/,
       /searchTextByDishId\.set\(dish\.id, toDishSearchText\(dish, venue\)\)/,
-      /sortedDishesByVenueId\.set\(venue\.id, cloneSortedDishes\(dishes\)\)/,
+      /sortedDishesByVenueId\.set\(venueId, cloneSortedDishes\(dishes\)\)/,
     ],
     "browse index source of truth",
   );

@@ -2,6 +2,9 @@
   "name": "hungry-mobile",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "22.22.1"
+  },
   "main": "index.ts",
   "scripts": {
     "start": "node ./scripts/run-expo.cjs start",

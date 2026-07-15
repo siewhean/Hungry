@@ -125,6 +125,10 @@ assertContains("src/app/api/waitlist/route.ts", "Select your food business type.
 assertContains("src/app/api/waitlist/route.ts", "Specify your food business type.", "Waitlist merchant other-business-type validation contract failed");
 assertContains("src/app/api/merchant/login/route.ts", "await requireRateLimit(request", "Merchant login rate-limit contract failed");
 assertContains("src/lib/security/api.ts", "HUNGRY_RATE_LIMIT_REDIS_REST_URL", "Durable rate-limit env contract failed");
+assertContains("src/lib/security/api.ts", "parseRedisRateLimitPipeline(payload)", "Redis pipeline validation contract failed");
+assertContains("src/lib/security/api.ts", "resolveClientIp(", "Trusted client-IP fallback contract failed");
+assertContains("src/lib/security/clientIp.ts", "sanitizeIp(realIp)", "Real-IP fallback contract failed");
+assertContains("src/lib/security/redisPipeline.ts", "entry.error", "Redis command-error rejection contract failed");
 assertContains("src/lib/security/validation.ts", "readJsonObject", "API validation helper contract failed");
 assertContains("src/app/api/merchant/signup/route.ts", "validationErrorResponse(error)", "Merchant signup validation contract failed");
 assertContains("src/app/api/merchant/profile/route.ts", "readJsonObject(request", "Merchant profile validation contract failed");
@@ -205,5 +209,41 @@ assertContains("src/lib/supabase/websiteData.ts", "metadata: sanitizeConsoleMeta
 assertContains("src/app/console/waitlist/page.tsx", '<ConsoleRoutePage section="waitlist" />', "Console waitlist shared route contract failed");
 assertContains("src/lib/supabase/consoleData.ts", "email: redactEmail(entry.email)", "Console waitlist shared-service email redaction contract failed");
 assertContains("src/lib/supabase/consoleData.ts", "recordConsoleAuditEvent(actor", "Console mutation audit contract failed");
+assertContains(
+  "src/proxy.ts",
+  'process.env.HUNGRY_MERCHANT_PORTAL_ENABLED === "1"',
+  "Merchant Portal explicit production enablement contract failed",
+);
+assertContains(
+  "src/proxy.ts",
+  'pathname.startsWith("/api/merchant")',
+  "Merchant API fail-closed proxy contract failed",
+);
+assertContains(
+  "src/proxy.ts",
+  "hasConsoleBearer",
+  "Named Supabase bearer must bypass only the proxy Basic Auth layer",
+);
+assertContains(
+  "src/lib/security/consoleBasicAuth.ts",
+  'envValue("HUNGRY_CONSOLE_BREAK_GLASS_ENABLED") === "1"',
+  "Console Basic Auth break-glass enablement contract failed",
+);
+assertContains(
+  "src/lib/security/api.ts",
+  'RATE_LIMIT_MODE !== "redis"',
+  "Deployed production durable rate-limit contract failed",
+);
+assertContains(
+  "src/lib/security/api.ts",
+  "return rateLimitUnavailableResponse();",
+  "Durable rate-limit failure must fail closed",
+);
+assertContains(
+  "src/lib/security/api.ts",
+  'RATE_LIMIT_MODE === "memory"',
+  "Explicit local/test in-memory rate-limit contract failed",
+);
+assertNotContains("next.config.ts", "'unsafe-eval'", "Production CSP must not allow unsafe-eval");
 
 console.log("Website security route contracts passed.");

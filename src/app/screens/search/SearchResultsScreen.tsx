@@ -35,7 +35,6 @@ import { SearchResultsView } from "@/components/discover/SearchResultsView";
 import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import {
-  getSearchResults,
   getSearchResultsAsync,
   sortSearchResults,
   type SearchSortMode,
@@ -53,8 +52,10 @@ import {
   searchBrowseDishes,
   type BrowseIndex,
 } from "@/features/search/browseIndex";
+import { resolveBrowseGridDataState } from "@/features/search/browseGridDataState";
+import { loadScopedBrowseCatalog } from "@/features/search/scopedBrowseCatalog";
 import { dedupeNearestVenueCandidates } from "@/features/search/venueDedupe";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { getDataRepository, getServiceProvider } from "@/lib/services/serviceProvider";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
@@ -321,13 +322,63 @@ function BrowseGridScreen({
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const profile = useProfileStore((state) => state.profile);
   const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
+  const serviceProvider = getServiceProvider();
+  const isSupabaseDataSource = serviceProvider.mode === "supabase";
   const repository = getDataRepository();
+  const discoveryService = serviceProvider.service;
   const [browseIndex, setBrowseIndex] = useState<BrowseIndex | null>(() =>
-    getCachedBrowseIndex(repository),
+    isSupabaseDataSource ? null : getCachedBrowseIndex(repository),
   );
-  const isBrowseDataReady = Boolean(browseIndex);
+  const [scopedQueryDishes, setScopedQueryDishes] = useState<DishDetail[] | null>(null);
+  const [isQueryLoading, setIsQueryLoading] = useState(false);
+  const [queryLoadError, setQueryLoadError] = useState<string | null>(null);
+  const [browseLoadError, setBrowseLoadError] = useState<string | null>(null);
+  const [browseLoadAttempt, setBrowseLoadAttempt] = useState(0);
+  const { isDataReady: isBrowseDataReady, loadError: effectiveBrowseLoadError } =
+    resolveBrowseGridDataState({
+      browseLoadError,
+      hasBrowseIndex: Boolean(browseIndex),
+      hasScopedQueryResponse: scopedQueryDishes !== null,
+      isQueryLoading,
+      isSupabaseDataSource,
+      queryLoadError,
+      shouldUseQueryScopedFeed,
+    });
 
   useEffect(() => {
+    let active = true;
+    setBrowseLoadError(null);
+
+    if (isSupabaseDataSource) {
+      if (shouldUseQueryScopedFeed) {
+        return () => {
+          active = false;
+        };
+      }
+
+      setBrowseIndex(null);
+      void loadScopedBrowseCatalog(discoveryService, {
+        lat: currentLocation.latitude,
+        lng: currentLocation.longitude,
+        radiusMeters: 3000,
+        limit: 100,
+      })
+        .then((index) => {
+          if (active) setBrowseIndex(index);
+        })
+        .catch((error: unknown) => {
+          if (!active) return;
+          setBrowseIndex(null);
+          setBrowseLoadError(
+            error instanceof Error ? error.message : "Nearby catalog is temporarily unavailable.",
+          );
+        });
+
+      return () => {
+        active = false;
+      };
+    }
+
     const cachedIndex = getCachedBrowseIndex(repository);
     if (cachedIndex) {
       setBrowseIndex(cachedIndex);
@@ -346,15 +397,88 @@ function BrowseGridScreen({
     );
 
     return () => {
+      active = false;
       cancelHydration();
     };
-  }, [repository]);
+  }, [
+    browseLoadAttempt,
+    currentLocation.latitude,
+    currentLocation.longitude,
+    discoveryService,
+    isSupabaseDataSource,
+    repository,
+    shouldUseQueryScopedFeed,
+  ]);
+
+  useEffect(() => {
+    let active = true;
+    if (!isSupabaseDataSource || !shouldUseQueryScopedFeed) {
+      setScopedQueryDishes(null);
+      setQueryLoadError(null);
+      setIsQueryLoading(false);
+      return undefined;
+    }
+
+    setIsQueryLoading(true);
+    setQueryLoadError(null);
+    const timer = setTimeout(() => {
+      void discoveryService.discovery
+        .searchDishes(
+          {
+            query: normalizedFoodTypeTag || searchQuery.trim(),
+            categories: [],
+            dietaryFlags: profile.dietaryPreferences,
+            tasteValues: profile.tasteVector,
+            radius: 5000,
+            latitude: currentLocation.latitude,
+            longitude: currentLocation.longitude,
+            foodTypeTag: normalizedFoodTypeTag || undefined,
+          },
+          profile.tasteVector,
+        )
+        .then((results) => {
+          if (active) setScopedQueryDishes(results.map((result) => result.dish));
+        })
+        .catch((error: unknown) => {
+          if (!active) return;
+          setScopedQueryDishes([]);
+          setQueryLoadError(
+            error instanceof Error ? error.message : "Dish search is temporarily unavailable.",
+          );
+        })
+        .finally(() => {
+          if (active) setIsQueryLoading(false);
+        });
+    }, 250);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [
+    browseLoadAttempt,
+    currentLocation.latitude,
+    currentLocation.longitude,
+    discoveryService,
+    isSupabaseDataSource,
+    normalizedFoodTypeTag,
+    profile.dietaryPreferences,
+    profile.tasteVector,
+    searchQuery,
+    shouldUseQueryScopedFeed,
+  ]);
   const areaBuildings = useMemo(
     () =>
-      browseIndex && !shouldUseQueryScopedFeed
+      browseIndex && !isSupabaseDataSource && !shouldUseQueryScopedFeed
         ? getNearestBuildings(currentLocation.latitude, currentLocation.longitude, 3, 14)
         : [],
-    [browseIndex, currentLocation.latitude, currentLocation.longitude, shouldUseQueryScopedFeed],
+    [
+      browseIndex,
+      currentLocation.latitude,
+      currentLocation.longitude,
+      isSupabaseDataSource,
+      shouldUseQueryScopedFeed,
+    ],
   );
   const allVenues = useMemo(
     () => (browseIndex && !shouldUseQueryScopedFeed ? browseIndex.allVenues : []),
@@ -372,7 +496,15 @@ function BrowseGridScreen({
     return uniqueVenues.size ? Array.from(uniqueVenues.values()) : allVenues;
   }, [allVenues, areaBuildings, browseIndex, shouldUseQueryScopedFeed]);
   const queryMatchedDishes = useMemo(() => {
-    if (!browseIndex || !shouldUseQueryScopedFeed) {
+    if (!shouldUseQueryScopedFeed) {
+      return [];
+    }
+
+    if (isSupabaseDataSource) {
+      return scopedQueryDishes ?? [];
+    }
+
+    if (!browseIndex) {
       return [];
     }
 
@@ -384,8 +516,10 @@ function BrowseGridScreen({
     });
   }, [
     browseIndex,
+    isSupabaseDataSource,
     normalizedFoodTypeTag,
     profile.dietaryPreferences,
+    scopedQueryDishes,
     searchQuery,
     shouldUseQueryScopedFeed,
   ]);
@@ -924,7 +1058,16 @@ function BrowseGridScreen({
           contentContainerStyle={{ paddingBottom: spacing[12] }}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
-            isBrowseDataReady ? (
+            effectiveBrowseLoadError ? (
+              <EmptyState
+                title="Unable to load nearby food"
+                body="Check your connection and try again."
+                ctaLabel="Retry"
+                onPress={() => setBrowseLoadAttempt((attempt) => attempt + 1)}
+                errorMessage={effectiveBrowseLoadError}
+                sendErrorContext="Browse nearby catalog"
+              />
+            ) : isBrowseDataReady ? (
               <EmptyState title="No matches found" body="Try another search or filter." />
             ) : (
               <BrowseGridLoadingState itemWidth={itemWidth} mode={mode} />
@@ -1005,9 +1148,12 @@ export function SearchResultsScreen() {
   const initialQuery = route.params?.initialQuery ?? "";
   const foodTypeTag = route.params?.foodTypeTag;
   const [serviceResults, setServiceResults] = useState<DishDetail[] | null>(null);
+  const [searchLoadError, setSearchLoadError] = useState<string | null>(null);
+  const [searchLoadAttempt, setSearchLoadAttempt] = useState(0);
   useEffect(() => {
     let active = true;
     setServiceResults(null);
+    setSearchLoadError(null);
     if (browseMode) {
       return () => {
         active = false;
@@ -1019,17 +1165,17 @@ export function SearchResultsScreen() {
         if (active) setServiceResults(results);
       })
       .catch(() => {
-        if (active) setServiceResults(null);
+        if (active) {
+          setServiceResults([]);
+          setSearchLoadError("Dish search is temporarily unavailable.");
+        }
       });
 
     return () => {
       active = false;
     };
-  }, [browseMode, filters, profile.tasteVector]);
-  const rawResults = useMemo(
-    () => serviceResults ?? getSearchResults(filters, profile.tasteVector),
-    [filters, profile.tasteVector, serviceResults],
-  );
+  }, [browseMode, filters, profile.tasteVector, searchLoadAttempt]);
+  const rawResults = serviceResults ?? [];
   const results = useMemo(
     () => sortSearchResults(rawResults, sortMode, profile.tasteVector),
     [profile.tasteVector, rawResults, sortMode],
@@ -1077,11 +1223,15 @@ export function SearchResultsScreen() {
     <Screen scroll={false}>
       <SearchResultsView
         query={filters.query}
+        onBack={() => navigation.goBack()}
         onQueryChange={updateQuery}
         onClear={() => updateQuery("")}
         onSubmitQuery={recordCommittedSearchQuery}
         onTasteFilterPress={() => navigation.navigate("TasteFilter")}
         results={results}
+        isLoading={serviceResults === null && !searchLoadError}
+        errorMessage={searchLoadError}
+        onRetry={() => setSearchLoadAttempt((attempt) => attempt + 1)}
         onResultPressIn={(dish) => {
           prefetchDishDetail(dish.id);
           preloadRoute(navigation, "DishDetail", { dishId: dish.id });

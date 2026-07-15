@@ -7,7 +7,7 @@
  * CTA dock: "Spin again" (classic) / "Next round" (elimination).
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Animated, Pressable, View, StyleSheet } from "react-native";
 import type {
   NativeStackNavigationProp,
@@ -17,27 +17,49 @@ import { MapPin, Navigation, Trophy, RotateCcw, CheckCircle2 } from "lucide-reac
 import { LinearGradient } from "expo-linear-gradient";
 
 import { AccessibleImage, AppText, Button } from "@/components/ui";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import { useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
 import type { WheelStackParamList } from "./WheelStack";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
+import type { DishDetail, VenueSummary } from "@/types/domain";
 
 type Props = NativeStackScreenProps<WheelStackParamList, "WheelResult">;
 
 export function WheelResultModal({ navigation, route }: Props) {
   const { componentRadii, palette, spacing, radii, shadows, motion } = useHungryTheme();
   const { winnerEntryId } = route.params;
-  const repository = getDataRepository();
+  const hungryService = getHungryService();
 
   const party = useWheelStore((s) => s.party);
   const entries = useWheelStore((s) => s.entries);
   const resetParty = useWheelStore((s) => s.reset);
 
   const winnerEntry = entries.find((e) => e.id === winnerEntryId);
-  const venue = winnerEntry ? repository.getVenueById(winnerEntry.venueId) : undefined;
-  const dishes = winnerEntry ? repository.listDishesByVenue(winnerEntry.venueId) : [];
-  const heroDish = dishes[0];
+  const [venue, setVenue] = useState<VenueSummary | undefined>();
+  const [heroDish, setHeroDish] = useState<DishDetail | undefined>();
+
+  useEffect(() => {
+    if (!winnerEntry) return undefined;
+    let active = true;
+    void Promise.all([
+      hungryService.discovery.getVenue(winnerEntry.venueId),
+      hungryService.discovery.listDishesByVenue(winnerEntry.venueId),
+    ])
+      .then(([nextVenue, dishes]) => {
+        if (!active) return;
+        setVenue(nextVenue);
+        setHeroDish(dishes[0]);
+      })
+      .catch(() => {
+        if (!active) return;
+        setVenue(undefined);
+        setHeroDish(undefined);
+      });
+    return () => {
+      active = false;
+    };
+  }, [hungryService, winnerEntry]);
 
   // Spring scale-in card entrance
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
@@ -128,12 +150,12 @@ export function WheelResultModal({ navigation, route }: Props) {
 
         {/* Hero image */}
         <View style={{ height: 240, width: "100%", position: "relative" }}>
-          {heroDish?.imageUrl ? (
+          {heroDish?.imageUrl || winnerEntry?.imageUrl ? (
             <AccessibleImage
-              source={{ uri: heroDish.imageUrl }}
+              source={{ uri: heroDish?.imageUrl ?? winnerEntry?.imageUrl }}
               style={StyleSheet.absoluteFill}
               contentFit="cover"
-              accessibilityLabel={`${heroDish.name} photo`}
+              accessibilityLabel={`${heroDish?.name ?? winnerEntry?.label ?? "Winning stall"} photo`}
             />
           ) : (
             <View

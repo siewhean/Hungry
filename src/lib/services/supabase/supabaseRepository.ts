@@ -744,6 +744,9 @@ async function refreshCache(force = false): Promise<void> {
 }
 
 function ensureHydrated(): void {
+  if (process.env.EXPO_PUBLIC_HUNGRY_LEGACY_CACHE_WARMUP !== "1") {
+    return;
+  }
   if (!hydrated || Date.now() - hydratedAt > REFRESH_TTL_MS) {
     void refreshCache(!hydrated);
   }
@@ -899,8 +902,35 @@ export async function searchVenuesByLocationViaRpc(
 }
 
 export async function getDishByIdViaRpc(dishId: string): Promise<DishDetail | undefined> {
-  const rows = await rpcRows("get_dish_detail", { p_dish_id: dishId });
+  const rows =
+    (await rpcRows("get_dish_detail_v2", { p_dish_id: dishId })) ??
+    (await rpcRows("get_dish_detail", { p_dish_id: dishId }));
   return rows?.[0] ? mapRpcDish(rows[0]) : undefined;
+}
+
+const MAX_BATCH_DISH_DETAILS = 100;
+const DISH_DETAIL_FALLBACK_CONCURRENCY = 8;
+
+export async function getDishesByIdsViaRpc(dishIds: string[]): Promise<DishDetail[] | undefined> {
+  const uniqueDishIds = Array.from(new Set(dishIds.filter(Boolean))).slice(
+    0,
+    MAX_BATCH_DISH_DETAILS,
+  );
+  if (!uniqueDishIds.length) return [];
+  const rows = await rpcRows("get_dish_details", { p_dish_ids: uniqueDishIds });
+  if (rows) return rows.map(mapRpcDish);
+
+  // Deployments can briefly run the client before the additive batch migration
+  // is applied. Keep that version-skew window functional through the existing
+  // invoker-safe detail RPCs, while bounding both total reads and concurrency.
+  const fallbackDishes: DishDetail[] = [];
+  for (let offset = 0; offset < uniqueDishIds.length; offset += DISH_DETAIL_FALLBACK_CONCURRENCY) {
+    const chunk = uniqueDishIds.slice(offset, offset + DISH_DETAIL_FALLBACK_CONCURRENCY);
+    const resolved = await Promise.all(chunk.map((dishId) => getDishByIdViaRpc(dishId)));
+    fallbackDishes.push(...resolved.filter((dish): dish is DishDetail => Boolean(dish)));
+  }
+
+  return fallbackDishes.length > 0 ? fallbackDishes : undefined;
 }
 
 export async function getVenueByIdViaRpc(venueId: string): Promise<VenueSummary | undefined> {

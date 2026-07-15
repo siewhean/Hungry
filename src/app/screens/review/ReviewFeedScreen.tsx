@@ -35,6 +35,7 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { useSocialStore, type InteractionState } from "@/store/useSocialStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
+import { useLocationStore } from "@/store/useLocationStore";
 import { useHungryTheme } from "@/theme";
 import { ReviewShareSheet, type ReviewShareTarget } from "./ReviewShareSheet";
 import {
@@ -481,6 +482,7 @@ export function ReviewFeedScreen() {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const showToast = useUIStore((state) => state.showToast);
+  const currentLocation = useLocationStore((state) => state.currentLocation);
 
   const [filterMode, setFilterMode] = useState<FilterMode>("recent");
   const [searchQuery, setSearchQuery] = useState("");
@@ -493,6 +495,8 @@ export function ReviewFeedScreen() {
   const commentInputRef = useRef<TextInput>(null);
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
   const [serviceReviewItems, setServiceReviewItems] = useState<ReviewFeedItem[] | null>(null);
+  const [reviewFeedError, setReviewFeedError] = useState<string | null>(null);
+  const [reviewFeedAttempt, setReviewFeedAttempt] = useState(0);
   const reviewReactionsEnabled = serviceProviderMode === "mock";
   const openCommentsSheet = useCallback(() => {
     const commentSheet = commentsSheetRef.current;
@@ -521,9 +525,10 @@ export function ReviewFeedScreen() {
   const reviewHeaderTitle = "Reviews";
 
   useEffect(() => {
+    if (serviceProviderMode !== "mock") return undefined;
     const timeout = setTimeout(() => setIsInitialLoading(false), 0);
     return () => clearTimeout(timeout);
-  }, []);
+  }, [serviceProviderMode]);
 
   useEffect(
     () => () => {
@@ -537,19 +542,31 @@ export function ReviewFeedScreen() {
   useEffect(() => {
     if (serviceProviderMode === "mock") {
       setServiceReviewItems(null);
+      setReviewFeedError(null);
       return;
     }
 
     let active = true;
-    const dishes = repository
-      .listBuildings()
-      .flatMap((building) => repository.listVenuesByBuilding(building.id))
-      .flatMap((venue) => repository.listDishesByVenue(venue.id));
-
-    void Promise.all(
-      dishes.map(async (dish) => {
-        try {
-          const reviews = await getHungryService().reviews.getReviewsForDish(dish.id);
+    setIsInitialLoading(true);
+    setReviewFeedError(null);
+    const service = getHungryService();
+    void service.discovery
+      .listDiscoveryFeedByLocation({
+        lat: currentLocation.latitude,
+        lng: currentLocation.longitude,
+        radiusMeters: 3000,
+        limit: 20,
+      })
+      .then(async (feed) => {
+        if (!feed) throw new Error("Review feed is temporarily unavailable.");
+        const dishes = Array.from(
+          new Map(feed.results.map((result) => [result.dish.id, result.dish])).values(),
+        );
+        const reviewsByDishId = await service.reviews.getReviewsForDishes(
+          dishes.map((dish) => dish.id),
+        );
+        const groups = dishes.map((dish) => {
+          const reviews = reviewsByDishId[dish.id] ?? [];
           return reviews.map((review, reviewIndex) => ({
             review,
             dish,
@@ -564,19 +581,22 @@ export function ReviewFeedScreen() {
               `${dish.id}::${review.createdAt}::${review.text}`,
             ),
           }));
-        } catch {
-          return [];
-        }
-      }),
-    ).then((groups) => {
-      if (!active) return;
-      setServiceReviewItems(groups.flat());
-    });
+        });
+        if (active) setServiceReviewItems(groups.flat());
+      })
+      .catch(() => {
+        if (!active) return;
+        setServiceReviewItems([]);
+        setReviewFeedError("Review feed is temporarily unavailable.");
+      })
+      .finally(() => {
+        if (active) setIsInitialLoading(false);
+      });
 
     return () => {
       active = false;
     };
-  }, [repository, serviceProviderMode]);
+  }, [currentLocation.latitude, currentLocation.longitude, reviewFeedAttempt, serviceProviderMode]);
 
   // Gather reviews from all dishes
   const allReviews = useMemo<ReviewFeedItem[]>(() => {
@@ -819,8 +839,20 @@ export function ReviewFeedScreen() {
           }}
           ListEmptyComponent={
             <EmptyState
-              title="No reviews yet"
-              body={searchQuery ? "Try a different search term." : "Be the first to review a dish!"}
+              title={reviewFeedError ? "Unable to load reviews" : "No reviews yet"}
+              body={
+                reviewFeedError
+                  ? "Check your connection and try again."
+                  : searchQuery
+                    ? "Try a different search term."
+                    : "Be the first to review a dish!"
+              }
+              ctaLabel={reviewFeedError ? "Retry" : undefined}
+              onPress={
+                reviewFeedError ? () => setReviewFeedAttempt((attempt) => attempt + 1) : undefined
+              }
+              errorMessage={reviewFeedError ?? undefined}
+              sendErrorContext={reviewFeedError ? "Review feed" : undefined}
             />
           }
         />

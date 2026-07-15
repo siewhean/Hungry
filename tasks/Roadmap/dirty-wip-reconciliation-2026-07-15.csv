@@ -1,0 +1,935 @@
+index,status,path,source_path,category,decision,porting_status,comparison,original_present,audit_present,origin_main_present,secret_indicator,recommended_action
+1,M ,.env.development,,local secret/config,preserve,excluded-from-port,diverged-from-audit-and-main,true,true,true,true,keep only in original checkout; never port values; rotate if confirmed live
+2,M ,.env.example,,local secret/config,preserve,excluded-from-port,original-only-delta,true,true,true,true,keep only in original checkout; never port values; rotate if confirmed live
+3,M ,README.md,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+4,M ,app.config.js,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+5,MM,data/Hungry F&B Database.xlsx,,binary data/workbook,preserve,not-ported,original-only-delta,true,true,true,false,retain pending provenance and canonical-workbook parity review
+6, M,data/stalls_to_fallback.json,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+7,M ,marketing/web/README.md,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+8,M ,marketing/web/app/layout.tsx,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+9,M ,marketing/web/app/terms/page.tsx,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+10,M ,marketing/website/web-v2/README.md,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+11,M ,marketing/website/web-v2/docs/seo-ai-discovery-architecture.md,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+12,M ,marketing/website/web-v2/public/llms-full.txt,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+13,M ,marketing/website/web-v2/public/llms.txt,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+14,M ,marketing/website/web-v2/scripts/seo-ai-readiness-check.mjs,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+15,M ,marketing/website/web-v2/src/app/console/ConsoleRouteClient.tsx,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+16,M ,marketing/website/web-v2/src/app/privacy/page.tsx,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+17,M ,marketing/website/web-v2/src/app/seo.ts,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+18,M ,marketing/website/web-v2/src/app/terms/page.tsx,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+19,M ,marketing/website/web-v2/src/lib/console/routeRegistry.ts,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+20,M ,marketing/website/web-v2/src/lib/supabase/consoleData.ts,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+21,M ,ops/playbooks/data-enrichment-model-runbook.md,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+22,M ,package-lock.json,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+23,M ,package.json,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+24,M ,playwright.config.ts,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+25,MM,scripts/__tests__/dish_taxonomy.test.py,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+26,MM,scripts/auto-enrich-images.contract.test.mjs,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+27,MM,scripts/auto-enrich-images.mjs,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+28,M ,scripts/backfill_grab_menu_catalog_images.mjs,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+29,MM,scripts/enrich_fallback_menus.js,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+30,MM,scripts/enrich_full_menus.js,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+31,MM,scripts/export_excel_catalog_for_app.py,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+32,M ,scripts/google_places_sheet_enrich.py,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+33,MM,scripts/lib/enrichment-platforms.test.mjs,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+34,MM,scripts/lib/platform-resolvers.mjs,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+35,MM,scripts/lib/platform-scrapers.mjs,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+36,M ,scripts/lib/venue-identity.mjs,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+37,M ,scripts/lib/venue-identity.test.mjs,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+38,MM,scripts/sync_supabase_excel_master.py,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+39,M ,scripts/test_sync_supabase_excel_master.py,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+40,M ,src/app/navigation/RootNavigator.tsx,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+41,M ,src/app/navigation/SwipeableTabNavigator.tsx,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+42,M ,src/app/navigation/navigationTypes.ts,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+43,M ,src/app/navigation/route-production-readiness.test.ts,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+44,MM,src/app/navigation/supabase-auth-guards.test.ts,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+45,M ,src/app/performance-prefetch-contracts.test.ts,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+46,M ,src/app/screens/SplashScreen.tsx,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+47, M,src/app/screens/auth/LoginScreen.tsx,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+48,M ,src/app/screens/auth/SignUpScreen.tsx,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+49,M ,src/app/screens/detail-location-actions-contracts.test.ts,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+50,M ,src/app/screens/detail-screen-hydration-contracts.test.ts,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+51,M ,src/app/screens/detail-v2-data-contracts.test.ts,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+52,M ,src/app/screens/detail/DishDetailScreen.tsx,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+53,M ,src/app/screens/detail/DishDetailScreenV2.tsx,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+54,M ,src/app/screens/detail/MerchantClaimExplainerScreen.tsx,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+55,M ,src/app/screens/detail/StallDetailScreen.tsx,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+56,D ,src/app/screens/detail/StallDetailScreenV2.tsx,,unique/valid candidate,needs-review,not-ported,original-only-delta,false,true,true,false,review content and tests before selective port
+57,M ,src/app/screens/dev/DeveloperLauncherScreen.tsx,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+58,M ,src/app/screens/discover/BuildingDrillDownScreenV2.tsx,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+59, M,src/app/screens/discover/CatalogDiscoverHome.tsx,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+60,MM,src/app/screens/discover/DiscoverHomeScreen.tsx,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+61,M ,src/app/screens/discover/HomeMapScreen.tsx,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+62,M ,src/app/screens/discover/QuickBitesScreen.tsx,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+63,M ,src/app/screens/discover/VenueDirectoryScreen.tsx,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+64,M ,src/app/screens/discover/quick-bites-header-contracts.test.ts,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+65,M ,src/app/screens/merchant/CustomerInboxScreen.tsx,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+66,M ,src/app/screens/merchant/MerchantAnalyticsScreen.tsx,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+67,M ,src/app/screens/merchant/MerchantSettingsScreen.tsx,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+68,M ,src/app/screens/merchant/PromotionListScreen.tsx,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+69,M ,src/app/screens/popular-visitors-contracts.test.ts,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+70,M ,src/app/screens/profile/ProfileHomeScreen.tsx,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+71,M ,src/app/screens/profile/ProfileStack.tsx,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+72,M ,src/app/screens/profile/SettingsScreen.tsx,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+73,MM,src/app/screens/search/SearchResultsScreen.tsx,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+74,M ,src/app/screens/search/browse-grid-contracts.test.ts,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+75,M ,src/app/screens/v2-trust-claims-contracts.test.ts,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+76,M ,src/app/user-mode-coverage-contracts.test.ts,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+77,M ,src/assets/discover/bak-chor-mee-topdown.png,,binary data/workbook,preserve,not-ported,original-only-delta,true,true,true,false,retain pending provenance and canonical-workbook parity review
+78,M ,src/assets/discover/char-kway-teow-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-delta,true,true,true,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+79,M ,src/assets/discover/chicken-rice-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-delta,true,true,true,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+80,D ,src/assets/discover/dishes-card-wide.png,,binary data/workbook,needs-review,not-ported,original-only-delta,false,true,true,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+81,M ,src/assets/discover/laksa-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-delta,true,true,true,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+82,D ,src/assets/discover/popular-bak-chor-mee-topdown.png,,binary data/workbook,preserve,not-ported,original-only-delta,false,true,true,false,retain pending provenance and canonical-workbook parity review
+83,D ,src/assets/discover/popular-char-kway-teow-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-delta,false,true,true,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+84,D ,src/assets/discover/popular-chicken-rice-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-delta,false,true,true,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+85,D ,src/assets/discover/popular-laksa-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-delta,false,true,true,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+86,D ,src/assets/discover/stalls-restaurants-card-wide.png,,binary data/workbook,needs-review,not-ported,original-only-delta,false,true,true,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+87,M ,src/components/discover/SearchResultsView.tsx,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+88,M ,src/components/dish/DishCard.tsx,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+89,M ,src/components/stall/StallCard.tsx,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+90,M ,src/components/stall/StallLogoMark.test.ts,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+91,M ,src/components/stall/StallLogoMark.tsx,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+92,M ,src/components/ui/Button.tsx,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+93,M ,src/components/ui/ExpandableSearchLauncher.tsx,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+94, M,src/components/ui/Skeleton.tsx,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+95,M ,src/components/ui/accessibility-primitives-contracts.test.ts,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+96,M ,src/components/ui/screen-header-contracts.test.ts,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+97,M ,src/features/discover/bites.test.ts,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+98,M ,src/features/discover/bites.ts,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+99,MM,src/features/search/browseIndex.ts,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+100,M ,src/features/search/venueDedupe.test.ts,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+101,M ,src/features/search/venueDedupe.ts,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+102,M ,src/features/search/venueLogo.test.ts,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+103,M ,src/features/search/venueLogo.ts,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+104,M ,src/hooks/useAppBootstrap.ts,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+105,M ,src/lib/analytics/gamificationEvents.ts,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+106,M ,src/lib/security/safeLinking.ts,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+107,M ,src/lib/services/mock/mockService.ts,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+108,M ,src/lib/services/serviceProvider.sprint5.test.ts,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+109,M ,src/lib/services/serviceProvider.ts,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+110,M ,src/lib/services/supabase/README.md,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+111,M ,src/lib/services/supabase/catalog-provenance-write-hardening.test.ts,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+112,M ,src/lib/services/supabase/client.test.ts,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+113,M ,src/lib/services/supabase/client.ts,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+114,M ,src/lib/services/supabase/merchant-linkage.test.ts,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+115,M ,src/lib/services/supabase/server-side-discovery.test.ts,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+116,M ,src/lib/services/supabase/supabaseRepository.ts,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+117,M ,src/lib/services/supabase/supabaseService.ts,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+118,M ,src/lib/services/types.ts,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+119,M ,src/store/useLocationStore.ts,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+120,M ,src/store/useSessionStore.auth-persistence.test.ts,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+121,M ,src/types/domain.ts,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+122,M ,supabase/migrations/20260608190000_promote_staging_to_production.sql,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+123,M ,supabase/migrations/20260611000000_add_staging_planning_area.sql,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+124,M ,supabase/smoke/account_deletion_merchant_rpc_hardening.sql,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+125,MM,tasks/backlog.md,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+126,M ,tasks/environment.md,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+127,M ,tasks/lessons.md,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+128,MM,tasks/session-log.md,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+129,M ,tasks/store-submission-checklists.md,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+130,MM,tasks/verification.md,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+131,M ,tests/e2e/guest-browsing.spec.ts,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+132,??,.tmp-check_enrichment.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+133,??,.tmp_grab_browser_probe.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+134,??,.tmp_grab_detail_capture.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+135,??,.tmp_grab_dumpsearch.js,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+136,??,.tmp_grab_extract.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+137,??,.tmp_grab_extract2.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+138,??,.tmp_grab_link_queries.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+139,??,.tmp_grab_links.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+140,??,.tmp_grab_multiquery.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+141,??,.tmp_grab_one.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+142,??,.tmp_grab_scan.js,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+143,??,.tmp_grab_search.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+144,??,.tmp_grab_single_summary.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+145,??,.tmp_grab_status.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+146,??,.tmp_top_missing_queue.cjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+147,??,.tmp_upsert_wb.js,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+148,??,.tmp_upsert_wb.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+149,??,artifacts/enrichment-review/2026-07-10T05-17-33-296Z/run-summary.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+150,??,artifacts/enrichment-review/2026-07-15-grounded-qa/run-summary.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+151,??,artifacts/enrichment-review/2026-07-15T08-48-40-315Z/run-summary.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+152,??,artifacts/enrichment-review/2026-07-15T08-48-56-623Z/checkpoint.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+153,??,artifacts/enrichment-review/2026-07-15T08-48-56-623Z/run-summary.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+154,??,artifacts/enrichment-review/2026-07-15T08-48-56-623Z/scraper-results.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+155,??,artifacts/enrichment-review/2026-07-15T08-48-56-623Z/stderr.log,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+156,??,artifacts/enrichment-review/2026-07-15T08-48-56-623Z/stdout.log,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+157,??,artifacts/enrichment-review/2026-07-15T08-50-22-217Z/checkpoint.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+158,??,artifacts/enrichment-review/2026-07-15T08-50-22-217Z/run-summary.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+159,??,artifacts/enrichment-review/2026-07-15T08-50-22-217Z/stderr.log,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+160,??,artifacts/enrichment-review/2026-07-15T08-50-22-217Z/stdout.log,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+161,??,artifacts/enrichment-review/2026-07-15T08-56-47-053Z/checkpoint.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+162,??,artifacts/enrichment-review/2026-07-15T08-56-47-053Z/run-summary.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+163,??,artifacts/enrichment-review/2026-07-15T08-56-47-053Z/scraper-results.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+164,??,artifacts/enrichment-review/2026-07-15T08-56-47-053Z/stderr.log,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+165,??,artifacts/enrichment-review/2026-07-15T08-56-47-053Z/stdout.log,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+166,??,artifacts/enrichment-review/2026-07-15T09-00-58-643Z/checkpoint.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+167,??,artifacts/enrichment-review/2026-07-15T09-00-58-643Z/run-summary.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+168,??,artifacts/enrichment-review/2026-07-15T09-00-58-643Z/scraper-results.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+169,??,artifacts/enrichment-review/2026-07-15T09-00-58-643Z/stderr.log,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+170,??,artifacts/enrichment-review/2026-07-15T09-00-58-643Z/stdout.log,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+171,??,artifacts/enrichment-review/recover_albarakath_discover.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+172,??,artifacts/enrichment-review/recover_albarakath_manual.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+173,??,artifacts/enrichment-review/recover_chicken_discover.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+174,??,artifacts/enrichment-review/recover_chicken_manual.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+175,??,artifacts/enrichment-review/recover_pietro_discover.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+176,??,artifacts/enrichment-review/recover_pietro_manual.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+177,??,artifacts/enrichment-review/recover_wala_discover.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+178,??,artifacts/enrichment-review/recover_walawala_manual.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+179,??,bulk-approve.sql,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+180,??,check_schema.sql,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+181,??,check_updates.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+182,??,chunk-approve-dishes.sql,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+183,??,chunk-approve-media.sql,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+184,??,chunk-approve-venues.sql,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+185,??,chunk-promote.sql,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+186,??,data/.Hungry F&B Database.xlsx.11340.tmp.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+187,??,data/.Hungry F&B Database.xlsx.31308.tmp.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+188,??,data/.Hungry F&B Database.xlsx.47233.tmp.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+189,??,data/.Hungry F&B Database.xlsx.4746.tmp.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+190,??,data/.Hungry F&B Database.xlsx.69807.tmp.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+191,??,data/.Hungry F&B Database.xlsx.78974.tmp.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+192,??,data/Hungry F&B Database.fromzip.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+193,??,data/Hungry F&B Database.repaired.zip,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+194,??,data/Hungry F&B Database.repaired_workbook.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+195,??,data/Hungry F&B Database.xlsx.bak-20260713T172954Z,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+196,??,data/Hungry F&B Database.xlsx.bak-20260715T080736Z,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+197,??,data/Hungry F&B Database.xlsx.bak-20260715T080736Z.test.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+198,??,data/Hungry F&B Database.xlsx.bak-20260715T081618Z,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+199,??,data/Hungry F&B Database.xlsx.bak-20260715T081618Z.test.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+200,??,data/Hungry F&B Database.xlsx.bak-20260715T081753Z,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+201,??,data/Hungry F&B Database.xlsx.bak-20260715T081753Z.test.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+202,??,data/Hungry F&B Database.xlsx.bak-20260715T083500Z,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+203,??,data/Hungry F&B Database.xlsx.bak-20260715T083500Z.test.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+204,??,data/Hungry F&B Database.xlsx.bak-20260715T085647Z,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+205,??,data/Hungry F&B Database.xlsx.bak-20260715T085647Z.test.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+206,??,data/Hungry F&B Database.xlsx.bak-20260715T094611Z,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+207,??,data/Hungry F&B Database.xlsx.bak-enrich-fix-20260715,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+208,??,data/Hungry F&B Database.xlsx.cleansrc.xlsx,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+209,??,data/Hungry F&B Database.xlsx.corrupt-20260715-$(date +%H%M%S).test.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+210,??,data/Hungry F&B Database.xlsx.corrupt-20260715-023200,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+211,??,data/Hungry F&B Database.xlsx.corrupt-20260715-023200.test.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+212,??,data/Hungry F&B Database.xlsx.recovering.bak,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+213,??,data/Hungry F&B Database.xlsx.recovering.bak.test.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+214,??,data/Hungry F&B Database.xlsx.repair-1784105423.bak,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+215,??,data/Hungry F&B Database.xlsx.repair-1784105423.bak.test.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+216,??,data/Hungry F&B Database.xlsx.repaired.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+217,??,data/Hungry F&B Database.xlsx.repaired_backup.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+218,??,data/Hungry F&B Database_backup_ok.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+219,??,data/agent-live-pass-1.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+220,??,data/agent-wks-venue1-dryrun.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+221,??,data/agent-wks-venue1-noknown-dryrun.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+222,??,data/agent-wks-venue2-dryrun.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+223,??,data/agent-wks-venue2-noknown-dryrun.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+224,??,data/agent-wks-venue3-dryrun.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+225,??,data/agent-wks-venue3-noknown-dryrun.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+226,??,data/approved_hd_image_urls.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+227,??,data/approved_hd_image_urls_add.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+228,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260713T155028Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+229,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260713T155803Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+230,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260713T160257Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+231,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260713T160741Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+232,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260713T165602Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+233,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260713T165921Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+234,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260713T171006Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+235,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260713T172425Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+236,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260713T172826Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+237,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260714T155950Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+238,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260714T160803Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+239,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260714T161107Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+240,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260714T161618Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+241,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260714T161650Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+242,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260714T161946Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+243,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260714T162053Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+244,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260714T162336Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+245,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260714T162951Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+246,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260714T163103Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+247,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260714T163236Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+248,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260714T163344Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+249,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260714T163557Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+250,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260714T163622Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+251,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260714T163644Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+252,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260714T163803Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+253,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260714T164223Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+254,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260714T164442Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+255,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260714T164746Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+256,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260714T164907Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+257,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260714T165111Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+258,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260714T165253Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+259,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260714T171746Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+260,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260714T172357Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+261,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260714T172700Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+262,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260714T172819Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+263,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260714T211940Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+264,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260715T081047Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+265,??,data/archive/20260707-master-sync/Hungry F&B Database.pre-master-sync-20260715T083426Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+266,??,data/archive/20260714-sync/Hungry F&B Database.pre-master-sync-20260714T155121Z.xlsx,,binary data/workbook,preserve,not-ported,original-only-untracked,true,false,false,false,retain pending provenance and canonical-workbook parity review
+267,??,data/arya_weak_retry.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+268,??,data/catalog-output-check.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+269,??,data/consolidated_chain_images.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+270,??,data/continue_target_4focus_365_dry.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+271,??,data/continue_target_4focus_365_live_write.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+272,??,data/continue_target_4focus_albarakath_dry.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+273,??,data/continue_target_4focus_albarakath_live.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+274,??,data/continue_target_4focus_chicken_dry.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+275,??,data/continue_target_4focus_chicken_live.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+276,??,data/continue_target_4focus_wala_dry.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+277,??,data/continue_target_4focus_wala_live.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+278,??,data/continue_target_multi2_20260716.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+279,??,data/continue_target_multi_20260716.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+280,??,data/continue_target_retry_20260716d.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+281,??,data/continue_target_retry_20260716e.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+282,??,data/continue_target_retry_20260716g.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+283,??,data/continue_target_retry_20260716h.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+284,??,data/continue_target_retry_20260716i.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+285,??,data/continue_target_retry_20260716j.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+286,??,data/continue_target_retry_20260716k.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+287,??,data/continue_target_retry_20260716k4.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+288,??,data/continue_target_retry_20260716l.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+289,??,data/continue_target_retry_20260716l4.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+290,??,data/continue_target_retry_20260716m.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+291,??,data/continue_target_run_now_dryrun.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+292,??,data/continue_target_run_now_nowrite.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+293,??,data/continue_target_single_20260716c.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+294,??,data/dashboard-server.lock,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+295,??,data/dashboard_history.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+296,??,data/discover_tmp.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+297,??,data/enrichment-continue-goal-pass-20260715.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+298,??,data/enrichment-continue-goal-pass-20260715b.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+299,??,data/enrichment-discover-dryrun-20260714.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+300,??,data/enrichment-discover-latest.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+301,??,data/enrichment-discover-sources-dryrun-20260715-next.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+302,??,data/enrichment-discover-sources-dryrun-20260715-next2.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+303,??,data/enrichment-discover-sources-dryrun-20260716-o.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+304,??,data/enrichment-discover-sources-dryrun-20260716-p.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+305,??,data/enrichment-discover-sources-live-20260715-next.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+306,??,data/enrichment-discover-sources-live-20260715-next2.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+307,??,data/enrichment-dryrun-20260714-weak.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+308,??,data/enrichment-dryrun-20260714.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+309,??,data/enrichment-foodrepublic-targets-dryrun-20260715.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+310,??,data/enrichment-goal-target-pass.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+311,??,data/enrichment-grab-next-dryrun-20260715-b2.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+312,??,data/enrichment-grab-next-dryrun-20260715-c.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+313,??,data/enrichment-grab-next-dryrun-20260715-c2.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+314,??,data/enrichment-grab-next-dryrun-20260715-c3.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+315,??,data/enrichment-grab-next-dryrun-20260715-d.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+316,??,data/enrichment-grab-next-dryrun-20260715.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+317,??,data/enrichment-grab-next-dryrun-20260716-e.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+318,??,data/enrichment-grab-next-dryrun-20260716-f.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+319,??,data/enrichment-grab-next-dryrun-20260716-g.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+320,??,data/enrichment-grab-next-dryrun-20260716-h.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+321,??,data/enrichment-grab-next-dryrun-20260716-i.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+322,??,data/enrichment-grab-next-live-20260715-b2.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+323,??,data/enrichment-grab-next-live-20260715-c3.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+324,??,data/enrichment-grab-next-live-20260715-d.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+325,??,data/enrichment-grab-next-live-20260716-e.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+326,??,data/enrichment-grab-next-live-20260716-f.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+327,??,data/enrichment-grab-next-live-20260716-g.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+328,??,data/enrichment-grab-next-live-20260716-h.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+329,??,data/enrichment-grab-targets-dryrun-20260715-b.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+330,??,data/enrichment-grab-targets-dryrun-20260715-b2.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+331,??,data/enrichment-grab-targets-dryrun-20260715-b3.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+332,??,data/enrichment-grab-targets-dryrun-20260715-b4.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+333,??,data/enrichment-grab-targets-dryrun-20260715.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+334,??,data/enrichment-grab-targets-live-20260715-b4.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+335,??,data/enrichment-huggs-official-live-20260715.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+336,??,data/enrichment-known-sources-bark-live-20260715.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+337,??,data/enrichment-known-sources-dryrun-20260715-next.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+338,??,data/enrichment-known-sources-dryrun-20260716-j.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+339,??,data/enrichment-known-sources-dryrun-20260716-k.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+340,??,data/enrichment-known-sources-dryrun-20260716-l.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+341,??,data/enrichment-known-sources-dryrun-20260716-m.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+342,??,data/enrichment-known-sources-dryrun-20260716-m2.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+343,??,data/enrichment-known-sources-dryrun-20260716-n.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+344,??,data/enrichment-known-sources-dryrun-20260716-o.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+345,??,data/enrichment-known-sources-live-20260715-hd-retry.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+346,??,data/enrichment-known-sources-live-20260716-j.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+347,??,data/enrichment-known-sources-live-20260716-k.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+348,??,data/enrichment-known-sources-live-20260716-l.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+349,??,data/enrichment-known-sources-live-20260716-m.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+350,??,data/enrichment-known-sources-live-20260716-n.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+351,??,data/enrichment-official-targets-dryrun-20260715.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+352,??,data/enrichment-pass-365juices-loc.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+353,??,data/enrichment-pass-albarakath-v2.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+354,??,data/enrichment-pass-albarakath-v3.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+355,??,data/enrichment-pass-albarakath.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+356,??,data/enrichment-pass-google-display-venue.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+357,??,data/enrichment-pass-live-pietro.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+358,??,data/enrichment-pass-offline-latest.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+359,??,data/enrichment-pass-pietro.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+360,??,data/enrichment-sweeheng-blue-beta-live-20260715.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+361,??,data/enrichment-target-ids-20260715-run-write.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+362,??,data/enrichment-target-ids-20260715-run.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+363,??,data/enrichment-targeted-live-20260715.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+364,??,data/enrichment-whyq-targets-dryrun-20260715.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+365,??,data/enrichment_checkpoint.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+366,??,data/enrichment_continue_goal_pass.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+367,??,data/enrichment_continue_goal_pass_c2.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+368,??,data/enrichment_continue_goal_pass_supabase.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+369,??,data/enrichment_continue_pass_goalgated_20260715.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+370,??,data/enrichment_continue_venue_CE15121_live.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+371,??,data/enrichment_discover_focus_pass.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+372,??,data/enrichment_discover_retry_pass1.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+373,??,data/enrichment_discover_retry_pass2.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+374,??,data/enrichment_export_focus.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+375,??,data/enrichment_export_focus_actionable_rows.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+376,??,data/enrichment_export_focus_actionable_sheet_rows.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+377,??,data/enrichment_export_focus_rows.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+378,??,data/enrichment_focus_selected_20260715.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+379,??,data/enrichment_focus_sw04164_discoverrun.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+380,??,data/enrichment_goal_live_dryrun_ALBARAKATH_online.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+381,??,data/enrichment_goal_live_dryrun_CHICKENRUN.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+382,??,data/enrichment_goal_live_dryrun_CHICKENRUN_online.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+383,??,data/enrichment_goal_multi_retry_v4.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+384,??,data/enrichment_goal_restart_dryrun.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+385,??,data/enrichment_goal_restart_live.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+386,??,data/enrichment_goal_restart_updated_dishes.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+387,??,data/enrichment_goal_retry_365juices_weak_final_v2.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+388,??,data/enrichment_goal_retry_agents.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+389,??,data/enrichment_goal_retry_agents_discover.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+390,??,data/enrichment_goal_retry_agents_live_20260715.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+391,??,data/enrichment_goal_retry_albarakath_weak_final_v2.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+392,??,data/enrichment_goal_ven-SFA-SE14897A000_live_dryrun.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+393,??,data/enrichment_goal_ven-SFA-SE14897A000_offline.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+394,??,data/enrichment_google_report_current.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+395,??,data/enrichment_live_ven-SFA-SE14897A000_weak.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+396,??,data/enrichment_retry2_albarakath.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+397,??,data/enrichment_retry2_chicken.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+398,??,data/enrichment_retry2_mrteh.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+399,??,data/enrichment_retry2_pietro.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+400,??,data/enrichment_retry2_senghuat.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+401,??,data/enrichment_retry2_walawala.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+402,??,data/enrichment_retry_365juices_weak_final.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+403,??,data/enrichment_retry_365juices_weak_final2.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+404,??,data/enrichment_retry_albarakath_weak_final.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+405,??,data/enrichment_retry_albarakath_weak_final2.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+406,??,data/enrichment_retry_chicken_weak.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+407,??,data/enrichment_retry_live5_final.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+408,??,data/enrichment_retry_live_venSFANW11452P000.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+409,??,data/enrichment_retry_live_venSFASE14897A000.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+410,??,data/enrichment_retry_live_venSFASE14897A000_discover.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+411,??,data/enrichment_retry_live_venSFASE18208P000.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+412,??,data/enrichment_retry_live_venSFASW04164A000.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+413,??,data/enrichment_retry_live_venSFASW08293X000.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+414,??,data/enrichment_retry_live_venSFAW83271N000.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+415,??,data/enrichment_retry_s90134_dryrun.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+416,??,data/enrichment_retry_se05289_dryrun.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+417,??,data/enrichment_retry_targets5_live.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+418,??,data/enrichment_retry_walawala_weak_v2.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+419,??,data/enrichment_run_20260714_1.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+420,??,data/enrichment_run_20260714_2.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+421,??,data/enrichment_run_20260714_3.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+422,??,data/enrichment_run_20260714_4.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+423,??,data/enrichment_run_20260714_5.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+424,??,data/enrichment_run_20260714_6.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+425,??,data/enrichment_run_20260714_dryrun_small.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+426,??,data/enrichment_run_cont_focus_SFA-CE12W28V000.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+427,??,data/enrichment_run_cont_focus_SFA-CE13040N000.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+428,??,data/enrichment_run_cont_focus_SWA_noHD_limit.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+429,??,data/enrichment_run_cont_focus_ven-SFA-SE14897A000.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+430,??,data/enrichment_run_cont_focus_ven-SFA-SW04164A000.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+431,??,data/enrichment_run_cont_focus_ven-SFA-W93409A000.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+432,??,data/enrichment_run_focus_SFA-C00149N007_2.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+433,??,data/enrichment_run_focus_SFA-C75012B000_2.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+434,??,data/enrichment_run_focus_SFA-CE06A62P000_2.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+435,??,data/enrichment_run_focus_SFA-CE12W28V000.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+436,??,data/enrichment_run_focus_SFA-CE12W28V000_strong.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+437,??,data/enrichment_run_focus_SFA-CE13M11B000_2.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+438,??,data/enrichment_run_focus_SFA-W92199J000.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+439,??,data/enrichment_run_focus_ven-S90134V000.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+440,??,data/enrichment_run_focus_ven-SFA-CE14332K000_2.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+441,??,data/enrichment_run_focus_ven-SFA-SE05289P000.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+442,??,data/enrichment_run_focus_ven-SFA-SE10025B000.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+443,??,data/enrichment_run_focus_ven-SFA-SE14897A000.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+444,??,data/enrichment_run_focus_ven-SFA-SW04164A000.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+445,??,data/enrichment_run_focus_ven-SFA-SW04164A000_strong.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+446,??,data/enrichment_run_focus_ven-SFA-W83271N000.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+447,??,data/enrichment_run_focus_ven-SFA-W93409A000.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+448,??,data/enrichment_run_focus_ven-SFA-W93409A000_strong.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+449,??,data/enrichment_run_retry_365juices.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+450,??,data/enrichment_run_retry_365juices2.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+451,??,data/enrichment_run_retry_albarakath.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+452,??,data/enrichment_run_retry_chicken.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+453,??,data/enrichment_run_retry_discover8.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+454,??,data/enrichment_run_retry_discover8_b.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+455,??,data/enrichment_run_retry_pietro.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+456,??,data/enrichment_run_retry_s90134_live.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+457,??,data/enrichment_run_retry_s90134_supabase.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+458,??,data/enrichment_run_retry_se05289_live.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+459,??,data/enrichment_run_retry_se05289_supabase.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+460,??,data/enrichment_run_retry_walawala.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+461,??,data/enrichment_target_pass_20260716.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+462,??,data/excel_target_updates_20260716.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+463,??,data/exports/auto_enrich_target_batch_20260715.json,,generated/cache/temp,needs-review,not-ported,original-only-untracked,true,false,false,false,confirm deterministic regeneration and references before removal
+464,??,data/exports/enrich_discover_retry_top3_20260715c.json,,generated/cache/temp,needs-review,not-ported,original-only-untracked,true,false,false,false,confirm deterministic regeneration and references before removal
+465,??,data/exports/enrich_retry_top3_20260715b.json,,generated/cache/temp,needs-review,not-ported,original-only-untracked,true,false,false,false,confirm deterministic regeneration and references before removal
+466,??,data/exports/enrich_retry_top3_20260715c.json,,generated/cache/temp,needs-review,not-ported,original-only-untracked,true,false,false,false,confirm deterministic regeneration and references before removal
+467,??,data/exports/enrich_run_2026-07-15.json,,generated/cache/temp,needs-review,not-ported,original-only-untracked,true,false,false,false,confirm deterministic regeneration and references before removal
+468,??,data/exports/enrichment_focus_four_20260715_dry.json,,generated/cache/temp,needs-review,not-ported,original-only-untracked,true,false,false,false,confirm deterministic regeneration and references before removal
+469,??,data/exports/enrichment_focus_four_20260715_rerun_dry.json,,generated/cache/temp,needs-review,not-ported,original-only-untracked,true,false,false,false,confirm deterministic regeneration and references before removal
+470,??,data/exports/enrichment_focus_ven_SFA-SE14897A000_apply2.json,,generated/cache/temp,needs-review,not-ported,original-only-untracked,true,false,false,false,confirm deterministic regeneration and references before removal
+471,??,data/exports/enrichment_focus_ven_SFA-SW04164A000_apply2.json,,generated/cache/temp,needs-review,not-ported,original-only-untracked,true,false,false,false,confirm deterministic regeneration and references before removal
+472,??,data/exports/enrichment_focus_ven_SFA-W93409A000_apply2.json,,generated/cache/temp,needs-review,not-ported,original-only-untracked,true,false,false,false,confirm deterministic regeneration and references before removal
+473,??,data/exports/enrichment_focus_venue_SFA-CE13040N000_apply2.json,,generated/cache/temp,needs-review,not-ported,original-only-untracked,true,false,false,false,confirm deterministic regeneration and references before removal
+474,??,data/exports/goal_continue_one_top_venue.json,,generated/cache/temp,needs-review,not-ported,original-only-untracked,true,false,false,false,confirm deterministic regeneration and references before removal
+475,??,data/exports/workbook_dish_patch_focus_four.json,,generated/cache/temp,needs-review,not-ported,original-only-untracked,true,false,false,false,confirm deterministic regeneration and references before removal
+476,??,data/fallback_enrichment_results.json.run-start.bak,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+477,??,data/focus_delivery_openweb_payload.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+478,??,data/focus_dishes_payload.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+479,??,data/free_validation_report_0_to_5.csv,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+480,??,data/free_validation_report_0_to_50.csv,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+481,??,data/google-missing-fields-report-20260715.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+482,??,data/google_name_report_focus.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+483,??,data/google_name_report_targeted_20260715.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+484,??,data/google_name_target_queue.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+485,??,data/google_places_report_500.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+486,??,data/google_places_report_500_reportonly.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+487,??,data/hungry-app-catalog.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+488,??,data/logs/agent_365juices.txt,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+489,??,data/logs/agent_365juices_weak_missingprice.txt,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+490,??,data/logs/agent_albarakath.txt,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+491,??,data/logs/agent_albarakath_weak_missingprice.txt,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+492,??,data/logs/agent_albarakath_weak_missingprice_r1.txt,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+493,??,data/logs/agent_c93023.txt,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+494,??,data/logs/agent_ce12.txt,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+495,??,data/logs/agent_ce12_weak.txt,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+496,??,data/logs/agent_ce12_weak_missingprice.txt,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+497,??,data/logs/agent_chicken.txt,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+498,??,data/logs/agent_chicken_weak_missingprice.txt,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+499,??,data/logs/agent_discover1.txt,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+500,??,data/logs/agent_discover2.txt,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+501,??,data/logs/agent_discover3.txt,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+502,??,data/logs/agent_frozbakery.txt,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+503,??,data/logs/agent_nw17078.txt,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+504,??,data/logs/agent_nw17905.txt,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+505,??,data/logs/agent_walawala.txt,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+506,??,data/logs/agent_walawala_weak_missingprice.txt,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+507,??,data/logs/agent_walawala_weak_missingprice_r1.txt,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+508,??,data/logs/albarakath_discovery.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+509,??,data/logs/albarakath_dryrun_weak.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+510,??,data/logs/chicken_discovery.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+511,??,data/logs/continue_target_discovery.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+512,??,data/logs/continue_target_live_20260715.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+513,??,data/logs/continue_target_live_20260715b.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+514,??,data/logs/continue_target_live_single_20260715c.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+515,??,data/logs/continue_target_live_single_20260715d.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+516,??,data/logs/continue_target_multi_20260715e.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+517,??,data/logs/continue_target_multi_20260715f.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+518,??,data/logs/continue_target_run1.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+519,??,data/logs/continue_target_run2.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+520,??,data/logs/continue_target_run3.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+521,??,data/logs/continue_target_run4.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+522,??,data/logs/continue_target_run5b.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+523,??,data/logs/continue_target_single_20260715b.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+524,??,data/logs/continue_target_single_debug_20260715.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+525,??,data/logs/continue_target_single_debug_20260715.log,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+526,??,data/logs/enrichment_retry2_SFA-CE13M11B000.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+527,??,data/logs/enrichment_retry3_SFA-CE13M11B000.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+528,??,data/logs/enrichment_retry4_SFA-C00149N007 https:/food.grab.com/sg/en/restaurant/teck-seng-bee-claypot-rice-chuan-village-delivery/4-c2u1lftznej2cj.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+529,??,data/logs/enrichment_retry4_SFA-C00149N007.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+530,??,data/logs/enrichment_retry4_SFA-C75012B000 https:/food.grab.com/sg/en/restaurant/barrels-entertainment-queenstown-delivery/SGDD01336.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+531,??,data/logs/enrichment_retry4_SFA-C75012B000.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+532,??,data/logs/enrichment_retry4_SFA-CE06A62P000.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+533,??,data/logs/enrichment_retry4_SFA-CE13M11B000 https:/food.grab.com/sg/en/restaurant/teng-bespoke-sunshine-plaza-delivery/4-C2UBCTDTVUEBT2.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+534,??,data/logs/enrichment_retry4_ven-SFA-CE14332K000 https:/food.grab.com/sg/en/restaurant/toast-box-harbourfront-centre-delivery/SGDD11199.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+535,??,data/logs/enrichment_retry4_ven-SFA-CE14332K000.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+536,??,data/logs/enrichment_retry5_targets.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+537,??,data/logs/enrichment_retry5_targets_dryrun.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+538,??,data/logs/enrichment_retry_SFA-C00149N007.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+539,??,data/logs/enrichment_retry_SFA-C75012B000.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+540,??,data/logs/enrichment_retry_SFA-CE06A62P000.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+541,??,data/logs/enrichment_retry_SFA-CE13M11B000.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+542,??,data/logs/enrichment_retry_ven-SFA-CE14332K000.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+543,??,data/logs/google_report_from_plan_20260715.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+544,??,data/logs/grab_diag.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+545,??,data/logs/grab_single_diag.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+546,??,data/logs/hungry-arkadas-live-20260713b.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+547,??,data/logs/hungry-banana-leaf-live-20260713b.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+548,??,data/logs/hungry-bark-cafe-live-20260713b.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+549,??,data/logs/hungry-boost-gw-live-20260713b.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+550,??,data/logs/hungry-discovery-next-20260713c.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+551,??,data/logs/hungry-discovery-next-20260713d.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+552,??,data/logs/hungry-ega-juice-clinic-dryrun-20260713.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+553,??,data/logs/hungry-grumpy-bear-live-20260713b.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+554,??,data/logs/hungry-live-window-20260714-01.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+555,??,data/logs/hungry-my-cosy-corner-audit-dryrun-20260713.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+556,??,data/logs/hungry-my-cosy-corner-audit-live-20260713.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+557,??,data/logs/hungry-pastamania-jem-audit-dryrun-20260713.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+558,??,data/logs/hungry-sushi-bar-far-east-dryrun-20260713.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+559,??,data/logs/hungry-sushi-bar-far-east-live-20260713.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+560,??,data/logs/hungry-toastbox-live-20260713b.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+561,??,data/logs/target5_dryrun.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+562,??,data/logs/target5_live.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+563,??,data/logs/walawala_dryrun_weak.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+564,??,data/manual-weak2-actionable-rows.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+565,??,data/manual_enrich_albarakath_v1.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+566,??,data/manual_enrich_chicken_v1.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+567,??,data/manual_enrich_pietro_v1.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+568,??,data/manual_enrich_walawala_v1.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+569,??,data/missing_dish_images.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+570,??,data/onemap-live-20260715-10.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+571,??,data/onemap-live-20260715-100-fixed.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+572,??,data/onemap-live-20260715-100.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+573,??,data/onemap-live-20260715-1000.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+574,??,data/onemap-live-20260715-500.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+575,??,data/onemap-live-20260715-next.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+576,??,data/planning-area.geojson,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+577,??,data/priority_validation_report_0_to_50.csv,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+578,??,data/priority_validation_report_100_to_6714.csv,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+579,??,data/priority_validation_report_50_to_100.csv,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+580,??,data/recent_activity.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+581,??,data/retry_update_ids.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+582,??,data/run-albarakath-dryrun.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+583,??,data/scraped_official_dish_images.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+584,??,data/stalls_to_fallback.json.run-start.bak,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+585,??,data/supabase_excel_sync_state.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+586,??,data/sync_state.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+587,??,data/tmp_approved_targets.json,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+588,??,data/tmp_fallback_smoke_run.json,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+589,??,data/tmp_fallback_smoke_run_candidate.json,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+590,??,data/tmp_fallback_smoke_run_placeid.json,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+591,??,data/tmp_manual_ce17m73.json,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+592,??,data/tmp_manual_communitycoffee.json,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+593,??,data/tmp_manual_edith.json,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+594,??,data/tmp_manual_joe.json,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+595,??,data/tmp_manual_soho.json,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+596,??,data/tmp_retry_recover_run.json,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+597,??,data/tmp_retry_recover_run2.json,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+598,??,data/tmp_retry_recover_run3.json,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+599,??,data/tmp_retry_recover_run4.json,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+600,??,data/tmp_retry_recover_run5.json,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+601,??,data/ven_SFA_SE14897_debug.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+602,??,data/venue_SFA-C75012B000_live.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+603,??,data/venue_SFA-CE12W28V000_live.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+604,??,data/venue_SFA-CE13040N000_live.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+605,??,data/venue_SFA-CE13M11B000_live.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+606,??,data/venue_ce12_dryrun.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+607,??,data/venue_ce12_live_run.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+608,??,data/venue_haikee_live.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+609,??,data/venue_mythai_dryrun.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+610,??,data/venue_mythai_live.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+611,??,data/venue_s92199_live.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+612,??,data/venue_se10025_live.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+613,??,data/venue_ven-SFA-SE14897A000_live.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+614,??,data/venue_ven-SFA-SW04164A000_live.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+615,??,data/venue_ven-SFA-W93409A000_live.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+616,??,data/venue_w83271_dryrun.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+617,??,data/venue_w83271_live.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+618,??,data/verified_hd_candidates.json,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+619,??,docs/data-enrichment-and-sync-runbook.md,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+620,??,docs/enrichment-model-handoff.md,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+621,??,logs/rasa-istimewa-ven-SFA-NE05155X000-extract.json,,generated/cache/temp,preserve,not-ported,original-only-untracked,true,false,false,false,retain as evidence until provenance/reference closeout
+622,??,marketing/website/web-v2/src/app/api/console/change-requests/[requestId]/review/route.ts,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+623,??,marketing/website/web-v2/src/app/api/console/inbox/[recordId]/review/route.ts,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+624,??,marketing/website/web-v2/src/app/api/console/submissions/[submissionId]/review/route.ts,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+625,??,marketing/website/web-v2/src/app/console/inbox/OcrReviewPanel.tsx,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+626,??,marketing/website/web-v2/src/app/console/inbox/page.tsx,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+627,??,marketing/website/web-v2/src/lib/console/actions/ocrActions.ts,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+628,??,mass-promote-staging.sql,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+629,??,ops/playbooks/data-extraction-enrichment-sync-model-handoff.md,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+630,??,ops/playbooks/excel-supabase-enrichment-sync-handoff.md,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+631,??,ops/playbooks/excel-supabase-extraction-sync-steps.md,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+632,??,ops/playbooks/extraction-enrichment-excel-supabase-handoff.md,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+633,??,ops/playbooks/fnb-chain-outlet-reconciliation.md,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+634,??,ops/playbooks/full-database-stall-menu-extraction.md,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+635,??,ops/playbooks/scraper-enrichment-runbook.md,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+636,??,ops/playbooks/venue-accuracy-loop-runbook.md,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+637,??,ops/playbooks/venue-platform-discovery-runbook.md,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+638,??,patch_stallcard.js,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+639,??,run-chunk-approve-dishes.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+640,??,run-chunk-approve-dishes.sh,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+641,??,run-chunk-approve-media.sh,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+642,??,run-chunk-approve-venues.sh,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+643,??,run-chunk.sh,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+644,??,scratch-brands-schema.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+645,??,scratch-brands.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+646,??,scratch-building-search.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+647,??,scratch-building.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+648,??,scratch-enum.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+649,??,scratch-promote.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+650,??,scratch-promote2.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+651,??,scratch-promote3.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+652,??,scratch-revert-unsplash.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+653,??,scratch-row-number.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+654,??,scratch-schema.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+655,??,scratch-staging.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+656,??,scripts/__tests__/batch_google_places_enrichment.test.py,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+657,??,scripts/__tests__/export_catalog_media.test.py,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+658,??,scripts/__tests__/google_places_sheet_enrich.test.py,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+659,??,scripts/apply-dish-images.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+660,??,scripts/apply-grab-verified-updates.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+661,??,scripts/apply_saizeriya_location_correction.py,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+662,??,scripts/audit-database-completeness.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+663,??,scripts/audit-supabase-fnb-validation.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+664,??,scripts/audit_excel_headers.py,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+665,??,scripts/auto-enrich-grab-images.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+666,??,scripts/backfill-chain-brands.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+667,??,scripts/batch-approve-trusted-data.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+668,??,scripts/batch_google_places_enrichment.py,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+669,??,scripts/capture-screenshots.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+670,??,scripts/check-fnb-batch-ledger-safety.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+671,??,scripts/check-fnb-objective-output-contract.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+672,??,scripts/check-fnb-source-policy-safety.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+673,??,scripts/check-fnb-staging-sql-safety.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+674,??,scripts/check-fnb-validation-readiness.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+675,??,scripts/check-legacy-dishes.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+676,??,scripts/check-venues-count.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+677,??,scripts/cleanup-consumer-facing-names.py,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+678,??,scripts/cleanup-duplicate-dishes.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+679,??,scripts/cleanup-reconciliation.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+680,??,scripts/cleanup_workbook_supermarkets_and_logos.py,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+681,??,scripts/compile-fnb-validation-observations.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+682,??,scripts/consolidate-chain-images.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+683,??,scripts/consolidate-sized-dish-variants.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+684,??,scripts/consolidate-top20-chain-menu-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+685,??,scripts/crawl-subway-product-pages-browser.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+686,??,scripts/dashboard-metrics.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+687,??,scripts/dashboard-server.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+688,??,scripts/dashboard-snapshot-worker.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+689,??,scripts/discover-venue-outlets.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+690,??,scripts/enrich-subway-official-product-pages.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+691,??,scripts/extract-burgerking-foodpanda-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+692,??,scripts/extract-coffee-bean-foodpanda-merged-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+693,??,scripts/extract-coffee-bean-official-image-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+694,??,scripts/extract-generic-discovery-candidates.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+695,??,scripts/extract-kfc-api-image-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+696,??,scripts/extract-kfc-limited-news-image-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+697,??,scripts/extract-kfc-normalized-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+698,??,scripts/extract-koi-normalized-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+699,??,scripts/extract-liho-foodpanda-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+700,??,scripts/extract-mcdonalds-foodpanda-merged-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+701,??,scripts/extract-mcdonalds-price-search-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+702,??,scripts/extract-mcdonalds-supplemental-price-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+703,??,scripts/extract-mos-burger-normalized-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+704,??,scripts/extract-mrbean-foodpanda-merged-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+705,??,scripts/extract-mrbean-official-detail-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+706,??,scripts/extract-mrbean-price-search-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+707,??,scripts/extract-old-chang-kee-catering-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+708,??,scripts/extract-pastamania-chain-image-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+709,??,scripts/extract-pastamania-foodpanda-merged-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+710,??,scripts/extract-pastamania-rendered-image-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+711,??,scripts/extract-pepper-lunch-official-merged-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+712,??,scripts/extract-pepper-lunch-price-search-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+713,??,scripts/extract-pepper-lunch-shopy-price-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+714,??,scripts/extract-starbucks-foodpanda-merged-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+715,??,scripts/extract-starbucks-official-shop-merged-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+716,??,scripts/extract-starbucks-price-search-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+717,??,scripts/extract-starbucks-supplemental-price-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+718,??,scripts/extract-subway-item-page-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+719,??,scripts/extract-subway-price-search-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+720,??,scripts/extract-subway-rendered-product-cards.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+721,??,scripts/extract-subway-supplemental-price-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+722,??,scripts/extract-subwayisfresh-item-pages.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+723,??,scripts/extract-sushi-express-official-price-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+724,??,scripts/extract-yakun-oddle-menu-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+725,??,scripts/extract_independent_logos.py,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+726,??,scripts/extract_local_logos.py,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+727,??,scripts/extract_nayana_menu_assets.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+728,??,scripts/extract_nayana_menu_assets.test.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+729,??,scripts/fetch-images-grab.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+730,??,scripts/fetch-mcd-help-article.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+731,??,scripts/fetch-sitemap.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+732,??,scripts/fetch-subway-outlets.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+733,??,scripts/fill-planning-area-geojson.contract.test.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+734,??,scripts/fill-planning-area-geojson.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+735,??,scripts/fill-planning-area.contract.test.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+736,??,scripts/fill-planning-area.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+737,??,scripts/filter-corporate-names.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+738,??,scripts/find-chains.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+739,??,scripts/find-mrbean-link.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+740,??,scripts/fixtures/nayana-menu-page.html,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+741,??,scripts/free_validate_database.py,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+742,??,scripts/generate-corporate-exclusions.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+743,??,scripts/generate-fnb-approval-checklist.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+744,??,scripts/generate-fnb-approval-handoff.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+745,??,scripts/generate-fnb-approval-package-index.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+746,??,scripts/generate-fnb-artifact-integrity-report.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+747,??,scripts/generate-fnb-brand-outlet-candidates.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+748,??,scripts/generate-fnb-completion-audit.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+749,??,scripts/generate-fnb-final-validation-summary.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+750,??,scripts/generate-fnb-objective-coverage.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+751,??,scripts/generate-fnb-promotion-plan.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+752,??,scripts/generate-fnb-staging-upserts.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+753,??,scripts/generate-fnb-validation-review-summary.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+754,??,scripts/geocode-onemap.contract.test.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+755,??,scripts/geocode-onemap.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+756,??,scripts/grabfood_stealth_scraper.js,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+757,??,scripts/hgr-generate-candidates.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+758,??,scripts/import-menu-enrichment-to-supabase.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+759,??,scripts/inspect-kfc-href.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+760,??,scripts/inspect-kfc-navigation.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+761,??,scripts/inspect-kfc-xhr.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+762,??,scripts/inspect-mcd-help.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+763,??,scripts/inspect-mcd.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+764,??,scripts/inspect-mrbean-menu.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+765,??,scripts/inspect-mrbean-menuprices.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+766,??,scripts/inspect-mrbean.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+767,??,scripts/inspect-sfa-mcd.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+768,??,scripts/inspect-subway.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+769,??,scripts/link-chain-menu-image-observations.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+770,??,scripts/mapbox-enrichment-live.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+771,??,scripts/mapbox_free_tier_scraper.py,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,true,review content and tests before selective port
+772,??,scripts/mass-promote-staging.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+773,??,scripts/normalize-breadtalk-official-shop-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+774,??,scripts/normalize-pizzahut-official-api-evidence.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+775,??,scripts/oddle-to-sql.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+776,??,scripts/parse-mcd-html-content.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+777,??,scripts/parse-mcd-html.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+778,??,scripts/parse-mrbean-html-test.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+779,??,scripts/parse-operating-hours.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+780,??,scripts/parse-subway-html.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+781,??,scripts/parse-test-failures.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+782,??,scripts/patch-images-bing.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+783,??,scripts/patch_excel_cached_rows.py,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+784,??,scripts/patch_saizeriya_workbook_cache.py,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+785,??,scripts/phase45-audit.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+786,??,scripts/preflight-fnb-validation-execution.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+787,??,scripts/prepare-fnb-validation-batches.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+788,??,scripts/probe-locators.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+789,??,scripts/quarantine-non-hd-grab-media.contract.test.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+790,??,scripts/quarantine-non-hd-grab-media.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+791,??,scripts/read_target_venues.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+792,??,scripts/reconcile-all.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+793,??,scripts/reconcile-fnb-chain-outlets.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+794,??,scripts/refetch-pizzahut-official-api-menu.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+795,??,scripts/refresh-fnb-validation-batches.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+796,??,scripts/refresh-fnb-validation-review-artifacts.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+797,??,scripts/remove-menu-item-images.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+798,??,scripts/remove_unsplash_images.py,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+799,??,scripts/report-fnb-execution-blocker-status.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+800,??,scripts/report-fnb-validation-gate-status.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+801,??,scripts/report-image-observation-coverage.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+802,??,scripts/reset_failed.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+803,??,scripts/retry_saizeriya_location_correction_rest.py,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+804,??,scripts/run-fnb-validation-all-batches.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+805,??,scripts/run-fnb-validation-batch.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+806,??,scripts/run-venue-accuracy-a-z-extraction.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+807,??,scripts/run-venue-accuracy-loop.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+808,??,scripts/scrape-bing-image.py,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+809,??,scripts/scrape-chain-dish-images.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+810,??,scripts/scrape-delivery-menus.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+811,??,scripts/scrape-grab-master.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+812,??,scripts/scrape-kopitiam-outlets.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+813,??,scripts/scrape-koufu-outlets.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+814,??,scripts/scrape-lihoteasg.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+815,??,scripts/scrape-mysgmenu-chain.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+816,??,scripts/scrape-mysgmenu.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+817,??,scripts/scrape-oddle-api.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+818,??,scripts/scrape-official-chain-menus.contract.test.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+819,??,scripts/scrape-official-chain-menus.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+820,??,scripts/scrape-official-images.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+821,??,scripts/scrape-official-outlets.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+822,??,scripts/scrape-sgmenuprice-chain.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+823,??,scripts/set-fnb-validation-approval.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+824,??,scripts/simulate-fnb-validation-approval.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+825,??,scripts/stage-local-dish-commons-images.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+826,??,scripts/stage-official-chain-menu-images.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+827,??,scripts/summarize-top20-chain-menu-gaps.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+828,??,scripts/summarize-venue-cleanup-candidates.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+829,??,scripts/supabase-seed-cuisine-menus.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+830,??,scripts/sync-all.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+831,??,scripts/sync-chain.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+832,??,scripts/sync-excel-dishes.py,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+833,??,scripts/sync-excel-mapbox.py,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+834,??,scripts/sync-liho-chain.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+835,??,scripts/test-onemap.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+836,??,scripts/test_grabfood_hang.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+837,??,scripts/test_patch_excel_cached_rows.py,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+838,??,scripts/tmp_query_targets.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+839,??,scripts/validate-phases-1-3.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+840,??,scripts/validate_database_cleaned_mapbox.py,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,true,review content and tests before selective port
+841,??,scripts/validate_database_foursquare.py,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,true,review content and tests before selective port
+842,??,scripts/validate_database_mapbox.py,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,true,review content and tests before selective port
+843,??,scripts/validate_database_places.py,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+844,??,scripts/verify-venue-platform-data.mjs,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+845,??,src/app/catalog-hydration-contracts.test.ts,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,false,false,three-way review required; do not auto-port
+846,??,src/app/screens/detail/review-reply-production-gating-contracts.test.ts,,already merged,preserve,already-present-in-audit,matches-audit,true,true,false,false,retain original WIP checkout until final parity approval; no re-port needed
+847,??,src/app/screens/discover/decide-for-me-production-actions-contracts.test.ts,,already merged,preserve,already-present-in-audit,matches-audit,true,true,false,false,retain original WIP checkout until final parity approval; no re-port needed
+848,??,src/app/screens/discover/popular-food-tags-contracts.test.ts,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+849,??,src/app/screens/profile/MySubmissionsScreen.tsx,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+850,??,src/app/screens/profile/edit-profile-password-reset-contracts.test.ts,,already merged,preserve,already-present-in-audit,matches-audit,true,true,false,false,retain original WIP checkout until final parity approval; no re-port needed
+851,??,src/app/screens/review/review-production-integrity-contracts.test.ts,,already merged,preserve,already-present-in-audit,matches-audit,true,true,false,false,retain original WIP checkout until final parity approval; no re-port needed
+852,??,src/assets/discover/beef-chow-fun-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+853,??,src/assets/discover/bibimbap-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+854,??,src/assets/discover/burrito-bowl-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+855,??,src/assets/discover/carrot-cake-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+856,??,src/assets/discover/chili-crab-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+857,??,src/assets/discover/dim-sum-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+858,??,src/assets/discover/dishes-wide.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+859,??,src/assets/discover/duck-rice-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+860,??,src/assets/discover/fish-soup-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+861,??,src/assets/discover/fishball-noodles-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+862,??,src/assets/discover/hokkien-mee-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+863,??,src/assets/discover/ice-kacang-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+864,??,src/assets/discover/katsu-curry-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+865,??,src/assets/discover/kimchi-jjigae-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+866,??,src/assets/discover/korean-bbq-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+867,??,src/assets/discover/mapo-tofu-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+868,??,src/assets/discover/mee-rebus-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+869,??,src/assets/discover/mee-siam-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+870,??,src/assets/discover/nasi-biryani-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+871,??,src/assets/discover/nasi-lemak-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+872,??,src/assets/discover/oyakodon-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+873,??,src/assets/discover/oyster-omelette-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+874,??,src/assets/discover/peking-duck-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+875,??,src/assets/discover/popiah-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+876,??,src/assets/discover/prawn-mee-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+877,??,src/assets/discover/ramen-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+878,??,src/assets/discover/roti-prata-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+879,??,src/assets/discover/satay-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+880,??,src/assets/discover/stalls-restaurants-wide.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+881,??,src/assets/discover/sushi-set-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+882,??,src/assets/discover/tacos-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+883,??,src/assets/discover/tteokbokki-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+884,??,src/assets/discover/wanton-mee-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+885,??,src/assets/discover/yong-tau-foo-topdown.png,,binary data/workbook,needs-review,not-ported,original-only-untracked,true,false,false,false,"verify provenance, rights, reference reachability, and replacement before port or removal"
+886,??,src/components/discover/search-results-view-contracts.test.ts,,already merged,preserve,already-present-in-audit,matches-audit,true,true,false,false,retain original WIP checkout until final parity approval; no re-port needed
+887,??,src/components/ui/avatar-image-fallback-contracts.test.ts,,already merged,preserve,already-present-in-audit,matches-audit,true,true,false,false,retain original WIP checkout until final parity approval; no re-port needed
+888,??,src/features/search/browseIndex.test.ts,,already merged,preserve,already-present-in-audit,matches-audit,true,true,true,false,retain original WIP checkout until final parity approval; no re-port needed
+889,??,src/features/search/scopedBrowseCatalog.test.ts,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,false,false,three-way review required; do not auto-port
+890,??,src/features/search/scopedBrowseCatalog.ts,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,false,false,three-way review required; do not auto-port
+891,??,src/features/search/venueDisplayName.test.ts,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+892,??,src/features/search/venueDisplayName.ts,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+893,??,src/lib/geo/distance.ts,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+894,??,src/lib/services/excel/excelCatalog.generated.json,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+895,??,src/lib/services/excel/excelService.ts,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+896,??,src/lib/services/excel/repositories.test.ts,,unique/valid candidate,needs-review,not-ported,original-only-delta,true,true,true,false,review content and tests before selective port
+897,??,src/lib/services/excel/repositories.ts,,stale/conflicting,needs-review,not-ported,diverged-from-audit-and-main,true,true,true,false,three-way review required; do not auto-port
+898,??,src/lib/services/supabase/submission-notifications.test.ts,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+899,??,supabase/migrations/20260628064500_update_promote_staging_to_production_logo.sql,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+900,??,supabase/migrations/20260628065000_execute_promotion_again.sql,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+901,??,supabase/migrations/20260628065500_force_execute_promotion_again.sql,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+902,??,supabase/migrations/20260628095253_backfill_venue_logos_from_official_websites.sql,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+903,??,supabase/migrations/20260630090000_stall_brand_accuracy_loop.sql,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+904,??,supabase/migrations/20260702153000_structured_operating_hours.sql,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+905,??,supabase/migrations/20260703153000_phase5_data_quality.sql,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+906,??,supabase/migrations/20260703160000_promote_submission_pipeline.sql,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+907,??,supabase/migrations/20260703170000_dish_food_type_tags.sql,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+908,??,supabase/migrations/20260703170000_merchant_auto_approval_and_application.sql,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+909,??,supabase/migrations/20260703180000_submission_notifications.sql,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+910,??,supabase/migrations/20260704013000_dish_size_options.sql,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+911,??,supabase/migrations/20260704015500_dish_size_options_rpc_payloads.sql,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+912,??,test-output.txt,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+913,??,tests/e2e/core-search-audit.mobile-android.spec.ts,,already merged,preserve,already-present-in-audit,matches-audit,true,true,false,false,retain original WIP checkout until final parity approval; no re-port needed
+914,??,tests/e2e/core-search-audit.mobile-ios.spec.ts,,already merged,preserve,already-present-in-audit,matches-audit,true,true,false,false,retain original WIP checkout until final parity approval; no re-port needed
+915,??,tests/e2e/dashboard.spec.ts,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+916,??,tests/e2e/excel-discover.spec.ts,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+917,??,tests/e2e/helpers/coreSearchAudit.ts,,already merged,preserve,already-present-in-audit,matches-audit,true,true,false,false,retain original WIP checkout until final parity approval; no re-port needed
+918,??,tests/e2e/helpers/profileSecurityAudit.ts,,already merged,preserve,already-present-in-audit,matches-audit,true,true,false,false,retain original WIP checkout until final parity approval; no re-port needed
+919,??,tests/e2e/helpers/visualAudit.ts,,already merged,preserve,already-present-in-audit,matches-audit,true,true,false,false,retain original WIP checkout until final parity approval; no re-port needed
+920,??,tests/e2e/profile-security-audit.mobile-android.spec.ts,,already merged,preserve,already-present-in-audit,matches-audit,true,true,false,false,retain original WIP checkout until final parity approval; no re-port needed
+921,??,tests/e2e/profile-security-audit.mobile-ios.spec.ts,,already merged,preserve,already-present-in-audit,matches-audit,true,true,false,false,retain original WIP checkout until final parity approval; no re-port needed
+922,??,tmp_changed_dishes.json,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+923,??,tmp_changed_venues.json,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+924,??,tmp_diag_grab.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+925,??,tmp_get_enrichment_queue.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+926,??,tmp_grab_merchant_payload.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+927,??,tmp_list_ids.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+928,??,tmp_list_missing_venues.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+929,??,tmp_list_missing_venues2.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+930,??,tmp_query_missing_google.mjs,,generated/cache/temp,delete,not-ported,original-only-untracked,true,false,false,false,eligible for later deletion after owner approval; no deletion executed
+931,??,tools/dashboard/app.js,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+932,??,tools/dashboard/index.html,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+933,??,tools/dashboard/style.css,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port
+934,??,venues.csv,,unique/valid candidate,needs-review,not-ported,original-only-untracked,true,false,false,false,review content and tests before selective port

@@ -417,18 +417,26 @@ export default function App() {
     if (!workingImage) {
       return;
     }
-    const json = exportLayoutJson(workingImage, shapes);
-    const filename = `${workingImage.name.replace(/\.[^/.]+$/, "")}-layout.json`;
-    downloadFile(filename, json, "application/json");
+    try {
+      const json = exportLayoutJson(workingImage, shapes);
+      const filename = `${workingImage.name.replace(/\.[^/.]+$/, "")}-layout.json`;
+      downloadFile(filename, json, "application/json");
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "The layout cannot be exported.");
+    }
   };
 
   const exportSvg = () => {
     if (!workingImage) {
       return;
     }
-    const svg = exportLayoutSvg(workingImage, shapes);
-    const filename = `${workingImage.name.replace(/\.[^/.]+$/, "")}-layout.svg`;
-    downloadFile(filename, svg, "image/svg+xml");
+    try {
+      const svg = exportLayoutSvg(workingImage, shapes);
+      const filename = `${workingImage.name.replace(/\.[^/.]+$/, "")}-layout.svg`;
+      downloadFile(filename, svg, "image/svg+xml");
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "The layout cannot be exported.");
+    }
   };
 
   return (

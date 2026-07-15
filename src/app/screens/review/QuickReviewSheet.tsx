@@ -117,12 +117,28 @@ export const QuickReviewSheet = ({
         }
       }
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      if (!selectedDishId || rating <= 0) {
+        throw new Error("Choose a dish and rating before posting.");
+      }
+
+      await getHungryService().reviews.submitReview({
+        dishId: selectedDishId,
+        venueId,
+        rating,
+        text: comment.trim(),
+        tags: selectedTags,
+        photos: [],
+        recommend: true,
+      });
 
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       awardPoints("quickReview");
       setStep(successStep); // Go to success step
+    } catch (error) {
+      useUIStore.getState().showToast({
+        message: error instanceof Error ? error.message : "Could not publish review.",
+        tone: "warning",
+      });
     } finally {
       setIsSubmitting(false);
     }

@@ -50,15 +50,6 @@ jobs:
       - name: Scaling readiness scaffold validation
         run: npm run scaling:validate
 
-      - name: Website SEO static validation
-        run: |
-          if [ -f marketing/website/web-v2/package.json ] && [ -f marketing/website/web-v2/package-lock.json ]; then
-            npm ci --prefix marketing/website/web-v2
-            npm --prefix marketing/website/web-v2 run predeploy:local
-          else
-            echo "web-v2 package files missing; skipping website static validation."
-          fi
-
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
@@ -95,8 +86,80 @@ jobs:
       - name: Expo Doctor
         run: npx expo-doctor
 
+  web-v2-quality-gates:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: marketing/website/web-v2
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.22.1
+          cache: npm
+          cache-dependency-path: marketing/website/web-v2/package-lock.json
+
+      - name: Install web-v2 dependencies
+        run: npm ci
+
+      - name: Website dependency audit
+        run: npm audit --audit-level=moderate
+
+      - name: Website lint
+        run: npm run lint
+
+      - name: Website typecheck
+        run: npm exec -- tsc --noEmit
+
+      - name: Website production build
+        run: npm run build
+
+      - name: Website bundle budget
+        run: npm run bundle:budget
+
+      - name: Website static security contracts
+        run: npm run security:audit
+
+      - name: Website SEO static validation
+        run: |
+          npm run routes:inventory
+          npm run seo:validate
+          npm run seo:sitemap
+          npm run seo:structured-data
+          npm run legal:validate
+          npm run a11y:contracts
+
+  store-layout-editor-quality-gates:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: store-layout-editor
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.22.1
+          cache: npm
+          cache-dependency-path: store-layout-editor/package-lock.json
+
+      - name: Install store-layout-editor dependencies
+        run: npm ci
+
+      - name: Store layout editor full check
+        run: npm run check
+
   eas-build-gate:
-    needs: quality-gates
+    needs: [quality-gates, web-v2-quality-gates, store-layout-editor-quality-gates]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 

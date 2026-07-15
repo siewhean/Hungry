@@ -1,6 +1,6 @@
 # Feature Flag Release Matrix
 
-Date: 2026-06-07
+Updated: 2026-07-15
 Source: `src/constants/featureFlags.ts`
 
 ## Rule
@@ -11,11 +11,11 @@ Production defaults must stay MVP-safe. Advanced surfaces may be visible in deve
 
 | Flag | Development | Staging | Production | Notes |
 | --- | --- | --- | --- | --- |
-| `readsEnabled` | true | true | true | Stable MVP surface |
+| `readsEnabled` | true | true | false | Disabled until the Supabase path has bounded async loading |
 | `craveEnabled` | true | true | true | Stable if current QA remains green |
-| `hungryWheelEnabled` | true | true | true | Stable decision flow |
+| `hungryWheelEnabled` | true | true | false | Retained prototype; disabled in production MVP |
 | `notificationsEnabled` | false | false | false | Push not release-proven |
-| `mockMapboxEnabled` | env-gated | env-gated | env-gated | Controlled by explicit env only |
+| `mockMapboxEnabled` | env-gated | env-gated | false | Production ignores the mock flag and fails closed without a live token |
 | `prototypeRoutesEnabled` | true | true | false | Blocks V2/design/prototype roots in production |
 | `merchantCentreEnabled` | true | true | false | Production requires separate launch approval |
 | `merchantClaimCtaEnabled` | true | true | false | Hidden in production MVP |

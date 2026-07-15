@@ -1,14 +1,13 @@
-import { useMemo } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { MapPin } from "lucide-react-native";
 
 import { AppText, Card, EmptyState } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
-import { isVenueOpenFromHours } from "@/utils/stallStatus";
 import type { ProfileStackParamList } from "./ProfileStack";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 
@@ -19,38 +18,62 @@ type VenueItem = {
   name: string;
   unitNumber?: string;
   floor?: string;
-  isOpen?: boolean;
-  operatingHours?: string;
+  reviewedDishName: string;
 };
 
 export function VisitedStallsScreen({ navigation }: Props) {
   const { componentRadii, palette, spacing } = useHungryTheme();
   const profile = useProfileStore((state) => state.profile);
-  const repository = getDataRepository();
+  const service = getHungryService();
   const rootNavigation = getRootNavigation(navigation as any);
+  const [visitedVenues, setVisitedVenues] = useState<VenueItem[]>([]);
+  const [isLoading, setIsLoading] = useState(profile.reviewedDishIds.length > 0);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
-  const visitedVenues = useMemo<VenueItem[]>(() => {
-    const venuesById = new Map<string, VenueItem>();
+  useEffect(() => {
+    let active = true;
+    if (!profile.reviewedDishIds.length) {
+      setVisitedVenues([]);
+      setLoadError(null);
+      setIsLoading(false);
+      return undefined;
+    }
 
-    profile.reviewedDishIds.forEach((dishId) => {
-      const dish = repository.getDishById(dishId);
-      if (!dish) return;
-
-      const venue = repository.getVenueById(dish.venueId);
-      if (!venue) return;
-
-      venuesById.set(venue.id, {
-        id: venue.id,
-        name: venue.name,
-        unitNumber: venue.unitNumber,
-        floor: venue.floor,
-        isOpen: venue.isOpen,
-        operatingHours: venue.operatingHours,
+    setIsLoading(true);
+    setLoadError(null);
+    void service.discovery
+      .getDishes(profile.reviewedDishIds)
+      .then((dishes) => {
+        if (!active) return;
+        const venuesById = new Map<string, VenueItem>();
+        dishes.forEach((dish) => {
+          if (venuesById.has(dish.venueId)) return;
+          venuesById.set(dish.venueId, {
+            id: dish.venueId,
+            name: dish.venueName,
+            unitNumber: dish.unitNumber,
+            floor: dish.floor,
+            reviewedDishName: dish.name,
+          });
+        });
+        setVisitedVenues([...venuesById.values()]);
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        setVisitedVenues([]);
+        setLoadError(
+          error instanceof Error ? error.message : "Visited stores are temporarily unavailable.",
+        );
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
       });
-    });
 
-    return [...venuesById.values()];
-  }, [profile.reviewedDishIds, repository]);
+    return () => {
+      active = false;
+    };
+  }, [loadAttempt, profile.reviewedDishIds, service]);
 
   return (
     <ProfileScreenShell
@@ -58,7 +81,18 @@ export function VisitedStallsScreen({ navigation }: Props) {
       subtitle="Stalls tied to dishes in your review history."
     >
       <ScrollView contentContainerStyle={{ gap: spacing[3], paddingBottom: spacing[5] }}>
-        {visitedVenues.length ? (
+        {isLoading ? (
+          <View accessibilityLabel="Loading visited stores" accessibilityRole="progressbar">
+            <ActivityIndicator color={palette.orange} />
+          </View>
+        ) : loadError ? (
+          <EmptyState
+            title="Visited stores unavailable"
+            body={loadError}
+            ctaLabel="Try again"
+            onPress={() => setLoadAttempt((attempt) => attempt + 1)}
+          />
+        ) : visitedVenues.length ? (
           visitedVenues.map((venue) => (
             <Pressable
               key={venue.id}
@@ -84,10 +118,7 @@ export function VisitedStallsScreen({ navigation }: Props) {
                         : ""}
                     </AppText>
                     <AppText tone="secondary" variant="micro">
-                      {venue.operatingHours ?? "Hours unavailable"} ·{" "}
-                      {isVenueOpenFromHours(venue.operatingHours, !!venue.isOpen)
-                        ? "Open now"
-                        : "Closed"}
+                      Visited via your {venue.reviewedDishName} review
                     </AppText>
                   </View>
                 </View>

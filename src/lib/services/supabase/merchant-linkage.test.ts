@@ -17,7 +17,7 @@ test("Supabase merchant service is wired to linked consumer venue and dish table
   assert.match(service, /from\("merchant_outlets"\)/);
   assert.match(service, /from\("venues"\)/);
   assert.match(service, /from\("dishes"\)/);
-  assert.match(service, /refreshSupabaseRepositoryCache/);
+  assert.doesNotMatch(service, /refreshSupabaseRepositoryCache/);
   assert.match(service, /requireLinkedMerchantOutlet/);
   assert.match(service, /UUID_PATTERN/);
   assert.match(service, /merchant_account_id/);

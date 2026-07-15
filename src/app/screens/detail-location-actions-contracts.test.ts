@@ -28,14 +28,20 @@ test("detail screens show full food-centre location, weekly hours, and maps acti
   assert.match(safeLinking, /openTrustedMapsUrl/);
 });
 
-test("detail save buttons use compact standardized labels that stay inside the buttons", () => {
+test("detail save buttons wrap standardized labels instead of truncating them", () => {
   const saveActions = read("src/features/checklistPortfolio/DetailSaveActions.tsx");
   const button = read("src/components/ui/Button.tsx");
 
-  assert.match(saveActions, /label="Add to Checklist"[\s\S]*size="sm"/);
-  assert.match(saveActions, /label="Add to Portfolio"[\s\S]*size="sm"/);
-  assert.match(saveActions, /labelNumberOfLines=\{1\}/);
-  assert.match(saveActions, /labelEllipsizeMode="tail"/);
+  assert.match(
+    saveActions,
+    /label="Add to Checklist"[\s\S]*size="sm"[\s\S]*labelNumberOfLines=\{2\}/,
+  );
+  assert.match(
+    saveActions,
+    /label="Add to Portfolio"[\s\S]*size="sm"[\s\S]*labelNumberOfLines=\{2\}/,
+  );
+  assert.doesNotMatch(saveActions, /labelNumberOfLines=\{1\}/);
+  assert.doesNotMatch(saveActions, /labelEllipsizeMode="tail"/);
   assert.match(button, /flexShrink: 1/);
   assert.match(button, /textAlign: "center"/);
 });

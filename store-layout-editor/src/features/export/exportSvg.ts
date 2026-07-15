@@ -1,7 +1,17 @@
 import type { LabelPosition, LayoutImage, Point, StoreShape } from "../../types/layout";
+import { assertLayoutExportable } from "./exportValidation";
 
 function polygonPointString(points: Point[]): string {
   return points.map((point) => `${point.x},${point.y}`).join(" ");
+}
+
+function escapeXml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
 }
 
 function centroid(points: Point[]): Point {
@@ -40,19 +50,21 @@ function labelAnchor(points: Point[], labelPosition: LabelPosition): Point {
 }
 
 export function exportLayoutSvg(image: LayoutImage, shapes: StoreShape[]): string {
+  assertLayoutExportable(image, shapes);
   const polygons = shapes
     .map((shape) => {
       const anchor = labelAnchor(shape.points, shape.labelPosition);
-      const label = (shape.unitId || shape.id).replace(/&/g, "&amp;");
+      const label = escapeXml(shape.unitId || shape.id);
+      const fillColor = escapeXml(shape.fillColor);
 
       return `
-  <polygon points="${polygonPointString(shape.points)}" fill="${shape.fillColor}" fill-opacity="0.2" stroke="${shape.fillColor}" stroke-width="1.5" />
+  <polygon points="${polygonPointString(shape.points)}" fill="${fillColor}" fill-opacity="0.2" stroke="${fillColor}" stroke-width="1.5" />
   <text x="${anchor.x}" y="${anchor.y}" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="#111827">${label}</text>`;
     })
     .join("\n");
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${image.width}" height="${image.height}" viewBox="0 0 ${image.width} ${image.height}">
-  <image href="${image.src}" x="0" y="0" width="${image.width}" height="${image.height}" preserveAspectRatio="none" />
+  <image href="${escapeXml(image.src)}" x="0" y="0" width="${image.width}" height="${image.height}" preserveAspectRatio="none" />
 ${polygons}
 </svg>`;
 }

@@ -9,6 +9,8 @@ const allowedRepoEnvKeys = new Set([
   "EXPO_PUBLIC_SUPABASE_URL",
   "HUNGRY_CONSOLE_PASSWORD",
   "HUNGRY_CONSOLE_USERNAME",
+  "HUNGRY_CONSOLE_BREAK_GLASS_ENABLED",
+  "HUNGRY_MERCHANT_PORTAL_ENABLED",
   "HUNGRY_SUPABASE_SERVICE_ROLE_KEY",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
   "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
@@ -45,7 +47,7 @@ const contentSecurityPolicy = [
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
   "connect-src 'self' https:",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline'",
   "upgrade-insecure-requests",
 ].join("; ");

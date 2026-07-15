@@ -11,11 +11,19 @@ const routes = [
   "/terms",
   "/account/delete",
   "/singapore",
+];
+const merchantAuthRoutes = [
   "/merchant/login",
   "/merchant/signup",
   "/merchant/forgot-password",
 ];
-const redirectRoutes = ["/merchant", "/console"];
+const merchantPortalEnabled = process.env.HUNGRY_MERCHANT_PORTAL_ENABLED === "1";
+if (merchantPortalEnabled) routes.push(...merchantAuthRoutes);
+const redirectRoutes = merchantPortalEnabled ? ["/merchant"] : [];
+const failClosedMerchantRoutes = merchantPortalEnabled
+  ? []
+  : ["/merchant", ...merchantAuthRoutes, "/api/merchant/session"];
+const failClosedConsoleRoutes = ["/console"];
 const authenticatedMerchantRoutes = [
   "/merchant",
   "/merchant/menu",
@@ -36,6 +44,7 @@ const consolePassword =
   process.env.HUNGRY_CONSOLE_PASSWORD?.trim() ||
   process.env.HUNGRY_CONSOLE_BASIC_AUTH_PASSWORD?.trim() ||
   "";
+const consoleBreakGlassEnabled = process.env.HUNGRY_CONSOLE_BREAK_GLASS_ENABLED === "1";
 const failures = [];
 
 function routeUrl(route) {
@@ -108,7 +117,7 @@ for (const route of routes) {
   await assertSkipLink(route, page);
 }
 
-if (merchantAccessToken) {
+if (merchantPortalEnabled && merchantAccessToken) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   await context.addCookies([
     {
@@ -129,7 +138,7 @@ if (merchantAccessToken) {
   await context.close();
 }
 
-if (consoleUsername && consolePassword) {
+if (consoleBreakGlassEnabled && consoleUsername && consolePassword) {
   const context = await browser.newContext({
     extraHTTPHeaders: {
       Authorization: basicAuthorization(consoleUsername, consolePassword),
@@ -155,12 +164,46 @@ for (const route of redirectRoutes) {
     failures.push(`${route}: expected unauthenticated redirect to /merchant/login, got ${page.url()}`);
   }
 
-  if (route === "/console" && pathname !== "/") {
-    failures.push(`${route}: expected unauthenticated redirect to /, got ${page.url()}`);
-  }
-
   if (status >= 500) {
     failures.push(`${route}: redirect smoke returned server error ${status}`);
+  }
+
+  await page.close();
+}
+
+for (const route of failClosedMerchantRoutes) {
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  const response = await page.goto(routeUrl(route), { waitUntil: "domcontentloaded" });
+  const status = response?.status() ?? 0;
+
+  if (new URL(page.url()).pathname !== route || status !== 503) {
+    failures.push(
+      `${route}: expected fail-closed 503 with Merchant Portal disabled, got ${status} at ${page.url()}`,
+    );
+  }
+
+  await page.close();
+}
+
+for (const route of failClosedConsoleRoutes) {
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  const response = await page.goto(routeUrl(route), { waitUntil: "domcontentloaded" });
+  const pathname = new URL(page.url()).pathname;
+  const status = response?.status() ?? 0;
+
+  if (consoleBreakGlassEnabled && consoleUsername && consolePassword) {
+    if (pathname !== "/") {
+      failures.push(`${route}: expected unauthenticated redirect to /, got ${page.url()}`);
+    }
+    if (status >= 500) {
+      failures.push(`${route}: redirect smoke returned server error ${status}`);
+    }
+  } else {
+    if (pathname !== route || status !== 503) {
+      failures.push(
+        `${route}: expected fail-closed 503 with no console credentials, got ${status} at ${page.url()}`,
+      );
+    }
   }
 
   await page.close();
@@ -175,13 +218,23 @@ if (failures.length > 0) {
 }
 
 console.log(`Keyboard smoke passed for ${routes.length} pages and ${redirectRoutes.length} private redirects.`);
-if (merchantAccessToken) {
+if (!merchantPortalEnabled) {
+  console.log(`Fail-closed Merchant Portal smoke passed for ${failClosedMerchantRoutes.length} routes.`);
+}
+if (!consoleBreakGlassEnabled || !consoleUsername || !consolePassword) {
+  console.log(`Fail-closed console smoke passed for ${failClosedConsoleRoutes.length} private route.`);
+}
+if (merchantPortalEnabled && merchantAccessToken) {
   console.log(`Authenticated merchant keyboard smoke passed for ${authenticatedMerchantRoutes.length} pages.`);
+} else if (!merchantPortalEnabled) {
+  console.log("Authenticated merchant keyboard smoke skipped: Merchant Portal is disabled.");
 } else {
   console.log("Authenticated merchant keyboard smoke skipped: HUNGRY_MERCHANT_ACCESS_TOKEN is not set.");
 }
-if (consoleUsername && consolePassword) {
+if (consoleBreakGlassEnabled && consoleUsername && consolePassword) {
   console.log(`Authenticated console keyboard smoke passed for ${authenticatedConsoleRoutes.length} pages.`);
+} else if (!consoleBreakGlassEnabled) {
+  console.log("Authenticated console keyboard smoke skipped: Basic Auth break-glass access is disabled.");
 } else {
   console.log("Authenticated console keyboard smoke skipped: HUNGRY_CONSOLE_USERNAME/PASSWORD is not set.");
 }

@@ -8,7 +8,7 @@
  *  - Host: "Spin" button; Members: "Waiting for host…" label
  *
  * Spin math (matches plan §3):
- *   winnerIndex   = seed % activeEntries.length
+ *   winnerIndex   = floor(seed % activeEntries.length)
  *   segmentAngle  = 360 / activeEntries.length
  *   winnerAngle   = winnerIndex * segmentAngle + segmentAngle / 2
  *   totalRotation = 5 * 360 + (360 - winnerAngle)  // 5 full spins + correction
@@ -84,7 +84,7 @@ export function WheelSpinScreen({ navigation }: Props) {
 
   // Watch for spin_triggered event — party.spinSeed is set when it fires.
   useEffect(() => {
-    if (!party?.spinSeed || !party.spinStartedAt) return;
+    if (party?.spinSeed === undefined || !party.spinStartedAt) return;
     if (isSpinning.current) return;
     if (activeEntries.length < 2) return;
 
@@ -92,8 +92,9 @@ export function WheelSpinScreen({ navigation }: Props) {
     const startedAt = party.spinStartedAt;
 
     const segmentAngle = 360 / activeEntries.length;
-    const winnerIndex =
-      ((seed % activeEntries.length) + activeEntries.length) % activeEntries.length;
+    const winnerIndex = Math.floor(
+      ((seed % activeEntries.length) + activeEntries.length) % activeEntries.length,
+    );
     const winnerAngle = winnerIndex * segmentAngle + segmentAngle / 2;
     const totalRotation = 5 * 360 + (360 - winnerAngle);
 
@@ -145,7 +146,7 @@ export function WheelSpinScreen({ navigation }: Props) {
   if (!party) return null;
 
   const spinning = party.status === "spinning";
-  const canSpin = isHost && !spinning && activeEntries.length >= 2;
+  const canSpin = isHost && party.status === "lobby" && activeEntries.length >= 2;
 
   return (
     <View style={{ flex: 1, backgroundColor: palette.bg }}>

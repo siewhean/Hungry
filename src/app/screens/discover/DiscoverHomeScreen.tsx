@@ -69,7 +69,6 @@ import {
 } from "@/features/navigation/prefetch";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getNearestBuildings, getNearestSingaporeArea } from "@/lib/geo/singaporeBuildings";
-import { toRecommendationGeoCell } from "@/lib/geo/recommendationGeoCell";
 import {
   getDataRepository,
   getHungryService,
@@ -1418,13 +1417,6 @@ export function DiscoverHomeScreen() {
 
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
   const refreshPopularNearby = useDiscoveryStore((state) => state.refreshPopularNearby);
-  const cacheRecommendationSlate = useDiscoveryStore((state) => state.cacheRecommendationSlate);
-  const getCachedRecommendationSlate = useDiscoveryStore(
-    (state) => state.getCachedRecommendationSlate,
-  );
-  const pruneExpiredRecommendations = useDiscoveryStore(
-    (state) => state.pruneExpiredRecommendations,
-  );
 
   useEffect(() => {
     void refreshPopularNearby();
@@ -2100,68 +2092,13 @@ export function DiscoverHomeScreen() {
   }, [isDiscoverFiltering, matchesDiscoverChipSelection, unfilteredStallShowcaseCards]);
   const discoverAreaCount = isSupabaseDataSource ? supabaseDiscoverAreaCount : areaVenues.length;
   const handleDecideForMe = () => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     const radiusMeters = 500;
     trackAnalyticsEvent("decide_for_me_triggered", {
       location_granted: locationPermission === "granted",
       radius_m: radiusMeters,
     });
-
-    const geoCell = toRecommendationGeoCell(currentLocation.latitude, currentLocation.longitude);
-    pruneExpiredRecommendations();
-
-    const cachedDishIds = getCachedRecommendationSlate(geoCell);
-    const cachedDishes = (cachedDishIds ?? [])
-      .map((dishId) => repositoryLookup.getDishById(dishId))
-      .filter((dish): dish is DishDetail => Boolean(dish));
-
-    let picked = repository.getDecideForMe(profile.tasteVector, {
-      dietaryFlags: profile.dietaryPreferences,
-      neophiliaIndex: profile.tasteProfile?.neophiliaIndex ?? 5,
-      radiusMeters,
-      latitude: currentLocation.latitude,
-      longitude: currentLocation.longitude,
-      excludeDishIds: [],
-    });
-
-    if (!picked && cachedDishes.length) {
-      picked = cachedDishes[0];
-    }
-
-    if (!cachedDishes.length) {
-      const liveSlate = repository
-        .searchDishes(
-          {
-            query: "",
-            categories: [],
-            dietaryFlags: profile.dietaryPreferences,
-            tasteValues: profile.tasteVector,
-            radius: radiusMeters,
-          },
-          profile.tasteVector,
-        )
-        .slice(0, 20);
-
-      if (liveSlate.length) {
-        cacheRecommendationSlate(
-          geoCell,
-          liveSlate.map((dish) => dish.id),
-        );
-        if (!picked) {
-          picked = liveSlate[0];
-        }
-      }
-    }
-
-    if (picked) {
-      recordTasteInteraction({
-        type: "food_button_click",
-        surface: "decide",
-        dish: picked,
-        buttonId: "decide_for_me",
-      });
-      setDecideForMe(picked);
-    }
+    setDecideForMe(undefined);
     navigation.navigate("DecideForMeResult");
   };
 
@@ -2547,59 +2484,61 @@ export function DiscoverHomeScreen() {
             </LinearGradient>
           </Pressable>
 
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Open hungry wheel"
-            onPressIn={() => preloadRoute(navigation, "WheelStack", { screen: "WheelHome" })}
-            onPress={() => navigation.navigate("WheelStack", { screen: "WheelHome" })}
-            style={({ pressed }) => [
-              shadows.card,
-              {
-                alignItems: "center",
-                backgroundColor: themeTints.isDark ? palette.inverseSurfaceFaint : palette.navy,
-                borderRadius: componentRadii.button,
-                flexDirection: "row",
-                gap: decisionCardInnerGap,
-                height: 72,
-                justifyContent: "center",
-                opacity: pressed ? 0.92 : 1,
-                padding: decisionCardPadding,
-                width: decisionCardWidth,
-              },
-            ]}
-          >
-            <View
-              style={{
-                alignItems: "center",
-                backgroundColor: palette.inverseSurfaceSoft,
-                borderRadius: radii.pill,
-                height: decisionCardIconSize,
-                justifyContent: "center",
-                width: decisionCardIconSize,
-              }}
+          {FEATURE_FLAGS.hungryWheelEnabled ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Open hungry wheel"
+              onPressIn={() => preloadRoute(navigation, "WheelStack", { screen: "WheelHome" })}
+              onPress={() => navigation.navigate("WheelStack", { screen: "WheelHome" })}
+              style={({ pressed }) => [
+                shadows.card,
+                {
+                  alignItems: "center",
+                  backgroundColor: themeTints.isDark ? palette.inverseSurfaceFaint : palette.navy,
+                  borderRadius: componentRadii.button,
+                  flexDirection: "row",
+                  gap: decisionCardInnerGap,
+                  height: 72,
+                  justifyContent: "center",
+                  opacity: pressed ? 0.92 : 1,
+                  padding: decisionCardPadding,
+                  width: decisionCardWidth,
+                },
+              ]}
             >
-              <Compass color={palette.white} size={decisionCardIconGraphicSize} />
-            </View>
-            <AppText
-              adjustsFontSizeToFit
-              minimumFontScale={0.88}
-              variant="bodyBold"
-              tone="inverse"
-              numberOfLines={1}
-              style={{
-                includeFontPadding: false,
-                flexShrink: 1,
-                fontSize: decisionCardLabelFontSize,
-                lineHeight: decisionCardLabelLineHeight,
-                maxWidth: decisionCardLabelMaxWidth,
-                minWidth: 0,
-                textAlign: "center",
-                textAlignVertical: "center",
-              }}
-            >
-              Hungry Wheel
-            </AppText>
-          </Pressable>
+              <View
+                style={{
+                  alignItems: "center",
+                  backgroundColor: palette.inverseSurfaceSoft,
+                  borderRadius: radii.pill,
+                  height: decisionCardIconSize,
+                  justifyContent: "center",
+                  width: decisionCardIconSize,
+                }}
+              >
+                <Compass color={palette.white} size={decisionCardIconGraphicSize} />
+              </View>
+              <AppText
+                adjustsFontSizeToFit
+                minimumFontScale={0.88}
+                variant="bodyBold"
+                tone="inverse"
+                numberOfLines={1}
+                style={{
+                  includeFontPadding: false,
+                  flexShrink: 1,
+                  fontSize: decisionCardLabelFontSize,
+                  lineHeight: decisionCardLabelLineHeight,
+                  maxWidth: decisionCardLabelMaxWidth,
+                  minWidth: 0,
+                  textAlign: "center",
+                  textAlignVertical: "center",
+                }}
+              >
+                Hungry Wheel
+              </AppText>
+            </Pressable>
+          ) : null}
         </View>
 
         {/* Discovery Targets — two large tap targets */}

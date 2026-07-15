@@ -120,12 +120,13 @@ test("production Post route publishes through the canonical composer service pat
   assert.match(postScreen, /disabled=\{selectedMedia\.length === 0\}/);
   assert.match(postScreen, /const \[selectedDishId, setSelectedDishId\]/);
   assert.match(postScreen, /const \[dishSearchQuery, setDishSearchQuery\]/);
-  assert.match(postScreen, /repository\.getDishById\(selectedDishId\) \?\? null/);
-  assert.match(postScreen, /repository\.listDishesByVenue\(selectedVenueId\)\[0\] \?\? null/);
+  assert.match(postScreen, /hungryService\.discovery\s*\.getDish\(selectedDishId\)/);
+  assert.match(postScreen, /hungryService\.discovery\s*\.searchDishes\(/);
+  assert.doesNotMatch(postScreen, /listDishesByVenue\([^)]*\)\[0\]/);
   assert.match(postScreen, /label="Find dish"/);
   assert.match(postScreen, /placeholder="Search dishes, stalls, or tags"/);
   assert.match(postScreen, /setSelectedDishId\(item\.id\)/);
-  assert.match(postScreen, /setSelectedVenueId\(item\.venueId\)/);
+  assert.match(postScreen, /setDish\(item\)/);
   assert.match(postScreen, /message: "Choose a dish before publishing\."/);
   assert.doesNotMatch(postScreen, /title="No dish available"/);
   assert.doesNotMatch(postScreen, /Save draft for later/);
@@ -215,7 +216,7 @@ test("Supabase review reads hydrate review_photos and public profile names and a
   assert.match(service, /from\("review_photos"\)/);
   assert.match(service, /from\("public_profiles"\)/);
   assert.match(service, /\.select\("id,display_name,avatar_url"\)/);
-  assert.match(service, /\.from\("reviews"\)[\s\S]*\.eq\("dish_id", dishId\)/);
+  assert.match(service, /\.from\("reviews"\)[\s\S]*\.in\("dish_id", uniqueDishIds\)/);
   assert.match(service, /\.from\("reviews"\)[\s\S]*\.eq\("user_id", userId\)/);
   assert.match(service, /dishId: asString\(row\.dish_id\)/);
   assert.match(
@@ -234,7 +235,8 @@ test("Supabase review reads hydrate review_photos and public profile names and a
   );
   assert.match(dishDetail, /serviceProviderMode === "mock" \? dish\.reviews : \[\]/);
   assert.match(stallDetail, /serviceProviderMode === "mock" \? dish\.reviews : \[\]/);
-  assert.match(reviewFeed, /getHungryService\(\)\.reviews\.getReviewsForDish\(dish\.id\)/);
+  assert.match(reviewFeed, /service\.reviews\.getReviewsForDishes/);
+  assert.match(reviewFeed, /listDiscoveryFeedByLocation\(\{/);
   assert.match(
     reviewFeed,
     /serviceProviderMode === "mock" \? listReviewFeedItems\(repository\) : \(serviceReviewItems \?\? \[\]\)/,
@@ -272,17 +274,16 @@ test("advanced liked-content social collection is gated out of MVP production", 
   assert.match(profileHome, /label="Liked Content"/);
 });
 
-test("Search results route hydrates through the service before trusting repository cache", () => {
+test("Search results route uses the service and exposes failures without an empty repository fallback", () => {
   const searchFeature = read("src/features/search/search.ts");
   const searchScreen = read("src/app/screens/search/SearchResultsScreen.tsx");
 
   assert.match(searchFeature, /getHungryService\(\)\.discovery\.searchDishes/);
   assert.match(searchFeature, /export async function getSearchResultsAsync/);
   assert.match(searchScreen, /getSearchResultsAsync\(filters, profile\.tasteVector\)/);
-  assert.match(
-    searchScreen,
-    /serviceResults \?\? getSearchResults\(filters, profile\.tasteVector\)/,
-  );
+  assert.match(searchScreen, /const rawResults = serviceResults \?\? \[\]/);
+  assert.match(searchScreen, /setSearchLoadError\("Dish search is temporarily unavailable\."\)/);
+  assert.doesNotMatch(searchScreen, /serviceResults \?\? getSearchResults/);
 });
 
 test("Supabase app readiness keeps the legacy cache opt-in and bounded away from public routes", () => {

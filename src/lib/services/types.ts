@@ -519,6 +519,7 @@ export interface SubmitReviewInput {
   text: string;
   tags: string[];
   photos: string[];
+  recommend?: boolean;
   // TODO(api): include upload references (asset ids / signed urls) once media service is wired.
 }
 
@@ -700,6 +701,7 @@ export interface HungryService {
     getVenue(id: string): Promise<VenueSummary | undefined>;
     listVenuesByBuilding(buildingId: string): Promise<VenueSummary[]>;
     getDish(id: string): Promise<DishDetail | undefined>;
+    getDishes(ids: string[]): Promise<DishDetail[]>;
     listActivePromotionsForTarget(input: {
       venueId: string;
       dishId?: string;
@@ -750,6 +752,7 @@ export interface HungryService {
   // Reviews
   reviews: {
     getReviewsForDish(dishId: string): Promise<DishDetail["reviews"]>;
+    getReviewsForDishes(dishIds: string[]): Promise<Record<string, DishDetail["reviews"]>>;
     getUserReviews(userId: string): Promise<DishDetail["reviews"]>;
     submitReview(draft: SubmitReviewInput): Promise<void>;
   };

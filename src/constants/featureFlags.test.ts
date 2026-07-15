@@ -44,6 +44,7 @@ test("advanced social and gamification surfaces are disabled in production", () 
 
   assert.equal(flags.directMessagesEnabled, false);
   assert.equal(flags.commentsEnabled, false);
+  assert.equal(flags.reviewRichMediaEnabled, false);
   assert.equal(flags.gamificationEnabled, false);
   assert.equal(flags.collectionsEnabled, false);
   assert.equal(flags.storiesEnabled, false);
@@ -51,6 +52,8 @@ test("advanced social and gamification surfaces are disabled in production", () 
   assert.equal(flags.merchantClaimCtaEnabled, false);
   assert.equal(flags.oauthProvidersEnabled, false);
   assert.equal(flags.floorplansEnabled, false);
+  assert.equal(flags.hungryWheelEnabled, false);
+  assert.equal(flags.readsEnabled, false);
 });
 
 test("audited social and gamification surfaces are available in explicit non-production environments", () => {
@@ -59,10 +62,13 @@ test("audited social and gamification surfaces are available in explicit non-pro
 
     assert.equal(flags.directMessagesEnabled, true);
     assert.equal(flags.commentsEnabled, true);
+    assert.equal(flags.reviewRichMediaEnabled, true);
     assert.equal(flags.oauthProvidersEnabled, true);
     assert.equal(flags.gamificationEnabled, true);
     assert.equal(flags.collectionsEnabled, true);
     assert.equal(flags.storiesEnabled, true);
+    assert.equal(flags.hungryWheelEnabled, true);
+    assert.equal(flags.readsEnabled, true);
   }
 });
 
@@ -72,6 +78,7 @@ test("unknown or missing environments fail closed outside local development", ()
 
     assert.equal(flags.directMessagesEnabled, false);
     assert.equal(flags.commentsEnabled, false);
+    assert.equal(flags.reviewRichMediaEnabled, false);
     assert.equal(flags.oauthProvidersEnabled, false);
     assert.equal(flags.gamificationEnabled, false);
     assert.equal(flags.collectionsEnabled, false);
@@ -79,6 +86,8 @@ test("unknown or missing environments fail closed outside local development", ()
     assert.equal(flags.merchantCentreEnabled, false);
     assert.equal(flags.merchantClaimCtaEnabled, false);
     assert.equal(flags.prototypeRoutesEnabled, false);
+    assert.equal(flags.hungryWheelEnabled, false);
+    assert.equal(flags.readsEnabled, false);
   }
 });
 
@@ -86,4 +95,10 @@ test("indoor floorplans stay disabled in every environment until launch gates pa
   for (const env of ["development", "staging", "production", undefined, "qa"]) {
     assert.equal(resolveFeatureFlags(env, "test").floorplansEnabled, false);
   }
+});
+
+test("mock Mapbox is never enabled in production", () => {
+  assert.equal(resolveFeatureFlags("production", "production", "1").mockMapboxEnabled, false);
+  assert.equal(resolveFeatureFlags(undefined, "test", "1").mockMapboxEnabled, false);
+  assert.equal(resolveFeatureFlags("development", "development", "1").mockMapboxEnabled, true);
 });

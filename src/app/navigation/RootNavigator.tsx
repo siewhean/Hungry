@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SplashScreen } from "@/app/screens/SplashScreen";
 import { AuthStack } from "@/app/screens/auth/AuthStack";
 import { OnboardingStack } from "@/app/screens/onboarding/OnboardingStack";
-import { FloatingToast } from "@/components/ui";
+import { AppText, FloatingToast } from "@/components/ui";
 import { UserProfileScreen } from "@/app/screens/profile/UserProfileScreen";
 
 import { useSessionStore } from "@/store/useSessionStore";
@@ -410,6 +410,39 @@ function CredEarnedToastHost() {
   return <CredEarnedToast />;
 }
 
+function OfflineStatusBanner() {
+  const isOffline = useUIStore((state) => state.isOffline);
+  const insets = useSafeAreaInsets();
+  const { palette, spacing, zIndex } = useHungryTheme();
+
+  if (!isOffline) return null;
+
+  return (
+    <Pressable
+      accessibilityHint="Opens connection recovery details."
+      accessibilityLabel="Offline. Live requests and submissions are unavailable."
+      accessibilityRole="button"
+      accessibilityLiveRegion="polite"
+      onPress={() => navigationRef.navigate("Offline")}
+      style={{
+        alignItems: "center",
+        backgroundColor: palette.warningSoft,
+        left: spacing[3],
+        paddingHorizontal: spacing[3],
+        paddingVertical: spacing[2],
+        position: "absolute",
+        right: spacing[3],
+        top: insets.top + spacing[1],
+        zIndex: zIndex.toast,
+      }}
+    >
+      <AppText variant="bodyBold" style={{ color: palette.warning }}>
+        Offline — live requests and submissions unavailable
+      </AppText>
+    </Pressable>
+  );
+}
+
 export function RootNavigator({ theme }: { theme: Theme }) {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const isAuthReady = useSessionStore((state) => state.isAuthReady);
@@ -420,7 +453,6 @@ export function RootNavigator({ theme }: { theme: Theme }) {
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
   const isMerchantMode = useMerchantStore((state) => state.account !== null);
   const resetScrollBack = useUIStore((state) => state.resetScrollBack);
-  const isOffline = useUIStore((state) => state.isOffline);
 
   const prefix = Linking.createURL("/");
   const linking = useMemo(
@@ -571,27 +603,6 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     }
   }, [isAuthenticated, isAuthReady, setReturnRoute]);
 
-  useEffect(() => {
-    if (!navigationRef.isReady()) {
-      return;
-    }
-
-    const rootState = navigationRef.getRootState();
-    const currentTopRoute = rootState.routes[rootState.index]?.name;
-
-    if (isOffline && currentTopRoute !== "Offline") {
-      navigationRef.navigate("Offline");
-      return;
-    }
-
-    if (!isOffline && currentTopRoute === "Offline") {
-      navigationRef.resetRoot({
-        index: 0,
-        routes: [{ name: "MainTabs", params: { screen: "Home" } }],
-      });
-    }
-  }, [isOffline]);
-
   return (
     <>
       <NavigationContainer
@@ -662,7 +673,9 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           ) : null}
           <RootStack.Screen component={BlogPostRouteScreen} name="BlogPost" />
           <RootStack.Screen getComponent={loadReviewStack} name="ReviewStack" />
-          <RootStack.Screen getComponent={loadWheelStack} name="WheelStack" />
+          {FEATURE_FLAGS.hungryWheelEnabled ? (
+            <RootStack.Screen getComponent={loadWheelStack} name="WheelStack" />
+          ) : null}
           <RootStack.Screen getComponent={loadActivityInboxScreen} name="ActivityInbox" />
           <RootStack.Screen getComponent={loadActivityPostDetailScreen} name="ActivityPostDetail" />
           {FEATURE_FLAGS.directMessagesEnabled ? (
@@ -752,6 +765,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       <ReviewSuccessModalHost onOpenHistory={() => navigationRef.navigate("ReviewHistory")} />
       <FloatingToast />
       <CredEarnedToastHost />
+      <OfflineStatusBanner />
     </>
   );
 }

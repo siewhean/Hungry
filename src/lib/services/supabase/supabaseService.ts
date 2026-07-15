@@ -18,6 +18,7 @@ import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import {
   countVenuesInAreaViaRpc,
   getDishByIdViaRpc,
+  getDishesByIdsViaRpc,
   getBuildingDetailViaRpc,
   getVenueByIdViaRpc,
   listBuildingsViaRpc,
@@ -25,12 +26,12 @@ import {
   listDishesByVenueViaRpc,
   listPopularNearbyViaRpc,
   listVenuesByBuildingViaRpc,
-  refreshSupabaseRepositoryCache,
   searchDishesViaRpc,
   searchVenuesByLocationViaRpc,
   supabaseRepository,
 } from "@/lib/services/supabase/supabaseRepository";
 import { getSupabaseClient } from "@/lib/services/supabase/client";
+import { loadDishDetailsInPages, requireSupabaseRows } from "@/lib/services/readSafety";
 import {
   assertValidMenuPhotoUpload,
   uploadImageFromUri,
@@ -43,7 +44,6 @@ import type {
   BiteDraft,
   BlockUserRequest,
   BuildingDetail,
-  DiscoveryLocationFeed,
   ChatConversation,
   ChatMessage,
   ChatParticipant,
@@ -608,56 +608,6 @@ async function getCurrentUserProfileOrGuest(): Promise<UserProfile> {
 }
 
 const STORY_TTL_MS = 24 * 60 * 60 * 1000;
-
-function clampRadiusMeters(radiusMeters?: number): number {
-  if (typeof radiusMeters !== "number" || !Number.isFinite(radiusMeters))
-    return Number.MAX_SAFE_INTEGER;
-  return radiusMeters > 0 ? radiusMeters : Number.MAX_SAFE_INTEGER;
-}
-
-function getFallbackDiscoveryFeed(request: {
-  areaName?: string;
-  lat?: number;
-  lng?: number;
-  radiusMeters?: number;
-  limit?: number;
-}): DiscoveryLocationFeed {
-  const limit = request.limit ?? 20;
-  const fallbackFilters: SearchFilters = {
-    query: "",
-    categories: [],
-    dietaryFlags: [],
-    tasteValues: NEUTRAL_TASTE_VECTOR,
-    radius: clampRadiusMeters(request.radiusMeters),
-    latitude: request.lat,
-    longitude: request.lng,
-    areaName: request.areaName,
-    openOnly: false,
-  };
-
-  const fallbackDishes = supabaseRepository
-    .searchDishes(fallbackFilters, NEUTRAL_TASTE_VECTOR)
-    .slice(0, limit);
-
-  const venueById = new Map<string, VenueSummary>();
-  const discoveryVenues: VenueSummary[] = [];
-
-  for (const dish of fallbackDishes) {
-    const venue = supabaseRepository.getVenueById(dish.venueId);
-    if (venue && !venueById.has(venue.id)) {
-      venueById.set(venue.id, venue);
-      discoveryVenues.push(venue);
-    }
-  }
-
-  return {
-    venues: discoveryVenues,
-    results: fallbackDishes.map((dish) => ({
-      dish,
-      score: dish.rating / 5,
-    })),
-  };
-}
 
 function cloneStory(story: Story): Story {
   return {
@@ -1340,24 +1290,28 @@ function clampTasteVector(vector: TasteVector): TasteVector {
   };
 }
 
-function mapRecommendationRpcRows(rows: Row[]): RankedRecommendation[] {
-  return rows
-    .map((row) => {
-      const dishId = asString(row.dish_id);
-      const dish = dishId ? supabaseRepository.getDishById(dishId) : undefined;
-      if (!dish) return null;
+async function mapRecommendationRpcRows(rows: Row[]): Promise<RankedRecommendation[] | undefined> {
+  const dishIds = rows
+    .map((row) => asString(row.dish_id))
+    .filter((id): id is string => Boolean(id));
+  const dishes = await getDishesByIdsViaRpc(dishIds);
+  if (!dishes) return undefined;
+  const dishesById = new Map(dishes.map((dish) => [dish.id, dish]));
+  const mapped = rows.map((row) => {
+    const dish = dishesById.get(asString(row.dish_id) ?? "");
+    if (!dish) return null;
 
-      const matchScore = asNumber(row.match_score) ?? 0;
-      return {
-        dish,
-        matchScore,
-        matchPercent:
-          asNumber(row.match_percent) ?? Math.max(0, Math.min(100, Math.round(matchScore * 100))),
-        matchReason: asString(row.match_reason) ?? "Taste profile match",
-        isSerendipitous: asBoolean(row.is_serendipitous) ?? false,
-      };
-    })
-    .filter((item): item is RankedRecommendation => Boolean(item));
+    const matchScore = asNumber(row.match_score) ?? 0;
+    return {
+      dish,
+      matchScore,
+      matchPercent:
+        asNumber(row.match_percent) ?? Math.max(0, Math.min(100, Math.round(matchScore * 100))),
+      matchReason: asString(row.match_reason) ?? "Taste profile match",
+      isSerendipitous: asBoolean(row.is_serendipitous) ?? false,
+    };
+  });
+  return mapped.filter((item): item is RankedRecommendation => Boolean(item));
 }
 
 async function getLiveTasteRecommendations(
@@ -1384,12 +1338,7 @@ async function getLiveTasteRecommendations(
   if (!Array.isArray(data)) return undefined;
 
   const rows = data as Row[];
-  let mapped = mapRecommendationRpcRows(rows);
-  if (rows.length > 0 && mapped.length === 0) {
-    await refreshSupabaseRepositoryCache();
-    mapped = mapRecommendationRpcRows(rows);
-  }
-  return mapped;
+  return mapRecommendationRpcRows(rows);
 }
 
 function toCoreFeedbackType(
@@ -2949,6 +2898,10 @@ export const supabaseService: HungryService = {
       return (await getDishByIdViaRpc(id)) ?? supabaseRepository.getDishById(id);
     },
 
+    async getDishes(ids) {
+      return loadDishDetailsInPages(ids, getDishesByIdsViaRpc);
+    },
+
     async listActivePromotionsForTarget(input) {
       const client = getSupabaseClient();
       if (!client) return [];
@@ -3017,7 +2970,7 @@ export const supabaseService: HungryService = {
     async listDiscoveryFeedByLocation(request) {
       const rpcFeed = await listDiscoveryFeedByLocationViaRpc(request);
       if (rpcFeed) return rpcFeed;
-      return getFallbackDiscoveryFeed(request);
+      throw new Error("Nearby catalog is temporarily unavailable.");
     },
 
     async searchVenuesByLocation(request) {
@@ -3027,11 +2980,7 @@ export const supabaseService: HungryService = {
     async searchDishes(filters: SearchFilters, tasteProfile: TasteVector): Promise<SearchResult[]> {
       const rpcResults = await searchDishesViaRpc(filters, tasteProfile);
       if (rpcResults) return rpcResults;
-      const results = supabaseRepository.searchDishes(filters, tasteProfile);
-      return results.map((dish) => ({
-        dish,
-        score: similarityScore(dish.tasteVector, tasteProfile),
-      }));
+      throw new Error("Dish search is temporarily unavailable.");
     },
 
     async decideForMe(tasteProfile, lat, lng) {
@@ -3048,18 +2997,31 @@ export const supabaseService: HungryService = {
 
   reviews: {
     async getReviewsForDish(dishId) {
+      const reviewsByDishId = await supabaseService.reviews.getReviewsForDishes([dishId]);
+      return reviewsByDishId[dishId] ?? [];
+    },
+
+    async getReviewsForDishes(dishIds) {
+      const uniqueDishIds = Array.from(new Set(dishIds.filter(Boolean)));
+      if (!uniqueDishIds.length) return {};
       const client = requireSupabaseClient();
       const { data, error } = await client
         .from("reviews")
         .select(
           "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend",
         )
-        .eq("dish_id", dishId)
+        .in("dish_id", uniqueDishIds)
         .order("created_at", { ascending: false });
       if (error || !Array.isArray(data)) {
-        return [];
+        if (error) throw error;
+        return {};
       }
-      return mapSupabaseReviewRows(client, data as Row[]);
+      const reviews = await mapSupabaseReviewRows(client, data as Row[]);
+      return reviews.reduce<Record<string, DishDetail["reviews"]>>((byDishId, review) => {
+        if (!review.dishId) return byDishId;
+        byDishId[review.dishId] = [...(byDishId[review.dishId] ?? []), review];
+        return byDishId;
+      }, {});
     },
 
     async getUserReviews(userId) {
@@ -3071,10 +3033,12 @@ export const supabaseService: HungryService = {
         )
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
-      if (error || !Array.isArray(data)) {
-        return [];
-      }
-      return mapSupabaseReviewRows(client, data as Row[]);
+      const rows = requireSupabaseRows<Row>(
+        data,
+        error,
+        "Review history returned an invalid response.",
+      );
+      return mapSupabaseReviewRows(client, rows);
     },
 
     async submitReview(draft: SubmitReviewInput) {
@@ -3091,7 +3055,7 @@ export const supabaseService: HungryService = {
           rating: draft.rating,
           text: draft.text,
           tags: draft.tags,
-          would_recommend: true,
+          would_recommend: draft.recommend ?? true,
         })
         .select("id")
         .maybeSingle();
@@ -3378,8 +3342,6 @@ export const supabaseService: HungryService = {
       if (publishError || !publishedPostData) {
         throw publishError ?? new Error("Failed to publish post.");
       }
-
-      await refreshSupabaseRepositoryCache();
 
       const primaryMediaUrl = media.displayUrls[0] ?? draft.photoUrl;
 
@@ -4837,7 +4799,6 @@ export const supabaseService: HungryService = {
             .update(venuePayload)
             .eq("id", venueId);
           if (venueError) throw venueError;
-          await refreshSupabaseRepositoryCache();
         }
       }
       return toMerchantOutlet(client, outlet);
@@ -4880,7 +4841,6 @@ export const supabaseService: HungryService = {
       await replaceDishImages(client, dishId, galleryUrls);
       await replaceDishDietaryFlags(client, dishId, dish.dietaryFlags);
       await replaceDishTasteVector(client, dishId, dish.tasteVector);
-      await refreshSupabaseRepositoryCache();
       const presentationByDishId = await fetchDishPresentationMap(client, [dishId]);
       return mapSupabaseDish(
         data as Row,
@@ -4923,7 +4883,6 @@ export const supabaseService: HungryService = {
       await replaceDishImages(client, dishId, galleryUrls);
       await replaceDishDietaryFlags(client, dishId, updates.dietaryFlags);
       await replaceDishTasteVector(client, dishId, updates.tasteVector);
-      await refreshSupabaseRepositoryCache();
       const presentationByDishId = await fetchDishPresentationMap(client, [dishId]);
       return mapSupabaseDish(
         row,
@@ -4941,7 +4900,6 @@ export const supabaseService: HungryService = {
         .eq("id", dishId)
         .eq("venue_id", asString(outlet.venue_id) ?? "");
       if (error) throw error;
-      await refreshSupabaseRepositoryCache();
     },
 
     async toggleSoldOut(outletId, dishId) {
@@ -4963,7 +4921,6 @@ export const supabaseService: HungryService = {
         .eq("id", dishId)
         .eq("venue_id", venueId);
       if (updateError) throw updateError;
-      await refreshSupabaseRepositoryCache();
       return enabled;
     },
 
@@ -4986,7 +4943,6 @@ export const supabaseService: HungryService = {
         .eq("id", dishId)
         .eq("venue_id", venueId);
       if (updateError) throw updateError;
-      await refreshSupabaseRepositoryCache();
       return enabled;
     },
 
@@ -5835,7 +5791,7 @@ export const supabaseService: HungryService = {
       const vectorBefore = clampTasteVector(feedback.userVectorBefore ?? profile.tasteVector);
       const createdAt = feedback.createdAt ?? new Date().toISOString();
       const persistedType = toPersistedFeedbackType(feedback);
-      const dish = feedback.dishId ? supabaseRepository.getDishById(feedback.dishId) : undefined;
+      const dish = feedback.dishId ? await getDishByIdViaRpc(feedback.dishId) : undefined;
       if (!dish && feedback.feedbackType !== "search_query") {
         const event = createServiceTasteEvent({
           type: persistedType,

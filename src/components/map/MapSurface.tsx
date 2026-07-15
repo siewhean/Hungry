@@ -10,12 +10,13 @@ import {
 } from "react-native";
 import { Utensils } from "lucide-react-native";
 
-import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { APP_ENVIRONMENT, FEATURE_FLAGS } from "@/constants/featureFlags";
 import type { BuildingType, Coordinate } from "@/types/domain";
 import { useHungryTheme } from "@/theme";
 import { componentRadii } from "@/theme/tokens";
 import { AccessibleImage, AppText } from "@/components/ui";
 import { BuildingPin } from "./BuildingPin";
+import { resolveMapSurfaceMode } from "./mapSurfaceMode";
 
 const MAPBOX_ACCESS_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
@@ -418,20 +419,43 @@ export function MapSurface({
   onZoomChange,
   cameraPadding,
 }: MapSurfaceProps) {
-  const { palette } = useHungryTheme();
-  const shouldUseFallback = FEATURE_FLAGS.mockMapboxEnabled || !MAPBOX_ACCESS_TOKEN;
+  const { palette, spacing } = useHungryTheme();
+  const mapSurfaceMode = resolveMapSurfaceMode(
+    APP_ENVIRONMENT,
+    FEATURE_FLAGS.mockMapboxEnabled,
+    MAPBOX_ACCESS_TOKEN,
+  );
 
   useEffect(() => {
-    if (shouldUseFallback || !MAPBOX_ACCESS_TOKEN || hasConfiguredMapboxToken) {
+    if (mapSurfaceMode !== "live" || !MAPBOX_ACCESS_TOKEN || hasConfiguredMapboxToken) {
       return;
     }
 
     const MapboxGL = getMapboxGL();
     MapboxGL.setAccessToken(MAPBOX_ACCESS_TOKEN);
     hasConfiguredMapboxToken = true;
-  }, [shouldUseFallback]);
+  }, [mapSurfaceMode]);
 
-  if (shouldUseFallback) {
+  if (mapSurfaceMode === "unavailable") {
+    return (
+      <View
+        style={[
+          styles.wrapper,
+          styles.unavailable,
+          { backgroundColor: palette.mapBg, paddingHorizontal: spacing[6] },
+          style,
+        ]}
+        accessibilityLabel="Map unavailable"
+        accessibilityRole="alert"
+      >
+        <AppText variant="body" style={{ color: palette.textMuted, textAlign: "center" }}>
+          The live map is temporarily unavailable. Try again later.
+        </AppText>
+      </View>
+    );
+  }
+
+  if (mapSurfaceMode === "mock") {
     return (
       <View
         style={[styles.wrapper, { backgroundColor: palette.mapBg }, style]}
@@ -548,6 +572,10 @@ const styles = StyleSheet.create({
   },
   map: {
     flex: 1,
+  },
+  unavailable: {
+    alignItems: "center",
+    justifyContent: "center",
   },
   markerPressable: {
     alignItems: "center",

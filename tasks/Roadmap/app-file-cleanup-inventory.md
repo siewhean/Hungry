@@ -1,7 +1,7 @@
 # App File Cleanup Inventory
 
-Updated: 2026-06-21
-Scope: `frontend-design-overhaul` prelaunch review for App Store and Google Play.
+Updated: 2026-07-15
+Scope: reconciled FDO production-readiness candidate.
 
 ## Inventory Summary
 
@@ -35,7 +35,11 @@ Tracked files inspected by path ownership: 1,515.
 | `.maestro/.watchman-cookie-*`, repo `.watchman-cookie-*`, `.DS_Store` | delete when touched by cleanup PR | Generated local junk, never release evidence. |
 | `data/**` | human review | Do not delete source data without import/provenance confirmation. |
 | `output/`, `scratch/`, `graphify-out/` | human review | Generated artifacts may support audits; delete only after reference scan. |
+| `**/*.tsbuildinfo` | delete / ignore | Generated compiler cache has no runtime or audit value; `store-layout-editor/tsconfig.tsbuildinfo` was removed and the pattern is ignored. |
+| Disabled social, gamification, Wheel, Reads, merchant, prototype code | retain-disabled | Roadmap work remains behind production route/entry-point flags; disabled status alone is not deletion evidence. |
+| Mock/Excel service modules | retain pending bundle proof | Provider entrypoints still need production Metro reachability evidence before data or implementations can be archived. |
+| Duplicate Discover imagery | consolidate only after reference/bundle audit | FDO visuals and representative-dish mappings are protected until asset references and screenshot parity prove an exact replacement. |
 
 ## Current No-Delete Rule
 
-No unique app/runtime file should be deleted in this pass. Only exact local junk and proven unreferenced generated files are safe to remove after `rg` import/reference checks and `npm run audit:assets`.
+No unique app/runtime file should be deleted solely because it is disabled. Exact local junk and generated compiler caches may be removed after reference checks. Runtime modules/assets require import, route, production-bundle, and screenshot parity evidence plus a rollback commit before deletion.

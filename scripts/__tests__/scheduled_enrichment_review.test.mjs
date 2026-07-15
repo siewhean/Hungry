@@ -29,7 +29,8 @@ test("workflow schedules review only and requires explicit manual apply confirma
   assert.ok(workflowSource.includes("github.event_name == 'schedule'"));
   assert.equal(workflowSource.match(/--limit=\"\$\{ENRICHMENT_LIMIT\}\"/g)?.length, 2);
   assert.equal(workflowSource.match(/--workers=\"\$\{ENRICHMENT_WORKERS\}\"/g)?.length, 2);
-  assert.equal(workflowSource.match(/node-version: 22/g)?.length, 2);
+  assert.equal(workflowSource.match(/node-version: 22\.22\.1/g)?.length, 2);
+  assert.equal(workflowSource.match(/lfs: true/g)?.length, 2);
 });
 
 test("review command is dry-run, bounded, known-sources-only, and no-inserts", () => {

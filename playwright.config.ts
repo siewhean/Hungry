@@ -12,6 +12,8 @@ export default defineConfig({
     timeout: 10_000,
   },
   fullyParallel: false,
+  // Expo web shares one in-memory mock backend, so parallel workers make user journeys race.
+  workers: 1,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: [["list"], ["html", { open: "never" }]],

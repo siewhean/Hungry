@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   PanResponder,
@@ -15,7 +15,16 @@ import * as Haptics from "expo-haptics";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AccessibleImage, AppText, Button, HungryLogo } from "@/components/ui";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { isUsableDiscoverImageUrl } from "@/features/discover/bites";
+import {
+  formatDiscoverDistance,
+  formatDiscoverPrice,
+  getDishFallbackImageSource,
+  getEffectiveCuisineTags,
+} from "@/features/discover/presentation";
+import { saveCurrentCraveDish } from "@/features/discover/craveSwipeRuntime";
+import { getHungryService } from "@/lib/services/serviceProvider";
+import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -25,9 +34,53 @@ import type { DishDetail } from "@/types/domain";
 const SWIPE_THRESHOLD = 120;
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
+function CraveDishImage({ dish, preview = false }: { dish: DishDetail; preview?: boolean }) {
+  const { palette, radii, spacing } = useHungryTheme();
+  const [remoteImageFailed, setRemoteImageFailed] = useState(false);
+  const showRemoteImage = isUsableDiscoverImageUrl(dish.imageUrl) && !remoteImageFailed;
+
+  useEffect(() => {
+    setRemoteImageFailed(false);
+  }, [dish.id, dish.imageUrl]);
+
+  return (
+    <View style={StyleSheet.absoluteFill}>
+      <AccessibleImage
+        source={showRemoteImage ? { uri: dish.imageUrl } : getDishFallbackImageSource(dish)}
+        style={StyleSheet.absoluteFill}
+        contentFit="cover"
+        cachePolicy="memory-disk"
+        transition={120}
+        onError={showRemoteImage ? () => setRemoteImageFailed(true) : undefined}
+        accessibilityLabel={`${dish.name}${showRemoteImage ? " photo" : " representative image"}${
+          preview ? " preview" : ""
+        }`}
+      />
+      {!showRemoteImage ? (
+        <View
+          pointerEvents="none"
+          style={{
+            backgroundColor: palette.imageLabelSurface,
+            borderRadius: radii.pill,
+            left: spacing[2],
+            paddingHorizontal: spacing[1.5],
+            paddingVertical: spacing[0.5],
+            position: "absolute",
+            top: spacing[2],
+          }}
+        >
+          <AppText variant="micro" style={{ color: palette.textOnDark, fontWeight: "900" }}>
+            REPRESENTATIVE
+          </AppText>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 export function CraveScreen() {
   const navigation = useNavigation<RootNavigation>();
-  const repository = getDataRepository();
+  const hungryService = getHungryService();
   const insets = useSafeAreaInsets();
   const { componentRadii, palette, spacing, radii, shadows, motion, zIndex } = useHungryTheme();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
@@ -36,46 +89,59 @@ export function CraveScreen() {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const showToast = useUIStore((state) => state.showToast);
+  const currentLocation = useLocationStore((state) => state.currentLocation);
 
-  // Get a set of appealing dishes for swiping
-  const [dishes, setDishes] = useState<DishDetail[]>(() => {
-    return repository
-      .listBuildings()
-      .flatMap((b) => repository.listVenuesByBuilding(b.id))
-      .flatMap((v) => repository.listDishesByVenue(v.id))
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 20);
-  });
+  const [dishes, setDishes] = useState<DishDetail[]>([]);
+  const [catalogStatus, setCatalogStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [catalogLoadAttempt, setCatalogLoadAttempt] = useState(0);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const position = useRef(new Animated.ValueXY()).current;
 
+  useEffect(() => {
+    let active = true;
+    setCatalogStatus("loading");
+    void hungryService.discovery
+      .listDiscoveryFeedByLocation({
+        lat: currentLocation.latitude,
+        lng: currentLocation.longitude,
+        radiusMeters: 3000,
+        limit: 20,
+      })
+      .then((feed) => {
+        if (!active) return;
+        if (!feed) throw new Error("Crave catalog unavailable");
+        setDishes(feed.results.map((result) => result.dish).sort(() => Math.random() - 0.5));
+        setCurrentIndex(0);
+        setCatalogStatus("ready");
+      })
+      .catch(() => {
+        if (!active) return;
+        setDishes([]);
+        setCatalogStatus("error");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [catalogLoadAttempt, currentLocation.latitude, currentLocation.longitude, hungryService]);
+
   const currentDish = dishes[currentIndex];
   const nextDish = dishes[currentIndex + 1];
+  const currentCuisineTags = currentDish ? getEffectiveCuisineTags(currentDish) : [];
+  const currentDistance = currentDish
+    ? formatDiscoverDistance(currentDish.distanceMeters)
+    : undefined;
+  const currentCardTags = currentDish
+    ? Array.from(new Set([...currentCuisineTags, ...currentDish.tasteTags])).slice(0, 3)
+    : [];
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onPanResponderMove: (_, gestureState) => {
-        position.setValue({ x: gestureState.dx, y: gestureState.dy });
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dx > SWIPE_THRESHOLD) {
-          swipeRight();
-        } else if (gestureState.dx < -SWIPE_THRESHOLD) {
-          swipeLeft();
-        } else {
-          Animated.spring(position, {
-            toValue: { x: 0, y: 0 },
-            friction: 5,
-            useNativeDriver: true,
-          }).start();
-        }
-      },
-    }),
-  ).current;
+  const nextCard = useCallback(() => {
+    setCurrentIndex((prev) => prev + 1);
+    position.setValue({ x: 0, y: 0 });
+  }, [position]);
 
-  const swipeRight = () => {
+  const swipeRight = useCallback(() => {
     if (!isAuthenticated) {
       Animated.spring(position, {
         toValue: { x: 0, y: 0 },
@@ -89,28 +155,58 @@ export function CraveScreen() {
     }
 
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    if (currentDish) toggleFavourite(currentDish);
+    saveCurrentCraveDish(currentDish, toggleFavourite);
 
     Animated.timing(position, {
       toValue: { x: screenWidth + 100, y: 0 },
       duration: motion.craveSwipe,
       useNativeDriver: true,
     }).start(() => nextCard());
-  };
+  }, [
+    currentDish,
+    isAuthenticated,
+    motion.craveSwipe,
+    navigation,
+    nextCard,
+    position,
+    screenWidth,
+    setReturnRoute,
+    showToast,
+    toggleFavourite,
+  ]);
 
-  const swipeLeft = () => {
+  const swipeLeft = useCallback(() => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     Animated.timing(position, {
       toValue: { x: -screenWidth - 100, y: 0 },
       duration: motion.craveSwipe,
       useNativeDriver: true,
     }).start(() => nextCard());
-  };
+  }, [motion.craveSwipe, nextCard, position, screenWidth]);
 
-  const nextCard = () => {
-    setCurrentIndex((prev) => prev + 1);
-    position.setValue({ x: 0, y: 0 });
-  };
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onPanResponderMove: (_, gestureState) => {
+          position.setValue({ x: gestureState.dx, y: gestureState.dy });
+        },
+        onPanResponderRelease: (_, gestureState) => {
+          if (gestureState.dx > SWIPE_THRESHOLD) {
+            swipeRight();
+          } else if (gestureState.dx < -SWIPE_THRESHOLD) {
+            swipeLeft();
+          } else {
+            Animated.spring(position, {
+              toValue: { x: 0, y: 0 },
+              friction: 5,
+              useNativeDriver: true,
+            }).start();
+          }
+        },
+      }),
+    [position, swipeLeft, swipeRight],
+  );
 
   const rotation = position.x.interpolate({
     inputRange: [-screenWidth / 2, 0, screenWidth / 2],
@@ -130,7 +226,7 @@ export function CraveScreen() {
     extrapolate: "clamp",
   });
 
-  if (!currentDish) {
+  if (catalogStatus !== "ready" || !currentDish) {
     return (
       <SafeAreaView
         style={{
@@ -143,7 +239,11 @@ export function CraveScreen() {
       >
         <Sparkles color={palette.orange} size={48} style={{ marginBottom: spacing[4] }} />
         <AppText variant="h2" style={{ textAlign: "center" }}>
-          You&apos;ve seen it all!
+          {catalogStatus === "loading"
+            ? "Finding your next craving…"
+            : catalogStatus === "error"
+              ? "Couldn’t load Crave"
+              : "You've seen it all!"}
         </AppText>
         <AppText
           tone="secondary"
@@ -153,9 +253,20 @@ export function CraveScreen() {
             marginBottom: spacing[6],
           }}
         >
-          Your taste profile is getting sharper. Go check out your updated Fingerprint.
+          {catalogStatus === "error"
+            ? "Check your connection and try again."
+            : catalogStatus === "loading"
+              ? "Loading nearby dishes for your taste profile."
+              : "Your taste profile is getting sharper. Go check out your updated Fingerprint."}
         </AppText>
-        <Button label="Back to Discover" onPress={() => navigation.goBack()} />
+        <Button
+          label={catalogStatus === "error" ? "Retry" : "Back to Discover"}
+          onPress={
+            catalogStatus === "error"
+              ? () => setCatalogLoadAttempt((attempt) => attempt + 1)
+              : () => navigation.goBack()
+          }
+        />
       </SafeAreaView>
     );
   }
@@ -174,10 +285,13 @@ export function CraveScreen() {
           }}
         >
           <Pressable
+            accessibilityHint="Returns to the Discover screen."
+            accessibilityLabel="Back to Discover"
+            accessibilityRole="button"
             onPress={() => navigation.goBack()}
             style={{
-              width: 40,
-              height: 40,
+              width: 44,
+              height: 44,
               alignItems: "center",
               justifyContent: "center",
             }}
@@ -199,7 +313,7 @@ export function CraveScreen() {
               SWIPE TO BUILD PROFILE
             </AppText>
           </View>
-          <View style={{ width: 40, height: 40 }} />
+          <View style={{ width: 44, height: 44 }} />
         </View>
 
         <View style={{ flex: 1, padding: spacing[4], justifyContent: "center" }}>
@@ -218,12 +332,7 @@ export function CraveScreen() {
                   },
                 ]}
               >
-                <AccessibleImage
-                  source={{ uri: nextDish.imageUrl }}
-                  style={StyleSheet.absoluteFill}
-                  contentFit="cover"
-                  accessibilityLabel={`${nextDish.name} preview photo`}
-                />
+                <CraveDishImage dish={nextDish} preview />
               </View>
             </View>
           )}
@@ -245,12 +354,7 @@ export function CraveScreen() {
               shadows.floating,
             ]}
           >
-            <AccessibleImage
-              source={{ uri: currentDish.imageUrl }}
-              style={StyleSheet.absoluteFill}
-              contentFit="cover"
-              accessibilityLabel={`${currentDish.name} photo`}
-            />
+            <CraveDishImage dish={currentDish} />
 
             {/* Feedback Overlays */}
             <Animated.View
@@ -323,7 +427,9 @@ export function CraveScreen() {
                     fontWeight: "600",
                   }}
                 >
-                  {currentDish.venueName}
+                  {[currentDish.venueName, currentDistance, formatDiscoverPrice(currentDish)]
+                    .filter(Boolean)
+                    .join(" · ")}
                 </AppText>
               </View>
               <View
@@ -333,7 +439,7 @@ export function CraveScreen() {
                   marginTop: spacing[2],
                 }}
               >
-                {currentDish.tasteTags.slice(0, 3).map((tag) => (
+                {currentCardTags.map((tag) => (
                   <View
                     key={tag}
                     style={{
@@ -367,6 +473,9 @@ export function CraveScreen() {
           }}
         >
           <Pressable
+            accessibilityHint={`Shows another dish instead of ${currentDish.name}.`}
+            accessibilityLabel="Pass on this dish"
+            accessibilityRole="button"
             onPress={swipeLeft}
             style={({ pressed }) => [
               {
@@ -386,6 +495,9 @@ export function CraveScreen() {
           </Pressable>
 
           <Pressable
+            accessibilityHint={`Saves ${currentDish.name} and shows another dish.`}
+            accessibilityLabel="Save this dish"
+            accessibilityRole="button"
             onPress={swipeRight}
             style={({ pressed }) => [
               {

@@ -79,7 +79,21 @@ if (process.env.HUNGRY_ALLOW_UNPROTECTED_CONSOLE_API === "1") {
 }
 
 if (hasAny(["HUNGRY_CONSOLE_API_TOKEN", "HUNGRY_CONSOLE_ADMIN_TOKEN"])) {
-  failures.push("Console token auth is deprecated; use HUNGRY_CONSOLE_USERNAME and HUNGRY_CONSOLE_PASSWORD.");
+  failures.push("Console static token auth is deprecated; use named Supabase admin bearer tokens.");
+}
+
+if (
+  value("HUNGRY_MERCHANT_PORTAL_ENABLED") &&
+  !["0", "1"].includes(value("HUNGRY_MERCHANT_PORTAL_ENABLED"))
+) {
+  failures.push("HUNGRY_MERCHANT_PORTAL_ENABLED must be 0, 1, or unset.");
+}
+
+if (
+  value("HUNGRY_CONSOLE_BREAK_GLASS_ENABLED") &&
+  !["0", "1"].includes(value("HUNGRY_CONSOLE_BREAK_GLASS_ENABLED"))
+) {
+  failures.push("HUNGRY_CONSOLE_BREAK_GLASS_ENABLED must be 0, 1, or unset.");
 }
 
 requireHttpsUrl("NEXT_PUBLIC_SITE_URL", value("NEXT_PUBLIC_SITE_URL"));
@@ -91,13 +105,37 @@ if (!publicSupabaseAnonKey()) {
 
 const username = consoleUsername();
 const password = consolePassword();
+const breakGlassEnabled = value("HUNGRY_CONSOLE_BREAK_GLASS_ENABLED") === "1";
 
-if (!username || !password) {
-  failures.push("Console access requires HUNGRY_CONSOLE_USERNAME and HUNGRY_CONSOLE_PASSWORD.");
+if (breakGlassEnabled && (!username || !password)) {
+  failures.push(
+    "Console Basic Auth break-glass access requires HUNGRY_CONSOLE_USERNAME and HUNGRY_CONSOLE_PASSWORD.",
+  );
 }
 
-if (password && isLikelyWeakSecret(password)) {
+if (!breakGlassEnabled && (username || password)) {
+  failures.push(
+    "Console Basic Auth credentials are present while HUNGRY_CONSOLE_BREAK_GLASS_ENABLED is not 1.",
+  );
+}
+
+if (breakGlassEnabled && password && isLikelyWeakSecret(password)) {
   failures.push("Console password is present but too short or appears to be a placeholder.");
+}
+
+if (value("HUNGRY_RATE_LIMIT_MODE") !== "redis") {
+  failures.push("HUNGRY_RATE_LIMIT_MODE must be redis for staging/production deployments.");
+}
+
+if (
+  !(
+    value("HUNGRY_RATE_LIMIT_REDIS_REST_URL") || value("UPSTASH_REDIS_REST_URL")
+  ) ||
+  !(
+    value("HUNGRY_RATE_LIMIT_REDIS_REST_TOKEN") || value("UPSTASH_REDIS_REST_TOKEN")
+  )
+) {
+  failures.push("Durable Redis rate-limit URL and token are required for staging/production.");
 }
 
 if (hasAny(["SUPABASE_SERVICE_ROLE_KEY", "HUNGRY_SUPABASE_SERVICE_ROLE_KEY"]) && serviceRoleKey().length < 32) {

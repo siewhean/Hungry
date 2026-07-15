@@ -109,6 +109,7 @@ import { filterCustomerVisiblePromotions } from "@/features/merchant/customerPro
 import { validateMerchantPromotionInput } from "@/features/merchant/promotionValidation";
 import { loadMockState, saveMockState } from "./persistence";
 import { biteToStallPost } from "@/lib/services/postTransforms";
+import { getBoundedUniqueDishDetailIds } from "@/lib/services/readSafety";
 import {
   appendPublishedStallPost,
   hydratePublishedStallPosts,
@@ -1455,6 +1456,16 @@ export const hungryService: HungryService = {
       return resolve(dishes.find((d) => d.id === id));
     },
 
+    async getDishes(ids) {
+      const uniqueIds = getBoundedUniqueDishDetailIds(ids);
+      const dishesById = new Map(dishes.map((dish) => [dish.id, dish]));
+      return resolve(
+        uniqueIds
+          .map((id) => dishesById.get(id))
+          .filter((dish): dish is DishDetail => Boolean(dish)),
+      );
+    },
+
     async listActivePromotionsForTarget(input) {
       const promotions = _merchantPromotions.filter(
         (promotion) => getPromotionOutletVenueId(promotion) === input.venueId,
@@ -1562,6 +1573,17 @@ export const hungryService: HungryService = {
     async getReviewsForDish(dishId) {
       const dish = dishes.find((d) => d.id === dishId);
       return resolve(dish?.reviews ?? []);
+    },
+
+    async getReviewsForDishes(dishIds) {
+      return resolve(
+        Object.fromEntries(
+          dishIds.map((dishId) => [
+            dishId,
+            dishes.find((dish) => dish.id === dishId)?.reviews ?? [],
+          ]),
+        ),
+      );
     },
 
     async getUserReviews(_userId) {

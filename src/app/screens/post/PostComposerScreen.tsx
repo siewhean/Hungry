@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Camera, Plus, Video } from "lucide-react-native";
@@ -19,11 +19,14 @@ import { publishComposerPost } from "@/features/post/publishing";
 import { useComposerStore, type MediaItem } from "@/features/post/useComposerStore";
 import { confirmGalleryAccess, isGalleryPermissionGranted } from "@/lib/permissions/gallery";
 import { POST_CAPTION_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSanitization";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import { useSessionStore } from "@/store/useSessionStore";
+import { useProfileStore } from "@/store/useProfileStore";
+import { useLocationStore } from "@/store/useLocationStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useMerchantStore } from "@/store/useMerchantStore";
 import { useHungryTheme } from "@/theme";
+import type { DishDetail, VenueSummary } from "@/types/domain";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Post">;
 
@@ -63,64 +66,101 @@ function PostComposerScreenInner({ navigation, route }: Props) {
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
   const isUserMode = !isMerchantMode && !isDeveloperMode;
   const shouldShowComposerBusinessFeatures = !isUserMode;
-  const repository = getDataRepository();
+  const hungryService = getHungryService();
+  const profile = useProfileStore((state) => state.profile);
+  const currentLocation = useLocationStore((state) => state.currentLocation);
   const [caption, setCaption] = useState("");
   const [selectedMedia, setSelectedMedia] = useState<MediaItem[]>([]);
   const [selectedDishId, setSelectedDishId] = useState<string | null>(route.params?.dishId ?? null);
-  const [selectedVenueId, setSelectedVenueId] = useState<string | null>(
-    route.params?.venueId ?? null,
-  );
   const [dishSearchQuery, setDishSearchQuery] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
-  const allDishes = useMemo(
-    () =>
-      repository
-        .listBuildings()
-        .flatMap((building) => repository.listVenuesByBuilding(building.id))
-        .flatMap((item) => repository.listDishesByVenue(item.id)),
-    [repository],
+  const [dish, setDish] = useState<DishDetail | null>(null);
+  const [venue, setVenue] = useState<VenueSummary | undefined>();
+  const [filteredDishes, setFilteredDishes] = useState<DishDetail[]>([]);
+  const [dishSearchStatus, setDishSearchStatus] = useState<"idle" | "loading" | "ready" | "error">(
+    "idle",
   );
-  const filteredDishes = useMemo(() => {
-    const query = dishSearchQuery.trim().toLowerCase();
-    const dishes = allDishes.filter((item) => {
-      if (!query) return true;
-      return (
-        item.name.toLowerCase().includes(query) ||
-        item.venueName.toLowerCase().includes(query) ||
-        item.tasteTags.some((tag) => tag.toLowerCase().includes(query)) ||
-        item.dietaryFlags.some((flag) => flag.toLowerCase().includes(query))
-      );
-    });
-    return dishes.slice(0, 12);
-  }, [allDishes, dishSearchQuery]);
+  const [dishSearchAttempt, setDishSearchAttempt] = useState(0);
 
   useEffect(() => {
     if (route.params?.dishId) {
       setSelectedDishId(route.params.dishId);
     }
-    if (route.params?.venueId) {
-      setSelectedVenueId(route.params.venueId);
-    }
-  }, [route.params?.dishId, route.params?.venueId]);
+  }, [route.params?.dishId]);
 
-  const dish = useMemo(() => {
-    if (selectedDishId) {
-      return repository.getDishById(selectedDishId) ?? null;
+  useEffect(() => {
+    let active = true;
+    if (!selectedDishId) {
+      setDish(null);
+      setVenue(undefined);
+      return () => {
+        active = false;
+      };
     }
-    if (selectedVenueId) {
-      return repository.listDishesByVenue(selectedVenueId)[0] ?? null;
-    }
-    return null;
-  }, [repository, selectedDishId, selectedVenueId]);
-  const venue = useMemo(() => {
-    if (!dish) {
-      return selectedVenueId ? repository.getVenueById(selectedVenueId) : undefined;
-    }
-    if (selectedVenueId) {
-      return repository.getVenueById(selectedVenueId) ?? repository.getVenueById(dish.venueId);
-    }
-    return repository.getVenueById(dish.venueId);
-  }, [dish, repository, selectedVenueId]);
+
+    void hungryService.discovery
+      .getDish(selectedDishId)
+      .then(async (nextDish) => {
+        if (!active) return;
+        setDish(nextDish ?? null);
+        if (!nextDish) return;
+        const nextVenue = await hungryService.discovery.getVenue(nextDish.venueId);
+        if (active) setVenue(nextVenue);
+      })
+      .catch(() => {
+        if (active) setDish(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [hungryService, selectedDishId]);
+
+  useEffect(() => {
+    if (dish) return undefined;
+    let active = true;
+    setDishSearchStatus("loading");
+    const timer = setTimeout(() => {
+      void hungryService.discovery
+        .searchDishes(
+          {
+            query: dishSearchQuery.trim(),
+            categories: [],
+            dietaryFlags: profile.dietaryPreferences,
+            tasteValues: profile.tasteVector,
+            radius: 100000,
+            latitude: currentLocation.latitude,
+            longitude: currentLocation.longitude,
+            openOnly: false,
+          },
+          profile.tasteVector,
+        )
+        .then((results) => {
+          if (!active) return;
+          setFilteredDishes(results.slice(0, 12).map((result) => result.dish));
+          setDishSearchStatus("ready");
+        })
+        .catch(() => {
+          if (!active) return;
+          setFilteredDishes([]);
+          setDishSearchStatus("error");
+        });
+    }, 180);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [
+    currentLocation.latitude,
+    currentLocation.longitude,
+    dish,
+    dishSearchAttempt,
+    dishSearchQuery,
+    hungryService,
+    profile.dietaryPreferences,
+    profile.tasteVector,
+  ]);
 
   const handlePickMedia = async () => {
     const shouldRequestPermission = await confirmGalleryAccess({
@@ -246,7 +286,6 @@ function PostComposerScreenInner({ navigation, route }: Props) {
           />
           {filteredDishes.length ? (
             filteredDishes.map((item) => {
-              const itemVenue = repository.getVenueById(item.venueId);
               return (
                 <Card key={item.id}>
                   <View style={{ flexDirection: "row", gap: spacing[3], alignItems: "center" }}>
@@ -264,7 +303,7 @@ function PostComposerScreenInner({ navigation, route }: Props) {
                     <View style={{ flex: 1, gap: spacing[1] }}>
                       <AppText variant="bodyBold">{item.name}</AppText>
                       <AppText variant="bodySmall" tone="secondary">
-                        {itemVenue?.name ?? item.venueName}
+                        {item.venueName}
                       </AppText>
                       {shouldShowComposerBusinessFeatures && (
                         <AppText variant="micro" tone="secondary">
@@ -278,13 +317,24 @@ function PostComposerScreenInner({ navigation, route }: Props) {
                       fullWidth={false}
                       onPress={() => {
                         setSelectedDishId(item.id);
-                        setSelectedVenueId(item.venueId);
+                        setDish(item);
                       }}
                     />
                   </View>
                 </Card>
               );
             })
+          ) : dishSearchStatus === "loading" ? (
+            <AppText tone="secondary" style={{ textAlign: "center", padding: spacing[6] }}>
+              Loading source-backed dishes…
+            </AppText>
+          ) : dishSearchStatus === "error" ? (
+            <EmptyState
+              title="Unable to load dishes"
+              body="Check your connection and try again."
+              ctaLabel="Retry"
+              onPress={() => setDishSearchAttempt((attempt) => attempt + 1)}
+            />
           ) : (
             <EmptyState title="No dishes found" body="Try a dish name or stall name." />
           )}

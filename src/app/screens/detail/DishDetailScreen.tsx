@@ -405,6 +405,10 @@ export function DishDetailScreen({ navigation, route }: Props) {
   };
 
   const submitReviewReply = (reviewId: string) => {
+    if (!FEATURE_FLAGS.commentsEnabled) {
+      return;
+    }
+
     const draft = (replyDraftByReviewId[reviewId] ?? "").trim();
     if (!draft.length) {
       return;
@@ -725,35 +729,38 @@ export function DishDetailScreen({ navigation, route }: Props) {
                         </View>
                       ) : null}
 
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <Pressable
-                          accessibilityRole="button"
-                          accessibilityLabel={`Reply to review by ${review.authorName}`}
-                          onPress={() =>
-                            setActiveReplyReviewId((current) =>
-                              current === review.id ? null : review.id,
-                            )
-                          }
+                      {FEATURE_FLAGS.commentsEnabled ? (
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                          }}
                         >
-                          <AppText variant="micro" tone="accent">
-                            Reply
-                          </AppText>
-                        </Pressable>
-                        {(localRepliesByReviewId[review.id]?.length ?? 0) > 0 ? (
-                          <AppText variant="micro" tone="muted">
-                            {localRepliesByReviewId[review.id]?.length} repl
-                            {(localRepliesByReviewId[review.id]?.length ?? 0) === 1 ? "y" : "ies"}
-                          </AppText>
-                        ) : null}
-                      </View>
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel={`Reply to review by ${review.authorName}`}
+                            onPress={() =>
+                              setActiveReplyReviewId((current) =>
+                                current === review.id ? null : review.id,
+                              )
+                            }
+                          >
+                            <AppText variant="micro" tone="accent">
+                              Reply
+                            </AppText>
+                          </Pressable>
+                          {(localRepliesByReviewId[review.id]?.length ?? 0) > 0 ? (
+                            <AppText variant="micro" tone="muted">
+                              {localRepliesByReviewId[review.id]?.length} repl
+                              {(localRepliesByReviewId[review.id]?.length ?? 0) === 1 ? "y" : "ies"}
+                            </AppText>
+                          ) : null}
+                        </View>
+                      ) : null}
 
-                      {(localRepliesByReviewId[review.id] ?? []).length > 0 ? (
+                      {FEATURE_FLAGS.commentsEnabled &&
+                      (localRepliesByReviewId[review.id] ?? []).length > 0 ? (
                         <View
                           style={{
                             gap: spacing[2],
@@ -784,7 +791,7 @@ export function DishDetailScreen({ navigation, route }: Props) {
                         </View>
                       ) : null}
 
-                      {activeReplyReviewId === review.id ? (
+                      {FEATURE_FLAGS.commentsEnabled && activeReplyReviewId === review.id ? (
                         <View style={{ gap: spacing[2], marginTop: spacing[1] }}>
                           <View
                             style={{

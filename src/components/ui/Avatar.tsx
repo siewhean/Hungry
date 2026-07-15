@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { View, StyleSheet } from "react-native";
 
 import { useHungryTheme } from "@/theme";
@@ -14,8 +15,14 @@ interface AvatarProps {
 
 export function Avatar({ uri, name, size = 40, variant = "circle" }: AvatarProps) {
   const { palette, radii } = useHungryTheme();
+  const [remoteImageFailed, setRemoteImageFailed] = useState(false);
+
+  useEffect(() => {
+    setRemoteImageFailed(false);
+  }, [uri]);
 
   const borderRadius = variant === "circle" ? size / 2 : radii.md;
+  const showRemoteImage = Boolean(uri) && !remoteImageFailed;
 
   return (
     <View
@@ -32,11 +39,12 @@ export function Avatar({ uri, name, size = 40, variant = "circle" }: AvatarProps
         },
       ]}
     >
-      {uri ? (
+      {showRemoteImage ? (
         <AccessibleImage
           source={{ uri }}
           style={{ width: "100%", height: "100%", borderRadius }}
           contentFit="cover"
+          onError={() => setRemoteImageFailed(true)}
           decorative
         />
       ) : (

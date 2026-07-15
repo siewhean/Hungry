@@ -45,7 +45,7 @@ test("Supabase social publish writes posts and post_media instead of legacy bite
   assert.match(postBite, /from\("post_media"\)\.insert/);
   assert.match(postBite, /from\("posts"\)[\s\S]*\.update/);
   assert.match(postBite, /status: "published"/);
-  assert.match(postBite, /refreshSupabaseRepositoryCache/);
+  assert.doesNotMatch(postBite, /refreshSupabaseRepositoryCache/);
   assert.doesNotMatch(postBite, /from\("bites"\)/);
   assert.doesNotMatch(postBite, /"bites-media"/);
 });

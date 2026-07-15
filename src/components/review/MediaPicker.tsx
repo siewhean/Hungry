@@ -15,6 +15,7 @@ interface MediaPickerProps {
   videoUri?: string;
   filterId?: string;
   maxPhotos?: number;
+  richMediaEnabled?: boolean;
   onAddPhoto: (uri: string) => void;
   onRemovePhoto: (uri: string) => void;
   onSetVideo: (uri?: string) => void;
@@ -26,6 +27,7 @@ export function MediaPicker({
   videoUri,
   filterId,
   maxPhotos = 5,
+  richMediaEnabled = false,
   onAddPhoto,
   onRemovePhoto,
   onSetVideo,
@@ -72,14 +74,15 @@ export function MediaPicker({
     } else {
       onAddPhoto(asset.uri);
     }
-    // Automatically open editor for the new media
-    setEditingUri(asset.uri);
+    if (richMediaEnabled) {
+      setEditingUri(asset.uri);
+    }
   };
 
   return (
     <View style={{ gap: spacing[4] }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-        <AppText variant="h3">Photos & Reels</AppText>
+        <AppText variant="h3">{richMediaEnabled ? "Photos & Reels" : "Photos"}</AppText>
         <AppText variant="micro" tone="muted">
           {photos.length}/5 photos
         </AppText>
@@ -90,54 +93,56 @@ export function MediaPicker({
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ gap: spacing[3] }}
       >
-        {/* Video/Reel Slot */}
-        {videoUri ? (
-          <View style={styles.mediaContainer}>
-            <AccessibleImage
-              source={{ uri: videoUri }}
-              accessibilityLabel="Selected review reel"
-              style={[
-                styles.media,
-                { backgroundColor: palette.mediaBackdrop, borderRadius: componentRadii.card },
+        {/* Video/Reel Slot — hidden in production until uploads persist end-to-end. */}
+        {richMediaEnabled ? (
+          videoUri ? (
+            <View style={styles.mediaContainer}>
+              <AccessibleImage
+                source={{ uri: videoUri }}
+                accessibilityLabel="Selected review reel"
+                style={[
+                  styles.media,
+                  { backgroundColor: palette.mediaBackdrop, borderRadius: componentRadii.card },
+                ]}
+                contentFit="cover"
+              />
+              <View style={[styles.badge, { backgroundColor: palette.mediaScrim }]}>
+                <Video size={12} color={palette.white} />
+              </View>
+              <View style={styles.mediaActions}>
+                <Pressable
+                  onPress={() => setEditingUri(videoUri)}
+                  style={[styles.actionBtn, { backgroundColor: palette.mediaScrimStrong }]}
+                >
+                  <Edit2 size={14} color={palette.white} />
+                </Pressable>
+                <Pressable
+                  onPress={() => onSetVideo(undefined)}
+                  style={[styles.actionBtn, { backgroundColor: palette.error }]}
+                >
+                  <X size={14} color={palette.white} />
+                </Pressable>
+              </View>
+            </View>
+          ) : (
+            <Pressable
+              onPress={() => handlePickMedia("video")}
+              style={({ pressed }) => [
+                styles.pickerBtn,
+                {
+                  borderColor: palette.orange,
+                  borderStyle: "dashed",
+                  opacity: pressed ? 0.8 : 1,
+                },
               ]}
-              contentFit="cover"
-            />
-            <View style={[styles.badge, { backgroundColor: palette.mediaScrim }]}>
-              <Video size={12} color={palette.white} />
-            </View>
-            <View style={styles.mediaActions}>
-              <Pressable
-                onPress={() => setEditingUri(videoUri)}
-                style={[styles.actionBtn, { backgroundColor: palette.mediaScrimStrong }]}
-              >
-                <Edit2 size={14} color={palette.white} />
-              </Pressable>
-              <Pressable
-                onPress={() => onSetVideo(undefined)}
-                style={[styles.actionBtn, { backgroundColor: palette.error }]}
-              >
-                <X size={14} color={palette.white} />
-              </Pressable>
-            </View>
-          </View>
-        ) : (
-          <Pressable
-            onPress={() => handlePickMedia("video")}
-            style={({ pressed }) => [
-              styles.pickerBtn,
-              {
-                borderColor: palette.orange,
-                borderStyle: "dashed",
-                opacity: pressed ? 0.8 : 1,
-              },
-            ]}
-          >
-            <Video size={24} color={palette.orange} />
-            <AppText variant="micro" style={{ color: palette.orange }}>
-              Add Reel
-            </AppText>
-          </Pressable>
-        )}
+            >
+              <Video size={24} color={palette.orange} />
+              <AppText variant="micro" style={{ color: palette.orange }}>
+                Add Reel
+              </AppText>
+            </Pressable>
+          )
+        ) : null}
 
         {/* Photos */}
         {photos.map((uri) => (
@@ -152,12 +157,14 @@ export function MediaPicker({
               contentFit="cover"
             />
             <View style={styles.mediaActions}>
-              <Pressable
-                onPress={() => setEditingUri(uri)}
-                style={[styles.actionBtn, { backgroundColor: palette.mediaScrimStrong }]}
-              >
-                <Edit2 size={14} color={palette.white} />
-              </Pressable>
+              {richMediaEnabled ? (
+                <Pressable
+                  onPress={() => setEditingUri(uri)}
+                  style={[styles.actionBtn, { backgroundColor: palette.mediaScrimStrong }]}
+                >
+                  <Edit2 size={14} color={palette.white} />
+                </Pressable>
+              ) : null}
               <Pressable
                 onPress={() => onRemovePhoto(uri)}
                 style={[styles.actionBtn, { backgroundColor: palette.error }]}
@@ -188,7 +195,7 @@ export function MediaPicker({
         )}
       </ScrollView>
 
-      {editingUri && (
+      {richMediaEnabled && editingUri ? (
         <MediaEditor
           uri={editingUri}
           isVisible={!!editingUri}
@@ -200,7 +207,7 @@ export function MediaPicker({
             showToast({ message: "Filter applied!", tone: "success" });
           }}
         />
-      )}
+      ) : null}
     </View>
   );
 }

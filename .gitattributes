@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Keep future workbook revisions out of ordinary Git blobs without rewriting history.
+*.xlsx filter=lfs diff=lfs merge=lfs -text

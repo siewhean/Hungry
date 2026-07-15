@@ -122,8 +122,7 @@ export function WheelSvg({ entries, size = 300 }: Props) {
                   fontWeight="500"
                   textAnchor="middle"
                   alignmentBaseline="middle"
-                  rotation={labelAngle}
-                  origin={`${labelPt.x}, ${labelPt.y}`}
+                  transform={`rotate(${labelAngle} ${labelPt.x} ${labelPt.y})`}
                 >
                   {truncateLabel(entry.label, maxLabelChars)}
                 </SvgText>

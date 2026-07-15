@@ -99,16 +99,18 @@ Level 4 — Current Sprint Goal
 
 | Flag | Full Audit V1 production default | Meaning |
 | --- | --- | --- |
-| `directMessagesEnabled` | `true` | Direct Messages tab and chat surfaces |
-| `commentsEnabled` | `true` | Community comments on posts/reviews |
-| `storiesEnabled` | `true` | Story viewer and story creation |
-| `collectionsEnabled` | `true` | Collection list/detail routes |
-| `gamificationEnabled` | `true` | Passport, Missions, and FoodCred surfaces |
-| `merchantCentreEnabled` | `true` | Merchant beta routes behind auth/role/verification checks |
+| `directMessagesEnabled` | `false` | Direct Messages tab and chat surfaces remain outside production |
+| `commentsEnabled` | `false` | Community comments remain outside production |
+| `storiesEnabled` | `false` | Story viewer and creation remain outside production |
+| `collectionsEnabled` | `false` | Collection list/detail routes remain outside production |
+| `gamificationEnabled` | `false` | Passport, Missions, and FoodCred remain outside production |
+| `merchantCentreEnabled` | `false` | Merchant beta routes remain outside production |
 | `oauthProvidersEnabled` | `false` | Google/Apple OAuth provider buttons stay disabled until live credentials are verified |
 | `prototypeRoutesEnabled` | `false` | Prototype-only routes stay hidden in production |
 | `floorplansEnabled` | `false` | Indoor floorplan routes and entry points stay hidden in production |
-| `readsEnabled` | `true` | Reads tab is visible |
+| `readsEnabled` | `false` | Reads stays outside production until its bounded live source is implemented |
+| `hungryWheelEnabled` | `false` | Local party/winner implementation stays outside production |
+| `craveEnabled` | `true` | Crave is part of the consumer MVP |
 | `notificationsEnabled` | `false` | Push notifications disabled |
 | `mockMapboxEnabled` | `false` | Use real Mapbox SDK; `true` = mock surface |
 

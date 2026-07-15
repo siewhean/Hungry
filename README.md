@@ -98,8 +98,9 @@ The application uses feature flags to toggle functionality for development and r
 | `FEATURE_FLAGS.collectionsEnabled`     | Enable collection list/detail routes.                                            | `true` outside production, `false` in production     |
 | `FEATURE_FLAGS.storiesEnabled`         | Enable story viewer and story creation surfaces.                                 | `true` outside production, `false` in production     |
 | `FEATURE_FLAGS.craveEnabled`           | Enable the "Daily Crave" swiping discovery mode.                                 | `true`                                               |
-| `FEATURE_FLAGS.readsEnabled`           | Enable the "Reads" (blog) tab.                                                   | `true`                                               |
-| `FEATURE_FLAGS.mockMapboxEnabled`      | Use a static fallback for the map in test environments.                          | `false`                                              |
+| `FEATURE_FLAGS.readsEnabled`           | Enable the "Reads" (blog) tab after a bounded live source is ready.              | `true` outside production, `false` in production     |
+| `FEATURE_FLAGS.hungryWheelEnabled`     | Enable the local Hungry Wheel prototype.                                          | `true` outside production, `false` in production     |
+| `FEATURE_FLAGS.mockMapboxEnabled`      | Use a static fallback only outside production.                                   | `false`                                              |
 
 To override these locally, you can use `.env.development` or modify the constants directly during prototyping.
 
@@ -118,7 +119,7 @@ To override these locally, you can use `.env.development` or modify the constant
 | Developer launcher (dev-only)       | Done                                                                                       |
 | Profile, Favourites, Review History | Done                                                                                       |
 | Review flow                         | Done                                                                                       |
-| Reads (feature-flagged)             | Done                                                                                       |
+| Reads (production-disabled)         | Prototype — bounded live source still required                                             |
 | Offline + NotFound states           | Done                                                                                       |
 | Marketing launch kit                | Done                                                                                       |
 | Excel Ingestion & ETL Migration     | Done — reconciled workbook and rights-safe runtime catalog published                       |
@@ -142,9 +143,9 @@ To override these locally, you can use `.env.development` or modify the constant
 - `MerchantTabs` is registered only when `FEATURE_FLAGS.merchantCentreEnabled` is true
 - Direct messages and chat entry points are hidden or disabled when `FEATURE_FLAGS.directMessagesEnabled` is false
 - Indoor floorplan routes and layout entry points are registered only when `FEATURE_FLAGS.floorplansEnabled` is true
-- `Reads` tab is behind `FEATURE_FLAGS.readsEnabled` (default `true`)
-- Map mock mode: set `FEATURE_FLAGS.mockMapboxEnabled = true` for test environments
-- Real map runtime: set `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` locally to enable the live Mapbox surface; without it, the map falls back to a static coordinate preview so the repo screens stay inspectable.
+- `Reads` and `Hungry Wheel` remain behind non-production flags until their live backends are ready.
+- Map mock mode: set `EXPO_PUBLIC_MOCK_MAPBOX_ENABLED=1` only in development/test environments.
+- Real map runtime: set `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` to enable Mapbox. Missing production configuration fails closed with a non-fabricated unavailable state; only non-production environments use the inspectable static coordinate preview.
 - Maps now use a draggable bottom sheet (`16% / 44% / 82%`) and dynamic camera padding; the active pilot directory overlay is Koufu @ JEM (`L2` + `L3`) with official floor-map image backplates, unit-aligned polygons, computed fit-to-viewport scaling, and explicit zoom controls.
 - Map marker semantics are standardized across map surfaces: hawker centre = orange, food court = teal, restaurant = grey/text-muted.
 - Core client state now persists across cold starts (session, profile, search filters/history, location, review draft) using Zustand persist + AsyncStorage.
@@ -157,7 +158,7 @@ To override these locally, you can use `.env.development` or modify the constant
 - Mock discovery data now includes a broader set of Singapore hawker centres and food courts with expanded stall/dish coverage
 - Maps now include a Figma-shaped `Maps` tab, a real `MapZoomedIn` route, and polygon-based building directory layouts (including Wisma and JEM mall-style floor overlays with vertical level switching).
 - **Design Specifications** — Comprehensive visual, UX, and accessibility specs for all remaining backlog items are now available in `docs/audit/`. These serve as the authoritative implementation guide for Batch 1–8.
-- Current MVP status: the `frontend-design-overhaul` UI/UX, including its Passport design, is reconciled onto the main integration line. The canonical workbook contains 4,273 display-safe venues and 22,042 rights-authorized dishes in the generated runtime catalog; conflicting, orphaned, generic, reference-only, and unapproved rows remain quarantined or excluded rather than promoted. The two High/P1 direct-order-write findings are closed repo-locally by an unapplied additive migration; typecheck, lint, format, 585 source tests (583 pass, 2 credential-gated skips), Expo Doctor 18/18, dependency/security checks, data validation, and an iOS simulator bundle/runtime smoke pass. Public launch remains No-Go pending owner-authorized staging apply and live order role-matrix proof, remaining scan remediation, Android install/device and store-track proof, iOS EAS/TestFlight credentials, Sentry/project proof, and store-console/legal approvals; see `tasks/verification.md`.
+- Current MVP status: the `frontend-design-overhaul` UI/UX, including its Passport design, is reconciled onto the main integration line. The reconciled workbook validates 474 accepted source rows with zero invalid/duplicate/generic findings and excludes 237,824 unapproved cache rows with zero display blockers. Its byte-reproducible runtime catalog contains 4,280 display-safe venues, 22,992 positive-priced rights-filtered dishes, and 10,408 approved images; production reads are bounded and failure-aware, Discover values are source-backed, and missing authorized media uses visibly labelled representative assets. Node 22.22.1 repo-local gates pass: typecheck, lint, format, 661 source tests (659 pass, 2 credential-gated skips), Expo Doctor 18/18, root/web/layout dependency audits at the moderate threshold, the 118-page web-v2 build and bundle/static gates, the store-layout editor's 15 behavioral tests/build/bundle gate, and 12 iOS/Android-sized Playwright journeys. Public launch remains No-Go: the stale-snapshot Deep Scan was terminated and a fresh scan must run after the candidate is frozen, while live data parity/staging, native performance/accessibility, store, monitoring, and legal proof remain external; see `tasks/verification.md` and `tasks/Roadmap/production-readiness-audit-2026-07-15.md`.
 
 ## Commands
 
@@ -174,7 +175,7 @@ To override these locally, you can use `.env.development` or modify the constant
 
 - Source-of-truth product requirements currently live in the three Hungry docx files in the repo root.
 - Added an interview question bank for multi-persona customer and stall-operator research at `Research/agent_interview_question_bank.md`.
-- Reads stays behind a feature flag even though the tab contract exists now.
+- Reads stays outside production until it uses a bounded asynchronous live source.
 - The app is designed to demo end-to-end without backend availability.
 - The `data/` folder also contains the Singapore food-business workbook, a checked-in curated seed snapshot, and the refresh pipeline for rebuilding the database from public datasets plus supplementary hawker- and food-court-source discovery.
 - The `marketing/` workspace now contains repo-grounded launch materials plus the Next.js marketing site in `marketing/web/` with the homepage, `for-merchants`, `about`, and `privacy` routes.

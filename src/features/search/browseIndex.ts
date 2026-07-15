@@ -56,6 +56,25 @@ export function getBrowseIndex(repository: DataRepository = getDataRepository())
   const buildings = repository.listBuildings();
   const allVenues = buildings.flatMap((building) => repository.listVenuesByBuilding(building.id));
   const stallPosts = repository.listStallPosts();
+  const index = buildBrowseIndex({
+    venues: allVenues,
+    dishes: allVenues.flatMap((venue) => repository.listDishesByVenue(venue.id)),
+    stallPosts,
+  });
+
+  cachedBrowseIndex = { index, repository };
+  return index;
+}
+
+export function buildBrowseIndex({
+  venues: allVenues,
+  dishes: allDishes,
+  stallPosts,
+}: {
+  venues: VenueSummary[];
+  dishes: DishDetail[];
+  stallPosts: StallPost[];
+}): BrowseIndex {
   const venueById = new Map<string, VenueSummary>();
   const venuesByBuildingId = new Map<string, VenueSummary[]>();
   const dishById = new Map<string, DishDetail>();
@@ -64,22 +83,25 @@ export function getBrowseIndex(repository: DataRepository = getDataRepository())
   const postByDishId = new Map<string, StallPost>();
   const postByVenueId = new Map<string, StallPost>();
   const searchTextByDishId = new Map<string, string>();
-  const allDishes: DishDetail[] = [];
 
   allVenues.forEach((venue) => {
     venueById.set(venue.id, venue);
     const venuesForBuilding = venuesByBuildingId.get(venue.buildingId) ?? [];
     venuesForBuilding.push(venue);
     venuesByBuildingId.set(venue.buildingId, venuesForBuilding);
+  });
 
-    const dishes = repository.listDishesByVenue(venue.id);
-    dishesByVenueId.set(venue.id, dishes);
-    sortedDishesByVenueId.set(venue.id, cloneSortedDishes(dishes));
-    dishes.forEach((dish) => {
-      allDishes.push(dish);
-      dishById.set(dish.id, dish);
-      searchTextByDishId.set(dish.id, toDishSearchText(dish, venue));
-    });
+  allDishes.forEach((dish) => {
+    const venue = venueById.get(dish.venueId);
+    const venueDishes = dishesByVenueId.get(dish.venueId) ?? [];
+    venueDishes.push(dish);
+    dishesByVenueId.set(dish.venueId, venueDishes);
+    dishById.set(dish.id, dish);
+    searchTextByDishId.set(dish.id, toDishSearchText(dish, venue));
+  });
+
+  dishesByVenueId.forEach((dishes, venueId) => {
+    sortedDishesByVenueId.set(venueId, cloneSortedDishes(dishes));
   });
 
   stallPosts.forEach((post) => {
@@ -93,7 +115,7 @@ export function getBrowseIndex(repository: DataRepository = getDataRepository())
     });
   });
 
-  const index: BrowseIndex = {
+  return {
     allDishes,
     allVenues,
     dishById,
@@ -106,9 +128,6 @@ export function getBrowseIndex(repository: DataRepository = getDataRepository())
     venueById,
     venuesByBuildingId,
   };
-
-  cachedBrowseIndex = { index, repository };
-  return index;
 }
 
 export function searchBrowseDishes(

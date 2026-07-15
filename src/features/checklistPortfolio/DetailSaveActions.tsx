@@ -242,8 +242,7 @@ export function DetailSaveActionsCard({
           onPress={onAddToChecklist}
           leftIcon={<ListPlus color={palette.text} size={14} />}
           style={{ flex: 1, minWidth: 0 }}
-          labelNumberOfLines={1}
-          labelEllipsizeMode="tail"
+          labelNumberOfLines={2}
         />
         <Button
           label="Add to Portfolio"
@@ -254,8 +253,7 @@ export function DetailSaveActionsCard({
           onPress={onAddToPortfolio}
           leftIcon={<Plus color={palette.text} size={14} />}
           style={{ flex: 1, minWidth: 0 }}
-          labelNumberOfLines={1}
-          labelEllipsizeMode="tail"
+          labelNumberOfLines={2}
         />
       </View>
     </Card>

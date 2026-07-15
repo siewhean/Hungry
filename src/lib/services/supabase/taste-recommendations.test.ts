@@ -81,10 +81,18 @@ test("supabase service prefers live recommendation RPC with mock-compatible fall
     "async getSlate(request)",
     "async recordExplicitFeedback",
   );
+  const mapRecommendationRows = segmentBetween(
+    source,
+    "async function mapRecommendationRpcRows",
+    "async function getLiveTasteRecommendations",
+  );
 
   assert.match(source, /async function getLiveTasteRecommendations/i);
   assert.match(source, /client\.rpc\("get_taste_recommendations"/);
-  assert.match(source, /refreshSupabaseRepositoryCache\(\)/);
+  assert.match(source, /await getDishesByIdsViaRpc\(dishIds\)/);
+  assert.doesNotMatch(mapRecommendationRows, /rows\.map\(async \(row\)/);
+  assert.doesNotMatch(mapRecommendationRows, /getDishByIdViaRpc/);
+  assert.doesNotMatch(source, /refreshSupabaseRepositoryCache\(\)/);
   assert.match(getSlate, /getLiveTasteRecommendations\(client, request, profile\)/);
   assert.match(getSlate, /liveItems \?\? getRankedRecommendations\(request, profile\)/);
 });

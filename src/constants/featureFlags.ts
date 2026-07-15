@@ -1,6 +1,6 @@
 export type AppEnvironment = "development" | "staging" | "production";
 
-function resolveAppEnvironment(
+export function resolveAppEnvironment(
   value: string | undefined,
   nodeEnv = process.env.NODE_ENV,
 ): AppEnvironment {
@@ -13,6 +13,7 @@ function resolveAppEnvironment(
 export function resolveFeatureFlags(
   appEnvRaw = process.env.EXPO_PUBLIC_APP_ENV,
   nodeEnv = process.env.NODE_ENV,
+  mockMapboxRaw = process.env.EXPO_PUBLIC_MOCK_MAPBOX_ENABLED,
 ) {
   const appEnv = resolveAppEnvironment(appEnvRaw?.trim().toLowerCase(), nodeEnv);
   const prototypeRoutesEnabled = appEnv !== "production";
@@ -21,12 +22,13 @@ export function resolveFeatureFlags(
   const merchantCentreEnabled = nonProductionSurfaceEnabled;
 
   return {
-    readsEnabled: true,
+    readsEnabled: nonProductionSurfaceEnabled,
     notificationsEnabled: false,
-    mockMapboxEnabled: process.env.EXPO_PUBLIC_MOCK_MAPBOX_ENABLED === "1",
-    hungryWheelEnabled: true,
+    mockMapboxEnabled: nonProductionSurfaceEnabled && mockMapboxRaw === "1",
+    hungryWheelEnabled: nonProductionSurfaceEnabled,
     directMessagesEnabled: nonProductionSurfaceEnabled,
     commentsEnabled: nonProductionSurfaceEnabled,
+    reviewRichMediaEnabled: nonProductionSurfaceEnabled,
     oauthProvidersEnabled: nonProductionSurfaceEnabled,
     floorplansEnabled: false,
     craveEnabled: true,
@@ -39,4 +41,8 @@ export function resolveFeatureFlags(
   } as const;
 }
 
+export const APP_ENVIRONMENT = resolveAppEnvironment(
+  process.env.EXPO_PUBLIC_APP_ENV,
+  process.env.NODE_ENV,
+);
 export const FEATURE_FLAGS = resolveFeatureFlags();

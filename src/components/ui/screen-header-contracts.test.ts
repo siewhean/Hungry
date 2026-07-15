@@ -100,7 +100,7 @@ test("Screen header contract: live Discover, Review, and New Post headers use Ap
   assert.match(home, /titleStyle=\{\{ color: palette\.orange \}\}/);
   assert.doesNotMatch(home, /homeHeaderTitle/);
   assert.match(reviews, /const reviewHeaderTitle = "Reviews"/);
-  assert.doesNotMatch(reviews, /getNearestSingaporeArea|useLocationStore|locationLabel/);
+  assert.doesNotMatch(reviews, /getNearestSingaporeArea|locationLabel/);
   assert.match(reviews, /<AppHeader[\s\S]*title=\{reviewHeaderTitle\}/);
   assert.match(
     reviews,

@@ -10,7 +10,7 @@ type ConsoleBasicAuthCredentials = {
 type ConsoleBasicAuthResult =
   | {
       configured: false;
-      reason: "missing_config";
+      reason: "disabled" | "missing_config";
       valid: false;
     }
   | {
@@ -28,7 +28,13 @@ function envValue(name: string) {
   return process.env[name]?.trim() ?? "";
 }
 
+export function isConsoleBasicAuthEnabled() {
+  return envValue("HUNGRY_CONSOLE_BREAK_GLASS_ENABLED") === "1";
+}
+
 export function getConsoleBasicAuthCredentials(): ConsoleBasicAuthCredentials | null {
+  if (!isConsoleBasicAuthEnabled()) return null;
+
   const username =
     envValue("HUNGRY_CONSOLE_USERNAME") || envValue("HUNGRY_CONSOLE_BASIC_AUTH_USERNAME");
   const password =
@@ -79,6 +85,10 @@ function constantTimeEquals(left: string, right: string) {
 }
 
 export function validateConsoleBasicAuth(request: NextRequest): ConsoleBasicAuthResult {
+  if (!isConsoleBasicAuthEnabled()) {
+    return { configured: false, reason: "disabled", valid: false };
+  }
+
   const expected = getConsoleBasicAuthCredentials();
   if (!expected) {
     return { configured: false, reason: "missing_config", valid: false };

@@ -1,7 +1,12 @@
 import { Image as ExpoImage } from "expo-image";
 
+import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { getBrowseIndex, searchBrowseDishes } from "@/features/search/browseIndex";
-import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import {
+  getDataRepository,
+  getHungryService,
+  getServiceProvider,
+} from "@/lib/services/serviceProvider";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import type { DataRepository } from "@/lib/services/types";
 import type { StallPost } from "@/types/domain";
@@ -111,6 +116,29 @@ export function prefetchDishDetail(dishId?: string | null, repository?: DataRepo
 
   scheduledDishDetails.add(dishId);
   schedulePrefetchWork(() => {
+    const provider = getServiceProvider();
+    if (provider.mode === "supabase") {
+      void provider.service.discovery
+        .getDish(dishId)
+        .then(async (dish) => {
+          if (!dish) return;
+          prefetchedDishDetails.add(dishId);
+          prefetchImages([dish.imageUrl, ...dish.gallery], 5);
+          const venue = await provider.service.discovery.getVenue(dish.venueId);
+          if (venue?.topDishId && venue.topDishId !== dishId) {
+            const topDish = await provider.service.discovery.getDish(venue.topDishId);
+            prefetchImage(topDish?.imageUrl);
+          }
+        })
+        .catch(() => {
+          prefetchedDishDetails.delete(dishId);
+        })
+        .finally(() => {
+          scheduledDishDetails.delete(dishId);
+        });
+      return;
+    }
+
     try {
       const dataRepository = repository ?? getDataRepository();
       const dish = dataRepository.getDishById(dishId);
@@ -139,6 +167,29 @@ export function prefetchStallDetail(venueId?: string | null, repository?: DataRe
 
   scheduledStallDetails.add(venueId);
   schedulePrefetchWork(() => {
+    const provider = getServiceProvider();
+    if (provider.mode === "supabase") {
+      void Promise.all([
+        provider.service.discovery.getVenue(venueId),
+        provider.service.discovery.listDishesByVenue(venueId),
+      ])
+        .then(([venue, dishes]) => {
+          prefetchedStallDetails.add(venueId);
+          prefetchImages(
+            dishes.map((dish) => dish.imageUrl),
+            6,
+          );
+          if (venue?.topDishId) prefetchDishDetail(venue.topDishId);
+        })
+        .catch(() => {
+          prefetchedStallDetails.delete(venueId);
+        })
+        .finally(() => {
+          scheduledStallDetails.delete(venueId);
+        });
+      return;
+    }
+
     try {
       const dataRepository = repository ?? getDataRepository();
       prefetchedStallDetails.add(venueId);
@@ -218,6 +269,44 @@ export function prefetchBrowseResults(
 
   scheduledBrowseResultPrefetches.add(key);
   schedulePrefetchWork(() => {
+    const provider = getServiceProvider();
+    if (provider.mode === "supabase") {
+      void provider.service.discovery
+        .searchDishes(
+          {
+            query: normalizedQuery,
+            categories: [],
+            dietaryFlags: [],
+            tasteValues: NEUTRAL_TASTE_VECTOR,
+            radius: 100000,
+            openOnly: false,
+          },
+          NEUTRAL_TASTE_VECTOR,
+        )
+        .then((results) => {
+          const dishes = results.slice(0, limit).map((result) => result.dish);
+          prefetchImages(
+            dishes.map((dish) => dish.imageUrl),
+            limit,
+          );
+          dishes.slice(0, 3).forEach((dish) => {
+            prefetchDishDetail(dish.id);
+            prefetchStallDetail(dish.venueId);
+          });
+          if (navigation && normalizedQuery) {
+            preloadRoute(navigation, "SearchResults", {
+              browseMode,
+              initialQuery: normalizedQuery,
+            });
+          }
+        })
+        .catch(() => undefined)
+        .finally(() => {
+          scheduledBrowseResultPrefetches.delete(key);
+        });
+      return;
+    }
+
     try {
       const repository = getDataRepository();
       const browseIndex = getBrowseIndex(repository);
