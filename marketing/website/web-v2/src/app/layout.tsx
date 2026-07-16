@@ -12,6 +12,8 @@ import "./globals.css";
 const nunito = localFont({
   variable: "--font-nunito",
   src: [{ path: "./fonts/Nunito-Variable.woff2", weight: "200 900", style: "normal" }],
+  display: "optional",
+  preload: false,
 });
 
 export const metadata: Metadata = {

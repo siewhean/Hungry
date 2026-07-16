@@ -14,6 +14,8 @@ All P0 blockers resolved. All static predeploy gates pass.
 
 **2026-07-16 PR-114 follow-up:** above-fold Foodies content now renders in server HTML, launch-time route prefetch is removed, the pure phone mockup is server-renderable, and nonfunctional mobile compositor hints are disabled. Three cold runs per public route improve median category performance to 93-97 and reduce median Lighthouse LCP to 3.189 s (`/`), 2.803 s (`/for-foodies`), 2.725 s (`/for-merchants`), and 2.509 s (`/join-waitlist`). Every median still exceeds 2.5 s, so the Lighthouse script now enforces 2,500 ms and fails closed. Raw reports are stored in `tasks/release-evidence/web-lighthouse-2026-07-16-pr114/`; PR-114 and deployed p75 CWV remain open.
 
+**2026-07-16 PR-114 font-delivery follow-up:** Nunito now uses optional display without an HTML preload, preserving computed Nunito typography on normal browser QA while allowing constrained first visits to render the metric-adjusted fallback. The ESM-only package is explicit, removing Node module-mode warnings. Three-run median LCP is 3.198 s (`/`), 2.819 s (`/for-foodies`), 2.573 s (`/for-merchants`), and 2.435 s (`/join-waitlist`); Waitlist now passes, Merchant improves 152 ms, and Home/Foodies stay within run noise. A final default-threshold run failed closed on the remaining three routes. Browser-enabled predeploy, 74-route crawl, keyboard/private-route checks, FDO mobile screenshots, and native Waitlist validation pass. Raw reports and hashes are stored in `tasks/release-evidence/web-lighthouse-2026-07-16-pr114-font/`. PR-114 and deployed p75 CWV remain open.
+
 | Gate | Status |
 |---|---|
 | TypeScript (`tsc --noEmit`) | ✅ 0 errors |

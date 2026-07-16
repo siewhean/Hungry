@@ -603,7 +603,7 @@ All items completed. Verification evidence in session log:
 
 ## 2026-07-16 Production-Readiness Follow-Up
 
-- [ ] **PR-114 — Public web LCP <=2.5 seconds.** Second hardening pass preserves the FDO layout and raises three-run median Lighthouse performance to 93-97, but median LCP remains 2.509-3.189 seconds. The 2,500 ms gate now fails closed; continue client-shell/Home server-split work and obtain deployed p75 CWV before closing.
+- [ ] **PR-114 — Public web LCP <=2.5 seconds.** Optional/non-preloaded Nunito delivery preserves the FDO layout and improves Merchant to 2.573 seconds and Waitlist to a passing 2.435 seconds. Home (3.198 seconds), Foodies (2.819 seconds), and Merchants still fail the 2,500 ms gate. Continue stable critical-CSS/client-shell work and obtain deployed p75 CWV before closing; the measured Home server split and CSS-background experiments were rejected because they did not improve LCP.
 
 ---
 
