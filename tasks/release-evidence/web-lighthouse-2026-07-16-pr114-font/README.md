@@ -1,6 +1,6 @@
 # Web-v2 PR-114 font-delivery follow-up — 2026-07-16
 
-Candidate implementation commit: `PENDING` on `codex/order-integrity-hardening`
+Candidate implementation commit: `52e2cf6c9a9ef922f7346357db71e301a3c3c4b5` on `codex/order-integrity-hardening`
 
 The final production build was served locally on macOS and audited three times per route with Chromium headless and Lighthouse's default mobile throttling. Evidence collection used a 10-second ceiling so all routes completed; the repository default remains 2,500 ms and a separate final strict run failed on the three routes still over target.
 
