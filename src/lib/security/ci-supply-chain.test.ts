@@ -83,6 +83,24 @@ test("CI fails closed on web-v2 and store-layout-editor quality gates", () => {
   assert.match(webJob, /Website production build\s*\n\s*run: npm run build/);
   assert.match(webJob, /Website bundle budget\s*\n\s*run: npm run bundle:budget/);
   assert.match(webJob, /Website static security contracts\s*\n\s*run: npm run security:audit/);
+  assert.match(
+    webJob,
+    /Install website Playwright Chromium\s*\n\s*run: npx playwright install --with-deps chromium/,
+  );
+  assert.match(webJob, /Website runtime browser acceptance[\s\S]*run: npm run ci:runtime/);
+  assert.match(webJob, /Website runtime browser acceptance\s*\n\s*timeout-minutes: 15/);
+  const webPackage = JSON.parse(read("marketing/website/web-v2/package.json"));
+  assert.equal(webPackage.scripts["ci:runtime"], "node scripts/runtime-ci-gates.mjs");
+  assert.equal(webPackage.devDependencies.playwright, "1.59.1");
+  const runtimeRunner = read("marketing/website/web-v2/scripts/runtime-ci-gates.mjs");
+  for (const script of ["security:browser", "private-routes:qc", "seo:links", "a11y:keyboard"]) {
+    assert.match(runtimeRunner, new RegExp(`["]${script.replace(":", "\\:")}["]`));
+  }
+  assert.match(runtimeRunner, /HUNGRY_MERCHANT_PORTAL_ENABLED: "0"/);
+  assert.match(runtimeRunner, /HUNGRY_REQUIRE_PRIVATE_ROUTE_QC: "0"/);
+  assert.match(runtimeRunner, /HUNGRY_CONSOLE_BREAK_GLASS_ENABLED: "0"/);
+  assert.match(runtimeRunner, /path\.resolve\("node_modules\/next\/dist\/bin\/next"\)/);
+  assert.match(runtimeRunner, /server\.kill\("SIGTERM"\)/);
   const websiteStaticStep = webJob.slice(webJob.indexOf("- name: Website SEO static validation"));
   for (const script of [
     "routes:inventory",

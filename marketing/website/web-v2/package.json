@@ -8,6 +8,7 @@
   },
   "scripts": {
     "clean": "rm -rf .next",
+    "ci:runtime": "node scripts/runtime-ci-gates.mjs",
     "dev:clean": "rm -rf .next && rm -f .next/lock && WATCHPACK_POLLING=true NEXT_DISABLE_SWC=1 node ./node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port 3000",
     "dev": "rm -f .next/lock && WATCHPACK_POLLING=true NEXT_DISABLE_SWC=1 node ./node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port 3000",
     "build": "rm -f .next/lock && NEXT_DISABLE_SWC=1 node ./node_modules/next/dist/bin/next build --webpack",
@@ -32,9 +33,9 @@
     "security:browser": "node scripts/csp-browser-smoke.mjs"
   },
   "dependencies": {
+    "@vercel/analytics": "^1.5.0",
     "framer-motion": "^12.38.0",
     "gsap": "^3.15.0",
-    "@vercel/analytics": "^1.5.0",
     "lucide-react": "^1.14.0",
     "next": "16.2.6",
     "react": "19.2.4",
@@ -49,6 +50,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "playwright": "1.59.1",
     "typescript": "^5"
   }
 }

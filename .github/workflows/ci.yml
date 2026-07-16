@@ -125,6 +125,15 @@ jobs:
       - name: Website static security contracts
         run: npm run security:audit
 
+      - name: Install website Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Website runtime browser acceptance
+        timeout-minutes: 15
+        env:
+          CSP_EVIDENCE_DIR: ${{ runner.temp }}/web-csp-runtime
+        run: npm run ci:runtime
+
       - name: Website SEO static validation
         run: |
           npm run routes:inventory
