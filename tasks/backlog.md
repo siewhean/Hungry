@@ -86,7 +86,8 @@
   Vercel Analytics coverage. Script and style-element containment now passes; PR-115 remains as a
   scoped P2 because current FDO/Next/animation style attributes still require
   `style-src-attr 'unsafe-inline'`. Post-CSP Lighthouse medians are 2.419-3.065 seconds, so PR-114
-  remains open on Home, Foodies, and Merchants.
+  remains open on Home, Foodies, and Merchants. The stable CSP/private-denial/link/keyboard runtime
+  suite is now mandatory in CI; authenticated staging and Lighthouse remain open under PR-117.
 
 - `ORDER-INTEGRITY-01` — Repo-local complete; linked apply and live role-matrix smoke pending.
   Findings `b016-c001` and `b016-c002` allowed authenticated customers to create terminal-state
