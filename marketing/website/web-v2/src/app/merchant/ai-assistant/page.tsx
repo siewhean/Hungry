@@ -103,11 +103,11 @@ export default function MerchantAiAssistantPage() {
             </div>
           ))}
           {thinking && (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+            <div className={styles.chatThinkingRow}>
               <div className={`${styles.chatBubble} ${styles.chatBubbleAssistant}`}>
-                <span style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+                <span className={styles.chatThinkingDots}>
                   {[0, 1, 2].map((i) => (
-                    <span key={i} style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--color-text-muted)", display: "inline-block", animation: `bounce 1s ease-in-out ${i * 0.15}s infinite` }} />
+                    <span key={i} className={styles.chatThinkingDot} />
                   ))}
                 </span>
               </div>
@@ -133,13 +133,6 @@ export default function MerchantAiAssistantPage() {
           </button>
         </div>
       </div>
-
-      <style>{`
-        @keyframes bounce {
-          0%, 80%, 100% { transform: translateY(0); opacity: 0.5; }
-          40% { transform: translateY(-6px); opacity: 1; }
-        }
-      `}</style>
     </div>
   );
 }

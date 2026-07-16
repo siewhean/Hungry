@@ -56,7 +56,6 @@ function assertServerOnlyEnvNames() {
 }
 
 const requiredHeaders = [
-  "Content-Security-Policy-Report-Only",
   "X-Content-Type-Options",
   "X-Frame-Options",
   "Referrer-Policy",
@@ -74,6 +73,14 @@ const mutationRoutes = [
 for (const header of requiredHeaders) {
   assertContains("next.config.ts", header, "Security header contract failed");
 }
+
+assertContains("src/proxy.ts", 'response.headers.set("Content-Security-Policy"', "Enforced nonce CSP response contract failed");
+assertContains("src/proxy.ts", "requestHeaders.set(CSP_NONCE_HEADER, nonce)", "CSP request nonce propagation contract failed");
+assertContains("src/lib/security/contentSecurityPolicy.ts", "'strict-dynamic'", "Strict script CSP contract failed");
+assertContains("src/lib/security/contentSecurityPolicy.ts", "script-src-attr 'none'", "Inline script-attribute CSP contract failed");
+assertContains("src/lib/security/contentSecurityPolicy.ts", "style-src-elem 'self' 'nonce-", "Style-element nonce CSP contract failed");
+assertNotContains("src/lib/security/contentSecurityPolicy.ts", "script-src 'self' 'unsafe-inline'", "Script CSP must not allow arbitrary inline scripts");
+assertContains("src/components/seo/JsonLd.tsx", "nonce={nonce}", "JSON-LD nonce contract failed");
 
 assertContains("src/proxy.ts", 'matcher: ["/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)"]', "Security proxy matcher failed");
 assertContains("src/proxy.ts", "hungry_merchant_access_token", "Merchant page proxy cookie contract failed");

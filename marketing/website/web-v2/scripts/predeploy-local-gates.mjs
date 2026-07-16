@@ -13,6 +13,14 @@ const defaultGates = [
 
 const optionalGates = [
   {
+    script: "security:browser",
+    description:
+      "Rendered nonce propagation, CSP violation, hostile-header, injection, navigation, and screenshot checks.",
+    enabled: () =>
+      Boolean(process.env.WEBSITE_BASE_URL) && process.env.HUNGRY_PREDEPLOY_BROWSER === "1",
+    skipReason: "set WEBSITE_BASE_URL and HUNGRY_PREDEPLOY_BROWSER=1",
+  },
+  {
     script: "private-routes:qc",
     description: "Runtime private merchant/console page and API access checks.",
     enabled: () => Boolean(process.env.WEBSITE_BASE_URL) || process.env.HUNGRY_PREDEPLOY_WITH_SERVER === "1",

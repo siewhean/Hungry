@@ -263,13 +263,18 @@ test("review photo writes persist storage paths and reads resolve signed URLs", 
 });
 
 test("marketing website ships a content security policy header", () => {
-  const config = readRepoFile("marketing/website/web-v2/next.config.ts");
+  const proxy = readRepoFile("marketing/website/web-v2/src/proxy.ts");
+  const policy = readRepoFile("marketing/website/web-v2/src/lib/security/contentSecurityPolicy.ts");
 
-  assert.match(config, /Content-Security-Policy/);
-  assert.match(config, /default-src 'self'/);
-  assert.match(config, /frame-ancestors 'none'/);
-  assert.match(config, /object-src 'none'/);
-  assert.match(config, /upgrade-insecure-requests/);
+  assert.match(proxy, /Content-Security-Policy/);
+  assert.match(proxy, /CSP_NONCE_HEADER/);
+  assert.match(policy, /default-src 'self'/);
+  assert.match(policy, /frame-ancestors 'none'/);
+  assert.match(policy, /object-src 'none'/);
+  assert.match(policy, /'strict-dynamic'/);
+  assert.match(policy, /style-src-elem 'self' 'nonce-/);
+  assert.doesNotMatch(policy, /script-src 'self' 'unsafe-inline'/);
+  assert.match(policy, /upgrade-insecure-requests/);
 });
 
 test("app security hardening migration restricts ops RPCs and verification evidence metadata", () => {

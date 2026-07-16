@@ -28,7 +28,8 @@
     "seo:validate": "node scripts/seo-ai-readiness-check.mjs",
     "seo:sitemap": "node scripts/validate-sitemap.mjs",
     "seo:structured-data": "node scripts/validate-structured-data.mjs",
-    "security:audit": "node scripts/security-route-contracts.mjs && node --experimental-strip-types --test src/lib/security/clientIp.test.mjs src/lib/security/redisPipeline.test.mjs"
+    "security:audit": "node scripts/security-route-contracts.mjs && node --experimental-strip-types --test src/lib/security/clientIp.test.mjs src/lib/security/contentSecurityPolicy.test.mjs src/lib/security/redisPipeline.test.mjs",
+    "security:browser": "node scripts/csp-browser-smoke.mjs"
   },
   "dependencies": {
     "framer-motion": "^12.38.0",

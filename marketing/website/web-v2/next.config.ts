@@ -38,34 +38,7 @@ function loadRepoRootEnvFallback() {
 
 loadRepoRootEnvFallback();
 
-const contentSecurityPolicy = [
-  "default-src 'self'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "frame-ancestors 'none'",
-  "object-src 'none'",
-  "img-src 'self' data: blob: https:",
-  "font-src 'self' data:",
-  "connect-src 'self' https:",
-  "script-src 'self' 'unsafe-inline'",
-  "style-src 'self' 'unsafe-inline'",
-  "upgrade-insecure-requests",
-].join("; ");
-
-const contentSecurityPolicyReportOnly = contentSecurityPolicy
-  .split("; ")
-  .filter((directive) => directive !== "upgrade-insecure-requests")
-  .join("; ");
-
 const securityHeaders = [
-  {
-    key: "Content-Security-Policy",
-    value: contentSecurityPolicy,
-  },
-  {
-    key: "Content-Security-Policy-Report-Only",
-    value: contentSecurityPolicyReportOnly,
-  },
   {
     key: "X-Content-Type-Options",
     value: "nosniff",

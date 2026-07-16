@@ -4,6 +4,11 @@ import {
   consoleBasicAuthChallengeHeader,
   validateConsoleBasicAuth,
 } from "@/lib/security/consoleBasicAuth";
+import {
+  CSP_NONCE_HEADER,
+  createContentSecurityPolicy,
+  createCspNonce,
+} from "@/lib/security/contentSecurityPolicy";
 
 const MERCHANT_ACCESS_COOKIE = "hungry_merchant_access_token";
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
@@ -80,19 +85,42 @@ function unavailableResponse(request: NextRequest, message: string) {
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const nonce = createCspNonce();
+  const development = process.env.NODE_ENV === "development";
+  const contentSecurityPolicy = createContentSecurityPolicy(nonce, { development });
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set(CSP_NONCE_HEADER, nonce);
+  requestHeaders.set("Content-Security-Policy", contentSecurityPolicy);
+
+  function secure(response: NextResponse) {
+    response.headers.set("Content-Security-Policy", contentSecurityPolicy);
+    return response;
+  }
+
+  function nextResponse() {
+    return secure(
+      NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
+      }),
+    );
+  }
 
   if (
     !MERCHANT_PORTAL_ENABLED &&
     (pathname.startsWith("/merchant") || pathname.startsWith("/api/merchant"))
   ) {
-    return unavailableResponse(request, "Merchant Portal is not enabled for this deployment.");
+    return secure(
+      unavailableResponse(request, "Merchant Portal is not enabled for this deployment."),
+    );
   }
 
   if (pathname.startsWith("/merchant") && !merchantAuthRoutes.has(pathname)) {
     const hasMerchantSession = Boolean(request.cookies.get(MERCHANT_ACCESS_COOKIE)?.value);
 
     if (!hasMerchantSession) {
-      return redirectOrJson(request, "/merchant/login", "Merchant sign-in is required.");
+      return secure(redirectOrJson(request, "/merchant/login", "Merchant sign-in is required."));
     }
   }
 
@@ -100,9 +128,12 @@ export function proxy(request: NextRequest) {
     pathname.startsWith("/api/console") &&
     request.headers.get("authorization")?.trim().toLowerCase().startsWith("bearer ");
 
-  if ((pathname.startsWith("/console") || pathname.startsWith("/api/console")) && !hasConsoleBearer) {
+  if (
+    (pathname.startsWith("/console") || pathname.startsWith("/api/console")) &&
+    !hasConsoleBearer
+  ) {
     const denied = consoleBasicAuthDenied(request);
-    if (denied) return denied;
+    if (denied) return secure(denied);
   }
 
   if (
@@ -110,10 +141,10 @@ export function proxy(request: NextRequest) {
     pathname.startsWith("/console") ||
     pathname.startsWith("/api/console")
   ) {
-    return applyPrivateResponseHeaders(NextResponse.next());
+    return applyPrivateResponseHeaders(nextResponse());
   }
 
-  return NextResponse.next();
+  return nextResponse();
 }
 
 export const config = {
