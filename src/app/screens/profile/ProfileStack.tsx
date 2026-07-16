@@ -13,57 +13,23 @@ import { VisitedStallsScreen } from "./VisitedStallsScreen";
 import { ReviewStack } from "@/app/screens/review/ReviewStack";
 import { FeedErrorBoundary } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import {
+  loadChecklistDetailScreen,
+  loadChecklistItemPickerScreen,
+  loadChecklistsHomeScreen,
+  loadPortfolioCollaboratorsScreen,
+  loadPortfolioCreateScreen,
+  loadPortfolioDetailScreen,
+  loadPortfolioEditScreen,
+  loadPortfolioItemPickerScreen,
+  loadPortfolioSearchScreen,
+  loadPortfoliosHomeScreen,
+  loadSocialGridScreen,
+  loadSocialPostDetailScreen,
+} from "@/app/screens/profile/optionalProfileRouteLoaders";
 export type { ProfileStackParamList };
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
-const loadChecklistsHomeScreen = () =>
-  (
-    require("@/app/screens/checklist/ChecklistsHomeScreen") as typeof import("@/app/screens/checklist/ChecklistsHomeScreen")
-  ).ChecklistsHomeScreen;
-const loadChecklistDetailScreen = () =>
-  (
-    require("@/app/screens/checklist/ChecklistDetailScreen") as typeof import("@/app/screens/checklist/ChecklistDetailScreen")
-  ).ChecklistDetailScreen;
-const loadChecklistItemPickerScreen = () =>
-  (
-    require("@/app/screens/checklist/ChecklistItemPickerScreen") as typeof import("@/app/screens/checklist/ChecklistItemPickerScreen")
-  ).ChecklistItemPickerScreen;
-const loadPortfoliosHomeScreen = () =>
-  (
-    require("@/app/screens/portfolio/PortfoliosHomeScreen") as typeof import("@/app/screens/portfolio/PortfoliosHomeScreen")
-  ).PortfoliosHomeScreen;
-const loadPortfolioDetailScreen = () =>
-  (
-    require("@/app/screens/portfolio/PortfolioDetailScreen") as typeof import("@/app/screens/portfolio/PortfolioDetailScreen")
-  ).PortfolioDetailScreen;
-const loadPortfolioCreateScreen = () =>
-  (
-    require("@/app/screens/portfolio/PortfolioCreateScreen") as typeof import("@/app/screens/portfolio/PortfolioCreateScreen")
-  ).PortfolioCreateScreen;
-const loadPortfolioEditScreen = () =>
-  (
-    require("@/app/screens/portfolio/PortfolioEditScreen") as typeof import("@/app/screens/portfolio/PortfolioEditScreen")
-  ).PortfolioEditScreen;
-const loadPortfolioItemPickerScreen = () =>
-  (
-    require("@/app/screens/portfolio/PortfolioItemPickerScreen") as typeof import("@/app/screens/portfolio/PortfolioItemPickerScreen")
-  ).PortfolioItemPickerScreen;
-const loadPortfolioCollaboratorsScreen = () =>
-  (
-    require("@/app/screens/portfolio/PortfolioCollaboratorsScreen") as typeof import("@/app/screens/portfolio/PortfolioCollaboratorsScreen")
-  ).PortfolioCollaboratorsScreen;
-const loadPortfolioSearchScreen = () =>
-  (
-    require("@/app/screens/portfolio/PortfolioSearchScreen") as typeof import("@/app/screens/portfolio/PortfolioSearchScreen")
-  ).PortfolioSearchScreen;
-const loadSocialGridScreen = () =>
-  (
-    require("@/app/screens/profile/SocialGridScreen") as typeof import("@/app/screens/profile/SocialGridScreen")
-  ).SocialGridScreen;
-const loadSocialPostDetailScreen = () =>
-  (
-    require("@/app/screens/profile/SocialPostDetailScreen") as typeof import("@/app/screens/profile/SocialPostDetailScreen")
-  ).SocialPostDetailScreen;
 
 export function ProfileStack() {
   return (

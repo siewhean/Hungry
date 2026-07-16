@@ -1012,7 +1012,8 @@ async function fetchPublishedPostBites(client: SupabaseClient, limit = 40): Prom
     .order("published_at", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(limit);
-  if (error || !Array.isArray(data)) return [];
+  if (error) throw error;
+  if (!Array.isArray(data)) return [];
 
   const postRows = data as Row[];
   const postIds = postRows.map((row) => asString(row.id)).filter((id): id is string => !!id);

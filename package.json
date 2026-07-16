@@ -35,6 +35,8 @@
     "audit:supabase:advisor-security:non-password": "node scripts/supabase-advisor-security-classifier.mjs --fail-on-external --ignore-leaked-password",
     "audit:supabase:advisor-support-snapshot": "node scripts/supabase-advisor-support-snapshot.mjs",
     "audit:assets": "node scripts/audit-assets.mjs",
+    "audit:bundle:production": "node scripts/audit-production-bundle.mjs",
+    "audit:bundle:production:test": "node --test scripts/audit-production-bundle.test.mjs",
     "check:edge-functions": "node scripts/check-edge-functions.mjs",
     "scaling:validate": "node scripts/validate-scaling-readiness.mjs",
     "load:public-web": "k6 run scripts/load/public-web.k6.js",

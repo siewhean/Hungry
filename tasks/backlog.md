@@ -6,6 +6,15 @@
 
 ## Current Focus
 
+- `PR-106` — Done repo-locally on 2026-07-17. Production Metro now selects Supabase-only
+  service, route-loader, profile-loader, store, and component entrypoints. Deterministic iOS and
+  Android Hermes source-map audits prove mock, Excel, developer, prototype, merchant, Wheel,
+  story, collection, and disabled gamification modules are excluded. Production Home/Discover
+  Playwright passes 2/2 with truthful retry states and no fixture substitution; mock Discover
+  truth passes 2/2; the full source suite passes 682 total / 680 pass / 2 credential-gated skips.
+  Evidence: `tasks/release-evidence/production-bundle-2026-07-17-pr106/`. Public launch remains
+  No-Go on the remaining P0/P1 and external gates.
+
 - `MAIN-FDO-RECONCILE-01` — Done. Reconciled `frontend-design-overhaul` onto the current `main`
   baseline with the FDO UI/UX and Passport implementation authoritative. Restored selected
   nonvisual safety fixes and added the lazy Excel repository/provider path. Published the

@@ -51,3 +51,56 @@ test("production UI and stores do not bypass the Hungry service provider with mo
 
   assert.deepEqual(violations, []);
 });
+
+test("Metro selects fail-closed production entrypoints for data and disabled features", () => {
+  const metro = readFileSync(path.join(root, "metro.config.js"), "utf8");
+  const requiredAliases = [
+    "serviceProvider.production",
+    "optionalRouteLoaders.production",
+    "optionalProfileRouteLoaders.production",
+    "useStoryStore.production",
+    "useMissionStore.production",
+    "usePassportStore.production",
+    "MissionBanner.production",
+    "PassportCard.production",
+  ];
+
+  assert.match(metro, /EXPO_PUBLIC_APP_ENV/);
+  assert.match(metro, /productionAliases/);
+  for (const alias of requiredAliases) {
+    assert.ok(metro.includes(alias), `missing production Metro alias: ${alias}`);
+  }
+});
+
+test("production provider has no mock or Excel dependency path", () => {
+  const source = readFileSync(
+    path.join(root, "src/lib/services/serviceProvider.production.ts"),
+    "utf8",
+  );
+
+  assert.doesNotMatch(source, /services\/(mock|excel)\//);
+  assert.match(
+    source,
+    /Production builds must use the Supabase data source|Supabase data source is required/,
+  );
+  assert.match(source, /rejectNonProductionProvider/);
+});
+
+test("disabled screen imports live behind aliased route-loader boundaries", () => {
+  const rootNavigator = readFileSync(
+    path.join(root, "src/app/navigation/RootNavigator.tsx"),
+    "utf8",
+  );
+  const profileStack = readFileSync(
+    path.join(root, "src/app/screens/profile/ProfileStack.tsx"),
+    "utf8",
+  );
+
+  assert.match(rootNavigator, /@\/app\/navigation\/optionalRouteLoaders/);
+  assert.match(profileStack, /@\/app\/screens\/profile\/optionalProfileRouteLoaders/);
+  assert.doesNotMatch(
+    rootNavigator,
+    /require\("@\/app\/(screens\/(dev|wheel|merchant)|navigation\/MerchantTabs)/,
+  );
+  assert.doesNotMatch(profileStack, /require\("@\/app\/screens\/(checklist|portfolio)/);
+});

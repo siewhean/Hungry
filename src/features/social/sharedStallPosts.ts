@@ -30,6 +30,7 @@ export async function listSharedStallPosts(repository: DataRepository = getDataR
   const service = getHungryService();
   let servicePosts: StallPost[] = [];
   let bitePosts: StallPost[] = [];
+  let biteFeedFailed = false;
 
   try {
     servicePosts = await service.content.listStallPosts();
@@ -43,10 +44,15 @@ export async function listSharedStallPosts(repository: DataRepository = getDataR
     );
   } catch {
     bitePosts = [];
+    biteFeedFailed = true;
   }
 
   if (getServiceProvider().mode === "supabase") {
-    return mergeStallPosts(bitePosts, servicePosts, repository.listStallPosts());
+    const mergedPosts = mergeStallPosts(bitePosts, servicePosts, repository.listStallPosts());
+    if (biteFeedFailed && mergedPosts.length === 0) {
+      throw new Error("Live home feed is temporarily unavailable");
+    }
+    return mergedPosts;
   }
 
   const localPublishedPosts = usePublishedPostStore.getState().posts;

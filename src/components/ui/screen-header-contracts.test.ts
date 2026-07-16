@@ -196,7 +196,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /Late Night Makan[\s\S]*showDiscoverFilterRailSkeleton \? \([\s\S]*<DiscoverFoodRailLoadingSkeleton[\s\S]*\) : lateNightCards\.length \? \([\s\S]*lateNightCards\.map[\s\S]*\) : isDiscoverFiltering \? \([\s\S]*<FilteredResultsEmptyState preserveHeight minHeight=\{discoverRailReservedHeight\} \/>/,
+    /Late Night Makan[\s\S]*showDiscoverFilterRailSkeleton \? \([\s\S]*<DiscoverFoodRailLoadingSkeleton[\s\S]*\) : lateNightCards\.length \? \([\s\S]*lateNightCards\.map[\s\S]*\) : isDiscoverFiltering \? \([\s\S]*<FilteredResultsEmptyState[\s\S]*preserveHeight[\s\S]*minHeight=\{discoverRailReservedHeight\}/,
   );
   assert.match(
     discover,
@@ -615,9 +615,10 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /rememberSearch\(item\.query\)/);
   assert.match(discover, /navigation\.navigate\("SearchResults", \{/);
   assert.match(discover, /places to eat in this area/);
+  assert.match(discover, /style=\{\{ backgroundColor: themeTints\.bg \}\}/);
   assert.match(
     discover,
-    /contentContainerStyle=\{\{\s*gap: discoverSectionGap,\s*paddingHorizontal: semanticSpacing\.screenEdge,\s*\}\}/,
+    /contentContainerStyle=\{\{\s*flexGrow: 1,\s*gap: discoverSectionGap,\s*paddingHorizontal: semanticSpacing\.screenEdge,\s*\}\}/,
   );
   assert.match(discover, /paddingTop: spacing\[1\]/);
   assert.match(discover, /Stalls & Restaurants/);

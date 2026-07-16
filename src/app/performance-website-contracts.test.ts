@@ -31,7 +31,8 @@ test("web-v2 keeps public shell server-rendered with a tiny client route gate", 
   assert.match(shell, /pathname\.startsWith\("\/merchant"\)/);
 
   assert.match(routeEffects, /"use client"/);
-  assert.match(routeEffects, /requestIdleCallback|setTimeout/);
+  assert.match(routeEffects, /useEffect/);
+  assert.match(routeEffects, /window\.scrollTo/);
   assert.doesNotMatch(navbar, /"use client"/);
   assert.match(navbar, /SamePageLink/);
 });

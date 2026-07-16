@@ -1308,6 +1308,8 @@ export function DiscoverHomeScreen() {
     null,
   );
   const [isSupabaseDiscoveryFeedLoading, setIsSupabaseDiscoveryFeedLoading] = useState(false);
+  const [supabaseDiscoveryFeedError, setSupabaseDiscoveryFeedError] = useState<string | null>(null);
+  const [supabaseDiscoveryFeedRetry, setSupabaseDiscoveryFeedRetry] = useState(0);
   const { height: screenHeight, width: screenWidth } = useWindowDimensions();
   const {
     componentSizes,
@@ -1484,11 +1486,13 @@ export function DiscoverHomeScreen() {
       setSupabaseDiscoverAreaCount(null);
       setSupabaseDiscoveryFeed(null);
       setIsSupabaseDiscoveryFeedLoading(false);
+      setSupabaseDiscoveryFeedError(null);
       return;
     }
 
     let isActive = true;
     setIsSupabaseDiscoveryFeedLoading(true);
+    setSupabaseDiscoveryFeedError(null);
     setSupabaseDiscoverAreaCount(null);
     setSupabaseDiscoveryFeed(null);
     const discoveryService = getHungryService().discovery;
@@ -1511,12 +1515,16 @@ export function DiscoverHomeScreen() {
         if (!isActive) return;
         setSupabaseDiscoverAreaCount(typeof venueCount === "number" ? venueCount : null);
         setSupabaseDiscoveryFeed(discoveryFeed ?? null);
+        setSupabaseDiscoveryFeedError(null);
         setIsSupabaseDiscoveryFeedLoading(false);
       })
       .catch(() => {
         if (isActive) {
           setSupabaseDiscoverAreaCount(null);
           setSupabaseDiscoveryFeed(null);
+          setSupabaseDiscoveryFeedError(
+            "Live discovery data could not be reached. No sample dishes were substituted.",
+          );
           setIsSupabaseDiscoveryFeedLoading(false);
         }
       });
@@ -1529,6 +1537,7 @@ export function DiscoverHomeScreen() {
     discoverLocationLatitude,
     discoverLocationLongitude,
     isSupabaseDataSource,
+    supabaseDiscoveryFeedRetry,
   ]);
 
   const themeTints = useMemo(() => {
@@ -2267,10 +2276,12 @@ export function DiscoverHomeScreen() {
     <Screen scroll={false} fullWidth style={{ backgroundColor: themeTints.bg }}>
       <ScrollView
         ref={discoverScrollRef}
+        style={{ backgroundColor: themeTints.bg }}
         showsVerticalScrollIndicator={false}
         scrollEnabled={!isStallShowcaseGestureActive}
         onLayout={handleDiscoverViewportLayout}
         contentContainerStyle={{
+          flexGrow: 1,
           gap: discoverSectionGap,
           paddingHorizontal: semanticSpacing.screenEdge,
         }}
@@ -2326,731 +2337,703 @@ export function DiscoverHomeScreen() {
           </View>
         </View>
 
-        {/* Search Bar Entry */}
-        <View style={{ alignItems: "flex-end" }}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Search dishes, stalls, or hawker centres"
-            onPressIn={() => preloadRoute(navigation, "SearchHome")}
-            onPress={openSearchHome}
-            style={{
-              width: searchBarWidth,
-              borderRadius: componentRadii.search,
-              backgroundColor: themeTints.cardBg,
-              borderWidth: themeTints.isDark ? 0 : 1,
-              borderColor: palette.border,
-              height: 48,
-              paddingHorizontal: spacing[3],
-              flexDirection: "row",
-              alignItems: "center",
-              ...shadows.card,
-            }}
-          >
-            <View style={{ flex: 1 }}>
-              <DiscoverSearchPlaceholder />
-            </View>
-            <View
-              style={{
-                width: searchIconSize,
-                alignItems: "center",
-                justifyContent: "center",
-                height: 48,
-              }}
-            >
-              <Search color={themeTints.isDark ? palette.white : palette.textMuted} size={19} />
-            </View>
-          </Pressable>
-        </View>
-
-        {/* Intent Chips with Icons */}
-        <FilterChipRail
-          options={sortedChips}
-          selectedIds={activeDiscoverChipIds}
-          onSelect={toggleDiscoverChip}
-          onSwipeLockChange={setTabSwipeLocked}
-          renderLeftIcon={(chip, isActive) =>
-            chip.id === "dietary" ? (
-              <Utensils size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
-            ) : chip.id === "spicy" ? (
-              <Flame size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
-            ) : chip.id === "halal" ? (
-              <HalalLogoIcon color={isActive ? palette.orange : themeTints.secondaryText} />
-            ) : chip.id === "late" ? (
-              <Compass size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
-            ) : (
-              <Utensils size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
-            )
-          }
-        />
-
-        {/* Popular food style buttons */}
-        <View style={{ gap: discoverContentGap }}>
-          <AppText variant="h2" style={{ color: themeTints.text }}>
-            Popular right now
-          </AppText>
-          {shouldShowPopularFoodSkeleton ? (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={edgeToEdgeHorizontalScrollStyle}
-              contentContainerStyle={{ gap: spacing[2] }}
-            >
-              <PopularFoodStyleSkeleton />
-            </ScrollView>
-          ) : popularFoodStyleItems.length ? (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={edgeToEdgeHorizontalScrollStyle}
-              contentContainerStyle={{ gap: spacing[2] }}
-            >
-              {popularFoodStyleItems.map((item) => (
-                <PopularFoodStyleItem
-                  key={item.id}
-                  item={item}
-                  onPrefetch={prefetchFoodStyle}
-                  onPress={handleFoodStylePress}
-                />
-              ))}
-            </ScrollView>
-          ) : isDiscoverFiltering ? (
-            <FilteredResultsEmptyState preserveHeight minHeight={popularFoodButtonHeight} />
-          ) : null}
-        </View>
-
-        {/* Decision action chips */}
-        <View style={{ flexDirection: "row", gap: decisionCardGap }}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Decide for me"
-            onPressIn={() => preloadRoute(navigation, "DecideForMeResult")}
-            onPress={handleDecideForMe}
-            style={({ pressed }) => [
+        {supabaseDiscoveryFeedError ? (
+          <View
+            style={[
               shadows.card,
               {
-                borderRadius: componentRadii.button,
-                height: 72,
-                opacity: pressed ? 0.92 : 1,
-                overflow: "hidden",
-                width: decisionCardWidth,
+                backgroundColor: themeTints.cardBg,
+                borderColor: palette.border,
+                borderRadius: componentRadii.card,
+                borderWidth: themeTints.isDark ? 0 : 1,
               },
             ]}
           >
-            <LinearGradient
-              colors={[palette.orange, palette.amber]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={{
-                alignItems: "center",
-                borderRadius: componentRadii.button,
-                flexDirection: "row",
-                gap: decisionCardInnerGap,
-                height: "100%",
-                justifyContent: "center",
-                padding: decisionCardPadding,
-              }}
-            >
-              <View
-                style={{
-                  alignItems: "center",
-                  backgroundColor: palette.inverseSurfaceSubtle,
-                  borderRadius: radii.pill,
-                  height: decisionCardIconSize,
-                  justifyContent: "center",
-                  width: decisionCardIconSize,
-                }}
-              >
-                <Dices color={palette.white} size={decisionCardIconGraphicSize} />
-              </View>
-              <AppText
-                adjustsFontSizeToFit
-                minimumFontScale={0.88}
-                variant="bodyBold"
-                tone="inverse"
-                numberOfLines={1}
-                style={{
-                  includeFontPadding: false,
-                  flexShrink: 1,
-                  fontSize: decisionCardLabelFontSize,
-                  lineHeight: decisionCardLabelLineHeight,
-                  maxWidth: decisionCardLabelMaxWidth,
-                  minWidth: 0,
-                  textAlign: "center",
-                  textAlignVertical: "center",
-                }}
-              >
-                Decide for Me
-              </AppText>
-            </LinearGradient>
-          </Pressable>
-
-          {FEATURE_FLAGS.hungryWheelEnabled ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Open hungry wheel"
-              onPressIn={() => preloadRoute(navigation, "WheelStack", { screen: "WheelHome" })}
-              onPress={() => navigation.navigate("WheelStack", { screen: "WheelHome" })}
-              style={({ pressed }) => [
-                shadows.card,
-                {
-                  alignItems: "center",
-                  backgroundColor: themeTints.isDark ? palette.inverseSurfaceFaint : palette.navy,
-                  borderRadius: componentRadii.button,
-                  flexDirection: "row",
-                  gap: decisionCardInnerGap,
-                  height: 72,
-                  justifyContent: "center",
-                  opacity: pressed ? 0.92 : 1,
-                  padding: decisionCardPadding,
-                  width: decisionCardWidth,
-                },
-              ]}
-            >
-              <View
-                style={{
-                  alignItems: "center",
-                  backgroundColor: palette.inverseSurfaceSoft,
-                  borderRadius: radii.pill,
-                  height: decisionCardIconSize,
-                  justifyContent: "center",
-                  width: decisionCardIconSize,
-                }}
-              >
-                <Compass color={palette.white} size={decisionCardIconGraphicSize} />
-              </View>
-              <AppText
-                adjustsFontSizeToFit
-                minimumFontScale={0.88}
-                variant="bodyBold"
-                tone="inverse"
-                numberOfLines={1}
-                style={{
-                  includeFontPadding: false,
-                  flexShrink: 1,
-                  fontSize: decisionCardLabelFontSize,
-                  lineHeight: decisionCardLabelLineHeight,
-                  maxWidth: decisionCardLabelMaxWidth,
-                  minWidth: 0,
-                  textAlign: "center",
-                  textAlignVertical: "center",
-                }}
-              >
-                Hungry Wheel
-              </AppText>
-            </Pressable>
-          ) : null}
-        </View>
-
-        {/* Discovery Targets — two large tap targets */}
-        <View style={{ gap: discoverContentGap }}>
-          <View style={{ flexDirection: "row", gap: discoverContentGap }}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Browse stalls and restaurants"
-              onPressIn={() => {
-                areaVenues
-                  .slice(0, 5)
-                  .forEach((venue) => prefetchStallDetail(venue.id, repository));
-                preloadRoute(navigation, "BrowseStalls");
-              }}
-              onPress={() => navigation.navigate("BrowseStalls")}
-              style={[
-                shadows.card,
-                {
-                  backgroundColor: themeTints.isDark ? palette.inverseSurfaceFaint : palette.bgSoft,
-                  borderRadius: componentRadii.card,
-                  flex: 1,
-                  overflow: "hidden",
-                  borderWidth: themeTints.isDark ? 0 : 1,
-                  borderColor: palette.border,
-                },
-              ]}
-            >
-              <View>
-                <AccessibleImage
-                  source={stallsCategoryImageSource}
-                  style={{ aspectRatio: 1.55, width: "100%" }}
-                  contentFit="cover"
-                  cachePolicy="memory-disk"
-                  decorative
-                />
-                <LinearGradient
-                  colors={[palette.imageOverlayGradientStart, palette.imageOverlayGradientEnd]}
-                  style={{
-                    bottom: 0,
-                    left: 0,
-                    padding: spacing[3],
-                    position: "absolute",
-                    right: 0,
-                  }}
-                >
-                  <View
-                    style={{
-                      alignSelf: "flex-start",
-                      backgroundColor: palette.imageLabelSurface,
-                      borderColor: palette.imageLabelBorder,
-                      borderRadius: radii.sm,
-                      borderWidth: 1,
-                      paddingHorizontal: spacing[2],
-                      paddingVertical: spacing[1],
-                    }}
-                  >
-                    <AppText variant="bodyBold" tone="inverse" numberOfLines={2}>
-                      Stalls & Restaurants
-                    </AppText>
-                  </View>
-                </LinearGradient>
-              </View>
-            </Pressable>
-
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Browse dishes"
-              onPressIn={() => {
-                areaDishPool.slice(0, 6).forEach((dish) => prefetchDishDetail(dish.id, repository));
-              }}
-              onPress={() => navigation.navigate("BrowseDishes")}
-              style={[
-                shadows.card,
-                {
-                  backgroundColor: themeTints.isDark ? palette.inverseSurfaceFaint : palette.bgSoft,
-                  borderRadius: componentRadii.card,
-                  flex: 1,
-                  overflow: "hidden",
-                  borderWidth: themeTints.isDark ? 0 : 1,
-                  borderColor: palette.border,
-                },
-              ]}
-            >
-              <View>
-                <AccessibleImage
-                  source={dishesCategoryImageSource}
-                  style={{ aspectRatio: 1.55, width: "100%" }}
-                  contentFit="cover"
-                  cachePolicy="memory-disk"
-                  decorative
-                />
-                <LinearGradient
-                  colors={[palette.imageOverlayGradientStart, palette.imageOverlayGradientEnd]}
-                  style={{
-                    bottom: 0,
-                    left: 0,
-                    padding: spacing[3],
-                    position: "absolute",
-                    right: 0,
-                  }}
-                >
-                  <View
-                    style={{
-                      alignSelf: "flex-start",
-                      backgroundColor: palette.imageLabelSurface,
-                      borderColor: palette.imageLabelBorder,
-                      borderRadius: radii.sm,
-                      borderWidth: 1,
-                      paddingHorizontal: spacing[2],
-                      paddingVertical: spacing[1],
-                    }}
-                  >
-                    <AppText variant="bodyBold" tone="inverse" numberOfLines={1}>
-                      Dishes
-                    </AppText>
-                  </View>
-                </LinearGradient>
-              </View>
-            </Pressable>
-          </View>
-        </View>
-
-        {/* Proactive Selection */}
-        <View style={{ gap: discoverContentGap }}>
-          {/* Daily Crave */}
-          {!isUserMode && FEATURE_FLAGS.craveEnabled ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Open daily crave"
-              onPressIn={() => preloadRoute(navigation, "Crave")}
-              onPress={() => navigation.navigate("Crave")}
-              style={[
-                shadows.card,
-                {
-                  backgroundColor: themeTints.isDark
-                    ? palette.inverseSurfaceBarely
-                    : palette.bgSoft,
-                  borderRadius: componentRadii.button,
-                  padding: spacing[4],
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: spacing[4],
-                  borderWidth: 1,
-                  borderColor: palette.border,
-                },
-              ]}
-            >
-              <View
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: radii.pill,
-                  backgroundColor: palette.orange,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Flame color={palette.white} size={22} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <AppText variant="bodyBold" style={{ color: themeTints.text }}>
-                  Daily Crave
-                </AppText>
-                <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
-                  Swipe to build your taste profile
-                </AppText>
-              </View>
-              <ChevronRight
-                color={themeTints.isDark ? palette.white : palette.textMuted}
-                size={20}
-              />
-            </Pressable>
-          ) : null}
-        </View>
-
-        {/* Quick Bites */}
-        <View style={{ gap: discoverContentGap }}>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-              <AppText variant="h2" style={{ color: themeTints.text }}>
-                Quick Bites
-              </AppText>
-              <View
-                style={{
-                  backgroundColor: palette.statusFast,
-                  paddingHorizontal: spacing[2],
-                  paddingVertical: spacing[0.5],
-                  borderRadius: radii.sm,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: spacing[1],
-                }}
-              >
-                <Zap color={palette.white} fill={palette.white} size={10} />
-                <AppText variant="micro" style={{ color: palette.white, fontWeight: "800" }}>
-                  &lt; 15 MIN
-                </AppText>
-              </View>
-            </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="See all quick bites under 15 minutes"
-              onPressIn={() => prefetchBiteCollectionRoute("quickBites")}
-              onPress={() => navigation.navigate("QuickBites", { collection: "quickBites" })}
-            >
-              <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
-                SEE ALL
-              </AppText>
-            </Pressable>
-          </View>
-          {showDiscoverFilterRailSkeleton ? (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={edgeToEdgeHorizontalScrollStyle}
-              contentContainerStyle={{ gap: spacing[4] }}
-            >
-              <DiscoverFoodRailLoadingSkeleton
-                cardWidth={discoverRailCardWidth}
-                imageHeight={discoverRailImageHeight}
-              />
-            </ScrollView>
-          ) : quickBiteCards.length ? (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={edgeToEdgeHorizontalScrollStyle}
-              contentContainerStyle={{ gap: spacing[4] }}
-            >
-              {quickBiteCards.map((bite) => (
-                <Pressable
-                  key={`quick-${bite.id}`}
-                  accessibilityRole="button"
-                  accessibilityLabel={getDiscoverBiteAccessibilityLabel(bite)}
-                  onPressIn={() => prefetchBiteCard(bite)}
-                  onPress={() => openBiteDish(bite, "quick_bite_card")}
-                  style={[
-                    shadows.card,
-                    {
-                      backgroundColor: themeTints.cardBg,
-                      borderRadius: componentRadii.card,
-                      overflow: "hidden",
-                      width: discoverRailCardWidth,
-                      borderWidth: themeTints.isDark ? 0 : 1,
-                      borderColor: palette.border,
-                    },
-                  ]}
-                >
-                  <DiscoverBiteImage bite={bite} height={discoverRailImageHeight} />
-                  <DiscoverCuisineBadge bite={bite} />
-                  <View style={{ padding: spacing[3], gap: spacing[1] }}>
-                    <AppText
-                      variant="bodySmallBold"
-                      numberOfLines={1}
-                      style={{ color: themeTints.text }}
-                    >
-                      {bite.dishName}
-                    </AppText>
-                    <AppText
-                      variant="micro"
-                      style={{ color: themeTints.secondaryText }}
-                      numberOfLines={1}
-                    >
-                      {bite.venueName}
-                      {formatDiscoverDistance(bite.distanceMeters)
-                        ? ` · ${formatDiscoverDistance(bite.distanceMeters)}`
-                        : ""}
-                    </AppText>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                        marginTop: spacing[1],
-                      }}
-                    >
-                      <AppText variant="price" style={{ color: palette.orange }}>
-                        {formatDiscoverPrice(bite)}
-                      </AppText>
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
-                        <Star color={palette.amber} size={12} fill={palette.amber} />
-                        <AppText
-                          variant="micro"
-                          style={{ fontWeight: "700", color: themeTints.text }}
-                        >
-                          {bite.rating.toFixed(1)}
-                        </AppText>
-                      </View>
-                    </View>
-                  </View>
-                </Pressable>
-              ))}
-            </ScrollView>
-          ) : isDiscoverFiltering ? (
-            <FilteredResultsEmptyState preserveHeight minHeight={discoverRailReservedHeight} />
-          ) : (
-            <NoFoodSectionEmptyState
-              title="No quick bites found"
-              preserveHeight
-              minHeight={discoverRailReservedHeight}
+            <EmptyState
+              title="Live discovery unavailable"
+              body="Check your connection and retry. Hungry will not show unverified sample dishes in production."
+              errorMessage={supabaseDiscoveryFeedError}
+              ctaLabel="Retry"
+              onPress={() => setSupabaseDiscoveryFeedRetry((attempt) => attempt + 1)}
             />
-          )}
-        </View>
-
-        {/* Recommended Dishes (Carousel) */}
-        <View style={{ gap: discoverContentGap }}>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <AppText variant="h2">Trending in {discoverLocationLabel}</AppText>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`See all trending dishes in ${discoverLocationLabel}`}
-              onPressIn={() => prefetchBiteCollectionRoute("trending")}
-              onPress={() => navigation.navigate("QuickBites", { collection: "trending" })}
-            >
-              <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
-                SEE ALL
-              </AppText>
-            </Pressable>
           </View>
-          {showDiscoverFilterRailSkeleton ? (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={edgeToEdgeHorizontalScrollStyle}
-              contentContainerStyle={{ gap: spacing[4] }}
-            >
-              <DiscoverFoodRailLoadingSkeleton
-                cardWidth={discoverRailCardWidth}
-                imageHeight={discoverRailImageHeight}
-              />
-            </ScrollView>
-          ) : trendingCards.length ? (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={edgeToEdgeHorizontalScrollStyle}
-              contentContainerStyle={{ gap: spacing[4] }}
-            >
-              {trendingCards.map((bite) => (
+        ) : null}
+
+        {supabaseDiscoveryFeedError ? null : (
+          <>
+            {/* Search Bar Entry */}
+            <View style={{ alignItems: "flex-end" }}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Search dishes, stalls, or hawker centres"
+                onPressIn={() => preloadRoute(navigation, "SearchHome")}
+                onPress={openSearchHome}
+                style={{
+                  width: searchBarWidth,
+                  borderRadius: componentRadii.search,
+                  backgroundColor: themeTints.cardBg,
+                  borderWidth: themeTints.isDark ? 0 : 1,
+                  borderColor: palette.border,
+                  height: 48,
+                  paddingHorizontal: spacing[3],
+                  flexDirection: "row",
+                  alignItems: "center",
+                  ...shadows.card,
+                }}
+              >
+                <View style={{ flex: 1 }}>
+                  <DiscoverSearchPlaceholder />
+                </View>
+                <View
+                  style={{
+                    width: searchIconSize,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: 48,
+                  }}
+                >
+                  <Search color={themeTints.isDark ? palette.white : palette.textMuted} size={19} />
+                </View>
+              </Pressable>
+            </View>
+
+            {/* Intent Chips with Icons */}
+            <FilterChipRail
+              options={sortedChips}
+              selectedIds={activeDiscoverChipIds}
+              onSelect={toggleDiscoverChip}
+              onSwipeLockChange={setTabSwipeLocked}
+              renderLeftIcon={(chip, isActive) =>
+                chip.id === "dietary" ? (
+                  <Utensils
+                    size={14}
+                    color={isActive ? palette.orange : themeTints.secondaryText}
+                  />
+                ) : chip.id === "spicy" ? (
+                  <Flame size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
+                ) : chip.id === "halal" ? (
+                  <HalalLogoIcon color={isActive ? palette.orange : themeTints.secondaryText} />
+                ) : chip.id === "late" ? (
+                  <Compass size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
+                ) : (
+                  <Utensils
+                    size={14}
+                    color={isActive ? palette.orange : themeTints.secondaryText}
+                  />
+                )
+              }
+            />
+
+            {/* Popular food style buttons */}
+            <View style={{ gap: discoverContentGap }}>
+              <AppText variant="h2" style={{ color: themeTints.text }}>
+                Popular right now
+              </AppText>
+              {shouldShowPopularFoodSkeleton ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={edgeToEdgeHorizontalScrollStyle}
+                  contentContainerStyle={{ gap: spacing[2] }}
+                >
+                  <PopularFoodStyleSkeleton />
+                </ScrollView>
+              ) : popularFoodStyleItems.length ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={edgeToEdgeHorizontalScrollStyle}
+                  contentContainerStyle={{ gap: spacing[2] }}
+                >
+                  {popularFoodStyleItems.map((item) => (
+                    <PopularFoodStyleItem
+                      key={item.id}
+                      item={item}
+                      onPrefetch={prefetchFoodStyle}
+                      onPress={handleFoodStylePress}
+                    />
+                  ))}
+                </ScrollView>
+              ) : isDiscoverFiltering ? (
+                <FilteredResultsEmptyState preserveHeight minHeight={popularFoodButtonHeight} />
+              ) : null}
+            </View>
+
+            {/* Decision action chips */}
+            <View style={{ flexDirection: "row", gap: decisionCardGap }}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Decide for me"
+                onPressIn={() => preloadRoute(navigation, "DecideForMeResult")}
+                onPress={handleDecideForMe}
+                style={({ pressed }) => [
+                  shadows.card,
+                  {
+                    borderRadius: componentRadii.button,
+                    height: 72,
+                    opacity: pressed ? 0.92 : 1,
+                    overflow: "hidden",
+                    width: decisionCardWidth,
+                  },
+                ]}
+              >
+                <LinearGradient
+                  colors={[palette.orange, palette.amber]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={{
+                    alignItems: "center",
+                    borderRadius: componentRadii.button,
+                    flexDirection: "row",
+                    gap: decisionCardInnerGap,
+                    height: "100%",
+                    justifyContent: "center",
+                    padding: decisionCardPadding,
+                  }}
+                >
+                  <View
+                    style={{
+                      alignItems: "center",
+                      backgroundColor: palette.inverseSurfaceSubtle,
+                      borderRadius: radii.pill,
+                      height: decisionCardIconSize,
+                      justifyContent: "center",
+                      width: decisionCardIconSize,
+                    }}
+                  >
+                    <Dices color={palette.white} size={decisionCardIconGraphicSize} />
+                  </View>
+                  <AppText
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.88}
+                    variant="bodyBold"
+                    tone="inverse"
+                    numberOfLines={1}
+                    style={{
+                      includeFontPadding: false,
+                      flexShrink: 1,
+                      fontSize: decisionCardLabelFontSize,
+                      lineHeight: decisionCardLabelLineHeight,
+                      maxWidth: decisionCardLabelMaxWidth,
+                      minWidth: 0,
+                      textAlign: "center",
+                      textAlignVertical: "center",
+                    }}
+                  >
+                    Decide for Me
+                  </AppText>
+                </LinearGradient>
+              </Pressable>
+
+              {FEATURE_FLAGS.hungryWheelEnabled ? (
                 <Pressable
-                  key={`trending-${bite.id}`}
                   accessibilityRole="button"
-                  accessibilityLabel={getDiscoverBiteAccessibilityLabel(bite)}
-                  onPressIn={() => prefetchBiteCard(bite)}
-                  onPress={() => openBiteDish(bite, "trending_bite_card")}
+                  accessibilityLabel="Open hungry wheel"
+                  onPressIn={() => preloadRoute(navigation, "WheelStack", { screen: "WheelHome" })}
+                  onPress={() => navigation.navigate("WheelStack", { screen: "WheelHome" })}
+                  style={({ pressed }) => [
+                    shadows.card,
+                    {
+                      alignItems: "center",
+                      backgroundColor: themeTints.isDark
+                        ? palette.inverseSurfaceFaint
+                        : palette.navy,
+                      borderRadius: componentRadii.button,
+                      flexDirection: "row",
+                      gap: decisionCardInnerGap,
+                      height: 72,
+                      justifyContent: "center",
+                      opacity: pressed ? 0.92 : 1,
+                      padding: decisionCardPadding,
+                      width: decisionCardWidth,
+                    },
+                  ]}
+                >
+                  <View
+                    style={{
+                      alignItems: "center",
+                      backgroundColor: palette.inverseSurfaceSoft,
+                      borderRadius: radii.pill,
+                      height: decisionCardIconSize,
+                      justifyContent: "center",
+                      width: decisionCardIconSize,
+                    }}
+                  >
+                    <Compass color={palette.white} size={decisionCardIconGraphicSize} />
+                  </View>
+                  <AppText
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.88}
+                    variant="bodyBold"
+                    tone="inverse"
+                    numberOfLines={1}
+                    style={{
+                      includeFontPadding: false,
+                      flexShrink: 1,
+                      fontSize: decisionCardLabelFontSize,
+                      lineHeight: decisionCardLabelLineHeight,
+                      maxWidth: decisionCardLabelMaxWidth,
+                      minWidth: 0,
+                      textAlign: "center",
+                      textAlignVertical: "center",
+                    }}
+                  >
+                    Hungry Wheel
+                  </AppText>
+                </Pressable>
+              ) : null}
+            </View>
+
+            {/* Discovery Targets — two large tap targets */}
+            <View style={{ gap: discoverContentGap }}>
+              <View style={{ flexDirection: "row", gap: discoverContentGap }}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Browse stalls and restaurants"
+                  onPressIn={() => {
+                    areaVenues
+                      .slice(0, 5)
+                      .forEach((venue) => prefetchStallDetail(venue.id, repository));
+                    preloadRoute(navigation, "BrowseStalls");
+                  }}
+                  onPress={() => navigation.navigate("BrowseStalls")}
                   style={[
                     shadows.card,
                     {
-                      backgroundColor: themeTints.cardBg,
+                      backgroundColor: themeTints.isDark
+                        ? palette.inverseSurfaceFaint
+                        : palette.bgSoft,
                       borderRadius: componentRadii.card,
+                      flex: 1,
                       overflow: "hidden",
-                      width: discoverRailCardWidth,
                       borderWidth: themeTints.isDark ? 0 : 1,
                       borderColor: palette.border,
                     },
                   ]}
                 >
-                  <DiscoverBiteImage bite={bite} height={discoverRailImageHeight} />
-                  <DiscoverCuisineBadge bite={bite} />
-                  <View style={{ padding: spacing[3], gap: spacing[1] }}>
-                    <AppText
-                      variant="bodySmallBold"
-                      numberOfLines={1}
-                      style={{ color: themeTints.text }}
-                    >
-                      {bite.dishName}
-                    </AppText>
-                    <AppText
-                      variant="micro"
-                      style={{ color: themeTints.secondaryText }}
-                      numberOfLines={1}
-                    >
-                      {bite.venueName}
-                      {formatDiscoverDistance(bite.distanceMeters)
-                        ? ` · ${formatDiscoverDistance(bite.distanceMeters)}`
-                        : ""}
-                    </AppText>
-                    <View
+                  <View>
+                    <AccessibleImage
+                      source={stallsCategoryImageSource}
+                      style={{ aspectRatio: 1.55, width: "100%" }}
+                      contentFit="cover"
+                      cachePolicy="memory-disk"
+                      decorative
+                    />
+                    <LinearGradient
+                      colors={[palette.imageOverlayGradientStart, palette.imageOverlayGradientEnd]}
                       style={{
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                        marginTop: spacing[1],
+                        bottom: 0,
+                        left: 0,
+                        padding: spacing[3],
+                        position: "absolute",
+                        right: 0,
                       }}
                     >
-                      <AppText variant="price" style={{ color: palette.orange }}>
-                        {formatDiscoverPrice(bite)}
-                      </AppText>
                       <View
                         style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          gap: spacing[1],
+                          alignSelf: "flex-start",
+                          backgroundColor: palette.imageLabelSurface,
+                          borderColor: palette.imageLabelBorder,
+                          borderRadius: radii.sm,
+                          borderWidth: 1,
+                          paddingHorizontal: spacing[2],
+                          paddingVertical: spacing[1],
                         }}
                       >
-                        <Star color={palette.amber} size={12} fill={palette.amber} />
-                        <AppText
-                          variant="micro"
-                          style={{ fontWeight: "700", color: themeTints.text }}
-                        >
-                          {bite.rating.toFixed(1)}
+                        <AppText variant="bodyBold" tone="inverse" numberOfLines={2}>
+                          Stalls & Restaurants
                         </AppText>
                       </View>
-                    </View>
+                    </LinearGradient>
                   </View>
                 </Pressable>
-              ))}
-            </ScrollView>
-          ) : isDiscoverFiltering ? (
-            <FilteredResultsEmptyState preserveHeight minHeight={discoverRailReservedHeight} />
-          ) : (
-            <NoFoodSectionEmptyState
-              title="No trending food found"
-              preserveHeight
-              minHeight={discoverRailReservedHeight}
-            />
-          )}
-        </View>
 
-        {/* Editor's Choice Carousel */}
-        <View style={{ gap: discoverContentGap }}>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-              <AppText variant="h2" style={{ color: themeTints.text }}>
-                Editor&apos;s Choice
-              </AppText>
-              <View
-                style={{
-                  backgroundColor: palette.orange,
-                  paddingHorizontal: spacing[2],
-                  paddingVertical: spacing[0.5],
-                  borderRadius: radii.sm,
-                }}
-              >
-                <AppText variant="micro" style={{ color: palette.white, fontWeight: "800" }}>
-                  ★ CURATED
-                </AppText>
-              </View>
-            </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="See all editor's choice dishes"
-              onPressIn={() => prefetchBiteCollectionRoute("editorChoice")}
-              onPress={() => navigation.navigate("QuickBites", { collection: "editorChoice" })}
-            >
-              <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
-                SEE ALL
-              </AppText>
-            </Pressable>
-          </View>
-          {showDiscoverFilterRailSkeleton ? (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={edgeToEdgeHorizontalScrollStyle}
-              contentContainerStyle={{ gap: spacing[4] }}
-            >
-              <DiscoverFoodRailLoadingSkeleton
-                cardWidth={discoverRailCardWidth}
-                imageHeight={discoverRailImageHeight}
-              />
-            </ScrollView>
-          ) : editorChoiceCards.length ? (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={edgeToEdgeHorizontalScrollStyle}
-              contentContainerStyle={{ gap: spacing[4] }}
-            >
-              {editorChoiceCards.map((bite) => (
                 <Pressable
-                  key={`ec-${bite.id}`}
                   accessibilityRole="button"
-                  accessibilityLabel={getDiscoverBiteAccessibilityLabel(bite)}
-                  onPressIn={() => prefetchBiteCard(bite)}
-                  onPress={() => openBiteDish(bite, "editor_choice_bite_card")}
+                  accessibilityLabel="Browse dishes"
+                  onPressIn={() => {
+                    areaDishPool
+                      .slice(0, 6)
+                      .forEach((dish) => prefetchDishDetail(dish.id, repository));
+                  }}
+                  onPress={() => navigation.navigate("BrowseDishes")}
                   style={[
                     shadows.card,
                     {
-                      backgroundColor: themeTints.cardBg,
+                      backgroundColor: themeTints.isDark
+                        ? palette.inverseSurfaceFaint
+                        : palette.bgSoft,
                       borderRadius: componentRadii.card,
+                      flex: 1,
                       overflow: "hidden",
-                      width: discoverRailCardWidth,
                       borderWidth: themeTints.isDark ? 0 : 1,
                       borderColor: palette.border,
                     },
                   ]}
                 >
-                  <DiscoverBiteImage bite={bite} height={discoverRailImageHeight} />
-                  <DiscoverCuisineBadge bite={bite} />
-                  {/* Editor badge overlay */}
+                  <View>
+                    <AccessibleImage
+                      source={dishesCategoryImageSource}
+                      style={{ aspectRatio: 1.55, width: "100%" }}
+                      contentFit="cover"
+                      cachePolicy="memory-disk"
+                      decorative
+                    />
+                    <LinearGradient
+                      colors={[palette.imageOverlayGradientStart, palette.imageOverlayGradientEnd]}
+                      style={{
+                        bottom: 0,
+                        left: 0,
+                        padding: spacing[3],
+                        position: "absolute",
+                        right: 0,
+                      }}
+                    >
+                      <View
+                        style={{
+                          alignSelf: "flex-start",
+                          backgroundColor: palette.imageLabelSurface,
+                          borderColor: palette.imageLabelBorder,
+                          borderRadius: radii.sm,
+                          borderWidth: 1,
+                          paddingHorizontal: spacing[2],
+                          paddingVertical: spacing[1],
+                        }}
+                      >
+                        <AppText variant="bodyBold" tone="inverse" numberOfLines={1}>
+                          Dishes
+                        </AppText>
+                      </View>
+                    </LinearGradient>
+                  </View>
+                </Pressable>
+              </View>
+            </View>
+
+            {/* Proactive Selection */}
+            <View style={{ gap: discoverContentGap }}>
+              {/* Daily Crave */}
+              {!isUserMode && FEATURE_FLAGS.craveEnabled ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Open daily crave"
+                  onPressIn={() => preloadRoute(navigation, "Crave")}
+                  onPress={() => navigation.navigate("Crave")}
+                  style={[
+                    shadows.card,
+                    {
+                      backgroundColor: themeTints.isDark
+                        ? palette.inverseSurfaceBarely
+                        : palette.bgSoft,
+                      borderRadius: componentRadii.button,
+                      padding: spacing[4],
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: spacing[4],
+                      borderWidth: 1,
+                      borderColor: palette.border,
+                    },
+                  ]}
+                >
                   <View
                     style={{
-                      position: "absolute",
-                      top: spacing[2],
-                      left: spacing[2],
+                      width: 44,
+                      height: 44,
+                      borderRadius: radii.pill,
+                      backgroundColor: palette.orange,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Flame color={palette.white} size={22} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <AppText variant="bodyBold" style={{ color: themeTints.text }}>
+                      Daily Crave
+                    </AppText>
+                    <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
+                      Swipe to build your taste profile
+                    </AppText>
+                  </View>
+                  <ChevronRight
+                    color={themeTints.isDark ? palette.white : palette.textMuted}
+                    size={20}
+                  />
+                </Pressable>
+              ) : null}
+            </View>
+
+            {/* Quick Bites */}
+            <View style={{ gap: discoverContentGap }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+                  <AppText variant="h2" style={{ color: themeTints.text }}>
+                    Quick Bites
+                  </AppText>
+                  <View
+                    style={{
+                      backgroundColor: palette.statusFast,
+                      paddingHorizontal: spacing[2],
+                      paddingVertical: spacing[0.5],
+                      borderRadius: radii.sm,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: spacing[1],
+                    }}
+                  >
+                    <Zap color={palette.white} fill={palette.white} size={10} />
+                    <AppText variant="micro" style={{ color: palette.white, fontWeight: "800" }}>
+                      &lt; 15 MIN
+                    </AppText>
+                  </View>
+                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="See all quick bites under 15 minutes"
+                  onPressIn={() => prefetchBiteCollectionRoute("quickBites")}
+                  onPress={() => navigation.navigate("QuickBites", { collection: "quickBites" })}
+                >
+                  <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
+                    SEE ALL
+                  </AppText>
+                </Pressable>
+              </View>
+              {showDiscoverFilterRailSkeleton ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={edgeToEdgeHorizontalScrollStyle}
+                  contentContainerStyle={{ gap: spacing[4] }}
+                >
+                  <DiscoverFoodRailLoadingSkeleton
+                    cardWidth={discoverRailCardWidth}
+                    imageHeight={discoverRailImageHeight}
+                  />
+                </ScrollView>
+              ) : quickBiteCards.length ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={edgeToEdgeHorizontalScrollStyle}
+                  contentContainerStyle={{ gap: spacing[4] }}
+                >
+                  {quickBiteCards.map((bite) => (
+                    <Pressable
+                      key={`quick-${bite.id}`}
+                      accessibilityRole="button"
+                      accessibilityLabel={getDiscoverBiteAccessibilityLabel(bite)}
+                      onPressIn={() => prefetchBiteCard(bite)}
+                      onPress={() => openBiteDish(bite, "quick_bite_card")}
+                      style={[
+                        shadows.card,
+                        {
+                          backgroundColor: themeTints.cardBg,
+                          borderRadius: componentRadii.card,
+                          overflow: "hidden",
+                          width: discoverRailCardWidth,
+                          borderWidth: themeTints.isDark ? 0 : 1,
+                          borderColor: palette.border,
+                        },
+                      ]}
+                    >
+                      <DiscoverBiteImage bite={bite} height={discoverRailImageHeight} />
+                      <DiscoverCuisineBadge bite={bite} />
+                      <View style={{ padding: spacing[3], gap: spacing[1] }}>
+                        <AppText
+                          variant="bodySmallBold"
+                          numberOfLines={1}
+                          style={{ color: themeTints.text }}
+                        >
+                          {bite.dishName}
+                        </AppText>
+                        <AppText
+                          variant="micro"
+                          style={{ color: themeTints.secondaryText }}
+                          numberOfLines={1}
+                        >
+                          {bite.venueName}
+                          {formatDiscoverDistance(bite.distanceMeters)
+                            ? ` · ${formatDiscoverDistance(bite.distanceMeters)}`
+                            : ""}
+                        </AppText>
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                            marginTop: spacing[1],
+                          }}
+                        >
+                          <AppText variant="price" style={{ color: palette.orange }}>
+                            {formatDiscoverPrice(bite)}
+                          </AppText>
+                          <View
+                            style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
+                          >
+                            <Star color={palette.amber} size={12} fill={palette.amber} />
+                            <AppText
+                              variant="micro"
+                              style={{ fontWeight: "700", color: themeTints.text }}
+                            >
+                              {bite.rating.toFixed(1)}
+                            </AppText>
+                          </View>
+                        </View>
+                      </View>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              ) : isDiscoverFiltering ? (
+                <FilteredResultsEmptyState preserveHeight minHeight={discoverRailReservedHeight} />
+              ) : (
+                <NoFoodSectionEmptyState
+                  title="No quick bites found"
+                  preserveHeight
+                  minHeight={discoverRailReservedHeight}
+                />
+              )}
+            </View>
+
+            {/* Recommended Dishes (Carousel) */}
+            <View style={{ gap: discoverContentGap }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <AppText variant="h2">Trending in {discoverLocationLabel}</AppText>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`See all trending dishes in ${discoverLocationLabel}`}
+                  onPressIn={() => prefetchBiteCollectionRoute("trending")}
+                  onPress={() => navigation.navigate("QuickBites", { collection: "trending" })}
+                >
+                  <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
+                    SEE ALL
+                  </AppText>
+                </Pressable>
+              </View>
+              {showDiscoverFilterRailSkeleton ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={edgeToEdgeHorizontalScrollStyle}
+                  contentContainerStyle={{ gap: spacing[4] }}
+                >
+                  <DiscoverFoodRailLoadingSkeleton
+                    cardWidth={discoverRailCardWidth}
+                    imageHeight={discoverRailImageHeight}
+                  />
+                </ScrollView>
+              ) : trendingCards.length ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={edgeToEdgeHorizontalScrollStyle}
+                  contentContainerStyle={{ gap: spacing[4] }}
+                >
+                  {trendingCards.map((bite) => (
+                    <Pressable
+                      key={`trending-${bite.id}`}
+                      accessibilityRole="button"
+                      accessibilityLabel={getDiscoverBiteAccessibilityLabel(bite)}
+                      onPressIn={() => prefetchBiteCard(bite)}
+                      onPress={() => openBiteDish(bite, "trending_bite_card")}
+                      style={[
+                        shadows.card,
+                        {
+                          backgroundColor: themeTints.cardBg,
+                          borderRadius: componentRadii.card,
+                          overflow: "hidden",
+                          width: discoverRailCardWidth,
+                          borderWidth: themeTints.isDark ? 0 : 1,
+                          borderColor: palette.border,
+                        },
+                      ]}
+                    >
+                      <DiscoverBiteImage bite={bite} height={discoverRailImageHeight} />
+                      <DiscoverCuisineBadge bite={bite} />
+                      <View style={{ padding: spacing[3], gap: spacing[1] }}>
+                        <AppText
+                          variant="bodySmallBold"
+                          numberOfLines={1}
+                          style={{ color: themeTints.text }}
+                        >
+                          {bite.dishName}
+                        </AppText>
+                        <AppText
+                          variant="micro"
+                          style={{ color: themeTints.secondaryText }}
+                          numberOfLines={1}
+                        >
+                          {bite.venueName}
+                          {formatDiscoverDistance(bite.distanceMeters)
+                            ? ` · ${formatDiscoverDistance(bite.distanceMeters)}`
+                            : ""}
+                        </AppText>
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                            marginTop: spacing[1],
+                          }}
+                        >
+                          <AppText variant="price" style={{ color: palette.orange }}>
+                            {formatDiscoverPrice(bite)}
+                          </AppText>
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              gap: spacing[1],
+                            }}
+                          >
+                            <Star color={palette.amber} size={12} fill={palette.amber} />
+                            <AppText
+                              variant="micro"
+                              style={{ fontWeight: "700", color: themeTints.text }}
+                            >
+                              {bite.rating.toFixed(1)}
+                            </AppText>
+                          </View>
+                        </View>
+                      </View>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              ) : isDiscoverFiltering ? (
+                <FilteredResultsEmptyState preserveHeight minHeight={discoverRailReservedHeight} />
+              ) : (
+                <NoFoodSectionEmptyState
+                  title="No trending food found"
+                  preserveHeight
+                  minHeight={discoverRailReservedHeight}
+                />
+              )}
+            </View>
+
+            {/* Editor's Choice Carousel */}
+            <View style={{ gap: discoverContentGap }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+                  <AppText variant="h2" style={{ color: themeTints.text }}>
+                    Editor&apos;s Choice
+                  </AppText>
+                  <View
+                    style={{
                       backgroundColor: palette.orange,
                       paddingHorizontal: spacing[2],
                       paddingVertical: spacing[0.5],
@@ -3058,425 +3041,513 @@ export function DiscoverHomeScreen() {
                     }}
                   >
                     <AppText variant="micro" style={{ color: palette.white, fontWeight: "800" }}>
-                      MUST ORDER
+                      ★ CURATED
                     </AppText>
                   </View>
-                  <View style={{ padding: spacing[3], gap: spacing[1] }}>
-                    <AppText
-                      variant="bodySmallBold"
-                      numberOfLines={1}
-                      style={{ color: themeTints.text }}
+                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="See all editor's choice dishes"
+                  onPressIn={() => prefetchBiteCollectionRoute("editorChoice")}
+                  onPress={() => navigation.navigate("QuickBites", { collection: "editorChoice" })}
+                >
+                  <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
+                    SEE ALL
+                  </AppText>
+                </Pressable>
+              </View>
+              {showDiscoverFilterRailSkeleton ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={edgeToEdgeHorizontalScrollStyle}
+                  contentContainerStyle={{ gap: spacing[4] }}
+                >
+                  <DiscoverFoodRailLoadingSkeleton
+                    cardWidth={discoverRailCardWidth}
+                    imageHeight={discoverRailImageHeight}
+                  />
+                </ScrollView>
+              ) : editorChoiceCards.length ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={edgeToEdgeHorizontalScrollStyle}
+                  contentContainerStyle={{ gap: spacing[4] }}
+                >
+                  {editorChoiceCards.map((bite) => (
+                    <Pressable
+                      key={`ec-${bite.id}`}
+                      accessibilityRole="button"
+                      accessibilityLabel={getDiscoverBiteAccessibilityLabel(bite)}
+                      onPressIn={() => prefetchBiteCard(bite)}
+                      onPress={() => openBiteDish(bite, "editor_choice_bite_card")}
+                      style={[
+                        shadows.card,
+                        {
+                          backgroundColor: themeTints.cardBg,
+                          borderRadius: componentRadii.card,
+                          overflow: "hidden",
+                          width: discoverRailCardWidth,
+                          borderWidth: themeTints.isDark ? 0 : 1,
+                          borderColor: palette.border,
+                        },
+                      ]}
                     >
-                      {bite.dishName}
+                      <DiscoverBiteImage bite={bite} height={discoverRailImageHeight} />
+                      <DiscoverCuisineBadge bite={bite} />
+                      {/* Editor badge overlay */}
+                      <View
+                        style={{
+                          position: "absolute",
+                          top: spacing[2],
+                          left: spacing[2],
+                          backgroundColor: palette.orange,
+                          paddingHorizontal: spacing[2],
+                          paddingVertical: spacing[0.5],
+                          borderRadius: radii.sm,
+                        }}
+                      >
+                        <AppText
+                          variant="micro"
+                          style={{ color: palette.white, fontWeight: "800" }}
+                        >
+                          MUST ORDER
+                        </AppText>
+                      </View>
+                      <View style={{ padding: spacing[3], gap: spacing[1] }}>
+                        <AppText
+                          variant="bodySmallBold"
+                          numberOfLines={1}
+                          style={{ color: themeTints.text }}
+                        >
+                          {bite.dishName}
+                        </AppText>
+                        <AppText
+                          variant="micro"
+                          style={{ color: themeTints.secondaryText }}
+                          numberOfLines={1}
+                        >
+                          {bite.venueName}
+                          {formatDiscoverDistance(bite.distanceMeters)
+                            ? ` · ${formatDiscoverDistance(bite.distanceMeters)}`
+                            : ""}
+                        </AppText>
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                            marginTop: spacing[1],
+                          }}
+                        >
+                          <AppText variant="price" style={{ color: palette.orange }}>
+                            {formatDiscoverPrice(bite)}
+                          </AppText>
+                          <View
+                            style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
+                          >
+                            <Star color={palette.amber} size={12} fill={palette.amber} />
+                            <AppText
+                              variant="micro"
+                              style={{ fontWeight: "700", color: themeTints.text }}
+                            >
+                              {bite.rating.toFixed(1)}
+                            </AppText>
+                          </View>
+                        </View>
+                      </View>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              ) : isDiscoverFiltering ? (
+                <FilteredResultsEmptyState preserveHeight minHeight={discoverRailReservedHeight} />
+              ) : (
+                <NoFoodSectionEmptyState
+                  title="No editor's choice food found"
+                  preserveHeight
+                  minHeight={discoverRailReservedHeight}
+                />
+              )}
+            </View>
+
+            {/* Budget < S$8 Dish Carousel */}
+            <View style={{ gap: discoverContentGap }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+                  <AppText variant="h2" style={{ color: themeTints.text }}>
+                    Budget &lt; S$8
+                  </AppText>
+                  <View
+                    style={{
+                      backgroundColor: palette.success,
+                      paddingHorizontal: spacing[2],
+                      paddingVertical: spacing[0.5],
+                      borderRadius: radii.sm,
+                    }}
+                  >
+                    <AppText variant="micro" style={{ color: palette.white, fontWeight: "800" }}>
+                      VALUE
                     </AppText>
-                    <AppText
-                      variant="micro"
-                      style={{ color: themeTints.secondaryText }}
-                      numberOfLines={1}
+                  </View>
+                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="See all budget dishes under $8"
+                  onPressIn={() => prefetchBiteCollectionRoute("budget")}
+                  onPress={() => navigation.navigate("QuickBites", { collection: "budget" })}
+                >
+                  <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
+                    SEE ALL
+                  </AppText>
+                </Pressable>
+              </View>
+              {showDiscoverFilterRailSkeleton ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={edgeToEdgeHorizontalScrollStyle}
+                  contentContainerStyle={{ gap: spacing[4] }}
+                >
+                  <DiscoverFoodRailLoadingSkeleton
+                    cardWidth={discoverRailCardWidth}
+                    imageHeight={discoverRailImageHeight}
+                  />
+                </ScrollView>
+              ) : budgetCards.length ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={edgeToEdgeHorizontalScrollStyle}
+                  contentContainerStyle={{ gap: spacing[4] }}
+                >
+                  {budgetCards.map((bite) => (
+                    <Pressable
+                      key={`budget-${bite.id}`}
+                      accessibilityRole="button"
+                      accessibilityLabel={getDiscoverBiteAccessibilityLabel(bite)}
+                      onPressIn={() => prefetchBiteCard(bite)}
+                      onPress={() => openBiteDish(bite, "budget_bite_card")}
+                      style={[
+                        shadows.card,
+                        {
+                          backgroundColor: themeTints.cardBg,
+                          borderRadius: componentRadii.card,
+                          overflow: "hidden",
+                          width: discoverRailCardWidth,
+                          borderWidth: themeTints.isDark ? 0 : 1,
+                          borderColor: palette.border,
+                        },
+                      ]}
                     >
-                      {bite.venueName}
-                      {formatDiscoverDistance(bite.distanceMeters)
-                        ? ` · ${formatDiscoverDistance(bite.distanceMeters)}`
-                        : ""}
+                      <DiscoverBiteImage bite={bite} height={discoverRailImageHeight} />
+                      <DiscoverCuisineBadge bite={bite} />
+                      <View style={{ padding: spacing[3], gap: spacing[1] }}>
+                        <AppText
+                          variant="bodySmallBold"
+                          numberOfLines={1}
+                          style={{ color: themeTints.text }}
+                        >
+                          {bite.dishName}
+                        </AppText>
+                        <AppText
+                          variant="micro"
+                          style={{ color: themeTints.secondaryText }}
+                          numberOfLines={1}
+                        >
+                          {bite.venueName}
+                          {formatDiscoverDistance(bite.distanceMeters)
+                            ? ` · ${formatDiscoverDistance(bite.distanceMeters)}`
+                            : ""}
+                        </AppText>
+                        <AppText
+                          variant="price"
+                          style={{
+                            color: palette.orange,
+                            fontWeight: "700",
+                            marginTop: spacing[0.5],
+                          }}
+                        >
+                          {formatDiscoverPrice(bite)}
+                        </AppText>
+                      </View>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              ) : isDiscoverFiltering ? (
+                <FilteredResultsEmptyState preserveHeight minHeight={discoverRailReservedHeight} />
+              ) : (
+                <NoFoodSectionEmptyState
+                  title="No budget-friendly food found"
+                  preserveHeight
+                  minHeight={discoverRailReservedHeight}
+                />
+              )}
+            </View>
+
+            {/* Late Night Makan */}
+            {isLateNightMakanVisible ? (
+              <View style={{ gap: discoverContentGap }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+                    <AppText variant="h2" style={{ color: themeTints.text }}>
+                      Late Night Makan
                     </AppText>
                     <View
                       style={{
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                        marginTop: spacing[1],
+                        backgroundColor: palette.navy,
+                        paddingHorizontal: spacing[2],
+                        paddingVertical: spacing[0.5],
+                        borderRadius: radii.sm,
                       }}
                     >
-                      <AppText variant="price" style={{ color: palette.orange }}>
-                        {formatDiscoverPrice(bite)}
+                      <AppText variant="micro" style={{ color: palette.white, fontWeight: "800" }}>
+                        LATE NIGHT
                       </AppText>
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
-                        <Star color={palette.amber} size={12} fill={palette.amber} />
-                        <AppText
-                          variant="micro"
-                          style={{ fontWeight: "700", color: themeTints.text }}
-                        >
-                          {bite.rating.toFixed(1)}
-                        </AppText>
-                      </View>
                     </View>
                   </View>
-                </Pressable>
-              ))}
-            </ScrollView>
-          ) : isDiscoverFiltering ? (
-            <FilteredResultsEmptyState preserveHeight minHeight={discoverRailReservedHeight} />
-          ) : (
-            <NoFoodSectionEmptyState
-              title="No editor's choice food found"
-              preserveHeight
-              minHeight={discoverRailReservedHeight}
-            />
-          )}
-        </View>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="See all late night stalls"
+                    onPressIn={() => prefetchBiteCollectionRoute("lateNight")}
+                    onPress={() => navigation.navigate("QuickBites", { collection: "lateNight" })}
+                  >
+                    <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
+                      SEE ALL
+                    </AppText>
+                  </Pressable>
+                </View>
+                {showDiscoverFilterRailSkeleton ? (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={edgeToEdgeHorizontalScrollStyle}
+                    contentContainerStyle={{ gap: spacing[4] }}
+                  >
+                    <DiscoverFoodRailLoadingSkeleton
+                      cardWidth={discoverRailCardWidth}
+                      imageHeight={discoverRailImageHeight}
+                    />
+                  </ScrollView>
+                ) : lateNightCards.length ? (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={edgeToEdgeHorizontalScrollStyle}
+                    contentContainerStyle={{ gap: spacing[4] }}
+                  >
+                    {lateNightCards.map((bite) => (
+                      <Pressable
+                        key={`night-${bite.id}`}
+                        accessibilityRole="button"
+                        accessibilityLabel={getDiscoverBiteAccessibilityLabel(bite)}
+                        onPressIn={() => prefetchBiteCard(bite)}
+                        onPress={() => openBiteDish(bite, "late_night_bite_card")}
+                        style={[
+                          shadows.card,
+                          {
+                            backgroundColor: themeTints.cardBg,
+                            borderRadius: componentRadii.card,
+                            borderWidth: themeTints.isDark ? 0 : 1,
+                            borderColor: palette.border,
+                            overflow: "hidden",
+                            width: discoverRailCardWidth,
+                          },
+                        ]}
+                      >
+                        <DiscoverBiteImage bite={bite} height={discoverRailImageHeight} />
+                        <DiscoverCuisineBadge bite={bite} />
+                        <View style={{ padding: spacing[3], gap: spacing[1] }}>
+                          <AppText
+                            variant="bodySmallBold"
+                            numberOfLines={1}
+                            style={{ color: themeTints.text }}
+                          >
+                            {bite.dishName}
+                          </AppText>
+                          <AppText
+                            variant="micro"
+                            style={{ color: themeTints.secondaryText }}
+                            numberOfLines={1}
+                          >
+                            {bite.venueName}
+                            {formatDiscoverDistance(bite.distanceMeters)
+                              ? ` · ${formatDiscoverDistance(bite.distanceMeters)}`
+                              : ""}
+                          </AppText>
+                          <AppText
+                            variant="price"
+                            style={{ color: palette.orange, fontWeight: "700" }}
+                          >
+                            {formatDiscoverPrice(bite)}
+                          </AppText>
+                        </View>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                ) : isDiscoverFiltering ? (
+                  <FilteredResultsEmptyState
+                    preserveHeight
+                    minHeight={discoverRailReservedHeight}
+                  />
+                ) : (
+                  <NoFoodSectionEmptyState
+                    title="No late-night food found"
+                    preserveHeight
+                    minHeight={discoverRailReservedHeight}
+                  />
+                )}
+              </View>
+            ) : null}
 
-        {/* Budget < S$8 Dish Carousel */}
-        <View style={{ gap: discoverContentGap }}>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-              <AppText variant="h2" style={{ color: themeTints.text }}>
-                Budget &lt; S$8
-              </AppText>
+            {/* Hawker Centres Near You (Horizontal Selection) */}
+            <View style={{ gap: discoverContentGap }}>
               <View
                 style={{
-                  backgroundColor: palette.success,
-                  paddingHorizontal: spacing[2],
-                  paddingVertical: spacing[0.5],
-                  borderRadius: radii.sm,
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
                 }}
               >
-                <AppText variant="micro" style={{ color: palette.white, fontWeight: "800" }}>
-                  VALUE
-                </AppText>
-              </View>
-            </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="See all budget dishes under $8"
-              onPressIn={() => prefetchBiteCollectionRoute("budget")}
-              onPress={() => navigation.navigate("QuickBites", { collection: "budget" })}
-            >
-              <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
-                SEE ALL
-              </AppText>
-            </Pressable>
-          </View>
-          {showDiscoverFilterRailSkeleton ? (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={edgeToEdgeHorizontalScrollStyle}
-              contentContainerStyle={{ gap: spacing[4] }}
-            >
-              <DiscoverFoodRailLoadingSkeleton
-                cardWidth={discoverRailCardWidth}
-                imageHeight={discoverRailImageHeight}
-              />
-            </ScrollView>
-          ) : budgetCards.length ? (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={edgeToEdgeHorizontalScrollStyle}
-              contentContainerStyle={{ gap: spacing[4] }}
-            >
-              {budgetCards.map((bite) => (
-                <Pressable
-                  key={`budget-${bite.id}`}
-                  accessibilityRole="button"
-                  accessibilityLabel={getDiscoverBiteAccessibilityLabel(bite)}
-                  onPressIn={() => prefetchBiteCard(bite)}
-                  onPress={() => openBiteDish(bite, "budget_bite_card")}
-                  style={[
-                    shadows.card,
-                    {
-                      backgroundColor: themeTints.cardBg,
-                      borderRadius: componentRadii.card,
-                      overflow: "hidden",
-                      width: discoverRailCardWidth,
-                      borderWidth: themeTints.isDark ? 0 : 1,
-                      borderColor: palette.border,
-                    },
-                  ]}
-                >
-                  <DiscoverBiteImage bite={bite} height={discoverRailImageHeight} />
-                  <DiscoverCuisineBadge bite={bite} />
-                  <View style={{ padding: spacing[3], gap: spacing[1] }}>
-                    <AppText
-                      variant="bodySmallBold"
-                      numberOfLines={1}
-                      style={{ color: themeTints.text }}
-                    >
-                      {bite.dishName}
-                    </AppText>
-                    <AppText
-                      variant="micro"
-                      style={{ color: themeTints.secondaryText }}
-                      numberOfLines={1}
-                    >
-                      {bite.venueName}
-                      {formatDiscoverDistance(bite.distanceMeters)
-                        ? ` · ${formatDiscoverDistance(bite.distanceMeters)}`
-                        : ""}
-                    </AppText>
-                    <AppText
-                      variant="price"
-                      style={{ color: palette.orange, fontWeight: "700", marginTop: spacing[0.5] }}
-                    >
-                      {formatDiscoverPrice(bite)}
-                    </AppText>
-                  </View>
-                </Pressable>
-              ))}
-            </ScrollView>
-          ) : isDiscoverFiltering ? (
-            <FilteredResultsEmptyState preserveHeight minHeight={discoverRailReservedHeight} />
-          ) : (
-            <NoFoodSectionEmptyState
-              title="No budget-friendly food found"
-              preserveHeight
-              minHeight={discoverRailReservedHeight}
-            />
-          )}
-        </View>
-
-        {/* Late Night Makan */}
-        {isLateNightMakanVisible ? (
-          <View style={{ gap: discoverContentGap }}>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
                 <AppText variant="h2" style={{ color: themeTints.text }}>
-                  Late Night Makan
+                  Stalls in {discoverLocationLabel}
                 </AppText>
-                <View
-                  style={{
-                    backgroundColor: palette.navy,
-                    paddingHorizontal: spacing[2],
-                    paddingVertical: spacing[0.5],
-                    borderRadius: radii.sm,
-                  }}
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="View hawker centres on map"
+                  hitSlop={12}
+                  onPressIn={() => preloadRoute(navigation, "DiscoverMap")}
+                  onPress={() => navigation.navigate("DiscoverMap")}
                 >
-                  <AppText variant="micro" style={{ color: palette.white, fontWeight: "800" }}>
-                    LATE NIGHT
+                  <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
+                    VIEW MAP
                   </AppText>
-                </View>
+                </Pressable>
               </View>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="See all late night stalls"
-                onPressIn={() => prefetchBiteCollectionRoute("lateNight")}
-                onPress={() => navigation.navigate("QuickBites", { collection: "lateNight" })}
-              >
-                <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
-                  SEE ALL
-                </AppText>
-              </Pressable>
-            </View>
-            {showDiscoverFilterRailSkeleton ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={edgeToEdgeHorizontalScrollStyle}
-                contentContainerStyle={{ gap: spacing[4] }}
-              >
-                <DiscoverFoodRailLoadingSkeleton
-                  cardWidth={discoverRailCardWidth}
-                  imageHeight={discoverRailImageHeight}
-                />
-              </ScrollView>
-            ) : lateNightCards.length ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={edgeToEdgeHorizontalScrollStyle}
-                contentContainerStyle={{ gap: spacing[4] }}
-              >
-                {lateNightCards.map((bite) => (
+              <View style={{ gap: discoverContentGap }}>
+                {showDiscoverFilterRailSkeleton ? (
+                  <DiscoverStallListLoadingSkeleton />
+                ) : areaStallCards.length ? (
+                  areaStallCards.map(({ venue, topDish }) => (
+                    <Pressable
+                      key={venue.id}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Open ${venue.name} ${
+                        isUserMode ? "details" : "in map zoomed view"
+                      }`}
+                      onPressIn={() => {
+                        prefetchStallDetail(venue.id, repository);
+                        if (topDish?.id) {
+                          prefetchDishDetail(topDish.id, repository);
+                        }
+                        if (!isUserMode) {
+                          preloadRoute(navigation, "MapZoomedIn", {
+                            buildingId: venue.buildingId,
+                          });
+                        }
+                      }}
+                      onPress={() => {
+                        if (isUserMode) {
+                          navigation.navigate("StallDetail", { venueId: venue.id });
+                          return;
+                        }
+
+                        navigation.navigate("MapZoomedIn", {
+                          buildingId: venue.buildingId,
+                        });
+                      }}
+                      style={[
+                        shadows.card,
+                        {
+                          backgroundColor: themeTints.cardBg,
+                          borderRadius: componentRadii.card,
+                          padding: spacing[3],
+                          flexDirection: "row",
+                          gap: spacing[3],
+                          alignItems: "center",
+                          borderWidth: themeTints.isDark ? 0 : 1,
+                          borderColor: palette.border,
+                        },
+                      ]}
+                    >
+                      <DiscoverStallThumbnail venue={venue} />
+                      <View style={{ flex: 1 }}>
+                        <DiscoverVenueMeta venue={venue} topDish={topDish} />
+                      </View>
+                      <ChevronRight color={palette.textMuted} size={20} />
+                    </Pressable>
+                  ))
+                ) : isDiscoverFiltering ? (
+                  <FilteredResultsEmptyState
+                    preserveHeight
+                    minHeight={discoverRailReservedHeight}
+                  />
+                ) : (
+                  <NoFoodSectionEmptyState
+                    title="No stalls in your area currently"
+                    preserveHeight
+                    minHeight={discoverRailReservedHeight}
+                  />
+                )}
+                {hasMoreAreaStalls ? (
                   <Pressable
-                    key={`night-${bite.id}`}
                     accessibilityRole="button"
-                    accessibilityLabel={getDiscoverBiteAccessibilityLabel(bite)}
-                    onPressIn={() => prefetchBiteCard(bite)}
-                    onPress={() => openBiteDish(bite, "late_night_bite_card")}
+                    accessibilityLabel={`Show ${nextAreaStallRevealCount} more stalls in ${discoverLocationLabel}`}
+                    onPress={handleShowMoreAreaStalls}
                     style={[
                       shadows.card,
                       {
+                        alignItems: "center",
+                        alignSelf: "stretch",
                         backgroundColor: themeTints.cardBg,
-                        borderRadius: componentRadii.card,
-                        borderWidth: themeTints.isDark ? 0 : 1,
                         borderColor: palette.border,
-                        overflow: "hidden",
-                        width: discoverRailCardWidth,
+                        borderRadius: componentRadii.button,
+                        borderWidth: themeTints.isDark ? 0 : 1,
+                        flexDirection: "row",
+                        gap: spacing[2],
+                        justifyContent: "center",
+                        paddingVertical: spacing[3],
                       },
                     ]}
                   >
-                    <DiscoverBiteImage bite={bite} height={discoverRailImageHeight} />
-                    <DiscoverCuisineBadge bite={bite} />
-                    <View style={{ padding: spacing[3], gap: spacing[1] }}>
-                      <AppText
-                        variant="bodySmallBold"
-                        numberOfLines={1}
-                        style={{ color: themeTints.text }}
-                      >
-                        {bite.dishName}
-                      </AppText>
-                      <AppText
-                        variant="micro"
-                        style={{ color: themeTints.secondaryText }}
-                        numberOfLines={1}
-                      >
-                        {bite.venueName}
-                        {formatDiscoverDistance(bite.distanceMeters)
-                          ? ` · ${formatDiscoverDistance(bite.distanceMeters)}`
-                          : ""}
-                      </AppText>
-                      <AppText variant="price" style={{ color: palette.orange, fontWeight: "700" }}>
-                        {formatDiscoverPrice(bite)}
-                      </AppText>
-                    </View>
+                    <AppText variant="bodySmall" tone="accent" style={{ fontWeight: "800" }}>
+                      Show {nextAreaStallRevealCount} more
+                    </AppText>
+                    <ChevronRight color={palette.orange} size={18} />
                   </Pressable>
-                ))}
-              </ScrollView>
-            ) : isDiscoverFiltering ? (
-              <FilteredResultsEmptyState preserveHeight minHeight={discoverRailReservedHeight} />
-            ) : (
-              <NoFoodSectionEmptyState
-                title="No late-night food found"
-                preserveHeight
-                minHeight={discoverRailReservedHeight}
-              />
-            )}
-          </View>
-        ) : null}
+                ) : null}
+              </View>
+            </View>
 
-        {/* Hawker Centres Near You (Horizontal Selection) */}
-        <View style={{ gap: discoverContentGap }}>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <AppText variant="h2" style={{ color: themeTints.text }}>
-              Stalls in {discoverLocationLabel}
-            </AppText>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="View hawker centres on map"
-              hitSlop={12}
-              onPressIn={() => preloadRoute(navigation, "DiscoverMap")}
-              onPress={() => navigation.navigate("DiscoverMap")}
-            >
-              <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
-                VIEW MAP
-              </AppText>
-            </Pressable>
-          </View>
-          <View style={{ gap: discoverContentGap }}>
-            {showDiscoverFilterRailSkeleton ? (
-              <DiscoverStallListLoadingSkeleton />
-            ) : areaStallCards.length ? (
-              areaStallCards.map(({ venue, topDish }) => (
-                <Pressable
-                  key={venue.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Open ${venue.name} ${
-                    isUserMode ? "details" : "in map zoomed view"
-                  }`}
-                  onPressIn={() => {
-                    prefetchStallDetail(venue.id, repository);
-                    if (topDish?.id) {
-                      prefetchDishDetail(topDish.id, repository);
-                    }
-                    if (!isUserMode) {
-                      preloadRoute(navigation, "MapZoomedIn", {
-                        buildingId: venue.buildingId,
-                      });
-                    }
-                  }}
-                  onPress={() => {
-                    if (isUserMode) {
-                      navigation.navigate("StallDetail", { venueId: venue.id });
-                      return;
-                    }
-
-                    navigation.navigate("MapZoomedIn", {
-                      buildingId: venue.buildingId,
-                    });
-                  }}
-                  style={[
-                    shadows.card,
-                    {
-                      backgroundColor: themeTints.cardBg,
-                      borderRadius: componentRadii.card,
-                      padding: spacing[3],
-                      flexDirection: "row",
-                      gap: spacing[3],
-                      alignItems: "center",
-                      borderWidth: themeTints.isDark ? 0 : 1,
-                      borderColor: palette.border,
-                    },
-                  ]}
-                >
-                  <DiscoverStallThumbnail venue={venue} />
-                  <View style={{ flex: 1 }}>
-                    <DiscoverVenueMeta venue={venue} topDish={topDish} />
-                  </View>
-                  <ChevronRight color={palette.textMuted} size={20} />
-                </Pressable>
-              ))
-            ) : isDiscoverFiltering ? (
-              <FilteredResultsEmptyState preserveHeight minHeight={discoverRailReservedHeight} />
-            ) : (
-              <NoFoodSectionEmptyState
-                title="No stalls in your area currently"
-                preserveHeight
-                minHeight={discoverRailReservedHeight}
+            {stallShowcaseCards.length ? (
+              <VerticalStallShowcaseSection
+                cards={stallShowcaseCards}
+                locationLabel={discoverLocationLabel}
+                pageHeight={stallShowcasePageHeight}
+                cardWidth={stallShowcaseCardWidth}
+                scrollY={stallShowcaseScrollY}
+                onOpenCard={openStallShowcaseCard}
+                onPrefetchCard={prefetchStallShowcaseCard}
+                onGestureStart={handleStallShowcaseGestureStart}
+                onGestureEnd={handleStallShowcaseGestureEnd}
+                onTopBoundaryPull={handleStallShowcaseTopBoundaryPull}
+                onRequestSectionFocus={focusStallShowcaseSection}
+                onSectionLayout={handleStallShowcaseLayout}
               />
-            )}
-            {hasMoreAreaStalls ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Show ${nextAreaStallRevealCount} more stalls in ${discoverLocationLabel}`}
-                onPress={handleShowMoreAreaStalls}
-                style={[
-                  shadows.card,
-                  {
-                    alignItems: "center",
-                    alignSelf: "stretch",
-                    backgroundColor: themeTints.cardBg,
-                    borderColor: palette.border,
-                    borderRadius: componentRadii.button,
-                    borderWidth: themeTints.isDark ? 0 : 1,
-                    flexDirection: "row",
-                    gap: spacing[2],
-                    justifyContent: "center",
-                    paddingVertical: spacing[3],
-                  },
-                ]}
-              >
-                <AppText variant="bodySmall" tone="accent" style={{ fontWeight: "800" }}>
-                  Show {nextAreaStallRevealCount} more
-                </AppText>
-                <ChevronRight color={palette.orange} size={18} />
-              </Pressable>
             ) : null}
-          </View>
-        </View>
-
-        {stallShowcaseCards.length ? (
-          <VerticalStallShowcaseSection
-            cards={stallShowcaseCards}
-            locationLabel={discoverLocationLabel}
-            pageHeight={stallShowcasePageHeight}
-            cardWidth={stallShowcaseCardWidth}
-            scrollY={stallShowcaseScrollY}
-            onOpenCard={openStallShowcaseCard}
-            onPrefetchCard={prefetchStallShowcaseCard}
-            onGestureStart={handleStallShowcaseGestureStart}
-            onGestureEnd={handleStallShowcaseGestureEnd}
-            onTopBoundaryPull={handleStallShowcaseTopBoundaryPull}
-            onRequestSectionFocus={focusStallShowcaseSection}
-            onSectionLayout={handleStallShowcaseLayout}
-          />
-        ) : null}
+          </>
+        )}
       </ScrollView>
     </Screen>
   );

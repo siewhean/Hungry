@@ -9,6 +9,7 @@ function read(pathFromRepoRoot: string): string {
 
 test("root navigation keeps heavy routes lazy-loaded", () => {
   const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
+  const optionalRouteLoaders = read("src/app/navigation/optionalRouteLoaders.ts");
   const tabs = read("src/app/navigation/SwipeableTabNavigator.tsx");
 
   assert.doesNotMatch(rootNavigator, /import \{ HomeMapScreen \}/);
@@ -26,7 +27,8 @@ test("root navigation keeps heavy routes lazy-loaded", () => {
   assert.doesNotMatch(rootNavigator, /import \* as CredEarnedToastModule/);
   assert.match(rootNavigator, /function CredEarnedToastHost/);
   assert.match(rootNavigator, /FEATURE_FLAGS\.gamificationEnabled/);
-  assert.match(rootNavigator, /require\("@\/components\/gamification\/CredEarnedToast"\)/);
+  assert.match(rootNavigator, /loadCredEarnedToast\(\)/);
+  assert.match(optionalRouteLoaders, /require\("@\/components\/gamification\/CredEarnedToast"\)/);
 
   assert.doesNotMatch(tabs, /import \{ DiscoverHomeScreen \}/);
   assert.doesNotMatch(tabs, /import \{ ReviewFeedScreen \}/);

@@ -328,8 +328,11 @@ test("Supabase social feed/profile history do not treat persisted local posts as
   assert.match(sharedPosts, /getServiceProvider\(\)\.mode === "supabase"/);
   assert.match(
     sharedPosts,
-    /return mergeStallPosts\(bitePosts, servicePosts, repository\.listStallPosts\(\)\)/,
+    /const mergedPosts = mergeStallPosts\(bitePosts, servicePosts, repository\.listStallPosts\(\)\)/,
   );
+  assert.match(sharedPosts, /if \(biteFeedFailed && mergedPosts\.length === 0\)/);
+  assert.match(sharedPosts, /throw new Error\("Live home feed is temporarily unavailable"\)/);
+  assert.match(sharedPosts, /return mergedPosts/);
   assert.match(
     sharedPosts,
     /return mergeStallPosts\(usePublishedPostStore\.getState\(\)\.posts, repository\.listStallPosts\(\)\)/,

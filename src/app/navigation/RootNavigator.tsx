@@ -27,6 +27,32 @@ import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
 import { SwipeableTabNavigator } from "./SwipeableTabNavigator";
 import { createRootLinking } from "./linking";
+import {
+  loadAddStoryScreen,
+  loadAdminPortfolioFlagsScreen,
+  loadBlogPostWebViewScreen,
+  loadBuildingDrillDownScreen,
+  loadBuildingDrillDownScreenV2,
+  loadChatDetailScreen,
+  loadCollectionDetailScreen,
+  loadCollectionListScreen,
+  loadCredEarnedToast,
+  loadDesignGalleryScreen,
+  loadDeveloperLauncherScreen,
+  loadDirectMessagesScreen,
+  loadMerchantClaimExplainerScreen,
+  loadMerchantTabs,
+  loadMissionsScreen,
+  loadMusicSelectionScreen,
+  loadPassportScreen,
+  loadPortfolioPublicViewScreen,
+  loadPostComposerScreenV2,
+  loadSplashScreenV2,
+  loadStallDetailScreenV2,
+  loadStoryViewerScreen,
+  loadVenueDirectoryScreen,
+  loadWheelStack,
+} from "@/app/navigation/optionalRouteLoaders";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
@@ -195,16 +221,9 @@ const loadStallDetailScreen = () =>
   (
     require("@/app/screens/detail/StallDetailScreen") as typeof import("@/app/screens/detail/StallDetailScreen")
   ).StallDetailScreen;
-const loadMerchantClaimExplainerScreen = () =>
-  (
-    require("@/app/screens/detail/MerchantClaimExplainerScreen") as typeof import("@/app/screens/detail/MerchantClaimExplainerScreen")
-  ).MerchantClaimExplainerScreen;
 const loadReviewStack = () =>
   (require("@/app/screens/review/ReviewStack") as typeof import("@/app/screens/review/ReviewStack"))
     .ReviewStack;
-const loadWheelStack = () =>
-  (require("@/app/screens/wheel/WheelStack") as typeof import("@/app/screens/wheel/WheelStack"))
-    .WheelStack;
 const loadActivityInboxScreen = () =>
   (
     require("@/app/screens/home/ActivityInboxScreen") as typeof import("@/app/screens/home/ActivityInboxScreen")
@@ -213,30 +232,14 @@ const loadActivityPostDetailScreen = () =>
   (
     require("@/app/screens/home/ActivityPostDetailScreen") as typeof import("@/app/screens/home/ActivityPostDetailScreen")
   ).ActivityPostDetailScreen;
-const loadChatDetailScreen = () =>
-  (
-    require("@/app/screens/home/ChatDetailScreen") as typeof import("@/app/screens/home/ChatDetailScreen")
-  ).ChatDetailScreen;
-const loadDirectMessagesScreen = () =>
-  (
-    require("@/app/screens/home/DirectMessagesScreen") as typeof import("@/app/screens/home/DirectMessagesScreen")
-  ).DirectMessagesScreen;
 const loadCraveScreen = () =>
   (
     require("@/app/screens/discover/CraveScreen") as typeof import("@/app/screens/discover/CraveScreen")
   ).CraveScreen;
-const loadMusicSelectionScreen = () =>
-  (
-    require("@/app/screens/review/MusicSelectionScreen") as typeof import("@/app/screens/review/MusicSelectionScreen")
-  ).MusicSelectionScreen;
 const loadDecideForMeResultScreen = () =>
   (
     require("@/app/screens/discover/DecideForMeResultScreen") as typeof import("@/app/screens/discover/DecideForMeResultScreen")
   ).DecideForMeResultScreen;
-const loadBuildingDrillDownScreen = () =>
-  (
-    require("@/app/screens/discover/BuildingDrillDownScreen") as typeof import("@/app/screens/discover/BuildingDrillDownScreen")
-  ).BuildingDrillDownScreen;
 const loadOfflineStateScreen = () =>
   (
     require("@/app/screens/detail/OfflineStateScreen") as typeof import("@/app/screens/detail/OfflineStateScreen")
@@ -245,80 +248,16 @@ const loadNotFoundScreen = () =>
   (
     require("@/app/screens/detail/NotFoundScreen") as typeof import("@/app/screens/detail/NotFoundScreen")
   ).NotFoundScreen;
-const loadStallDetailScreenV2 = () =>
-  (
-    require("@/app/screens/detail/StallDetailScreenV2") as typeof import("@/app/screens/detail/StallDetailScreenV2")
-  ).StallDetailScreenV2;
-const loadBuildingDrillDownScreenV2 = () =>
-  (
-    require("@/app/screens/discover/BuildingDrillDownScreenV2") as typeof import("@/app/screens/discover/BuildingDrillDownScreenV2")
-  ).BuildingDrillDownScreenV2;
 const loadQuickBitesScreen = () =>
   (
     require("@/app/screens/discover/QuickBitesScreen") as typeof import("@/app/screens/discover/QuickBitesScreen")
   ).QuickBitesScreen;
-const loadSplashScreenV2 = () =>
-  (require("@/app/screens/SplashScreenV2") as typeof import("@/app/screens/SplashScreenV2"))
-    .SplashScreenV2;
-const loadDesignGalleryScreen = () =>
-  (
-    require("@/app/screens/dev/DesignGalleryScreen") as typeof import("@/app/screens/dev/DesignGalleryScreen")
-  ).DesignGalleryScreen;
-const loadMerchantTabs = () =>
-  (require("@/app/navigation/MerchantTabs") as typeof import("@/app/navigation/MerchantTabs"))
-    .MerchantTabs;
-const loadPostComposerScreenV2 = () =>
-  (
-    require("@/app/screens/post/PostComposerScreenV2") as typeof import("@/app/screens/post/PostComposerScreenV2")
-  ).PostComposerScreenV2;
-const loadVenueDirectoryScreen = () =>
-  (
-    require("@/app/screens/discover/VenueDirectoryScreen") as typeof import("@/app/screens/discover/VenueDirectoryScreen")
-  ).VenueDirectoryScreen;
-const loadStoryViewerScreen = () =>
-  (
-    require("@/app/screens/home/StoryViewerScreen") as typeof import("@/app/screens/home/StoryViewerScreen")
-  ).StoryViewerScreen;
-const loadAddStoryScreen = () =>
-  (
-    require("@/app/screens/home/AddStoryScreen") as typeof import("@/app/screens/home/AddStoryScreen")
-  ).AddStoryScreen;
-const loadDeveloperLauncherScreen = () =>
-  (
-    require("@/app/screens/dev/DeveloperLauncherScreen") as typeof import("@/app/screens/dev/DeveloperLauncherScreen")
-  ).DeveloperLauncherScreen;
-// Gamification screens
-const loadPassportScreen = () =>
-  (
-    require("@/app/screens/profile/PassportScreen") as typeof import("@/app/screens/profile/PassportScreen")
-  ).PassportScreen;
-const loadMissionsScreen = () =>
-  (
-    require("@/app/screens/profile/MissionsScreen") as typeof import("@/app/screens/profile/MissionsScreen")
-  ).MissionsScreen;
-const loadCollectionListScreen = () =>
-  (
-    require("@/app/screens/discover/CollectionListScreen") as typeof import("@/app/screens/discover/CollectionListScreen")
-  ).CollectionListScreen;
-const loadCollectionDetailScreen = () =>
-  (
-    require("@/app/screens/discover/CollectionDetailScreen") as typeof import("@/app/screens/discover/CollectionDetailScreen")
-  ).CollectionDetailScreen;
-const loadPortfolioPublicViewScreen = () =>
-  (
-    require("@/app/screens/portfolio/PortfolioPublicViewScreen") as typeof import("@/app/screens/portfolio/PortfolioPublicViewScreen")
-  ).PortfolioPublicViewScreen;
-const loadAdminPortfolioFlagsScreen = () =>
-  (
-    require("@/app/screens/portfolio/AdminPortfolioFlagsScreen") as typeof import("@/app/screens/portfolio/AdminPortfolioFlagsScreen")
-  ).AdminPortfolioFlagsScreen;
 
 function BlogPostRouteScreen({
   navigation,
   route,
 }: NativeStackScreenProps<RootStackParamList, "BlogPost">) {
-  const { BlogPostWebViewScreen } =
-    require("@/app/screens/reads/BlogPostWebViewScreen") as typeof import("@/app/screens/reads/BlogPostWebViewScreen");
+  const BlogPostWebViewScreen = loadBlogPostWebViewScreen();
 
   return (
     <BlogPostWebViewScreen
@@ -404,8 +343,7 @@ function CredEarnedToastHost() {
     return null;
   }
 
-  const { CredEarnedToast } =
-    require("@/components/gamification/CredEarnedToast") as typeof import("@/components/gamification/CredEarnedToast");
+  const CredEarnedToast = loadCredEarnedToast();
 
   return <CredEarnedToast />;
 }
@@ -671,7 +609,9 @@ export function RootNavigator({ theme }: { theme: Theme }) {
               }}
             />
           ) : null}
-          <RootStack.Screen component={BlogPostRouteScreen} name="BlogPost" />
+          {FEATURE_FLAGS.readsEnabled ? (
+            <RootStack.Screen component={BlogPostRouteScreen} name="BlogPost" />
+          ) : null}
           <RootStack.Screen getComponent={loadReviewStack} name="ReviewStack" />
           {FEATURE_FLAGS.hungryWheelEnabled ? (
             <RootStack.Screen getComponent={loadWheelStack} name="WheelStack" />
@@ -687,7 +627,9 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           {FEATURE_FLAGS.craveEnabled ? (
             <RootStack.Screen getComponent={loadCraveScreen} name="Crave" />
           ) : null}
-          <RootStack.Screen getComponent={loadMusicSelectionScreen} name="MusicSelection" />
+          {FEATURE_FLAGS.reviewRichMediaEnabled ? (
+            <RootStack.Screen getComponent={loadMusicSelectionScreen} name="MusicSelection" />
+          ) : null}
           <RootStack.Screen getComponent={loadDecideForMeResultScreen} name="DecideForMeResult" />
           {FEATURE_FLAGS.floorplansEnabled ? (
             <RootStack.Screen getComponent={loadBuildingDrillDownScreen} name="BuildingDrillDown" />
