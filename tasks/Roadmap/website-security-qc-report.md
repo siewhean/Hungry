@@ -7,14 +7,19 @@ Date: 2026-06-18
 - Added `marketing/website/web-v2/src/proxy.ts` using the Next 16 proxy convention.
 - Proxy gates `/merchant/**` private pages by `hungry_merchant_access_token`.
 - Proxy gates `/console/**` pages and `/api/console/**` by env-backed HTTP Basic Auth, and fails closed when the console username/password are missing.
-- Added security headers in `marketing/website/web-v2/next.config.ts`:
-  - `Content-Security-Policy`
-  - `Content-Security-Policy-Report-Only`
+- Added static non-CSP security headers in `marketing/website/web-v2/next.config.ts`:
   - `X-Content-Type-Options`
   - `X-Frame-Options`
   - `Referrer-Policy`
   - `Permissions-Policy`
   - production-only `Strict-Transport-Security`
+- Replaced the static inline-permissive CSP with a per-request enforced policy in
+  `src/proxy.ts` and `src/lib/security/contentSecurityPolicy.ts`. Every response receives a fresh
+  trusted nonce; inbound CSP/nonce headers are overwritten; Next/Flight/JSON-LD/style elements use
+  the response nonce; production uses `strict-dynamic`, denies script attributes and frames, and
+  narrows connection/image origins.
+- Added production Playwright CSP coverage for public, merchant disabled/redirect, console denial,
+  hostile-header, injected handler/style, client navigation, and Vercel Analytics modes.
 - Added no-store/noindex headers for private/auth surfaces:
   - `/merchant`, `/merchant/**`
   - `/console`, `/console/**`
@@ -40,12 +45,21 @@ Date: 2026-06-18
 
 ## Remaining Security Blockers
 
+- A scoped P2 CSP residual remains: current FDO/Next/animation code requires
+  `style-src-attr 'unsafe-inline'` for roughly 342 React style props plus generated style
+  attributes. Script execution and injected style elements are nonce-restricted, but reachable
+  style attributes must be migrated to classes before this final allowance can be removed.
 - Need authenticated staging browser/API proof that non-merchant users cannot access merchant pages. The private-route QC is wired, but real staging merchant/non-merchant credentials are still required.
 - Need authenticated staging browser/API proof that non-admin users cannot access console pages. The private-route QC supports admin/non-admin bearer proof, but real staging accounts are still required.
 - Need final owner-controlled proof that production/staging runs `npm run env:validate` with real env and passes. Local skip mode and synthetic proof mode are verified, but real secret configuration is not visible from this repo.
 
 ## Command Evidence
 
+- 2026-07-17 candidate `58d090ad84a48cb62cb32418d736ca9d5c147949`: web security
+  audit, lint, typecheck, production build, bundle budget, CSP browser smoke, browser-enabled local
+  predeploy, root security contracts, full 682-test source suite, and staged Gitleaks passed.
+  Runtime coverage observed zero legitimate CSP violations and blocked a nonce-less event handler
+  plus injected style element. Evidence: `tasks/release-evidence/web-csp-2026-07-17-pr115/`.
 - `cd marketing/website/web-v2 && npm run security:audit`: passed on 2026-06-18.
 - `cd marketing/website/web-v2 && WEBSITE_BASE_URL=http://127.0.0.1:3016 npm run private-routes:qc`: passed on 2026-06-18 against the local production server for unauthenticated merchant/console denial; authenticated branches skipped because staging tokens were not set.
 - `cd marketing/website/web-v2 && npm run env:validate`: passed on 2026-06-18 in local skip mode.

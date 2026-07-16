@@ -81,7 +81,12 @@
   screenshots across three cold runs per route. Optional/non-preloaded Nunito delivery reduces
   median Lighthouse LCP to 2.435-3.198 seconds. Waitlist now passes the <=2.5-second lab target;
   Home, Foodies, and Merchants still fail the 2,500 ms gate, so PR-114 remains open alongside
-  deployed p75 CWV, authenticated private routes, and manual accessibility.
+  deployed p75 CWV, authenticated private routes, and manual accessibility. 2026-07-17 adds a
+  fresh per-response nonce CSP with hostile-header replacement and runtime injection/navigation/
+  Vercel Analytics coverage. Script and style-element containment now passes; PR-115 remains as a
+  scoped P2 because current FDO/Next/animation style attributes still require
+  `style-src-attr 'unsafe-inline'`. Post-CSP Lighthouse medians are 2.419-3.065 seconds, so PR-114
+  remains open on Home, Foodies, and Merchants.
 
 - `ORDER-INTEGRITY-01` — Repo-local complete; linked apply and live role-matrix smoke pending.
   Findings `b016-c001` and `b016-c002` allowed authenticated customers to create terminal-state
@@ -172,7 +177,10 @@
   2026-06-07 full security audit follow-up removed precise coordinates from PostHog identity
   properties, added guarded deep-link parsing/auth redirects, made review media private with signed
   display URLs, added guest-session IP throttling, hardened OCR MIME/error handling, added website CSP
-  headers, and reconciled `tasks/Roadmap/Security/claude-full-security-audit.md`. Local source/type/
+  headers, and reconciled `tasks/Roadmap/Security/claude-full-security-audit.md`. The 2026-07-17
+  follow-up replaces inline-permissive script/style-element policy with per-request nonces and
+  production browser violation tests; only the documented P2 style-attribute allowance remains.
+  Local source/type/
   lint/format/static Supabase/Edge/diff gates pass. Remaining blockers require external action: apply
   the new migration to target Supabase, rerun live RLS/storage smoke and Advisor checks, complete
   penetration/privacy/legal sign-off, and verify production bucket behavior.
