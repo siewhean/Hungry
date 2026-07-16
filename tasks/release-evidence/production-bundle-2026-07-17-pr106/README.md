@@ -2,7 +2,7 @@
 
 Date: 2026-07-17
 
-Candidate: `codex/order-integrity-hardening` (implementation SHA pending)
+Implementation candidate: `4e5a51b553f498efa694f2435e497e9db3423f3f` on `codex/order-integrity-hardening`
 
 Verdict: repo-local pass; public launch remains No-Go
 
