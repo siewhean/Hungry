@@ -219,21 +219,19 @@ export function setServiceProvider(provider: ServiceProvider): void {
 
 export function setMockServiceProvider(): void {
   setConfiguredDataSource("mock");
-  activeProvider =
-    getConfiguredDataSource() === "mock" ? createMockProvider() : createSupabaseProvider();
+  activeProvider = createProviderFromEnv();
   cachedCatalogReadService = null;
 }
 
 export function setSupabaseServiceProvider(): void {
   setConfiguredDataSource("supabase");
-  activeProvider = createSupabaseProvider();
+  activeProvider = createProviderFromEnv();
   cachedCatalogReadService = null;
 }
 
 export function setExcelServiceProvider(): void {
   setConfiguredDataSource("excel");
-  activeProvider =
-    getConfiguredDataSource() === "excel" ? createExcelProvider() : createSupabaseProvider();
+  activeProvider = createProviderFromEnv();
   cachedCatalogReadService = null;
 }
 
