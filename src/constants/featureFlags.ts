@@ -23,8 +23,8 @@ export function resolveFeatureFlags(
   return {
     readsEnabled: true,
     notificationsEnabled: false,
-    // Enable only after the release-versioned catalog migration is published.
-    // Production never falls back to a partial client-side catalog cache.
+    // Release-versioned Supabase catalog reads use the bundled rights-reviewed
+    // Excel catalog as a read-only fallback when the online catalog is unavailable.
     catalogReadV2: process.env.EXPO_PUBLIC_CATALOG_READ_V2 === "1",
     mockMapboxEnabled: process.env.EXPO_PUBLIC_MOCK_MAPBOX_ENABLED === "1",
     hungryWheelEnabled: true,
