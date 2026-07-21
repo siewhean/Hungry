@@ -2,32 +2,14 @@ import { FEATURE_FLAGS } from "@/constants/featureFlags";
 
 const SAFE_DEEP_LINK_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const SAFE_JOIN_CODE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
-const PROTECTED_DEEP_LINK_ROUTES = new Set([
-  "MerchantTabs",
-  "Post",
-  "ActivityInbox",
-  "ActivityPostDetail",
-  "ChatDetail",
-  "DirectMessages",
-  "EditProfile",
-  "Favourites",
-  "ReviewHistory",
-  "Settings",
-  "ReviewStack",
-  "AddStory",
-  "MusicSelection",
-  "MerchantClaimExplainer",
-  "PassportScreen",
-  "MissionsScreen",
-  "AdminPortfolioFlags",
-]);
 
-interface LinkingAuthState {
+export interface LinkingAuthState {
   isAuthReady: boolean;
   isAuthenticated: boolean;
+  hasCompletedOnboarding?: boolean;
 }
 
-interface LinkingRoute {
+export interface LinkingRoute {
   name: string;
   params?: Record<string, unknown>;
 }
@@ -56,10 +38,8 @@ function sanitizeRouteParams(name: string, params: unknown): Record<string, unkn
     return undefined;
   }
 
-  if (name === "WheelStack") {
-    if (next.code !== undefined && !isSafeJoinCode(next.code)) {
-      return undefined;
-    }
+  if (name === "WheelStack" && next.code !== undefined && !isSafeJoinCode(next.code)) {
+    return undefined;
   }
 
   return Object.keys(next).length > 0 ? next : undefined;
@@ -101,38 +81,41 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
   }
   if (path === "order") return createState("Post", parseOrderDeepLinkQuery(rawPath));
   if (FEATURE_FLAGS.prototypeRoutesEnabled && parts[0] === "portfolio") {
-    return createState("PortfolioPublicView", { portfolioId: decodePathSegment(parts[1]) });
+    const portfolioId = decodePathSegment(parts[1]);
+    return portfolioId ? createState("PortfolioPublicView", { portfolioId }) : undefined;
   }
   if (FEATURE_FLAGS.merchantCentreEnabled && parts[0] === "merchant") {
     return createState("MerchantTabs");
   }
-  if (parts[0] === "join") return createState("WheelStack", { code: decodePathSegment(parts[1]) });
+  if (parts[0] === "join") {
+    const code = decodePathSegment(parts[1]);
+    return code ? createState("WheelStack", { code }) : undefined;
+  }
   return undefined;
 }
 
 function sanitizeLinkingState(state: LinkingState | undefined) {
-  if (!state?.routes?.length) {
-    return state;
-  }
+  if (!state?.routes?.length) return state;
 
-  const sanitizedRoutes = [];
+  const sanitizedRoutes: LinkingRoute[] = [];
   for (const route of state.routes) {
     const params = sanitizeRouteParams(String(route.name), route.params);
-    if (route.params && !params) {
-      return undefined;
-    }
+    if (route.params && !params) return undefined;
     sanitizedRoutes.push(params ? { ...route, params } : { ...route, params: undefined });
   }
 
-  return {
-    ...state,
-    routes: sanitizedRoutes,
-  };
+  return { ...state, routes: sanitizedRoutes };
 }
 
-function isProtectedDeepLinkState(state: LinkingState | undefined): boolean {
+function isAuthRouteState(state: LinkingState | undefined): boolean {
   const activeRoute = state?.routes?.[state.routes.length - 1];
-  return Boolean(activeRoute && PROTECTED_DEEP_LINK_ROUTES.has(String(activeRoute.name)));
+  return activeRoute?.name === "AuthStack";
+}
+
+function signedOutState(hasCompletedOnboarding: boolean | undefined): LinkingState {
+  return hasCompletedOnboarding
+    ? createState("AuthStack", { screen: "Login" })
+    : createState("OnboardingStack", { screen: "OnboardingWelcome" });
 }
 
 export function createRootLinking(
@@ -140,7 +123,9 @@ export function createRootLinking(
   getAuthState: () => LinkingAuthState = () => ({
     isAuthReady: true,
     isAuthenticated: true,
+    hasCompletedOnboarding: true,
   }),
+  onProtectedRoute?: (route: LinkingRoute) => void,
 ) {
   return {
     prefixes: [prefix, "hungry://", "https://hungry.sg"],
@@ -178,26 +163,21 @@ export function createRootLinking(
           : {}),
         WheelStack: {
           path: "join/:code",
-          screens: {
-            WheelHome: "",
-          },
+          screens: { WheelHome: "" },
         },
       },
     },
     getStateFromPath(path: string) {
       const state = sanitizeLinkingState(buildStateFromPath(path));
-      if (!state) {
-        return undefined;
-      }
+      if (!state) return undefined;
+      if (isAuthRouteState(state)) return state;
 
-      const { isAuthReady, isAuthenticated } = getAuthState();
-      if (!isAuthReady && isProtectedDeepLinkState(state)) {
-        return undefined;
-      }
-      if (!isAuthenticated && isProtectedDeepLinkState(state)) {
-        return {
-          routes: [{ name: "AuthStack", params: { screen: "Login" } }],
-        };
+      const { isAuthReady, isAuthenticated, hasCompletedOnboarding } = getAuthState();
+      if (!isAuthReady) return undefined;
+      if (!isAuthenticated) {
+        const activeRoute = state.routes[state.routes.length - 1];
+        if (activeRoute) onProtectedRoute?.(activeRoute);
+        return signedOutState(hasCompletedOnboarding);
       }
 
       return state;
@@ -207,10 +187,7 @@ export function createRootLinking(
 
 export function parseOrderDeepLinkQuery(rawPath: string): { venueId?: string } {
   const queryIndex = rawPath.indexOf("?");
-  if (queryIndex < 0) {
-    return {};
-  }
-
+  if (queryIndex < 0) return {};
   const query = rawPath.slice(queryIndex + 1);
   const params = new URLSearchParams(query);
   const venueId = params.get("venueId") ?? undefined;
