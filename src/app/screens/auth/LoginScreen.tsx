@@ -20,26 +20,30 @@ import { AuthScreenShell } from "./AuthScreenShell";
 import { AUTH_COPY, getAuthProviderUnavailableMessage, type AuthProvider } from "./authCopy";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
-
-type FormValues = {
-  email: string;
-  password: string;
-};
+type FormValues = { email: string; password: string };
 
 export function LoginScreen({ navigation }: Props) {
   const { colorScheme, palette, spacing } = useHungryTheme();
   const oauthProvidersEnabled = FEATURE_FLAGS.oauthProvidersEnabled;
   const [showPassword, setShowPassword] = useState(false);
   const completeAuth = useSessionStore((state) => state.completeAuth);
+  const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
   const showToast = useUIStore((state) => state.showToast);
 
   const {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<FormValues>({
-    defaultValues: { email: "", password: "" },
-  });
+  } = useForm<FormValues>({ defaultValues: { email: "", password: "" } });
+
+  const finishLogin = (authProvider: "email" | AuthProvider, trackSignInEvent = true) => {
+    completeAuth({
+      authProvider,
+      completedOnboarding: hasCompletedOnboarding,
+      skippedTasteQuiz: hasCompletedOnboarding,
+      trackSignInEvent,
+    });
+  };
 
   const handleLogin = handleSubmit(async (values) => {
     try {
@@ -60,7 +64,7 @@ export function LoginScreen({ navigation }: Props) {
           return;
         }
       }
-      completeAuth({ completedOnboarding: true, skippedTasteQuiz: true });
+      finishLogin("email");
       showToast({ message: AUTH_COPY.login.successToast, tone: "success" });
     } catch (err) {
       const code =
@@ -84,35 +88,23 @@ export function LoginScreen({ navigation }: Props) {
       if (message.includes("provider is not enabled")) {
         return getAuthProviderUnavailableMessage(provider);
       }
-      if (message.includes("cancelled")) {
-        return AUTH_COPY.login.providerCancelledToast;
-      }
-      if (message.includes("callback url was not trusted")) {
-        return message;
-      }
-      if (message.includes("state did not match")) {
-        return message;
-      }
+      if (message.includes("cancelled")) return AUTH_COPY.login.providerCancelledToast;
+      if (message.includes("callback url was not trusted")) return message;
+      if (message.includes("state did not match")) return message;
       if (message.includes("no active session") || message.includes("session credentials")) {
         return rawMessage;
       }
-
-      if (typeof __DEV__ !== "undefined" && __DEV__) {
-        return rawMessage;
-      }
-
+      if (typeof __DEV__ !== "undefined" && __DEV__) return rawMessage;
       return AUTH_COPY.login.genericErrorToast;
     };
 
     try {
       if (getConfiguredDataSource() === "supabase") {
         const service = getHungryService();
-        let session;
-        if (provider === "google") {
-          session = await service.auth.signInWithGoogle();
-        } else {
-          session = await service.auth.signInWithApple();
-        }
+        const session =
+          provider === "google"
+            ? await service.auth.signInWithGoogle()
+            : await service.auth.signInWithApple();
         await applySignedInProfile(session.profile, {
           profileReady: session.profileReady,
           onSyncWarning: () =>
@@ -122,7 +114,7 @@ export function LoginScreen({ navigation }: Props) {
             }),
         });
       }
-      completeAuth({ completedOnboarding: true, skippedTasteQuiz: true });
+      finishLogin(provider);
       showToast({ message: AUTH_COPY.login.providerSuccessToast, tone: "success" });
     } catch (err) {
       const message = providerErrorMessage(err);
@@ -268,17 +260,13 @@ export function LoginScreen({ navigation }: Props) {
               disabled={!oauthProvidersEnabled}
               intent="signIn"
               provider="google"
-              onPress={() => {
-                void handleProviderLogin("google");
-              }}
+              onPress={() => void handleProviderLogin("google")}
             />
             <AuthProviderButton
               disabled={!oauthProvidersEnabled}
               intent="signIn"
               provider="apple"
-              onPress={() => {
-                void handleProviderLogin("apple");
-              }}
+              onPress={() => void handleProviderLogin("apple")}
             />
           </View>
         </View>
