@@ -1,7 +1,14 @@
-import { getSupabaseClient } from "@/lib/services/supabase/client";
+import { getSupabaseClient, isSupabaseConfigured } from "@/lib/services/supabase/client";
 
 export type CatalogVerificationStatus = "raw" | "verified" | "approved";
 export type CatalogSort = "nearby" | "relevance" | "quality";
+export type CatalogErrorKind =
+  | "authentication_required"
+  | "session_invalid"
+  | "configuration"
+  | "network"
+  | "rpc"
+  | "unavailable";
 
 export interface CatalogCoordinate {
   latitude: number;
@@ -27,10 +34,7 @@ export interface CatalogPage<T> {
   items: T[];
   nextCursor?: string;
   releaseId: string;
-  totals: {
-    venues: number;
-    dishes: number;
-  };
+  totals: { venues: number; dishes: number };
 }
 
 export interface CatalogRawMedia {
@@ -58,6 +62,7 @@ export interface CatalogRawDishCard {
   reviewCount?: number;
   cuisineTags: string[];
   dietaryFlags: string[];
+  sectionTags: string[];
   isOpen?: boolean;
   verificationStatus: CatalogVerificationStatus;
   menuRightsStatus: string;
@@ -143,10 +148,130 @@ const pageCache = new Map<string, CacheEntry<unknown>>();
 const detailCache = new Map<string, CacheEntry<unknown>>();
 
 export class CatalogAccessError extends Error {
-  constructor(message: string) {
-    super(message);
+  readonly kind: CatalogErrorKind;
+  readonly fallbackEligible: boolean;
+
+  constructor(
+    message: string,
+    options: {
+      kind?: CatalogErrorKind;
+      fallbackEligible?: boolean;
+      cause?: unknown;
+    } = {},
+  ) {
+    super(message, options.cause === undefined ? undefined : { cause: options.cause });
     this.name = "CatalogAccessError";
+    this.kind = options.kind ?? "unavailable";
+    this.fallbackEligible = options.fallbackEligible ?? false;
   }
+}
+
+export class CatalogAuthenticationRequiredError extends CatalogAccessError {
+  constructor(message = "Sign in to browse Hungry.", cause?: unknown) {
+    super(message, { kind: "authentication_required", fallbackEligible: false, cause });
+    this.name = "CatalogAuthenticationRequiredError";
+  }
+}
+
+export class CatalogSessionInvalidError extends CatalogAccessError {
+  constructor(message = "Your session is no longer valid. Sign in again.", cause?: unknown) {
+    super(message, { kind: "session_invalid", fallbackEligible: false, cause });
+    this.name = "CatalogSessionInvalidError";
+  }
+}
+
+export class CatalogConfigurationError extends CatalogAccessError {
+  constructor(message = "Hungry's account service is not configured for this build.", cause?: unknown) {
+    super(message, { kind: "configuration", fallbackEligible: false, cause });
+    this.name = "CatalogConfigurationError";
+  }
+}
+
+export class CatalogNetworkError extends CatalogAccessError {
+  constructor(message = "The online catalog could not be reached.", cause?: unknown) {
+    super(message, { kind: "network", fallbackEligible: true, cause });
+    this.name = "CatalogNetworkError";
+  }
+}
+
+export class CatalogRpcError extends CatalogAccessError {
+  constructor(message = "The online catalog request failed.", cause?: unknown) {
+    super(message, { kind: "rpc", fallbackEligible: true, cause });
+    this.name = "CatalogRpcError";
+  }
+}
+
+export class CatalogUnavailableError extends CatalogAccessError {
+  constructor(message = "The online catalog is temporarily unavailable.", cause?: unknown) {
+    super(message, { kind: "unavailable", fallbackEligible: true, cause });
+    this.name = "CatalogUnavailableError";
+  }
+}
+
+export function isCatalogFallbackEligibleError(error: unknown): boolean {
+  return error instanceof CatalogAccessError && error.fallbackEligible;
+}
+
+export function isCatalogAuthenticationError(error: unknown): boolean {
+  return (
+    error instanceof CatalogAuthenticationRequiredError || error instanceof CatalogSessionInvalidError
+  );
+}
+
+function errorRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+}
+
+function errorMessage(value: unknown): string {
+  if (value instanceof Error) return value.message;
+  const row = errorRecord(value);
+  return typeof row.message === "string" ? row.message : String(value ?? "");
+}
+
+function looksLikeNetworkFailure(value: unknown): boolean {
+  const row = errorRecord(value);
+  const message = errorMessage(value).toLowerCase();
+  const code = String(row.code ?? "").toLowerCase();
+  return (
+    code === "57014" ||
+    code.includes("timeout") ||
+    message.includes("network request failed") ||
+    message.includes("failed to fetch") ||
+    message.includes("fetch failed") ||
+    message.includes("timed out") ||
+    message.includes("timeout") ||
+    message.includes("aborted") ||
+    message.includes("socket") ||
+    message.includes("connection")
+  );
+}
+
+function looksLikeInvalidSession(value: unknown): boolean {
+  const row = errorRecord(value);
+  const status = Number(row.status ?? 0);
+  const code = String(row.code ?? "").toLowerCase();
+  const message = errorMessage(value).toLowerCase();
+  return (
+    status === 401 ||
+    status === 403 ||
+    code === "pgrst301" ||
+    code.includes("jwt") ||
+    message.includes("invalid jwt") ||
+    message.includes("jwt expired") ||
+    message.includes("invalid claim") ||
+    message.includes("refresh token") ||
+    message.includes("session_not_found")
+  );
+}
+
+function classifyCatalogError(value: unknown, context: "session" | "rpc"): CatalogAccessError {
+  if (value instanceof CatalogAccessError) return value;
+  const message = errorMessage(value) || "The online catalog request failed.";
+  if (looksLikeNetworkFailure(value)) return new CatalogNetworkError(message, value);
+  if (looksLikeInvalidSession(value)) return new CatalogSessionInvalidError(message, value);
+  return context === "session"
+    ? new CatalogSessionInvalidError(message, value)
+    : new CatalogRpcError(message, value);
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -204,6 +329,7 @@ function mapDishCard(value: unknown): CatalogRawDishCard {
     reviewCount: asNumber(row.review_count),
     cuisineTags: asStringArray(row.cuisine_tags),
     dietaryFlags: asStringArray(row.dietary_flags),
+    sectionTags: asStringArray(row.section_tags),
     isOpen: asBoolean(row.is_open),
     verificationStatus: verificationStatus(row.verification_status),
     menuRightsStatus: asString(row.menu_rights_status) ?? "unverified",
@@ -307,21 +433,30 @@ function writeCache<T>(
 }
 
 async function requireAuthenticatedClient() {
+  if (!isSupabaseConfigured()) throw new CatalogConfigurationError();
   const client = getSupabaseClient();
-  if (!client)
-    throw new CatalogAccessError("Catalog is unavailable because Supabase is not configured.");
-  const { data, error } = await client.auth.getSession();
-  if (error || !data.session?.user) {
-    throw new CatalogAccessError("Sign in to browse the complete Hungry directory.");
+  if (!client) throw new CatalogConfigurationError();
+
+  let result;
+  try {
+    result = await client.auth.getSession();
+  } catch (error) {
+    throw classifyCatalogError(error, "session");
   }
+  if (result.error) throw classifyCatalogError(result.error, "session");
+  if (!result.data.session?.user) throw new CatalogAuthenticationRequiredError();
   return client;
 }
 
 async function callRawRpc<T>(name: string, args: Record<string, unknown>): Promise<T> {
   const client = await requireAuthenticatedClient();
-  const { data, error } = await client.rpc(name, args);
-  if (error) throw new CatalogAccessError(error.message);
-  return data as T;
+  try {
+    const { data, error } = await client.rpc(name, args);
+    if (error) throw classifyCatalogError(error, "rpc");
+    return data as T;
+  } catch (error) {
+    throw classifyCatalogError(error, "rpc");
+  }
 }
 
 function mapPage<T>(value: unknown, mapItem: (item: unknown) => T): CatalogPage<T> {
@@ -372,6 +507,7 @@ export const catalogRawService = {
         p_release_id: releaseId ?? null,
       }),
     );
+    if (!asString(row.id)) throw new CatalogUnavailableError("Dish details are unavailable.");
     const detail: CatalogRawDishDetail = {
       ...mapDishCard(row),
       media: Array.isArray(row.media) ? row.media.map(mapMedia) : [],
@@ -389,6 +525,7 @@ export const catalogRawService = {
         p_release_id: releaseId ?? null,
       }),
     );
+    if (!asString(row.id)) throw new CatalogUnavailableError("Stall details are unavailable.");
     const detail: CatalogRawVenueDetail = {
       ...mapVenueCard(row),
       address: asString(row.address),
