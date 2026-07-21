@@ -5,7 +5,7 @@ import { CuisineSelectionScreen } from "./CuisineSelectionScreen";
 import { FoodSelectionScreen } from "./FoodSelectionScreen";
 import { LocationPermissionScreen } from "./LocationPermissionScreen";
 import { ManualLocationPickerScreen } from "./ManualLocationPickerScreen";
-import { OnboardingAuthScreen } from "./OnboardingAuthScreen";
+import { MandatoryOnboardingAuthScreen } from "./MandatoryOnboardingAuthScreen";
 import { OnboardingIntro1Screen } from "./OnboardingIntro1Screen";
 import { OnboardingIntro2Screen } from "./OnboardingIntro2Screen";
 import { OnboardingIntro3Screen } from "./OnboardingIntro3Screen";
@@ -32,7 +32,7 @@ export function OnboardingStack() {
       <Stack.Screen name="TasteProfileResult" component={TasteProfileResultScreen} />
       <Stack.Screen name="LocationPermission" component={LocationPermissionScreen} />
       <Stack.Screen name="ManualLocationPicker" component={ManualLocationPickerScreen} />
-      <Stack.Screen name="OnboardingAuth" component={OnboardingAuthScreen} />
+      <Stack.Screen name="OnboardingAuth" component={MandatoryOnboardingAuthScreen} />
     </Stack.Navigator>
   );
 }
