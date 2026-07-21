@@ -19,10 +19,11 @@ export function getConfiguredDataSource(): HungryDataSource {
   const appEnvironment = process.env.EXPO_PUBLIC_APP_ENV?.trim().toLowerCase();
   const isReleasedBuild = appEnvironment === "staging" || appEnvironment === "production";
 
-  // Released builds use Supabase whenever credentials are present. A build with
-  // missing public Supabase configuration remains useful for discovery by using
-  // the bundled, rights-reviewed Excel catalog rather than an empty/mock screen.
-  if (isReleasedBuild) return isSupabaseConfigured() ? "supabase" : "excel";
+  // Released builds stay on the Supabase-first provider. Its public catalog
+  // reads fall back to the bundled Excel catalog when configuration, auth,
+  // network, or RPC access is unavailable. This preserves one release data
+  // path while keeping discovery usable during an outage.
+  if (isReleasedBuild) return "supabase";
 
   if (configuredDataSourceOverride) {
     return configuredDataSourceOverride;
@@ -33,8 +34,6 @@ export function getConfiguredDataSource(): HungryDataSource {
   const explicit = e2eSource || privateSource || publicSource;
   if (explicit === "supabase" || explicit === "excel" || explicit === "mock") return explicit;
 
-  // Never substitute small mock fixtures merely because environment variables
-  // were omitted. The Excel provider is the read-only catalog fallback.
   return isSupabaseConfigured() ? "supabase" : "excel";
 }
 
