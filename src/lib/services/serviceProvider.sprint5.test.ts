@@ -8,7 +8,6 @@ import {
   setMockServiceProvider,
   setSupabaseServiceProvider,
 } from "@/lib/services/serviceProvider";
-import { isSupabaseConfigured } from "@/lib/services/supabase/client";
 
 const shouldSkipSupabaseRuntime =
   process.env.HUNGRY_DISABLE_ASYNC_STORAGE === "1" ||
@@ -72,18 +71,16 @@ test("service provider can be forced into mock mode for developer shortcuts", ()
   resetServiceProvider();
 });
 
-test("released builds reject fixture mode and use Supabase or the Excel catalog fallback", () => {
+test("released builds stay Supabase-first while catalog reads can fall back to Excel", () => {
   const previousEnvironment = process.env.EXPO_PUBLIC_APP_ENV;
   process.env.EXPO_PUBLIC_APP_ENV = "production";
   resetServiceProvider();
 
-  const expectedReleasedMode = isSupabaseConfigured() ? "supabase" : "excel";
-
   setMockServiceProvider();
-  assert.equal(getServiceProvider().mode, expectedReleasedMode);
+  assert.equal(getServiceProvider().mode, "supabase");
 
   setExcelServiceProvider();
-  assert.equal(getServiceProvider().mode, expectedReleasedMode);
+  assert.equal(getServiceProvider().mode, "supabase");
 
   if (previousEnvironment === undefined) {
     delete process.env.EXPO_PUBLIC_APP_ENV;
