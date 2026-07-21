@@ -61,15 +61,15 @@ test("Excel fallback venue cards expose stall imagery or a representative menu i
   });
 });
 
-test("Excel fallback creates visible Discover sections without Supabase", async () => {
-  const result = await excelCatalogFallbackService.getDiscoverSections({
-    rotationSeed: "test-seed",
-    limitPerSection: 8,
-  });
+test("Excel fallback supplies visible paged Discover data without Supabase", async () => {
+  const [dishes, venues] = await Promise.all([
+    excelCatalogFallbackService.listDishes({ limit: 8, sort: "nearby" }),
+    excelCatalogFallbackService.listVenues({ limit: 8, sort: "nearby" }),
+  ]);
 
-  assert.equal(result.releaseId, "excel-fallback-v1");
-  const sections = Object.values(result.sections);
-  assert.equal(sections.length, 4);
-  assert.ok(sections.some((items) => items.length > 0));
-  assert.ok(sections.flat().some((item) => Boolean(item.imageUrl)));
+  assert.equal(dishes.releaseId, "excel-fallback-v1");
+  assert.equal(venues.releaseId, "excel-fallback-v1");
+  assert.ok(dishes.items.length > 0);
+  assert.ok(venues.items.length > 0);
+  assert.ok(dishes.items.some((item) => Boolean(item.imageUrl)));
 });
