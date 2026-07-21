@@ -100,10 +100,10 @@ function RawDishCard({ item, releaseId }: { item: CatalogRawDishCard; releaseId?
           {item.imageUrl ? (
             <AccessibleImage
               accessibilityLabel={`${item.name} menu image`}
+              cachePolicy="memory-disk"
               contentFit="cover"
               source={{ uri: item.imageUrl }}
               style={{ height: "100%", width: "100%" }}
-              cachePolicy="memory-disk"
             />
           ) : (
             <View style={{ alignItems: "center", flex: 1, justifyContent: "center" }}>
@@ -186,11 +186,11 @@ function RawVenueRow({ item, releaseId }: { item: CatalogRawVenueCard; releaseId
         >
           {imageUrl ? (
             <AccessibleImage
-              source={{ uri: imageUrl }}
-              contentFit="cover"
-              style={{ height: "100%", width: "100%" }}
               accessibilityLabel={`${item.name} stall or menu image`}
               cachePolicy="memory-disk"
+              contentFit="cover"
+              source={{ uri: imageUrl }}
+              style={{ height: "100%", width: "100%" }}
             />
           ) : (
             <View style={{ alignItems: "center", flex: 1, justifyContent: "center" }}>
@@ -231,6 +231,7 @@ export function CatalogDiscoverHome() {
   const [error, setError] = useState<string | null>(null);
   const requestVersion = useRef(0);
   const request = useMemo(() => requestForFilter(filter, coordinate), [coordinate, filter]);
+  const isOfflineCatalog = Boolean(releaseId?.startsWith("excel-fallback"));
 
   const load = useCallback(async () => {
     if (!service) {
@@ -258,6 +259,7 @@ export function CatalogDiscoverHome() {
       if (version !== requestVersion.current) return;
       setDishes([]);
       setVenues([]);
+      setReleaseId(undefined);
       setError(loadError instanceof Error ? loadError.message : "Could not load the catalog.");
     } finally {
       if (version === requestVersion.current) setLoading(false);
@@ -280,10 +282,10 @@ export function CatalogDiscoverHome() {
   if (error && !dishes.length && !venues.length) {
     return (
       <EmptyState
-        title="Catalog unavailable"
         body={error}
         ctaLabel="Retry"
         onPress={() => void load()}
+        title="Catalog unavailable"
       />
     );
   }
@@ -291,7 +293,6 @@ export function CatalogDiscoverHome() {
     const hasFilter = filter !== "all";
     return (
       <EmptyState
-        title={hasFilter ? "No nearby matches" : "No nearby catalog results"}
         body={
           hasFilter
             ? "Try another filter or browse the full authenticated directory."
@@ -299,30 +300,56 @@ export function CatalogDiscoverHome() {
         }
         ctaLabel={hasFilter ? "Clear filter" : "Retry"}
         onPress={hasFilter ? () => setFilter("all") : () => void load()}
+        title={hasFilter ? "No nearby matches" : "No nearby catalog results"}
       />
     );
   }
 
   return (
     <ScrollView
-      refreshControl={
-        <RefreshControl refreshing={loading} onRefresh={() => void load()} tintColor={palette.orange} />
-      }
       contentContainerStyle={{
         gap: spacing[5],
         paddingBottom: spacing[12],
         paddingHorizontal: semanticSpacing.screenEdge,
         paddingTop: spacing[3],
       }}
+      refreshControl={
+        <RefreshControl
+          refreshing={loading}
+          onRefresh={() => void load()}
+          tintColor={palette.orange}
+        />
+      }
       showsVerticalScrollIndicator={false}
       style={{ backgroundColor: palette.bg }}
+      testID="catalog-discover-screen"
     >
       <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
-        <View>
+        <View style={{ gap: spacing[1] }}>
           <AppText variant="h2">Discover</AppText>
           <AppText tone="secondary" variant="micro">
             {totals.dishes.toLocaleString()} dishes · {totals.venues.toLocaleString()} stalls
           </AppText>
+          <View
+            accessibilityLabel={isOfflineCatalog ? "Offline catalog active" : "Live catalog active"}
+            style={{
+              alignSelf: "flex-start",
+              backgroundColor: isOfflineCatalog ? palette.bgSoft : palette.surface,
+              borderColor: isOfflineCatalog ? palette.orange : palette.border,
+              borderRadius: radii.pill,
+              borderWidth: 1,
+              paddingHorizontal: spacing[2],
+              paddingVertical: spacing[1],
+            }}
+            testID={isOfflineCatalog ? "catalog-source-excel" : "catalog-source-supabase"}
+          >
+            <AppText
+              style={{ color: isOfflineCatalog ? palette.orange : palette.textSecondary }}
+              variant="micro"
+            >
+              {isOfflineCatalog ? "Offline catalog" : "Live catalog"}
+            </AppText>
+          </View>
         </View>
         <Pressable
           accessibilityLabel="Open map"
@@ -355,7 +382,11 @@ export function CatalogDiscoverHome() {
         </AppText>
       </Pressable>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[2] }}>
+      <ScrollView
+        contentContainerStyle={{ gap: spacing[2] }}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+      >
         {FILTERS.map((option) => {
           const active = filter === option.id;
           return (
@@ -371,7 +402,10 @@ export function CatalogDiscoverHome() {
                 paddingVertical: spacing[2],
               }}
             >
-              <AppText style={{ color: active ? palette.textInverse : palette.text }} variant="bodyBold">
+              <AppText
+                style={{ color: active ? palette.textOnOrange : palette.text }}
+                variant="bodyBold"
+              >
                 {option.label}
               </AppText>
             </Pressable>
@@ -384,21 +418,39 @@ export function CatalogDiscoverHome() {
           accessibilityLabel="Browse stalls and restaurants"
           accessibilityRole="button"
           onPress={() => openBrowse("stalls")}
-          style={{ backgroundColor: palette.bgSoft, borderRadius: radii.lg, flex: 1, gap: spacing[2], minHeight: 116, padding: spacing[3] }}
+          style={{
+            backgroundColor: palette.bgSoft,
+            borderRadius: radii.lg,
+            flex: 1,
+            gap: spacing[2],
+            minHeight: 116,
+            padding: spacing[3],
+          }}
         >
           <Utensils color={palette.orange} size={26} />
           <AppText variant="bodyBold">Stalls & Restaurants</AppText>
-          <AppText tone="secondary" variant="micro">Browse the full directory</AppText>
+          <AppText tone="secondary" variant="micro">
+            Browse the full directory
+          </AppText>
         </Pressable>
         <Pressable
           accessibilityLabel="Browse dishes"
           accessibilityRole="button"
           onPress={() => openBrowse("dishes")}
-          style={{ backgroundColor: palette.bgSoft, borderRadius: radii.lg, flex: 1, gap: spacing[2], minHeight: 116, padding: spacing[3] }}
+          style={{
+            backgroundColor: palette.bgSoft,
+            borderRadius: radii.lg,
+            flex: 1,
+            gap: spacing[2],
+            minHeight: 116,
+            padding: spacing[3],
+          }}
         >
           <Search color={palette.orange} size={26} />
           <AppText variant="bodyBold">Dishes</AppText>
-          <AppText tone="secondary" variant="micro">Find your craving first</AppText>
+          <AppText tone="secondary" variant="micro">
+            Find your craving first
+          </AppText>
         </Pressable>
       </View>
 
@@ -406,10 +458,16 @@ export function CatalogDiscoverHome() {
         <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
           <AppText variant="h3">Nearby dishes</AppText>
           <Pressable accessibilityRole="button" onPress={() => openBrowse("dishes")}>
-            <AppText style={{ color: palette.orange }} variant="bodyBold">See all</AppText>
+            <AppText style={{ color: palette.orange }} variant="bodyBold">
+              See all
+            </AppText>
           </Pressable>
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[3] }}>
+        <ScrollView
+          contentContainerStyle={{ gap: spacing[3] }}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+        >
           {dishes.slice(0, 8).map((item) => (
             <RawDishCard key={item.id} item={item} releaseId={releaseId} />
           ))}
@@ -420,7 +478,9 @@ export function CatalogDiscoverHome() {
         <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
           <AppText variant="h3">Stalls near you</AppText>
           <Pressable accessibilityRole="button" onPress={() => openBrowse("stalls")}>
-            <AppText style={{ color: palette.orange }} variant="bodyBold">See all</AppText>
+            <AppText style={{ color: palette.orange }} variant="bodyBold">
+              See all
+            </AppText>
           </Pressable>
         </View>
         {venues.slice(0, 8).map((item) => (
