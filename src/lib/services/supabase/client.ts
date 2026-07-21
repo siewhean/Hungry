@@ -19,7 +19,9 @@ export function getAppEnvironment(): HungryAppEnvironment {
   if (explicit === "staging" || explicit === "production" || explicit === "development") {
     return explicit;
   }
-  return process.env.NODE_ENV === "development" ? "development" : "production";
+  // EAS profiles set EXPO_PUBLIC_APP_ENV explicitly. Treat unspecified Node,
+  // test, and local processes as development so test fixtures remain usable.
+  return "development";
 }
 
 export function isReleasedBuild(): boolean {
