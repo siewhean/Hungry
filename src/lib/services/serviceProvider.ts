@@ -1,16 +1,22 @@
-import type { TasteVector } from "@/types/domain";
-import { getConfiguredDataSource, setConfiguredDataSource } from "@/lib/services/supabase/client";
 import { similarityScore } from "@/lib/ai/similarityScore";
-import type { DataRepository, HungryService } from "@/lib/services/types";
 import {
   CatalogAuthenticationRequiredError,
+  CatalogConfigurationError,
   CatalogNetworkError,
   CatalogRpcError,
   CatalogSessionInvalidError,
+  CatalogUnavailableError,
   isCatalogAuthenticationError,
   isCatalogFallbackEligibleError,
+  type CatalogPage,
   type catalogRawService,
 } from "@/lib/services/catalog";
+import {
+  getConfiguredDataSource,
+  setConfiguredDataSource,
+} from "@/lib/services/supabase/client";
+import type { DataRepository, HungryService } from "@/lib/services/types";
+import type { TasteVector } from "@/types/domain";
 
 export interface ServiceProvider {
   mode: "mock" | "supabase" | "excel";
@@ -22,7 +28,8 @@ export interface ServiceProvider {
 type CatalogReadService = typeof catalogRawService;
 type DiscoveryService = HungryService["discovery"];
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function sessionStoreState() {
   const { useSessionStore } =
@@ -58,17 +65,44 @@ function expireRejectedSession(error: unknown): void {
 function discoveryError(error: unknown) {
   if (error instanceof Error) {
     const message = error.message.toLowerCase();
+    if (message.includes("not configured") || message.includes("missing configuration")) {
+      return new CatalogConfigurationError(error.message, error);
+    }
+    if (
+      message.includes("jwt") ||
+      message.includes("unauthorized") ||
+      message.includes("forbidden") ||
+      message.includes("invalid session") ||
+      message.includes("refresh token")
+    ) {
+      return new CatalogSessionInvalidError(error.message, error);
+    }
     if (
       message.includes("network") ||
       message.includes("fetch") ||
       message.includes("timeout") ||
-      message.includes("connection")
+      message.includes("connection") ||
+      message.includes("socket")
     ) {
       return new CatalogNetworkError(error.message, error);
     }
     return new CatalogRpcError(error.message, error);
   }
   return new CatalogRpcError("The online discovery request failed.", error);
+}
+
+function requireCatalogRelease<T>(page: CatalogPage<T>): CatalogPage<T> {
+  if (!page.releaseId) {
+    throw new CatalogUnavailableError("No active Hungry catalog release is available.");
+  }
+  return page;
+}
+
+function requireMapRelease<T extends { releaseId: string }>(value: T): T {
+  if (!value.releaseId) {
+    throw new CatalogUnavailableError("No active Hungry map catalog is available.");
+  }
+  return value;
 }
 
 async function runAuthenticatedCatalogFallback<T>(
@@ -96,7 +130,8 @@ async function runAuthenticatedDiscoveryFallback<T>(
     return await primary();
   } catch (error) {
     const classified = discoveryError(error);
-    if (!isCatalogFallbackEligibleError(classified)) throw error;
+    expireRejectedSession(classified);
+    if (!isCatalogFallbackEligibleError(classified)) throw classified;
     requireAuthenticatedCatalogFallbackSession();
     return fallback();
   }
@@ -308,7 +343,7 @@ function createResilientCatalogReadService(): CatalogReadService {
         return fallback.listDishes(request);
       }
       return runAuthenticatedCatalogFallback(
-        () => primary.listDishes(request),
+        async () => requireCatalogRelease(await primary.listDishes(request)),
         () => fallback.listDishes(request),
       );
     },
@@ -318,7 +353,7 @@ function createResilientCatalogReadService(): CatalogReadService {
         return fallback.listVenues(request);
       }
       return runAuthenticatedCatalogFallback(
-        () => primary.listVenues(request),
+        async () => requireCatalogRelease(await primary.listVenues(request)),
         () => fallback.listVenues(request),
       );
     },
@@ -348,7 +383,7 @@ function createResilientCatalogReadService(): CatalogReadService {
         return fallback.listVenueMenu(venueId, request);
       }
       return runAuthenticatedCatalogFallback(
-        () => primary.listVenueMenu(venueId, request),
+        async () => requireCatalogRelease(await primary.listVenueMenu(venueId, request)),
         () => fallback.listVenueMenu(venueId, request),
       );
     },
@@ -358,7 +393,7 @@ function createResilientCatalogReadService(): CatalogReadService {
         return fallback.getMapViewport(request);
       }
       return runAuthenticatedCatalogFallback(
-        () => primary.getMapViewport(request),
+        async () => requireMapRelease(await primary.getMapViewport(request)),
         () => fallback.getMapViewport(request),
       );
     },
