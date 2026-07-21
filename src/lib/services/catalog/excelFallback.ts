@@ -7,9 +7,6 @@ import {
   listExcelVenues,
 } from "@/lib/services/excel/repositories";
 import type {
-  CatalogDiscoverSectionId,
-  CatalogDiscoverSections,
-  CatalogDiscoverSectionsRequest,
   CatalogMapItem,
   CatalogMapRequest,
   CatalogPage,
@@ -343,27 +340,6 @@ function pageFromItems<T>(
   };
 }
 
-function requestFromSections(request: CatalogDiscoverSectionsRequest): CatalogPageRequest {
-  return {
-    coordinate: request.coordinate,
-    radiusMeters: request.radiusMeters,
-    dietaryFlags: request.dietaryFlags,
-    cuisineTags: request.cuisineTags,
-    maxPrice: request.maxPrice,
-    sort: "nearby",
-    limit: Math.max(1, Math.min(request.limitPerSection ?? 8, 50)),
-  };
-}
-
-function sectionItems(
-  cards: CatalogRawDishCard[],
-  sectionId: CatalogDiscoverSectionId,
-  limit: number,
-): CatalogRawDishCard[] {
-  const filtered = cards.filter((card) => card.sectionTags.includes(sectionId));
-  return (filtered.length ? filtered : cards).slice(0, limit);
-}
-
 const metadata = getExcelCatalogMetadata();
 const fallbackTotals = { venues: metadata.venueCount, dishes: metadata.dishCount };
 
@@ -375,23 +351,6 @@ export const excelCatalogFallbackService = {
   async listDishes(request: CatalogPageRequest) {
     const filtered = filterDishes(request);
     return pageFromItems(filtered, request, { venues: allVenues.length, dishes: filtered.length });
-  },
-
-  async getDiscoverSections(
-    request: CatalogDiscoverSectionsRequest,
-  ): Promise<CatalogDiscoverSections> {
-    const baseRequest = requestFromSections(request);
-    const cards = filterDishes(baseRequest);
-    const limit = baseRequest.limit ?? 8;
-    return {
-      releaseId: FALLBACK_RELEASE_ID,
-      sections: {
-        nearby: sectionItems(cards, "nearby", limit),
-        budget: sectionItems(cards, "budget", limit),
-        late_night: sectionItems(cards, "late_night", limit),
-        editors_choice: sectionItems(cards, "editors_choice", limit),
-      },
-    };
   },
 
   async listVenues(request: CatalogPageRequest) {
