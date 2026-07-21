@@ -1,0 +1,45 @@
+appId: ${APP_ID}
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    text: "Hungry, http://.*:8081"
+    optional: true
+- tapOn:
+    text: "Hungry"
+    optional: true
+- tapOn:
+    text: "Continue"
+    optional: true
+- tapOn:
+    text: "Close"
+    optional: true
+- runFlow:
+    when:
+      visible: "Enter URL manually"
+    commands:
+      - tapOn: "Enter URL manually"
+      - tapOn:
+          point: "50%,34%"
+      - inputText: "${METRO_URL}"
+      - tapOn: "Connect"
+- extendedWaitUntil:
+    visible: "Get started"
+    timeout: 60000
+- assertVisible: "Get started"
+- assertNotVisible: "Continue as Guest"
+- assertNotVisible: "Skip login"
+- tapOn:
+    text: "Already have an account.*Sign in"
+- extendedWaitUntil:
+    visible: "Welcome back"
+    timeout: 30000
+- assertVisible: "Email address"
+- assertVisible: "Password"
+- assertVisible: "Create account"
+- openLink: "hungry://venue/mandatory-auth-test"
+- extendedWaitUntil:
+    visible: "Welcome back"
+    timeout: 10000
+- assertNotVisible: "Discover"
+- takeScreenshot: "android-mandatory-auth"
