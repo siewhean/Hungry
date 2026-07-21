@@ -5,9 +5,9 @@ import { trackAnalyticsEvent } from "@/lib/analytics";
 import type { AuthProvider } from "@/lib/services/types";
 import { getConfiguredDataSource, type HungryDataSource } from "@/lib/services/supabase/client";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import { useLocationStore } from "./useLocationStore";
 import { hungryPersistStorage } from "./persistStorage";
-import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 
 export interface PendingRoute {
   name: string;
@@ -70,12 +70,12 @@ function getMerchantStoreState() {
 }
 
 function getSafeProfileId(): string {
-  return getProfileStoreState().profile?.id ?? "guest-user";
+  return getProfileStoreState().profile?.id ?? "anonymous-session";
 }
 
 function isUuidLike(value?: string | null): value is string {
   return Boolean(
-    value?.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i),
+    value?.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i),
   );
 }
 
@@ -98,7 +98,8 @@ function clearAccountScopedStores(): void {
   getMerchantStoreState().clearMerchant();
   useLocationStore.getState().resetLocationState();
   const { useSocialStore } = require("./useSocialStore") as typeof import("./useSocialStore");
-  const { useActivityStore } = require("./useActivityStore") as typeof import("./useActivityStore");
+  const { useActivityStore } =
+    require("./useActivityStore") as typeof import("./useActivityStore");
   const { usePublishedPostStore } =
     require("./usePublishedPostStore") as typeof import("./usePublishedPostStore");
   const { useStallInteractionStore } =
@@ -109,6 +110,11 @@ function clearAccountScopedStores(): void {
   useStallInteractionStore.getState()._reset();
 }
 
+function clearAuthenticatedProfile(): void {
+  getProfileStoreState().clearProfile();
+  getProfileStoreState().syncProfile(false);
+}
+
 function shouldEnablePostHogIdentity() {
   return (
     process.env.EXPO_PUBLIC_DISABLE_POSTHOG !== "1" &&
@@ -117,20 +123,14 @@ function shouldEnablePostHogIdentity() {
 }
 
 function identifyPostHogUser(userId: string, properties: Record<string, unknown>): void {
-  if (!shouldEnablePostHogIdentity()) {
-    return;
-  }
-
+  if (!shouldEnablePostHogIdentity()) return;
   const { identifyPostHogUser: identify } =
     require("@/lib/analytics/posthogSink") as typeof import("@/lib/analytics/posthogSink");
   identify(userId, properties);
 }
 
 function resetPostHogUser(): void {
-  if (!shouldEnablePostHogIdentity()) {
-    return;
-  }
-
+  if (!shouldEnablePostHogIdentity()) return;
   const { resetPostHogUser: reset } =
     require("@/lib/analytics/posthogSink") as typeof import("@/lib/analytics/posthogSink");
   reset();
@@ -170,11 +170,10 @@ export const useSessionStore = create<SessionState>()(
           sessionExpired: false,
         }));
         syncProfileForAuthState(shouldAuthenticate, nextUserId);
-        if (!shouldAuthenticate) {
-          return;
-        }
+        if (!shouldAuthenticate) return;
+
         const syncedProfile = getProfileStoreState().profile;
-        const profileId = syncedProfile?.id ?? "guest-user";
+        const profileId = syncedProfile?.id ?? nextUserId ?? "authenticated-user";
         scheduleIdleWork(
           () => {
             identifyPostHogUser(profileId, buildPostHogIdentityProperties());
@@ -204,8 +203,16 @@ export const useSessionStore = create<SessionState>()(
       },
       expireSession: () => {
         const profileId = getSafeProfileId();
-        set({ sessionExpired: true, isAuthenticated: false });
+        set({
+          isAuthenticated: false,
+          isAuthReady: true,
+          authenticatedUserId: null,
+          authDataSource: null,
+          returnRoute: undefined,
+          sessionExpired: true,
+        });
         clearAccountScopedStores();
+        clearAuthenticatedProfile();
         resetPostHogUser();
         trackAnalyticsEvent("sign_out", { reason: "session_expired" }, { userId: profileId });
       },
@@ -214,7 +221,7 @@ export const useSessionStore = create<SessionState>()(
       setSkippedTasteQuiz: (hasSkippedTasteQuiz) => set({ hasSkippedTasteQuiz }),
       signOut: () => {
         const profileId = getSafeProfileId();
-        const hasSkippedTasteQuiz = useSessionStore.getState().hasSkippedTasteQuiz;
+        const { hasCompletedOnboarding, hasSkippedTasteQuiz } = useSessionStore.getState();
         if (getConfiguredDataSource() === "supabase") {
           void getHungryService()
             .auth.signOut()
@@ -223,21 +230,25 @@ export const useSessionStore = create<SessionState>()(
         set({
           ...initialState,
           isAuthReady: true,
-          hasCompletedOnboarding: true,
+          hasCompletedOnboarding,
           hasSkippedTasteQuiz,
         });
         clearAccountScopedStores();
-        getProfileStoreState().clearProfile();
-        getProfileStoreState().syncProfile(false);
+        clearAuthenticatedProfile();
         resetPostHogUser();
         trackAnalyticsEvent("sign_out", { reason: "manual" }, { userId: profileId });
       },
       clearSession: () => {
         const profileId = getSafeProfileId();
-        set({ ...initialState, isAuthReady: true });
+        const { hasCompletedOnboarding, hasSkippedTasteQuiz } = useSessionStore.getState();
+        set({
+          ...initialState,
+          isAuthReady: true,
+          hasCompletedOnboarding,
+          hasSkippedTasteQuiz,
+        });
         clearAccountScopedStores();
-        getProfileStoreState().clearProfile();
-        getProfileStoreState().syncProfile(false);
+        clearAuthenticatedProfile();
         resetPostHogUser();
         trackAnalyticsEvent("sign_out", { reason: "clear_session" }, { userId: profileId });
       },
@@ -251,17 +262,17 @@ export const useSessionStore = create<SessionState>()(
           !isUuidLike(session.userId);
 
         if (isInvalidSupabaseAuthState) {
-          if (currentlyAuthenticated) {
-            clearAccountScopedStores();
-          }
+          if (currentlyAuthenticated) clearAccountScopedStores();
           set({
             isAuthenticated: false,
             isAuthReady: true,
             authenticatedUserId: null,
             authDataSource: null,
-            sessionExpired: false,
+            returnRoute: undefined,
+            sessionExpired: true,
           });
-          syncProfileForAuthState(false, null);
+          clearAuthenticatedProfile();
+          resetPostHogUser();
           return;
         }
 
@@ -283,7 +294,7 @@ export const useSessionStore = create<SessionState>()(
           syncProfileForAuthState(true, session.userId);
 
           const profile = getProfileStoreState().profile;
-          const profileId = session.userId ?? profile?.id ?? "guest-user";
+          const profileId = session.userId ?? profile?.id ?? "authenticated-user";
           scheduleIdleWork(
             () => {
               identifyPostHogUser(profileId, buildPostHogIdentityProperties());
@@ -304,27 +315,25 @@ export const useSessionStore = create<SessionState>()(
           return;
         }
 
-        if (!currentlyAuthenticated) {
-          set({ isAuthReady: true });
-          return;
-        }
-
         const profileId = getSafeProfileId();
         set({
           isAuthenticated: false,
           isAuthReady: true,
           authenticatedUserId: null,
           authDataSource: null,
+          returnRoute: undefined,
           sessionExpired: false,
         });
-        clearAccountScopedStores();
-        getProfileStoreState().syncProfile(false);
-        resetPostHogUser();
-        trackAnalyticsEvent(
-          "sign_out",
-          { reason: "supabase_auth_state_change" },
-          { userId: profileId },
-        );
+        if (currentlyAuthenticated) {
+          clearAccountScopedStores();
+          clearAuthenticatedProfile();
+          resetPostHogUser();
+          trackAnalyticsEvent(
+            "sign_out",
+            { reason: "supabase_auth_state_change" },
+            { userId: profileId },
+          );
+        }
       },
     }),
     {
