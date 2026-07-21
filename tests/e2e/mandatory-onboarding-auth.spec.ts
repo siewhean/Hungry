@@ -1,6 +1,6 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
-async function openLoginAfterLocalOnboarding(page: Parameters<typeof test>[0]["page"]) {
+async function openLoginAfterLocalOnboarding(page: Page) {
   await page.goto("/");
   await expect(page.getByRole("button", { name: "Get started" })).toBeVisible({ timeout: 60_000 });
   await expect(page.getByText(/Continue as Guest/i)).toHaveCount(0);
