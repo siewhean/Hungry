@@ -12,11 +12,119 @@ export interface ServiceProvider {
 }
 
 type CatalogReadService = typeof catalogRawService;
+type DiscoveryService = HungryService["discovery"];
+
+function getExcelDiscoveryService(): DiscoveryService {
+  const { excelService } =
+    require("@/lib/services/excel/excelService") as typeof import("@/lib/services/excel/excelService");
+  return excelService.discovery;
+}
+
+function createResilientDiscoveryService(primary: DiscoveryService): DiscoveryService {
+  let fallback: DiscoveryService | null = null;
+  const getFallback = () => {
+    fallback ??= getExcelDiscoveryService();
+    return fallback;
+  };
+
+  return {
+    ...primary,
+    async listBuildings(...args) {
+      try {
+        const result = await primary.listBuildings(...args);
+        return result.length ? result : getFallback().listBuildings(...args);
+      } catch {
+        return getFallback().listBuildings(...args);
+      }
+    },
+    async countVenuesInArea(...args) {
+      try {
+        const result = await primary.countVenuesInArea(...args);
+        return result && result > 0 ? result : getFallback().countVenuesInArea(...args);
+      } catch {
+        return getFallback().countVenuesInArea(...args);
+      }
+    },
+    async getVenue(...args) {
+      try {
+        const result = await primary.getVenue(...args);
+        return result ?? getFallback().getVenue(...args);
+      } catch {
+        return getFallback().getVenue(...args);
+      }
+    },
+    async listVenuesByBuilding(...args) {
+      try {
+        const result = await primary.listVenuesByBuilding(...args);
+        return result.length ? result : getFallback().listVenuesByBuilding(...args);
+      } catch {
+        return getFallback().listVenuesByBuilding(...args);
+      }
+    },
+    async getDish(...args) {
+      try {
+        const result = await primary.getDish(...args);
+        return result ?? getFallback().getDish(...args);
+      } catch {
+        return getFallback().getDish(...args);
+      }
+    },
+    async listDishesByVenue(...args) {
+      try {
+        const result = await primary.listDishesByVenue(...args);
+        return result.length ? result : getFallback().listDishesByVenue(...args);
+      } catch {
+        return getFallback().listDishesByVenue(...args);
+      }
+    },
+    async listPopularNearby(...args) {
+      try {
+        const result = await primary.listPopularNearby(...args);
+        return result.length ? result : getFallback().listPopularNearby(...args);
+      } catch {
+        return getFallback().listPopularNearby(...args);
+      }
+    },
+    async listDiscoveryFeedByLocation(...args) {
+      try {
+        const result = await primary.listDiscoveryFeedByLocation(...args);
+        return result?.venues.length || result?.results.length
+          ? result
+          : getFallback().listDiscoveryFeedByLocation(...args);
+      } catch {
+        return getFallback().listDiscoveryFeedByLocation(...args);
+      }
+    },
+    async searchVenuesByLocation(...args) {
+      try {
+        const result = await primary.searchVenuesByLocation(...args);
+        return result?.length ? result : getFallback().searchVenuesByLocation(...args);
+      } catch {
+        return getFallback().searchVenuesByLocation(...args);
+      }
+    },
+    async searchDishes(...args) {
+      try {
+        const result = await primary.searchDishes(...args);
+        return result.length ? result : getFallback().searchDishes(...args);
+      } catch {
+        return getFallback().searchDishes(...args);
+      }
+    },
+    async decideForMe(...args) {
+      try {
+        const result = await primary.decideForMe(...args);
+        return result ?? getFallback().decideForMe(...args);
+      } catch {
+        return getFallback().decideForMe(...args);
+      }
+    },
+  };
+}
 
 function createMockProvider(): ServiceProvider {
   const { hungryService: mockHungryService } =
     require("@/lib/services/mock/mockService") as typeof import("@/lib/services/mock/mockService");
-
   const { dataRepositoryMock } =
     require("@/lib/services/mock/repositories") as typeof import("@/lib/services/mock/repositories");
   return {
@@ -28,22 +136,20 @@ function createMockProvider(): ServiceProvider {
 }
 
 function createSupabaseProvider(): ServiceProvider {
-  // Lazy getters prevent expo/react-native modules from loading during
-  // Node-based tests that only inspect provider mode.
   let cachedService: HungryService | null = null;
   let cachedRepository: DataRepository | null = null;
 
   const loadModules = () => {
     if (cachedService && cachedRepository) return;
-
     const { supabaseRepository } =
       require("@/lib/services/supabase/supabaseRepository") as typeof import("@/lib/services/supabase/supabaseRepository");
-
     const { supabaseService } =
       require("@/lib/services/supabase/supabaseService") as typeof import("@/lib/services/supabase/supabaseService");
-
     cachedRepository = supabaseRepository;
-    cachedService = supabaseService;
+    cachedService = {
+      ...supabaseService,
+      discovery: createResilientDiscoveryService(supabaseService.discovery),
+    };
   };
 
   return {
@@ -61,19 +167,15 @@ function createSupabaseProvider(): ServiceProvider {
 }
 
 function createExcelProvider(): ServiceProvider {
-  // Match the Supabase provider's lazy loading so choosing mock or Supabase
-  // never parses the large generated Excel catalog.
   let cachedService: HungryService | null = null;
   let cachedRepository: DataRepository | null = null;
 
   const loadModules = () => {
     if (cachedService && cachedRepository) return;
-
     const { excelRepository } =
       require("@/lib/services/excel/repositories") as typeof import("@/lib/services/excel/repositories");
     const { excelService } =
       require("@/lib/services/excel/excelService") as typeof import("@/lib/services/excel/excelService");
-
     cachedRepository = excelRepository;
     cachedService = excelService;
   };
@@ -103,9 +205,7 @@ let activeProvider: ServiceProvider | null = null;
 let cachedCatalogReadService: CatalogReadService | null = null;
 
 function getActiveProvider(): ServiceProvider {
-  if (!activeProvider) {
-    activeProvider = createProviderFromEnv();
-  }
+  if (!activeProvider) activeProvider = createProviderFromEnv();
   return activeProvider;
 }
 
@@ -129,7 +229,6 @@ function createResilientCatalogReadService(): CatalogReadService {
       primary.clearCache();
       fallback.clearCache();
     },
-
     async listDishes(request) {
       if (isExcelFallbackRelease(request.releaseId)) return fallback.listDishes(request);
       try {
@@ -139,11 +238,8 @@ function createResilientCatalogReadService(): CatalogReadService {
         return fallback.listDishes(request);
       }
     },
-
     async getDiscoverSections(request) {
-      if (isExcelFallbackRelease(request.releaseId)) {
-        return fallback.getDiscoverSections(request);
-      }
+      if (isExcelFallbackRelease(request.releaseId)) return fallback.getDiscoverSections(request);
       try {
         const result = await primary.getDiscoverSections(request);
         const hasItems = Object.values(result.sections).some((items) => items.length > 0);
@@ -152,7 +248,6 @@ function createResilientCatalogReadService(): CatalogReadService {
         return fallback.getDiscoverSections(request);
       }
     },
-
     async listVenues(request) {
       if (isExcelFallbackRelease(request.releaseId)) return fallback.listVenues(request);
       try {
@@ -162,7 +257,6 @@ function createResilientCatalogReadService(): CatalogReadService {
         return fallback.listVenues(request);
       }
     },
-
     async getDish(id, releaseId) {
       if (isExcelFallbackRelease(releaseId)) return fallback.getDish(id, releaseId);
       try {
@@ -171,7 +265,6 @@ function createResilientCatalogReadService(): CatalogReadService {
         return fallback.getDish(id, releaseId);
       }
     },
-
     async getVenue(id, releaseId) {
       if (isExcelFallbackRelease(releaseId)) return fallback.getVenue(id, releaseId);
       try {
@@ -180,11 +273,8 @@ function createResilientCatalogReadService(): CatalogReadService {
         return fallback.getVenue(id, releaseId);
       }
     },
-
     async listVenueMenu(venueId, request = {}) {
-      if (isExcelFallbackRelease(request.releaseId)) {
-        return fallback.listVenueMenu(venueId, request);
-      }
+      if (isExcelFallbackRelease(request.releaseId)) return fallback.listVenueMenu(venueId, request);
       try {
         const result = await primary.listVenueMenu(venueId, request);
         return result.items.length || result.releaseId
@@ -194,7 +284,6 @@ function createResilientCatalogReadService(): CatalogReadService {
         return fallback.listVenueMenu(venueId, request);
       }
     },
-
     async getMapViewport(request) {
       if (isExcelFallbackRelease(request.releaseId)) return fallback.getMapViewport(request);
       try {
@@ -255,9 +344,7 @@ export function getCatalogRawService(): CatalogReadService | null {
   const providerMode = getActiveProvider().mode;
   if (providerMode === "mock") return null;
   if (providerMode === "excel") return getExcelCatalogFallbackService();
-  if (!cachedCatalogReadService) {
-    cachedCatalogReadService = createResilientCatalogReadService();
-  }
+  if (!cachedCatalogReadService) cachedCatalogReadService = createResilientCatalogReadService();
   return cachedCatalogReadService;
 }
 
@@ -269,16 +356,12 @@ export function getSimilarityScore(left: TasteVector, right: TasteVector): numbe
   return getActiveProvider().similarityScore(left, right);
 }
 
-// Compatibility layer for legacy callsites migrating off direct mock imports.
-// Each access resolves the current provider lazily, so provider swaps stay live.
 /** @deprecated Use getDataRepository() directly. */
 export const dataRepository = new Proxy({} as DataRepository, {
   get(_target, property, receiver) {
     const repository = getDataRepository() as unknown as Record<PropertyKey, unknown>;
     const value = Reflect.get(repository, property, receiver);
-    if (typeof value === "function") {
-      return value.bind(repository);
-    }
+    if (typeof value === "function") return value.bind(repository);
     return value;
   },
 });
