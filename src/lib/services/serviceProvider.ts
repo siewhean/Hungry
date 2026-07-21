@@ -12,11 +12,119 @@ export interface ServiceProvider {
 }
 
 type CatalogReadService = typeof catalogRawService;
+type DiscoveryService = HungryService["discovery"];
+
+function getExcelDiscoveryService(): DiscoveryService {
+  const { excelService } =
+    require("@/lib/services/excel/excelService") as typeof import("@/lib/services/excel/excelService");
+  return excelService.discovery;
+}
+
+function createResilientDiscoveryService(primary: DiscoveryService): DiscoveryService {
+  let fallback: DiscoveryService | null = null;
+  const getFallback = () => {
+    fallback ??= getExcelDiscoveryService();
+    return fallback;
+  };
+
+  return {
+    ...primary,
+    async listBuildings(...args) {
+      try {
+        const result = await primary.listBuildings(...args);
+        return result.length ? result : getFallback().listBuildings(...args);
+      } catch {
+        return getFallback().listBuildings(...args);
+      }
+    },
+    async countVenuesInArea(...args) {
+      try {
+        const result = await primary.countVenuesInArea(...args);
+        return result && result > 0 ? result : getFallback().countVenuesInArea(...args);
+      } catch {
+        return getFallback().countVenuesInArea(...args);
+      }
+    },
+    async getVenue(...args) {
+      try {
+        const result = await primary.getVenue(...args);
+        return result ?? getFallback().getVenue(...args);
+      } catch {
+        return getFallback().getVenue(...args);
+      }
+    },
+    async listVenuesByBuilding(...args) {
+      try {
+        const result = await primary.listVenuesByBuilding(...args);
+        return result.length ? result : getFallback().listVenuesByBuilding(...args);
+      } catch {
+        return getFallback().listVenuesByBuilding(...args);
+      }
+    },
+    async getDish(...args) {
+      try {
+        const result = await primary.getDish(...args);
+        return result ?? getFallback().getDish(...args);
+      } catch {
+        return getFallback().getDish(...args);
+      }
+    },
+    async listDishesByVenue(...args) {
+      try {
+        const result = await primary.listDishesByVenue(...args);
+        return result.length ? result : getFallback().listDishesByVenue(...args);
+      } catch {
+        return getFallback().listDishesByVenue(...args);
+      }
+    },
+    async listPopularNearby(...args) {
+      try {
+        const result = await primary.listPopularNearby(...args);
+        return result.length ? result : getFallback().listPopularNearby(...args);
+      } catch {
+        return getFallback().listPopularNearby(...args);
+      }
+    },
+    async listDiscoveryFeedByLocation(...args) {
+      try {
+        const result = await primary.listDiscoveryFeedByLocation(...args);
+        return result?.venues.length || result?.results.length
+          ? result
+          : getFallback().listDiscoveryFeedByLocation(...args);
+      } catch {
+        return getFallback().listDiscoveryFeedByLocation(...args);
+      }
+    },
+    async searchVenuesByLocation(...args) {
+      try {
+        const result = await primary.searchVenuesByLocation(...args);
+        return result?.length ? result : getFallback().searchVenuesByLocation(...args);
+      } catch {
+        return getFallback().searchVenuesByLocation(...args);
+      }
+    },
+    async searchDishes(...args) {
+      try {
+        const result = await primary.searchDishes(...args);
+        return result.length ? result : getFallback().searchDishes(...args);
+      } catch {
+        return getFallback().searchDishes(...args);
+      }
+    },
+    async decideForMe(...args) {
+      try {
+        const result = await primary.decideForMe(...args);
+        return result ?? getFallback().decideForMe(...args);
+      } catch {
+        return getFallback().decideForMe(...args);
+      }
+    },
+  };
+}
 
 function createMockProvider(): ServiceProvider {
   const { hungryService: mockHungryService } =
     require("@/lib/services/mock/mockService") as typeof import("@/lib/services/mock/mockService");
-
   const { dataRepositoryMock } =
     require("@/lib/services/mock/repositories") as typeof import("@/lib/services/mock/repositories");
   return {
@@ -38,7 +146,10 @@ function createSupabaseProvider(): ServiceProvider {
     const { supabaseService } =
       require("@/lib/services/supabase/supabaseService") as typeof import("@/lib/services/supabase/supabaseService");
     cachedRepository = supabaseRepository;
-    cachedService = supabaseService;
+    cachedService = {
+      ...supabaseService,
+      discovery: createResilientDiscoveryService(supabaseService.discovery),
+    };
   };
 
   return {
