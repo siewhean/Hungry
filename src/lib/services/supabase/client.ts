@@ -17,7 +17,11 @@ export function getConfiguredDataSource(): HungryDataSource {
   const appEnvironment = process.env.EXPO_PUBLIC_APP_ENV?.trim().toLowerCase();
   const isReleasedBuild = appEnvironment === "staging" || appEnvironment === "production";
 
-  if (isReleasedBuild) return isSupabaseConfigured() ? "supabase" : "excel";
+  // Released builds stay on the Supabase-first provider. Its public catalog
+  // reads fall back to the bundled Excel catalog when configuration, auth,
+  // network, or RPC access is unavailable. This preserves one release data
+  // path while keeping discovery usable during an outage.
+  if (isReleasedBuild) return "supabase";
   if (configuredDataSourceOverride) return configuredDataSourceOverride;
 
   const e2eSource = process.env.EXPO_PUBLIC_HUNGRY_E2E_DATA_SOURCE?.trim().toLowerCase();
