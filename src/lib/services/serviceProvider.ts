@@ -11,6 +11,8 @@ export interface ServiceProvider {
   similarityScore: (left: TasteVector, right: TasteVector) => number;
 }
 
+type CatalogReadService = typeof catalogRawService;
+
 function createMockProvider(): ServiceProvider {
   const { hungryService: mockHungryService } =
     require("@/lib/services/mock/mockService") as typeof import("@/lib/services/mock/mockService");
@@ -98,12 +100,111 @@ function createProviderFromEnv(): ServiceProvider {
 }
 
 let activeProvider: ServiceProvider | null = null;
+let cachedCatalogReadService: CatalogReadService | null = null;
 
 function getActiveProvider(): ServiceProvider {
   if (!activeProvider) {
     activeProvider = createProviderFromEnv();
   }
   return activeProvider;
+}
+
+function getExcelCatalogFallbackService(): CatalogReadService {
+  const { excelCatalogFallbackService } =
+    require("@/lib/services/catalog/excelFallback") as typeof import("@/lib/services/catalog/excelFallback");
+  return excelCatalogFallbackService;
+}
+
+function isExcelFallbackRelease(releaseId?: string): boolean {
+  return Boolean(releaseId?.startsWith("excel-fallback"));
+}
+
+function createResilientCatalogReadService(): CatalogReadService {
+  const { catalogRawService: primary } =
+    require("@/lib/services/catalog") as typeof import("@/lib/services/catalog");
+  const fallback = getExcelCatalogFallbackService();
+
+  return {
+    clearCache() {
+      primary.clearCache();
+      fallback.clearCache();
+    },
+
+    async listDishes(request) {
+      if (isExcelFallbackRelease(request.releaseId)) return fallback.listDishes(request);
+      try {
+        const result = await primary.listDishes(request);
+        return result.items.length || result.releaseId ? result : fallback.listDishes(request);
+      } catch {
+        return fallback.listDishes(request);
+      }
+    },
+
+    async getDiscoverSections(request) {
+      if (isExcelFallbackRelease(request.releaseId)) {
+        return fallback.getDiscoverSections(request);
+      }
+      try {
+        const result = await primary.getDiscoverSections(request);
+        const hasItems = Object.values(result.sections).some((items) => items.length > 0);
+        return hasItems || result.releaseId ? result : fallback.getDiscoverSections(request);
+      } catch {
+        return fallback.getDiscoverSections(request);
+      }
+    },
+
+    async listVenues(request) {
+      if (isExcelFallbackRelease(request.releaseId)) return fallback.listVenues(request);
+      try {
+        const result = await primary.listVenues(request);
+        return result.items.length || result.releaseId ? result : fallback.listVenues(request);
+      } catch {
+        return fallback.listVenues(request);
+      }
+    },
+
+    async getDish(id, releaseId) {
+      if (isExcelFallbackRelease(releaseId)) return fallback.getDish(id, releaseId);
+      try {
+        return await primary.getDish(id, releaseId);
+      } catch {
+        return fallback.getDish(id, releaseId);
+      }
+    },
+
+    async getVenue(id, releaseId) {
+      if (isExcelFallbackRelease(releaseId)) return fallback.getVenue(id, releaseId);
+      try {
+        return await primary.getVenue(id, releaseId);
+      } catch {
+        return fallback.getVenue(id, releaseId);
+      }
+    },
+
+    async listVenueMenu(venueId, request = {}) {
+      if (isExcelFallbackRelease(request.releaseId)) {
+        return fallback.listVenueMenu(venueId, request);
+      }
+      try {
+        const result = await primary.listVenueMenu(venueId, request);
+        return result.items.length || result.releaseId
+          ? result
+          : fallback.listVenueMenu(venueId, request);
+      } catch {
+        return fallback.listVenueMenu(venueId, request);
+      }
+    },
+
+    async getMapViewport(request) {
+      if (isExcelFallbackRelease(request.releaseId)) return fallback.getMapViewport(request);
+      try {
+        const result = await primary.getMapViewport(request);
+        return result.items.length || result.releaseId ? result : fallback.getMapViewport(request);
+      } catch {
+        return fallback.getMapViewport(request);
+      }
+    },
+  };
 }
 
 export function getServiceProvider(): ServiceProvider {
@@ -113,28 +214,33 @@ export function getServiceProvider(): ServiceProvider {
 export function setServiceProvider(provider: ServiceProvider): void {
   setConfiguredDataSource();
   activeProvider = provider;
+  cachedCatalogReadService = null;
 }
 
 export function setMockServiceProvider(): void {
   setConfiguredDataSource("mock");
   activeProvider =
     getConfiguredDataSource() === "mock" ? createMockProvider() : createSupabaseProvider();
+  cachedCatalogReadService = null;
 }
 
 export function setSupabaseServiceProvider(): void {
   setConfiguredDataSource("supabase");
   activeProvider = createSupabaseProvider();
+  cachedCatalogReadService = null;
 }
 
 export function setExcelServiceProvider(): void {
   setConfiguredDataSource("excel");
   activeProvider =
     getConfiguredDataSource() === "excel" ? createExcelProvider() : createSupabaseProvider();
+  cachedCatalogReadService = null;
 }
 
 export function resetServiceProvider(): void {
   setConfiguredDataSource();
   activeProvider = null;
+  cachedCatalogReadService = null;
 }
 
 export function getHungryService(): HungryService {
@@ -142,14 +248,19 @@ export function getHungryService(): HungryService {
 }
 
 /**
- * Authenticated, release-versioned catalog reads. This deliberately has no
- * mock/Excel fallback: callers must render the online error state instead.
+ * Release-versioned catalog reads use Supabase first and fall back to the
+ * bundled, rights-reviewed Excel catalog when the online catalog is unavailable.
+ * The fallback is read-only: profile, social, review, and merchant writes remain
+ * on their configured service provider and never silently become fixture writes.
  */
-export function getCatalogRawService(): typeof catalogRawService | null {
-  if (getActiveProvider().mode !== "supabase") return null;
-  const { catalogRawService: service } =
-    require("@/lib/services/catalog") as typeof import("@/lib/services/catalog");
-  return service;
+export function getCatalogRawService(): CatalogReadService | null {
+  const providerMode = getActiveProvider().mode;
+  if (providerMode === "mock") return null;
+  if (providerMode === "excel") return getExcelCatalogFallbackService();
+  if (!cachedCatalogReadService) {
+    cachedCatalogReadService = createResilientCatalogReadService();
+  }
+  return cachedCatalogReadService;
 }
 
 export function getDataRepository(): DataRepository {
