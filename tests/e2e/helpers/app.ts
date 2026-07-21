@@ -1,6 +1,8 @@
 import { expect, type Page, type TestInfo } from "@playwright/test";
 
 const CAPTION_PLACEHOLDER = "Write your masterpiece... Use @ to tag or # for topics.";
+const MOCK_E2E_EMAIL = "playwright@hungry.test";
+const MOCK_E2E_PASSWORD = "HungryPass123!";
 
 function toDevTestId(value: string) {
   return value
@@ -51,6 +53,23 @@ async function clearBrowserStorage(page: Page) {
   });
 }
 
+async function authenticateMockDeveloperSession(page: Page) {
+  const launcher = page.getByText("Developer Launcher", { exact: true }).first();
+  if (await launcher.isVisible().catch(() => false)) return;
+
+  const getStarted = page.getByRole("button", { name: "Get started" });
+  if (await getStarted.isVisible().catch(() => false)) {
+    await page.getByRole("button", { name: "Sign in to existing account" }).click();
+  }
+
+  const loginTitle = page.getByText("Welcome back", { exact: true });
+  await expect(loginTitle).toBeVisible({ timeout: 60_000 });
+  await page.getByPlaceholder("Email address").fill(MOCK_E2E_EMAIL);
+  await page.getByPlaceholder("Password").fill(MOCK_E2E_PASSWORD);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(launcher).toBeVisible({ timeout: 30_000 });
+}
+
 export async function openDevSection(page: Page, section: string) {
   const sectionId = toDevTestId(section);
   const sectionToggle = page.getByTestId(`dev-section-toggle-${sectionId}`);
@@ -69,12 +88,12 @@ export async function resetAppState(page: Page) {
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await clearBrowserStorage(page);
   await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(page.getByText("Developer Launcher", { exact: true }).first()).toBeVisible();
+  await authenticateMockDeveloperSession(page);
 }
 
 export async function gotoLauncher(page: Page) {
   await page.goto("/", { waitUntil: "domcontentloaded" });
-  await expect(page.getByText("Developer Launcher", { exact: true }).first()).toBeVisible();
+  await authenticateMockDeveloperSession(page);
 }
 
 export async function clickDevButton(page: Page, label: string, section?: string) {
@@ -117,16 +136,22 @@ export async function createEmailAccountFromScratch(page: Page, prefix: string) 
     password: "HungryPass123!",
   };
 
-  await resetAppState(page);
-  await clickDevButton(page, "SignUp", "Auth & Onboarding");
-  await page.getByPlaceholder("Full Name").fill(user.name);
-  await page.getByPlaceholder("Email Address").fill(user.email);
-  await page.getByPlaceholder("Create Password").fill(user.password);
-  await page.getByRole("button", { name: "Create Account" }).click();
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await clearBrowserStorage(page);
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("button", { name: "Get started" })).toBeVisible({ timeout: 60_000 });
+  await page.getByRole("button", { name: "Sign in to existing account" }).click();
+  await page.getByRole("button", { name: "Create account" }).click();
+  await page.getByPlaceholder("Full name").fill(user.name);
+  await page.getByPlaceholder("Email address").fill(user.email);
+  await page.getByPlaceholder("Create password").fill(user.password);
+  await page.getByRole("button", { name: "Create account", exact: true }).click();
   await expect(page.getByText("Verify your email", { exact: true }).first()).toBeVisible();
   await expect(page.getByText(user.email)).toBeVisible();
   await page.getByRole("button", { name: "I Verified My Email" }).click();
-  await expect(page.getByText("Find the dish. Not just the restaurant.")).toBeVisible();
+  await expect(page.getByText("Developer Launcher", { exact: true }).first()).toBeVisible({
+    timeout: 30_000,
+  });
 
   return user;
 }
