@@ -1,0 +1,77 @@
+import * as Linking from "expo-linking";
+import { useMemo } from "react";
+import { NavigationContainer, type Theme } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+
+import { SplashScreen } from "@/app/screens/SplashScreen";
+import { AuthStack } from "@/app/screens/auth/AuthStack";
+import { OnboardingStack } from "@/app/screens/onboarding/OnboardingStack";
+import { FloatingToast } from "@/components/ui";
+import { useSessionStore } from "@/store/useSessionStore";
+import { useUIStore } from "@/store/useUIStore";
+import type { RootStackParamList } from "./navigationTypes";
+import { createRootLinking } from "./linking";
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
+/**
+ * The signed-out application owns only Splash, Onboarding, and Auth. Main app
+ * routes are not mounted at all, so stale navigation state and deep links cannot
+ * render catalog or account surfaces before authentication succeeds.
+ */
+export function PreAuthNavigator({ theme }: { theme: Theme }) {
+  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
+  const resetScrollBack = useUIStore((state) => state.resetScrollBack);
+  const prefix = Linking.createURL("/");
+
+  const linking = useMemo(() => {
+    const base = createRootLinking(
+      prefix,
+      () => {
+        const state = useSessionStore.getState();
+        return {
+          isAuthReady: state.isAuthReady,
+          isAuthenticated: state.isAuthenticated,
+          hasCompletedOnboarding: state.hasCompletedOnboarding,
+        };
+      },
+      (route) => setReturnRoute({ name: route.name, params: route.params }),
+    );
+
+    return {
+      ...base,
+      config: {
+        screens: {
+          Splash: "splash",
+          OnboardingStack: "onboarding",
+          AuthStack: {
+            screens: {
+              Login: "login",
+              SignUp: "signup",
+              ForgotPassword: "forgot-password",
+              ResetPassword: "auth/callback",
+              ResetPasswordSuccess: "auth/reset/success",
+            },
+          },
+        },
+      },
+    };
+  }, [prefix, setReturnRoute]);
+
+  return (
+    <>
+      <NavigationContainer
+        theme={theme}
+        linking={linking}
+        onStateChange={resetScrollBack}
+      >
+        <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
+          <Stack.Screen component={SplashScreen} name="Splash" />
+          <Stack.Screen component={OnboardingStack} name="OnboardingStack" />
+          <Stack.Screen component={AuthStack} name="AuthStack" />
+        </Stack.Navigator>
+      </NavigationContainer>
+      <FloatingToast />
+    </>
+  );
+}
