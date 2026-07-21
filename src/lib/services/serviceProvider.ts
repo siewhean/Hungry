@@ -2,7 +2,15 @@ import type { TasteVector } from "@/types/domain";
 import { getConfiguredDataSource, setConfiguredDataSource } from "@/lib/services/supabase/client";
 import { similarityScore } from "@/lib/ai/similarityScore";
 import type { DataRepository, HungryService } from "@/lib/services/types";
-import type { catalogRawService } from "@/lib/services/catalog";
+import {
+  CatalogAuthenticationRequiredError,
+  CatalogNetworkError,
+  CatalogRpcError,
+  CatalogSessionInvalidError,
+  isCatalogAuthenticationError,
+  isCatalogFallbackEligibleError,
+  type catalogRawService,
+} from "@/lib/services/catalog";
 
 export interface ServiceProvider {
   mode: "mock" | "supabase" | "excel";
@@ -13,6 +21,86 @@ export interface ServiceProvider {
 
 type CatalogReadService = typeof catalogRawService;
 type DiscoveryService = HungryService["discovery"];
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function sessionStoreState() {
+  const { useSessionStore } =
+    require("@/store/useSessionStore") as typeof import("@/store/useSessionStore");
+  return useSessionStore.getState();
+}
+
+function hasValidAuthenticatedSession(): boolean {
+  const state = sessionStoreState();
+  return Boolean(
+    state.isAuthReady &&
+      state.isAuthenticated &&
+      state.authDataSource === "supabase" &&
+      state.authenticatedUserId &&
+      UUID_PATTERN.test(state.authenticatedUserId),
+  );
+}
+
+function requireAuthenticatedCatalogFallbackSession(): void {
+  if (!hasValidAuthenticatedSession()) {
+    throw new CatalogAuthenticationRequiredError(
+      "Sign in with a valid Hungry account before using the food directory.",
+    );
+  }
+}
+
+function expireRejectedSession(error: unknown): void {
+  if (!isCatalogAuthenticationError(error)) return;
+  const state = sessionStoreState();
+  if (state.isAuthenticated) state.expireSession();
+}
+
+function discoveryError(error: unknown) {
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    if (
+      message.includes("network") ||
+      message.includes("fetch") ||
+      message.includes("timeout") ||
+      message.includes("connection")
+    ) {
+      return new CatalogNetworkError(error.message, error);
+    }
+    return new CatalogRpcError(error.message, error);
+  }
+  return new CatalogRpcError("The online discovery request failed.", error);
+}
+
+async function runAuthenticatedCatalogFallback<T>(
+  primary: () => Promise<T>,
+  fallback: () => Promise<T>,
+): Promise<T> {
+  requireAuthenticatedCatalogFallbackSession();
+  try {
+    // A successful empty result is authoritative. Fallback is used only for
+    // classified availability failures, never to replace legitimate no matches.
+    return await primary();
+  } catch (error) {
+    expireRejectedSession(error);
+    if (!isCatalogFallbackEligibleError(error)) throw error;
+    requireAuthenticatedCatalogFallbackSession();
+    return fallback();
+  }
+}
+
+async function runAuthenticatedDiscoveryFallback<T>(
+  primary: () => Promise<T>,
+  fallback: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await primary();
+  } catch (error) {
+    const classified = discoveryError(error);
+    if (!isCatalogFallbackEligibleError(classified)) throw error;
+    requireAuthenticatedCatalogFallbackSession();
+    return fallback();
+  }
+}
 
 function getExcelDiscoveryService(): DiscoveryService {
   const { excelService } =
@@ -30,94 +118,79 @@ function createResilientDiscoveryService(primary: DiscoveryService): DiscoverySe
   return {
     ...primary,
     async listBuildings(...args) {
-      try {
-        const result = await primary.listBuildings(...args);
-        return result.length ? result : getFallback().listBuildings(...args);
-      } catch {
-        return getFallback().listBuildings(...args);
-      }
+      return runAuthenticatedDiscoveryFallback(
+        () => primary.listBuildings(...args),
+        () => getFallback().listBuildings(...args),
+      );
     },
     async countVenuesInArea(...args) {
-      try {
-        const result = await primary.countVenuesInArea(...args);
-        return result && result > 0 ? result : getFallback().countVenuesInArea(...args);
-      } catch {
-        return getFallback().countVenuesInArea(...args);
-      }
+      const result = await runAuthenticatedDiscoveryFallback(
+        () => primary.countVenuesInArea(...args),
+        () => getFallback().countVenuesInArea(...args),
+      );
+      if (result !== undefined) return result;
+      requireAuthenticatedCatalogFallbackSession();
+      return getFallback().countVenuesInArea(...args);
     },
     async getVenue(...args) {
-      try {
-        const result = await primary.getVenue(...args);
-        return result ?? getFallback().getVenue(...args);
-      } catch {
-        return getFallback().getVenue(...args);
-      }
+      return runAuthenticatedDiscoveryFallback(
+        () => primary.getVenue(...args),
+        () => getFallback().getVenue(...args),
+      );
     },
     async listVenuesByBuilding(...args) {
-      try {
-        const result = await primary.listVenuesByBuilding(...args);
-        return result.length ? result : getFallback().listVenuesByBuilding(...args);
-      } catch {
-        return getFallback().listVenuesByBuilding(...args);
-      }
+      return runAuthenticatedDiscoveryFallback(
+        () => primary.listVenuesByBuilding(...args),
+        () => getFallback().listVenuesByBuilding(...args),
+      );
     },
     async getDish(...args) {
-      try {
-        const result = await primary.getDish(...args);
-        return result ?? getFallback().getDish(...args);
-      } catch {
-        return getFallback().getDish(...args);
-      }
+      return runAuthenticatedDiscoveryFallback(
+        () => primary.getDish(...args),
+        () => getFallback().getDish(...args),
+      );
     },
     async listDishesByVenue(...args) {
-      try {
-        const result = await primary.listDishesByVenue(...args);
-        return result.length ? result : getFallback().listDishesByVenue(...args);
-      } catch {
-        return getFallback().listDishesByVenue(...args);
-      }
+      return runAuthenticatedDiscoveryFallback(
+        () => primary.listDishesByVenue(...args),
+        () => getFallback().listDishesByVenue(...args),
+      );
     },
     async listPopularNearby(...args) {
-      try {
-        const result = await primary.listPopularNearby(...args);
-        return result.length ? result : getFallback().listPopularNearby(...args);
-      } catch {
-        return getFallback().listPopularNearby(...args);
-      }
+      return runAuthenticatedDiscoveryFallback(
+        () => primary.listPopularNearby(...args),
+        () => getFallback().listPopularNearby(...args),
+      );
     },
     async listDiscoveryFeedByLocation(...args) {
-      try {
-        const result = await primary.listDiscoveryFeedByLocation(...args);
-        return result?.venues.length || result?.results.length
-          ? result
-          : getFallback().listDiscoveryFeedByLocation(...args);
-      } catch {
-        return getFallback().listDiscoveryFeedByLocation(...args);
-      }
+      const result = await runAuthenticatedDiscoveryFallback(
+        () => primary.listDiscoveryFeedByLocation(...args),
+        () => getFallback().listDiscoveryFeedByLocation(...args),
+      );
+      if (result !== undefined) return result;
+      requireAuthenticatedCatalogFallbackSession();
+      return getFallback().listDiscoveryFeedByLocation(...args);
     },
     async searchVenuesByLocation(...args) {
-      try {
-        const result = await primary.searchVenuesByLocation(...args);
-        return result?.length ? result : getFallback().searchVenuesByLocation(...args);
-      } catch {
-        return getFallback().searchVenuesByLocation(...args);
-      }
+      const result = await runAuthenticatedDiscoveryFallback(
+        () => primary.searchVenuesByLocation(...args),
+        () => getFallback().searchVenuesByLocation(...args),
+      );
+      if (result !== undefined) return result;
+      requireAuthenticatedCatalogFallbackSession();
+      return getFallback().searchVenuesByLocation(...args);
     },
     async searchDishes(...args) {
-      try {
-        const result = await primary.searchDishes(...args);
-        return result.length ? result : getFallback().searchDishes(...args);
-      } catch {
-        return getFallback().searchDishes(...args);
-      }
+      return runAuthenticatedDiscoveryFallback(
+        () => primary.searchDishes(...args),
+        () => getFallback().searchDishes(...args),
+      );
     },
     async decideForMe(...args) {
-      try {
-        const result = await primary.decideForMe(...args);
-        return result ?? getFallback().decideForMe(...args);
-      } catch {
-        return getFallback().decideForMe(...args);
-      }
+      return runAuthenticatedDiscoveryFallback(
+        () => primary.decideForMe(...args),
+        () => getFallback().decideForMe(...args),
+      );
     },
   };
 }
@@ -230,68 +303,64 @@ function createResilientCatalogReadService(): CatalogReadService {
       fallback.clearCache();
     },
     async listDishes(request) {
-      if (isExcelFallbackRelease(request.releaseId)) return fallback.listDishes(request);
-      try {
-        const result = await primary.listDishes(request);
-        return result.items.length || result.releaseId ? result : fallback.listDishes(request);
-      } catch {
+      if (isExcelFallbackRelease(request.releaseId)) {
+        requireAuthenticatedCatalogFallbackSession();
         return fallback.listDishes(request);
       }
-    },
-    async getDiscoverSections(request) {
-      if (isExcelFallbackRelease(request.releaseId)) return fallback.getDiscoverSections(request);
-      try {
-        const result = await primary.getDiscoverSections(request);
-        const hasItems = Object.values(result.sections).some((items) => items.length > 0);
-        return hasItems || result.releaseId ? result : fallback.getDiscoverSections(request);
-      } catch {
-        return fallback.getDiscoverSections(request);
-      }
+      return runAuthenticatedCatalogFallback(
+        () => primary.listDishes(request),
+        () => fallback.listDishes(request),
+      );
     },
     async listVenues(request) {
-      if (isExcelFallbackRelease(request.releaseId)) return fallback.listVenues(request);
-      try {
-        const result = await primary.listVenues(request);
-        return result.items.length || result.releaseId ? result : fallback.listVenues(request);
-      } catch {
+      if (isExcelFallbackRelease(request.releaseId)) {
+        requireAuthenticatedCatalogFallbackSession();
         return fallback.listVenues(request);
       }
+      return runAuthenticatedCatalogFallback(
+        () => primary.listVenues(request),
+        () => fallback.listVenues(request),
+      );
     },
     async getDish(id, releaseId) {
-      if (isExcelFallbackRelease(releaseId)) return fallback.getDish(id, releaseId);
-      try {
-        return await primary.getDish(id, releaseId);
-      } catch {
+      if (isExcelFallbackRelease(releaseId)) {
+        requireAuthenticatedCatalogFallbackSession();
         return fallback.getDish(id, releaseId);
       }
+      return runAuthenticatedCatalogFallback(
+        () => primary.getDish(id, releaseId),
+        () => fallback.getDish(id, releaseId),
+      );
     },
     async getVenue(id, releaseId) {
-      if (isExcelFallbackRelease(releaseId)) return fallback.getVenue(id, releaseId);
-      try {
-        return await primary.getVenue(id, releaseId);
-      } catch {
+      if (isExcelFallbackRelease(releaseId)) {
+        requireAuthenticatedCatalogFallbackSession();
         return fallback.getVenue(id, releaseId);
       }
+      return runAuthenticatedCatalogFallback(
+        () => primary.getVenue(id, releaseId),
+        () => fallback.getVenue(id, releaseId),
+      );
     },
     async listVenueMenu(venueId, request = {}) {
-      if (isExcelFallbackRelease(request.releaseId)) return fallback.listVenueMenu(venueId, request);
-      try {
-        const result = await primary.listVenueMenu(venueId, request);
-        return result.items.length || result.releaseId
-          ? result
-          : fallback.listVenueMenu(venueId, request);
-      } catch {
+      if (isExcelFallbackRelease(request.releaseId)) {
+        requireAuthenticatedCatalogFallbackSession();
         return fallback.listVenueMenu(venueId, request);
       }
+      return runAuthenticatedCatalogFallback(
+        () => primary.listVenueMenu(venueId, request),
+        () => fallback.listVenueMenu(venueId, request),
+      );
     },
     async getMapViewport(request) {
-      if (isExcelFallbackRelease(request.releaseId)) return fallback.getMapViewport(request);
-      try {
-        const result = await primary.getMapViewport(request);
-        return result.items.length || result.releaseId ? result : fallback.getMapViewport(request);
-      } catch {
+      if (isExcelFallbackRelease(request.releaseId)) {
+        requireAuthenticatedCatalogFallbackSession();
         return fallback.getMapViewport(request);
       }
+      return runAuthenticatedCatalogFallback(
+        () => primary.getMapViewport(request),
+        () => fallback.getMapViewport(request),
+      );
     },
   };
 }
@@ -335,15 +404,17 @@ export function getHungryService(): HungryService {
 }
 
 /**
- * Release-versioned catalog reads use Supabase first and fall back to the
- * bundled, rights-reviewed Excel catalog when the online catalog is unavailable.
- * The fallback is read-only: profile, social, review, and merchant writes remain
- * on their configured service provider and never silently become fixture writes.
+ * Supabase remains the authentication/write authority. Excel is reachable only
+ * through this authenticated, read-only catalog wrapper after a classified
+ * online availability failure.
  */
 export function getCatalogRawService(): CatalogReadService | null {
   const providerMode = getActiveProvider().mode;
   if (providerMode === "mock") return null;
-  if (providerMode === "excel") return getExcelCatalogFallbackService();
+  if (providerMode === "excel") {
+    requireAuthenticatedCatalogFallbackSession();
+    return getExcelCatalogFallbackService();
+  }
   if (!cachedCatalogReadService) cachedCatalogReadService = createResilientCatalogReadService();
   return cachedCatalogReadService;
 }
