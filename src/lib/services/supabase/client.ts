@@ -18,7 +18,12 @@ let cachedClient: SupabaseClient | null | undefined;
 export function getConfiguredDataSource(): HungryDataSource {
   const appEnvironment = process.env.EXPO_PUBLIC_APP_ENV?.trim().toLowerCase();
   const isReleasedBuild = appEnvironment === "staging" || appEnvironment === "production";
-  if (isReleasedBuild) return "supabase";
+
+  // Released builds use Supabase whenever credentials are present. A build with
+  // missing public Supabase configuration remains useful for discovery by using
+  // the bundled, rights-reviewed Excel catalog rather than an empty/mock screen.
+  if (isReleasedBuild) return isSupabaseConfigured() ? "supabase" : "excel";
+
   if (configuredDataSourceOverride) {
     return configuredDataSourceOverride;
   }
@@ -26,10 +31,11 @@ export function getConfiguredDataSource(): HungryDataSource {
   const privateSource = process.env.HUNGRY_DATA_SOURCE?.trim().toLowerCase();
   const publicSource = process.env.EXPO_PUBLIC_HUNGRY_DATA_SOURCE?.trim().toLowerCase();
   const explicit = e2eSource || privateSource || publicSource;
-  // Consumer builds are Supabase-only. Test/developer overrides remain explicit
-  // so fixture data can never appear because configuration was absent or invalid.
   if (explicit === "supabase" || explicit === "excel" || explicit === "mock") return explicit;
-  return "supabase";
+
+  // Never substitute small mock fixtures merely because environment variables
+  // were omitted. The Excel provider is the read-only catalog fallback.
+  return isSupabaseConfigured() ? "supabase" : "excel";
 }
 
 export function setConfiguredDataSource(override?: HungryDataSource): void {
@@ -45,12 +51,10 @@ export function getSupabaseClient(): SupabaseClient | null {
   if (cachedClient !== undefined) {
     return cachedClient;
   }
-
   if (!isSupabaseConfigured()) {
     cachedClient = null;
     return cachedClient;
   }
-
   const { createClient } =
     require("@supabase/supabase-js") as typeof import("@supabase/supabase-js");
   cachedClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
