@@ -34,6 +34,7 @@ export function SignUpScreen({ navigation }: Props) {
   const [showPassword, setShowPassword] = useState(false);
   const showToast = useUIStore((state) => state.showToast);
   const completeAuth = useSessionStore((state) => state.completeAuth);
+  const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
   const {
     control,
     handleSubmit,
@@ -51,10 +52,12 @@ export function SignUpScreen({ navigation }: Props) {
           values.password,
           values.displayName,
         );
-        // session === null means email confirmation is required.
         if (!session) {
           showToast({ message: AUTH_COPY.signUp.emailVerificationToast, tone: "success" });
-          navigation.navigate("EmailVerification", { email: values.email });
+          navigation.navigate("EmailVerification", {
+            email: values.email,
+            completedOnboarding: hasCompletedOnboarding,
+          });
           return;
         }
         await applySignedInProfile(session.profile, {
@@ -66,36 +69,36 @@ export function SignUpScreen({ navigation }: Props) {
               tone: "warning",
             }),
         });
-        // When project auth is auto-confirm, Supabase returns an active session immediately.
         completeAuth({
           authProvider: "email",
-          completedOnboarding: false,
+          completedOnboarding: hasCompletedOnboarding,
           trackSignInEvent: false,
         });
-        showToast({ message: AUTH_COPY.signUp.continueOnboardingToast, tone: "success" });
-        return;
-      } else {
-        const failure = getMockSignUpFailure(values.email);
-        if (failure) {
-          showToast({ message: failure.message, tone: "error" });
-          return;
-        }
         showToast({
-          message: AUTH_COPY.signUp.verificationUnavailableToast,
-          tone: "warning",
+          message: hasCompletedOnboarding
+            ? "Account created. Welcome to Hungry."
+            : AUTH_COPY.signUp.continueOnboardingToast,
+          tone: "success",
         });
+        return;
       }
-      showToast({ message: AUTH_COPY.signUp.emailVerificationToast, tone: "success" });
-      navigation.navigate("EmailVerification", { email: values.email });
+
+      const failure = getMockSignUpFailure(values.email);
+      if (failure) {
+        showToast({ message: failure.message, tone: "error" });
+        return;
+      }
+      showToast({ message: AUTH_COPY.signUp.verificationUnavailableToast, tone: "warning" });
+      navigation.navigate("EmailVerification", {
+        email: values.email,
+        completedOnboarding: hasCompletedOnboarding,
+      });
     } catch (err) {
       const code =
         (err as { error_code?: string; code?: string })?.error_code ??
         (err as { error_code?: string; code?: string })?.code;
       if (code === "over_email_send_rate_limit") {
-        showToast({
-          message: AUTH_COPY.signUp.tooManyAttemptsToast,
-          tone: "error",
-        });
+        showToast({ message: AUTH_COPY.signUp.tooManyAttemptsToast, tone: "error" });
       } else if (code === "email_address_invalid") {
         showToast({ message: AUTH_COPY.signUp.invalidEmailToast, tone: "error" });
       } else {
@@ -112,35 +115,23 @@ export function SignUpScreen({ navigation }: Props) {
       if (message.includes("provider is not enabled")) {
         return getAuthProviderUnavailableMessage(provider);
       }
-      if (message.includes("cancelled")) {
-        return AUTH_COPY.signUp.providerCancelledToast;
-      }
-      if (message.includes("callback url was not trusted")) {
-        return message;
-      }
-      if (message.includes("state did not match")) {
-        return message;
-      }
+      if (message.includes("cancelled")) return AUTH_COPY.signUp.providerCancelledToast;
+      if (message.includes("callback url was not trusted")) return message;
+      if (message.includes("state did not match")) return message;
       if (message.includes("no active session") || message.includes("session credentials")) {
         return rawMessage;
       }
-
-      if (typeof __DEV__ !== "undefined" && __DEV__) {
-        return rawMessage;
-      }
-
+      if (typeof __DEV__ !== "undefined" && __DEV__) return rawMessage;
       return AUTH_COPY.signUp.genericErrorToast;
     };
 
     try {
       if (getConfiguredDataSource() === "supabase") {
         const service = getHungryService();
-        let session;
-        if (provider === "google") {
-          session = await service.auth.signInWithGoogle();
-        } else {
-          session = await service.auth.signInWithApple();
-        }
+        const session =
+          provider === "google"
+            ? await service.auth.signInWithGoogle()
+            : await service.auth.signInWithApple();
         await applySignedInProfile(session.profile, {
           profileReady: session.profileReady,
           onSyncWarning: () =>
@@ -150,20 +141,11 @@ export function SignUpScreen({ navigation }: Props) {
             }),
         });
       }
-      showToast({
-        message: getSignUpProviderSuccessMessage(provider),
-        tone: "success",
-      });
+      showToast({ message: getSignUpProviderSuccessMessage(provider), tone: "success" });
       completeAuth({
         authProvider: provider,
-        completedOnboarding: false,
+        completedOnboarding: hasCompletedOnboarding,
         trackSignInEvent: false,
-      });
-      navigation.getParent()?.reset({
-        index: 0,
-        routes: [
-          { name: "OnboardingStack" as never, params: { screen: "OnboardingIntro1" } as never },
-        ],
       });
     } catch (err) {
       const message = providerErrorMessage(err);
@@ -221,11 +203,8 @@ export function SignUpScreen({ navigation }: Props) {
                 accessibilityLabel={AUTH_COPY.signUp.footerAction}
                 accessibilityHint="Returns to the sign in screen"
                 onPress={() => {
-                  if (navigation.canGoBack()) {
-                    navigation.goBack();
-                  } else {
-                    navigation.navigate("Login");
-                  }
+                  if (navigation.canGoBack()) navigation.goBack();
+                  else navigation.navigate("Login");
                 }}
               >
                 <AppText variant="bodyBold" tone="accent">
@@ -242,17 +221,13 @@ export function SignUpScreen({ navigation }: Props) {
               disabled={!oauthProvidersEnabled}
               intent="continue"
               provider="google"
-              onPress={() => {
-                void handleProviderContinue("google");
-              }}
+              onPress={() => void handleProviderContinue("google")}
             />
             <AuthProviderButton
               disabled={!oauthProvidersEnabled}
               intent="continue"
               provider="apple"
-              onPress={() => {
-                void handleProviderContinue("apple");
-              }}
+              onPress={() => void handleProviderContinue("apple")}
             />
           </View>
 
