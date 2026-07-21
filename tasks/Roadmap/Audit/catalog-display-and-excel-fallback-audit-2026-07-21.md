@@ -14,9 +14,9 @@ The app already contained two large catalog sources:
 1. the release-versioned Supabase catalog used by the V2 catalog read service; and
 2. the bundled, rights-reviewed Excel runtime catalog used by the Excel provider.
 
-The main integration gap was that the V2 catalog service explicitly had **no Excel fallback**. When Supabase was unconfigured, unreachable, unauthenticated, or returned a catalog error, the Discover catalog could render an error/empty state even though the app bundle already contained usable venue, dish, location, and menu-image data.
+The main integration gap was that the V2 catalog service explicitly had **no Excel fallback**. The legacy Supabase discovery methods also returned an empty/error result when Supabase was unconfigured, unreachable, unauthenticated, or returned an RPC error, even though the app bundle already contained usable venue, dish, location, and menu-image data.
 
-This change adds a read-only Excel catalog adapter and a Supabase-first resilient catalog service. Shared writes such as profiles, reviews, posts, and merchant changes are **not** redirected to mock or Excel behavior.
+This change adds a read-only Excel catalog adapter, a Supabase-first resilient raw catalog service, and a read-only fallback around the legacy discovery methods. Shared writes such as profiles, reviews, posts, and merchant changes are **not** redirected to mock or Excel behavior.
 
 ### Updated status
 
@@ -24,10 +24,11 @@ This change adds a read-only Excel catalog adapter and a Supabase-first resilien
 |---|---|---|
 | Supabase catalog available | Online catalog renders | Unchanged |
 | Supabase catalog unavailable | Catalog error/empty state | Bundled Excel catalog renders |
-| Missing Supabase public config | Provider stayed on Supabase | Released build uses Excel catalog provider |
+| Missing Supabase public config | Released provider could not return catalog data | Released provider remains Supabase-first and its discovery/catalog reads use Excel fallback |
+| Legacy Discover feed | Online results only | Supabase results or location-aware Excel discovery feed |
 | Discover dish images | Menu images when online rows supplied them | Menu images from Supabase or Excel fallback |
-| Stall images | Venue/representative menu image when supplied | Logo → venue image → representative dish image |
-| All stalls | Online cursor paging only | Supabase or Excel cursor paging |
+| Stall images | Venue/representative menu image when supplied | Logo → venue image → representative menu dish image |
+| All stalls | Online paging or limited legacy results | Supabase/Excel paging for full directory; Discover exposes representative nearby results with Show More |
 | Writes during fallback | Not applicable | Remain on configured write service; fallback is catalog-read-only |
 
 ---
@@ -46,13 +47,13 @@ This change adds a read-only Excel catalog adapter and a Supabase-first resilien
 - search by query, cuisine, dietary flags, price, open status, area, and radius;
 - nearby/popular ranking that prioritizes rows with real images.
 
-`src/lib/services/excel/excelService.ts` already provides location-aware discovery and search, including a large venue-count query and discovery feed construction.
+`src/lib/services/excel/excelService.ts` already provides location-aware discovery and search, including venue-count queries and discovery feed construction.
 
-### 2. The V2 raw catalog did not use that fallback
+### 2. The online catalog and legacy discovery paths did not use that fallback
 
 Before this change, `getCatalogRawService()` returned the Supabase raw service only when the active provider mode was `supabase`. Its own comment explicitly stated that it had no mock/Excel fallback.
 
-The raw service also requires a configured Supabase client and authenticated session. A failure therefore prevented the already-bundled Excel data from reaching `CatalogDiscoverHome`.
+The raw service requires a configured Supabase client and authenticated session. The legacy discovery methods also depended on successful online reads. A configuration, auth, network, or RPC failure could therefore prevent the already-bundled Excel data from reaching Discover, Browse, detail, or map surfaces.
 
 ### 3. Discover already rejects generic placeholder hosts
 
@@ -71,6 +72,7 @@ The complete catalog should be **accessible**, not mounted simultaneously. Rende
 The required behavior is:
 
 - Discover shows representative nearby sections;
+- Discover's area-stall section supports incremental Show More;
 - Browse/Search exposes the full directory;
 - cursor paging or infinite scrolling loads subsequent pages;
 - totals indicate catalog coverage;
@@ -124,13 +126,24 @@ The fallback uses the bundled catalog's menu images. It does not introduce Unspl
 3. fall back to the bundled Excel catalog on configuration, auth, network, RPC, timeout, or empty-release failure;
 4. preserve the fallback release ID for subsequent detail/menu pagination reads.
 
-Only catalog **reads** fall back. The profile/social/review/merchant write service remains unchanged.
+The Supabase provider's **read-only discovery methods** are also wrapped with Excel fallback:
+
+- buildings and area counts;
+- venue and dish reads;
+- venue menus;
+- popular nearby;
+- location-aware Discover feed;
+- location-aware venue search;
+- dish search;
+- Decide For Me.
+
+Only discovery/catalog **reads** fall back. The profile/social/review/merchant write service remains unchanged.
 
 ### `src/lib/services/supabase/client.ts`
 
-A released build with missing public Supabase URL/key now selects the Excel provider instead of showing an empty catalog.
+Released builds remain on the Supabase-first provider so the same route and screen behavior is preserved. If public Supabase configuration is absent, the Supabase client returns `null` and the resilient discovery/catalog wrappers serve the bundled Excel data.
 
-When Supabase is correctly configured, released builds still use Supabase first.
+Development builds can still explicitly select Supabase, Excel, or mock. Without an explicit source and without Supabase configuration, development defaults to the Excel provider rather than a tiny mock catalog.
 
 ### Test coverage
 
@@ -143,7 +156,7 @@ Added `src/lib/services/catalog/excelFallback.test.ts` covering:
 - venue image or representative dish image selection;
 - non-empty Discover sections without Supabase.
 
-Updated service-provider tests to recognize the released-build fallback policy.
+Updated service-provider tests to verify that released builds remain Supabase-first while reads can fall back to Excel.
 
 ---
 
@@ -158,15 +171,16 @@ Updated service-provider tests to recognize the released-build fallback policy.
 
 ### Supabase unconfigured
 
-- Select the Excel provider.
-- Display the bundled buildings, venues, dishes, planning areas, and menu images.
-- Keep the app useful for read-only food discovery.
+- Keep the released app on the Supabase-first provider.
+- The missing client causes discovery/catalog reads to use the bundled Excel fallback.
+- Display bundled buildings, venues, dishes, planning areas, and menu images.
+- Authenticated writes remain unavailable until Supabase configuration is restored; the app does not fake successful writes.
 
 ### Supabase temporarily fails at runtime
 
-- The raw catalog wrapper catches read failures.
-- Discover, catalog Browse, details, menus, and map reads use the Excel adapter.
-- Returned pages use the `excel-fallback-v1` release ID so subsequent pages/details stay on the same source.
+- The legacy discovery wrapper and raw catalog wrapper catch read failures.
+- Discover, catalog Browse, details, menus, search, Decide For Me, and map reads use the Excel data.
+- Raw catalog pages use the `excel-fallback-v1` release ID so subsequent pages/details stay on the same source.
 
 ### No valid image
 
@@ -210,7 +224,9 @@ Test these states:
 3. Supabase RPC returns an error;
 4. network disabled after a successful session;
 5. catalog page 1 and subsequent cursor pages;
-6. dish and venue detail opened from an Excel fallback page.
+6. dish and venue detail opened from an Excel fallback page;
+7. guest Discover shows Excel-backed nearby stalls during an online outage;
+8. Search/Browse can reach subsequent stall and dish pages.
 
 ### iOS simulator/device
 
@@ -234,6 +250,27 @@ npm run smoke:native:ios:prepared
 npm run smoke:native:ios:media:prepared
 ```
 
+For production-like JavaScript behavior, also run:
+
+```bash
+npx expo start --no-dev --minify
+```
+
+---
+
+## Current Verification Status
+
+| Check | Status | Notes |
+|---|---|---|
+| Static code audit | Complete | Supabase-first + Excel read fallback implemented. |
+| Fallback unit tests added | Complete | Tests committed but not proven green in this environment. |
+| GitHub CI | Blocked | Jobs fail before useful step/log output is returned. |
+| Security workflow | Blocked | Workflow fails before usable step/log output is returned. |
+| Vercel preview | Blocked externally | Free daily deployment limit exceeded. |
+| Automated AI review | Blocked externally | Codex/Copilot review quota exhausted. |
+| iOS simulator/device visual QA | Not run | XcodeBuildMCP/simulator tools are unavailable in this conversation. |
+| Supabase staging smoke | Not run here | Requires staging credentials. |
+
 ---
 
 ## Remaining Risks
@@ -241,8 +278,9 @@ npm run smoke:native:ios:media:prepared
 | Risk | Severity | Action |
 |---|---:|---|
 | Native visual verification not run in this environment | P0 before release | Run XcodeBuildMCP/Simulator QA and attach screenshots. |
+| Automated checks have not produced usable results | P0 before merge | Run locally or restore GitHub Actions capacity/logging, then attach results. |
 | Remote menu URLs may expire or reject hotlinking | P1 | Audit failed-image hosts and migrate approved media to owned storage/CDN. |
-| Runtime outage while signed out may still encounter auth-dependent online directory behavior | P1 | Verify guest path uses Excel provider/fallback in a release build. |
+| Raw full-directory catalog may require auth | P1 | Decide whether the complete public directory should be guest-readable; keep RLS intentional. |
 | Large Excel bundle increases binary size and memory | P1 | Measure EAS binary size and cold-load cost; consider split/chunked fallback later. |
 | Fallback data is a bundle snapshot | P1 | Display data freshness/source and regenerate catalog for releases. |
 | Supabase and Excel totals differ | Expected | Treat Supabase as canonical when healthy; Excel is resilient read coverage only. |
@@ -253,12 +291,12 @@ npm run smoke:native:ios:media:prepared
 
 ### Static architecture verdict
 
-**Go candidate for automated verification.**
+**Go candidate for automated and native verification.**
 
-The catalog now has a coherent Supabase-first and Excel-fallback read path. The Discover image pipeline uses actual menu/stall media where available, and the full catalog is accessible through paging rather than rendering all rows at once.
+The catalog now has a coherent Supabase-first and Excel-fallback read path. The Discover image pipeline uses actual menu/stall media where available, legacy Discover can recover with location-aware Excel data, and the full catalog is accessible through paging rather than rendering all rows at once.
 
 ### Production verdict
 
 **No-Go until automated checks and native iOS/Android visual QA pass.**
 
-Do not mark this complete solely from static inspection. The final gate is an actual release-mode simulator/device run with Supabase healthy and Supabase unavailable.
+Do not mark this complete solely from static inspection. The final gate is an actual production-like simulator/device run with Supabase healthy and Supabase unavailable, plus successful typecheck/lint/test/security verification.
