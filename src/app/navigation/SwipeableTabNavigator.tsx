@@ -34,9 +34,7 @@ function createTabScreenLoader(loadModule: () => TabScreenComponent): TabScreenL
   return {
     getCached: () => cached,
     load: () => {
-      if (!cached) {
-        cached = loadModule();
-      }
+      if (!cached) cached = loadModule();
       return cached;
     },
   };
@@ -49,9 +47,9 @@ const reviewScreenLoader = createTabScreenLoader(() => {
 });
 
 const discoverScreenLoader = createTabScreenLoader(() => {
-  const { DiscoverHomeScreen } =
-    require("@/app/screens/discover/DiscoverHomeScreen") as typeof import("@/app/screens/discover/DiscoverHomeScreen");
-  return DiscoverHomeScreen as TabScreenComponent;
+  const { DiscoverEntryScreen } =
+    require("@/app/screens/discover/DiscoverEntryScreen") as typeof import("@/app/screens/discover/DiscoverEntryScreen");
+  return DiscoverEntryScreen as TabScreenComponent;
 });
 
 const profileStackLoader = createTabScreenLoader(() => {
@@ -88,10 +86,7 @@ function TabScreenLoadingPlaceholder() {
     <View
       style={[
         styles.loadingPlaceholder,
-        {
-          backgroundColor: palette.bg,
-          paddingBottom: spacing[8],
-        },
+        { backgroundColor: palette.bg, paddingBottom: spacing[8] },
       ]}
     >
       <View style={{ gap: spacing[5], width: "100%" }}>
@@ -121,16 +116,10 @@ function createDeferredTabScreen(loader: TabScreenLoader) {
     const [Component, setComponent] = useState<TabScreenComponent | null>(() => loader.getCached());
 
     useEffect(() => {
-      if (Component) {
-        return undefined;
-      }
-
+      if (Component) return undefined;
       let cancelled = false;
       const LoadedComponent = loader.load();
-      if (!cancelled) {
-        setComponent(() => LoadedComponent);
-      }
-
+      if (!cancelled) setComponent(() => LoadedComponent);
       return () => {
         cancelled = true;
       };
@@ -149,10 +138,7 @@ function scheduleMainTabScreensWarmup(onComplete: () => void) {
   let loaderIndex = 0;
 
   const warmNextLoader = () => {
-    if (cancelled) {
-      return;
-    }
-
+    if (cancelled) return;
     const loader = mainTabScreenLoaders[loaderIndex];
     if (!loader) {
       onComplete();
@@ -161,10 +147,7 @@ function scheduleMainTabScreensWarmup(onComplete: () => void) {
 
     cancelCurrentWarmup = scheduleIdleWork(
       () => {
-        if (cancelled) {
-          return;
-        }
-
+        if (cancelled) return;
         loader.load();
         loaderIndex += 1;
         warmNextLoader();
@@ -177,7 +160,6 @@ function scheduleMainTabScreensWarmup(onComplete: () => void) {
   };
 
   warmNextLoader();
-
   return () => {
     cancelled = true;
     cancelCurrentWarmup?.();
@@ -203,9 +185,7 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
   const resetTimer = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
     setHighlightVisible(true);
-    timerRef.current = setTimeout(() => {
-      setHighlightVisible(false);
-    }, 5000);
+    timerRef.current = setTimeout(() => setHighlightVisible(false), 5000);
   }, []);
 
   useEffect(() => {
@@ -215,8 +195,8 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
     };
   }, [state.index, resetTimer]);
 
-  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
-  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
+  const isAuthenticated = useSessionStore((store) => store.isAuthenticated);
+  const setReturnRoute = useSessionStore((store) => store.setReturnRoute);
   const routeByName = new Map(state.routes.map((route) => [route.name, route]));
   const composerRoute = FEATURE_FLAGS.prototypeRoutesEnabled ? "PostComposerV2" : "Post";
   const tabItems = [
@@ -242,9 +222,7 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
       {tabItems.map((item) => {
         const route = item.route;
         const isCreateAction = item.isCreateAction === true;
-        if (!isCreateAction && !route) {
-          return null;
-        }
+        if (!isCreateAction && !route) return null;
         const routeName = route?.name;
         const routeKey = route?.key ?? "create-post-action";
         const routeIndex = route ? state.routes.indexOf(route) : -1;
@@ -257,35 +235,18 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
               rootNavigation?.navigate("AuthStack", { screen: "Login" });
               return;
             }
-
-            if (composerRoute === "PostComposerV2") {
-              rootNavigation?.navigate("PostComposerV2");
-            } else {
-              rootNavigation?.navigate("Post");
-            }
+            rootNavigation?.navigate(composerRoute as never);
             resetTimer();
             return;
           }
 
-          if (!routeName) {
-            return;
-          }
-
+          if (!routeName) return;
           const event = navigation.emit({
             type: "tabPress",
             target: routeKey,
             canPreventDefault: true,
           });
-
-          if (!isFocused && !event.defaultPrevented) {
-            // Special handling for protected routes
-            if (routeName === "Profile" && !isAuthenticated) {
-              setReturnRoute(routeName);
-              rootNavigation?.navigate("AuthStack", { screen: "Login" });
-              return;
-            }
-            navigation.navigate(routeName);
-          }
+          if (!isFocused && !event.defaultPrevented) navigation.navigate(routeName);
           resetTimer();
         };
 
@@ -294,13 +255,10 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
             preloadRoute(rootNavigation, composerRoute);
             return;
           }
-          // Module loading is synchronous in React Native. Keep it off the
-          // touch-down path so switching tabs always responds immediately.
           scheduleMainTabRouteWarmup(routeName);
         };
 
         const Icon = item.icon;
-
         const activeColor = palette.orange;
         const inactiveColor = palette.textMuted;
         const currentColor = isFocused && highlightVisible ? activeColor : inactiveColor;
@@ -328,13 +286,8 @@ export function SwipeableTabNavigator() {
   const [tabPreloadEnabled, setTabPreloadEnabled] = useState(false);
 
   useEffect(() => {
-    const cancelWarmup = scheduleMainTabScreensWarmup(() => {
-      setTabPreloadEnabled(true);
-    });
-
-    return () => {
-      cancelWarmup();
-    };
+    const cancelWarmup = scheduleMainTabScreensWarmup(() => setTabPreloadEnabled(true));
+    return () => cancelWarmup();
   }, []);
 
   return (
