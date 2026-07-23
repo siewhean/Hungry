@@ -1,7 +1,7 @@
 # Hungry Release 0.1 — Week 1 and Week 2 Completion Report
 
-Final implementation SHA: `da3d6dd4959af08ac13ef3404d1ed8a0863cc86d`
-Evidence update: documentation-only follow-up; all runtime evidence applies to the implementation SHA above
+Final implementation SHA: `91561aaca5204a81e00a6899eb81af7b89816f18`
+Evidence update: E2E harness repair; all runtime evidence applies to the implementation SHA above
 Report date: 2026-07-24
 Verdict: **No-Go — Week 1 and Week 2 are not complete.**
 
@@ -10,7 +10,7 @@ Verdict: **No-Go — Week 1 and Week 2 are not complete.**
 | Check | Result | Evidence |
 |---|---:|---|
 | Starting commit audited | Pass | `8a5822c99dc11e4f0aebac8349cb8485b42006f3` |
-| Latest `main` comparison | Pass | `origin/main...da3d6dd49 = 0 behind / 75 ahead` before evidence commit |
+| Latest `main` comparison | Pass | `origin/main...91561aaca = 0 behind / 76 ahead` before evidence follow-up |
 | PR #44 mergeability | Blocked | GitHub reports `UNSTABLE`; CI/Security executed zero steps because Actions billing/spend capacity must be restored |
 | PR #43 raw-catalog path retained | Pass | Catalog V2 and non-consumer contracts pass in `npm run test` |
 | Worktree at release closeout | Pending | Must be clean after this evidence commit |
@@ -25,9 +25,9 @@ Verdict: **No-Go — Week 1 and Week 2 are not complete.**
 | `npm run format:check` | Pass | All matched source files formatted |
 | `npm run audit:assets` | Pass | Asset budgets/provenance pass |
 | `node scripts/audit-release-01-catalog.mjs` | Pass, insufficient visual proof | 273 venues; 876 dishes; 5/273 image-backed venues (1.83%); 511/876 image-backed dishes (58.33%); 100% coordinates; 0 blocked URLs |
-| `npm run test` | Pass | 617 pass, 0 fail, 2 intentional credential-gated skips |
-| `npm run test:e2e` | Fail | Full suite remains blocked by legacy Developer Launcher harness expectations; Release auth subset is 3/3 pass on isolated port 8098 |
-| `npm run test:e2e:merchant-catalog` | Fail | Developer Launcher is not registered in non-dev Expo Web; test timed out at auth harness. Merchant is deferred from Release 0.1. |
+| `npm run test` | Pass | 618 pass, 0 fail, 2 intentional credential-gated skips |
+| `npm run test:e2e` | Pass locally | 29 local browser scenarios pass; 2 authenticated staging fallback/no-results scenarios remain credential-gated and are not counted as release proof |
+| `npm run test:e2e:merchant-catalog` | Pass | 1/1, isolated Expo Web mock-development launcher path |
 | `npx expo-doctor --non-interactive` | Invalid command form | CLI treats `--non-interactive` as an invalid path; replacement `npx expo-doctor` passes 18/18 |
 | `npm run audit:supabase:static` | Pass | Static RLS/grant/audit contract passes |
 | `npm run check:edge-functions` | Pass | Static edge-function checks passed |
@@ -121,7 +121,7 @@ The earlier Android build `b4eb5445-f343-4d15-8f18-7efd5aeba1cb` is queued for o
 | Primary journey completions | 0/5 | No completion evidence |
 | P0/P1 feedback retest build | Blocked | Depends on first tester build and findings |
 
-## 10. Issues fixed in `da3d6dd49`
+## 10. Issues fixed through `91561aaca`
 
 | ID | Severity | Fix | Verification |
 |---|---:|---|---|
@@ -131,6 +131,7 @@ The earlier Android build `b4eb5445-f343-4d15-8f18-7efd5aeba1cb` is queued for o
 | R01-IMG-01 | P0 | Raw catalog media requires explicit approval plus recognised rights state | Media contracts pass |
 | R01-PAGE-01 | P0 | Excel dish/stall three-page, cursor reset, source/release detail/menu and signed-out denial tests added | Targeted contracts pass |
 | R01-SEC-LOCAL | P0 | Updated Expo and transitive security dependencies | `npm audit` 0 vulnerabilities; Expo Doctor 18/18 |
+| R01-E2E-01 | P0 test harness | Isolated the mock-development launcher behind Expo config plus an E2E-only browser-storage request; release builds retain the signed-out pre-auth navigator | Full local Playwright suite passes; production-gate and mandatory-auth contracts pass |
 
 ## 11. Remaining blockers and owner action
 
