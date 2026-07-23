@@ -1,252 +1,220 @@
 # product-context.md — Product Requirements & App Context
 
-> Derived from Research/01_Product_Requirements_Document_Hungry.docx,
-> Research/02_App_Flow_Document_Hungry.docx, Research/03_Frontend_Guidelines_Hungry.docx.
-> Dictionary format. Agents read this before any feature work.
+> Derived from the Hungry product requirements, app-flow, frontend-guideline, research, and approved product-policy updates. Use this as stable product context; use `tasks/backlog.md` and `tasks/verification.md` for implementation status.
 
----
-
-## Core Identity
+## Core identity
 
 | Key | Value |
-|-----|-------|
-| Tagline | "Find the dish. Not just the restaurant." |
-| Secondary | "Find the dish. Makan nearby." |
-| Primary data object | Individual Dish (not venue/restaurant) |
-| Market | Singapore locals and residents (MVP) — Malaysia, Thailand etc. are V2+ |
-| Phase | Pre-backend: frontend mock-first demo |
-| Future backend | Supabase (PostgreSQL + PostGIS + pgvector), Claude Haiku for taste tagging |
+|---|---|
+| Tagline | “Find the dish. Not just the restaurant.” |
+| Secondary | “Find the dish. Makan nearby.” |
+| Primary data object | Individual dish, not only the venue/restaurant |
+| Primary market | Singapore locals, residents, and visitors |
+| Platform | Expo/React Native app plus public, merchant, and operational web surfaces |
+| Backend | Supabase PostgreSQL, Auth, Storage, RPCs, RLS, and Edge Functions |
+| Catalog continuity | Bundled rights-reviewed Excel catalog, authenticated read-only fallback only |
 
----
+## Mandatory account policy
 
-## Problem This App Solves
+Hungry does not support guest mode.
 
-| Problem | Magnitude |
-|---------|-----------|
-| Decision fatigue | 25,000+ licensed F&B in Singapore; users waste 35–55 min/week deciding what to eat |
-| No dish-first search | All competitors (Google Maps, Burpple, GrabFood) are restaurant-centric |
-| Hawker centres are black boxes | 114 hawker centres, 6,000+ stalls — no app organises by floor + unit + live ratings |
-| Food blogs are scattered | 60+ independent Singapore food blogs; unlinked from live discovery |
-| No taste-based filtering | Users think in cravings (spicy, rich, sweet) — not cuisine categories |
-| Hawker culture under-served | Burpple skews premium restaurants; UNESCO-inscribed hawker culture ignored |
-
----
-
-## User Personas
-
-### Persona 1 — The Indecisive Local (Primary)
-| Attribute | Value |
-|-----------|-------|
-| Archetype | Wei Ming, 26, NUS graduate, CBD office worker |
-| Goals | Find food near office in <3 min · discover new hawker stalls · order delivery |
-| Pain points | 10+ min deciding daily · Burpple too expensive for daily use · Google Maps doesn't say what to order |
-| Device | Android (primary) |
-
-### Persona 2 — Tourist / Expat Explorer
-| Attribute | Value |
-|-----------|-------|
-| Archetype | Sarah, 34, British expat, 6 months in Singapore |
-| Goals | Navigate hawker centres · discover authentic local dishes · delivery on weekday evenings |
-| Pain points | Overwhelmed by hawker centre complexity · blog articles not actionable · doesn't know what to order |
-| Device | iPhone (primary) |
-
-### Persona 3 — Hawker Stall Owner (Business User, V1.1)
-| Attribute | Value |
-|-----------|-------|
-| Archetype | Uncle Tan, 58, second-generation chicken rice stall |
-| Goals | Get found by younger audience · list delivery links · understand customer taste preferences |
-| Pain points | No digital presence · relies on regulars · no time to manage social media |
-| Business portal | Next.js web dashboard (separate from consumer app — out of scope for this phase) |
-
----
-
-## MVP Feature Set
-
-### Core Features (Must Have)
-
-| ID | Feature | Key Requirement |
-|----|---------|----------------|
-| F-001 | User accounts + Auth | Email + password, Google Sign-In, guest mode |
-| F-002 | Taste Profile (Onboarding) | 6-slider quiz seeding TasteVector; skip allowed |
-| F-003 | Location permissions | Opt-in; required for proximity ranking |
-| F-004 | Building Drill-Down | Tap map pin → floor tabs → stall grid. Loads <1.5s |
-| F-005 | Dish-First Search | Type "laksa" → all options across venues ranked by proximity + rating + taste match. Results <1s |
-| F-006 | Taste-Based Filtering | 6 sliders (sweet/spicy/sour/salty/rich/aromatic). Real-time results <500ms |
-| F-007 | Decide For Me | Tap FAB → best dish within 500m by cosine similarity. Result <2s |
-| F-008 | Dish Detail | Photo carousel, taste radar, price, tags, reviews, delivery buttons |
-| F-009 | Stall Detail | Name, floor/unit, hygiene grade, hours, closure notice, all dishes, directions |
-| F-010 | Dish-Level Reviews | Stars (1–5), text, taste tags, photos (up to 5, max 1MB each) |
-| F-011 | Favourites | Saved dishes; updates user taste vector (weighted avg, recency-weighted), and supports saved-list sorting by dish type, rating, taste profile, and location |
-| F-012 | Delivery Deep Links | GrabFood + Foodpanda universal links. Native app if installed, else web. Hidden if no URL. |
-
-### Secondary Features (V1.1 — Should Have)
-
-| ID | Feature | Notes |
-|----|---------|-------|
-| F-013 | Food Blog Aggregator (Reads tab) | RSS from 60+ blogs, 3–6h polling. Excerpt-only |
-| F-014 | Halal / Dietary Filter Toggle | Top-level: Halal, Vegetarian, Vegan, Pork-Free |
-| F-015 | Situation-Based Discovery | Quick presets: <15 min meal, Budget <S$8, Late night >10pm |
-| F-016 | NEA Closure Integration | Auto-refresh from data.gov.sg; 'Closed today' badge |
-| F-017 | Business Portal | Next.js web — claim listing, manage photos, add delivery links, analytics |
-| F-018 | 30-Second Tag Review | Quick path: taste tags + recommend toggle only |
-| F-019 | Photo Check-In | One-tap: take photo, tag dish, seeds taste database |
-
-### V2+ (Nice to Have — Do Not Implement Now)
-
-| ID | Feature |
-|----|---------|
-| F-020 | Taste similarity between friends |
-| F-021 | AI-predicted dish score |
-| F-022 | Busy hours heatmap |
-| F-023 | Telegram share integration |
-| F-024 | Annual Hungry Awards |
-| F-025 | Curated scenario guides |
-| F-026 | Offline saved maps |
-| F-027 | Instagram Story auto-logging |
-
----
-
-## Out of Scope (MVP, Never Add)
-
-```
-- In-app ordering or payment
-- Table reservations
-- Full social network / messaging
-- International markets
-- Desktop/web consumer app
-- Grocery, recipes, delivery logistics
-- In-app purchases
+```text
+Fresh user: Splash → Onboarding → Create Account / Sign In → verification when required → authenticated app
+Returning user: Splash → secure session restoration → authenticated app, or Login when no valid session exists
 ```
 
----
+Rules:
 
-## Key UX Specifications
+- MainTabs and app data surfaces must not mount before authentication.
+- Supabase is mandatory for authentication and every shared write.
+- Missing release configuration, failed login/signup, signed-out state, missing/invalid/revoked sessions, and deep-link bypass attempts remain outside the app shell.
+- Excel fallback is available only after a valid Supabase-authenticated session has been restored and an eligible catalog network/RPC/release outage occurs.
+- A successful empty search remains empty; fallback must not replace legitimate no-results.
 
-### Taste Vector
+Public privacy, terms, support, and account-deletion web pages may remain available outside the authenticated app.
+
+## Problem this product solves
+
+| Problem | Product response |
+|---|---|
+| Decision fatigue | Dish-first ranking, filters, nearby discovery, and Decide For Me |
+| Restaurant-centric competitors | Search and detail surfaces organised around individual dishes and stalls |
+| Hawker centres are difficult to navigate | Location, building, floor/unit, stall, menu, and map context |
+| Food information is scattered | Canonical catalog, source provenance, merchant input, and curated public content |
+| Cuisine filters do not express cravings | Taste vectors and taste/dietary intent filters |
+| Hawker culture is under-served | Singapore-first hawker and food-court coverage |
+
+## User personas
+
+### Persona 1 — The indecisive local
+
+| Attribute | Value |
+|---|---|
+| Archetype | Wei Ming, 26, CBD office worker |
+| Goals | Find food near work in under three minutes; discover stalls; remember favourites |
+| Pain points | Daily decision fatigue; venue-first tools do not explain what to order |
+| Device emphasis | Android |
+
+### Persona 2 — Tourist or expat explorer
+
+| Attribute | Value |
+|---|---|
+| Archetype | Sarah, 34, new to Singapore |
+| Goals | Navigate hawker centres; discover local dishes; understand stalls and menus |
+| Pain points | Hawker complexity; disconnected articles; unfamiliar dish names |
+| Device emphasis | iPhone |
+
+### Persona 3 — Hawker or merchant operator
+
+| Attribute | Value |
+|---|---|
+| Archetype | Uncle Tan, second-generation stall owner |
+| Goals | Be discoverable; maintain menu/profile; understand customer interest |
+| Pain points | Limited digital presence and time; fragmented platforms |
+| Product surface | Feature-gated merchant app/web surfaces backed by Supabase |
+
+## MVP feature set
+
+### Core features
+
+| ID | Feature | Key requirement |
+|---|---|---|
+| F-001 | Accounts and authentication | Mandatory account; email/password; approved OAuth providers when enabled; verification and recovery flows |
+| F-002 | Taste profile onboarding | Quiz seeds taste preferences; onboarding selections persist and migrate to the authenticated profile |
+| F-003 | Location | Clear permission purpose; manual fallback; app handles denial safely |
+| F-004 | Building/stall navigation | Map or list → building/stall/menu/detail context with safe missing-data states |
+| F-005 | Dish-first search | Search dishes, stalls, and areas with bounded server-side paging and location relevance |
+| F-006 | Taste/dietary filtering | Taste, dietary, cuisine, location, price, and availability filters where supported by canonical data |
+| F-007 | Decide For Me | Select a suitable nearby dish without false precision or fake data |
+| F-008 | Dish detail | Approved menu media, price, taste context, reviews, source and venue context |
+| F-009 | Stall detail | Stall identity, building/unit, hours, menu, directions, merchant claim state where enabled |
+| F-010 | Dish-level reviews | Authenticated rating/text/tags/media with storage ownership and moderation safeguards |
+| F-011 | Favourites | Supabase-backed saved dishes with useful sorting and reliable rehydration |
+| F-012 | Delivery links | Safe allowlisted external links; hide when unavailable |
+| F-013 | Posts and profile history | Supabase-backed public/private content with media, moderation, report/block/delete controls |
+| F-014 | Account settings | Profile, privacy, notification/device settings, password/recovery, and account deletion |
+
+### Feature-gated secondary surfaces
+
+These are not assumed production-ready merely because code exists:
+
+- merchant centre and merchant claim flows;
+- direct messages, comments, and stories;
+- Passport, missions, collections, checklists, and portfolios;
+- OCR and operations workflows;
+- floorplans and experimental map/drill-down variants;
+- AI creator/business tools;
+- public promotions and advanced analytics.
+
+Each requires its own flag, role boundary, canonical data source, moderation/security review, tests, and release evidence.
+
+## Explicit MVP exclusions
+
+- In-app ordering or payment unless separately approved and audited.
+- Table reservations.
+- Unmoderated public messaging or user-generated-content surfaces.
+- International-market assumptions in Singapore MVP data and copy.
+- Grocery, recipes, or delivery logistics.
+- Production use of mock providers, fake counts, placeholder claims, or generic stock food images.
+
+## Key UX specifications
+
+### Taste vector
 
 | Spec | Detail |
-|------|--------|
-| Dimensions | sweet · spicy · sour · salty · rich · aromatic |
-| Range (PRD) | 0.0–1.0 (floating point) |
-| Range (implementation) | 0–10 (integer) — map to/from 0.0–1.0 when backend integration begins |
-| Dish tagging | Claude Haiku (future); manual fixtures now |
-| User profile | Seeded from onboarding quiz; updated by favourites (weighted avg) |
-| Matching | Cosine similarity between user vector and dish vector |
+|---|---|
+| Dimensions | sweet, spicy, sour, salty, rich, aromatic |
+| Implementation range | Canonical implementation uses the domain model; adapters normalise external formats |
+| User profile | Seeded during onboarding and stored on the authenticated profile |
+| Matching | Explainable recommendation score; no unsupported confidence claims |
 
 ### Decide For Me
 
 | Spec | Detail |
-|------|--------|
-| Trigger | Orange FAB, bottom-right, 56dp, spring animation, haptic |
-| Algorithm | Best dish within 500m by cosine similarity to user taste vector |
-| Result | Large photo, dish name, stall, floor/unit, taste match % |
-| Time limit | <2 seconds |
-| No match | Expand radius option |
+|---|---|
+| Trigger | Prominent authenticated action with accessible label and safe haptics |
+| Inputs | User taste, dietary rules, selected/current location, canonical availability |
+| Result | Dish, stall, location context, source-backed image, and clear retry/expand behavior |
+| No match | Show a real no-results/expand-filter state; do not inject unrelated fallback results |
 
-### Favourites Sorting
+### Favourites sorting
 
-| Spec | Detail |
-|------|--------|
-| Primary object | Saved dishes in Profile > Favourites |
-| Dish-type grouping | Users can sort or group favourites by dish type, for example Chicken Rice, Nasi Lemak, Laksa |
-| Rating sort | Users can sort favourites by rating, highest to lowest first |
-| Taste-profile sort | Users can sort favourites by strongest taste signal or closest match to their personal taste vector |
-| Location sort | Users can sort favourites by nearest distance or by building / hawker centre |
-| Data dependency | Dish type must be explicit in mock data or derived from canonical dish taxonomy before UI rollout |
-| UX goal | Help users revisit saved dishes by craving, quality, and convenience instead of a flat chronological list |
+Users should be able to revisit saved dishes by:
 
-### Hygiene Grade Colours
+- dish type or taxonomy;
+- rating where real data exists;
+- taste similarity;
+- distance, area, building, or stall;
+- recent save/visit activity.
 
-| Grade | Colour | Hex |
-|-------|--------|-----|
-| A | Green | `#16A34A` (success) |
-| B | Amber | `#D97706` (warning) |
-| C | Orange | `#E8531E` (orange brand) |
-| D | Red | `#DC2626` (error) |
+### Location and permissions
 
-### Map Pin Colours
+- Explain location use before or with the native permission request.
+- Permission denial must not crash or trap the user.
+- Manual area selection remains available.
+- Do not collect or retain precise location beyond the disclosed product need.
 
-| Building Type | Colour | Hex |
-|--------------|--------|-----|
-| `hawker_centre` | Orange | `#E8531E` |
-| `food_court` | Teal | `#14B8A6` |
-| `restaurant` | Grey | `#6B7280` |
+### Media
 
-### Delivery Buttons
+- Prefer menu-derived dish media.
+- Stall cards use stall logo → stall/venue image → representative menu dish image.
+- Reject generic placeholder providers such as Unsplash for production catalog cards.
+- Display only rights-approved media and preserve provenance.
 
-| Platform | Brand Colour | Hex |
-|----------|-------------|-----|
-| GrabFood | Green | `#00B14F` |
-| Foodpanda | Pink | `#D70F64` |
-| Behaviour | Universal link — native app if installed, else webUrl |
-| When to hide | When `deliveryLinks` array is empty |
+### Authenticated access matrix
 
-### Guest vs Authenticated Access
+| State | Expected behavior |
+|---|---|
+| Fresh install | Splash then local onboarding |
+| Onboarding complete, no account | Mandatory Create Account / Sign In |
+| Authenticated, Supabase healthy | Full approved app and Supabase reads/writes |
+| Authenticated, eligible catalog outage | Read-only Excel catalog continuity; writes unavailable with clear feedback |
+| Signed out | Auth flow only; no MainTabs or Excel catalog |
+| Missing/invalid/revoked session | Clear sensitive state and return to auth |
+| Missing production Supabase config | Blocking configuration/service-unavailable state |
 
-| Action | Guest | Authenticated |
-|--------|-------|--------------|
-| Browse map | No — redirect to login | Yes |
-| Dish/stall detail | No — redirect to login | Yes |
-| Search | No — redirect to login | Yes |
-| Reads | No — redirect to login | Yes |
-| Favourite a dish | No — redirect to login | Yes |
-| Write a review | No — redirect to login | Yes |
-| View profile | No — redirect to login | Yes |
-| Taste profile | No — redirect to login | Yes |
+## Performance and quality targets
 
----
+| Action | Target or principle |
+|---|---|
+| Cold start to usable | Under three seconds on representative devices where practical |
+| Search response | Fast perceived response; staging p95 target documented in performance QA |
+| Detail load | Bounded request, skeleton/loading/error handling, no full-catalog hydration |
+| Tab interaction | Immediate response; prefetch must not block navigation |
+| Catalog paging | Cursor-paged and deduplicated; do not mount the full catalog at once |
+| Image loading | Cached, correct aspect ratio, safe failure state, no placeholder-host fallback |
+| Offline/outage | Read continuity only when policy allows; no false write success |
 
-## Performance Targets (Reference — Not enforced in mock-first phase)
+## Current data sources
 
-| Action | Target |
-|--------|--------|
-| Search results | <1 second |
-| Taste filter update | <500ms |
-| Building drill-down load | <1.5 seconds |
-| Decide For Me | <2 seconds |
-| Taste profile update after favourite | <3 seconds |
-| App cold start to interactive | <3 seconds |
+| Data | Canonical source |
+|---|---|
+| Authentication and account | Supabase Auth and profile tables |
+| Shared user/merchant content | Supabase database and storage under RLS |
+| Release catalog | Supabase release-versioned catalog/RPCs |
+| Catalog outage continuity | Bundled validated Excel runtime catalog after authentication |
+| Canonical source work | Versioned workbook and audited enrichment/reconciliation pipelines |
+| Location/building data | Approved imported/enriched sources with provenance |
+| Analytics/crash data | Configured PostHog/Sentry sinks with privacy scrubbing |
 
----
+## Tone and content rules
 
-## Data Sources (Future Backend)
+| Do | Do not |
+|---|---|
+| Direct, warm, locally knowledgeable | Corporate jargon or exaggerated claims |
+| Use specific real dish and stall context | Generic “amazing restaurants” copy |
+| Use approved menu/stall photos | Unsplash, generic stock food, or unapproved AI food imagery |
+| Explain source/freshness when relevant | Present uncertain data as verified fact |
+| Use accessible labels and clear errors | Rely on icon-only or color-only meaning |
 
-| Data | Source | Notes |
-|------|--------|-------|
-| Eating establishments | SFA GeoJSON from data.gov.sg | GPS coords, floor, unit |
-| Hygiene grades | NEA dataset | A/B/C/D |
-| Hawker closures | NEA "Dates of Hawker Centres Closure" from data.gov.sg | Scheduled cleaning |
-| Postal codes | OneMap SG API | Free |
-| Food blogs | RSS feeds (60+ blogs) | Poll every 3–6 hours |
-| Delivery URLs | Stall owner input + scraper | Updated weekly |
-| Taste vectors | Claude Haiku batch tagging | ~S$0.01–0.05 per dish |
+## Current navigation reference
 
----
+The authenticated consumer shell currently centres on:
 
-## Tone of Voice Rules
+- Home feed;
+- Discover/search;
+- Create post action;
+- Review;
+- Profile and settings.
 
-| Do | Don't |
-|----|-------|
-| Direct, warm, local | Corporate jargon |
-| Singlish references acceptable | Excessive exclamation marks |
-| Knowledgeable food friend | Generic stock photography |
-| "Find the dish. Makan nearby." | "Discover amazing restaurants!" |
-| Show real dish photos | AI-generated food imagery |
-| Specific stall/dish names | Vague testimonials |
-
----
-
-## Tab Structure Reference
-
-The PRD defines 4 main tabs. Current implementation has 5. Reconciliation:
-
-| PRD Tab | PRD Screen | Current Implementation |
-|---------|-----------|----------------------|
-| Discover (map pin) | Home Map Screen | Maps tab |
-| Search (magnifying glass) | Dish Search | Discover tab |
-| Reads (newspaper) | Blog Feed | Reads (via feature flag + Home) |
-| Profile (person) | User Profile | Profile tab |
-| — | — | Home tab (feed) — added in implementation |
-| — | — | Review tab — surfaced as tab in implementation |
-
-> Note: Tab structure may be reconciled in a future sprint. Do not reorder tabs without explicit instruction.
+Root routes provide details, browse/search, map, activity, auth/account, and feature-gated advanced or merchant surfaces. `src/app/navigation/navigationTypes.ts`, navigator registration, feature flags, and route guards are the implementation source of truth. Do not reorder tabs or expose hidden routes without explicit product approval and verification.
