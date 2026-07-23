@@ -7,14 +7,25 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import type { MainTabParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AccessibleImage, AppText, EmptyState, Skeleton } from "@/components/ui";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { isRelease01BlockedImageUrl } from "@/constants/release01";
 import type {
   CatalogPageRequest,
   CatalogRawDishCard,
   CatalogRawVenueCard,
 } from "@/lib/services/catalog";
+import { CatalogAccessError } from "@/lib/services/catalog";
+import {
+  clearCatalogDiagnostics,
+  getCatalogDiagnosticsSnapshot,
+  recordCatalogDiagnostic,
+  summarizeCatalogRequest,
+  type CatalogDiagnosticEvent,
+} from "@/lib/services/catalog/diagnostics";
 import { getCatalogRawService } from "@/lib/services/serviceProvider";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useHungryTheme } from "@/theme";
+import { CatalogDiagnosticsModal } from "./CatalogDiagnosticsModal";
 
 type RootNavigation = CompositeNavigationProp<
   MaterialTopTabNavigationProp<MainTabParamList, "Discover">,
@@ -44,6 +55,11 @@ function requestForFilter(
     cuisineTags: filter === "japanese" || filter === "western" ? [filter] : [],
     maxPrice: filter === "value" ? 8 : undefined,
   };
+}
+
+function displayImageUrl(value: string | null | undefined): string | undefined {
+  const url = value?.trim();
+  return url && !isRelease01BlockedImageUrl(url) ? url : undefined;
 }
 
 function uniqueDishes(items: CatalogRawDishCard[]) {
@@ -78,6 +94,8 @@ function CatalogDiscoverSkeleton() {
 function RawDishCard({ item, releaseId }: { item: CatalogRawDishCard; releaseId?: string }) {
   const navigation = useNavigation<RootNavigation>();
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
+  const imageUrl = displayImageUrl(item.imageUrl);
+
   return (
     <Pressable
       accessibilityLabel={`Open ${item.name}`}
@@ -97,12 +115,12 @@ function RawDishCard({ item, releaseId }: { item: CatalogRawDishCard; releaseId?
         }}
       >
         <View style={{ backgroundColor: palette.bgSoft, height: 118 }}>
-          {item.imageUrl ? (
+          {imageUrl ? (
             <AccessibleImage
               accessibilityLabel={`${item.name} menu image`}
               cachePolicy="memory-disk"
               contentFit="cover"
-              source={{ uri: item.imageUrl }}
+              source={{ uri: imageUrl }}
               style={{ height: "100%", width: "100%" }}
             />
           ) : (
@@ -158,7 +176,9 @@ function RawDishCard({ item, releaseId }: { item: CatalogRawDishCard; releaseId?
 function RawVenueRow({ item, releaseId }: { item: CatalogRawVenueCard; releaseId?: string }) {
   const navigation = useNavigation<RootNavigation>();
   const { componentRadii, palette, spacing } = useHungryTheme();
-  const imageUrl = item.imageUrl ?? item.representativeDish?.imageUrl;
+  const imageUrl =
+    displayImageUrl(item.imageUrl) ?? displayImageUrl(item.representativeDish?.imageUrl);
+
   return (
     <Pressable
       accessibilityLabel={`Open ${item.name}`}
@@ -229,16 +249,37 @@ export function CatalogDiscoverHome() {
   const [totals, setTotals] = useState({ dishes: 0, venues: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [diagnosticsVisible, setDiagnosticsVisible] = useState(false);
+  const [diagnosticEvents, setDiagnosticEvents] = useState<CatalogDiagnosticEvent[]>(() =>
+    getCatalogDiagnosticsSnapshot(),
+  );
   const requestVersion = useRef(0);
   const request = useMemo(() => requestForFilter(filter, coordinate), [coordinate, filter]);
   const isOfflineCatalog = Boolean(releaseId?.startsWith("excel-fallback"));
 
+  const refreshDiagnosticEvents = useCallback(() => {
+    setDiagnosticEvents(getCatalogDiagnosticsSnapshot());
+  }, []);
+
   const load = useCallback(async () => {
+    const startedAt = Date.now();
     if (!service) {
-      setError("The authenticated catalog service is unavailable.");
+      const unavailableMessage = "The authenticated catalog service is unavailable.";
+      setError(unavailableMessage);
       setLoading(false);
+      recordCatalogDiagnostic({
+        operation: "discover",
+        durationMs: Date.now() - startedAt,
+        errorKind: "service_unavailable",
+        releaseId: undefined,
+        request: summarizeCatalogRequest(request),
+        resultCount: 0,
+        succeeded: false,
+      });
+      refreshDiagnosticEvents();
       return;
     }
+
     const version = ++requestVersion.current;
     setLoading(true);
     setError(null);
@@ -248,23 +289,45 @@ export function CatalogDiscoverHome() {
         service.listVenues({ ...request, limit: 24 }),
       ]);
       if (version !== requestVersion.current) return;
-      setDishes(uniqueDishes(dishPage.items));
+      const nextDishes = uniqueDishes(dishPage.items);
+      const nextReleaseId = dishPage.releaseId || venuePage.releaseId || undefined;
+      setDishes(nextDishes);
       setVenues(venuePage.items);
-      setTotals({
-        dishes: dishPage.totals.dishes,
-        venues: venuePage.totals.venues,
+      setTotals({ dishes: dishPage.totals.dishes, venues: venuePage.totals.venues });
+      setReleaseId(nextReleaseId);
+      recordCatalogDiagnostic({
+        operation: "discover",
+        durationMs: Date.now() - startedAt,
+        releaseId: nextReleaseId,
+        request: summarizeCatalogRequest(request),
+        resultCount: nextDishes.length + venuePage.items.length,
+        succeeded: true,
       });
-      setReleaseId(dishPage.releaseId || venuePage.releaseId || undefined);
     } catch (loadError) {
       if (version !== requestVersion.current) return;
       setDishes([]);
       setVenues([]);
       setReleaseId(undefined);
       setError(loadError instanceof Error ? loadError.message : "Could not load the catalog.");
+      recordCatalogDiagnostic({
+        operation: "discover",
+        durationMs: Date.now() - startedAt,
+        errorKind:
+          loadError instanceof CatalogAccessError
+            ? loadError.kind
+            : loadError instanceof Error
+              ? loadError.name
+              : "unknown",
+        releaseId: undefined,
+        request: summarizeCatalogRequest(request),
+        resultCount: 0,
+        succeeded: false,
+      });
     } finally {
       if (version === requestVersion.current) setLoading(false);
+      refreshDiagnosticEvents();
     }
-  }, [request, service]);
+  }, [refreshDiagnosticEvents, request, service]);
 
   useEffect(() => {
     void load();
@@ -278,215 +341,279 @@ export function CatalogDiscoverHome() {
     [navigation],
   );
 
-  if (loading && !dishes.length && !venues.length) return <CatalogDiscoverSkeleton />;
+  const diagnostics = (
+    <CatalogDiagnosticsModal
+      events={diagnosticEvents}
+      onClear={() => {
+        clearCatalogDiagnostics();
+        refreshDiagnosticEvents();
+      }}
+      onClose={() => setDiagnosticsVisible(false)}
+      releaseId={releaseId}
+      totals={totals}
+      visible={diagnosticsVisible}
+    />
+  );
+
+  if (loading && !dishes.length && !venues.length) {
+    return (
+      <>
+        <CatalogDiscoverSkeleton />
+        {diagnostics}
+      </>
+    );
+  }
   if (error && !dishes.length && !venues.length) {
     return (
-      <EmptyState
-        body={error}
-        ctaLabel="Retry"
-        onPress={() => void load()}
-        title="Catalog unavailable"
-      />
+      <>
+        <EmptyState
+          body={error}
+          ctaLabel="Retry"
+          onPress={() => void load()}
+          title="Catalog unavailable"
+        />
+        {diagnostics}
+      </>
     );
   }
   if (!dishes.length && !venues.length) {
     const hasFilter = filter !== "all";
     return (
-      <EmptyState
-        body={
-          hasFilter
-            ? "Try another filter or browse the full authenticated directory."
-            : "Try again in a moment."
-        }
-        ctaLabel={hasFilter ? "Clear filter" : "Retry"}
-        onPress={hasFilter ? () => setFilter("all") : () => void load()}
-        title={hasFilter ? "No nearby matches" : "No nearby catalog results"}
-      />
+      <>
+        <EmptyState
+          body={
+            hasFilter
+              ? "Try another filter or browse the full authenticated directory."
+              : "Try again in a moment."
+          }
+          ctaLabel={hasFilter ? "Clear filter" : "Retry"}
+          onPress={hasFilter ? () => setFilter("all") : () => void load()}
+          title={hasFilter ? "No nearby matches" : "No nearby catalog results"}
+        />
+        {diagnostics}
+      </>
     );
   }
 
   return (
-    <ScrollView
-      contentContainerStyle={{
-        gap: spacing[5],
-        paddingBottom: spacing[12],
-        paddingHorizontal: semanticSpacing.screenEdge,
-        paddingTop: spacing[3],
-      }}
-      refreshControl={
-        <RefreshControl
-          refreshing={loading}
-          onRefresh={() => void load()}
-          tintColor={palette.orange}
-        />
-      }
-      showsVerticalScrollIndicator={false}
-      style={{ backgroundColor: palette.bg }}
-      testID="catalog-discover-screen"
-    >
-      <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
-        <View style={{ gap: spacing[1] }}>
-          <AppText variant="h2">Discover</AppText>
-          <AppText tone="secondary" variant="micro">
-            {totals.dishes.toLocaleString()} dishes · {totals.venues.toLocaleString()} stalls
-          </AppText>
-          <View
-            accessibilityLabel={isOfflineCatalog ? "Offline catalog active" : "Live catalog active"}
-            style={{
-              alignSelf: "flex-start",
-              backgroundColor: isOfflineCatalog ? palette.bgSoft : palette.surface,
-              borderColor: isOfflineCatalog ? palette.orange : palette.border,
-              borderRadius: radii.pill,
-              borderWidth: 1,
-              paddingHorizontal: spacing[2],
-              paddingVertical: spacing[1],
-            }}
-            testID={isOfflineCatalog ? "catalog-source-excel" : "catalog-source-supabase"}
-          >
-            <AppText
-              style={{ color: isOfflineCatalog ? palette.orange : palette.textSecondary }}
-              variant="micro"
-            >
-              {isOfflineCatalog ? "Offline catalog" : "Live catalog"}
-            </AppText>
-          </View>
-        </View>
-        <Pressable
-          accessibilityLabel="Open map"
-          accessibilityRole="button"
-          onPress={() => navigation.navigate("DiscoverMap")}
-          style={{ backgroundColor: palette.bgSoft, borderRadius: radii.md, padding: spacing[3] }}
-        >
-          <MapPinned color={palette.text} size={20} />
-        </Pressable>
-      </View>
-
-      <Pressable
-        accessibilityLabel="Search dishes and stalls"
-        accessibilityRole="button"
-        onPress={() => openBrowse("dishes")}
-        style={{
-          alignItems: "center",
-          backgroundColor: palette.surface,
-          borderColor: palette.border,
-          borderRadius: radii.lg,
-          borderWidth: 1,
-          flexDirection: "row",
-          gap: spacing[2],
-          padding: spacing[3],
-        }}
-      >
-        <Search color={palette.textMuted} size={20} />
-        <AppText tone="muted" variant="body">
-          Dishes, stalls, or hawker centres…
-        </AppText>
-      </Pressable>
-
+    <>
       <ScrollView
-        contentContainerStyle={{ gap: spacing[2] }}
-        horizontal
-        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{
+          gap: spacing[5],
+          paddingBottom: spacing[12],
+          paddingHorizontal: semanticSpacing.screenEdge,
+          paddingTop: spacing[3],
+        }}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={() => void load()}
+            tintColor={palette.orange}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+        style={{ backgroundColor: palette.bg }}
+        testID="catalog-discover-screen"
       >
-        {FILTERS.map((option) => {
-          const active = filter === option.id;
-          return (
+        <View
+          style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}
+        >
+          <View style={{ gap: spacing[1] }}>
+            <AppText variant="h2">Discover</AppText>
+            <AppText tone="secondary" variant="micro">
+              {totals.dishes.toLocaleString()} dishes · {totals.venues.toLocaleString()} stalls
+            </AppText>
             <Pressable
-              key={option.id}
+              accessibilityLabel={
+                isOfflineCatalog ? "Offline catalog active" : "Live catalog active"
+              }
+              accessibilityHint={
+                FEATURE_FLAGS.catalogDiagnosticsEnabled
+                  ? "Long press to open catalog diagnostics"
+                  : undefined
+              }
               accessibilityRole="button"
-              accessibilityState={{ selected: active }}
-              onPress={() => setFilter(option.id)}
-              style={{
-                backgroundColor: active ? palette.orange : palette.bgSoft,
-                borderRadius: radii.pill,
-                paddingHorizontal: spacing[3],
-                paddingVertical: spacing[2],
+              disabled={!FEATURE_FLAGS.catalogDiagnosticsEnabled}
+              onLongPress={() => {
+                refreshDiagnosticEvents();
+                setDiagnosticsVisible(true);
               }}
+              style={{
+                alignSelf: "flex-start",
+                backgroundColor: isOfflineCatalog ? palette.bgSoft : palette.surface,
+                borderColor: isOfflineCatalog ? palette.orange : palette.border,
+                borderRadius: radii.pill,
+                borderWidth: 1,
+                paddingHorizontal: spacing[2],
+                paddingVertical: spacing[1],
+              }}
+              testID={isOfflineCatalog ? "catalog-source-excel" : "catalog-source-supabase"}
             >
               <AppText
-                style={{ color: active ? palette.textOnOrange : palette.text }}
-                variant="bodyBold"
+                style={{ color: isOfflineCatalog ? palette.orange : palette.textSecondary }}
+                variant="micro"
               >
-                {option.label}
+                {isOfflineCatalog ? "Offline catalog" : "Live catalog"}
               </AppText>
             </Pressable>
-          );
-        })}
-      </ScrollView>
+          </View>
+          {FEATURE_FLAGS.mapEnabled ? (
+            <Pressable
+              accessibilityLabel="Open map"
+              accessibilityRole="button"
+              onPress={() => navigation.navigate("DiscoverMap")}
+              style={{
+                backgroundColor: palette.bgSoft,
+                borderRadius: radii.md,
+                padding: spacing[3],
+              }}
+            >
+              <MapPinned color={palette.text} size={20} />
+            </Pressable>
+          ) : null}
+        </View>
 
-      <View style={{ flexDirection: "row", gap: spacing[3] }}>
         <Pressable
-          accessibilityLabel="Browse stalls and restaurants"
-          accessibilityRole="button"
-          onPress={() => openBrowse("stalls")}
-          style={{
-            backgroundColor: palette.bgSoft,
-            borderRadius: radii.lg,
-            flex: 1,
-            gap: spacing[2],
-            minHeight: 116,
-            padding: spacing[3],
-          }}
-        >
-          <Utensils color={palette.orange} size={26} />
-          <AppText variant="bodyBold">Stalls & Restaurants</AppText>
-          <AppText tone="secondary" variant="micro">
-            Browse the full directory
-          </AppText>
-        </Pressable>
-        <Pressable
-          accessibilityLabel="Browse dishes"
+          accessibilityLabel="Search dishes and stalls"
           accessibilityRole="button"
           onPress={() => openBrowse("dishes")}
           style={{
-            backgroundColor: palette.bgSoft,
+            alignItems: "center",
+            backgroundColor: palette.surface,
+            borderColor: palette.border,
             borderRadius: radii.lg,
-            flex: 1,
+            borderWidth: 1,
+            flexDirection: "row",
             gap: spacing[2],
-            minHeight: 116,
             padding: spacing[3],
           }}
         >
-          <Search color={palette.orange} size={26} />
-          <AppText variant="bodyBold">Dishes</AppText>
-          <AppText tone="secondary" variant="micro">
-            Find your craving first
+          <Search color={palette.textMuted} size={20} />
+          <AppText tone="muted" variant="body">
+            Dishes, stalls, or hawker centres…
           </AppText>
         </Pressable>
-      </View>
 
-      <View style={{ gap: spacing[3] }}>
-        <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
-          <AppText variant="h3">Nearby dishes</AppText>
-          <Pressable accessibilityRole="button" onPress={() => openBrowse("dishes")}>
-            <AppText style={{ color: palette.orange }} variant="bodyBold">
-              See all
-            </AppText>
-          </Pressable>
-        </View>
         <ScrollView
-          contentContainerStyle={{ gap: spacing[3] }}
+          contentContainerStyle={{ gap: spacing[2] }}
           horizontal
           showsHorizontalScrollIndicator={false}
         >
-          {dishes.slice(0, 8).map((item) => (
-            <RawDishCard key={item.id} item={item} releaseId={releaseId} />
-          ))}
+          {FILTERS.map((option) => {
+            const active = filter === option.id;
+            return (
+              <Pressable
+                key={option.id}
+                accessibilityLabel={`${option.label} filter`}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+                onPress={() => setFilter(option.id)}
+                style={{
+                  backgroundColor: active ? palette.orange : palette.bgSoft,
+                  borderRadius: radii.pill,
+                  paddingHorizontal: spacing[3],
+                  paddingVertical: spacing[2],
+                }}
+              >
+                <AppText
+                  style={{ color: active ? palette.textOnOrange : palette.text }}
+                  variant="bodyBold"
+                >
+                  {option.label}
+                </AppText>
+              </Pressable>
+            );
+          })}
         </ScrollView>
-      </View>
 
-      <View style={{ gap: spacing[2] }}>
-        <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
-          <AppText variant="h3">Stalls near you</AppText>
-          <Pressable accessibilityRole="button" onPress={() => openBrowse("stalls")}>
-            <AppText style={{ color: palette.orange }} variant="bodyBold">
-              See all
+        <View style={{ flexDirection: "row", gap: spacing[3] }}>
+          <Pressable
+            accessibilityLabel="Browse stalls and restaurants"
+            accessibilityRole="button"
+            onPress={() => openBrowse("stalls")}
+            style={{
+              backgroundColor: palette.bgSoft,
+              borderRadius: radii.lg,
+              flex: 1,
+              gap: spacing[2],
+              minHeight: 116,
+              padding: spacing[3],
+            }}
+          >
+            <Utensils color={palette.orange} size={26} />
+            <AppText variant="bodyBold">Stalls & Restaurants</AppText>
+            <AppText tone="secondary" variant="micro">
+              Browse the full directory
+            </AppText>
+          </Pressable>
+          <Pressable
+            accessibilityLabel="Browse dishes"
+            accessibilityRole="button"
+            onPress={() => openBrowse("dishes")}
+            style={{
+              backgroundColor: palette.bgSoft,
+              borderRadius: radii.lg,
+              flex: 1,
+              gap: spacing[2],
+              minHeight: 116,
+              padding: spacing[3],
+            }}
+          >
+            <Search color={palette.orange} size={26} />
+            <AppText variant="bodyBold">Dishes</AppText>
+            <AppText tone="secondary" variant="micro">
+              Find your craving first
             </AppText>
           </Pressable>
         </View>
-        {venues.slice(0, 8).map((item) => (
-          <RawVenueRow key={item.id} item={item} releaseId={releaseId} />
-        ))}
-      </View>
-    </ScrollView>
+
+        <View style={{ gap: spacing[3] }}>
+          <View
+            style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}
+          >
+            <AppText variant="h3">Nearby dishes</AppText>
+            <Pressable
+              accessibilityLabel="See all nearby dishes"
+              accessibilityRole="button"
+              onPress={() => openBrowse("dishes")}
+            >
+              <AppText style={{ color: palette.orange }} variant="bodyBold">
+                See all
+              </AppText>
+            </Pressable>
+          </View>
+          <ScrollView
+            contentContainerStyle={{ gap: spacing[3] }}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+          >
+            {dishes.slice(0, 8).map((item) => (
+              <RawDishCard key={item.id} item={item} releaseId={releaseId} />
+            ))}
+          </ScrollView>
+        </View>
+
+        <View style={{ gap: spacing[2] }}>
+          <View
+            style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}
+          >
+            <AppText variant="h3">Stalls near you</AppText>
+            <Pressable
+              accessibilityLabel="See all nearby stalls"
+              accessibilityRole="button"
+              onPress={() => openBrowse("stalls")}
+            >
+              <AppText style={{ color: palette.orange }} variant="bodyBold">
+                See all
+              </AppText>
+            </Pressable>
+          </View>
+          {venues.slice(0, 8).map((item) => (
+            <RawVenueRow key={item.id} item={item} releaseId={releaseId} />
+          ))}
+        </View>
+      </ScrollView>
+      {diagnostics}
+    </>
   );
 }
