@@ -1,22 +1,23 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { View, StyleSheet } from "react-native";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { StyleSheet, View } from "react-native";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
-import type { MaterialTopTabBarProps } from "@react-navigation/material-top-tabs";
-import type { NavigationProp } from "@react-navigation/native";
-import { House, Compass, BookOpenText, Plus, User } from "lucide-react-native";
+import type {
+  MaterialTopTabBarProps,
+  MaterialTopTabNavigationProp,
+} from "@react-navigation/material-top-tabs";
+import { useNavigation, type NavigationProp } from "@react-navigation/native";
+import { BookOpenText, Compass, House, Plus, User } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { HomeFeedScreen } from "@/app/screens/home/HomeFeedScreen";
 import { AppBottomTabItem, Skeleton } from "@/components/ui";
-import { preloadRoute } from "@/features/navigation/prefetch";
-import { useHungryTheme } from "@/theme";
-import { useSessionStore } from "@/store/useSessionStore";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
-import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
+import { preloadRoute } from "@/features/navigation/prefetch";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
+import { useHungryTheme } from "@/theme";
+import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
 
 const Tab = createMaterialTopTabNavigator<MainTabParamList>();
-const MAIN_TAB_PRELOAD_DISTANCE = 3;
+const MAIN_TAB_PRELOAD_DISTANCE = 2;
 const MAIN_TAB_WARMUP_TIMEOUT_MS = 350;
 const MAIN_TAB_WARMUP_FALLBACK_DELAY_MS = 120;
 const MAIN_TAB_INTENT_WARMUP_FALLBACK_DELAY_MS = 0;
@@ -40,10 +41,10 @@ function createTabScreenLoader(loadModule: () => TabScreenComponent): TabScreenL
   };
 }
 
-const reviewScreenLoader = createTabScreenLoader(() => {
-  const { ReviewFeedScreen } =
-    require("@/app/screens/review/ReviewFeedScreen") as typeof import("@/app/screens/review/ReviewFeedScreen");
-  return ReviewFeedScreen as TabScreenComponent;
+const homeScreenLoader = createTabScreenLoader(() => {
+  const { HomeFeedScreen } =
+    require("@/app/screens/home/HomeFeedScreen") as typeof import("@/app/screens/home/HomeFeedScreen");
+  return (() => <HomeFeedScreen mode="social" />) as TabScreenComponent;
 });
 
 const discoverScreenLoader = createTabScreenLoader(() => {
@@ -52,17 +53,35 @@ const discoverScreenLoader = createTabScreenLoader(() => {
   return DiscoverEntryScreen as TabScreenComponent;
 });
 
-const profileStackLoader = createTabScreenLoader(() => {
+const reviewScreenLoader = createTabScreenLoader(() => {
+  const { ReviewFeedScreen } =
+    require("@/app/screens/review/ReviewFeedScreen") as typeof import("@/app/screens/review/ReviewFeedScreen");
+  return ReviewFeedScreen as TabScreenComponent;
+});
+
+const profileScreenLoader = createTabScreenLoader(() => {
+  if (FEATURE_FLAGS.release01CoreOnly) {
+    const { ReleaseProfileScreen } =
+      require("@/app/screens/profile/ReleaseProfileScreen") as typeof import("@/app/screens/profile/ReleaseProfileScreen");
+    return ReleaseProfileScreen as TabScreenComponent;
+  }
   const { ProfileStack } =
     require("@/app/screens/profile/ProfileStack") as typeof import("@/app/screens/profile/ProfileStack");
   return ProfileStack as TabScreenComponent;
 });
 
-const mainTabScreenLoaders = [discoverScreenLoader, reviewScreenLoader, profileStackLoader];
+const mainTabScreenLoaders = [
+  discoverScreenLoader,
+  profileScreenLoader,
+  ...(FEATURE_FLAGS.socialFeedEnabled ? [homeScreenLoader] : []),
+  ...(FEATURE_FLAGS.reviewCreationEnabled ? [reviewScreenLoader] : []),
+];
+
 const mainTabScreenLoaderByRouteName: Partial<Record<keyof MainTabParamList, TabScreenLoader>> = {
+  Home: FEATURE_FLAGS.socialFeedEnabled ? homeScreenLoader : discoverScreenLoader,
   Discover: discoverScreenLoader,
-  Review: reviewScreenLoader,
-  Profile: profileStackLoader,
+  Review: FEATURE_FLAGS.reviewCreationEnabled ? reviewScreenLoader : discoverScreenLoader,
+  Profile: profileScreenLoader,
 };
 
 function warmMainTabRoute(routeName?: string) {
@@ -97,7 +116,6 @@ function TabScreenLoadingPlaceholder() {
         <View style={{ flexDirection: "row", gap: spacing[3], paddingHorizontal: spacing[4] }}>
           <Skeleton width={108} height={44} borderRadius={radii.pill} />
           <Skeleton width={136} height={44} borderRadius={radii.pill} />
-          <Skeleton width={96} height={44} borderRadius={radii.pill} />
         </View>
         <View style={{ gap: spacing[3], paddingHorizontal: spacing[4] }}>
           <Skeleton width="56%" height={24} borderRadius={radii.sm} />
@@ -166,20 +184,27 @@ function scheduleMainTabScreensWarmup(onComplete: () => void) {
   };
 }
 
-function HomeWrapper() {
-  return <HomeFeedScreen mode="social" />;
-}
-
-const ReviewWrapper = createDeferredTabScreen(reviewScreenLoader);
+const HomeWrapper = createDeferredTabScreen(homeScreenLoader);
 const DiscoverWrapper = createDeferredTabScreen(discoverScreenLoader);
-const ProfileWrapper = createDeferredTabScreen(profileStackLoader);
+const ReviewWrapper = createDeferredTabScreen(reviewScreenLoader);
+const ProfileWrapper = createDeferredTabScreen(profileScreenLoader);
+
+function ReleaseLandingRedirect() {
+  const navigation = useNavigation<MaterialTopTabNavigationProp<MainTabParamList>>();
+
+  useEffect(() => {
+    navigation.navigate("Discover");
+  }, [navigation]);
+
+  return <DiscoverWrapper />;
+}
 
 function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
   const { componentSizes, palette, spacing } = useHungryTheme();
   const styles = createStyles();
   const insets = useSafeAreaInsets();
   const [highlightVisible, setHighlightVisible] = useState(true);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rootNavigation = navigation.getParent<NavigationProp<RootStackParamList>>();
 
   const resetTimer = useCallback(() => {
@@ -195,15 +220,18 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
     };
   }, [state.index, resetTimer]);
 
-  const isAuthenticated = useSessionStore((store) => store.isAuthenticated);
-  const setReturnRoute = useSessionStore((store) => store.setReturnRoute);
   const routeByName = new Map(state.routes.map((route) => [route.name, route]));
-  const composerRoute = FEATURE_FLAGS.prototypeRoutesEnabled ? "PostComposerV2" : "Post";
   const tabItems = [
-    { key: "Home", route: routeByName.get("Home"), icon: House, label: "Home" },
+    ...(FEATURE_FLAGS.socialFeedEnabled
+      ? [{ key: "Home", route: routeByName.get("Home"), icon: House, label: "Home" }]
+      : []),
     { key: "Discover", route: routeByName.get("Discover"), icon: Compass, label: "Discover" },
-    { key: "Create", isCreateAction: true, icon: Plus, label: "Create post" },
-    { key: "Review", route: routeByName.get("Review"), icon: BookOpenText, label: "Review" },
+    ...(FEATURE_FLAGS.postCreationEnabled
+      ? [{ key: "Create", isCreateAction: true, icon: Plus, label: "Create post" }]
+      : []),
+    ...(FEATURE_FLAGS.reviewCreationEnabled
+      ? [{ key: "Review", route: routeByName.get("Review"), icon: BookOpenText, label: "Review" }]
+      : []),
     { key: "Profile", route: routeByName.get("Profile"), icon: User, label: "Profile" },
   ].filter((item) => item.isCreateAction || item.route);
 
@@ -222,7 +250,6 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
       {tabItems.map((item) => {
         const route = item.route;
         const isCreateAction = item.isCreateAction === true;
-        if (!isCreateAction && !route) return null;
         const routeName = route?.name;
         const routeKey = route?.key ?? "create-post-action";
         const routeIndex = route ? state.routes.indexOf(route) : -1;
@@ -230,12 +257,7 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
 
         const onPress = () => {
           if (isCreateAction) {
-            if (!isAuthenticated) {
-              setReturnRoute({ name: composerRoute });
-              rootNavigation?.navigate("AuthStack", { screen: "Login" });
-              return;
-            }
-            rootNavigation?.navigate(composerRoute as never);
+            rootNavigation?.navigate("Post");
             resetTimer();
             return;
           }
@@ -252,16 +274,15 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
 
         const onPressIn = () => {
           if (isCreateAction) {
-            preloadRoute(rootNavigation, composerRoute);
+            preloadRoute(rootNavigation, "Post");
             return;
           }
           scheduleMainTabRouteWarmup(routeName);
         };
 
         const Icon = item.icon;
-        const activeColor = palette.orange;
-        const inactiveColor = palette.textMuted;
-        const currentColor = isFocused && highlightVisible ? activeColor : inactiveColor;
+        const currentColor =
+          isFocused && highlightVisible ? palette.orange : palette.textMuted;
 
         return (
           <AppBottomTabItem
@@ -293,19 +314,26 @@ export function SwipeableTabNavigator() {
   return (
     <Tab.Navigator
       id="Tabs"
+      initialRouteName={FEATURE_FLAGS.socialFeedEnabled ? "Home" : "Discover"}
       tabBarPosition="bottom"
       tabBar={(props: MaterialTopTabBarProps) => <CustomTabBar {...props} />}
       screenOptions={{
-        swipeEnabled: true,
+        swipeEnabled: !FEATURE_FLAGS.release01CoreOnly,
         animationEnabled: false,
         lazy: !tabPreloadEnabled,
         lazyPlaceholder: () => <TabScreenLoadingPlaceholder />,
         lazyPreloadDistance: tabPreloadEnabled ? MAIN_TAB_PRELOAD_DISTANCE : 0,
       }}
     >
-      <Tab.Screen name="Home" component={HomeWrapper} />
+      <Tab.Screen
+        name="Home"
+        component={FEATURE_FLAGS.socialFeedEnabled ? HomeWrapper : ReleaseLandingRedirect}
+      />
       <Tab.Screen name="Discover" component={DiscoverWrapper} />
-      <Tab.Screen name="Review" component={ReviewWrapper} />
+      <Tab.Screen
+        name="Review"
+        component={FEATURE_FLAGS.reviewCreationEnabled ? ReviewWrapper : ReleaseLandingRedirect}
+      />
       <Tab.Screen name="Profile" component={ProfileWrapper} />
     </Tab.Navigator>
   );
