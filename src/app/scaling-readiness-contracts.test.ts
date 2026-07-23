@@ -73,10 +73,16 @@ test("production feature flags remain MVP-safe and documented in the release mat
   const flags = read("src/constants/featureFlags.ts");
   const matrix = read("tasks/Roadmap/Scaling/feature-flag-release-matrix.md");
 
-  assert.match(flags, /const prototypeRoutesEnabled = appEnv !== "production"/);
-  assert.match(flags, /const nonProductionSurfaceEnabled = prototypeRoutesEnabled/);
-  assert.match(flags, /const merchantCentreEnabled = nonProductionSurfaceEnabled/);
-  assert.match(flags, /const merchantClaimCtaEnabled = nonProductionSurfaceEnabled/);
+  assert.match(
+    flags,
+    /const isReleasedEnvironment = appEnv === "staging" \|\| appEnv === "production"/,
+  );
+  assert.match(
+    flags,
+    /const releaseOptIn = \(key: string\) => isDevelopment \|\| enabled\(env, key\)/,
+  );
+  assert.match(flags, /const advancedDevelopmentSurfaceEnabled = isDevelopment/);
+  assert.match(flags, /release01CoreOnly: isReleasedEnvironment/);
   for (const flag of [
     "directMessagesEnabled",
     "commentsEnabled",
@@ -85,8 +91,20 @@ test("production feature flags remain MVP-safe and documented in the release mat
     "collectionsEnabled",
     "storiesEnabled",
   ]) {
-    assert.match(flags, new RegExp(`${flag}: nonProductionSurfaceEnabled`));
+    assert.match(flags, new RegExp(`${flag}: advancedDevelopmentSurfaceEnabled`));
     assert.match(matrix, new RegExp(`\\\`${flag}\\\`[\\s\\S]*false`));
+  }
+  for (const flag of [
+    "socialFeedEnabled",
+    "postCreationEnabled",
+    "reviewCreationEnabled",
+    "activityEnabled",
+    "readsEnabled",
+    "mapEnabled",
+    "hungryWheelEnabled",
+    "craveEnabled",
+  ]) {
+    assert.match(flags, new RegExp(`const ${flag} = releaseOptIn`));
   }
   assert.match(flags, /floorplansEnabled: false/);
   assert.match(matrix, /Production defaults must stay MVP-safe/);

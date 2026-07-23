@@ -13,13 +13,19 @@ import {
   listExcelVenues,
 } from "@/lib/services/excel/repositories";
 import { excelCatalogFallbackService } from "@/lib/services/catalog/excelFallback";
+import { calculateDistanceMeters } from "@/lib/geo/distance";
 
 const venues = listExcelVenues();
 const dishes = listExcelDishes();
-const pilotName = RELEASE_01_PILOT.name.toLowerCase();
-const pilotVenues = venues.filter(
-  (venue) => (venue.planningArea ?? "").trim().toLowerCase() === pilotName,
-);
+const pilotVenues = venues.filter((venue) => {
+  const coordinate = getExcelVenueCoordinate(venue.id);
+  return (
+    coordinate !== undefined &&
+    isSingaporeCoordinate(coordinate.latitude, coordinate.longitude) &&
+    calculateDistanceMeters(RELEASE_01_PILOT.coordinate, coordinate) <=
+      RELEASE_01_PILOT.radiusMeters
+  );
+});
 const pilotVenueIds = new Set(pilotVenues.map((venue) => venue.id));
 const pilotDishes = dishes.filter((dish) => pilotVenueIds.has(dish.venueId));
 const dishesByVenueId = new Map<string, typeof dishes>();
@@ -50,9 +56,7 @@ test("Release 0.1 Jurong East pilot has enough reachable catalog records", () =>
     const coordinate = getExcelVenueCoordinate(venue.id);
     return coordinate && isSingaporeCoordinate(coordinate.latitude, coordinate.longitude);
   });
-  const coordinateCoverage = pilotVenues.length
-    ? coordinateBacked.length / pilotVenues.length
-    : 0;
+  const coordinateCoverage = pilotVenues.length ? coordinateBacked.length / pilotVenues.length : 0;
   const imageBackedVenues = pilotVenues.filter(venueHasDisplayImage);
   const imageBackedDishes = pilotDishes.filter((dish) => validImage(dish.imageUrl));
 

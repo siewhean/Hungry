@@ -23,14 +23,15 @@ test("production route gates keep advanced surfaces behind MVP-safe flags", () =
   const linking = read("src/app/navigation/linking.ts");
 
   assert.match(flags, /prototypeRoutesEnabled/);
-  assert.match(flags, /directMessagesEnabled: nonProductionSurfaceEnabled/);
-  assert.match(flags, /gamificationEnabled: nonProductionSurfaceEnabled/);
-  assert.match(flags, /collectionsEnabled: nonProductionSurfaceEnabled/);
-  assert.match(flags, /storiesEnabled: nonProductionSurfaceEnabled/);
-  assert.match(flags, /commentsEnabled: nonProductionSurfaceEnabled/);
-  assert.match(flags, /const merchantCentreEnabled = nonProductionSurfaceEnabled/);
-  assert.match(flags, /const merchantClaimCtaEnabled = nonProductionSurfaceEnabled/);
-  assert.match(flags, /oauthProvidersEnabled: nonProductionSurfaceEnabled/);
+  assert.match(flags, /const advancedDevelopmentSurfaceEnabled = isDevelopment/);
+  assert.match(flags, /directMessagesEnabled: advancedDevelopmentSurfaceEnabled/);
+  assert.match(flags, /gamificationEnabled: advancedDevelopmentSurfaceEnabled/);
+  assert.match(flags, /collectionsEnabled: advancedDevelopmentSurfaceEnabled/);
+  assert.match(flags, /storiesEnabled: advancedDevelopmentSurfaceEnabled/);
+  assert.match(flags, /commentsEnabled: advancedDevelopmentSurfaceEnabled/);
+  assert.match(flags, /merchantCentreEnabled: advancedDevelopmentSurfaceEnabled/);
+  assert.match(flags, /merchantClaimCtaEnabled: advancedDevelopmentSurfaceEnabled/);
+  assert.match(flags, /oauthProvidersEnabled: advancedDevelopmentSurfaceEnabled/);
   assert.match(flags, /floorplansEnabled: false/);
   assert.match(flags, /appEnv !== "production"/);
   assert.match(rootNavigator, /FEATURE_FLAGS\.prototypeRoutesEnabled \? \(/);
@@ -79,6 +80,25 @@ test("production route gates keep advanced surfaces behind MVP-safe flags", () =
   assert.match(rootNavigator, /name="BuildingDrillDown"/);
   assert.match(rootNavigator, /name="BuildingDrillDownV2"/);
   assert.match(rootNavigator, /name="VenueDirectory"/);
+  for (const [flag, routeName] of [
+    ["mapEnabled", "DiscoverMap"],
+    ["mapEnabled", "MapZoomedIn"],
+    ["postCreationEnabled", "Post"],
+    ["readsEnabled", "BlogPost"],
+    ["reviewCreationEnabled", "ReviewStack"],
+    ["hungryWheelEnabled", "WheelStack"],
+    ["hungryWheelEnabled", "MusicSelection"],
+    ["hungryWheelEnabled", "DecideForMeResult"],
+    ["activityEnabled", "ActivityInbox"],
+    ["activityEnabled", "ActivityPostDetail"],
+  ]) {
+    assert.match(
+      rootNavigator,
+      new RegExp(`FEATURE_FLAGS\\.${flag} \\? \\([\\s\\S]*name="${routeName}"`),
+      `${routeName} should be registered only when ${flag} is enabled`,
+    );
+  }
+  assert.match(rootNavigator, /!FEATURE_FLAGS\.release01CoreOnly \? \([\s\S]*name="QuickBites"/);
 });
 
 test("floorplan entry points are hidden behind the floorplans flag", () => {
@@ -106,11 +126,8 @@ test("signed-out app entry starts at login while public routes stay unprotected"
     "BrowseDishes",
     "BrowseStalls",
     "TasteFilter",
-    "DiscoverMap",
-    "MapZoomedIn",
     "DishDetail",
     "StallDetail",
-    "BlogPost",
   ]) {
     assert.doesNotMatch(
       protectedRoutes,
@@ -198,9 +215,6 @@ test("protected actions preserve return routes before auth", () => {
     parameterizedRootReturnRestore,
     /name: returnRoute\.name, params: returnRoute\.params/,
   );
-  assert.match(
-    tabs,
-    /const composerRoute = FEATURE_FLAGS\.prototypeRoutesEnabled \? "PostComposerV2" : "Post"/,
-  );
-  assert.match(tabs, /setReturnRoute\(\{ name: composerRoute \}\)/);
+  assert.match(tabs, /FEATURE_FLAGS\.postCreationEnabled/);
+  assert.match(tabs, /rootNavigation\?\.navigate\("Post"\)/);
 });

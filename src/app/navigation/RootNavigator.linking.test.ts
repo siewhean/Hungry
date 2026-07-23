@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { createRootLinking, parseOrderDeepLinkQuery } from "@/app/navigation/linking";
 
-test("root linking config exposes authenticated dish, venue, and order entry points", () => {
+test("Release 0.1 linking exposes authenticated dish and venue entry points only", () => {
   const linking = createRootLinking("exp://127.0.0.1:8081/--/");
   const screens = linking.config.screens as Record<string, unknown>;
   const authStack = screens.AuthStack as { screens: Record<string, string> };
@@ -11,8 +11,9 @@ test("root linking config exposes authenticated dish, venue, and order entry poi
   assert.equal(authStack.screens.ResetPassword, "auth/callback");
   assert.equal(screens.DishDetail, "dish/:id");
   assert.equal(screens.StallDetail, "venue/:id");
-  assert.equal(screens.Post, "order");
+  assert.equal(screens.Post, undefined);
   assert.equal(screens.MerchantTabs, undefined);
+  assert.equal(linking.getStateFromPath("order"), undefined);
 });
 
 test("order deep link parses venueId query parameter", () => {
@@ -23,7 +24,7 @@ test("order deep link parses venueId query parameter", () => {
   assert.deepEqual(parseOrderDeepLinkQuery("order?venueId=<script>alert(1)</script>"), {});
 });
 
-test("fresh users are sent to onboarding before protected deep links", () => {
+test("fresh users are sent to onboarding before protected catalog deep links", () => {
   let capturedRoute: { name: string; params?: Record<string, unknown> } | undefined;
   const linking = createRootLinking(
     "exp://127.0.0.1:8081/--/",
@@ -37,11 +38,11 @@ test("fresh users are sent to onboarding before protected deep links", () => {
     },
   );
 
-  assert.deepEqual(linking.getStateFromPath("order")?.routes?.[0], {
+  assert.deepEqual(linking.getStateFromPath("dish/dish-123")?.routes?.[0], {
     name: "OnboardingStack",
     params: { screen: "OnboardingWelcome" },
   });
-  assert.equal(capturedRoute?.name, "Post");
+  assert.deepEqual(capturedRoute, { name: "DishDetail", params: { id: "dish-123" } });
 });
 
 test("onboarded signed-out users are sent to login and retain a safe return route", () => {

@@ -102,7 +102,11 @@ export function CatalogDiagnosticsModal({
         </View>
 
         <ScrollView
-          contentContainerStyle={{ gap: spacing[5], padding: spacing[4], paddingBottom: spacing[12] }}
+          contentContainerStyle={{
+            gap: spacing[5],
+            padding: spacing[4],
+            paddingBottom: spacing[12],
+          }}
         >
           <View
             style={{
@@ -139,7 +143,11 @@ export function CatalogDiagnosticsModal({
 
           <View style={{ gap: spacing[2] }}>
             <View
-              style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}
+              style={{
+                alignItems: "center",
+                flexDirection: "row",
+                justifyContent: "space-between",
+              }}
             >
               <AppText variant="bodyBold">Recent catalog requests</AppText>
               <Pressable accessibilityRole="button" onPress={onClear}>

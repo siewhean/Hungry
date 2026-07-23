@@ -1,4 +1,5 @@
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/services/supabase/client";
+import { sanitizeCatalogMediaUrl } from "./media";
 
 export type CatalogVerificationStatus = "raw" | "verified" | "approved";
 export type CatalogSort = "nearby" | "relevance" | "quality";
@@ -181,7 +182,10 @@ export class CatalogSessionInvalidError extends CatalogAccessError {
 }
 
 export class CatalogConfigurationError extends CatalogAccessError {
-  constructor(message = "Hungry's account service is not configured for this build.", cause?: unknown) {
+  constructor(
+    message = "Hungry's account service is not configured for this build.",
+    cause?: unknown,
+  ) {
     super(message, { kind: "configuration", fallbackEligible: false, cause });
     this.name = "CatalogConfigurationError";
   }
@@ -214,7 +218,8 @@ export function isCatalogFallbackEligibleError(error: unknown): boolean {
 
 export function isCatalogAuthenticationError(error: unknown): boolean {
   return (
-    error instanceof CatalogAuthenticationRequiredError || error instanceof CatalogSessionInvalidError
+    error instanceof CatalogAuthenticationRequiredError ||
+    error instanceof CatalogSessionInvalidError
   );
 }
 
@@ -312,6 +317,7 @@ function verificationStatus(value: unknown): CatalogVerificationStatus {
 
 function mapDishCard(value: unknown): CatalogRawDishCard {
   const row = asRecord(value);
+  const mediaRightsStatus = asString(row.media_rights_status) ?? "unverified";
   return {
     id: asString(row.id) ?? "",
     venueId: asString(row.venue_id) ?? "",
@@ -323,7 +329,11 @@ function mapDishCard(value: unknown): CatalogRawDishCard {
     description: asString(row.description),
     price: asNumber(row.price),
     priceRange: asString(row.price_range),
-    imageUrl: asString(row.image_url),
+    imageUrl: sanitizeCatalogMediaUrl(
+      asString(row.image_url),
+      mediaRightsStatus,
+      asBoolean(row.media_approved_for_display),
+    ),
     distanceMeters: asNumber(row.distance_meters),
     rating: asNumber(row.rating),
     reviewCount: asNumber(row.review_count),
@@ -333,7 +343,7 @@ function mapDishCard(value: unknown): CatalogRawDishCard {
     isOpen: asBoolean(row.is_open),
     verificationStatus: verificationStatus(row.verification_status),
     menuRightsStatus: asString(row.menu_rights_status) ?? "unverified",
-    mediaRightsStatus: asString(row.media_rights_status) ?? "unverified",
+    mediaRightsStatus,
     menuSourceUrl: asString(row.menu_source_url),
     mediaSourceUrl: asString(row.media_source_url),
     updatedAt: asString(row.updated_at),
@@ -343,6 +353,8 @@ function mapDishCard(value: unknown): CatalogRawDishCard {
 function mapVenueCard(value: unknown): CatalogRawVenueCard {
   const row = asRecord(value);
   const representative = asRecord(row.representative_dish);
+  const mediaRightsStatus = asString(row.media_rights_status) ?? "unverified";
+  const representativeRightsStatus = asString(representative.media_rights_status) ?? "unverified";
   return {
     id: asString(row.id) ?? "",
     buildingId: asString(row.building_id) ?? "",
@@ -351,7 +363,11 @@ function mapVenueCard(value: unknown): CatalogRawVenueCard {
     buildingType: asString(row.building_type),
     unitNumber: asString(row.unit_number),
     floor: asString(row.floor),
-    imageUrl: asString(row.image_url),
+    imageUrl: sanitizeCatalogMediaUrl(
+      asString(row.image_url),
+      mediaRightsStatus,
+      asBoolean(row.media_approved_for_display),
+    ),
     latitude: asNumber(row.latitude),
     longitude: asNumber(row.longitude),
     distanceMeters: asNumber(row.distance_meters),
@@ -361,14 +377,18 @@ function mapVenueCard(value: unknown): CatalogRawVenueCard {
       ? {
           id: asString(representative.id) ?? "",
           name: asString(representative.name) ?? "Unnamed dish",
-          imageUrl: asString(representative.image_url),
+          imageUrl: sanitizeCatalogMediaUrl(
+            asString(representative.image_url),
+            representativeRightsStatus,
+            asBoolean(representative.media_approved_for_display),
+          ),
           price: asNumber(representative.price),
           verificationStatus: verificationStatus(representative.verification_status),
         }
       : undefined,
     verificationStatus: verificationStatus(row.verification_status),
     menuRightsStatus: asString(row.menu_rights_status) ?? "unverified",
-    mediaRightsStatus: asString(row.media_rights_status) ?? "unverified",
+    mediaRightsStatus,
     menuSourceUrl: asString(row.menu_source_url),
     mediaSourceUrl: asString(row.media_source_url),
     updatedAt: asString(row.updated_at),
@@ -377,11 +397,13 @@ function mapVenueCard(value: unknown): CatalogRawVenueCard {
 
 function mapMedia(value: unknown): CatalogRawMedia {
   const row = asRecord(value);
+  const rightsStatus = asString(row.rights_status) ?? "unverified";
+  const approvedForDisplay = asBoolean(row.approved_for_display) ?? false;
   return {
-    url: asString(row.url) ?? "",
+    url: sanitizeCatalogMediaUrl(asString(row.url), rightsStatus, approvedForDisplay) ?? "",
     sourceUrl: asString(row.source_url),
-    rightsStatus: asString(row.rights_status) ?? "unverified",
-    approvedForDisplay: asBoolean(row.approved_for_display) ?? false,
+    rightsStatus,
+    approvedForDisplay,
     sortOrder: asNumber(row.sort_order) ?? 0,
   };
 }

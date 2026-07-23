@@ -158,7 +158,7 @@ function RawDishCard({ item, releaseId }: { item: CatalogRawDishCard; releaseId?
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
             <AppText tone="muted" variant="micro">
               {item.distanceMeters === undefined
-                ? item.buildingName ?? "Singapore"
+                ? (item.buildingName ?? "Singapore")
                 : `${Math.round(item.distanceMeters)} m`}
             </AppText>
             {item.price !== undefined ? (
@@ -227,7 +227,7 @@ function RawVenueRow({ item, releaseId }: { item: CatalogRawVenueCard; releaseId
           </AppText>
           <AppText tone="muted" variant="micro">
             {item.distanceMeters === undefined
-              ? item.buildingName ?? "Singapore"
+              ? (item.buildingName ?? "Singapore")
               : `${Math.round(item.distanceMeters)} m away`}
           </AppText>
         </View>

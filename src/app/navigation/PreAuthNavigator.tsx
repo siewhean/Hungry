@@ -1,6 +1,6 @@
 import * as Linking from "expo-linking";
 import { useMemo } from "react";
-import { NavigationContainer, type Theme } from "@react-navigation/native";
+import { NavigationContainer, type LinkingOptions, type Theme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import { SplashScreen } from "@/app/screens/SplashScreen";
@@ -38,33 +38,14 @@ export function PreAuthNavigator({ theme }: { theme: Theme }) {
       (route) => setReturnRoute({ name: route.name, params: route.params }),
     );
 
-    return {
-      ...base,
-      config: {
-        screens: {
-          Splash: "splash",
-          OnboardingStack: "onboarding",
-          AuthStack: {
-            screens: {
-              Login: "login",
-              SignUp: "signup",
-              ForgotPassword: "forgot-password",
-              ResetPassword: "auth/callback",
-              ResetPasswordSuccess: "auth/reset/success",
-            },
-          },
-        },
-      },
-    };
+    // React Navigation cannot infer the nested AuthStack params from a navigator
+    // that intentionally mounts only the pre-auth subset of the root routes.
+    return base as unknown as LinkingOptions<RootStackParamList>;
   }, [prefix, setReturnRoute]);
 
   return (
     <>
-      <NavigationContainer
-        theme={theme}
-        linking={linking}
-        onStateChange={resetScrollBack}
-      >
+      <NavigationContainer theme={theme} linking={linking} onStateChange={resetScrollBack}>
         <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
           <Stack.Screen component={SplashScreen} name="Splash" />
           <Stack.Screen component={OnboardingStack} name="OnboardingStack" />

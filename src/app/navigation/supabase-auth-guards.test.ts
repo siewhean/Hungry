@@ -18,12 +18,12 @@ test("Supabase auth bootstrap gates protected-route redirects until session rest
   assert.match(sessionStore, /isAuthReady: false/);
   assert.match(sessionStore, /markAuthReady: \(\) => set\(\{ isAuthReady: true \}\)/);
   assert.match(bootstrap, /const hasHydrated = useSessionStore/);
-  assert.match(bootstrap, /if \(!hasHydrated\) \{\s*return;\s*\}/);
+  assert.match(bootstrap, /if \(!hasHydrated\) return;/);
   assert.match(bootstrap, /client\.auth\s*\.\s*getSession\(\)/);
   assert.match(bootstrap, /client\.auth\.onAuthStateChange/);
   assert.match(rootNavigator, /const isAuthReady = useSessionStore/);
-  assert.match(rootNavigator, /if \(!isAuthReady\) \{\s*return;\s*\}/);
-  assert.match(splash, /if \(!isAuthReady\) \{\s*return;\s*\}/);
+  assert.match(rootNavigator, /if \(!isAuthReady\) \{/);
+  assert.match(splash, /if \(!isAuthReady\) return;/);
 });
 
 test("Supabase auth responses hydrate the app profile store", () => {
@@ -70,7 +70,7 @@ test("Supabase auth responses hydrate the app profile store", () => {
   );
 });
 
-test("Supabase auth bootstrap preserves restored sessions across transient startup failures", () => {
+test("Supabase auth bootstrap fails closed when persisted metadata cannot verify a session", () => {
   const bootstrap = read("src/hooks/useAppBootstrap.ts");
   const sessionStore = read("src/store/useSessionStore.ts");
 
@@ -78,15 +78,14 @@ test("Supabase auth bootstrap preserves restored sessions across transient start
     sessionStore,
     /partialize: \(state\) => \(\{[\s\S]*isAuthenticated: state\.isAuthenticated[\s\S]*authenticatedUserId: state\.authenticatedUserId[\s\S]*authDataSource: state\.authDataSource/,
   );
-  assert.match(bootstrap, /const restoredSession = useSessionStore\.getState\(\)/);
-  assert.match(bootstrap, /function preserveRestoredAuthState/);
+  assert.doesNotMatch(bootstrap, /preserveRestoredAuthState/);
   assert.match(
     bootstrap,
-    /restoredSession\.isAuthenticated && restoredSession\.authenticatedUserId/,
+    /if \(!client\) \{\s*applyAuthStateFromSession\(\{ isAuthenticated: false, userId: null \}\);/,
   );
   assert.match(
     bootstrap,
-    /applyAuthStateFromSession\(\{\s*isAuthenticated: true,\s*userId: restoredSession\.authenticatedUserId,\s*\}\)/,
+    /\.catch\(\(\) => \{[\s\S]*applyAuthStateFromSession\(\{ isAuthenticated: false, userId: null \}\);/,
   );
 });
 
@@ -114,16 +113,16 @@ test("explicit mock data source keeps user-mode bootstrap on mock services for d
   assert.match(bootstrap, /setSupabaseServiceProvider\(\)/);
 });
 
-test("Supabase null-session bootstrap events do not clear a restored app session", () => {
+test("Supabase null-session bootstrap events clear stale persisted app metadata", () => {
   const bootstrap = read("src/hooks/useAppBootstrap.ts");
 
   assert.match(
     bootstrap,
-    /const user = data\.session\?\.user;\s*if \(!user\) \{\s*if \(preserveRestoredAuthState\(applyAuthStateFromSession\)\) \{\s*return;\s*\}\s*applyAuthStateFromSession\(\{ isAuthenticated: false, userId: null \}\);/,
+    /const user = data\.session\?\.user;\s*if \(!user\) \{\s*applyAuthStateFromSession\(\{ isAuthenticated: false, userId: null \}\);/,
   );
   assert.match(bootstrap, /client\.auth\.onAuthStateChange\(\(event, session\) =>/);
   assert.match(
     bootstrap,
-    /if \(event !== "SIGNED_OUT" && preserveRestoredAuthState\(applyAuthStateFromSession\)\) \{\s*return;\s*\}\s*applyAuthStateFromSession\(\{ isAuthenticated: false, userId: null \}\);/,
+    /const user = session\?\.user;\s*if \(!user\) \{\s*applyAuthStateFromSession\(\{\s*isAuthenticated: false,\s*userId: null,\s*\}\);/,
   );
 });

@@ -6,7 +6,17 @@ import { ArrowLeft, ExternalLink, MapPin } from "lucide-react-native";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AccessibleImage, AppText, EmptyState, Screen, Skeleton } from "@/components/ui";
 import { getCatalogRawService, getServiceProvider } from "@/lib/services/serviceProvider";
-import type { CatalogRawDishDetail, CatalogRawVenueDetail } from "@/lib/services/catalog";
+import {
+  CatalogAccessError,
+  type CatalogPage,
+  type CatalogRawDishCard,
+  type CatalogRawDishDetail,
+  type CatalogRawVenueDetail,
+} from "@/lib/services/catalog";
+import {
+  recordCatalogDiagnostic,
+  summarizeCatalogRequest,
+} from "@/lib/services/catalog/diagnostics";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
 
@@ -26,14 +36,24 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const service = getCatalogRawService();
   const [detail, setDetail] = useState<Detail | null>(null);
+  const [menu, setMenu] = useState<CatalogPage<CatalogRawDishCard> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const isDish = route.params.kind === "dish";
 
   const load = useCallback(async () => {
-    if (!service || !isAuthenticated || getServiceProvider().mode !== "supabase") {
+    const startedAt = Date.now();
+    if (!service || !isAuthenticated || getServiceProvider().mode === "mock") {
       setError("Sign in with the live Hungry data source to view this catalog record.");
       setIsLoading(false);
+      recordCatalogDiagnostic({
+        operation: isDish ? "dish-detail" : "stall-detail",
+        durationMs: Date.now() - startedAt,
+        errorKind: "authentication_required",
+        resultCount: 0,
+        succeeded: false,
+        request: summarizeCatalogRequest({ releaseId: route.params.releaseId }),
+      });
       return;
     }
     setIsLoading(true);
@@ -43,10 +63,48 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
         ? await service.getDish(route.params.id, route.params.releaseId)
         : await service.getVenue(route.params.id, route.params.releaseId);
       setDetail(next);
+      recordCatalogDiagnostic({
+        operation: isDish ? "dish-detail" : "stall-detail",
+        durationMs: Date.now() - startedAt,
+        releaseId: route.params.releaseId,
+        resultCount: 1,
+        succeeded: true,
+        request: summarizeCatalogRequest({ releaseId: route.params.releaseId }),
+      });
+      if (!isDish) {
+        const menuPage = await service.listVenueMenu(route.params.id, {
+          limit: 24,
+          releaseId: route.params.releaseId,
+        });
+        setMenu(menuPage);
+        recordCatalogDiagnostic({
+          operation: "venue-menu",
+          durationMs: Date.now() - startedAt,
+          releaseId: menuPage.releaseId,
+          resultCount: menuPage.items.length,
+          succeeded: true,
+          request: summarizeCatalogRequest({ releaseId: route.params.releaseId }),
+        });
+      } else {
+        setMenu(null);
+      }
     } catch (loadError) {
       setError(
         loadError instanceof Error ? loadError.message : "Could not load this catalog record.",
       );
+      recordCatalogDiagnostic({
+        operation: isDish ? "dish-detail" : "stall-detail",
+        durationMs: Date.now() - startedAt,
+        errorKind:
+          loadError instanceof CatalogAccessError
+            ? loadError.kind
+            : loadError instanceof Error
+              ? loadError.name
+              : "unknown",
+        resultCount: 0,
+        succeeded: false,
+        request: summarizeCatalogRequest({ releaseId: route.params.releaseId }),
+      });
     } finally {
       setIsLoading(false);
     }
@@ -173,6 +231,41 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
           )}
           {"description" in detail && detail.description ? (
             <AppText>{detail.description}</AppText>
+          ) : null}
+          {!isDish && menu ? (
+            <View style={{ gap: spacing[2] }}>
+              <AppText variant="bodyBold">Menu</AppText>
+              {menu.items.map((item) => (
+                <Pressable
+                  key={item.id}
+                  accessibilityLabel={`Open ${item.name}`}
+                  accessibilityRole="button"
+                  onPress={() =>
+                    navigation.navigate("CatalogRawDetail", {
+                      kind: "dish",
+                      id: item.id,
+                      releaseId: menu.releaseId,
+                    })
+                  }
+                  style={{
+                    backgroundColor: palette.bgSoft,
+                    borderRadius: 12,
+                    gap: spacing[1],
+                    padding: spacing[3],
+                  }}
+                >
+                  <AppText variant="bodySmallBold">{item.name}</AppText>
+                  <AppText tone="secondary" variant="micro">
+                    {item.price !== undefined ? `S$${item.price.toFixed(2)}` : "Price unavailable"}
+                  </AppText>
+                </Pressable>
+              ))}
+              {menu.nextCursor ? (
+                <AppText tone="muted" variant="micro">
+                  More menu items are available in this catalog release.
+                </AppText>
+              ) : null}
+            </View>
           ) : null}
           <View style={{ flexDirection: "row", gap: spacing[2] }}>
             <MapPin color={palette.textMuted} size={18} />

@@ -11,21 +11,21 @@ Use only these four sections for Week 1–2 work. Do not add unrelated features.
 
 | ID | Owner | Work | Acceptance evidence | Status |
 |---|---|---|---|---|
-| R01-CI-01 | Codex | Fix current CI quality-gate failure | Green CI on final PR SHA; exact failing step and fix recorded | Open |
-| R01-SEC-01 | Codex | Fix current Security workflow failure | Green Security workflow on final PR SHA | Open |
+| R01-CI-01 | Codex + GitHub owner | Fix current CI quality-gate failure | Green CI on final PR SHA; exact failing step and fix recorded | Blocked: Actions billing/spend cap |
+| R01-SEC-01 | Codex + Supabase/GitHub owner | Fix current Security workflow failure | Green Security workflow on final PR SHA | In progress: hardening migration prepared; remote quota and Actions billing block verification |
 | R01-MAIN-01 | Codex | Rebase/update PR #44 against latest `main` | Clean comparison; conflicts resolved; PR mergeable | Open |
-| R01-SCOPE-01 | Codex | Prove deferred routes cannot open in staging/production | Source, Playwright, and native route-gating results | Open |
-| R01-IMG-01 | Codex | Centralize catalog image sanitization | Shared mapper tests; Discover/Browse/Search/detail parity | Open |
-| R01-DIAG-01 | Codex | Extend catalog diagnostics beyond Discover | Browse/search/detail/menu diagnostics tests | Open |
+| R01-SCOPE-01 | Codex | Prove deferred routes cannot open in staging/production | Source, Playwright, and native route-gating results | Repo-local pass; signed-in staging/native proof pending |
+| R01-IMG-01 | Codex | Centralize catalog image sanitization | Shared mapper tests; Discover/Browse/Search/detail parity | Repo-local pass |
+| R01-DIAG-01 | Codex | Extend catalog diagnostics beyond Discover | Browse/search/detail/menu diagnostics tests | Repo-local pass |
 | R01-GOLD-01 | Codex + Owner | Create exact Jurong East pilot manifest | 10 dish IDs, 10 venue IDs, expected image/location/detail fields | Open |
-| R01-CAT-01 | Codex | Run and fix bundled pilot audit | `node scripts/audit-release-01-catalog.mjs` passes | Open |
-| R01-AUTH-01 | Codex | Verify mandatory auth and no guest route | Unit/E2E/Maestro/native proof | Open |
+| R01-CAT-01 | Codex | Run and fix bundled pilot audit | `node scripts/audit-release-01-catalog.mjs` passes | Pass |
+| R01-AUTH-01 | Codex | Verify mandatory auth and no guest route | Unit/E2E/Maestro/native proof | Repo-local + iOS sign-in render pass |
 | R01-FALL-01 | Codex | Verify authenticated-only Excel fallback | Targeted catalog outage with auth healthy; signed-out denial | Open |
 | R01-NORES-01 | Codex | Prove successful no-results is not replaced | Source/E2E/native no-results proof | Open |
-| R01-PAGE-01 | Codex | Prove three Supabase and Excel pages are distinct | IDs/source/release evidence for dishes and stalls | Open |
+| R01-PAGE-01 | Codex | Prove three Supabase and Excel pages are distinct | IDs/source/release evidence for dishes and stalls | Excel pass; live Supabase continuation pending quota recovery |
 | R01-WRITE-01 | Codex | Prove no false write success during outage | Save/profile and every enabled write audited; disabled writes hidden | Open |
-| R01-SUPA-01 | Owner + Codex | Run staging Supabase/advisor/RLS/catalog smokes | No skipped checks; exact output attached | Blocked on credentials |
-| R01-IOS-01 | Owner + Codex | Build/install iOS internal alpha | EAS build ID, install, screenshots, logs, scenarios pass | Blocked on Apple/EAS access |
+| R01-SUPA-01 | Owner + Codex | Run staging Supabase/advisor/RLS/catalog smokes | No skipped checks; exact output attached | Blocked: RLS REST smoke HTTP 402 quota; Advisor remediation un-applied |
+| R01-IOS-01 | Owner + Codex | Build/install iOS internal alpha | EAS build ID, install, screenshots, logs, scenarios pass | Local simulator pass; EAS artifact pending |
 | R01-AND-01 | Owner + Codex | Build/install Android internal alpha | EAS build ID, install, screenshots, logs, scenarios pass | Blocked on device/EAS access |
 | R01-TEST-01 | Owner | Recruit first five internal testers | Tester list and access confirmed; no passwords in repo | Open |
 

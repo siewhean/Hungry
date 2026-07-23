@@ -3,12 +3,13 @@ import test from "node:test";
 
 import { createRootLinking } from "@/app/navigation/linking";
 
-const protectedPaths = [
-  "dish/dish-123",
-  "venue/venue-123",
-  "order",
-  "join/SAFE_CODE",
-] as const;
+const protectedPaths = ["dish/dish-123", "venue/venue-123"] as const;
+
+test("deferred deep links do not resolve when their release flags are disabled", () => {
+  const linking = createRootLinking("hungry://");
+  assert.equal(linking.getStateFromPath("order"), undefined);
+  assert.equal(linking.getStateFromPath("join/SAFE_CODE"), undefined);
+});
 
 test("all main deep links resolve to onboarding for a fresh signed-out user", () => {
   for (const path of protectedPaths) {

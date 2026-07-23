@@ -17,6 +17,7 @@ import type {
   CatalogRawVenueCard,
   CatalogRawVenueDetail,
 } from "@/lib/services/catalog";
+import { sanitizeCatalogImageUrl } from "@/lib/services/catalog/media";
 import type { Coordinate, DietaryFlag, DishDetail } from "@/types/domain";
 
 type ExcelVenue = ReturnType<typeof listExcelVenues>[number];
@@ -38,14 +39,7 @@ for (const dish of allDishes) {
 }
 
 function cleanImageUrl(value: string | null | undefined): string | undefined {
-  const url = value?.trim();
-  if (!url) return undefined;
-  try {
-    const parsed = new URL(url);
-    return parsed.protocol === "https:" || parsed.protocol === "http:" ? parsed.toString() : undefined;
-  } catch {
-    return undefined;
-  }
+  return sanitizeCatalogImageUrl(value, { rightsStatus: "approved", approvedForDisplay: true });
 }
 
 function dishImageUrl(dish: Pick<DishDetail, "gallery" | "imageUrl">): string | undefined {
@@ -215,9 +209,7 @@ function filterDishes(request: CatalogPageRequest): CatalogRawDishCard[] {
       if (!matchesAllTags(text, request.cuisineTags)) return false;
       if (
         request.dietaryFlags?.length &&
-        !request.dietaryFlags.every((flag) =>
-          dish.dietaryFlags.includes(flag as DietaryFlag),
-        )
+        !request.dietaryFlags.every((flag) => dish.dietaryFlags.includes(flag as DietaryFlag))
       ) {
         return false;
       }
@@ -269,6 +261,8 @@ function filterDishes(request: CatalogPageRequest): CatalogRawDishCard[] {
 }
 
 function filterVenues(request: CatalogPageRequest): CatalogRawVenueCard[] {
+  const maxPrice = request.maxPrice;
+
   return allVenues
     .filter((venue) => {
       const text = venueSearchText(venue);
@@ -289,7 +283,7 @@ function filterVenues(request: CatalogPageRequest): CatalogRawVenueCard[] {
         return false;
       }
       const menu = dishesByVenueId.get(venue.id) ?? [];
-      if (request.maxPrice !== undefined && !menu.some((dish) => dish.price <= request.maxPrice)) {
+      if (maxPrice !== undefined && !menu.some((dish) => dish.price <= maxPrice)) {
         return false;
       }
       const distance = distanceForVenue(venue.id, request.coordinate);

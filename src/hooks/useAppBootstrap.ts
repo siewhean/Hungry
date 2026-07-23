@@ -145,9 +145,7 @@ export function useAppBootstrap() {
     // Released user mode is always Supabase-authenticated. Excel is exposed
     // only inside the authenticated read wrapper, never as the app provider.
     const hasValidSupabaseAuth =
-      isAuthenticated &&
-      authDataSource === "supabase" &&
-      isUuidLikeAuthUserId(authenticatedUserId);
+      isAuthenticated && authDataSource === "supabase" && isUuidLikeAuthUserId(authenticatedUserId);
     setConfiguredDataSource("supabase");
     setSupabaseServiceProvider();
     if (isAuthenticated && !hasValidSupabaseAuth) {

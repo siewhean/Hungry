@@ -16,6 +16,14 @@ const installedSupabaseCli =
 const args = ["db", "advisors", "--linked", "--type", "security", "--level", "warn", "-o", "json"];
 const command = installedSupabaseCli || npxCommand;
 const commandArgs = installedSupabaseCli ? args : [...npxInstallArgs, "supabase", ...args];
+const AUTHENTICATED_RAW_CATALOG_RPCS = new Set([
+  "catalog_raw_dishes_page",
+  "catalog_raw_venue_menu_page",
+  "catalog_raw_venues_page",
+  "catalog_raw_dish_detail",
+  "catalog_raw_venue_detail",
+  "catalog_raw_map_view",
+]);
 
 function isRequired() {
   return process.argv.includes("--require-network") || process.env[REQUIRED_ENV] === "1";
@@ -87,6 +95,14 @@ function fail(message, details) {
 function externalReason(finding) {
   const metadata = finding.metadata || {};
   const detail = finding.detail || "";
+
+  if (
+    finding.name === "authenticated_security_definer_function_executable" &&
+    metadata.schema === "public" &&
+    AUTHENTICATED_RAW_CATALOG_RPCS.has(metadata.name)
+  ) {
+    return "intentional authenticated catalog raw-read RPC; body requires auth.uid() and projection tables deny direct reads";
+  }
 
   if (
     finding.name === "rls_disabled_in_public" &&

@@ -74,9 +74,15 @@ test("staging permits explicit, one-feature-at-a-time QA opt-ins", () => {
 });
 
 test("catalog diagnostics remain unavailable in public production", () => {
-  assert.equal(resolveFeatureFlags("development", "development", {}).catalogDiagnosticsEnabled, true);
+  assert.equal(
+    resolveFeatureFlags("development", "development", {}).catalogDiagnosticsEnabled,
+    true,
+  );
   assert.equal(resolveFeatureFlags("staging", "production", {}).catalogDiagnosticsEnabled, true);
-  assert.equal(resolveFeatureFlags("production", "production", {}).catalogDiagnosticsEnabled, false);
+  assert.equal(
+    resolveFeatureFlags("production", "production", {}).catalogDiagnosticsEnabled,
+    false,
+  );
 });
 
 test("unknown or missing environments fail closed outside local development", () => {

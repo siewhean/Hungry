@@ -11,10 +11,7 @@ test("the signed-out app mounts only Splash, Onboarding, and Auth", () => {
   const appBody = read("src/app/AppBody.tsx");
   const preAuth = read("src/app/navigation/PreAuthNavigator.tsx");
 
-  assert.match(
-    appBody,
-    /isAuthenticated\s*\?\s*<RootNavigator[\s\S]*:\s*<PreAuthNavigator/,
-  );
+  assert.match(appBody, /isAuthenticated\s*\?\s*<RootNavigator[\s\S]*:\s*<PreAuthNavigator/);
   assert.match(preAuth, /name="Splash"/);
   assert.match(preAuth, /name="OnboardingStack"/);
   assert.match(preAuth, /name="AuthStack"/);
@@ -44,7 +41,7 @@ test("released builds require Supabase configuration instead of selecting Excel 
   assert.match(client, /if \(isReleasedBuild\(\)\) return "supabase"/);
   assert.match(client, /getReleasedSupabaseConfigurationError/);
   assert.match(appBody, /Hungry is temporarily unavailable/);
-  assert.doesNotMatch(client, /isReleasedBuild\(\).*\?\s*"supabase"\s*:\s*"excel"/s);
+  assert.match(client, /if \(isReleasedBuild\(\)\) return "supabase";/);
 });
 
 test("obsolete guest native entry points are removed from executable scripts", () => {

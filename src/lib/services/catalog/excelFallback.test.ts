@@ -22,7 +22,7 @@ test("Excel catalog fallback exposes workbook totals through paged dish and venu
   assert.ok(venuePage.nextCursor);
 });
 
-test("Excel fallback pagination returns distinct subsequent catalog records", async () => {
+test("Excel fallback pagination has three distinct release-bound pages", async () => {
   const firstPage = await excelCatalogFallbackService.listVenues({ limit: 12, sort: "quality" });
   assert.ok(firstPage.nextCursor);
   const secondPage = await excelCatalogFallbackService.listVenues({
@@ -31,10 +31,46 @@ test("Excel fallback pagination returns distinct subsequent catalog records", as
     releaseId: firstPage.releaseId,
     sort: "quality",
   });
+  assert.ok(secondPage.nextCursor);
+  const thirdPage = await excelCatalogFallbackService.listVenues({
+    cursor: secondPage.nextCursor,
+    limit: 12,
+    releaseId: secondPage.releaseId,
+    sort: "quality",
+  });
 
-  const firstIds = new Set(firstPage.items.map((item) => item.id));
-  assert.ok(secondPage.items.length > 0);
-  secondPage.items.forEach((item) => assert.equal(firstIds.has(item.id), false));
+  const ids = [firstPage, secondPage, thirdPage].flatMap((page) =>
+    page.items.map((item) => item.id),
+  );
+  assert.equal(new Set(ids).size, ids.length);
+  assert.ok(thirdPage.items.length > 0);
+  assert.ok(
+    [firstPage, secondPage, thirdPage].every((page) => page.releaseId === firstPage.releaseId),
+  );
+});
+
+test("Excel fallback preserves source and release through venue detail and menu paging", async () => {
+  const venuePage = await excelCatalogFallbackService.listVenues({ limit: 50, sort: "quality" });
+  const venue = venuePage.items.find((item) => item.menuCount >= 3);
+  assert.ok(venue, "Expected an Excel venue with a paged menu");
+
+  const detail = await excelCatalogFallbackService.getVenue(venue.id);
+  assert.equal(detail.id, venue.id);
+  const firstMenu = await excelCatalogFallbackService.listVenueMenu(venue.id, {
+    limit: 1,
+    releaseId: venuePage.releaseId,
+  });
+  assert.ok(firstMenu.nextCursor);
+  const secondMenu = await excelCatalogFallbackService.listVenueMenu(venue.id, {
+    cursor: firstMenu.nextCursor,
+    limit: 1,
+    releaseId: firstMenu.releaseId,
+  });
+  assert.equal(firstMenu.releaseId, venuePage.releaseId);
+  assert.equal(secondMenu.releaseId, venuePage.releaseId);
+  assert.notEqual(firstMenu.items[0]?.id, secondMenu.items[0]?.id);
+  const dishDetail = await excelCatalogFallbackService.getDish(firstMenu.items[0]?.id ?? "");
+  assert.equal(dishDetail.venueId, venue.id);
 });
 
 test("Excel fallback dish cards use menu image URLs rather than blocked placeholders", async () => {

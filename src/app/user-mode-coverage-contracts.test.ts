@@ -63,7 +63,7 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
       /getHungryService\(\)\.auth\.signIn\(/,
       /service\.auth\.signInWithGoogle\(/,
       /service\.auth\.signInWithApple\(/,
-      /completeAuth\(\{ completedOnboarding: true, skippedTasteQuiz: true \}\)/,
+      /const finishLogin = \(authProvider: "email" \| AuthProvider, trackSignInEvent = true\) => \{[\s\S]*completedOnboarding: hasCompletedOnboarding,[\s\S]*skippedTasteQuiz: hasCompletedOnboarding/,
     ],
     "LoginScreen",
   );
@@ -72,8 +72,8 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
     [
       /getHungryService\(\)\.auth\.signUp\(/,
       /navigation\.navigate\("EmailVerification"/,
-      /completeAuth\(\{[\s\S]*completedOnboarding: false/,
-      /navigation\.getParent\(\)\?\.reset\(\{[\s\S]*OnboardingStack/,
+      /completeAuth\(\{[\s\S]*completedOnboarding: hasCompletedOnboarding/,
+      /navigation\.navigate\("EmailVerification", \{[\s\S]*completedOnboarding: hasCompletedOnboarding/,
     ],
     "SignUpScreen",
   );

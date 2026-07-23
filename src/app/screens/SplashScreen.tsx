@@ -123,7 +123,10 @@ export function SplashScreen({ navigation }: Props) {
 
       const pending = returnRoute;
       setReturnRoute(undefined);
-      if (typeof pending === "string" && SAFE_MAIN_TAB_RETURNS.has(pending as keyof MainTabParamList)) {
+      if (
+        typeof pending === "string" &&
+        SAFE_MAIN_TAB_RETURNS.has(pending as keyof MainTabParamList)
+      ) {
         navigation.reset({
           index: 0,
           routes: [
@@ -202,7 +205,9 @@ export function SplashScreen({ navigation }: Props) {
             marginBottom: spacing[2],
           }}
         >
-          <View style={[styles.dot, { backgroundColor: palette.orange, borderRadius: radii.pill }]} />
+          <View
+            style={[styles.dot, { backgroundColor: palette.orange, borderRadius: radii.pill }]}
+          />
         </Animated.View>
       </View>
 

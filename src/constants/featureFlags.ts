@@ -61,8 +61,7 @@ export function resolveFeatureFlags(
     // Staging and production must exercise the same release-versioned catalog
     // path. Development can opt in while legacy screens remain available for
     // local comparison work.
-    catalogReadV2:
-      isReleasedEnvironment || enabled(env, "EXPO_PUBLIC_CATALOG_READ_V2"),
+    catalogReadV2: isReleasedEnvironment || enabled(env, "EXPO_PUBLIC_CATALOG_READ_V2"),
     mockMapboxEnabled: enabled(env, "EXPO_PUBLIC_MOCK_MAPBOX_ENABLED"),
     directMessagesEnabled: advancedDevelopmentSurfaceEnabled,
     commentsEnabled: advancedDevelopmentSurfaceEnabled,

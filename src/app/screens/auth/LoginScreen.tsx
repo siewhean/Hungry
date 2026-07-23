@@ -65,7 +65,6 @@ export function LoginScreen({ navigation }: Props) {
         }
       }
       finishLogin("email");
-      showToast({ message: AUTH_COPY.login.successToast, tone: "success" });
     } catch (err) {
       const code =
         (err as { error_code?: string; code?: string })?.error_code ??
@@ -115,7 +114,6 @@ export function LoginScreen({ navigation }: Props) {
         });
       }
       finishLogin(provider);
-      showToast({ message: AUTH_COPY.login.providerSuccessToast, tone: "success" });
     } catch (err) {
       const message = providerErrorMessage(err);
       showToast({

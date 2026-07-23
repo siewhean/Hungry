@@ -5,7 +5,12 @@ import { dirname, resolve } from "node:path";
 
 const catalogPath = resolve(process.cwd(), "src/lib/services/excel/excelCatalog.generated.json");
 const catalog = JSON.parse(readFileSync(catalogPath, "utf8"));
-const PILOT_AREA = "Jurong East";
+const PILOT = {
+  name: "Jurong East",
+  latitude: 1.3331,
+  longitude: 103.7421,
+  radiusMeters: 3500,
+};
 const THRESHOLDS = {
   venues: 10,
   dishes: 20,
@@ -57,6 +62,17 @@ function validCoordinate(latitude, longitude) {
   return !(Math.abs(lat - 1.3521) < 0.000001 && Math.abs(lng - 103.8198) < 0.000001);
 }
 
+function distanceMeters(latitude, longitude) {
+  const toRadians = (degrees) => (degrees * Math.PI) / 180;
+  const lat1 = toRadians(PILOT.latitude);
+  const lat2 = toRadians(Number(latitude));
+  const deltaLat = toRadians(Number(latitude) - PILOT.latitude);
+  const deltaLng = toRadians(Number(longitude) - PILOT.longitude);
+  const a =
+    Math.sin(deltaLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLng / 2) ** 2;
+  return 6_371_000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 function blockedImage(url) {
   const value = normalized(url);
   return Boolean(value) && BLOCKED_IMAGE_MARKERS.some((marker) => value.includes(marker));
@@ -87,7 +103,9 @@ for (const dish of dishes) {
 }
 
 const pilotVenues = venues.filter(
-  (venue) => normalized(venue.planningArea) === PILOT_AREA.toLowerCase(),
+  (venue) =>
+    validCoordinate(venue.latitude, venue.longitude) &&
+    distanceMeters(venue.latitude, venue.longitude) <= PILOT.radiusMeters,
 );
 const pilotVenueIds = new Set(pilotVenues.map((venue) => text(venue.id)));
 const pilotDishes = dishes.filter((dish) => pilotVenueIds.has(text(dish.venueId)));
@@ -107,14 +125,16 @@ const blockedPilotImageUrls = [
 const goldenQueries = GOLDEN_QUERIES.map((query) => {
   const matches = dishes.filter((dish) => {
     const venue = venueById.get(text(dish.venueId));
-    const haystack = normalized([
-      dish.name,
-      dish.foodTypeTag,
-      dish.description,
-      venue?.name,
-      venue?.planningArea,
-      venue?.buildingName,
-    ].join(" "));
+    const haystack = normalized(
+      [
+        dish.name,
+        dish.foodTypeTag,
+        dish.description,
+        venue?.name,
+        venue?.planningArea,
+        venue?.buildingName,
+      ].join(" "),
+    );
     return haystack.includes(query);
   });
   return { query, count: matches.length, firstDish: text(matches[0]?.name) || null };
@@ -148,7 +168,9 @@ if (coordinateCoverage < THRESHOLDS.coordinateCoverage) {
 }
 const missingGoldenQueries = goldenQueries.filter((result) => result.count === 0);
 if (missingGoldenQueries.length) {
-  failures.push(`Missing golden queries: ${missingGoldenQueries.map((item) => item.query).join(", ")}`);
+  failures.push(
+    `Missing golden queries: ${missingGoldenQueries.map((item) => item.query).join(", ")}`,
+  );
 }
 if (blockedPilotImageUrls.length) {
   failures.push(`Pilot contains ${blockedPilotImageUrls.length} blocked placeholder image URLs`);
@@ -171,7 +193,9 @@ const report = {
     dishImages: catalog.metadata?.dishImageCount ?? null,
   },
   pilot: {
-    area: PILOT_AREA,
+    area: PILOT.name,
+    coordinate: { latitude: PILOT.latitude, longitude: PILOT.longitude },
+    radiusMeters: PILOT.radiusMeters,
     venues: pilotVenues.length,
     dishes: pilotDishes.length,
     coordinateBackedVenues: coordinateBackedVenues.length,

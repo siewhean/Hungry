@@ -11,10 +11,7 @@ import {
   type CatalogPage,
   type catalogRawService,
 } from "@/lib/services/catalog";
-import {
-  getConfiguredDataSource,
-  setConfiguredDataSource,
-} from "@/lib/services/supabase/client";
+import { getConfiguredDataSource, setConfiguredDataSource } from "@/lib/services/supabase/client";
 import type { DataRepository, HungryService } from "@/lib/services/types";
 import type { TasteVector } from "@/types/domain";
 
@@ -28,8 +25,7 @@ export interface ServiceProvider {
 type CatalogReadService = typeof catalogRawService;
 type DiscoveryService = HungryService["discovery"];
 
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function sessionStoreState() {
   const { useSessionStore } =
@@ -41,10 +37,10 @@ function hasValidAuthenticatedSession(): boolean {
   const state = sessionStoreState();
   return Boolean(
     state.isAuthReady &&
-      state.isAuthenticated &&
-      state.authDataSource === "supabase" &&
-      state.authenticatedUserId &&
-      UUID_PATTERN.test(state.authenticatedUserId),
+    state.isAuthenticated &&
+    state.authDataSource === "supabase" &&
+    state.authenticatedUserId &&
+    UUID_PATTERN.test(state.authenticatedUserId),
   );
 }
 

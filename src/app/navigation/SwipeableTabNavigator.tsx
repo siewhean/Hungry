@@ -281,8 +281,7 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
         };
 
         const Icon = item.icon;
-        const currentColor =
-          isFocused && highlightVisible ? palette.orange : palette.textMuted;
+        const currentColor = isFocused && highlightVisible ? palette.orange : palette.textMuted;
 
         return (
           <AppBottomTabItem

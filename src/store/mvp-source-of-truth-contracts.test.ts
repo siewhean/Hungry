@@ -101,15 +101,14 @@ test("EAS release profiles set explicit MVP feature-flag environments", () => {
   assert.equal(eas.build.production?.env?.EXPO_PUBLIC_HUNGRY_DATA_SOURCE, "supabase");
 });
 
-test("production Post route publishes through the canonical composer service path", () => {
+test("post composer remains isolated behind the Release 0.1 post flag", () => {
   const postScreen = read("src/app/screens/post/PostComposerScreen.tsx");
   const publishing = read("src/features/post/publishing.ts");
   const swipeTabs = read("src/app/navigation/SwipeableTabNavigator.tsx");
 
-  assert.match(
-    swipeTabs,
-    /const composerRoute = FEATURE_FLAGS\.prototypeRoutesEnabled \? "PostComposerV2" : "Post"/,
-  );
+  assert.match(swipeTabs, /FEATURE_FLAGS\.postCreationEnabled[\s\S]*key: "Create"/);
+  assert.match(swipeTabs, /rootNavigation\?\.navigate\("Post"\)/);
+  assert.doesNotMatch(swipeTabs, /PostComposerV2/);
   assert.match(postScreen, /import \{ publishComposerPost \}/);
   assert.match(postScreen, /useComposerStore\.getState\(\)/);
   assert.match(postScreen, /confirmGalleryAccess/);

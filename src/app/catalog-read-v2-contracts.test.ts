@@ -97,7 +97,10 @@ test("V2 Discover consumes bounded authenticated catalog pages and never hydrate
   );
   assert.match(searchHome, /shouldUseCatalogReadV2[\s\S]*getDiscoverStallCollections/);
   assert.doesNotMatch(searchHome, /FEATURE_FLAGS\.catalogReadV2 && isAuthenticated/);
-  assert.match(discoverEntry, /return useCatalog \? <CatalogDiscoverHome \/> : <DiscoverHomeScreen \/>/);
+  assert.match(
+    discoverEntry,
+    /return useCatalog \? <CatalogDiscoverHome \/> : <DiscoverHomeScreen \/>/,
+  );
   assert.match(catalogDiscoverHome, /service\.listDishes\(request\)/);
   assert.match(catalogDiscoverHome, /service\.listVenues\(\{ \.\.\.request, limit: 24 \}\)/);
   assert.match(catalogDiscoverHome, /radiusMeters: 3_000/);

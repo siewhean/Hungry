@@ -98,8 +98,7 @@ function clearAccountScopedStores(): void {
   getMerchantStoreState().clearMerchant();
   useLocationStore.getState().resetLocationState();
   const { useSocialStore } = require("./useSocialStore") as typeof import("./useSocialStore");
-  const { useActivityStore } =
-    require("./useActivityStore") as typeof import("./useActivityStore");
+  const { useActivityStore } = require("./useActivityStore") as typeof import("./useActivityStore");
   const { usePublishedPostStore } =
     require("./usePublishedPostStore") as typeof import("./usePublishedPostStore");
   const { useStallInteractionStore } =

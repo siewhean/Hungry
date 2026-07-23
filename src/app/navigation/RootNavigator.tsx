@@ -641,13 +641,19 @@ export function RootNavigator({ theme }: { theme: Theme }) {
             options={{ animation: "none" }}
           />
           <RootStack.Screen getComponent={loadTasteFilterScreen} name="TasteFilter" />
-          <RootStack.Screen
-            getComponent={loadHomeMapScreen}
-            name="DiscoverMap"
-            options={{ gestureEnabled: true }}
-          />
-          <RootStack.Screen getComponent={loadMapZoomedInScreen} name="MapZoomedIn" />
-          <RootStack.Screen getComponent={loadPostComposerScreen} name="Post" />
+          {FEATURE_FLAGS.mapEnabled ? (
+            <>
+              <RootStack.Screen
+                getComponent={loadHomeMapScreen}
+                name="DiscoverMap"
+                options={{ gestureEnabled: true }}
+              />
+              <RootStack.Screen getComponent={loadMapZoomedInScreen} name="MapZoomedIn" />
+            </>
+          ) : null}
+          {FEATURE_FLAGS.postCreationEnabled ? (
+            <RootStack.Screen getComponent={loadPostComposerScreen} name="Post" />
+          ) : null}
           <RootStack.Screen getComponent={loadEditProfileScreen} name="EditProfile" />
           <RootStack.Screen getComponent={loadFavouritesScreen} name="Favourites" />
           <RootStack.Screen getComponent={loadReviewHistoryScreen} name="ReviewHistory" />
@@ -667,11 +673,31 @@ export function RootNavigator({ theme }: { theme: Theme }) {
               }}
             />
           ) : null}
-          <RootStack.Screen component={BlogPostRouteScreen} name="BlogPost" />
-          <RootStack.Screen getComponent={loadReviewStack} name="ReviewStack" />
-          <RootStack.Screen getComponent={loadWheelStack} name="WheelStack" />
-          <RootStack.Screen getComponent={loadActivityInboxScreen} name="ActivityInbox" />
-          <RootStack.Screen getComponent={loadActivityPostDetailScreen} name="ActivityPostDetail" />
+          {FEATURE_FLAGS.readsEnabled ? (
+            <RootStack.Screen component={BlogPostRouteScreen} name="BlogPost" />
+          ) : null}
+          {FEATURE_FLAGS.reviewCreationEnabled ? (
+            <RootStack.Screen getComponent={loadReviewStack} name="ReviewStack" />
+          ) : null}
+          {FEATURE_FLAGS.hungryWheelEnabled ? (
+            <>
+              <RootStack.Screen getComponent={loadWheelStack} name="WheelStack" />
+              <RootStack.Screen getComponent={loadMusicSelectionScreen} name="MusicSelection" />
+              <RootStack.Screen
+                getComponent={loadDecideForMeResultScreen}
+                name="DecideForMeResult"
+              />
+            </>
+          ) : null}
+          {FEATURE_FLAGS.activityEnabled ? (
+            <>
+              <RootStack.Screen getComponent={loadActivityInboxScreen} name="ActivityInbox" />
+              <RootStack.Screen
+                getComponent={loadActivityPostDetailScreen}
+                name="ActivityPostDetail"
+              />
+            </>
+          ) : null}
           {FEATURE_FLAGS.directMessagesEnabled ? (
             <>
               <RootStack.Screen getComponent={loadChatDetailScreen} name="ChatDetail" />
@@ -681,14 +707,14 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           {FEATURE_FLAGS.craveEnabled ? (
             <RootStack.Screen getComponent={loadCraveScreen} name="Crave" />
           ) : null}
-          <RootStack.Screen getComponent={loadMusicSelectionScreen} name="MusicSelection" />
-          <RootStack.Screen getComponent={loadDecideForMeResultScreen} name="DecideForMeResult" />
           {FEATURE_FLAGS.floorplansEnabled ? (
             <RootStack.Screen getComponent={loadBuildingDrillDownScreen} name="BuildingDrillDown" />
           ) : null}
           <RootStack.Screen getComponent={loadOfflineStateScreen} name="Offline" />
           <RootStack.Screen getComponent={loadNotFoundScreen} name="NotFound" />
-          <RootStack.Screen getComponent={loadQuickBitesScreen} name="QuickBites" />
+          {!FEATURE_FLAGS.release01CoreOnly ? (
+            <RootStack.Screen getComponent={loadQuickBitesScreen} name="QuickBites" />
+          ) : null}
           {FEATURE_FLAGS.prototypeRoutesEnabled ? (
             <>
               <RootStack.Screen getComponent={loadDishDetailScreenV2} name="DishDetailV2" />
