@@ -1,42 +1,95 @@
-# App Final Prelaunch Go / No-Go
+# Hungry App Final Pre-Launch Go / No-Go
 
-Updated: 2026-06-21
+Updated: 2026-07-23  
 Final status: **No-Go**
 
-## Store-Readiness Repo-Side Status
+## 1. Current change lines
+
+| PR | Purpose | State |
+|---|---|---:|
+| #44 | Mandatory authentication, fail-closed session/configuration behavior, authenticated read-only Excel catalog fallback, catalog reconciliation | open / implementation and verification incomplete |
+| #45 | Repository organization, current documentation, stale PR closure, generated-output cleanup | draft / verification incomplete |
+
+Both branches start from current `main` but overlap in policy documentation. Rebase/update and resolve deliberately before either merge. Do not let #45 overwrite newer runtime-specific #44 content.
+
+## 2. Store-readiness repository drafts
 
 | Workstream | Status | Evidence |
 |---|---:|---|
 | ASO metadata drafts | repo-complete draft | `tasks/Roadmap/app-store-submission-qc-report.md`, `tasks/Roadmap/google-play-submission-qc-report.md` |
-| Reviewer-note template | repo-complete draft | `tasks/Roadmap/app-store-submission-qc-report.md`, `tasks/Roadmap/app-store-google-play-prelaunch-qaqc-checklist.md` |
+| Reviewer-note template | repo-complete draft | store submission reports and policy checklist |
 | Store policy checklist | repo-complete draft | `tasks/Roadmap/app-store-google-play-prelaunch-qaqc-checklist.md` |
 | Data Safety / App Privacy mapping | repo-complete draft | `tasks/Roadmap/app-store-data-safety-mapping.md` |
-| Release evidence key template | repo-complete draft | `tasks/release-evidence/full-audit-v1.example.env` |
+| Release evidence template | repo-complete draft | `tasks/release-evidence/full-audit-v1.example.env` |
 | Local release checklist wiring | repo-complete draft | `scripts/release_ready_checklist.sh` |
 
-Repo-complete means the repository now has the draft/checklist/template surface needed for owner review. It does **not** mean App Store Connect, Play Console, EAS, legal/privacy, live Supabase, or production monitoring proof exists.
+Repo-complete means the repository contains a draft, checklist, contract or evidence template for owner review. It does **not** mean the active implementation is green, the native binaries were tested, the store consoles were completed, the live Supabase project passed, or legal/privacy approval exists.
 
-## Repo-Local Gates
+## 3. Mandatory product gates
 
-| Gate | Status |
+The approved flow is:
+
+```text
+Splash → Onboarding → Create Account / Sign In → verification when required → authenticated app
+```
+
+The following must be proven on the final reconciled commit:
+
+- [ ] No guest/skip/session bypass exists.
+- [ ] MainTabs and all app data surfaces remain unmounted before authentication.
+- [ ] A valid SecureStore-backed Supabase session is required for restoration.
+- [ ] Signed-out, missing, invalid and revoked sessions return to auth and clear account-scoped state.
+- [ ] Missing production Supabase configuration blocks app entry.
+- [ ] Supabase remains authoritative for authentication and every shared write.
+- [ ] Excel is available only to an already authenticated user for eligible catalog network/RPC/release outages.
+- [ ] Successful empty searches remain no-results.
+- [ ] Excel fallback exposes no write path and no failed write appears successful.
+- [ ] Deep links, return routes, feature flags, merchant roles and admin roles cannot be bypassed.
+
+## 4. Repository-local gates
+
+No current reconciled branch has complete green evidence. GitHub Actions for recent #44/#45 commits have failed before returning usable job steps/logs, and this audit environment has no local checkout to run the commands.
+
+| Gate | Current status |
 |---|---:|
-| prelaunch source contracts | pass: 5/5 |
-| native/release evidence contracts | pass: 5/5 |
-| typecheck | pass |
-| lint | pass |
-| format check | pass |
-| unit/integration tests | pass: 533 total / 531 passing / 2 skipped |
-| Playwright e2e | not rerun in full; repo-side webServer prompt blocker fixed, sandbox localhost bind remains environment-limited |
-| merchant catalog e2e | pass when run with localhost bind access; sandbox bind remains environment-limited |
-| Expo Doctor | blocked: compatible `CI=1 npx expo-doctor .` reaches the CLI, but remote Expo API / React Native Directory checks fail in this environment and the app-config common-issues warning remains |
-| asset audit | pass |
-| Supabase static audit | pass |
-| edge function check | pass |
-| database smoke scripts | skipped: missing Supabase smoke URL / anon key |
-| security scans | pass: npm audit 0 vulnerabilities, gitleaks pass, TruffleHog pass |
-| release ready local | not rerun after latest Expo config/report updates; previous run passed source/static checks before older npm-audit network blocker |
+| Typecheck | pending current reconciled commit |
+| Lint | pending current reconciled commit |
+| Format check | pending current reconciled commit |
+| Unit/integration/source contracts | pending current reconciled commit |
+| Full Playwright | pending mandatory-auth suite and runnable localhost environment |
+| Merchant/admin Playwright | pending current roles/environment |
+| Expo Doctor | pending current environment and accepted external-check evidence |
+| Asset audit | pending current reconciled commit |
+| Supabase static audit | pending current reconciled commit |
+| Edge Function check | pending current reconciled commit |
+| npm audit | pending current lockfile/registry access |
+| Gitleaks | pending current branch |
+| TruffleHog | pending current branch |
+| Release-ready local | pending all preceding gates |
+| Database location/search/RLS smoke | pending approved staging configuration |
+| Security/Performance Advisor | pending owner-controlled Supabase evidence |
 
-## External Required Evidence Blocking Store Submission
+Historical passes are useful context but do not certify the new mandatory-auth and cleanup diffs.
+
+## 5. Native and runtime gates
+
+| Evidence | Status |
+|---|---:|
+| Fresh install → onboarding → mandatory account | missing current build proof |
+| Valid session restore | missing current build proof |
+| Failed auth/verification/recovery | missing current build proof |
+| Signed-out and revoked-session denial | missing current build proof |
+| Supabase healthy catalog | missing current build proof |
+| Authenticated targeted catalog outage | missing current build proof |
+| Signed-out outage with no Excel access | missing current build proof |
+| Missing release configuration block | missing current build proof |
+| Legitimate no-results | missing current build proof |
+| iOS VoiceOver / large text / reduced motion | missing |
+| Android TalkBack / large text / reduced motion | missing |
+| iOS EAS/TestFlight artifact | missing |
+| Android EAS/AAB/pre-launch report | missing |
+
+## 6. External required evidence
 
 | Evidence | Status |
 |---|---:|
@@ -49,57 +102,51 @@ Repo-complete means the repository now has the draft/checklist/template surface 
 | store policy checklist owner/legal approval | missing |
 | iOS EAS/TestFlight artifact | missing |
 | Android EAS/AAB/pre-launch report | missing |
-| live Supabase RLS/storage smoke | missing |
+| live Supabase RLS/storage/function smoke | missing |
 | Supabase Advisor owner proof | missing |
-| Sentry staging crash capture | missing |
-| full-platform UGC moderation smoke | missing |
-| merchant/admin RBAC live smoke | missing |
+| Sentry staging error/source-map/release proof | missing |
+| full-platform UGC moderation proof | missing |
+| merchant/admin RBAC live proof | missing |
+| SMTP/auth email delivery proof | missing |
 | legal/privacy sign-off | missing |
+| documented rollout/rollback owner proof | missing |
 
-## Verdict
+## 7. Apple account requirement risk
 
-Hungry is not store-submission ready until all repo-local gates pass and every external evidence item above is attached. The repo-side store-submission drafts are ready for owner review, but public submission remains blocked by store-console, legal/privacy, EAS/TestFlight/Play, live Supabase, monitoring, UGC, and runtime smoke proof. This report is intentionally conservative for Apple and Google review.
+Hungry currently requires authentication before app entry. App Review notes must explain the significant account-based core functionality truthfully: synced taste/profile state, personalised recommendations, saved content, reviews/posts, privacy and moderation identity, and cross-device continuity. This does not guarantee Apple acceptance; any reviewer objection requires owner/product/legal response rather than silently reintroducing guest mode.
 
-## Safe Deployment Handoff
-
-Direct external deploy was not attempted in this handoff. The current app-store prelaunch changes are separable from the pre-existing website visual/content changes and can be committed as their own app-store readiness group while leaving `marketing/website/web-v2/**` unstaged.
-
-Recommended app-store prelaunch staging group:
+## 8. Required final verification
 
 ```bash
-git add app.config.js package.json playwright.config.ts scripts/release_ready_checklist.sh scripts/run-expo.cjs scripts/run-maestro-smoke.mjs src/app/app-store-prelaunch-contracts.test.ts src/app/e2e-webserver-contracts.test.ts src/app/release-evidence-contracts.test.ts tasks/release-evidence/full-audit-v1.example.env .maestro/android-app-launch-smoke.yaml .maestro/android-guest-browse-smoke.yaml .maestro/android-media-permission-smoke.yaml .maestro/ios-app-launch-smoke.yaml .maestro/ios-auth-smoke.yaml .maestro/ios-guest-browse-smoke.yaml .maestro/ios-location-denied-smoke.yaml .maestro/ios-review-post-smoke.yaml tasks/Roadmap/app-file-cleanup-inventory.md tasks/Roadmap/app-final-prelaunch-go-nogo.md tasks/Roadmap/app-maestro-native-smoke-report.md tasks/Roadmap/app-playwright-prelaunch-report.md tasks/Roadmap/app-prefetch-qc-report.md tasks/Roadmap/app-privacy-permissions-qc-report.md tasks/Roadmap/app-route-feature-flag-qc-report.md tasks/Roadmap/app-security-qc-report.md tasks/Roadmap/app-store-data-safety-mapping.md tasks/Roadmap/app-store-google-play-prelaunch-qaqc-checklist.md tasks/Roadmap/app-store-submission-checklist.md tasks/Roadmap/app-store-submission-qc-report.md tasks/Roadmap/app-ugc-moderation-qc-report.md tasks/Roadmap/google-play-submission-qc-report.md tasks/session-log.md tasks/verification.md
+npm run typecheck
+npm run lint
+npm run format:check
+npm run test
+npm run test:e2e
+npm run test:e2e:merchant-catalog
+npx expo-doctor --non-interactive
+npm run audit:assets
+npm run audit:supabase:static
+npm run check:edge-functions
+npm run security:audit
+npm run security:gitleaks
+npm run security:trufflehog
+npm run release:ready:local
+npm run smoke:database:location
+npm run smoke:database:search
+npm run smoke:database:rls
 ```
 
-Separate website visual/content group, if the owner wants it committed later:
+With approved staging credentials:
 
 ```bash
-git add marketing/website/web-v2/src/components/sections/Hero.module.css marketing/website/web-v2/src/components/sections/Hero.tsx marketing/website/web-v2/src/components/sections/LocalGuide.module.css marketing/website/web-v2/src/content/site.ts marketing/website/web-v2/src/styles/tokens.css
+npm run audit:supabase:advisor-security:non-password
+npm run smoke:supabase-canonical-food-business-staging
+npm run smoke:supabase-full-audit-v1
 ```
 
-Expo config coexistence check: `app.config.js` intentionally imports and clones `app.json`, then strips development-only or unjustified release settings only for `EXPO_PUBLIC_APP_ENV=production`; `app.json` remains the static base config for development and shared metadata.
+Then complete current iOS and Android preview/production-candidate builds, device/simulator scenarios, store-console declarations and external approvals.
 
-## Latest Command Evidence
+## 9. Verdict
 
-- `npm run typecheck` -> pass.
-- `npm run lint` -> pass.
-- `npm run format:check` -> pass.
-- `npm run test` -> pass, 533 total / 531 passing / 2 skipped.
-- `npm run audit:assets` -> pass.
-- `npm run audit:supabase:static` -> pass.
-- `npm run check:edge-functions` -> pass.
-- `npm run security:gitleaks` -> pass, no leaks found.
-- `npm run security:trufflehog` -> pass, 0 verified and 0 unverified secrets.
-- `npm run smoke:database:location` / `search` / `rls` -> skipped without Supabase smoke env.
-- `npm audit --audit-level=moderate` -> pass, found 0 vulnerabilities.
-- `EXPO_NO_DOTENV=1 CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` -> blocked with 15/18 checks passed; failures are Expo API fetch `getaddrinfo ENOTFOUND exp.host`, React Native Directory response, and the app-config common-issues warning despite default dynamic config matching `app.json`.
-- Repo-side Expo webServer prompt blocker -> fixed in `scripts/run-expo.cjs`; sandbox localhost bind can still return `EPERM`.
-- Elevated `E2E_PORT=8082 npm run test:e2e:merchant-catalog -- --reporter=line` -> pass, 1/1.
-- `npm run release:ready:local` -> previous run passed typecheck/tests/static checks/edge/assets/TruffleHog before failing at an older npm-audit DNS blocker; rerun after npm-audit recovery is still pending because Expo Doctor remains blocked.
-- Current store-readiness repo-side pass -> `bash -n scripts/release_ready_checklist.sh` pass; focused prelaunch/release-evidence contracts pass 6/6; touched-file `git diff --check` pass.
-
-## Current Store Draft Evidence
-
-- App Store ASO and reviewer-note drafts -> repo-complete draft; final App Store Connect approval missing.
-- Google Play listing draft -> repo-complete draft; final Play Console approval missing.
-- Data Safety/App Privacy mapping -> repo-complete draft; final legal/store-console answers missing.
-- Release evidence template/checklist -> repo-complete draft; external proof keys remain `0` until captured.
+The repository is better organised and the active mandatory-auth/catalog direction is clearer, but Hungry is not ready for production or store submission. The correct status is **No-Go** until #44 and #45 are reconciled, every repository-local gate passes, current native evidence exists, live Supabase/security proof passes, and all store, monitoring, image-rights and legal/privacy evidence is attached.
