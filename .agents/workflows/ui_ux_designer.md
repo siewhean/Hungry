@@ -1,80 +1,99 @@
 ---
-description: UI/UX designer — visual audit of all screens for alignment, spacing, and overflow issues
+description: UI/UX designer — rendered audit of Hungry screens, states, interaction, and visual consistency
 ---
 
 # UI/UX Designer Agent
 
-You are a UI/UX Designer Agent for the **Hungry** food discovery app. Your job is to audit every screen for visual quality, layout alignment, spacing consistency, safe-area compliance, and overflow/clip issues.
+Audit rendered Hungry interfaces rather than judging source alone. Use the current theme, UI primitives, approved design sources, registered routes, feature flags, and product behavior.
 
-## Design System Reference
+## Product boundary
 
-All design tokens are in `src/theme/tokens.ts`. Every screen must use `useHungryTheme()` — no hardcoded hex colors or pixel values.
+- No guest-mode surfaces.
+- Fresh users complete onboarding before mandatory account creation/sign-in.
+- Main app UI mounts only when authenticated.
+- Authenticated Excel fallback is read-only and should communicate source/freshness without making the app feel broken.
+- Disabled features must not appear as active UI.
 
-Typography scale: `h1` | `h2` | `h3` | `body` | `bodySmall` | `micro` | `price`
+## Source of truth
 
-## Audit Checklist
+- approved design/product source for the scoped screen;
+- `src/theme/` and `src/components/ui/`;
+- current screen and directly used components;
+- current route/auth/data behavior;
+- `docs/DESIGN_STANDARDS.md`, `PROJECT_INSTRUCTIONS.md`, and task-specific design files where applicable.
 
-### 1. Safe area compliance
+Do not enforce a design mock that conflicts with current product policy or native platform behavior without documenting the decision.
 
-Every screen must respect the device safe area:
-- Top: statusbar height (iOS notch, Dynamic Island, Android statusbar)
-- Bottom: home indicator (iOS) / navigation bar (Android)
-- Use `<Screen>` wrapper which handles this automatically
+## Audit matrix
 
-**Check:** Take a screenshot at iPhone 15 Pro resolution (393×852). Verify no content is cut off.
+Test every scoped screen in:
 
-### 2. Spacing uniformity
+- iOS and Android;
+- small and representative phone sizes;
+- light and dark mode;
+- normal and large text;
+- loading, empty, error, offline, no-results, permission-denied, invalid-param, and expired-session states;
+- keyboard open/closed where inputs exist;
+- authenticated healthy catalog and authenticated fallback where relevant.
 
-All internal spacing must use `spacing` tokens (4, 8, 12, 16, 20, 24, 32, 40, 48…).
-No ad-hoc pixel values.
+### 1. Layout and safe areas
 
-**Check:** Search for `marginTop: [0-9]` patterns in screen files. Flag any non-token values.
+- no content under notch, Dynamic Island, status bar, home indicator, Android navigation, keyboard, or custom tab bar;
+- no clipped text, images, cards, sheets, toasts, or floating controls;
+- scroll areas have enough bottom space without arbitrary padding that creates excessive blank areas;
+- orientation/tablet behavior is intentional when supported.
 
-### 3. Typography hierarchy
+### 2. Hierarchy and consistency
 
-Each screen must have exactly one `<AppText variant="h1">`. Check:
-- No double H1
-- H2 > H3 > body hierarchy respected
-- No body text smaller than 12px effective size
+- one clear primary purpose per screen;
+- headings, sections, cards, metadata, and CTAs follow the shared visual system;
+- spacing, radii, typography, icons, elevation, and colour use tokens/primitives where available;
+- deliberate local dimensions are allowed when driven by media ratio, safe area, geometry, or platform constraints and should be named/explained;
+- no parallel component patterns for the same interaction without a reason.
 
-### 4. Color contrast
+### 3. Interaction and feedback
 
-Verify text-on-background contrast ratio ≥ 4.5:1 (WCAG AA):
-- `textPrimary` on `bg` ✓
-- `textMuted` on `surface` — verify
-- `orange` as background with white text — verify (may fail for light mode)
+- every visible control works;
+- pressed, selected, disabled, loading, success, failure, retry, and destructive states are clear;
+- navigation and back behavior preserve appropriate context;
+- gestures have visible alternatives where accessibility or discoverability requires them;
+- optimistic state reverts or explains failure rather than showing false success.
 
-### 5. Touch targets
+### 4. Media and data presentation
 
-All tappable elements: minimum 44×44pt.
-Check: Pressable/TouchableOpacity wrappers. Flag any icon-only buttons < 44pt.
+- dish cards use approved menu-derived imagery;
+- stall cards use logo → stall/venue image → representative menu dish;
+- no Unsplash or generic production placeholders;
+- aspect ratio, crop, caching, transition, and failure treatment are consistent;
+- ratings, prices, distance, hours, availability, verification, and source/freshness are clear and not visually overstated.
 
-### 6. Scroll areas
+### 5. Accessibility-aware visual quality
 
-Long content screens (Profile, StallDetail, DishDetail, ReviewHistory) must scroll without clipping. 
-Add `paddingBottom: spacing[16]` to all ScrollView/FlatList content containers.
+- touch targets meet platform expectations;
+- text and meaningful graphics meet contrast requirements;
+- selected/error/open/verified states do not rely on colour alone;
+- large text does not destroy hierarchy or controls;
+- focus indicators, modal boundaries, reduced motion, and screen-reader labels are coordinated with the accessibility audit.
 
-### 7. Overlay / z-index issues
+### 6. Performance perception
 
-Check: no tooltip/toast behind modals, no FAB behind bottom bar.
+- skeletons match final layout and do not jump dramatically;
+- prefetch improves perceived latency without blocking interaction;
+- long lists use appropriate virtualization/paging;
+- images and animations do not cause obvious jank, flashes, or memory-heavy behavior.
 
-### 8. Dark mode
+## Execution
 
-All colors must work in dark mode. Test by toggling `palette.mode` in `DeveloperLauncher`:
-- No hardcoded `#FFFFFF` or `#000000` backgrounds
-- Shadows visible in dark mode (reduce opacity)
-
-## Execution steps
-
-1. Set viewport to 393×852 (iPhone 15 Pro).
-2. Navigate to each screen via DeveloperLauncher.
-3. Take a screenshot. Annotate any issues.
-4. Write findings to `ui_ux_report.md`.
+1. Inspect current UI through simulator/device or Playwright before planning changes.
+2. Capture before screenshots and UI hierarchy for representative states.
+3. Interact with every control and record failures.
+4. Compare with approved design and platform conventions.
+5. Fix one coherent issue group at a time and rerun the affected flow.
+6. Record findings and screenshot/trace references in the task-specific audit; do not create a loose root `ui_ux_report.md`.
 
 ## Pass criteria
 
-- No content clipped outside safe area.
-- All spacing uses theme tokens.
-- All touch targets ≥ 44pt.
-- No WCAG AA contrast failures for primary text.
-- Dark mode renders without white flash or broken colors.
+- No P0/P1 layout, interaction, readability, safe-area, keyboard, modal, or visual-trust defect.
+- Core flows are consistent across iOS/Android and supported themes/text sizes.
+- Production media and data states are truthful and polished.
+- Rendered evidence exists for the major states, not only source inspection.
