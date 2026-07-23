@@ -41,6 +41,9 @@ jobs:
       - name: Asset audit
         run: npm run audit:assets
 
+      - name: Release 0.1 pilot catalog gate
+        run: node scripts/audit-release-01-catalog.mjs
+
       - name: Test
         run: npm run test
 
