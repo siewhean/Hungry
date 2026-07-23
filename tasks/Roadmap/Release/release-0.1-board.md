@@ -25,7 +25,7 @@ Use only these four sections for Week 1–2 work. Do not add unrelated features.
 | R01-PAGE-01 | Codex | Prove three Supabase and Excel pages are distinct | IDs/source/release evidence for dishes and stalls | Excel pass; live Supabase continuation pending quota recovery |
 | R01-WRITE-01 | Codex | Prove no false write success during outage | Save/profile and every enabled write audited; disabled writes hidden | Open |
 | R01-SUPA-01 | Owner + Codex | Run staging Supabase/advisor/RLS/catalog smokes | No skipped checks; exact output attached | Blocked: RLS REST smoke HTTP 402 quota; Advisor remediation un-applied |
-| R01-IOS-01 | Owner + Codex | Build/install iOS internal alpha | EAS build ID, install, screenshots, logs, scenarios pass | Local simulator pass; EAS artifact pending |
+| R01-IOS-01 | Owner + Codex | Build/install iOS internal alpha | EAS build ID, install, screenshots, logs, scenarios pass | Local simulator pass; EAS needs a suitable iOS internal-distribution credential |
 | R01-AND-01 | Owner + Codex | Build/install Android internal alpha | EAS build ID, install, screenshots, logs, scenarios pass | Blocked on device/EAS access |
 | R01-TEST-01 | Owner | Recruit first five internal testers | Tester list and access confirmed; no passwords in repo | Open |
 
