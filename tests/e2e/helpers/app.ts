@@ -1,8 +1,8 @@
 import { expect, type Page, type TestInfo } from "@playwright/test";
 
 const CAPTION_PLACEHOLDER = "Write your masterpiece... Use @ to tag or # for topics.";
-const MOCK_E2E_EMAIL = "playwright@hungry.test";
-const MOCK_E2E_PASSWORD = "HungryPass123!";
+const E2E_DEVELOPER_LAUNCHER_PATH = "/";
+const E2E_DEVELOPER_LAUNCHER_STORAGE_KEY = "hungry.e2eDeveloperLauncher";
 
 function toDevTestId(value: string) {
   return value
@@ -53,21 +53,21 @@ async function clearBrowserStorage(page: Page) {
   });
 }
 
+async function enableE2eDeveloperLauncher(page: Page) {
+  await page.addInitScript((storageKey) => {
+    window.localStorage.setItem(storageKey, "1");
+  }, E2E_DEVELOPER_LAUNCHER_STORAGE_KEY);
+}
+
+async function disableE2eDeveloperLauncher(page: Page) {
+  await page.addInitScript((storageKey) => {
+    window.localStorage.removeItem(storageKey);
+  }, E2E_DEVELOPER_LAUNCHER_STORAGE_KEY);
+}
+
 async function authenticateMockDeveloperSession(page: Page) {
   const launcher = page.getByText("Developer Launcher", { exact: true }).first();
-  if (await launcher.isVisible().catch(() => false)) return;
-
-  const getStarted = page.getByRole("button", { name: "Get started" });
-  if (await getStarted.isVisible().catch(() => false)) {
-    await page.getByRole("button", { name: "Sign in to existing account" }).click();
-  }
-
-  const loginTitle = page.getByText("Welcome back", { exact: true });
-  await expect(loginTitle).toBeVisible({ timeout: 60_000 });
-  await page.getByPlaceholder("Email address").fill(MOCK_E2E_EMAIL);
-  await page.getByPlaceholder("Password").fill(MOCK_E2E_PASSWORD);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(launcher).toBeVisible({ timeout: 30_000 });
+  await expect(launcher).toBeVisible({ timeout: 60_000 });
 }
 
 export async function openDevSection(page: Page, section: string) {
@@ -85,14 +85,16 @@ export async function openDevSection(page: Page, section: string) {
 }
 
 export async function resetAppState(page: Page) {
-  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await enableE2eDeveloperLauncher(page);
+  await page.goto(E2E_DEVELOPER_LAUNCHER_PATH, { waitUntil: "domcontentloaded" });
   await clearBrowserStorage(page);
   await page.reload({ waitUntil: "domcontentloaded" });
   await authenticateMockDeveloperSession(page);
 }
 
 export async function gotoLauncher(page: Page) {
-  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await enableE2eDeveloperLauncher(page);
+  await page.goto(E2E_DEVELOPER_LAUNCHER_PATH, { waitUntil: "domcontentloaded" });
   await authenticateMockDeveloperSession(page);
 }
 
@@ -136,6 +138,7 @@ export async function createEmailAccountFromScratch(page: Page, prefix: string) 
     password: "HungryPass123!",
   };
 
+  await disableE2eDeveloperLauncher(page);
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await clearBrowserStorage(page);
   await page.reload({ waitUntil: "domcontentloaded" });
@@ -143,7 +146,7 @@ export async function createEmailAccountFromScratch(page: Page, prefix: string) 
   await page.getByRole("button", { name: "Sign in to existing account" }).click();
   await page.getByRole("button", { name: "Create account" }).click();
   await page.getByPlaceholder("Full name").fill(user.name);
-  await page.getByPlaceholder("Email address").fill(user.email);
+  await page.getByRole("textbox", { name: "Email address" }).fill(user.email);
   await page.getByPlaceholder("Create password").fill(user.password);
   await page.getByRole("button", { name: "Create account", exact: true }).click();
   await expect(page.getByText("Verify your email", { exact: true }).first()).toBeVisible();

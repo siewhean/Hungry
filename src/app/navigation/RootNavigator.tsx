@@ -24,13 +24,13 @@ import { useMerchantStore } from "@/store/useMerchantStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { isE2eDeveloperLauncherBuild } from "@/lib/runtime/e2eDeveloperLauncher";
 import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
 import { SwipeableTabNavigator } from "./SwipeableTabNavigator";
 import { createRootLinking } from "./linking";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
-const isMockE2eDataSource = process.env.EXPO_PUBLIC_HUNGRY_E2E_DATA_SOURCE === "mock";
 
 type RootRouteName = keyof RootStackParamList;
 type MainTabRouteName = keyof MainTabParamList;
@@ -451,9 +451,11 @@ function CredEarnedToastHost() {
 }
 
 export function RootNavigator({ theme }: { theme: Theme }) {
+  const isDeveloperLauncherAvailable = __DEV__ || isE2eDeveloperLauncherBuild();
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const isAuthReady = useSessionStore((state) => state.isAuthReady);
   const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
+  const authDataSource = useSessionStore((state) => state.authDataSource);
   const sessionExpired = useSessionStore((state) => state.sessionExpired);
   const dismissSessionExpiry = useSessionStore((state) => state.dismissSessionExpiry);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
@@ -539,13 +541,13 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     const rootState = navigationRef.getRootState();
     const currentTopRoute = rootState.routes[rootState.index]?.name;
     if (
-      __DEV__ &&
+      isDeveloperLauncherAvailable &&
       currentTopRoute === "DeveloperLauncher" &&
       isAuthenticated &&
       hasCompletedOnboarding &&
+      authDataSource === "supabase" &&
       !isDeveloperMode &&
-      !isMerchantMode &&
-      !isMockE2eDataSource
+      !isMerchantMode
     ) {
       navigateHome();
       return;
@@ -577,6 +579,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     }
   }, [
     hasCompletedOnboarding,
+    authDataSource,
     isAuthenticated,
     isAuthReady,
     isDeveloperMode,
@@ -651,10 +654,10 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       >
         <RootStack.Navigator
           id="Root"
-          initialRouteName={__DEV__ ? "DeveloperLauncher" : "Splash"}
+          initialRouteName={isDeveloperLauncherAvailable ? "DeveloperLauncher" : "Splash"}
           screenOptions={{ headerShown: false }}
         >
-          {__DEV__ ? (
+          {isDeveloperLauncherAvailable ? (
             <RootStack.Screen getComponent={loadDeveloperLauncherScreen} name="DeveloperLauncher" />
           ) : null}
           <RootStack.Screen component={SplashScreen} name="Splash" />

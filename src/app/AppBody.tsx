@@ -9,6 +9,7 @@ import { useAppBootstrap } from "@/hooks/useAppBootstrap";
 import { RootNavigator } from "@/app/navigation/RootNavigator";
 import { PreAuthNavigator } from "@/app/navigation/PreAuthNavigator";
 import { getReleasedSupabaseConfigurationError } from "@/lib/services/supabase/client";
+import { isE2eDeveloperLauncherRequested } from "@/lib/runtime/e2eDeveloperLauncher";
 import { useSessionStore } from "@/store/useSessionStore";
 
 const APP_SHELL_FONT_GRACE_MS = 900;
@@ -20,6 +21,7 @@ export function AppBody() {
   const { colorScheme, theme, palette, spacing, fontsLoaded } = useHungryTheme();
   const [fontGraceReached, setFontGraceReached] = useState(false);
   const configurationError = getReleasedSupabaseConfigurationError();
+  const isE2eDeveloperLauncherAvailable = isE2eDeveloperLauncherRequested();
 
   useEffect(() => {
     if (fontsLoaded) {
@@ -72,7 +74,11 @@ export function AppBody() {
     <View style={{ flex: 1, backgroundColor: palette.bg }}>
       <BottomSheetModalProvider>
         <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-        {isAuthenticated ? <RootNavigator theme={theme} /> : <PreAuthNavigator theme={theme} />}
+        {isAuthenticated || isE2eDeveloperLauncherAvailable ? (
+          <RootNavigator theme={theme} />
+        ) : (
+          <PreAuthNavigator theme={theme} />
+        )}
       </BottomSheetModalProvider>
     </View>
   );

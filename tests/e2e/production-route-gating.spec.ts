@@ -24,10 +24,10 @@ test.describe("production route gating", () => {
     expect(flags).toContain("gamificationEnabled");
     expect(flags).toContain("collectionsEnabled");
     expect(flags).toContain("storiesEnabled");
-    expect(flags).toContain("commentsEnabled: nonProductionSurfaceEnabled");
-    expect(flags).toContain("directMessagesEnabled: nonProductionSurfaceEnabled");
-    expect(flags).toContain("const merchantCentreEnabled = nonProductionSurfaceEnabled");
-    expect(flags).toContain("const merchantClaimCtaEnabled = nonProductionSurfaceEnabled");
+    expect(flags).toContain("commentsEnabled: advancedDevelopmentSurfaceEnabled");
+    expect(flags).toContain("directMessagesEnabled: advancedDevelopmentSurfaceEnabled");
+    expect(flags).toContain("merchantCentreEnabled: advancedDevelopmentSurfaceEnabled");
+    expect(flags).toContain("merchantClaimCtaEnabled: advancedDevelopmentSurfaceEnabled");
     expect(flags).toContain('appEnv !== "production"');
     expect(rootNavigator).toContain("FEATURE_FLAGS.prototypeRoutesEnabled ? (");
     expect(rootNavigator).toContain("FEATURE_FLAGS.merchantCentreEnabled ? (");

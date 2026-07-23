@@ -7,11 +7,15 @@ function read(path: string) {
   return readFileSync(resolve(process.cwd(), path), "utf8");
 }
 
-test("the signed-out app mounts only Splash, Onboarding, and Auth", () => {
+test("the signed-out app mounts only Splash, Onboarding, and Auth outside the isolated E2E launcher", () => {
   const appBody = read("src/app/AppBody.tsx");
   const preAuth = read("src/app/navigation/PreAuthNavigator.tsx");
+  const e2eRuntime = read("src/lib/runtime/e2eDeveloperLauncher.ts");
 
-  assert.match(appBody, /isAuthenticated\s*\?\s*<RootNavigator[\s\S]*:\s*<PreAuthNavigator/);
+  assert.match(appBody, /isAuthenticated \|\| isE2eDeveloperLauncherAvailable/);
+  assert.match(appBody, /<PreAuthNavigator theme=\{theme\} \/>/);
+  assert.match(e2eRuntime, /extra\?\.appEnv === "development"/);
+  assert.match(e2eRuntime, /extra\?\.e2eDeveloperLauncherEnabled === true/);
   assert.match(preAuth, /name="Splash"/);
   assert.match(preAuth, /name="OnboardingStack"/);
   assert.match(preAuth, /name="AuthStack"/);

@@ -163,9 +163,10 @@ test("signed-out app entry starts at login while public routes stay unprotected"
   );
   assert.match(rootNavigator, /const isDeveloperMode = useMerchantStore/);
   assert.match(rootNavigator, /const isMerchantMode = useMerchantStore/);
+  assert.match(rootNavigator, /const authDataSource = useSessionStore/);
   assert.match(
     rootNavigator,
-    /currentTopRoute === "DeveloperLauncher"[\s\S]*isAuthenticated[\s\S]*hasCompletedOnboarding[\s\S]*!isDeveloperMode[\s\S]*!isMerchantMode[\s\S]*navigateHome\(\)/,
+    /currentTopRoute === "DeveloperLauncher"[\s\S]*isAuthenticated[\s\S]*hasCompletedOnboarding[\s\S]*authDataSource === "supabase"[\s\S]*!isDeveloperMode[\s\S]*!isMerchantMode[\s\S]*navigateHome\(\)/,
   );
   assert.match(
     developerLauncher,
