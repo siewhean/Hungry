@@ -79,7 +79,9 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
     const id = decodePathSegment(parts[1]);
     return id ? createState("StallDetail", { id }) : undefined;
   }
-  if (path === "order") return createState("Post", parseOrderDeepLinkQuery(rawPath));
+  if (FEATURE_FLAGS.postCreationEnabled && path === "order") {
+    return createState("Post", parseOrderDeepLinkQuery(rawPath));
+  }
   if (FEATURE_FLAGS.prototypeRoutesEnabled && parts[0] === "portfolio") {
     const portfolioId = decodePathSegment(parts[1]);
     return portfolioId ? createState("PortfolioPublicView", { portfolioId }) : undefined;
@@ -87,7 +89,7 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
   if (FEATURE_FLAGS.merchantCentreEnabled && parts[0] === "merchant") {
     return createState("MerchantTabs");
   }
-  if (parts[0] === "join") {
+  if (FEATURE_FLAGS.hungryWheelEnabled && parts[0] === "join") {
     const code = decodePathSegment(parts[1]);
     return code ? createState("WheelStack", { code }) : undefined;
   }
@@ -142,7 +144,7 @@ export function createRootLinking(
         },
         DishDetail: "dish/:id",
         StallDetail: "venue/:id",
-        Post: "order",
+        ...(FEATURE_FLAGS.postCreationEnabled ? { Post: "order" } : {}),
         ...(FEATURE_FLAGS.prototypeRoutesEnabled
           ? { PortfolioPublicView: "portfolio/:portfolioId" }
           : {}),
@@ -161,10 +163,14 @@ export function createRootLinking(
               },
             }
           : {}),
-        WheelStack: {
-          path: "join/:code",
-          screens: { WheelHome: "" },
-        },
+        ...(FEATURE_FLAGS.hungryWheelEnabled
+          ? {
+              WheelStack: {
+                path: "join/:code",
+                screens: { WheelHome: "" },
+              },
+            }
+          : {}),
       },
     },
     getStateFromPath(path: string) {
