@@ -2,6 +2,7 @@
 
 > Repository: `siewhean/Hungry`  
 > Cleanup branch: `codex/repository-hygiene-cleanup`  
+> Cleanup PR: #45  
 > Integration base: `main`  
 > Production status: **No-Go** — this audit does not replace application, database, native, store, security, or legal verification.
 
@@ -23,11 +24,12 @@ There is no guest mode. Supabase remains mandatory for authentication and shared
 
 ## 3. Pull-request and branch audit
 
-### Active integration line
+### Active change lines after cleanup
 
 | PR | Branch | Decision |
 |---|---|---|
 | #44 | `codex/catalog-excel-fallback-audit` | Keep open. Renamed and rewritten to reflect mandatory authentication, typed outage handling, authenticated read-only Excel fallback, and PR #43 reconciliation. |
+| #45 | `codex/repository-hygiene-cleanup` | Draft cleanup PR containing documentation consolidation, repository policy, and safe generated-output removal. |
 
 ### Closed as superseded during this audit
 
@@ -43,18 +45,18 @@ There is no guest mode. Supabase remains mandatory for authentication and shared
 | #23 | `code-health-fix-dietary-check-any-cast-1472434782269874449` | Current `main` already contains the typed behavior; branch is stale. |
 | #22 | `palette/a11y-icon-buttons-6629553433176848557` | Current `main` already contains later accessibility work; branch is stale/non-mergeable. |
 
-All other recent PRs are already merged or closed. The open PR search now returns only #44.
+All other recent PRs are already merged or closed. The only active implementation/cleanup PRs after this pass are #44 and #45.
 
 ### Branch-ref limitation
 
 The connector used for this pass exposes branch creation/update but not branch deletion or a reliable complete branch-ref listing. PR-associated branches were audited through PR metadata. Old branch refs may still exist after their PRs were closed. The owner should delete merged/superseded refs in GitHub after confirming no deployment, environment, or rollback process depends on them.
 
-Recommended retained refs:
+Recommended retained refs during this work:
 
 ```text
 main
 codex/catalog-excel-fallback-audit     # while PR #44 is active
-codex/repository-hygiene-cleanup       # while this cleanup PR is active
+codex/repository-hygiene-cleanup       # while PR #45 is active
 ```
 
 ## 4. Root documentation findings
@@ -92,6 +94,16 @@ Previous problems:
 - referenced stale policy and documents.
 
 Action: replaced with a concise Claude entrypoint and task-specific read/verification rules.
+
+### `CODEX.md`
+
+Previous problems:
+
+- required volatile task progress and blockers to be written into `README.md`;
+- did not state the current authentication/data-source boundary;
+- duplicated workflow rules without clarifying source ownership.
+
+Action: replaced with a concise Codex entrypoint pointing to the canonical ledgers, stable-doc rule, mandatory authentication, Supabase authority, and authenticated Excel fallback.
 
 ### `WORKFLOW.md`
 
@@ -187,14 +199,14 @@ Retained as append-only schema/security history and reproducible backend evidenc
 | old design exports/concepts | confirm no implementation, review, or legal asset dependency |
 | one-off scripts at `scripts/` root | package/workflow/doc reference search and focused test replacement |
 | historical root docs not in stable root set | reconcile unique content, then move to Archive or delete |
-| obsolete guest-session backend paths | security/product audit: distinguish unsupported app guest mode from any operational anonymous/abuse-control function before deletion |
+| obsolete guest-session backend paths | security/product audit: distinguish unsupported app guest mode from operational anonymous/abuse-control infrastructure before deletion |
 | stale branch refs | owner review and GitHub branch deletion |
 
 ## 9. Code-cleanliness assessment
 
 This hygiene branch intentionally contains documentation/organization and generated-output removal only. Runtime deletion without executable verification would be unsafe.
 
-Known code work is concentrated in PR #44, which must complete:
+Known runtime work is concentrated in PR #44, which must complete:
 
 - mandatory pre-auth/authenticated navigator separation;
 - no guest route or deep-link bypass;
@@ -238,7 +250,7 @@ The cleanup environment used for this audit had GitHub repository operations but
 |---|---|
 | PR-associated branch audit | Complete |
 | Superseded PR closure | Complete |
-| Only one prior open product PR remains | Complete — #44 |
+| Active PR set | #44 implementation, #45 cleanup |
 | Root governance docs | Reconciled on cleanup branch |
 | Product-context/QA-agent policy | Reconciled on cleanup branch |
 | Generated QA output removal | Complete on cleanup branch |
