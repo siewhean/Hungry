@@ -51,6 +51,7 @@ supabase/.temp/
 graphify-out/
 src/graphify-out/
 scratch/
+output/qa/*.txt
 output/qa/generated/
 *.tmp.json
 query_supabase*.ts
