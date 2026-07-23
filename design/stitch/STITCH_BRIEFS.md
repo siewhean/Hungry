@@ -1,515 +1,319 @@
 # Hungry Stitch Screen Briefs
 
-This file identifies which screens are already good enough to use as reference anchors, which screens still need generation, and the exact briefs to paste into Stitch.
+> Purpose: concise prompts for generating or reviewing Hungry mobile concepts.  
+> Runtime source of truth: registered screens, feature flags, current product policy, and approved design system.  
+> Do not treat a generated Stitch screen as implementation authority without reconciling it against the app.
 
-## Existing Progress To Keep
+## Product boundary
 
-Use these screens as visual anchors. Do not regenerate them first unless you are standardizing them to match the final system.
+Hungry does not support guest mode.
 
-- Home social feed
-  - `/Users/Siew Hean/Documents/GitHub/Hungry/design/figma-v2/home-feed.html`
-- Discover landing + search hybrid
-  - `/Users/Siew Hean/Documents/GitHub/Hungry/design/figma-v2/discover-search.html`
-- Building layout + floor navigation
-  - `/Users/Siew Hean/Documents/GitHub/Hungry/design/figma-v2/building-layout.html`
-- Stall detail
-  - `/Users/Siew Hean/Documents/GitHub/Hungry/design/figma-v2/stall-detail.html`
-- Quick review flow + review success
-  - `/Users/Siew Hean/Documents/GitHub/Hungry/design/figma-v2/quick-review.html`
+```text
+Splash → Onboarding → Create Account / Sign In → verification when required → authenticated app
+```
 
-Secondary concept references:
+Do not generate:
 
-- Reads, search utility, profile, settings, and state screens
-  - `/Users/Siew Hean/Documents/GitHub/Hungry/design/archive/figma-concept/index.html`
-  - `/Users/Siew Hean/Documents/GitHub/Hungry/design/archive/figma-redesign/prototype.html`
+- Continue as Guest or Skip Login;
+- guest soft gates;
+- unauthenticated Home, Discover, Search, detail, map, review, post, or profile screens;
+- enabled-looking UI for production-disabled features;
+- generic stock/Unsplash food imagery;
+- fake ratings, counts, hours, promotions, or verification claims.
 
-## Screens Still To Design In Stitch
+Excel catalog fallback, when surfaced, is an authenticated read-only continuity state. It must not look as though saves, reviews, posts, profile edits, or merchant writes can succeed offline.
 
-Priority order:
+## Repository-relative visual anchors
 
-1. Splash
-2. Login
-3. Sign Up
-4. Forgot Password
-5. Email Verification
-6. Taste Quiz
-7. Dietary Preferences
-8. Location Permission
-9. Search Idle
-10. Taste Filter Sheet
-11. Search Results
-12. Decide For Me Result
-13. Dish Detail
-14. Reads Article Bridge
-15. Profile Home
-16. Favourites
-17. Review History
-18. Settings
-19. Guest Soft Gate
-20. Offline State
-21. Not Found State
+Use current repository sources rather than developer-specific absolute paths:
 
-## Use This Global Prefix In Stitch
+```text
+design/figma-v2/home-feed.html
+design/figma-v2/discover-search.html
+design/figma-v2/building-layout.html
+design/figma-v2/stall-detail.html
+design/figma-v2/quick-review.html
+design/archive/figma-concept/index.html
+design/archive/figma-redesign/prototype.html
+design/stitch/DESIGN.md
+PROJECT_INSTRUCTIONS.md
+tasks/design-system.md
+```
 
-Paste this before each screen prompt:
+Archived concepts provide visual ideas only. Current product and accessibility rules override them.
 
-> Design a mobile app screen for Hungry, a Singapore dish-first food discovery app. Use the attached DESIGN.md rules exactly. Standardize the layout, spacing, typography, and components with the rest of the app. Use Paper Warm `#FFF7EE` as the default canvas, white for raised cards and sheets, Hungry Orange `#E8531E` for primary actions, Russian Red `#CD0302` for urgency and high-energy accents, Hawker Amber `#F5A623` for ratings and recommendation highlights, Autumn Green `#4F7E17` for freshness and open-now states, Line `#E7DED4` for borders and dividers, and Deep Navy `#1A2E44` for strong text and icon strokes. Use Nunito for UI text and DM Mono for prices, unit numbers, and codes. Keep the layout compact, polished, image-led where relevant, and clearly optimized for mobile. Do not use purple gradients, oversized blocks, emoji icons, teal accents, or inconsistent component styles.
+## Global prefix
 
-## Screen Briefs
+Use this before a screen-specific prompt:
 
-### 01. Splash
+> Design a mobile screen for Hungry, a Singapore dish-first food discovery app. Follow the current Hungry design tokens and reusable components. Use a warm paper-like background, raised neutral surfaces, accessible Hungry Orange for primary actions, strong dark text, restrained status colours, Nunito-based UI typography, and monospaced treatment only where the design system uses it for prices/codes. Make the screen compact, clear, mobile-native, safe-area aware, accessible at large text sizes, and consistent in light and dark modes. Use approved menu-derived dish imagery and stall logo/venue/representative-dish imagery. Do not use purple gradients, generic stock food, emoji as primary UI icons, fake data, or unsupported feature states.
 
-- Purpose:
-  - Establish brand, confirm appetite-led tone, and transition to the app quickly.
-- Required blocks:
-  - centered Hungry logo
-  - short tagline
-  - subtle food-texture or map-dot background motif
-  - loading indicator
-- Components:
-  - brand mark
-  - minimal progress indicator
-- Notes:
-  - keep it clean and premium
-  - no buttons
-- Stitch prompt:
-  - Create the Hungry splash screen for a Singapore dish-first food discovery app. Use a Paper Warm background, centered logo, short tagline “Find the dish. Not just the restaurant.” and a subtle background motif inspired by food maps or dish pins. Use Hungry Orange as the core brand accent and allow a restrained Russian Red or Hawker Amber detail if needed. Keep the screen elegant, fast, and minimal with a small loading indicator near the bottom. No clutter, no extra controls, no large paragraphs.
+## Screen families and briefs
 
-### 02. Login
+### 1. Splash and bootstrap
 
-- Purpose:
-  - Let users sign in fast without making the screen feel corporate.
-- Required blocks:
-  - compact top brand header
-  - email field
-  - password field
-  - primary sign-in button
-  - Google sign-in secondary action
-  - forgot password link
-  - sign-up link
-- Components:
-  - AppHeader light
-  - Input fields
-  - PrimaryButton
-  - SecondaryButton
-- Notes:
-  - high trust and low friction
-  - guest-friendly tone
-- Stitch prompt:
-  - Design a polished mobile login screen for Hungry. Make it warm and modern, not enterprise. Use a compact brand header, two clean inputs for email and password, a strong orange sign-in button, a secondary Google sign-in option, a small “Forgot password?” link, and a bottom link to sign up. Keep spacing tight, typography moderate, and component styling consistent with a consumer food app.
+**Purpose:** brand introduction while authentication/configuration bootstrap completes.
 
-### 03. Sign Up
+Required states:
 
-- Purpose:
-  - Create account with minimal friction.
-- Required blocks:
-  - brand header
-  - display name
-  - email
-  - password
-  - confirm or helper text
-  - terms note
-  - create account CTA
-  - Google sign-up option
-- Components:
-  - Input set
-  - Inline helper text
-  - PrimaryButton
-- Notes:
-  - use concise copy
-  - make the main CTA clear
-- Stitch prompt:
-  - Design the Hungry sign-up screen as a compact mobile form with display name, email, and password fields, a strong orange “Create account” button, a Google sign-up secondary action, and a short terms/privacy note. The layout should feel modern, welcoming, and easy to complete in under 30 seconds. Keep the UI standardized with the login screen.
+- normal Splash;
+- session restoration;
+- blocking released-build configuration/service-unavailable state.
 
-### 04. Forgot Password
+Prompt:
 
-- Purpose:
-  - Recover access with one simple action.
-- Required blocks:
-  - title
-  - short explanation
-  - email input
-  - send reset link CTA
-  - back to login link
-- Components:
-  - Input
-  - PrimaryButton
-  - Secondary text link
-- Notes:
-  - do not expose security complexity
-- Stitch prompt:
-  - Design a clean “Forgot password” mobile screen for Hungry with one email field, a short explanation, an orange “Send reset link” button, and a lightweight back-to-login link. Use the same standardized auth-shell spacing, type scale, and component styling as the other auth screens.
+> Design Hungry’s minimal splash/bootstrap family with the Hungry mark, “Find the dish. Not just the restaurant.”, restrained motion, and a small progress treatment. Also provide a calm blocking configuration/service-unavailable variant with a clear support/update action. No navigation controls on the normal splash and no path into the app when configuration is missing.
 
-### 05. Email Verification
+### 2. Onboarding welcome and value
 
-- Purpose:
-  - Confirm sign-up and make next steps obvious.
-- Required blocks:
-  - success or inbox illustration
-  - short title
-  - helper text
-  - resend timer state
-  - resend action
-  - back to login
-- Components:
-  - State illustration
-  - Countdown row
-  - Primary or secondary action
-- Notes:
-  - optimistic and calm
-- Stitch prompt:
-  - Design the Hungry email verification screen with a friendly, polished confirmation state: a lightweight inbox or check illustration, a short “Check your inbox” title, helper text explaining verification, a resend timer, a resend action, and a back-to-login link. Keep the layout clean and aligned with the auth screen family.
+**Purpose:** explain dish-first discovery, taste preferences, and location value before mandatory authentication.
 
-### 06. Taste Quiz
+Required:
 
-- Purpose:
-  - Capture taste vector quickly.
-- Required blocks:
-  - progress indicator
-  - one question at a time
-  - slider or stepped scale
-  - optional taste labels
-  - next button
-  - skip link
-- Components:
-  - ReviewStepper adapted for onboarding
-  - TasteSlider
-  - PrimaryButton
-- Notes:
-  - should feel playful but efficient
-  - six-step quiz model
-- Stitch prompt:
-  - Design the Hungry taste quiz screen as a mobile onboarding step. Show one taste question at a time, a compact progress indicator, a polished slider for intensity, small labels for the taste dimension, and a clear Next button. The screen should feel warm, modern, and lightweight, with just enough delight to make the quiz memorable without slowing it down.
+- clear progress;
+- skippable optional quiz portions only where product-approved;
+- no account bypass;
+- location explanation and manual-location alternative.
 
-### 07. Dietary Preferences
+Prompt:
 
-- Purpose:
-  - Let users set restrictions without friction.
-- Required blocks:
-  - screen title
-  - short supporting line
-  - multi-select chip grid
-  - “no restrictions” option
-  - next button
-- Components:
-  - Selectable chips
-  - PrimaryButton
-- Notes:
-  - chips must be standardized in size and states
-- Stitch prompt:
-  - Design the Hungry dietary preferences screen with a clean chip-based multi-select layout for Halal, Vegetarian, Vegan, Pork-Free, Nut-Free, and Gluten-Free, plus a “No restrictions” option. Keep the screen visually simple, modern, and highly tappable with consistent chip sizing and a clear next-step CTA.
+> Design a short Hungry onboarding sequence explaining dish-first search, personalised taste preferences, and nearby Singapore food. Keep each step benefit-led, accessible, and fast. The final step must lead to mandatory Create Account / Sign In, not guest access.
 
-### 08. Location Permission
+### 3. Mandatory account screen
 
-- Purpose:
-  - Explain location value and request permission clearly.
-- Required blocks:
-  - illustration or location motif
-  - title
-  - two-line value proposition
-  - allow location CTA
-  - secondary manual entry action
-- Components:
-  - State illustration
-  - PrimaryButton
-  - SecondaryButton
-- Notes:
-  - make the rationale obvious: nearby dishes, hawker centres, indoor navigation
-- Stitch prompt:
-  - Design the Hungry location permission screen. Show a clear but friendly explanation that location powers nearby dishes, hawker-centre discovery, and building navigation. Include a strong primary CTA to allow location and a secondary action for manual location entry. The screen should feel trustworthy, lightweight, and helpful.
+**Purpose:** create an account or sign in after onboarding.
 
-### 09. Search Idle
+Required:
 
-- Purpose:
-  - Make dish-first search useful before typing.
-- Required blocks:
-  - search field
-  - recent searches
-  - cuisine chips
-  - dietary quick toggles
-  - entry to taste filter
-  - decide for me shortcut
-- Components:
-  - SearchField
-  - Chip row
-  - SectionHeader
-  - DecideForMeCard compact
-- Notes:
-  - more utility-driven than Discover
-- Stitch prompt:
-  - Design the Hungry Search Idle screen as a dish-first utility surface. Include a focused search bar, recent searches, cuisine chips, quick dietary toggles, a clear “Taste Filter” control, and a compact “Decide For Me” shortcut. Make the layout denser and more functional than Discover while preserving the same visual system.
+- Create account and Sign in tabs/actions;
+- email/password paths;
+- approved OAuth providers only when enabled;
+- terms/privacy links;
+- offline/auth-unavailable error state;
+- no guest or skip action.
 
-### 10. Taste Filter Sheet
+Prompt:
 
-- Purpose:
-  - Let users tune cravings precisely.
-- Required blocks:
-  - bottom-sheet or modal shell
-  - six taste sliders
-  - default profile hint
-  - reset action
-  - apply button
-- Components:
-  - BottomSheet
-  - TasteSlider
-  - PrimaryButton
-- Notes:
-  - sheet should feel premium and compact
-- Stitch prompt:
-  - Design the Hungry Taste Filter screen as a premium bottom sheet with six standardized taste sliders: Sweet, Spicy, Sour, Salty, Rich, and Aromatic. Include a “Reset to my profile” action, an Apply CTA, and subtle default-value cues. Keep the controls compact, elegant, and easy to scan on a phone.
+> Design Hungry’s mandatory account screen shown after onboarding. Provide clear Create account and Sign in paths, trusted email/password fields, optional enabled provider buttons, terms/privacy context, validation, and a calm network-unavailable state. The hierarchy should make authentication required without feeling punitive. Do not include Continue as Guest, Skip, or a dismiss route into the app.
 
-### 11. Search Results
+### 4. Email verification and recovery
 
-- Purpose:
-  - Rank nearby dish options fast.
-- Required blocks:
-  - active search field
-  - filter summary row
-  - dish result list
-  - distance, rating, taste match, and stall metadata
-  - optional decide for me re-entry
-- Components:
-  - SearchField active
-  - FilterPills
-  - DishCard result variant
-- Notes:
-  - prioritize density and scanability
-- Stitch prompt:
-  - Design the Hungry Search Results screen for dish-first search. Show a list of dish cards ranked by proximity, rating, and taste match, with each card displaying dish image, dish name, stall name, unit or building context, price, and key taste tags. The layout should be compact, highly scannable, and more utility-led than the social feed.
+**Purpose:** complete account verification and restore access safely.
 
-### 12. Decide For Me Result
+Required states:
 
-- Purpose:
-  - Present one dish recommendation with confidence.
-- Required blocks:
-  - hero recommendation card
-  - taste match or why-this-picked explanation
-  - order now CTA
-  - get directions CTA
-  - try again action
-- Components:
-  - DecideForMeCard expanded
-  - CTADock
-- Notes:
-  - must feel decisive, not random
-- Stitch prompt:
-  - Design the Hungry “Decide For Me” result screen around one hero dish recommendation. Use strong photography, a clear taste-match explanation, and two main actions: Order Now and Get Directions, plus a lighter “Try Again” action. The screen should feel confident, high-conviction, and tailored to the user’s craving profile.
+- check inbox;
+- resend timer/action;
+- verification not yet confirmed;
+- forgot password;
+- reset password;
+- reset success with Login action.
 
-### 13. Dish Detail
+Prompt:
 
-- Purpose:
-  - Turn a dish into a decision fast.
-- Required blocks:
-  - large hero dish image
-  - dish name and price
-  - taste tags
-  - radar or taste visualization summary
-  - stall context
-  - review preview
-  - order CTA and write review CTA
-- Components:
-  - HeroMedia
-  - PriceBlock
-  - TasteTag
-  - ReviewPreview
-  - CTADock
-- Notes:
-  - dish page should feel more appetite-led than stall page
-- Stitch prompt:
-  - Design the Hungry Dish Detail screen as an appetite-led decision page. Include a large hero image, dish name, price, taste tags, a compact taste-profile visualization, stall and location context, a short community review preview, and a sticky bottom CTA area for ordering and writing a review. Keep the screen premium, compact, and clearly dish-first.
+> Design a consistent Hungry verification and password-recovery family with concise explanations, clear next actions, resend/retry states, and accessible errors. Do not imply the account is active until verification/session confirmation succeeds.
 
-### 14. Reads Article Bridge
+### 5. Authenticated Home feed
 
-- Purpose:
-  - Connect editorial content back into discovery.
-- Required blocks:
-  - article hero
-  - short editorial excerpt
-  - featured stall or dish card
-  - CTA into stall detail
-  - related nearby article or dish
-- Components:
-  - HeroMedia
-  - ArticleCard
-  - StallCard featured
-- Notes:
-  - not a full browser view
-  - bridge screen only
-- Stitch prompt:
-  - Design the Hungry Reads Article Bridge screen that sits between an editorial article and a Hungry venue page. Show the article hero, a short excerpt, a featured stall or dish card, and a strong CTA that takes the user into the stall detail flow. Make the screen feel editorial but still part of the app.
+**Purpose:** show relevant public food activity and recommendations after authentication.
 
-### 15. Profile Home
+Required:
 
-- Purpose:
-  - Show taste identity, saved content, and activity.
-- Required blocks:
-  - profile hero
-  - taste fingerprint card
-  - saved dishes summary
-  - review history summary
-  - activity stats
-  - settings entry
-- Components:
-  - ProfileHero
-  - TasteFingerprintCard
-  - StatPill
-  - SettingsRow
-- Notes:
-  - identity first, settings second
-- Stitch prompt:
-  - Design the Hungry Profile Home screen with a clear user identity header, a taste fingerprint card, saved dishes summary, review history summary, and compact activity stats. Keep the screen warm and personal, but not noisy. Settings should be present but not dominant.
+- feed loading/empty/error states;
+- source-backed media;
+- accessible post/profile/dish/stall actions;
+- activity inbox;
+- no fake engagement counts;
+- clear write failure/retry behavior.
 
-### 16. Favourites
+Prompt:
 
-- Purpose:
-  - Let users revisit saved dishes and stalls quickly.
-- Required blocks:
-  - segmented filter or tabs for dishes and stalls
-  - saved item list
-  - compact metadata
-  - empty state
-- Components:
-  - SegmentControl
-  - DishCard compact
-  - StallCard compact
-  - EmptyState
-- Notes:
-  - optimize for revisit and reorder, not browsing
-- Stitch prompt:
-  - Design the Hungry Favourites screen with a simple segmented control for saved dishes and saved stalls, plus a tidy saved-items list with thumbnails, location context, and compact metadata. Include a strong empty state for first-time users. The screen should feel practical and lightweight.
+> Design Hungry’s authenticated Home feed with image-led food posts, clear author and dish/stall context, compact social actions, and strong hierarchy. Use real menu/user media patterns, not stock food. Include loading, empty, failed-media, and backend-write failure variants without false optimistic success.
 
-### 17. Review History
+### 6. Discover and browse
 
-- Purpose:
-  - Show past contributions and let users revisit them.
-- Required blocks:
-  - stats row
-  - review list
-  - dish context
-  - stall context
-  - score and date
-- Components:
-  - HistoryRow
-  - ReviewSummaryCard
-- Notes:
-  - clearly dish-attached
-- Stitch prompt:
-  - Design the Hungry Review History screen with a compact stats summary at the top and a scrollable list of past dish reviews showing dish name, stall name, score, date, and a short snippet of the review. Make it clear that reviews are attached to dishes, not just venues.
+**Purpose:** scan nearby dishes and stalls, filter, search, map, and open full paged directories.
 
-### 18. Settings
+Required:
 
-- Purpose:
-  - Manage preferences without overwhelming the user.
-- Required blocks:
-  - grouped settings rows
-  - notifications
-  - dietary preferences
-  - location preferences
-  - app feature toggles
-  - sign out
-- Components:
-  - SettingsRow
-  - Toggle rows
-  - Danger action row
-- Notes:
-  - lowest emotional intensity screen
-  - keep it clean and standardized
-- Stitch prompt:
-  - Design the Hungry Settings screen with grouped settings rows for notifications, dietary preferences, location settings, and feature preferences, plus a clear sign-out action. Keep the screen minimal, orderly, and consistent with the Profile screen family.
+- dish and stall totals where real;
+- filters for supported dietary/cuisine/price/location data;
+- Browse Dishes and Browse Stalls;
+- map action;
+- legitimate no-results;
+- live versus authenticated offline-catalog source indication.
 
-### 19. Guest Soft Gate
+Prompt:
 
-- Purpose:
-  - Nudge guests to sign in when they try to save or review.
-- Required blocks:
-  - bottom sheet
-  - short value proposition
-  - Google sign-in
-  - email sign-in
-  - continue as guest
-- Components:
-  - SoftGateSheet
-  - PrimaryButton
-  - SecondaryButton
-- Notes:
-  - polite, fast, dismissible
-- Stitch prompt:
-  - Design the Hungry guest soft gate as a bottom sheet that appears when a guest tries to save a dish or write a review. Include a short explanation of the benefit, a Google sign-in action, an email sign-in action, and a continue-as-guest option. The tone should be helpful and low-pressure.
+> Design Hungry’s authenticated Discover screen with a compact search launcher, supported filter chips, nearby menu-image dish cards, stall rows using logo/venue/representative-dish imagery, Browse Dishes and Browse Stalls actions, and map access. Include distinct legitimate no-results and read-only offline-catalog states. Do not substitute unrelated results when a search has no matches.
 
-### 20. Offline State
+### 7. Search and filter
 
-- Purpose:
-  - Recover gracefully when there is no connection.
-- Required blocks:
-  - calm illustration
-  - title
-  - concise explanation
-  - retry action
-  - secondary action to view saved items if relevant
-- Components:
-  - EmptyState
-  - PrimaryButton
-  - SecondaryButton
-- Notes:
-  - no scary error styling
-- Stitch prompt:
-  - Design the Hungry offline state screen with a calm illustration, a concise title, a short explanation, a Retry action, and an optional secondary action to view saved or cached content. Keep the tone warm and practical rather than alarming.
+**Purpose:** high-density dish/stall/area search with paged results.
 
-### 21. Not Found State
+Required:
 
-- Purpose:
-  - Recover from broken or missing links.
-- Required blocks:
-  - neutral illustration
-  - title
-  - explanation
-  - back to discover CTA
-  - optional search CTA
-- Components:
-  - EmptyState
-  - PrimaryButton
-- Notes:
-  - should feel part of the app, not a developer error page
-- Stitch prompt:
-  - Design the Hungry not-found screen for missing dishes, stalls, or links. Include a simple illustration, one short explanation, a strong “Back to Discover” action, and an optional search action. Keep it lightweight, branded, and mobile-native.
+- active search field;
+- cancellable loading;
+- recent/suggested intent only when data-backed;
+- filter summary and clear action;
+- paged/deduplicated results;
+- empty/error/offline variants.
 
-## Stitch Workflow Recommendation
+Prompt:
 
-Generate in these batches so the system stays consistent:
+> Design a utility-focused Hungry search family: idle search, filter sheet, dish results, and stall results. Prioritise scanability, menu imagery, location/stall context, price, dietary tags, and clear filter state. Include loading, no-results, and authenticated read-only fallback variants.
 
-1. Auth shell family:
-   - Login
-   - Sign Up
-   - Forgot Password
-   - Email Verification
-2. Onboarding family:
-   - Taste Quiz
-   - Dietary Preferences
-   - Location Permission
-3. Search and decision family:
-   - Search Idle
-   - Taste Filter
-   - Search Results
-   - Decide For Me Result
-   - Dish Detail
-4. Reads and profile family:
-   - Reads Article Bridge
-   - Profile Home
-   - Favourites
-   - Review History
-   - Settings
-5. Recovery and guest family:
-   - Guest Soft Gate
-   - Offline State
-   - Not Found State
+### 8. Dish detail
 
-## Standardization Checklist For Every Generated Screen
+**Purpose:** help the user decide on one dish.
 
-- Same type scale as `src/theme/tokens.ts`
-- Same spacing scale as `src/theme/tokens.ts`
-- Same radius system as `src/theme/tokens.ts`
-- Same button behavior and CTA hierarchy
-- Same bottom-nav treatment on root screens
-- Same search field treatment across Discover and Search
-- Same dish, stall, and article card language
-- Same review component language across review, profile, and detail flows
+Required:
+
+- approved menu/gallery media;
+- dish, stall, building/unit, price, dietary/taste context;
+- reviews and source/verification treatment;
+- Save and Write review actions;
+- missing/unavailable data states;
+- offline write-unavailable state.
+
+Prompt:
+
+> Design an appetite-led Hungry dish detail screen with approved menu imagery, dish and stall identity, price/location context, supported taste/dietary information, community review preview, Save, directions/order link where available, and Write review. Show uncertainty or unavailable data honestly and disable online writes clearly during catalog-only fallback.
+
+### 9. Stall detail and menu
+
+**Purpose:** understand the stall, location, operating context, and full menu.
+
+Required:
+
+- logo/stall image or representative menu image;
+- building/floor/unit/address;
+- hours/closure with source-aware state;
+- paged or efficient menu list;
+- directions and merchant claim only when enabled;
+- missing/no-image/error/offline variants.
+
+Prompt:
+
+> Design a Hungry stall detail screen using stall logo or venue/representative menu imagery, clear building/floor/unit context, hours and closure state, menu items with dish images and prices, directions, and approved merchant actions. Avoid fake hygiene, open-now, or verification claims.
+
+### 10. Review flow
+
+**Purpose:** create an authenticated dish-level review with optional media.
+
+Required:
+
+- target dish/stall confirmation;
+- rating, tags, text, recommendation state;
+- media permissions/validation/upload progress;
+- edit/back behavior;
+- submission failure and retry;
+- success/history link.
+
+Prompt:
+
+> Design a compact accessible Hungry review flow with clear progress, dish/stall context, rating and taste tags, optional media, validation, upload progress, and retry-safe submission. Success must appear only after the backend confirms the review.
+
+### 11. Post composer
+
+**Purpose:** publish authenticated food content with valid media and context.
+
+Required:
+
+- dish/stall selection;
+- photo/video management;
+- caption/tags/privacy controls supported by the implementation;
+- upload/publish progress;
+- permission denial, retry, draft, and failure states;
+- no false published state.
+
+Prompt:
+
+> Design Hungry’s post composer with clear food context, media management, concise caption input, supported visibility controls, upload/publish progress, and recoverable permission or network failure states. Keep the Publish action unavailable until requirements are satisfied and never show success before backend confirmation.
+
+### 12. Profile, favourites, history, and settings
+
+**Purpose:** show one consistent authenticated identity and manage saved/account data.
+
+Required:
+
+- avatar/display name/taste identity;
+- posts/reviews/favourites/history;
+- edit profile;
+- device versus account settings;
+- privacy/support/account deletion/sign-out;
+- empty/loading/error states.
+
+Prompt:
+
+> Design Hungry’s authenticated profile family with one consistent avatar and identity, taste summary, posts/reviews/favourites/history, edit profile, and orderly settings. Clearly separate device preferences from account/privacy controls. Include account deletion and sign-out as deliberate actions with accessible confirmation.
+
+### 13. Map and location
+
+**Purpose:** discover authenticated catalog records by location without blocking users who deny precise location.
+
+Required:
+
+- permission explanation;
+- manual area selection;
+- map/list fallback;
+- accessible marker/result alternative;
+- loading/error/offline states;
+- no unsupported indoor/floorplan claims when disabled.
+
+Prompt:
+
+> Design Hungry’s map and location states with clear nearby context, filters, accessible list alternatives, manual area selection, and safe permission-denied behavior. Keep markers and selected-card treatment readable without relying on colour alone.
+
+### 14. Activity and UGC safety
+
+**Purpose:** surface relevant updates while preserving moderation and privacy.
+
+Required:
+
+- updates/messages only when the corresponding feature is enabled;
+- report/block/delete-own-content/support actions;
+- moderation and hidden-content states;
+- no enabled-looking DM/comment/story UI when production-disabled.
+
+Prompt:
+
+> Design Hungry’s activity and UGC safety states with compact updates, clear moderation/report/block actions, and supportive error/empty states. Do not include messaging, comments, or stories unless the task explicitly confirms the feature is enabled and moderated.
+
+### 15. Offline, unavailable, unauthorized, and not found
+
+These are distinct states:
+
+- authenticated read-only catalog fallback;
+- internet required for account creation/sign-in;
+- service/configuration unavailable;
+- unauthorized merchant/admin role;
+- disabled feature;
+- missing dish/stall/link;
+- legitimate no-results.
+
+Prompt:
+
+> Design a consistent Hungry recovery-state family that distinguishes read-only catalog continuity, authentication-required internet, service configuration failure, role denial, disabled features, missing content, and valid no-results. Each state should offer only actions that can actually succeed.
+
+## Recommended generation batches
+
+1. Splash, onboarding, mandatory account, verification/recovery.
+2. Home, Discover, Search, Browse, Map.
+3. Dish detail, Stall detail/menu, Decide For Me.
+4. Review, Post composer, upload/permission/failure states.
+5. Profile, favourites, history, settings, account lifecycle.
+6. Offline/unavailable/unauthorized/not-found and accessibility variants.
+7. Merchant/admin/advanced surfaces only when their current feature brief and role policy are attached.
+
+## Review checklist for every generated design
+
+- matches current authentication and feature policy;
+- uses repository-relative/current source references;
+- safe-area, keyboard, large-text, dark-mode, reduced-motion, and VoiceOver/TalkBack aware;
+- all controls have clear states and actions;
+- images and data claims are source-safe;
+- loading/empty/error/offline/permission/no-results states are covered;
+- no duplicate component pattern without a reason;
+- implementation differences are documented before handoff.
