@@ -1,131 +1,150 @@
 # Hungry Mobile App Production Readiness Audit
 
-Updated: 2026-06-19
-Target: public Apple App Store and Google Play launch
-Verdict: **No-Go** until all P0 repo-local gates and external proof gates pass.
+Updated: 2026-07-23  
+Target: Apple App Store and Google Play public launch  
+Verdict: **No-Go**
 
-## Evidence Snapshot
+## 1. Current change lines and evidence boundary
 
-| Area | Evidence | Status |
-|---|---|---|
-| Branch | `frontend-design-overhaul...origin/frontend-design-overhaul [ahead 1]` | Dirty, must reconcile before public release |
-| Dirty worktree | Many modified/untracked mobile, Supabase, data, website, and task files | Release blocker until reviewed/staged/committed or intentionally excluded |
-| App config | `app.json` | iOS/Android identifiers and permissions present |
-| EAS config | `eas.json` | Preview and production profiles exist |
-| Feature flags | `src/constants/featureFlags.ts` | Production disables experimental/social/merchant/prototype surfaces |
-| Deep links | `src/app/navigation/linking.ts` | Public dish/stall links, protected action redirect, unsafe param rejection |
-| Release wrapper | `scripts/release_ready_checklist.sh` | Local gates plus external evidence keys |
-| Current external blockers | `tasks/release-evidence/full-audit-v1.example.env` and final checklist | Prepared iOS smoke proof is now recorded; EAS, Supabase, store, legal, CI, secret, monitoring, and dirty-worktree proof keys remain `0` |
-| 2026-06-19 local gates | typecheck, lint, format, tests, static audits, edge checks, asset audit, npm audit, gitleaks, trufflehog, Expo Doctor, focused native-smoke contract | Repo-local gates pass except linked Advisor/live proof |
-| Supabase dry-run | `/opt/homebrew/bin/supabase db push --dry-run` | Would push four pending migrations; production was not mutated |
-| Native smoke | `npm run smoke:native:ios:prepared` | Passed on iPhone 17 Pro simulator with LAN Metro after Expo dev-client onboarding handling |
-| EAS preview | `npx --yes eas-cli@18.12.3 build --profile preview --platform all --non-interactive` | Prior Android build errored on missing Mapbox Maven config; source fix added. Fresh EAS upload/build requires explicit owner approval; iOS failed due missing internal-distribution credentials |
-| Final QA/QC agent | `.github/agents/hungry-qa-qc.agent.md` independent pass | No new repo-local P0 code defect found; public launch remains No-Go |
+| PR | Scope | Status |
+|---|---|---:|
+| #44 | Mandatory authentication, session/configuration hardening, catalog error classification, authenticated read-only Excel fallback, catalog performance/exclusions | open; implementation and verification incomplete |
+| #45 | Repository/document organization, stale PR closure, generated-output cleanup | draft; verification incomplete |
 
-## Route Inventory
+This audit defines the current target policy. It does not certify that `main` or either branch already satisfies it. The final release audit must be generated from the reconciled commit, registered navigators, feature flags, service boundaries, live Supabase project and native binaries.
 
-| Route | Screen | Public/private | Auth required | Feature flag | Production enabled? | Deep link? | Risk | Fix |
-|---|---|---|---:|---|---:|---:|---|---|
-| `Splash` | Splash | public shell | no | none | yes | no | startup crash | local/native smoke |
-| `AuthStack/Login` | Login | public auth | no | none | yes | yes `/login` | auth failure | auth tests/smoke |
-| `AuthStack/SignUp` | SignUp | public auth | no | none | yes | yes `/signup` | signup/email proof | auth tests/smoke |
-| `AuthStack/EmailVerification` | EmailVerification | public auth | no | none | yes | no | callback drift | auth callback tests |
-| `AuthStack/ForgotPassword` | ForgotPassword | public auth | no | none | yes | yes `/forgot-password` | email provider proof | external SMTP proof |
-| `AuthStack/ResetPassword` | ResetPassword | public auth | no | none | yes | yes `/auth/callback` | token leak/expired code | invalid callback tests |
-| `OnboardingStack/*` | Onboarding screens | public onboarding | no | none | yes | no | incomplete onboarding | screen QC |
-| `MainTabs/Home` | HomeFeed | public browse | no | none | yes | no | feed crash/offline | screen QC |
-| `MainTabs/Discover` | Discover | public browse | no | none | yes | no | location denied | location smoke |
-| `MainTabs/Review` | Review tab | mixed | yes for submit | none | yes | no | protected action bypass | auth redirect tests |
-| `MainTabs/Profile` | Profile stack | private for own profile | yes | none | yes | no | private data leak | auth/security tests |
-| `StallDetail` | StallDetailScreen | public detail | no | none | yes | yes `/venue/:id` | missing data crash | not-found/skeleton tests |
-| `DishDetail` | DishDetailScreenV2 | public detail | no | none | yes | yes `/dish/:id` | missing data crash | not-found/skeleton tests |
-| `SearchHome` | SearchHome | public browse | no | none | yes | no | no-result state | search QC |
-| `SearchResults` | SearchResults | public browse | no | none | yes | no | filter/query drift | search contracts |
-| `BrowseDishes` | BrowseDishes | public browse | no | none | yes | no | stale mock fallback | data source audit |
-| `BrowseStalls` | BrowseStalls | public browse | no | none | yes | no | stale mock fallback | data source audit |
-| `TasteFilter` | TasteFilter | public browse | no | none | yes | no | filter state drift | screen QC |
-| `DiscoverMap` | HomeMap | public map | no | none | yes | no | Mapbox token/runtime | permission/offline smoke |
-| `QuickBites` | QuickBites | public browse | no | none | yes | no | missing dish id | detail hydration tests |
-| `Post` | Post composer | private action | yes | none | yes | yes `/order` redirects | unauth publish | protected-action tests |
-| `ReviewStack` | Review flow | private action | yes | none | yes | no | unauth publish | protected-action tests |
-| `ActivityInbox` | Activity updates | private | yes | none | yes | no | social data leak | auth/security tests |
-| `ActivityPostDetail` | Activity post detail | private | yes | none | yes | no | social data leak | auth/security tests |
-| `EditProfile` | EditProfile | private | yes | none | yes | no | profile mutation leak | auth/RLS smoke |
-| `Favourites` | Favourites | private | yes | none | yes | no | other-user data | auth/RLS smoke |
-| `ReviewHistory` | ReviewHistory | private | yes | none | yes | no | other-user data | auth/RLS smoke |
-| `Settings` | Settings | private | yes | none | yes | no | deletion/logout gaps | auth/deletion smoke |
-| `WheelStack/*` | Decide wheel | public/shared | mixed | `hungryWheelEnabled` | yes | yes `/join/:code` | shared code abuse | join-code validation |
-| `Crave` | Crave | public browse | no | `craveEnabled` | yes | no | unproven MVP scope | QC or disable if not launch-approved |
-| `BlogPost` | Reads | public content | no | `readsEnabled` | yes | no | unsafe external link | safe-link tests |
-| `MusicSelection` | MusicSelection | private flow | yes | none | yes | no | unclear launch scope | QC or disable if not launch-approved |
-| `MerchantClaimExplainer` | Claim CTA | private/merchant | yes | `merchantClaimCtaEnabled` | no | no | unfinished merchant flow | keep production-disabled |
-| `ChatDetail` | Chat | private social | yes | `directMessagesEnabled` | no | no | moderation/realtime risk | keep production-disabled |
-| `DirectMessages` | DirectMessages | private social | yes | `directMessagesEnabled` | no | no | moderation/realtime risk | keep production-disabled |
-| `BuildingDrillDown` | Floorplan | public map | no | `floorplansEnabled` | no | no | floorplan QA incomplete | keep production-disabled |
-| `DishDetailV2` | Prototype detail | public prototype | no | `prototypeRoutesEnabled` | no | no | duplicate route drift | keep production-disabled |
-| `StallDetailV2` | Prototype stall | public prototype | no | `prototypeRoutesEnabled` | no | no | duplicate route drift | keep production-disabled |
-| `BuildingDrillDownV2` | Prototype floorplan | public prototype | no | `prototypeRoutesEnabled` + `floorplansEnabled` | no | no | geometry QA incomplete | keep disabled |
-| `VenueDirectory` | Prototype directory | public prototype | no | `prototypeRoutesEnabled` + `floorplansEnabled` | no | no | geometry QA incomplete | keep disabled |
-| `SplashV2` | Prototype splash | public prototype | no | `prototypeRoutesEnabled` | no | no | stale UX | keep disabled |
-| `DesignGallery` | Developer gallery | dev only | no | `prototypeRoutesEnabled` | no | no | debug surface | keep disabled |
-| `PostComposerV2` | Prototype composer | private prototype | yes | `prototypeRoutesEnabled` | no | no | duplicate publish path | keep disabled |
-| `MerchantTabs/*` | Merchant centre | merchant private | yes | `merchantCentreEnabled` | no | yes only when enabled | merchant RBAC risk | keep disabled until merchant QA |
-| `StoryViewer` | Stories | social public | mixed | `storiesEnabled` | no | no | moderation/storage risk | keep disabled |
-| `AddStory` | Add story | private social | yes | `storiesEnabled` | no | no | moderation/storage risk | keep disabled |
-| `PassportScreen` | Passport | private gamification | yes | `gamificationEnabled` | no | no | unfinished data backing | keep disabled |
-| `MissionsScreen` | Missions | private gamification | yes | `gamificationEnabled` | no | no | unfinished data backing | keep disabled |
-| `CollectionList` | Collections | mixed | yes | `collectionsEnabled` | no | no | launch scope risk | keep disabled |
-| `CollectionDetail` | Collection detail | mixed | yes | `collectionsEnabled` | no | no | launch scope risk | keep disabled |
-| `PortfolioPublicView` | Public portfolio | public prototype | no | `prototypeRoutesEnabled` | no | yes only when enabled | stale public access | keep disabled |
-| `AdminPortfolioFlags` | Admin flags | admin prototype | yes | `prototypeRoutesEnabled` | no | no | admin exposure | keep disabled |
-| `Offline` | Offline state | public shell | no | none | yes | no | blank offline UX | screen QC |
-| `NotFound` | NotFound | public shell | no | none | yes | no | unsafe missing params | screen QC |
+## 2. Mandatory product and source policy
 
-## Data Source Audit
+```text
+Fresh user: Splash → Onboarding → Create Account / Sign In → verification when required → authenticated app
+Returning user: Splash → secure Supabase session restoration → authenticated app, or Login
+```
 
-| Feature | Current data source | Canonical source | Local cache? | Risk | Fix |
-|---|---|---|---:|---|---|
-| Profile | `useProfileStore` + service | Supabase `user_profiles` | yes | stale profile | keep Supabase sync as canonical |
-| Avatar | profile/media service | Supabase Storage + profile row | yes | private URL leak | signed/private media checks |
-| Taste profile | profile/service | Supabase user taste/profile tables | yes | guest overwrites | merge only meaningful guest values |
-| Dietary preferences | profile/service | Supabase profile | yes | stale filters | service-backed sync |
-| Favourites | profile/service | Supabase `user_favourite_dishes` | optimistic | rehydration drift | keep login/app restore tests |
-| Reviews | review service | Supabase `reviews` | optimistic | local-only review | reject mock fallback in production |
-| Review photos | media upload service | Supabase Storage | yes | MIME/path abuse | signed upload and ownership tests |
-| Posts | post service | Supabase `posts` | optimistic | local-only post | production publish through service only |
-| Post media | media upload service | Supabase Storage + `post_media` | yes | MIME/path abuse | signed upload and ownership tests |
-| Likes/saves | social service | Supabase post engagement tables | optimistic | fake counts | UUID-backed writes only |
-| Comments | social service if enabled | Supabase comments | optimistic | moderation gap | production disabled unless safety proof |
-| Activity | activity service | Supabase activity if enabled | cache | missing table/safe fallback | keep honest error/empty state |
-| Merchant claims | merchant service | Supabase merchant claim tables | no | unfinished flow | production disabled |
-| Discovery/search/detail | repository/service | Supabase RPCs/tables | read cache | mock fallback claims | production source audits |
+- No guest mode or unauthenticated MainTabs.
+- All mobile app content routes require authentication; public privacy, terms, support and account-deletion pages may exist on the website.
+- Supabase is mandatory for authentication and shared writes.
+- Missing released-build Supabase configuration blocks app entry.
+- Excel is an authenticated, read-only catalog fallback only for classified catalog network/timeout/RPC/release availability failures.
+- Signed-out, missing, invalid or revoked sessions, failed auth, missing configuration and legitimate no-results must not invoke Excel fallback.
+- Mock providers, developer tools, prototypes and unfinished features are unavailable in released builds.
 
-## P0 Blockers
+## 3. Route release classification
 
-- Dirty worktree not reconciled.
-- Linked Supabase project is behind local migrations:
-  - `20260610120000_catalog_display_provenance_guardrails.sql`
-  - `20260611000000_add_staging_planning_area.sql`
-  - `20260611113000_discovery_feed_rating_sync.sql`
-  - `20260619110000_release_advisor_security_cleanup.sql`
-- Linked Supabase Advisor still reports app-owned function hardening findings until the pending migrations are applied and rechecked.
-- Android/EAS proof is incomplete: Android preview build `6cb95ee3-b795-489b-98d5-1b8f26b175c1` errored on missing Mapbox Maven config; source fix added, but fresh EAS upload/build needs explicit owner approval before artifact proof can be collected.
-- iOS EAS preview is blocked by missing internal-distribution credentials in non-interactive mode.
-- Full iOS release build proof is still pending, but prepared iOS native smoke now passes on a booted iPhone 17 Pro simulator with LAN Metro.
-- Heavy build/cache gates are fragile on this machine; generated cache cleanup restored free disk from about 263 MiB, but current free space after reruns is about 4.8 GiB and more headroom is still recommended for EAS/native work.
-- Production/staging secret proof missing.
-- Store-console metadata/Data Safety/privacy labels/demo account proof missing.
-- Live multi-user RLS/storage/Edge Function smoke missing.
-- Sentry staging crash/source-map/release proof missing.
-- Legal/privacy sign-off missing.
+The final inventory must be generated from `navigationTypes.ts`, every registered navigator and `linking.ts`. The classifications below are the current release target; feature presence and names must be reconciled against the final code.
 
-## Policy References
+| Route/group | Purpose | Release classification | Additional gate |
+|---|---|---|---|
+| `Splash` | Brand/bootstrap | pre-auth shell | configuration/session handling |
+| `OnboardingStack/*` | Local onboarding | pre-auth shell | must end at mandatory account screen |
+| `AuthStack/*` | Login/signup/verification/recovery | pre-auth shell | no route into app without real session |
+| `MainTabs/Home` | Home feed | authenticated consumer | UGC/data/error/accessibility proof |
+| `MainTabs/Discover` | Discovery | authenticated consumer | catalog/location/fallback proof |
+| `MainTabs/Review` | Review entry | authenticated write | storage/RLS/moderation proof |
+| `MainTabs/Profile` | Profile/settings entry | authenticated private | user-data isolation |
+| `SearchHome`, `SearchResults` | Search | authenticated browse | bounded queries and no-results |
+| `BrowseDishes`, `BrowseStalls` | Paged catalog | authenticated browse | pagination/deduplication |
+| `TasteFilter` | Preference filter | authenticated browse | canonical profile/filter behavior |
+| `DishDetail`, `CatalogRawDetail`, `StallDetail` | Detail/menu | authenticated browse | safe missing IDs and source continuity |
+| `DiscoverMap`, `MapZoomedIn` | Location/map | authenticated browse | permission/list fallback/token proof |
+| `DecideForMeResult`, `QuickBites` | Decision/collection entry | authenticated browse | approved data and no fake confidence |
+| `BlogPost` | In-app editorial bridge | authenticated content | safe external links; public website remains separate |
+| `Post`, `PostComposerV2` | Post creation | authenticated write | feature flag, uploads, UGC controls |
+| `ReviewStack/*` | Review creation | authenticated write | validation, storage, RLS, moderation |
+| `ActivityInbox` | Activity updates | authenticated/private | user-data isolation and enabled tabs only |
+| `ActivityPostDetail` | Activity target | authenticated/private | target authorization |
+| `UserProfile` | Other-user profile | authenticated/visibility-controlled | block/privacy/moderation |
+| `EditProfile`, `Favourites`, `ReviewHistory`, `Settings` | Account data | authenticated/private | RLS, deletion, cache cleanup |
+| `WheelStack/*` | Decide wheel | authenticated/shared | join-code abuse and feature approval |
+| `Crave` | Crave | authenticated browse | feature approval and canonical data |
+| `MusicSelection` | Music selection | authenticated flow | composer/rights/feature approval |
+| `BuildingDrillDown`, `BuildingDrillDownV2`, `VenueDirectory` | Floor/directory | authenticated + feature-gated | geometry/map/accessibility proof |
+| `MerchantClaimExplainer`, `MerchantTabs/*` | Merchant entry/tools | authenticated + merchant role + flag | outlet RLS/RBAC/audit proof |
+| `DirectMessages`, `ChatDetail` | Messaging | authenticated + feature-gated | realtime, report/block/moderation proof |
+| `StoryViewer`, `AddStory` | Stories | authenticated + feature-gated | media/storage/moderation proof |
+| `PassportScreen`, `MissionsScreen` | Gamification | authenticated + feature-gated | backend/unlock integrity |
+| `CollectionList`, `CollectionDetail`, `ChecklistDetail` | Collections/checklists | authenticated + feature-gated | ownership/collaboration/privacy |
+| `PortfolioDetail`, `PortfolioPublicView`, `AdminPortfolioFlags` | Portfolio/admin | authenticated + visibility/role/flag | RLS/moderation/admin audit |
+| `DeveloperLauncher`, `DesignGallery`, `SplashV2`, prototype detail routes | Development/prototype | development only | absent/unregistered in production |
+| `Offline` | Recovery shell | context-dependent | signed-out state cannot expose app/fallback |
+| `NotFound` | Invalid/missing route | context-dependent | safe params and correct auth boundary |
 
-- Apple App Review Guidelines: https://developer.apple.com/app-store/review/guidelines/
-- Apple account deletion: https://developer.apple.com/support/offering-account-deletion-in-your-app/
-- Google Play Developer Program Policies: https://support.google.com/googleplay/android-developer/answer/16070163
-- Google Play User Data: https://support.google.com/googleplay/android-developer/answer/10144311
-- Google Play account deletion: https://support.google.com/googleplay/android-developer/answer/13327111
-- Google Play Data safety: https://support.google.com/googleplay/answer/11416267
-- Expo EAS Build: https://docs.expo.dev/build/introduction/
-- Supabase production checklist: https://supabase.com/docs/guides/platform/going-into-prod
+No route in this table is classified as guest/public mobile browsing.
+
+## 4. Deep-link and return-route requirements
+
+- Auth/reset links may open the pre-auth shell.
+- Every content/action link checks auth readiness and authentication before mounting the target.
+- Fresh users go to onboarding; onboarded signed-out users go to Login.
+- Only allowlisted routes with validated params may be retained as return destinations.
+- Feature-disabled, merchant/admin-only, malformed and unsafe routes are discarded.
+- Authentication success does not override feature or role denial.
+- Notification and stale persisted navigation payloads follow the same policy.
+
+## 5. Data-source audit
+
+| Feature/data | Canonical source | Local role | Release risk to verify |
+|---|---|---|---|
+| Auth/session | Supabase Auth + secure token storage | non-sensitive metadata only | persisted ID must not authenticate |
+| Profile/avatar/privacy | Supabase DB/Storage | cache/optimistic state | cross-surface identity and RLS |
+| Taste/dietary/location choice | Supabase profile after auth | local onboarding draft/device location | migration and privacy |
+| Catalog/search/detail/map | Supabase release/RPCs | bounded memory cache | paging, indexes, provenance, no-results |
+| Eligible catalog outage | bundled validated Excel catalog | authenticated read-only fallback | no auth/write/config bypass |
+| Favourites | Supabase | optimistic/cache | idempotency and rehydration |
+| Reviews/photos | Supabase DB/Storage | draft/optimistic state | ownership, moderation, false success |
+| Posts/media/engagement | Supabase DB/RPC/Storage | draft/optimistic cache | visibility, UGC safety, retries |
+| Settings | device store or Supabase by setting type | explicit | privacy/account versus device boundary |
+| Merchant/admin operations | Supabase with role/RLS/audit | no fixture success | cross-tenant/admin exposure |
+| Analytics/crash | configured sinks | local buffer where approved | PII/location/token scrubbing |
+
+## 6. Production feature policy
+
+The final production build must prove that unapproved merchant, DM/chat, comments, stories, gamification, collections, floorplans, prototypes, AI creator tools, OCR/ops and developer surfaces are:
+
+- disabled by production defaults;
+- not registered or reachable where appropriate;
+- blocked through direct navigation, deep links, return routes, notification payloads and stale state;
+- excluded from public store metadata/screenshots;
+- not prefetched or queried for unauthorized users.
+
+## 7. P0 launch blockers
+
+- [ ] #44 and #45 reconciled against current `main` with no overwritten policy/runtime work.
+- [ ] Typecheck, lint, format, unit/integration, Playwright, Expo Doctor, asset, static Supabase, edge and security gates pass.
+- [ ] Mandatory auth, session restoration/invalidation, missing configuration and deep-link gates pass.
+- [ ] Supabase Security/Performance Advisor and live RLS/storage/function tests pass or have approved risk.
+- [ ] Catalog paging, images, no-results, healthy Supabase and authenticated Excel fallback pass.
+- [ ] All shared writes are durable and never falsely succeed offline/fallback.
+- [ ] Public UGC has report, block, delete-own-content, moderation and support controls.
+- [ ] iOS production-candidate/TestFlight and Android AAB/internal-track/native smoke pass.
+- [ ] VoiceOver/TalkBack, large text, contrast, reduced motion and permission-denied flows pass.
+- [ ] Sentry release/source-map/privacy proof passes.
+- [ ] Store metadata, App Privacy, Data Safety, reviewer/demo account, support/privacy/deletion URLs and image rights are approved.
+- [ ] Legal/privacy and rollout/rollback owners sign off.
+
+## 8. Required verification
+
+```bash
+npm run typecheck
+npm run lint
+npm run format:check
+npm run test
+npm run test:e2e
+npm run test:e2e:merchant-catalog
+npx expo-doctor --non-interactive
+npm run audit:assets
+npm run audit:supabase:static
+npm run check:edge-functions
+npm run security:audit
+npm run security:gitleaks
+npm run security:trufflehog
+npm run release:ready:local
+npm run smoke:database:location
+npm run smoke:database:search
+npm run smoke:database:rls
+```
+
+Add credential-backed staging checks, current iOS/Android builds, manual accessibility, store-console and legal evidence. A skipped or blocked check is not a pass.
+
+## 9. Current verdict
+
+The target architecture and route policy are now documented consistently, but the active implementation and cleanup branches do not yet have complete automated, staging, native or external proof. Production remains **No-Go**.
