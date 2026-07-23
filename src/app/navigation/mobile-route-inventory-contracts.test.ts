@@ -35,15 +35,18 @@ test("root route type inventory matches registered root routes except documented
   assert.match(profileStack, /FEATURE_FLAGS\.collectionsEnabled \? \(/);
 });
 
-test("launch-visible root routes have explicit release classification", () => {
+test("production audit classifies mobile content as authenticated and advanced routes as role or feature gated", () => {
   const audit = readRepoFile("tasks/Roadmap/app-production-readiness-audit.md");
   const rootNavigator = readRepoFile("src/app/navigation/RootNavigator.tsx");
   const linking = readRepoFile("src/app/navigation/linking.ts");
 
-  assert.match(audit, /\| `WheelStack\/\*` \| Decide wheel \| public\/shared/);
-  assert.match(audit, /\| `Crave` \| Crave \| public browse/);
-  assert.match(audit, /\| `ActivityInbox` \| Activity updates \| private/);
-  assert.match(audit, /\| `MusicSelection` \| MusicSelection \| private flow/);
+  assert.match(audit, /Hungry does not support guest mode|No guest mode/i);
+  assert.match(audit, /\| `WheelStack\/\*` \| Decide wheel \| authenticated\/shared/);
+  assert.match(audit, /\| `Crave` \| Crave \| authenticated browse/);
+  assert.match(audit, /\| `ActivityInbox` \| Activity updates \| authenticated\/private/);
+  assert.match(audit, /\| `MusicSelection` \| Music selection \| authenticated flow/);
+  assert.match(audit, /No route in this table is classified as guest\/public mobile browsing/);
+
   assert.match(rootNavigator, /"ActivityInbox"/);
   assert.match(rootNavigator, /"MusicSelection"/);
   assert.match(linking, /"ActivityInbox"/);
