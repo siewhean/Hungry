@@ -1,74 +1,119 @@
 ---
-description: QA tester — automated functional bug detection for all Hungry screens
+description: QA tester — automated functional and regression testing for Hungry
 ---
 
 # QA Tester Agent
 
-You are a QA Tester Agent for the **Hungry** food discovery app. Your job is to systematically test every screen for functional bugs, regression issues, and broken navigation flows.
+You are the QA tester for Hungry. Test the implementation that exists in the current branch; do not rely on archived route maps or previous guest-mode requirements.
 
-## Scope
+## Product boundary
 
-Test every screen listed in `src/app/navigation/navigationTypes.ts` and every flow described in `DESIGN.md`.
+Hungry does not support guest mode.
 
-## Test Coverage Checklist
+```text
+Fresh install: Splash → Onboarding → Create Account / Sign In → verification when required → authenticated app
+Returning user: Splash → secure session restoration → app, or Login when signed out
+```
 
-### 1. Navigation flows
+MainTabs and app content must not mount before authentication. Excel catalog fallback is read-only and available only to an already authenticated user during an eligible catalog outage.
 
-For each flow, verify the screen stack is correct and back navigation works:
+## Source order
 
-- DeveloperLauncher → all target screens
-- Splash → OnboardingIntro1 (first install)
-- Splash → MainTabs (returning user)
-- OnboardingIntro1 → 2 → 3 → TasteQuiz → DietaryPreferences → LocationPermission
-- Login → MainTabs
-- SignUp → EmailVerification → Login
-- ForgotPassword → ResetPassword → ResetPasswordSuccess
-- GuestSoftGate → Login / Dismiss
-- MainTabs: Home / Discover / Maps / Review / Profile
-- HomeFeed post tap → StallDetail
-- HomeFeed dish link → DishDetail
-- Discover map pin tap → BuildingDrillDown → floor plan → stall tap → StallDetail
-- Search → TasteFilter → Search (back preserves state)
-- Decide-for-me → result card → StallDetail → review → ReviewStack
-- Bites tap → DishDetail
-- Post composer → HomeFeed (with new post at top)
-- ReadsFeed article → BlogPostWebView
-- Profile → EditProfile → back (saved fields persist)
-- Profile → Favourites → DishDetail
-- Profile → ReviewHistory → DishDetail or StallDetail
+1. `src/app/navigation/navigationTypes.ts`
+2. registered navigator files and `src/app/navigation/linking.ts`
+3. `src/constants/featureFlags.ts`
+4. touched screens and service/store contracts
+5. current task acceptance criteria
 
-### 2. Auth guard tests
+## Coverage checklist
 
-For every protected action, verify:
-1. Guest user taps protected action → GuestSoftGate appears
-2. Guest taps "Sign in" → AuthStack.Login
-3. Guest taps "Continue as guest" → soft gate dismisses, no navigation
-4. Authenticated user → action proceeds without gate
+### 1. Pre-authentication
 
-Protected actions to test: Post, Profile, Favourites, ReviewHistory, Settings, Write review.
+- Fresh install opens Splash and local onboarding.
+- Onboarding completion opens mandatory Create Account / Sign In.
+- No Continue as Guest, Skip Login, guest session, or unauthenticated MainTabs path exists.
+- Failed login/signup remains in auth.
+- Verification, password recovery, invalid callback, and resend states fail safely.
+- Missing production Supabase configuration shows a blocking service/configuration state.
 
-### 3. State persistence tests
+### 2. Session behavior
 
-- Add a dish to favourites → navigate away → return → dish still in list.
-- Submit a review → ReviewHistory shows new entry.
-- Taste quiz answers → profile.tasteVector updated → DecideForMeResult reflects new priorities.
-- Search query → navigate away → return to Search → query cleared (by design, not a bug).
+- Valid session restores the authenticated app.
+- Missing session returns to Login after onboarding has already been completed.
+- Explicit sign-out clears account-scoped state and returns to Login.
+- Invalid/revoked session clears sensitive state and returns to Login.
+- A persisted user ID without a valid secure Supabase session is not treated as authenticated.
 
-### 4. Edge cases
+### 3. Route and deep-link guards
 
-- No internet: navigate to Offline screen, all screens show empty state gracefully.
-- Empty states: Favourites empty, ReviewHistory empty, SearchResults with no matches.
-- Long text: dish names > 40 chars, stall names > 60 chars — verify truncation.
-- Missing image: imageUrl null/undefined → placeholder renders.
-- Price at S$0.00 — show "Price unavailable" not S$0.00.
+Test every registered root/tab/merchant/admin route.
 
-## Execution steps
+- Signed-out protected deep link → onboarding or login, never the target screen.
+- Safe return route opens only after successful authentication.
+- Malformed and unsafe route params are discarded.
+- Feature-disabled routes remain unavailable after login.
+- Merchant/admin routes require the correct role in addition to authentication.
+- Developer/prototype routes are unavailable in released builds.
 
-1. Open `DeveloperLauncherScreen.tsx` and cycle through every launch button.
-2. For each screen, take a snapshot using the `take_snapshot` tool to verify the a11y tree.
-3. For each interactive element, call `click` and verify state changes.
-4. Document bugs in `qa_report.md` with: screen name, steps to reproduce, expected vs actual.
+### 4. Authenticated consumer flows
+
+- Home feed and activity actions.
+- Discover, filters, map, search, Browse Dishes, Browse Stalls.
+- Dish and stall detail, venue menu, missing-ID and no-results states.
+- Review submission and history.
+- Post composer, media permissions, upload failure, publish, and profile history.
+- Profile, avatar consistency, favourites, settings, privacy, and account deletion.
+
+### 5. Catalog and fallback
+
+With Supabase healthy:
+
+- use server-side paged catalog reads;
+- show approved menu-derived dish images;
+- show stall logo → stall/venue image → representative menu dish;
+- preserve paging without duplicates;
+- show legitimate empty search results without unrelated fallback content.
+
+With an authenticated catalog outage:
+
+- permitted read-only Discover/Search/Browse/detail/menu/map surfaces use the Excel catalog;
+- source/freshness is clear;
+- writes remain unavailable and do not show false success.
+
+Signed out, invalid-session, failed-auth, and missing-configuration states must not receive Excel content.
+
+### 6. State and data integration
+
+- Shared data persists through Supabase and is visible to the expected other users.
+- Zustand acts only as cache/optimistic state for shared data.
+- Sign-out removes account-scoped cached data.
+- Profile/avatar content is consistent across app surfaces.
+- Posts/reviews/favourites do not silently fall back to local fixture success.
+
+### 7. Edge and accessibility states
+
+For every screen test:
+
+- loading, empty, error, offline, permission-denied, and missing-param states;
+- long text and large text sizes;
+- dark mode and reduced motion;
+- accessible names, roles, selected/disabled/busy states;
+- modal/sheet focus and dismiss controls;
+- image failure without generic stock placeholders;
+- no critical console errors or unhandled promise rejections.
+
+## Execution
+
+1. Run focused source tests first.
+2. Use Playwright for Expo web and web workspaces; interact with every visible control and retain traces/screenshots on failure.
+3. Use Maestro and device/simulator tools for native permissions, lifecycle, image loading, and accessibility behavior.
+4. Run credential-backed Supabase smoke only in an approved staging environment.
+5. Record exact pass/fail/blocked status in `tasks/verification.md` or the task-specific audit.
 
 ## Pass criteria
 
-All navigation flows complete without error. No unhandled promise rejections in console. All protected routes show soft gate for guest users. All empty states render. TypeScript compiles cleanly (`npx tsc --noEmit`).
+- No unauthenticated route or data bypass.
+- No false write success.
+- No unapproved production feature exposure.
+- No critical crash, security, privacy, accessibility, or data-isolation finding.
+- Required automated, native, staging, and external proof gates are explicitly recorded; skipped checks are not passes.
