@@ -1,231 +1,203 @@
 # Repository Hygiene Audit — 2026-07-23
 
 > Repository: `siewhean/Hungry`  
-> Cleanup branch: `codex/repository-hygiene-cleanup`  
-> Cleanup PR: #45  
+> Cleanup branch/PR: `codex/repository-hygiene-cleanup` / #45  
+> Active runtime branch/PR: `codex/catalog-excel-fallback-audit` / #44  
 > Integration base: `main`  
-> Production status: **No-Go** — repository organization does not replace app, database, native, store, security, privacy, or legal verification.
+> Verdict: **No-Go** until automated checks, branch sequencing, staging/native proof and external release gates pass.
 
-## 1. Scope and safety rule
+## 1. Scope and governing policy
 
-This pass reviewed:
+This pass audited repository governance, recent/open pull requests, PR-associated branch history, current entrypoint/product/release/QA documents, specialist agent workflows, generated QA output and high-risk deletion candidates.
 
-- active and recent pull requests;
-- PR-associated branch history;
-- repository entrypoint and governance documents;
-- current product-policy contradictions;
-- generated QA output;
-- active versus legacy workspace boundaries;
-- keep/archive/delete rules;
-- obvious stale planning surfaces.
-
-It intentionally does **not** delete runtime code, migrations, canonical data, or large workspaces merely because they appear old. Those changes require reference, build, test, migration, and owner proof.
-
-The governing product policy is:
+The approved product policy is authoritative:
 
 ```text
 Splash → Onboarding → Create Account / Sign In → verification when required → authenticated app
 ```
 
-Hungry has no guest mode. Supabase remains mandatory for authentication and shared writes. Excel is an authenticated, read-only catalog fallback for eligible catalog outages; it is not an authentication, missing-configuration, invalid-session, or no-results fallback.
+- No guest mode or unauthenticated MainTabs/content.
+- Supabase is mandatory for authentication and shared writes.
+- Missing released-build configuration blocks app entry.
+- Excel is an authenticated, read-only catalog fallback for classified catalog network/timeout/RPC/release availability failures only.
+- Signed-out, missing, invalid or revoked sessions, failed auth, missing configuration and legitimate no-results cannot invoke Excel fallback.
 
-## 2. Pull-request and branch audit
+This pass did not delete runtime code, migrations, canonical data or large workspaces merely because they appeared old. Destructive runtime/data/workspace cleanup requires a local reference graph, green tests/builds and owner/environment evidence.
 
-### Active change lines after cleanup
+## 2. Pull-request and branch disposition
+
+### Active lines
 
 | PR | Branch | Decision |
 |---|---|---|
-| #44 | `codex/catalog-excel-fallback-audit` | Keep open. Renamed and rewritten around mandatory auth, typed outage handling, authenticated read-only Excel fallback, and PR #43 reconciliation. |
-| #45 | `codex/repository-hygiene-cleanup` | Keep draft until repository checks and #44 sequencing pass. Contains documentation consolidation and safe generated-output removal. |
+| #44 | `codex/catalog-excel-fallback-audit` | Keep open. Renamed/reframed around mandatory auth and authenticated read-only Excel fallback. Relevant #43 catalog performance/exclusion work is reconciled here. |
+| #45 | `codex/repository-hygiene-cleanup` | Keep draft. Contains documentation/organization cleanup and safe generated-output removal. |
 
 ### Closed as superseded
 
-| PR | Branch | Disposition |
+| PR | Branch | Reason |
 |---|---|---|
-| #43 | `codex/catalog-timeout-exclusion` | Superseded by #44; relevant query, exclusion, map, and smoke work is reconciled there. |
+| #43 | `codex/catalog-timeout-exclusion` | Reconciled into #44. |
 | #31 | `frontend-design-overhaul-no-large` | Superseded by merged #38 and later `main`. |
-| #30 | `feature/hungry-passport-visual-refresh` | Current `main` Passport implementation is newer and more complete. |
+| #30 | `feature/hungry-passport-visual-refresh` | Current Passport implementation is newer/more complete. |
 | #28 | `codex/main-integration-05-docs-website-ops` | Superseded by merged #38/current `main`. |
 | #27 | `codex/main-integration-04-merchant-auth-backend` | Superseded by merged #38/current `main`. |
 | #26 | `codex/main-integration-03-consumer-surfaces` | Superseded by merged #38/current `main`. |
 | #25 | `codex/main-integration-02-core` | Superseded by merged #38/current `main`. |
-| #23 | `code-health-fix-dietary-check-any-cast-1472434782269874449` | Current `main` already contains the typed dietary behavior; branch is stale. |
-| #22 | `palette/a11y-icon-buttons-6629553433176848557` | Current `main` contains later accessibility work; branch is stale/non-mergeable. |
+| #23 | `code-health-fix-dietary-check-any-cast-1472434782269874449` | Current `main` already contains the typed behavior; branch is stale. |
+| #22 | `palette/a11y-icon-buttons-6629553433176848557` | Later accessibility work supersedes it; branch is stale/non-mergeable. |
 
-All other recent PRs are already merged or closed. The active implementation/cleanup PR set is now #44 and #45.
+All other recent PRs were already merged or closed. The open PR set after the audit is #44 and #45.
 
 ### Branch-ref limitation
 
-The available connector can create/update refs but cannot delete branch refs or reliably list every ref. PR-associated branches were audited through PR metadata. Closed PR branches may still exist. After confirming no deployment, environment, release, or rollback process depends on them, delete superseded refs in GitHub.
+The available connector cannot safely delete branch refs or reliably list every ref. Closed-PR refs may still exist. After confirming no deployment, environment, tag, release or rollback process depends on them, delete superseded refs in GitHub.
 
-Recommended retained refs during this work:
+Recommended temporary retained refs:
 
 ```text
 main
-codex/catalog-excel-fallback-audit     # while PR #44 is active
-codex/repository-hygiene-cleanup       # while PR #45 is active
+codex/catalog-excel-fallback-audit
+codex/repository-hygiene-cleanup
 ```
 
-## 3. Documentation reconciliation
+## 3. Implemented repository cleanup
 
-### `README.md`
+### Stable root and workflow entrypoints
 
-Previous problems:
+Replaced stale, duplicated or contradictory current documentation:
 
-- repeated command and note sections;
-- mock-first/backend-optional framing;
-- guest/public browsing claims;
-- no reliable current repository map;
-- static release prose likely to drift.
+```text
+README.md
+AGENTS.md
+CLAUDE.md
+CODEX.md
+WORKFLOW.md
+```
 
-Action: replaced with a concise current project map, mandatory-auth and Supabase/Excel boundaries, setup/verification commands, source hierarchy, and branch policy.
+The replacements define current architecture, source ownership, mandatory auth, Supabase/Excel boundaries, task/verification ledgers, branch lifecycle, retention policy and evidence rules. Volatile release status no longer belongs in root entrypoints.
 
-### `AGENTS.md`
+Added:
 
-Previous problems:
+```text
+docs/repository/REPOSITORY_STRUCTURE.md
+```
 
-- described the repo as frontend-only and mock-first;
-- excluded backend, website, and data work;
-- contained stale guest/no-network/media assumptions;
-- embedded unrelated floorplan instructions and a large memory dump;
-- used an incorrect authentication order.
+This defines root contents, directory ownership, active versus legacy workspaces, generated-output policy and keep/archive/delete criteria.
 
-Action: replaced with stable current architecture, source ownership, high-risk paths, code/document/branch rules, verification budget, and closeout policy.
+### Product and implementation plans
 
-### `CLAUDE.md` and `CODEX.md`
+Reconciled current active planning documents that still described guest browsing, mock-first/backend-future architecture, old branches or static stale status:
 
-Previous problems:
+```text
+tasks/product-context.md
+tasks/Roadmap/mvp-basic-features-implementation-phases.md
+tasks/Roadmap/Scaling/scaling-implementation-test-qaqc-plan.md
+```
 
-- duplicated long generic guidance;
-- required volatile progress in `README.md`;
-- omitted the current authentication/data-source boundary;
-- blurred ownership between entrypoint docs and active ledgers.
+They now use the mandatory-auth flow, Supabase authority, authenticated fallback, current feature-gated surfaces and evidence-based phase gates.
 
-Action: replaced with concise agent entrypoints pointing to `AGENTS.md`, `WORKFLOW.md`, `tasks/backlog.md`, and `tasks/verification.md`.
+### Release and QA documents
 
-### `WORKFLOW.md`
+Replaced stale guest-era/current-proof claims in:
 
-Previous problems:
+```text
+tasks/Roadmap/app-file-cleanup-inventory.md
+tasks/Roadmap/app-screen-qc-checklist.md
+tasks/Roadmap/app-production-readiness-audit.md
+tasks/Roadmap/app-route-feature-flag-qc-report.md
+tasks/Roadmap/app-playwright-prelaunch-report.md
+tasks/Roadmap/app-maestro-native-smoke-report.md
+tasks/Roadmap/app-store-google-play-prelaunch-qaqc-checklist.md
+tasks/Roadmap/app-final-prelaunch-go-nogo.md
+tasks/Roadmap/app-final-go-no-go-checklist.md
+```
 
-- incomplete branch/PR lifecycle;
-- no generated-output policy;
-- no archive-versus-delete rules;
-- no mandatory-auth/Excel safety boundary.
+The documents now separate historical evidence from current final-commit proof, preserve No-Go status and require current automated, staging, native, store-console, monitoring, image-rights and legal/privacy evidence.
 
-Action: replaced with source hierarchy, task model, roles, work modes, branch lifecycle, repository/document lifecycle, verification budget, safety boundaries, and closeout checklist.
+### Agent and design workflow cleanup
 
-### `tasks/product-context.md`
+Updated current specialist workflows:
 
-Previous problems:
+```text
+.agents/workflows/supervisor.md
+.agents/workflows/qa_tester.md
+.agents/workflows/flow_analyst.md
+.agents/workflows/ui_ux_designer.md
+.agents/workflows/design_system_enforcer.md
+.agents/workflows/accessibility_auditor.md
+.agents/workflows/security_auditor.md
+.agents/workflows/performance_auditor.md
+.agents/workflows/copywriter.md
+.agents/workflows/ai_ml_reviewer.md
+```
 
-- described the app as pre-backend/mock-first;
-- listed guest mode as an MVP requirement;
-- treated Supabase as future work;
-- retained a guest/auth matrix contradicting approved policy;
-- did not reflect the current feature-gated application.
+Key changes:
 
-Action: reconciled product context with mandatory authentication, Supabase authority, authenticated Excel fallback, approved media policy, current data sources, navigation, and feature-gated secondary surfaces.
+- removed GuestSoftGate/guest-mode requirements;
+- removed stale future-backend and mock-only assumptions;
+- replaced loose root `*_report.md` outputs with task-specific audits and `tasks/verification.md`;
+- aligned security, accessibility, performance, data provenance and no-false-write checks with current architecture;
+- replaced brittle absolute rules with evidence-based platform-aware requirements.
 
-### `tasks/Roadmap/mvp-basic-features-implementation-phases.md`
+Replaced `design/stitch/STITCH_BRIEFS.md` to remove developer-specific absolute paths, guest screen briefs, generic stock/Unsplash imagery and enabled-looking disabled features. It now uses repository-relative sources and current auth/fallback/media states.
 
-Previous problems:
+### Ignore policy and generated-output removal
 
-- defined the core loop as browsing before login;
-- required guest browsing as a launch gate;
-- referred to guest taste migration as the primary auth path;
-- was tied to the superseded `frontend-design-overhaul` branch;
-- embedded static feature-flag values and stale implementation status.
+Normalized `.gitignore` for build/test/native output, local environments/secrets, editor/agent caches, Python/Supabase local state, generated QA/scratch output and temporary data work products.
 
-Action: replaced with the current authenticated MVP sequence, data-source/fallback matrix, phases 0–7, acceptance gates, verification commands, and an explicit rule that volatile status belongs in the canonical ledgers.
-
-### `.agents/workflows/qa_tester.md`
-
-Previous problems:
-
-- required `GuestSoftGate` and Continue as Guest;
-- used obsolete route/tab expectations;
-- accepted generic placeholders;
-- lacked authenticated fallback and no-false-write testing.
-
-Action: rewrote the QA agent around mandatory auth, deep-link/role/flag protection, catalog source behavior, native/web/accessibility testing, and exact pass/fail/blocked evidence.
-
-## 4. Repository organization changes
-
-Created `docs/repository/REPOSITORY_STRUCTURE.md` to define:
-
-- stable root contents;
-- mobile, backend, tests, web, data, scripts, tasks, docs, research, and design directory purposes;
-- active `marketing/website/web-v2` versus legacy `marketing/web` boundaries;
-- generated-output handling;
-- keep/archive/delete criteria;
-- branch retention policy.
-
-Updated `.gitignore` to consolidate duplicate patterns and ignore build/test output, generated QA text, scratch files, local environment values, local data work products, and scanner/tool caches.
-
-## 5. Files removed
-
-Deleted reproducible stale QA snapshots:
+Deleted reproducible stale grep snapshots:
 
 ```text
 output/qa/accessibility-smoke-20260413.txt
 output/qa/accessibility-smoke-20260413-postfix.txt
 ```
 
-They were machine-generated grep output with obsolete line references, not canonical release evidence. Current accessibility status remains in source contracts, active verification records, and dedicated audit material. Equivalent generated text output is now ignored.
+They contained obsolete line references and were not canonical release evidence.
 
-## 6. Areas retained deliberately
+### Source-contract cleanup
 
-### `marketing/web/`
+On PR #45:
 
-Retained as a documented legacy workspace. Add no new work. Delete only after reference search, route/content parity, build/deployment proof, and owner approval show that `marketing/website/web-v2` fully replaces it.
+- updated `src/app/navigation/mobile-route-inventory-contracts.test.ts` so the production audit classifies mobile content as authenticated rather than guest/public.
 
-### `tasks/Roadmap/Archive/`
+On PR #44:
 
-Retained for unique historical context. Archived guest/mock/product assumptions are not current requirements.
+- updated `src/app/app-store-prelaunch-contracts.test.ts` so required native flows and scripts use mandatory-auth and authenticated-fallback coverage rather than obsolete guest smoke files/names.
 
-### Root accessibility audit
+## 4. Deliberately retained areas
 
-`accessibility-audit-report.md` remains temporarily because it contains unique detailed remediation and manual-proof history. Consolidate it into the Accessibility roadmap and remove the root copy only after preserving references/evidence.
+| Area | Reason retained | Follow-up condition for removal/change |
+|---|---|---|
+| `marketing/web/` | Possible legacy content/deployment dependency | reference search, route/content parity, build/deploy proof, owner approval |
+| `tasks/Roadmap/Archive/` | Unique historical decisions/audit context | archive remains non-authoritative; delete exact duplicates only after review |
+| root `accessibility-audit-report.md` | Unique detailed remediation/manual history | consolidate into Accessibility roadmap and update references first |
+| canonical workbook/runtime catalog | Intentional release inputs with validation pipelines | preserve provenance/generator; ignore temporary outputs |
+| Supabase migrations/smoke SQL | Append-only schema/security/evidence history | never delete merely as “old”; use corrective migrations |
+| current runtime files | No local executable reference graph in this environment | remove only after reference, typecheck, tests, build and native proof |
+| guest-session backend paths | May support anonymous abuse-control/operational behavior rather than app guest mode | explicit backend/security/product audit |
+| old design exports/concepts | May have review, provenance or asset-rights value | reference and rights audit |
 
-### Canonical workbook and generated runtime catalog
+## 5. Runtime/code cleanliness assessment
 
-Retained as intentional runtime/release inputs with validation and reconciliation pipelines. Temporary backups, review queues, and intermediate outputs are ignored.
+PR #45 is intentionally documentation/organization focused. It would be unsafe to claim all runtime code is clean without executing the repository.
 
-### Supabase migrations and smoke SQL
+Runtime cleanup remains concentrated in #44:
 
-Retained as append-only schema/security history and reproducible backend evidence.
-
-## 7. Remaining cleanup candidates requiring proof
-
-| Candidate | Required proof before removal |
-|---|---|
-| `marketing/web/` | reference search, route/content parity, build/deploy proof, owner approval |
-| root `accessibility-audit-report.md` | consolidate unique evidence into `tasks/Roadmap/Accessibility/`, update references |
-| old design exports/concepts | verify no implementation, review, source-rights, or legal dependency |
-| one-off scripts at `scripts/` root | package/workflow/doc reference search and focused replacement tests |
-| historical root docs outside the stable root set | reconcile unique content, then archive or delete |
-| guest-session backend paths | security/product audit to distinguish unsupported app guest mode from operational abuse-control/anonymous infrastructure |
-| stale branch refs | owner review and GitHub branch deletion |
-
-## 8. Code-cleanliness assessment
-
-PR #45 intentionally limits itself to documentation/organization and generated-output removal. Runtime deletion without executable verification would be unsafe.
-
-Known runtime cleanup is concentrated in PR #44:
-
-- mandatory pre-auth/authenticated navigator separation;
-- removal of guest route and deep-link bypasses;
-- typed catalog errors;
+- pre-auth versus authenticated navigator separation;
+- guest route/deep-link removal;
 - fail-closed session/configuration behavior;
-- authenticated-only Excel catalog fallback;
-- replacement of obsolete guest Playwright/Maestro/source contracts;
-- current runtime documentation reconciliation.
+- typed catalog errors;
+- authenticated-only read-only Excel fallback;
+- no-results preservation;
+- current Playwright/Maestro/source contracts;
+- Supabase/catalog performance and exclusion reconciliation.
 
-Do not merge #45 in a way that overwrites newer #44 versions of overlapping files. Update both branches against `main` and resolve any overlap deliberately.
+Known follow-up categories requiring executable proof include unused imports/dependencies, duplicate route/screen variants, one-off scripts, legacy website removal, obsolete backend functions and stale assets. They are documented as candidates rather than deleted speculatively.
 
-## 9. Verification plan
+## 6. Verification required
 
-Required for PR #45:
+### PR #45 repository checks
 
 ```bash
 npm run typecheck
@@ -238,28 +210,46 @@ npm run security:trufflehog
 git diff --check
 ```
 
-Reference and duplicate checks:
+### Reference, duplicate and policy checks
 
 ```bash
 git grep -n "Continue as Guest\|GuestSoftGate\|guest browse" -- ':!tasks/Roadmap/Archive/**'
+git grep -n "frontend-design-overhaul" -- ':!tasks/Roadmap/Archive/**' ':!tasks/session-log.md' ':!tasks/verification.md'
 git grep -n "output/qa/accessibility-smoke-20260413"
 git grep -n "marketing/web" -- .github package.json scripts tasks docs README.md AGENTS.md WORKFLOW.md
 git ls-files | sort | uniq -d
+git status --short
 ```
 
-This audit environment had GitHub repository operations but no local checkout. These commands were not executed here; CI or a local/Codex checkout must provide proof before merge.
+### PR #44/runtime checks
 
-## 10. Current verdict
+Run the full typecheck/lint/format/test/Playwright/Expo Doctor/assets/Supabase/edge/security/release set plus staging catalog/RLS/advisor checks and current iOS/Android mandatory-auth/fallback scenarios.
+
+This audit environment had GitHub repository operations but no local checkout. The commands were not executed here. Recent GitHub Actions runs for the active branches failed before returning usable step logs, so they are not green evidence.
+
+## 7. Merge sequencing
+
+1. Obtain current local/CI proof for #45.
+2. Resolve why #45 currently reports non-mergeable and update it against `main` if needed.
+3. Merge or rebase the documentation cleanup deliberately.
+4. Update #44 against the resulting `main` and resolve overlapping policy documents/tests.
+5. Run the full runtime, staging and native verification again.
+6. Delete superseded branch refs after owner review.
+
+## 8. Final verdict
 
 | Area | Status |
 |---|---|
-| PR-associated branch audit | Complete |
-| Superseded PR closure | Complete |
+| Recent/open PR audit | complete |
+| Superseded PR closure | complete |
 | Active PR set | #44 implementation, #45 cleanup |
-| Root governance docs | Reconciled on cleanup branch |
-| Product context, MVP plan, QA agent | Reconciled on cleanup branch |
-| Generated QA output removal | Complete on cleanup branch |
-| Complete branch-ref deletion | Blocked by connector capability and owner review |
-| Runtime dead-code removal | Deferred to verified implementation work |
-| Automated cleanup verification | Pending |
-| Merge readiness | **No-Go until CI/local checks pass and #44/#45 sequencing is reconciled** |
+| Root/governance documentation | reconciled on #45 |
+| Current product/MVP/scaling/store/QA documents | reconciled on #45 |
+| Agent/design workflows | reconciled on #45 |
+| Generated QA junk | removed on #45 |
+| Stale native prelaunch contract on #44 | corrected |
+| Branch-ref deletion | blocked by connector capability and owner review |
+| Runtime dead-code/dependency cleanup | pending executable proof |
+| PR #45 mergeability | unresolved; currently reported non-mergeable |
+| Automated/staging/native/external proof | incomplete |
+| Overall | **No-Go** |
