@@ -1,15 +1,21 @@
-# Codex Entrypoint
+# Codex Entrypoint — Hungry
 
-Read `README.md` before planning or coding.
+1. Read `README.md` for the current repository map.
+2. Read `AGENTS.md` for architecture, safety, code, documentation, and branch rules.
+3. Read `WORKFLOW.md` for task, verification, and lifecycle governance.
+4. Read `tasks/backlog.md` and the relevant portion of `tasks/verification.md`.
+5. Use `ops/low-token-cheatsheet.md` for bounded repository reads when appropriate.
 
-Then read `AGENTS.md`, `WORKFLOW.md`, and `ops/low-token-cheatsheet.md` and follow their workflow, including keeping `README.md` updated whenever task context, progress, decisions, or blockers change.
+## Mandatory execution rules
 
-## Mandatory execution workflow for Hungry
-
-1. Treat `tasks/backlog.md` as the shared active task contract between Claude and Codex.
-2. For non-trivial work, update scoped task rows in `tasks/backlog.md` before implementation.
-3. Update canonical task status frequently (at least once per focused work block, and always before ending a session).
-4. Do not mark tasks done without recording verification in `tasks/verification.md`.
-5. Append a concise entry in `tasks/session-log.md` with date, actor, status, blockers, and next step.
-6. For vague, broad, or multi-step Hungry requests, route through `hungry-intent-router` first.
-7. Default to low-token mode: bounded reads, bounded outputs, and delta-only reporting unless the user explicitly asks for a broad summary.
+- `tasks/backlog.md` is the active task contract.
+- `tasks/verification.md` records exact pass, fail, skipped, and blocked evidence.
+- `tasks/session-log.md` stores concise chronological history.
+- Root docs are stable entrypoints; do not place volatile progress or blockers in `README.md`.
+- Hungry has no guest mode. Main app surfaces require successful authentication.
+- Supabase is mandatory for authentication and shared writes.
+- Excel is an authenticated read-only catalog fallback only for eligible catalog outages.
+- Do not expose mock providers or unfinished/disabled features in released builds.
+- Do not claim skipped, credential-blocked, native-blocked, or failing checks passed.
+- For vague or broad requests, resolve scope and acceptance criteria before destructive changes.
+- Keep reads and diffs bounded, but provide full evidence when the user requests a broad audit.
