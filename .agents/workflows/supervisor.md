@@ -1,85 +1,126 @@
 ---
-description: Supervisor agent — orchestrate all QA, UX, security, and persona agents and compile a final release readiness report
+description: Supervisor agent — orchestrate Hungry audits and produce one evidence-backed Go/No-Go report
 ---
 
 # Supervisor Agent
 
-You are the Lead QA Supervisor for the **Hungry** food discovery app. Your job is to orchestrate all other agents, track findings, and produce a single **Release Readiness Report**.
+Coordinate the Hungry specialist workflows without creating parallel source-of-truth files. Use current code, registered routes, feature flags, the active task, and the canonical verification ledger.
+
+## Governing policy
+
+- No guest mode.
+- Main app surfaces require successful authentication.
+- Supabase is mandatory for auth and shared writes.
+- Excel is an authenticated read-only catalog fallback only for eligible catalog outages.
+- A skipped, credential-blocked, simulator-blocked, or failing check is not a pass.
 
 ## Agent roster
 
-| Agent | Workflow file | Output report |
-|---|---|---|
-| QA Tester | qa_tester.md | qa_report.md |
-| UI/UX Designer | ui_ux_designer.md | ui_ux_report.md |
-| Security Auditor | security_auditor.md | security_report.md |
-| Performance Auditor | performance_auditor.md | performance_report.md |
-| Accessibility Auditor | accessibility_auditor.md | accessibility_report.md |
-| Design System Enforcer | design_system_enforcer.md | design_system_report.md |
-| Copywriter | copywriter.md | copy_report.md |
-| Flow Analyst | flow_analyst.md | flow_report.md |
-| AI/ML Reviewer | ai_ml_reviewer.md | ai_ml_report.md |
-| Persona: Wei Ming | persona_wei_ming.md | wei_ming_report.md |
-| Persona: Sarah | persona_sarah.md | sarah_report.md |
-| Persona: Ahmad | persona_ahmad.md | ahmad_report.md |
-| Persona: Emma | persona_emma.md | emma_report.md |
-| Persona: Wei Ling | persona_wei_ling.md | wei_ling_report.md |
-| Persona: Uncle Tan | persona_uncle_tan.md | uncle_tan_report.md |
+| Agent | Workflow |
+|---|---|
+| QA | `qa_tester.md` |
+| Flow | `flow_analyst.md` |
+| UI/UX | `ui_ux_designer.md` |
+| Design system | `design_system_enforcer.md` |
+| Accessibility | `accessibility_auditor.md` |
+| Security | `security_auditor.md` |
+| Performance | `performance_auditor.md` |
+| Copy | `copywriter.md` |
+| AI/recommendation | `ai_ml_reviewer.md` |
+| Personas | `persona_*.md` |
+
+Specialist outputs belong in the current task-specific audit and `tasks/verification.md`. Do not create loose root files such as `qa_report.md`, `security_report.md`, or `release_readiness_report.md`.
 
 ## Execution order
 
-Run agents in this priority order:
+1. **Scope and baseline**
+   - resolve branch, current task, product policy, feature flags, route inventory, and required environments;
+   - run the smallest static baseline that can expose an invalid working state.
+2. **Architecture and flow**
+   - Flow Analyst;
+   - Design System Enforcer;
+   - Copywriter.
+3. **Functional and visual quality**
+   - QA Tester;
+   - UI/UX Designer;
+   - Accessibility Auditor.
+4. **Risk and scale**
+   - Security Auditor;
+   - Performance Auditor;
+   - AI/ML Reviewer where recommendation behavior is in scope.
+5. **User validation**
+   - relevant personas only; do not run all personas when the task is narrow.
+6. **Regression loop**
+   - assign each issue to an owner;
+   - fix;
+   - rerun the focused check;
+   - repeat until resolved, accepted, or explicitly blocked.
+7. **Final gates**
+   - broad automated checks;
+   - staging/database proof;
+   - native/device proof;
+   - store/monitoring/legal proof where release readiness is claimed.
 
-1. **Verification baseline:** `npx tsc --noEmit` — must pass before any agents run.
-2. **Foundation:** Design System Enforcer → Copywriter → Flow Analyst
-3. **Quality gates:** QA Tester → UI/UX Designer → Accessibility Auditor
-4. **Risk gates:** Security Auditor → Performance Auditor → AI/ML Reviewer
-5. **User validation:** Run all 6 persona tests in parallel.
+## Severity
 
-## Severity levels
-
-| Level | Definition | Must fix before release? |
+| Level | Definition | Release effect |
 |---|---|---|
-| 🔴 Critical | Data loss, auth bypass, crash on launch | Yes |
-| 🟠 High | Key flow broken, accessibility failure | Yes |
-| 🟡 Medium | Friction, missing copy, UI overflow | Preferred |
-| 🟢 Low | Minor polish, copy tweaks | Optional |
+| P0 | Auth bypass, private-data exposure, data loss, launch crash, destructive release defect | Block |
+| P1 | Core flow unusable, serious accessibility/security/privacy failure, cross-user inconsistency | Block |
+| P2 | Significant friction, performance, copy, layout, or recoverability issue with workaround | Fix before public release unless accepted |
+| P3 | Minor polish or maintainability improvement | Backlog |
 
-## Release readiness report template
+## Required evidence format
 
-```markdown
-# Hungry Release Readiness Report
-Date: {DATE}
-Version: {VERSION}
+For each finding record:
 
-## Executive summary
-{PASS/FAIL} — {N} critical issues, {N} high, {N} medium, {N} low.
-
-## Critical blockers
-{LIST}
-
-## High priority
-{LIST}
-
-## Verification checklist
-- [ ] TypeScript: zero errors
-- [ ] All navigation flows: navigable
-- [ ] Auth guard: all protected routes tested
-- [ ] Map: building → floor plan → stall → detail
-- [ ] Review flow: hub → rating → tags → compose → success
-- [ ] Favourites: persist across restart
-- [ ] Empty states: all screens tested
-
-## Sign-off
-[ ] QA Lead sign-off
-[ ] UI/UX sign-off
-[ ] Security sign-off
+```text
+ID
+Area/screen/route
+Environment and account role
+Severity
+Steps to reproduce
+Expected
+Actual
+Evidence (test, trace, screenshot, log, query)
+Root cause
+Fix/owner
+Retest result
+Residual risk
 ```
 
-## Execution steps
+## Verification baseline
 
-1. Run TypeScript check: `npx tsc --noEmit`
-2. Invoke each agent workflow in order.
-3. Collect individual reports.
-4. Compile findings into `release_readiness_report.md`.
-5. Escalate any 🔴 Critical issues immediately and block release.
+Use repository scripts rather than ad-hoc equivalents:
+
+```bash
+npm run typecheck
+npm run lint
+npm run format:check
+npm run test
+```
+
+Add Playwright, Maestro, Supabase, security, asset, build, load, and release commands according to risk. Do not claim repository-wide readiness from source contracts alone.
+
+## Final report
+
+Update the task-specific audit with:
+
+1. scope and branch/commit;
+2. agents/checks run;
+3. issues found and fixed;
+4. exact command results;
+5. native/staging/external evidence;
+6. unresolved P0/P1 blockers;
+7. accepted risks and owner;
+8. Go, Go Candidate, or No-Go verdict.
+
+Also add concise evidence to `tasks/verification.md` and an execution entry to `tasks/session-log.md` when appropriate.
+
+## Pass criteria
+
+- No unresolved P0/P1 finding.
+- Mandatory auth, route/role/flag boundaries, and data-source policy are proven.
+- Core flows pass automated and native tests.
+- Staging and external release gates are complete for any Go claim.
+- Repository status is recorded in one canonical audit/ledger set, not duplicated across loose reports.
