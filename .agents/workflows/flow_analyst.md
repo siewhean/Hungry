@@ -1,95 +1,115 @@
 ---
-description: Flow analyst — map the full user journey and identify dead ends, friction points, and missing transitions
+description: Flow analyst — map authenticated journeys, dead ends, recovery paths, and role boundaries
 ---
 
 # Flow Analyst Agent
 
-You are a Flow Analyst Agent for the **Hungry** food discovery app. Your job is to map every user journey, identify dead ends, and surface unnecessary friction that would cause users to drop off.
+Map Hungry’s current journeys from registered navigators and feature flags. Do not use archived route maps or guest-mode requirements.
 
-## Primary user journeys
+## Product boundary
 
-### Journey 1 — First-time food discovery
-1. Open app → Splash (2s)
-2. Onboarding intro 1 → 2 → 3
-3. TasteQuiz (6 sliders)
-4. DietaryPreferences
-5. LocationPermission
-6. Home feed (logged out)
-7. See a dish in feed → tap dish link
-8. DishDetail → "Find stall"
-9. StallDetail → "Get directions" / "Order now"
-10. Soft gate: "Save to favourites" → GuestSoftGate → Sign up → back to stall
+```text
+Fresh user: Splash → Onboarding → Create Account / Sign In → verification when required → authenticated app
+Returning user: Splash → secure session restoration → app, or Login when signed out
+```
 
-**Check:** Is the path from DishDetail → SignUp → back to dish seamless? Does `setReturnRoute` correctly restore context after auth?
+There is no guest mode. MainTabs, catalog, details, reviews, posts, profile, merchant, and admin surfaces require authentication. Excel catalog fallback is read-only and available only to a valid authenticated session during an eligible catalog outage.
 
-### Journey 2 — Map-based discovery
-1. Tap "Maps" tab
-2. HomeMapScreen — filter by region
-3. Tap building pin
-4. BuildingDrillDown — view floor plan
-5. Tap stall on floor plan
-6. StallDetail
+## Source order
 
-**Check:** Does the floor plan scroll on small screens (< 375pt wide)? Can the user go back from BuildingDrillDown to the map without losing filter state?
+1. `src/app/navigation/navigationTypes.ts`
+2. registered navigator files
+3. `src/app/navigation/linking.ts`
+4. `src/constants/featureFlags.ts`
+5. `src/store/useSessionStore.ts` and `src/hooks/useAppBootstrap.ts`
+6. current task acceptance criteria
 
-### Journey 3 — Decide for me
-1. Tap "Decide for me" (from Search or Home)
-2. DecideForMeResult
-3. "View stall" → StallDetail
-4. "Order now" → external URL
-5. "Try another" → new result
+## Required journeys
 
-**Check:** Can the user always go back from DecideForMeResult? Does "Try another" work if only 1 dish matches?
+### 1. Fresh install and onboarding
 
-### Journey 4 — Write a review
-1. StallDetail → "Write review" (or FAB on Home)
-2. ReviewHub → select dish
-3. ReviewRating → 1–5 stars
-4. ReviewTags → taste tags
-5. ReviewCompose → caption
-6. Submit → ReviewSuccessModal → dismiss
-7. ReviewHistory shows new entry
+1. Launch → Splash.
+2. Complete onboarding and location/manual-location choices.
+3. Reach mandatory Create Account / Sign In.
+4. Complete signup and verification, or sign in.
+5. Confirm MainTabs mount only after authentication.
+6. Confirm onboarding choices migrate to the authenticated profile.
 
-**Check:** Is the review multi-step progress visible? Can the user edit tags after moving to compose step?
+Check failed signup/login, offline auth, verification delay, back navigation, and no guest/skip path.
 
-### Journey 5 — Returning user (logged in)
-1. Splash (< 500ms) → Home
-2. Check for new content in feed
-3. Profile → Favourites
-4. Edit profile
+### 2. Returning and expired sessions
 
-**Check:** Does the feed load fresh content on every Home tab visit or is it cached? Does EditProfile correctly pre-fill current values?
+- Valid secure session → authenticated app.
+- No session after onboarding → Login.
+- Explicit sign-out → clear account-scoped state → Login.
+- Invalid/revoked session → clear sensitive state → Login.
+- Persisted user metadata without a valid Supabase session must not open the app.
 
-## Dead-end checklist
+### 3. Discover and search
 
-A dead end is any screen with no forward navigation and no back button.
+- Home/Discover → search or browse → dish/stall result → detail/menu/map.
+- Location allowed and denied/manual-location paths.
+- Browse multiple pages without duplicate records.
+- Legitimate no-results remains empty.
+- Missing/invalid route IDs recover safely.
 
-- `ResetPasswordSuccess` — must have "Back to login" CTA.
-- `OfflineStateScreen` — must have "Retry" CTA.
-- `NotFoundScreen` — must have "Back to home" CTA.
-- `EmailVerificationScreen` — must have "Resend email" and timer.
+### 4. Authenticated catalog outage
 
-## Friction inventory
+- Start with a valid restored session.
+- Force a catalog network/RPC/release failure without disabling authentication.
+- Confirm permitted read-only Discover/Search/Browse/detail/menu/map paths use Excel fallback.
+- Confirm source/freshness is clear.
+- Confirm Save, Review, Post, Follow, Profile, Comment, and Merchant mutations remain unavailable and never show false success.
+- Sign out or invalidate the session and confirm fallback access disappears.
 
-High friction = more than 2 taps to reach a key action.
+### 5. Favourites, reviews, and posts
 
-| Goal | Current taps | Target |
-|---|---|---|
-| Find a dish | Feed → DishDetail = 1 tap | ✓ |
-| Find a stall | Feed → StallDetail = 1 tap | ✓ |
-| Write review | Home → FAB → ReviewHub → ... = 4 screens | Acceptable |
-| Decide for me | Search → button → result = 2 taps | ✓ |
-| Change dietary prefs | Profile → Settings → ? | Currently missing — needs Settings screen link |
+- Save/unsave → restart/re-login → state rehydrates.
+- Review → media validation/upload → detail/profile/history visibility.
+- Post → media upload → publish → permitted second-user visibility.
+- Error/retry/delete/report/block/moderation paths where public UGC is enabled.
 
-## Execution steps
+### 6. Profile, settings, and account lifecycle
 
-1. Navigate each journey end-to-end via DeveloperLauncher.
-2. Count taps for each goal.
-3. Identify any screen with no navigation exit.
-4. Write findings to `flow_report.md`.
+- Edit profile/avatar and verify cross-surface consistency.
+- Distinguish device-only settings from Supabase account/privacy settings.
+- Password recovery and account deletion.
+- Sign-out clears user data while preserving approved device preferences.
+
+### 7. Merchant/admin and feature-gated flows
+
+- Correct role may enter the enabled merchant/admin surface.
+- Authenticated consumer cannot enter merchant/admin routes.
+- Disabled prototype, story, DM, comment, gamification, collection, floorplan, and developer routes remain unreachable through navigation, deep links, stale return routes, or notifications.
+
+## Dead-end and friction checks
+
+Every state needs a safe next action or back path:
+
+- verification/resend;
+- password reset success;
+- configuration failure;
+- offline/auth unavailable;
+- no results;
+- missing dish/stall;
+- upload/write failure;
+- permission denial;
+- disabled feature/unauthorized role.
+
+Count taps only after validating correctness and safety. Do not remove mandatory authentication, consent, confirmation, or moderation steps merely to improve a tap count.
+
+## Execution
+
+1. Build a route/state matrix from code.
+2. Run focused source tests.
+3. Use Playwright for Expo web and website flows.
+4. Use Maestro/device/simulator tools for native permissions, lifecycle, deep links, and visual behavior.
+5. Record findings in the current task audit and exact evidence in `tasks/verification.md`; do not create an untracked root `flow_report.md`.
 
 ## Pass criteria
 
-- No dead-end screens.
-- All core actions reachable in ≤ 3 taps from Home.
-- Auth return route works for all soft-gated actions.
+- No unauthenticated or role-bypass path.
+- No dead-end P0/P1 state.
+- Safe return routes work after successful authentication only.
+- Offline/fallback paths preserve read continuity without false writes.
+- Core authenticated goals remain understandable and reasonably direct.
