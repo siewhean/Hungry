@@ -43,44 +43,47 @@ Codex must preserve them and add exact Jurong East record cases.
 
 ## Exact pilot manifest
 
-Fill this table using stable IDs from the final staging release and bundled Excel catalog. Do not invent missing facts.
+Active Supabase release: `68cd0682-1655-4ceb-bd53-043309c9aafb` (119,232 venues / 156,351 dishes).
+Bundled Excel fallback release: `excel-fallback-v1` (4,273 venues / 22,042 dishes; SHA-256 prefix `a81ab6…e2262c3aef`).
+
+These are exact cross-source Jurong East candidates, not passing Release 0.1 visual evidence. Live detail, menu, image and installed-artifact verification is blocked by the Supabase HTTP 402 quota restriction and missing internal-alpha artifacts. Records with unapproved, placeholder, restricted, or unverified media are deliberately withheld by the client media sanitizer.
 
 ### Dishes
 
-| # | Dish ID | Name | Venue ID/name | Expected source(s) | Image expected | Price expected | Search term | Detail pass |
+| # | Dish ID | Name | Venue ID/name | Expected source(s) | Image/rights state | Price | Search term | Detail result |
 |---:|---|---|---|---|---:|---:|---|---:|
-| 1 |  |  |  | Supabase/Excel |  |  |  |  |
-| 2 |  |  |  | Supabase/Excel |  |  |  |  |
-| 3 |  |  |  | Supabase/Excel |  |  |  |  |
-| 4 |  |  |  | Supabase/Excel |  |  |  |  |
-| 5 |  |  |  | Supabase/Excel |  |  |  |  |
-| 6 |  |  |  | Supabase/Excel |  |  |  |  |
-| 7 |  |  |  | Supabase/Excel |  |  |  |  |
-| 8 |  |  |  | Supabase/Excel |  |  |  |  |
-| 9 |  |  |  | Supabase/Excel |  |  |  |  |
-| 10 |  |  |  | Supabase/Excel |  |  |  |  |
+| 1 | `dsh-c51ad71cb3753d53d08f32f313d834ab` | Meatless Minestrone | `ven-SFA-SW13S48L000` / The Soup Spoon | Supabase / Excel | Unverified; neutral fallback required | S$6.00 | meatless minestrone | Blocked live |
+| 2 | `dsh-96649f14010a7770969311ac0ea7316e` | Mango Ice Blended | `ven-SFA-SW13T18X000` / The Coffee Bean & Tea Leaf | Supabase / Excel | Unverified; neutral fallback required | S$5.00 | mango ice blended | Blocked live |
+| 3 | `01b9469c-51dc-4d1e-954d-9eaac7c49f5f` | Nasi Goreng Ayam | `ven-SFA-SW04164A000` / Al Barakath Restaurant | Supabase / Excel | Approved and permitted | S$8.50 | nasi goreng ayam | Blocked live |
+| 4 | `0b79ab3c-58cf-48f5-909c-dc1d53f78a48` | Taro Tart | `ven-SFA-SW14083L000` / Time Table Cafe | Supabase / Excel | Approved and permitted | S$5.20 | taro tart | Blocked live |
+| 5 | `dsh-menu-04263eb6fa832ad355b16c771c95c954` | Deep-Fried Calamari | `ven-SFA-C80172B009` / Banana Leaf Clementi BBQ Seafood | Supabase / Excel | Approved and permitted | S$16.00 | deep-fried calamari | Blocked live |
+| 6 | `dsh-ven-sfa-sw13077p000-abalone-slice-63` | Abalone Slice | `ven-SFA-SW13077P000` / Sushi Express | Supabase / Excel | Unverified; neutral fallback required | S$4.50 | abalone slice | Blocked live |
+| 7 | `dsh-47421e219b14dce0d1f0ec29e7de6410` | Pork Ribs Soup | `ven-SFA-SW13S03P000` / Song Fa Bak Kut Teh | Supabase / Excel | Unverified; neutral fallback required | S$6.00 | pork ribs soup | Blocked live |
+| 8 | `dsh-dbd343a7ab4b48d232241b6a8cfc5d05` | Signature Herbal Roast Duck | `ven-SFA-SW13T26X000` / Dian Xiao Er | Supabase / Excel | Unverified; neutral fallback required | S$6.00 | herbal roast duck | Blocked live |
+| 9 | `dsh-f5855af3386330577256db83a28dca2c` | Sotong Wing OnStik | `ven-SFA-SW13T76V000` / Old Chang Kee | Supabase / Excel | Unverified; neutral fallback required | S$6.00 | sotong wing | Blocked live |
+| 10 | `dsh-e13b09db605294a482d21563e2a780a6` | Bento Sets | `ven-SFA-SW13205N000` / Greendot | Supabase / Excel | Unverified; neutral fallback required | S$6.00 | bento sets | Blocked live |
 
 ### Venues/stalls
 
-| # | Venue ID | Name | Building/area | Expected source(s) | Logo/stall/representative image | Coordinates valid | Menu pass | Detail pass |
+| # | Venue ID | Name | Coordinates | Expected source(s) | Logo/stall/representative image status | Coordinates valid | Menu result | Detail result |
 |---:|---|---|---|---|---|---:|---:|---:|
-| 1 |  |  |  | Supabase/Excel |  |  |  |  |
-| 2 |  |  |  | Supabase/Excel |  |  |  |  |
-| 3 |  |  |  | Supabase/Excel |  |  |  |  |
-| 4 |  |  |  | Supabase/Excel |  |  |  |  |
-| 5 |  |  |  | Supabase/Excel |  |  |  |  |
-| 6 |  |  |  | Supabase/Excel |  |  |  |  |
-| 7 |  |  |  | Supabase/Excel |  |  |  |  |
-| 8 |  |  |  | Supabase/Excel |  |  |  |  |
-| 9 |  |  |  | Supabase/Excel |  |  |  |  |
-| 10 |  |  |  | Supabase/Excel |  |  |  |  |
+| 1 | `ven-SFA-SW13S48L000` | The Soup Spoon | `1.33320021671365, 103.743170430901` | Supabase / Excel | Unverified; withheld | Yes | Blocked live | Blocked live |
+| 2 | `ven-SFA-SW13T18X000` | The Coffee Bean & Tea Leaf | `1.33320021671365, 103.743170430901` | Supabase / Excel | Unverified; withheld | Yes | Blocked live | Blocked live |
+| 3 | `ven-SFA-SW04164A000` | Al Barakath Restaurant | `1.32136881443795, 103.742845116502` | Supabase / Excel | Approved/permitted | Yes | Blocked live | Blocked live |
+| 4 | `ven-SFA-SW14083L000` | Time Table Cafe | `1.35067572550184, 103.720022400236` | Supabase / Excel | Approved/permitted | Yes | Blocked live | Blocked live |
+| 5 | `ven-SFA-C80172B009` | Banana Leaf Clementi BBQ Seafood | `1.31353886546821, 103.765476312301` | Supabase / Excel | Approved/permitted | Yes | Blocked live | Blocked live |
+| 6 | `ven-SFA-SW13077P000` | Sushi Express | `1.33402529468935, 103.74258601505` | Supabase / Excel | Unverified; withheld | Yes | Blocked live | Blocked live |
+| 7 | `ven-SFA-SW13S03P000` | Song Fa Bak Kut Teh | `1.33320021671365, 103.743170430901` | Supabase / Excel | Unverified; withheld | Yes | Blocked live | Blocked live |
+| 8 | `ven-SFA-SW13T26X000` | Dian Xiao Er | `1.33320021671365, 103.743170430901` | Supabase / Excel | Unverified; withheld | Yes | Blocked live | Blocked live |
+| 9 | `ven-SFA-SW13T76V000` | Old Chang Kee | `1.33320021671365, 103.743170430901` | Supabase / Excel | Unverified; withheld | Yes | Blocked live | Blocked live |
+| 10 | `ven-SFA-SW13205N000` | Greendot | `1.33402529468935, 103.74258601505` | Supabase / Excel | Unverified; withheld | Yes | Blocked live | Blocked live |
 
 ## Negative and failure cases
 
 | Case | Input/setup | Expected |
 |---|---|---|
-| Legitimate no-results | Deliberately nonexistent dish/stall string with healthy Supabase | Empty state; no unrelated Excel result |
-| Authenticated catalog outage | Valid restored session; intercept/disable catalog RPC only | Excel source badge and read-only results |
+| Legitimate no-results | `__release01_no_result_jurong_east__` with healthy Supabase | Empty state; no unrelated Excel result — blocked: staging credentials/base URL absent |
+| Authenticated catalog outage | Valid restored session; intercept/disable catalog RPC only | Excel source badge and read-only results — blocked: staging credentials/base URL absent |
 | Signed-out outage | Sign out, then remove network/catalog | Auth only; no Excel access |
 | Invalid/revoked session | Revoke token/session | Account state cleared; auth only |
 | Missing released config | Remove required public Supabase config in production-like build | Blocking configuration state |

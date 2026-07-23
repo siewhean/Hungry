@@ -4,6 +4,17 @@ Updated: 2026-07-24
 Build profile: `internal-alpha`  
 Production status before completion: **No-Go**
 
+## Closeout snapshot (2026-07-24)
+
+```text
+Implementation SHA: da3d6dd4959af08ac13ef3404d1ed8a0863cc86d
+iOS build ID/artifact: none — blocked on internal-distribution credential
+Android build ID/artifact: none — old queued build b4eb5445-f343-4d15-8f18-7efd5aeba1cb is ineligible
+Staging catalog release: 68cd0682-1655-4ceb-bd53-043309c9aafb (119232 venues / 156351 dishes)
+Excel fallback: excel-fallback-v1; SHA-256 a81ab6…e2262c3aef (4273 venues / 22042 dishes)
+Device evidence: no final-SHA artifact; do not check any scenario box below
+```
+
 ## Owner prerequisites
 
 - [ ] EAS project access works with `EXPO_TOKEN` or interactive owner login.
@@ -30,7 +41,7 @@ node scripts/audit-release-01-catalog.mjs
 npm run test
 npm run test:e2e
 npm run test:e2e:merchant-catalog
-npx expo-doctor --non-interactive
+npx expo-doctor
 
 eas build --profile internal-alpha --platform ios
 eas build --profile internal-alpha --platform android

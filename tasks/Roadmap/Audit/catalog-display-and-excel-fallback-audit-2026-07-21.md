@@ -300,3 +300,19 @@ The catalog now has a coherent Supabase-first and Excel-fallback read path. The 
 **No-Go until automated checks and native iOS/Android visual QA pass.**
 
 Do not mark this complete solely from static inspection. The final gate is an actual production-like simulator/device run with Supabase healthy and Supabase unavailable, plus successful typecheck/lint/test/security verification.
+
+---
+
+## PR #44 closeout update — 2026-07-24
+
+Implementation SHA: `da3d6dd4959af08ac13ef3404d1ed8a0863cc86d`.
+
+- Repo-local source suite: 617 passed, 0 failed, 2 intentional credential-gated skips; typecheck, lint, source formatting, asset audit, static Supabase and Edge checks pass; `npm audit` reports 0 vulnerabilities.
+- The strict catalog media boundary now requires explicit display approval and a recognised rights state. This safely withholds raw, placeholder, unverified and social-hero media instead of rendering it.
+- Excel has contract proof for three distinct dish and venue pages, cursor reset, release/source-bound details and signed-out denial. Live raw Supabase pages are not release-ready: page 3 contains `dsh-mock-*` data and venue pages have semantic duplicates.
+- Exact pilot candidates and their image/right states are recorded in `tasks/Roadmap/Release/release-0.1-pilot-catalog.md`; only three of ten pairs have approved/permitted media. Aggregate pilot imagery is 5/273 venues (1.83%) and 511/876 dishes (58.33%), which is insufficient for first-screen visual readiness.
+- Canonical and full-audit Supabase smokes pass, but location (and therefore search/RLS continuation) returns HTTP 402 `exceed_db_size_quota`. The non-password Advisor gate fails on app-owned remote findings and local/remote migration history diverges.
+- The mandatory-auth Playwright release subset passes 3/3 on an isolated current-source server. The full suite and merchant harness are not acceptance evidence because their legacy Developer Launcher harness cannot run under the non-dev Expo Web bundle.
+- No final-SHA EAS iOS or Android artifact, installed-device run, screenshots, or five-tester evidence exists.
+
+**Current production verdict: No-Go.** Do not enable visual catalog claims, fallback claims, or a release label until the remote data/security, staging, final-artifact and tester gates in the closeout report pass.

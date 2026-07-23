@@ -1,171 +1,150 @@
 # Hungry Release 0.1 — Week 1 and Week 2 Completion Report
 
-Final implementation commit SHA: `08b9fa0310106c787cdddc3347db346516fa898c`; release remains No-Go pending external gates.
+Final implementation SHA: `da3d6dd4959af08ac13ef3404d1ed8a0863cc86d`
+Evidence update: documentation-only follow-up; all runtime evidence applies to the implementation SHA above
 Report date: 2026-07-24
-Prepared by: Codex
-Verdict: **No-Go**
+Verdict: **No-Go — Week 1 and Week 2 are not complete.**
 
 ## 1. Branch and integration
 
 | Check | Result | Evidence |
 |---|---:|---|
-| PR #44 updated against latest `main` | Pass | `origin/main...HEAD = 0 behind / 71 ahead` before this work |
-| PR mergeable | Unstable | GitHub Actions billing/spend-cap failure; no code job ran |
-| PR #43 catalog work preserved | Pass | `npm test` catalog-read-v2 contracts pass |
-| Worktree clean | Pass | Final evidence and fixes committed on the PR branch |
+| Starting commit audited | Pass | `8a5822c99dc11e4f0aebac8349cb8485b42006f3` |
+| Latest `main` comparison | Pass | `origin/main...da3d6dd49 = 0 behind / 75 ahead` before evidence commit |
+| PR #44 mergeability | Blocked | GitHub reports `UNSTABLE`; CI/Security executed zero steps because Actions billing/spend capacity must be restored |
+| PR #43 raw-catalog path retained | Pass | Catalog V2 and non-consumer contracts pass in `npm run test` |
+| Worktree at release closeout | Pending | Must be clean after this evidence commit |
 
 ## 2. Automated checks
 
-| Command | Result | Key output/link |
+| Command | Result | Current evidence |
 |---|---:|---|
-| `npm ci` | Pass | Completed without install failure |
+| `npm ci` | Pass | Completed successfully |
 | `npm run typecheck` | Pass | 2026-07-24 |
 | `npm run lint` | Pass | 2026-07-24 |
-| `npm run format:check` | Pass | 2026-07-24 |
-| `npm run audit:assets` | Pass | 2026-07-24 |
-| `node scripts/audit-release-01-catalog.mjs` | Pass | 273 venues, 876 dishes, 5 image-backed venues, 511 image-backed dishes, 100% coordinate coverage, 0 blocked URLs |
-| `npm run test` | Pass | 614 passed, 0 failed, 2 explicitly skipped |
-| `npm run test:e2e` |  |  |
-| `npm run test:e2e:merchant-catalog` |  |  |
-| `npx expo-doctor --non-interactive` |  |  |
-| `npm run audit:supabase:static` |  |  |
-| `npm run check:edge-functions` |  |  |
-| `npm run security:audit` |  |  |
-| `npm run security:gitleaks` |  |  |
-| `npm run security:trufflehog` |  |  |
-| `npm run release:ready:local` |  |  |
-| `git diff --check` |  |  |
+| `npm run format:check` | Pass | All matched source files formatted |
+| `npm run audit:assets` | Pass | Asset budgets/provenance pass |
+| `node scripts/audit-release-01-catalog.mjs` | Pass, insufficient visual proof | 273 venues; 876 dishes; 5/273 image-backed venues (1.83%); 511/876 image-backed dishes (58.33%); 100% coordinates; 0 blocked URLs |
+| `npm run test` | Pass | 617 pass, 0 fail, 2 intentional credential-gated skips |
+| `npm run test:e2e` | Fail | Full suite remains blocked by legacy Developer Launcher harness expectations; Release auth subset is 3/3 pass on isolated port 8098 |
+| `npm run test:e2e:merchant-catalog` | Fail | Developer Launcher is not registered in non-dev Expo Web; test timed out at auth harness. Merchant is deferred from Release 0.1. |
+| `npx expo-doctor --non-interactive` | Invalid command form | CLI treats `--non-interactive` as an invalid path; replacement `npx expo-doctor` passes 18/18 |
+| `npm run audit:supabase:static` | Pass | Static RLS/grant/audit contract passes |
+| `npm run check:edge-functions` | Pass | Static edge-function checks passed |
+| `npm run security:audit` | Pass | 0 vulnerabilities |
+| `npm run security:gitleaks` | Pass | 0 staged leaks |
+| `npm run security:trufflehog` | Pass with scanner read warnings | 0 verified and 0 unverified secrets; scanner logged nonfatal malformed Brotli reads inside local Python bytecode |
+| `npm run release:ready:local` | Fail correctly | Stops on live Advisor findings; it must remain red until remote hardening is applied/rechecked |
+| `git diff --check` | Pass before evidence edits | Re-run required immediately before the evidence commit |
 
 ## 3. Staging Supabase
 
 | Check | Result | Evidence |
 |---|---:|---|
-| Security Advisor non-password gate | Fail | Existing app-owned Advisor findings; remediation pending, then blocked from recheck by quota restriction |
-| Canonical food-business staging smoke | Pass | Ran with `HUNGRY_SUPABASE_SMOKE_REQUIRED=1`; no skip |
-| Full audit V1 smoke |  |  |
-| Location queries |  |  |
-| Search queries |  |  |
-| RLS smoke | Blocked | REST request returned HTTP 402: project exceeds database-size quota |
-| Raw catalog smoke | Pass | Linked `catalog_raw_reads.sql` returned `raw_catalog_projections_rls_and_no_direct_reads=true` |
-| Active release ID and totals |  |  |
+| Canonical food-business staging smoke | Pass | `HUNGRY_SUPABASE_SMOKE_REQUIRED=1 npm run smoke:supabase-canonical-food-business-staging` |
+| Full Audit V1 smoke | Pass | `HUNGRY_SUPABASE_SMOKE_REQUIRED=1 npm run smoke:supabase-full-audit-v1`; no readiness findings |
+| Raw catalog boundary smoke | Pass | `npm run smoke:database:catalog-raw` returned `raw_catalog_projections_rls_and_no_direct_reads=true` |
+| Location smoke | Blocked | `get_discovery_feed_by_location` returned HTTP 402 `exceed_db_size_quota` |
+| Search smoke | Blocked | Not run after location gate returned HTTP 402; same remote capacity blocker |
+| RLS smoke | Blocked | Not run after location gate returned HTTP 402; same remote capacity blocker |
+| Advisor non-password gate | Fail | 22 unexpected app-owned findings; local hardening migration `20260724090000_release_01_advisor_hardening.sql` has not been reconciled/applied remotely |
+| Active release / totals | Observed, not release proof | `68cd0682-1655-4ceb-bd53-043309c9aafb`; 119,232 venues / 156,351 dishes |
+| Migration state | Blocked | 12 remote-only and 8 local-only versions; reconcile before any migration apply |
 
-Skipped credential-gated checks must be recorded as blocked, not passed.
+## 4. Jurong East pilot and images
 
-## 4. Jurong East pilot
-
-| Metric | Result | Threshold | Pass |
+| Metric | Result | Threshold | Release result |
 |---|---:|---:|---:|
-| Venues | 273 | 10 | Yes |
-| Dishes | 876 | 20 | Yes |
-| Image-backed venues | 5 | 5 | Yes |
-| Image-backed dishes | 511 | 10 | Yes |
-| Coordinate coverage | 100% | 95% | Yes |
-| Blocked image URLs | 0 | 0 | Yes |
+| Candidate venues | 273 | 10 | Aggregate pass only |
+| Candidate dishes | 876 | 20 | Aggregate pass only |
+| Image-backed venues | 5 (1.83%) | 5 | Not visual-ready; initial Discover requires approved image coverage per shown card |
+| Image-backed dishes | 511 (58.33%) | 10 | Not visual-ready; approval and device verification still required |
+| Coordinate coverage | 100% | 95% | Pass |
+| Blocked image URLs in Excel audit | 0 | 0 | Pass |
+| Exact 10-dish / 10-venue manifest | Populated, blocked | 10 / 10 | See `release-0.1-pilot-catalog.md`; only three candidate pairs have approved/permitted media and none has final installed-app proof |
 
-Pilot manifest path/link: `tasks/Roadmap/Release/release-0.1-pilot-catalog.md` (exact staging records still pending)
-Audit JSON path/link: generated by `node scripts/audit-release-01-catalog.mjs` (current terminal evidence)
+The active raw release also has 38,966 unverified dish URLs, 212 placeholder dish URLs, 310 unverified venue URLs, `dsh-mock-*` rows on a third live dish page, and semantic venue duplicates. The strict media mapper now withholds all media lacking explicit approval and recognised rights; this fixes unsafe display but does not make live imagery release-ready.
 
 ## 5. Data-source behavior
 
-| Scenario | Expected | Result | Evidence |
-|---|---|---:|---|
-| Healthy Supabase | Supabase source |  |  |
-| Authenticated catalog network/RPC failure | Excel read-only fallback |  |  |
-| Signed out | Auth only; no Excel |  |  |
-| Invalid/revoked session | Clear state; auth only |  |  |
-| Missing released config | Blocking configuration state |  |  |
-| Legitimate no-results | Empty state; no fallback substitution |  |  |
-| Write unavailable | Clear failure/retry; no false success |  |  |
+| Scenario | Result | Evidence |
+|---|---:|---|
+| Healthy Supabase | Partial | Active release/totals and raw boundary SQL observed; authenticated device record/badge proof blocked |
+| Authenticated catalog RPC failure | Contract pass; staging blocked | Fallback contracts pass; no credentialed staging Playwright account/base URL |
+| Signed out | Contract pass | Signed-out fallback denial test passes |
+| Invalid/revoked session | Contract pass; staging blocked | Auth bootstrap contracts pass; no staging revocation run |
+| Missing released configuration | Contract pass | Released config blocks catalog/auth fallback contract |
+| Legitimate no-results | Contract pass; staging blocked | Cursor/no-results contracts pass; staging credentials absent |
+| Write unavailable | Pass by deferral | Favourites and review writes are hidden in staging/production; no optimistic false-success control remains in Release 0.1 path |
+
+Credential-gated staging fallback/no-results Playwright tests are **blocked**, not skipped-as-pass: `PLAYWRIGHT_STAGING_EMAIL`, `PLAYWRIGHT_STAGING_PASSWORD`, and staging base URL are not available in the secure environment.
 
 ## 6. Paging and source continuity
 
 | Surface/source | Pages tested | Duplicate IDs | Release/source retained | Result |
 |---|---:|---:|---:|---:|
-| Supabase dishes |  |  |  |  |
-| Supabase stalls |  |  |  |  |
-| Excel dishes |  |  |  |  |
-| Excel stalls | 3 | 0 | Yes | Pass |
-| Dish detail | n/a | n/a | release-bound | Pass (contract) |
-| Stall detail/menu | n/a | n/a | release-bound | Pass (contract) |
+| Supabase dishes | 3 candidate pages | Raw IDs distinct; mock rows on page 3 | Yes in RPC contract | Fail release parity: mock/semantic quality rows remain |
+| Supabase stalls | 3 candidate pages | Raw IDs distinct; semantic duplicates found | Yes in RPC contract | Fail release parity |
+| Excel dishes | 3 | 0 | Yes | Pass — targeted contracts |
+| Excel stalls | 3 | 0 | Yes | Pass — targeted contracts |
+| Query/filter cursor reset | Contract | n/a | Yes | Pass |
+| Dish detail | Contract | n/a | Release-bound | Pass |
+| Stall detail/menu | Contract | n/a | Release-bound | Pass |
 
-## 7. Image behavior
+## 7. Image behavior and diagnostics
 
-| Surface | Approved menu image | Venue/logo priority | Blocked hosts absent | Failure fallback | Result |
-|---|---:|---:|---:|---:|---:|
-| Discover |  |  |  |  |  |
-| Browse Dishes |  | n/a |  |  |  |
-| Browse Stalls | n/a |  |  |  |  |
-| Search |  |  |  |  |  |
-| Dish detail |  | n/a |  |  |  |
-| Stall detail/menu |  |  |  |  |  |
+| Surface | Shared strict media mapper | Visual/device proof | Release result |
+|---|---:|---:|---:|
+| Discover | Pass | Blocked | No-Go |
+| Browse Dishes | Pass | Blocked | No-Go |
+| Browse Stalls | Pass | Blocked | No-Go |
+| Search | Pass | Blocked | No-Go |
+| Dish detail | Pass | Blocked | No-Go |
+| Stall detail/menu | Pass | Blocked | No-Go |
+
+The mapper rejects missing approval, unverified/placeholder/restricted rights, malformed hosts, Unsplash, Picsum, generic placeholders and social-hero assets. Tests cover the raw mapping boundary, but five dish and five venue screenshots across all Release 0.1 surfaces are still required.
 
 ## 8. Native build and QA
 
-### iOS
+| Platform | Final-SHA internal-alpha artifact | Install/device QA | Result |
+|---|---|---|---|
+| iOS | None | Prior Debug simulator login render is not final-SHA evidence; `eas build --profile internal-alpha --platform ios --non-interactive` refused because no suitable credential exists | Blocked: EAS iOS internal-distribution credential required |
+| Android | `5090a020-c49b-47e9-ad9c-ce98521b4dda` (queued) | Internal Android build for `da3d6dd49`; no artifact/install/device evidence yet | Blocked until the queued final-SHA build completes and is installed |
 
-Build ID/artifact: Local Debug simulator artifact; EAS iOS internal-alpha blocked before build creation because no suitable non-interactive internal-distribution credential exists
-Device/simulator and OS: iPhone 17 Pro simulator (`99014C62-326A-4514-9C75-3449E9B3F5BE`)
-
-| Scenario | Result | Evidence |
-|---|---:|---|
-| Fresh install/onboarding/mandatory auth | Pass | Built, installed, launched, and rendered mandatory sign-in controls via Build iOS Apps workflow |
-| Valid session restore/sign-out |  |  |
-| Healthy catalog |  |  |
-| Authenticated Excel fallback |  |  |
-| Signed-out outage denial |  |  |
-| Invalid-session denial |  |  |
-| Missing configuration block |  |  |
-| No-results |  |  |
-| Large text/dark mode/VoiceOver smoke |  |  |
-
-### Android
-
-Build ID/artifact:  
-Device/emulator and OS:  
-
-| Scenario | Result | Evidence |
-|---|---:|---|
-| Fresh install/onboarding/mandatory auth |  |  |
-| Valid session restore/sign-out |  |  |
-| Healthy catalog |  |  |
-| Authenticated Excel fallback |  |  |
-| Signed-out outage denial |  |  |
-| Invalid-session denial |  |  |
-| Missing configuration block |  |  |
-| No-results |  |  |
-| Large text/dark mode/TalkBack smoke |  |  |
+The earlier Android build `b4eb5445-f343-4d15-8f18-7efd5aeba1cb` is queued for old SHA `08b9fa…`; it is ineligible. The new Android build is currently `IN_QUEUE` and has no artifact. There are no iOS EAS builds. No accessibility, offline, source fallback, three-page, image, reduced-motion, VoiceOver, or TalkBack acceptance may be inferred from source tests.
 
 ## 9. Internal testers
 
-| Tester | Platform | Build | Primary journey completed | Issues |
-|---|---|---|---:|---|
-| Pending owner recruitment | iOS/Android | Pending EAS artifacts | No | Five named internal testers are required |
+| Requirement | Result | Evidence |
+|---|---:|---|
+| Five named internal testers | Blocked | No final iOS/Android artifact and no tester recruitment records |
+| Primary journey completions | 0/5 | No completion evidence |
+| P0/P1 feedback retest build | Blocked | Depends on first tester build and findings |
 
-Do not include passwords.
+## 10. Issues fixed in `da3d6dd49`
 
-## 10. Issues resolved
+| ID | Severity | Fix | Verification |
+|---|---:|---|---|
+| R01-AUTH-01 | P0 | Existing-account sign-in records completed onboarding and routes directly to the authenticated shell; no success toast | Mandatory Playwright 3/3; source suite pass |
+| R01-SCOPE-01 | P0 | Deferred routes, review hosts and visible detail/profile controls are feature-gated; return routes validate release availability | Route contracts pass |
+| R01-WRITE-01 | P0 | Favourites deferred from staging/production until full Supabase write proof exists | Source contracts pass |
+| R01-IMG-01 | P0 | Raw catalog media requires explicit approval plus recognised rights state | Media contracts pass |
+| R01-PAGE-01 | P0 | Excel dish/stall three-page, cursor reset, source/release detail/menu and signed-out denial tests added | Targeted contracts pass |
+| R01-SEC-LOCAL | P0 | Updated Expo and transitive security dependencies | `npm audit` 0 vulnerabilities; Expo Doctor 18/18 |
 
-| ID | Severity | Problem | Fix | Verification |
-|---|---|---|---|---|
-| R01-SCOPE-01 | P0 | Deferred routes registered in released root navigator | Flag-gated map, posts, reads, review, wheel, activity, and Quick Bites routes | `npm test` passes |
-| R01-IMG-01 | P0 | Image filtering split across source paths | Added shared catalog media mapper for Supabase and Excel; blocked/withheld media returns neutral state | Media and fallback tests pass |
-| R01-PAGE-01 | P0 | Excel paging had only two-page proof | Added three-page and venue detail/menu source-continuity coverage | Targeted tests pass |
-| R01-AUTH-01 | P0 | Post-sign-in success toast delayed shell | Removed success toasts while preserving error/warning feedback | Full test suite passes |
-| R01-SEC-01 | P0 | Advisor classifier treated the explicit authenticated raw-catalog RPC allowlist as an external blocker | Classify only the six source-backed, authenticated RPCs as expected findings; platform and app-owned findings remain blocking | Advisor classifier contracts pass |
+## 11. Remaining blockers and owner action
 
-## 11. Remaining blockers
-
-| Blocker | Owner | Code/external | Required action | Target date |
-|---|---|---|---|---|
-| GitHub CI/Security workflows are not green | GitHub owner | External | Restore GitHub Actions billing/spend capacity; rerun CI and Security on final SHA | Owner |
-| Supabase Advisor findings | Codex + Supabase owner | Code/external | Apply reviewed hardening migration; rerun Advisor | Before internal alpha |
-| Supabase REST RLS smoke | Supabase owner | External | Restore project database capacity after HTTP 402 quota restriction; rerun no-skip RLS smoke | Owner |
-| iOS EAS internal-alpha artifact | Apple/EAS owner | External | Configure a suitable iOS internal-distribution credential, then rerun the EAS build | Owner |
-| Android EAS internal-alpha artifact | Codex + Android owner | External | Build `b4eb5445-f343-4d15-8f18-7efd5aeba1cb` is queued for implementation SHA `08b9fa0310106c787cdddc3347db346516fa898c`; wait for completion, install, and smoke | Codex/Owner |
-| Five primary-journey testers | Release owner | External | Recruit and record five testers without credentials | Owner |
+| Blocker | Owner | Required action |
+|---|---|---|
+| CI/Security zero-step failures | GitHub owner | Restore Actions billing/spend capacity; rerun both checks on the evidence SHA |
+| Advisor findings / drift | Supabase owner + Codex | Reconcile migration history; review/apply hardening migration; rerun Advisor gate |
+| Database quota HTTP 402 | Supabase owner | Upgrade/remove spend cap or reduce database below quota; rerun location, search and RLS smokes with no skips |
+| Raw data quality | Catalog owner | Quarantine mock/duplicate/non-consumer data and publish a release with approved media projections |
+| Staging fallback/no-results | Release owner | Provide secure staging test account and base URL through approved secret environment |
+| iOS internal alpha | Apple/EAS owner | Configure internal-distribution credentials, build final SHA, install and complete matrix |
+| Android internal alpha | Android/EAS owner | Monitor queued `5090a020-c49b-47e9-ad9c-ce98521b4dda`, then install the resulting final-SHA artifact on two representative devices |
+| Five tester journeys | Release owner | Recruit five testers and record completed journeys without credentials |
 
 ## 12. Final decision
 
-Week 1 and Week 2 are complete only when every P0 row is passed on the final commit, staging and native evidence are attached, and five internal testers can complete the core journey.
-
-Final verdict and rationale: **No-Go.** Repo-local automated gates, the linked raw-catalog smoke, the required canonical staging smoke, and local iOS Simulator build/install/sign-in rendering are passing. Week 1–2 cannot be declared complete because CI/Security are externally blocked, the Advisor has unresolved findings, the REST RLS smoke is quota-blocked, no EAS internal-alpha artifacts or Android device evidence exist, and five tester journeys have not been completed.
+**No-Go. Week 1 and Week 2 remain incomplete.** The final implementation improves release safety and all repo-local source/security gates pass, but the definition of done is not met: GitHub CI/Security are not green, live Supabase paging/data/image parity fails, Advisor and quota gates are unresolved, authenticated staging Playwright is unavailable, no final-SHA iOS/Android artifacts exist, and no internal tester journey is complete.
