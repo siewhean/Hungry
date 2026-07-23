@@ -12,7 +12,7 @@ Verdict: **No-Go**
 | PR #44 updated against latest `main` | Pass | `origin/main...HEAD = 0 behind / 71 ahead` before this work |
 | PR mergeable | Unstable | GitHub Actions billing/spend-cap failure; no code job ran |
 | PR #43 catalog work preserved | Pass | `npm test` catalog-read-v2 contracts pass |
-| Worktree clean | Pending | Release fixes and evidence report remain uncommitted |
+| Worktree clean | Pass | Final evidence and fixes committed on the PR branch |
 
 ## 2. Automated checks
 
@@ -151,6 +151,7 @@ Do not include passwords.
 | R01-IMG-01 | P0 | Image filtering split across source paths | Added shared catalog media mapper for Supabase and Excel; blocked/withheld media returns neutral state | Media and fallback tests pass |
 | R01-PAGE-01 | P0 | Excel paging had only two-page proof | Added three-page and venue detail/menu source-continuity coverage | Targeted tests pass |
 | R01-AUTH-01 | P0 | Post-sign-in success toast delayed shell | Removed success toasts while preserving error/warning feedback | Full test suite passes |
+| R01-SEC-01 | P0 | Advisor classifier treated the explicit authenticated raw-catalog RPC allowlist as an external blocker | Classify only the six source-backed, authenticated RPCs as expected findings; platform and app-owned findings remain blocking | Advisor classifier contracts pass |
 
 ## 11. Remaining blockers
 

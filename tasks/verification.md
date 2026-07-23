@@ -1078,6 +1078,12 @@ Use the smallest check that matches the change risk.
 | SEC-08        | App Security      | Seed `app_ops_admins` with an explicit Supabase auth user UUID, then run live normal-user/merchant/operator RLS, storage, and Edge Function smoke tests                                                     | Codex + User                                        |
 | MER-PORTAL-01 | Merchant Portal   | Configure the `merchant_email_outbox` delivery worker/provider and rerun prepared native merchant smoke once Maestro can see an iOS simulator/device; migration `0039` is already applied to linked staging | Codex + User                                        |
 
+## Release 0.1 Week 1-2
+
+| date | scope | command/evidence | result | notes |
+| --- | --- | --- | --- | --- |
+| 2026-07-24 | PR #44 Release 0.1 Week 1-2 | `npm test`; `npm run typecheck`; `npm run lint`; `npm run format:check`; `npm run audit:assets`; required canonical and raw-catalog Supabase smoke; iPhone 17 Pro Simulator build/install/render | No-Go | Local automated and required catalog smokes pass: 614 pass / 0 fail / 2 intentional skips; Jurong East release-radius audit 273 venues / 876 dishes / 5 venue images / 511 dish images / 100% coordinates / 0 blocked URLs. Advisor recheck awaits reviewed migration application; REST RLS smoke is blocked by Supabase HTTP 402 database-size quota; GitHub CI/Security cannot start because billing/spend capacity is disabled; iOS EAS needs internal-distribution credentials; Android build is queued; Android smoke and five tester journeys remain pending. |
+
 ## Full Audit V1 Batch 7 Basics
 
 | date       | scope                           | command                                                      | result  | notes                                                                                                                                                                                                                                        |

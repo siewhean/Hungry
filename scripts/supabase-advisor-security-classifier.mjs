@@ -92,9 +92,8 @@ function fail(message, details) {
   process.exit(1);
 }
 
-function externalReason(finding) {
+function expectedAppReason(finding) {
   const metadata = finding.metadata || {};
-  const detail = finding.detail || "";
 
   if (
     finding.name === "authenticated_security_definer_function_executable" &&
@@ -103,6 +102,13 @@ function externalReason(finding) {
   ) {
     return "intentional authenticated catalog raw-read RPC; body requires auth.uid() and projection tables deny direct reads";
   }
+
+  return null;
+}
+
+function externalReason(finding) {
+  const metadata = finding.metadata || {};
+  const detail = finding.detail || "";
 
   if (
     finding.name === "rls_disabled_in_public" &&
@@ -176,9 +182,11 @@ if (!Array.isArray(findings)) {
 
 const classified = findings.map((finding) => ({
   finding,
+  expectedAppReason: expectedAppReason(finding),
   externalReason: externalReason(finding),
 }));
-const unexpected = classified.filter((item) => !item.externalReason);
+const unexpected = classified.filter((item) => !item.externalReason && !item.expectedAppReason);
+const expectedAppFindings = classified.filter((item) => item.expectedAppReason);
 const ignoredExternal = shouldIgnoreLeakedPassword()
   ? classified.filter((item) => item.finding.name === "auth_leaked_password_protection")
   : [];
@@ -196,9 +204,9 @@ if (unexpected.length > 0) {
 }
 
 if (external.length === 0) {
-  if (ignoredExternal.length > 0) {
+  if (ignoredExternal.length > 0 || expectedAppFindings.length > 0) {
     console.log(
-      `[supabase-advisor-security-classifier] passed; ignored leaked-password protection findings: ${ignoredExternal.length}`,
+      `[supabase-advisor-security-classifier] passed; expected authenticated catalog RPC findings: ${expectedAppFindings.length}; ignored leaked-password protection findings: ${ignoredExternal.length}`,
     );
   } else {
     console.log("[supabase-advisor-security-classifier] passed; no Security Advisor findings.");
