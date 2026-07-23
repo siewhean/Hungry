@@ -13,6 +13,12 @@ import {
   isCatalogAuthenticationError,
   isCatalogFallbackEligibleError,
 } from "@/lib/services/catalog";
+import {
+  getCatalogRawService,
+  resetServiceProvider,
+  setExcelServiceProvider,
+} from "@/lib/services/serviceProvider";
+import { useSessionStore } from "@/store/useSessionStore";
 
 function read(path: string) {
   return readFileSync(resolve(process.cwd(), path), "utf8");
@@ -45,6 +51,50 @@ test("the resilient service requires a real restored Supabase session before fal
   assert.match(provider, /requireAuthenticatedCatalogFallbackSession\(\)/);
   assert.match(provider, /isCatalogFallbackEligibleError/);
   assert.match(provider, /expireRejectedSession/);
+});
+
+test("a signed-out user cannot access the Excel catalog fallback", () => {
+  const previousSession = useSessionStore.getState();
+  const previousEnvironment = process.env.EXPO_PUBLIC_APP_ENV;
+
+  try {
+    if (previousEnvironment === "production") delete process.env.EXPO_PUBLIC_APP_ENV;
+    useSessionStore.setState({
+      isAuthReady: true,
+      isAuthenticated: false,
+      authenticatedUserId: null,
+      authDataSource: null,
+    });
+    resetServiceProvider();
+    setExcelServiceProvider();
+
+    assert.throws(
+      () => getCatalogRawService(),
+      (error: unknown) => error instanceof CatalogAuthenticationRequiredError,
+    );
+  } finally {
+    useSessionStore.setState(previousSession);
+    if (previousEnvironment === undefined) delete process.env.EXPO_PUBLIC_APP_ENV;
+    else process.env.EXPO_PUBLIC_APP_ENV = previousEnvironment;
+    resetServiceProvider();
+  }
+});
+
+test("fallback detail and venue-menu requests remain on the originating Excel source", () => {
+  const provider = read("src/lib/services/serviceProvider.ts");
+
+  assert.match(
+    provider,
+    /async getDish\(id, releaseId\) \{[\s\S]*?isExcelFallbackRelease\(releaseId\)[\s\S]*?requireAuthenticatedCatalogFallbackSession\(\)[\s\S]*?fallback\.getDish\(id, releaseId\)/,
+  );
+  assert.match(
+    provider,
+    /async getVenue\(id, releaseId\) \{[\s\S]*?isExcelFallbackRelease\(releaseId\)[\s\S]*?requireAuthenticatedCatalogFallbackSession\(\)[\s\S]*?fallback\.getVenue\(id, releaseId\)/,
+  );
+  assert.match(
+    provider,
+    /async listVenueMenu\(venueId, request = \{\}\) \{[\s\S]*?isExcelFallbackRelease\(request\.releaseId\)[\s\S]*?requireAuthenticatedCatalogFallbackSession\(\)[\s\S]*?fallback\.listVenueMenu\(venueId, request\)/,
+  );
 });
 
 test("successful empty online pages are not replaced by unrelated Excel records", () => {

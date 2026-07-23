@@ -55,7 +55,9 @@ export function resolveFeatureFlags(
     mapEnabled,
     hungryWheelEnabled,
     craveEnabled,
-    favouritesEnabled: true,
+    // Saving is deferred from the Release 0.1 consumer loop until the
+    // authenticated write, rollback, and account-isolation journey is proven.
+    favouritesEnabled: advancedDevelopmentSurfaceEnabled,
     notificationsEnabled: false,
     catalogDiagnosticsEnabled: appEnv !== "production",
     // Staging and production must exercise the same release-versioned catalog

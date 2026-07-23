@@ -27,7 +27,6 @@ export function LoginScreen({ navigation }: Props) {
   const oauthProvidersEnabled = FEATURE_FLAGS.oauthProvidersEnabled;
   const [showPassword, setShowPassword] = useState(false);
   const completeAuth = useSessionStore((state) => state.completeAuth);
-  const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
   const showToast = useUIStore((state) => state.showToast);
 
   const {
@@ -39,8 +38,11 @@ export function LoginScreen({ navigation }: Props) {
   const finishLogin = (authProvider: "email" | AuthProvider, trackSignInEvent = true) => {
     completeAuth({
       authProvider,
-      completedOnboarding: hasCompletedOnboarding,
-      skippedTasteQuiz: hasCompletedOnboarding,
+      // Existing-account sign-in must open the authenticated shell immediately.
+      // Local onboarding completion is device state and cannot gate a restored
+      // authenticated account after a reinstall or deep link.
+      completedOnboarding: true,
+      skippedTasteQuiz: true,
       trackSignInEvent,
     });
   };

@@ -36,5 +36,21 @@ export function sanitizeCatalogMediaUrl(
   rightsStatus: string | undefined,
   approvedForDisplay: boolean | undefined,
 ): string | undefined {
+  const normalizedRightsStatus = rightsStatus?.trim().toLowerCase();
+  const allowedRightsStatuses = new Set([
+    "approved",
+    "licensed",
+    "owned",
+    "permitted",
+    "permitted_api",
+  ]);
+
+  // Raw catalog responses are untrusted by default. A URL is displayable only
+  // when the server explicitly returns both a positive display approval and a
+  // recognised rights status; missing projection fields must not surface media.
+  if (approvedForDisplay !== true || !allowedRightsStatuses.has(normalizedRightsStatus ?? "")) {
+    return undefined;
+  }
+
   return sanitizeCatalogImageUrl(value, { rightsStatus, approvedForDisplay });
 }

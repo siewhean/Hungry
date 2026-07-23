@@ -63,7 +63,7 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
       /getHungryService\(\)\.auth\.signIn\(/,
       /service\.auth\.signInWithGoogle\(/,
       /service\.auth\.signInWithApple\(/,
-      /const finishLogin = \(authProvider: "email" \| AuthProvider, trackSignInEvent = true\) => \{[\s\S]*completedOnboarding: hasCompletedOnboarding,[\s\S]*skippedTasteQuiz: hasCompletedOnboarding/,
+      /const finishLogin = \(authProvider: "email" \| AuthProvider, trackSignInEvent = true\) => \{[\s\S]*completedOnboarding: true,[\s\S]*skippedTasteQuiz: true/,
     ],
     "LoginScreen",
   );

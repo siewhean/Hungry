@@ -26,6 +26,10 @@ test("catalog read v2 uses RPC pages instead of the BrowseIndex in its active br
     /initialFoodTypeTag=\{route\.params\?\.foodTypeTag \?\? storedCatalogCategory\}/,
   );
   assert.match(source, /request\.releaseId = cursor \? releaseIdRef\.current : undefined/);
+  assert.match(
+    source,
+    /useEffect\(\(\) => \{[\s\S]*?requestVersion\.current \+= 1;[\s\S]*?releaseIdRef\.current = undefined;[\s\S]*?setReleaseId\(undefined\);[\s\S]*?void loadPage\(\);/,
+  );
 });
 
 test("raw catalog service is authenticated, typed, cursor-paged, and non-persistent", () => {

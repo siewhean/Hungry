@@ -29,7 +29,7 @@ test("staging and production default to the narrow Release 0.1 surface", () => {
 
     assert.equal(flags.release01CoreOnly, true);
     assert.equal(flags.catalogReadV2, true);
-    assert.equal(flags.favouritesEnabled, true);
+    assert.equal(flags.favouritesEnabled, false);
     for (const flag of RELEASE_DISABLED_FLAGS) {
       assert.equal(flags[flag], false, `${flag} must fail closed in ${appEnv}`);
     }
@@ -48,6 +48,7 @@ test("development retains the wider implementation surface", () => {
   assert.equal(flags.mapEnabled, true);
   assert.equal(flags.hungryWheelEnabled, true);
   assert.equal(flags.craveEnabled, true);
+  assert.equal(flags.favouritesEnabled, true);
   assert.equal(flags.directMessagesEnabled, true);
   assert.equal(flags.commentsEnabled, true);
   assert.equal(flags.oauthProvidersEnabled, true);

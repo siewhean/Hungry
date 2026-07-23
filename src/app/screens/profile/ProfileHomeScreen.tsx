@@ -610,15 +610,17 @@ export function ProfileHomeScreen({
                   }}
                 />
               )}
-              <MenuRow
-                label="Review History"
-                icon={<PencilLine size={20} color={palette.text} />}
-                onPressIn={() => preloadRoute(navigation, "ReviewHistory")}
-                onPress={() => {
-                  setMenuOpen(false);
-                  navigation.navigate("ReviewHistory");
-                }}
-              />
+              {FEATURE_FLAGS.reviewCreationEnabled ? (
+                <MenuRow
+                  label="Review History"
+                  icon={<PencilLine size={20} color={palette.text} />}
+                  onPressIn={() => preloadRoute(navigation, "ReviewHistory")}
+                  onPress={() => {
+                    setMenuOpen(false);
+                    navigation.navigate("ReviewHistory");
+                  }}
+                />
+              ) : null}
               <MenuRow
                 label="Settings"
                 icon={<Settings size={20} color={palette.text} />}
@@ -767,15 +769,17 @@ export function ProfileHomeScreen({
             />
           </View>
           <View style={{ flexDirection: "row", gap: spacing[2] }}>
-            <StatBlock
-              label="Reviews"
-              value={profile.stats.dishesReviewed}
-              icon={<PencilLine size={14} color={palette.orange} />}
-              onPressIn={() =>
-                !isOtherUserProfile ? preloadRoute(navigation, "ReviewHistory") : undefined
-              }
-              onPress={handleReviewsCardPress}
-            />
+            {FEATURE_FLAGS.reviewCreationEnabled ? (
+              <StatBlock
+                label="Reviews"
+                value={profile.stats.dishesReviewed}
+                icon={<PencilLine size={14} color={palette.orange} />}
+                onPressIn={() =>
+                  !isOtherUserProfile ? preloadRoute(navigation, "ReviewHistory") : undefined
+                }
+                onPress={handleReviewsCardPress}
+              />
+            ) : null}
             <StatBlock
               label="Stalls"
               value={profile.stats.stallsVisited}
@@ -783,7 +787,7 @@ export function ProfileHomeScreen({
               onPressIn={() => preloadRoute(navigation, "VisitedStalls")}
               onPress={() => navigation.navigate("VisitedStalls")}
             />
-            {!isOtherUserProfile ? (
+            {!isOtherUserProfile && FEATURE_FLAGS.favouritesEnabled ? (
               <StatBlock
                 label="Saved"
                 value={profileStatSummary.saved}

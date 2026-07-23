@@ -14,6 +14,26 @@ test("catalog image mapping rejects blocked, malformed, and withheld media", () 
     sanitizeCatalogMediaUrl("https://cdn.example.com/dish.jpg", "restricted", true),
     undefined,
   );
+  assert.equal(
+    sanitizeCatalogMediaUrl("https://cdn.example.com/dish.jpg", "unverified", true),
+    undefined,
+  );
+  assert.equal(
+    sanitizeCatalogMediaUrl("https://cdn.example.com/dish.jpg", undefined, true),
+    undefined,
+  );
+  assert.equal(
+    sanitizeCatalogMediaUrl("https://cdn.example.com/dish.jpg", "approved", undefined),
+    undefined,
+  );
+  assert.equal(
+    sanitizeCatalogMediaUrl(
+      "https://food.grab.com/static/images/social-hero-SG.jpg",
+      "permitted_api",
+      true,
+    ),
+    undefined,
+  );
 });
 
 test("catalog image mapping retains a valid allowed image", () => {

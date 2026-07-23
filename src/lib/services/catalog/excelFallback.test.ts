@@ -22,31 +22,78 @@ test("Excel catalog fallback exposes workbook totals through paged dish and venu
   assert.ok(venuePage.nextCursor);
 });
 
-test("Excel fallback pagination has three distinct release-bound pages", async () => {
-  const firstPage = await excelCatalogFallbackService.listVenues({ limit: 12, sort: "quality" });
-  assert.ok(firstPage.nextCursor);
-  const secondPage = await excelCatalogFallbackService.listVenues({
-    cursor: firstPage.nextCursor,
+async function threePages<T extends { id: string }>(
+  list: (request: {
+    cursor?: string;
+    limit: number;
+    releaseId?: string;
+    sort: "quality";
+  }) => Promise<{
+    items: T[];
+    nextCursor?: string;
+    releaseId: string;
+  }>,
+) {
+  const first = await list({ limit: 12, sort: "quality" });
+  assert.ok(first.nextCursor, "Expected a cursor after the first page");
+  const second = await list({
+    cursor: first.nextCursor,
     limit: 12,
-    releaseId: firstPage.releaseId,
+    releaseId: first.releaseId,
     sort: "quality",
   });
-  assert.ok(secondPage.nextCursor);
-  const thirdPage = await excelCatalogFallbackService.listVenues({
-    cursor: secondPage.nextCursor,
+  assert.ok(second.nextCursor, "Expected a cursor after the second page");
+  const third = await list({
+    cursor: second.nextCursor,
     limit: 12,
-    releaseId: secondPage.releaseId,
+    releaseId: second.releaseId,
     sort: "quality",
   });
+  const pages = [first, second, third];
+  const ids = pages.flatMap((page) => page.items.map((item) => item.id));
 
-  const ids = [firstPage, secondPage, thirdPage].flatMap((page) =>
-    page.items.map((item) => item.id),
-  );
-  assert.equal(new Set(ids).size, ids.length);
-  assert.ok(thirdPage.items.length > 0);
+  assert.ok(third.items.length > 0, "Expected a non-empty third page");
+  assert.equal(new Set(ids).size, ids.length, "Stable IDs must not repeat across pages");
   assert.ok(
-    [firstPage, secondPage, thirdPage].every((page) => page.releaseId === firstPage.releaseId),
+    pages.every((page) => page.releaseId === first.releaseId),
+    "A cursor chain must stay on its originating Excel release",
   );
+  return pages;
+}
+
+test("Excel fallback serves three distinct, release-bound pages for dishes and venues", async () => {
+  const [dishPages, venuePages] = await Promise.all([
+    threePages((request) => excelCatalogFallbackService.listDishes(request)),
+    threePages((request) => excelCatalogFallbackService.listVenues(request)),
+  ]);
+
+  assert.equal(dishPages[0].releaseId, "excel-fallback-v1");
+  assert.equal(venuePages[0].releaseId, "excel-fallback-v1");
+});
+
+test("Excel fallback starts a fresh cursor chain when a query or filter changes", async () => {
+  const unfiltered = await excelCatalogFallbackService.listDishes({ limit: 12, sort: "quality" });
+  assert.ok(unfiltered.nextCursor);
+
+  const queryRequest = { query: "chicken", limit: 12, sort: "relevance" as const };
+  const firstQueryPage = await excelCatalogFallbackService.listDishes(queryRequest);
+  const resetQueryPage = await excelCatalogFallbackService.listDishes(queryRequest);
+  assert.deepEqual(
+    resetQueryPage.items.map((item) => item.id),
+    firstQueryPage.items.map((item) => item.id),
+    "A query reset must request the first matching page, not reuse an old cursor",
+  );
+  assert.equal(resetQueryPage.releaseId, firstQueryPage.releaseId);
+
+  const filterRequest = { maxPrice: 8, limit: 12, sort: "quality" as const };
+  const firstFilteredPage = await excelCatalogFallbackService.listDishes(filterRequest);
+  const resetFilteredPage = await excelCatalogFallbackService.listDishes(filterRequest);
+  assert.deepEqual(
+    resetFilteredPage.items.map((item) => item.id),
+    firstFilteredPage.items.map((item) => item.id),
+    "A filter reset must request the first matching page, not reuse an old cursor",
+  );
+  assert.equal(resetFilteredPage.releaseId, firstFilteredPage.releaseId);
 });
 
 test("Excel fallback preserves source and release through venue detail and menu paging", async () => {

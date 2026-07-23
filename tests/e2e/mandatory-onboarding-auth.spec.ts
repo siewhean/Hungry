@@ -36,6 +36,6 @@ test("successful mock authentication is required before the app shell mounts", a
   await page.getByPlaceholder("Password").fill("Password123!");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
 
-  await expect(page.getByText("Developer Launcher", { exact: true })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText("Home", { exact: true })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText("Welcome back", { exact: true })).toHaveCount(0);
 });

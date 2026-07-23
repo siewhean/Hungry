@@ -31,6 +31,7 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import { TASTE_DIMENSIONS } from "@/constants/taste";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { AccessibleImage, AppText, Button, EmptyState, FeedErrorBoundary } from "@/components/ui";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useHungryTheme } from "@/theme";
@@ -958,24 +959,26 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
               right: 0,
             }}
           >
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={isSaved ? "Unsave this dish" : "Save this dish"}
-              onPress={handleSave}
-              style={{
-                alignItems: "center",
-                paddingHorizontal: spacing[1],
-                height: 42,
-                justifyContent: "center",
-                width: undefined,
-              }}
-            >
-              <Bookmark
-                color={isSaved ? palette.white : palette.text}
-                size={reviewIconSize}
-                fill={isSaved ? palette.white : "none"}
-              />
-            </Pressable>
+            {FEATURE_FLAGS.favouritesEnabled ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={isSaved ? "Unsave this dish" : "Save this dish"}
+                onPress={handleSave}
+                style={{
+                  alignItems: "center",
+                  paddingHorizontal: spacing[1],
+                  height: 42,
+                  justifyContent: "center",
+                  width: undefined,
+                }}
+              >
+                <Bookmark
+                  color={isSaved ? palette.white : palette.text}
+                  size={reviewIconSize}
+                  fill={isSaved ? palette.white : "none"}
+                />
+              </Pressable>
+            ) : null}
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Mark this food as tried"
@@ -1007,20 +1010,22 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             >
               <CheckCircle color={palette.text} fill="none" size={reviewIconSize} />
             </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Write a review"
-              onPress={handleReview}
-              style={{
-                alignItems: "center",
-                paddingHorizontal: spacing[1],
-                height: 42,
-                justifyContent: "center",
-                width: undefined,
-              }}
-            >
-              <CommentIcon color={palette.text} size={reviewIconSize} />
-            </Pressable>
+            {FEATURE_FLAGS.reviewCreationEnabled ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Write a review"
+                onPress={handleReview}
+                style={{
+                  alignItems: "center",
+                  paddingHorizontal: spacing[1],
+                  height: 42,
+                  justifyContent: "center",
+                  width: undefined,
+                }}
+              >
+                <CommentIcon color={palette.text} size={reviewIconSize} />
+              </Pressable>
+            ) : null}
           </View>
 
           <View

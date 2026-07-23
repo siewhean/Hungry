@@ -124,6 +124,40 @@ function isRootRouteName(value: string): value is RootRouteName {
   return ROOT_ROUTE_NAMES.has(value as RootRouteName);
 }
 
+function isReleaseRouteAvailable(routeName: RootRouteName | MainTabRouteName): boolean {
+  switch (routeName) {
+    case "Review":
+    case "ReviewHistory":
+    case "ReviewStack":
+      return FEATURE_FLAGS.reviewCreationEnabled;
+    case "Favourites":
+      return FEATURE_FLAGS.favouritesEnabled;
+    case "UserProfile":
+      return FEATURE_FLAGS.socialFeedEnabled;
+    case "DiscoverMap":
+    case "MapZoomedIn":
+      return FEATURE_FLAGS.mapEnabled;
+    case "Post":
+      return FEATURE_FLAGS.postCreationEnabled;
+    case "BlogPost":
+      return FEATURE_FLAGS.readsEnabled;
+    case "WheelStack":
+    case "MusicSelection":
+    case "DecideForMeResult":
+      return FEATURE_FLAGS.hungryWheelEnabled;
+    case "ActivityInbox":
+    case "ActivityPostDetail":
+      return FEATURE_FLAGS.activityEnabled;
+    case "ChatDetail":
+    case "DirectMessages":
+      return FEATURE_FLAGS.directMessagesEnabled;
+    case "Crave":
+      return FEATURE_FLAGS.craveEnabled;
+    default:
+      return true;
+  }
+}
+
 function getMainTabScreen(params: unknown): MainTabRouteName {
   if (params && typeof params === "object" && "screen" in params) {
     const screen = (params as { screen?: unknown }).screen;
@@ -454,12 +488,12 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     }
 
     if (typeof returnRoute === "string") {
-      if (isMainTabRouteName(returnRoute)) {
+      if (isMainTabRouteName(returnRoute) && isReleaseRouteAvailable(returnRoute)) {
         navigationRef.resetRoot({
           index: 0,
           routes: [{ name: "MainTabs", params: { screen: returnRoute } }],
         });
-      } else if (isRootRouteName(returnRoute)) {
+      } else if (isRootRouteName(returnRoute) && isReleaseRouteAvailable(returnRoute)) {
         navigationRef.resetRoot({
           index: 1,
           routes: [{ name: "MainTabs", params: { screen: "Home" } }, { name: returnRoute }],
@@ -470,7 +504,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           routes: [{ name: "MainTabs", params: { screen: "Home" } }],
         });
       }
-    } else if (isRootRouteName(returnRoute.name)) {
+    } else if (isRootRouteName(returnRoute.name) && isReleaseRouteAvailable(returnRoute.name)) {
       navigationRef.resetRoot({
         index: 1,
         routes: [
@@ -532,7 +566,14 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     }
 
     if (currentTopRoute === "OnboardingStack" && hasCompletedOnboarding) {
-      navigateHome();
+      if (isAuthenticated) {
+        navigateHome();
+      } else {
+        navigationRef.resetRoot({
+          index: 0,
+          routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+        });
+      }
     }
   }, [
     hasCompletedOnboarding,
@@ -655,10 +696,16 @@ export function RootNavigator({ theme }: { theme: Theme }) {
             <RootStack.Screen getComponent={loadPostComposerScreen} name="Post" />
           ) : null}
           <RootStack.Screen getComponent={loadEditProfileScreen} name="EditProfile" />
-          <RootStack.Screen getComponent={loadFavouritesScreen} name="Favourites" />
-          <RootStack.Screen getComponent={loadReviewHistoryScreen} name="ReviewHistory" />
+          {FEATURE_FLAGS.favouritesEnabled ? (
+            <RootStack.Screen getComponent={loadFavouritesScreen} name="Favourites" />
+          ) : null}
+          {FEATURE_FLAGS.reviewCreationEnabled ? (
+            <RootStack.Screen getComponent={loadReviewHistoryScreen} name="ReviewHistory" />
+          ) : null}
           <RootStack.Screen getComponent={loadSettingsScreen} name="Settings" />
-          <RootStack.Screen component={UserProfileScreen} name="UserProfile" />
+          {FEATURE_FLAGS.socialFeedEnabled ? (
+            <RootStack.Screen component={UserProfileScreen} name="UserProfile" />
+          ) : null}
           <RootStack.Screen getComponent={loadDishDetailScreenV2} name="DishDetail" />
           <RootStack.Screen getComponent={loadCatalogRawDetailScreen} name="CatalogRawDetail" />
           <RootStack.Screen getComponent={loadStallDetailScreen} name="StallDetail" />
@@ -781,8 +828,10 @@ export function RootNavigator({ theme }: { theme: Theme }) {
         </RootStack.Navigator>
       </NavigationContainer>
       <GlobalScrollBackButton />
-      <QuickReviewModalHost />
-      <ReviewSuccessModalHost onOpenHistory={() => navigationRef.navigate("ReviewHistory")} />
+      {FEATURE_FLAGS.reviewCreationEnabled ? <QuickReviewModalHost /> : null}
+      {FEATURE_FLAGS.reviewCreationEnabled ? (
+        <ReviewSuccessModalHost onOpenHistory={() => navigationRef.navigate("ReviewHistory")} />
+      ) : null}
       <FloatingToast />
       <CredEarnedToastHost />
     </>

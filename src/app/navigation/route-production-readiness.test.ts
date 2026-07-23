@@ -33,6 +33,7 @@ test("production route gates keep advanced surfaces behind MVP-safe flags", () =
   assert.match(flags, /merchantClaimCtaEnabled: advancedDevelopmentSurfaceEnabled/);
   assert.match(flags, /oauthProvidersEnabled: advancedDevelopmentSurfaceEnabled/);
   assert.match(flags, /floorplansEnabled: false/);
+  assert.match(flags, /favouritesEnabled: advancedDevelopmentSurfaceEnabled/);
   assert.match(flags, /appEnv !== "production"/);
   assert.match(rootNavigator, /FEATURE_FLAGS\.prototypeRoutesEnabled \? \(/);
   for (const routeName of [
@@ -99,6 +100,13 @@ test("production route gates keep advanced surfaces behind MVP-safe flags", () =
     );
   }
   assert.match(rootNavigator, /!FEATURE_FLAGS\.release01CoreOnly \? \([\s\S]*name="QuickBites"/);
+  assert.match(rootNavigator, /FEATURE_FLAGS\.favouritesEnabled \? \([\s\S]*name="Favourites"/);
+  assert.match(
+    rootNavigator,
+    /FEATURE_FLAGS\.reviewCreationEnabled \? \([\s\S]*name="ReviewHistory"/,
+  );
+  assert.match(rootNavigator, /FEATURE_FLAGS\.socialFeedEnabled \? \([\s\S]*name="UserProfile"/);
+  assert.match(rootNavigator, /function isReleaseRouteAvailable/);
 });
 
 test("floorplan entry points are hidden behind the floorplans flag", () => {
@@ -151,7 +159,7 @@ test("signed-out app entry starts at login while public routes stay unprotected"
   assert.doesNotMatch(profileHome, /Unlock your taste profile|Sign In \/ Create Account/);
   assert.match(
     rootNavigator,
-    /if \(currentTopRoute === "OnboardingStack" && hasCompletedOnboarding\) \{\s*navigateHome\(\);\s*\}/,
+    /if \(currentTopRoute === "OnboardingStack" && hasCompletedOnboarding\) \{[\s\S]*if \(isAuthenticated\) \{[\s\S]*navigateHome\(\);[\s\S]*name: "AuthStack"[\s\S]*screen: "Login"/,
   );
   assert.match(rootNavigator, /const isDeveloperMode = useMerchantStore/);
   assert.match(rootNavigator, /const isMerchantMode = useMerchantStore/);
@@ -193,20 +201,28 @@ test("protected actions preserve return routes before auth", () => {
   assert.match(rootNavigator, /setReturnRoute\(/);
   assert.match(rootNavigator, /navigationRef\.resetRoot\(\{[\s\S]*name: "AuthStack"/);
   const rootReturnRestore = rootNavigator.slice(
-    rootNavigator.indexOf("else if (isRootRouteName(returnRoute))"),
+    rootNavigator.indexOf(
+      "else if (isRootRouteName(returnRoute) && isReleaseRouteAvailable(returnRoute))",
+    ),
     rootNavigator.indexOf(
       "} else {",
-      rootNavigator.indexOf("else if (isRootRouteName(returnRoute))"),
+      rootNavigator.indexOf(
+        "else if (isRootRouteName(returnRoute) && isReleaseRouteAvailable(returnRoute))",
+      ),
     ),
   );
   assert.match(rootReturnRestore, /index: 1/);
   assert.match(rootReturnRestore, /name: "MainTabs", params: \{ screen: "Home" \}/);
   assert.match(rootReturnRestore, /name: returnRoute/);
   const parameterizedRootReturnRestore = rootNavigator.slice(
-    rootNavigator.indexOf("else if (isRootRouteName(returnRoute.name))"),
+    rootNavigator.indexOf(
+      "else if (isRootRouteName(returnRoute.name) && isReleaseRouteAvailable(returnRoute.name))",
+    ),
     rootNavigator.indexOf(
       "} else {",
-      rootNavigator.indexOf("else if (isRootRouteName(returnRoute.name))"),
+      rootNavigator.indexOf(
+        "else if (isRootRouteName(returnRoute.name) && isReleaseRouteAvailable(returnRoute.name))",
+      ),
     ),
   );
   assert.match(parameterizedRootReturnRestore, /index: 1/);

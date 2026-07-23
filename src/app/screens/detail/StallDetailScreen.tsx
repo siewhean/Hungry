@@ -774,46 +774,48 @@ export function StallDetailScreen({ navigation, route }: Props) {
             />
             <View style={{ flex: 1 }} />
             <View style={{ flexDirection: "row", gap: spacing[2] }}>
-              <IconButton
-                variant="floating"
-                accessibilityLabel={
-                  profile.favouriteDishIds.includes(leadDish?.id ?? "")
-                    ? "Remove from favourites"
-                    : "Save to favourites"
-                }
-                onPress={() => {
-                  if (!requireAuthForProtectedAction("Sign in to save this stall.")) {
-                    return;
+              {FEATURE_FLAGS.favouritesEnabled ? (
+                <IconButton
+                  variant="floating"
+                  accessibilityLabel={
+                    profile.favouriteDishIds.includes(leadDish?.id ?? "")
+                      ? "Remove from favourites"
+                      : "Save to favourites"
                   }
-                  if (leadDish) {
-                    const wasSaved = profile.favouriteDishIds.includes(leadDish.id);
-                    toggleFavourite(leadDish);
-                    if (!wasSaved) {
-                      void getHungryService().discovery.recordMerchantActionEvent({
-                        eventType: "save",
-                        venueId: venue.id,
-                        dishId: leadDish.id,
-                        userId: profile.id,
-                      });
+                  onPress={() => {
+                    if (!requireAuthForProtectedAction("Sign in to save this stall.")) {
+                      return;
                     }
+                    if (leadDish) {
+                      const wasSaved = profile.favouriteDishIds.includes(leadDish.id);
+                      toggleFavourite(leadDish);
+                      if (!wasSaved) {
+                        void getHungryService().discovery.recordMerchantActionEvent({
+                          eventType: "save",
+                          venueId: venue.id,
+                          dishId: leadDish.id,
+                          userId: profile.id,
+                        });
+                      }
+                    }
+                  }}
+                  icon={
+                    <Heart
+                      color={palette.text}
+                      fill={
+                        profile.favouriteDishIds.includes(leadDish?.id ?? "")
+                          ? palette.text
+                          : "transparent"
+                      }
+                      size={20}
+                    />
                   }
-                }}
-                icon={
-                  <Heart
-                    color={palette.text}
-                    fill={
-                      profile.favouriteDishIds.includes(leadDish?.id ?? "")
-                        ? palette.text
-                        : "transparent"
-                    }
-                    size={20}
-                  />
-                }
-                style={{
-                  backgroundColor: headerButtonColor,
-                  borderColor: headerButtonBorderColor,
-                }}
-              />
+                  style={{
+                    backgroundColor: headerButtonColor,
+                    borderColor: headerButtonBorderColor,
+                  }}
+                />
+              ) : null}
               <IconButton
                 variant="floating"
                 accessibilityLabel="Share stall"
@@ -885,7 +887,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
               </Card>
 
               {/* Save / Visited / Add-to-List */}
-              {isAuthenticated && venue && (
+              {isAuthenticated && venue && !FEATURE_FLAGS.release01CoreOnly ? (
                 <StallInteractionBar
                   stallId={venue.id}
                   userId={profile.id}
@@ -893,7 +895,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   reviewPromptText="Please review a dish from this stall before marking it as visited."
                   onReviewRequired={handleReviewRequiredForTried}
                 />
-              )}
+              ) : null}
 
               {FEATURE_FLAGS.collectionsEnabled ? (
                 <DetailSaveActionsCard
@@ -954,7 +956,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
                 </Card>
               </View>
 
-              <PopularVisitorsSection venueId={venue.id} horizontalPadding={0} />
+              {FEATURE_FLAGS.socialFeedEnabled ? (
+                <PopularVisitorsSection venueId={venue.id} horizontalPadding={0} />
+              ) : null}
 
               {activePromotions.length > 0 ? (
                 <View style={{ gap: spacing[3] }}>
@@ -1048,7 +1052,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     >
                       No menu available for this stall yet.
                     </AppText>
-                    {isAuthenticated && (
+                    {isAuthenticated && FEATURE_FLAGS.reviewCreationEnabled ? (
                       <Button
                         label="Add a menu photo"
                         variant="secondary"
@@ -1059,168 +1063,170 @@ export function StallDetailScreen({ navigation, route }: Props) {
                           })
                         }
                       />
-                    )}
+                    ) : null}
                   </Card>
                 )}
               </View>
 
               {/* Community Reviews */}
-              <View style={{ gap: spacing[4] }}>
-                <AppText variant="h2">Recent Reviews</AppText>
-                {communityReviews.length > 0 ? (
-                  communityReviews.map((review) => (
-                    <View
-                      key={review.id}
-                      style={{
-                        paddingVertical: spacing[3],
-                        borderBottomWidth: 1,
-                        borderBottomColor: palette.border,
-                      }}
-                    >
+              {FEATURE_FLAGS.reviewCreationEnabled ? (
+                <View style={{ gap: spacing[4] }}>
+                  <AppText variant="h2">Recent Reviews</AppText>
+                  {communityReviews.length > 0 ? (
+                    communityReviews.map((review) => (
                       <View
+                        key={review.id}
                         style={{
-                          alignItems: "center",
-                          flexDirection: "row",
-                          gap: spacing[3],
+                          paddingVertical: spacing[3],
+                          borderBottomWidth: 1,
+                          borderBottomColor: palette.border,
                         }}
                       >
-                        <AccessibleImage
-                          source={{ uri: review.avatarUrl }}
+                        <View
                           style={{
-                            borderRadius: radii.pill,
-                            height: 40,
-                            width: 40,
+                            alignItems: "center",
+                            flexDirection: "row",
+                            gap: spacing[3],
                           }}
-                          accessibilityLabel={`Avatar of ${review.authorName}`}
-                        />
-                        <View style={{ flex: 1 }}>
-                          <AppText style={{ fontWeight: "700" }}>{review.authorName}</AppText>
+                        >
+                          <AccessibleImage
+                            source={{ uri: review.avatarUrl }}
+                            style={{
+                              borderRadius: radii.pill,
+                              height: 40,
+                              width: 40,
+                            }}
+                            accessibilityLabel={`Avatar of ${review.authorName}`}
+                          />
+                          <View style={{ flex: 1 }}>
+                            <AppText style={{ fontWeight: "700" }}>{review.authorName}</AppText>
+                            <View
+                              style={{
+                                flexDirection: "row",
+                                gap: spacing[0.5],
+                              }}
+                            >
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <Star
+                                  key={i}
+                                  size={12}
+                                  color={i < review.rating ? palette.amber : palette.border}
+                                  fill={i < review.rating ? palette.amber : "transparent"}
+                                />
+                              ))}
+                            </View>
+                          </View>
+                          <AppText variant="micro" tone="muted">
+                            {formatTimeAgo(review.createdAt)}
+                          </AppText>
+                        </View>
+                        <AppText
+                          variant="bodySmall"
+                          tone="secondary"
+                          style={{ marginTop: spacing[2] }}
+                        >
+                          {review.text}
+                        </AppText>
+
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            marginTop: spacing[2],
+                          }}
+                        >
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel={`Reply to review by ${review.authorName}`}
+                            onPress={() =>
+                              setActiveReplyReviewId((current) =>
+                                current === review.id ? null : review.id,
+                              )
+                            }
+                          >
+                            <AppText variant="micro" tone="accent">
+                              Reply
+                            </AppText>
+                          </Pressable>
+                          {(localRepliesByReviewId[review.id]?.length ?? 0) > 0 ? (
+                            <AppText variant="micro" tone="muted">
+                              {localRepliesByReviewId[review.id]?.length} repl
+                              {(localRepliesByReviewId[review.id]?.length ?? 0) === 1 ? "y" : "ies"}
+                            </AppText>
+                          ) : null}
+                        </View>
+
+                        {(localRepliesByReviewId[review.id] ?? []).length > 0 ? (
                           <View
                             style={{
-                              flexDirection: "row",
-                              gap: spacing[0.5],
+                              gap: spacing[2],
+                              marginTop: spacing[2],
+                              paddingLeft: spacing[3],
+                              borderLeftWidth: 1,
+                              borderLeftColor: palette.border,
                             }}
                           >
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <Star
-                                key={i}
-                                size={12}
-                                color={i < review.rating ? palette.amber : palette.border}
-                                fill={i < review.rating ? palette.amber : "transparent"}
-                              />
-                            ))}
-                          </View>
-                        </View>
-                        <AppText variant="micro" tone="muted">
-                          {formatTimeAgo(review.createdAt)}
-                        </AppText>
-                      </View>
-                      <AppText
-                        variant="bodySmall"
-                        tone="secondary"
-                        style={{ marginTop: spacing[2] }}
-                      >
-                        {review.text}
-                      </AppText>
-
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          marginTop: spacing[2],
-                        }}
-                      >
-                        <Pressable
-                          accessibilityRole="button"
-                          accessibilityLabel={`Reply to review by ${review.authorName}`}
-                          onPress={() =>
-                            setActiveReplyReviewId((current) =>
-                              current === review.id ? null : review.id,
-                            )
-                          }
-                        >
-                          <AppText variant="micro" tone="accent">
-                            Reply
-                          </AppText>
-                        </Pressable>
-                        {(localRepliesByReviewId[review.id]?.length ?? 0) > 0 ? (
-                          <AppText variant="micro" tone="muted">
-                            {localRepliesByReviewId[review.id]?.length} repl
-                            {(localRepliesByReviewId[review.id]?.length ?? 0) === 1 ? "y" : "ies"}
-                          </AppText>
-                        ) : null}
-                      </View>
-
-                      {(localRepliesByReviewId[review.id] ?? []).length > 0 ? (
-                        <View
-                          style={{
-                            gap: spacing[2],
-                            marginTop: spacing[2],
-                            paddingLeft: spacing[3],
-                            borderLeftWidth: 1,
-                            borderLeftColor: palette.border,
-                          }}
-                        >
-                          {(localRepliesByReviewId[review.id] ?? []).map((reply) => (
-                            <View key={reply.id} style={{ gap: 2 }}>
-                              <View
-                                style={{
-                                  flexDirection: "row",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                }}
-                              >
-                                <AppText variant="micro">{reply.authorName}</AppText>
-                                <AppText variant="micro" tone="muted">
-                                  {formatTimeAgo(reply.createdAt)}
+                            {(localRepliesByReviewId[review.id] ?? []).map((reply) => (
+                              <View key={reply.id} style={{ gap: 2 }}>
+                                <View
+                                  style={{
+                                    flexDirection: "row",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <AppText variant="micro">{reply.authorName}</AppText>
+                                  <AppText variant="micro" tone="muted">
+                                    {formatTimeAgo(reply.createdAt)}
+                                  </AppText>
+                                </View>
+                                <AppText variant="bodySmall" tone="secondary">
+                                  {reply.text}
                                 </AppText>
                               </View>
-                              <AppText variant="bodySmall" tone="secondary">
-                                {reply.text}
-                              </AppText>
-                            </View>
-                          ))}
-                        </View>
-                      ) : null}
+                            ))}
+                          </View>
+                        ) : null}
 
-                      {activeReplyReviewId === review.id ? (
-                        <View
-                          style={{
-                            gap: spacing[2],
-                            marginTop: spacing[2],
-                            paddingLeft: spacing[3],
-                          }}
-                        >
-                          <Input
-                            placeholder={`Reply to ${review.authorName}`}
-                            value={replyDraftByReviewId[review.id] ?? ""}
-                            onChangeText={(text) => {
-                              setReplyDraftByReviewId((prev) => ({
-                                ...prev,
-                                [review.id]: text,
-                              }));
+                        {activeReplyReviewId === review.id ? (
+                          <View
+                            style={{
+                              gap: spacing[2],
+                              marginTop: spacing[2],
+                              paddingLeft: spacing[3],
                             }}
-                            multiline
-                          />
-                          <Button
-                            label="Post reply"
-                            variant="secondary"
-                            onPress={() => submitReviewReply(review.id)}
-                            disabled={!(replyDraftByReviewId[review.id] ?? "").trim().length}
-                          />
-                        </View>
-                      ) : null}
-                    </View>
-                  ))
-                ) : (
-                  <EmptyState
-                    title="No community reviews yet"
-                    body="Write your first review for this stall."
-                    icon={<CommentIcon size={36} color={palette.textMuted} />}
-                  />
-                )}
-              </View>
+                          >
+                            <Input
+                              placeholder={`Reply to ${review.authorName}`}
+                              value={replyDraftByReviewId[review.id] ?? ""}
+                              onChangeText={(text) => {
+                                setReplyDraftByReviewId((prev) => ({
+                                  ...prev,
+                                  [review.id]: text,
+                                }));
+                              }}
+                              multiline
+                            />
+                            <Button
+                              label="Post reply"
+                              variant="secondary"
+                              onPress={() => submitReviewReply(review.id)}
+                              disabled={!(replyDraftByReviewId[review.id] ?? "").trim().length}
+                            />
+                          </View>
+                        ) : null}
+                      </View>
+                    ))
+                  ) : (
+                    <EmptyState
+                      title="No community reviews yet"
+                      body="Write your first review for this stall."
+                      icon={<CommentIcon size={36} color={palette.textMuted} />}
+                    />
+                  )}
+                </View>
+              ) : null}
 
               {FEATURE_FLAGS.merchantClaimCtaEnabled ? (
                 <Card style={{ padding: spacing[4], gap: spacing[4] }}>
