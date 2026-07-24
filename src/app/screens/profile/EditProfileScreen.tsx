@@ -38,7 +38,6 @@ export function EditProfileScreen({ navigation }: Props) {
   const showToast = useUIStore((state) => state.showToast);
   const { palette, spacing, radii } = useHungryTheme();
   const [displayName, setDisplayName] = useState(profile.displayName);
-  const [email, setEmail] = useState(profile.email);
   const [avatarUri, setAvatarUri] = useState<string | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
   const avatarPreviewUri = avatarUri ?? profile.avatarUrl;
@@ -97,14 +96,14 @@ export function EditProfileScreen({ navigation }: Props) {
     }
 
     setAvatarUri(result.assets[0].uri);
-    showToast({ message: "Profile photo updated.", tone: "success" });
+    showToast({ message: "Photo selected. Save changes to upload it.", tone: "info" });
   };
 
   const handleChangePassword = () => {
     const rootNavigation = getRootNavigation(navigation);
     rootNavigation.navigate("AuthStack", {
       screen: "ResetPassword",
-      params: { email, code: "profile-settings" },
+      params: { email: profile.email, code: "profile-settings" },
     });
   };
 
@@ -175,13 +174,18 @@ export function EditProfileScreen({ navigation }: Props) {
       <Card>
         <View style={{ gap: spacing[3] }}>
           <Input label="Display name" value={displayName} onChangeText={setDisplayName} />
-          <Input
-            label="Email"
-            autoCapitalize="none"
-            keyboardType="email-address"
-            value={email}
-            onChangeText={setEmail}
-          />
+          <View style={{ gap: spacing[1] }}>
+            <Input
+              label="Email"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              value={profile.email}
+              editable={false}
+            />
+            <AppText variant="micro" tone="secondary">
+              Account email changes require verification and are managed separately.
+            </AppText>
+          </View>
           <Pressable
             onPress={handleChangePassword}
             style={{
@@ -205,11 +209,11 @@ export function EditProfileScreen({ navigation }: Props) {
             try {
               const savedProfile = await getHungryService().profile.updateProfile({
                 displayName,
-                email,
                 avatarUrl: avatarUri,
                 dietaryPreferences: profile.dietaryPreferences,
               });
               applyProfile(savedProfile);
+              setAvatarUri(undefined);
               showToast({ message: "Profile updated.", tone: "success" });
               navigation.goBack();
             } catch {
