@@ -4,6 +4,7 @@ import { useNavigation } from "@react-navigation/native";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { AppText, Avatar, Card, Screen } from "@/components/ui";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
@@ -82,18 +83,22 @@ export function ReleaseProfileScreen() {
         <View style={{ alignItems: "center", gap: spacing[1] }}>
           <AppText variant="h3">{profile.displayName || "Hungry member"}</AppText>
           <AppText tone="secondary" style={{ textAlign: "center" }} variant="bodySmall">
-            Your account, saved dishes, and essential settings.
+            {FEATURE_FLAGS.favouritesEnabled
+              ? "Your account, saved dishes, and essential settings."
+              : "Your account and essential settings."}
           </AppText>
         </View>
       </Card>
 
       <View style={{ gap: spacing[2] }}>
-        <ReleaseProfileRow
-          icon={<Heart color={palette.orange} size={20} />}
-          label="Saved dishes"
-          detail="Open your favourites"
-          onPress={() => rootNavigation.navigate("Favourites")}
-        />
+        {FEATURE_FLAGS.favouritesEnabled ? (
+          <ReleaseProfileRow
+            icon={<Heart color={palette.orange} size={20} />}
+            label="Saved dishes"
+            detail="Open your favourites"
+            onPress={() => rootNavigation.navigate("Favourites")}
+          />
+        ) : null}
         <ReleaseProfileRow
           icon={<Pencil color={palette.text} size={20} />}
           label="Edit profile"
