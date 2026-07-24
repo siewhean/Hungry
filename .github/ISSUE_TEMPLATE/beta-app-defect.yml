@@ -1,0 +1,122 @@
+name: Beta app defect
+description: Report a reproducible problem in a Hungry internal-alpha or beta build.
+title: "[Beta Bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include passwords, access tokens, verification codes, private messages, or personal data. Attach only fictional or redacted screenshots.
+  - type: input
+    id: implementation_sha
+    attributes:
+      label: Implementation SHA
+      description: Commit SHA shown in the build evidence or supplied by the release owner.
+      placeholder: 40-character commit SHA
+    validations:
+      required: true
+  - type: input
+    id: build_id
+    attributes:
+      label: Build ID and version
+      placeholder: EAS build ID, app version and build number
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - iOS
+        - Android
+        - Expo Web test harness
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and operating system
+      placeholder: iPhone 15 / iOS 26.0 or Pixel 8 / Android 16
+    validations:
+      required: true
+  - type: input
+    id: route
+    attributes:
+      label: Screen or route
+      placeholder: Discover → Dish Detail
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: Catalog source shown
+      options:
+        - Supabase live catalog
+        - Excel offline catalog
+        - Not shown / unknown
+        - Not applicable
+    validations:
+      required: true
+  - type: input
+    id: release_id
+    attributes:
+      label: Catalog release ID
+      description: Use the diagnostics/source badge when available. Do not enter credentials.
+      placeholder: Release UUID or excel-fallback-v1
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. Sign in
+        2. Open Discover
+        3. Tap...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+    validations:
+      required: true
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: Frequency
+      options:
+        - Every time
+        - Often
+        - Sometimes
+        - Once
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Suggested severity
+      options:
+        - P0 — security, data loss, auth bypass, crash, or core journey blocked
+        - P1 — major function broken with no acceptable workaround
+        - P2 — degraded experience with a workaround
+        - P3 — polish or minor issue
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Redacted evidence
+      description: Screenshot, screen recording, console/log excerpt, trace or network observation. Remove personal data.
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy confirmation
+      options:
+        - label: I removed passwords, tokens, verification codes and personal data.
+          required: true
