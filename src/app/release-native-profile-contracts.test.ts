@@ -177,6 +177,22 @@ test("EAS pre-install strips release-only native capabilities in its isolated wo
   }
 });
 
+test("EAS archive excludes non-runtime catalog and QA material without excluding build inputs", () => {
+  const ignore = read(".easignore");
+
+  for (const excluded of [".claude/", "data/", "marketing/", "supabase/", "tasks/", "tests/"]) {
+    assert.match(ignore, new RegExp(`^${excluded.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")}`, "m"));
+  }
+
+  for (const requiredInput of ["src/", "assets/", "scripts/", "android/", "ios/"]) {
+    assert.doesNotMatch(
+      ignore,
+      new RegExp(`^${requiredInput.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")}$`, "m"),
+      `${requiredInput} must remain in the EAS build context`,
+    );
+  }
+});
+
 test("released updates use the matching EAS environment and never retain E2E inputs", () => {
   const publisher = join(root, "scripts", "publish-eas-update.mjs");
   for (const [profile, expected] of [
