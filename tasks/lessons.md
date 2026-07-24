@@ -54,6 +54,7 @@
 - For bottom-sheet controls that must remain visible while the list scrolls, verify with a simulator screenshot; absolute children inside scroll content can sit below the visible viewport instead of behaving like a floating overlay.
 - For Expo Web E2E, set both private and `EXPO_PUBLIC_` mock data-source flags in the Playwright web server; bundled web code cannot read private env vars, and tests should prove the rendered read path rather than only the composer success state.
 - When a test-only launcher lives behind authenticated navigation, activate it at the app shell through a development-and-mock Expo config plus an explicit browser-only request; never widen the released pre-auth navigator to make E2E setup convenient.
+- When moving a release predicate into a dedicated runtime guard, update source-contract tests to assert the guard itself and its call site; stale text assertions can turn a hardening refactor into a false failure.
 - Contract tests should not depend on Prettier-only formatting details such as trailing commas in collapsed arrays; assert the behavioral source dependency instead.
 - Press-intent handlers (`onPressIn`) must never synchronously resolve repositories, build large result sets, or preload heavy routes; schedule those prefetch/analytics/search-history tasks as deduped idle work so the actual `onPress` navigation can commit immediately.
 - Pull-to-refresh on an already loaded feed should use the native refresh indicator and preserve visible ready content; do not switch the whole feed back to a skeleton during manual refresh.

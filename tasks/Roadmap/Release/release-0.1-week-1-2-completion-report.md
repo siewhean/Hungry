@@ -1,7 +1,7 @@
 # Hungry Release 0.1 — Week 1 and Week 2 Completion Report
 
-Final implementation SHA: `91561aaca5204a81e00a6899eb81af7b89816f18`
-Evidence update: E2E harness repair; all runtime evidence applies to the implementation SHA above
+Final implementation SHA: `055f9846b28b183690180048338f8efd677418b3`
+Evidence update: final-closeout remediation; the following evidence was collected against the implementation above before this documentation update
 Report date: 2026-07-24
 Verdict: **No-Go — Week 1 and Week 2 are not complete.**
 
@@ -10,8 +10,8 @@ Verdict: **No-Go — Week 1 and Week 2 are not complete.**
 | Check | Result | Evidence |
 |---|---:|---|
 | Starting commit audited | Pass | `8a5822c99dc11e4f0aebac8349cb8485b42006f3` |
-| Latest `main` comparison | Pass | `origin/main...91561aaca = 0 behind / 76 ahead` before evidence follow-up |
-| PR #44 mergeability | Blocked | GitHub reports `UNSTABLE`; CI/Security executed zero steps because Actions billing/spend capacity must be restored |
+| Latest `main` comparison | Pass before final evidence commit | `origin/main...055f9846` was 0 behind before this evidence update |
+| PR #44 mergeability | Blocked | GitHub reports `UNSTABLE`; the last CI/Security runs executed zero steps because Actions billing/spend capacity must be restored. The corrected workflow has not yet received a green final-head run. |
 | PR #43 raw-catalog path retained | Pass | Catalog V2 and non-consumer contracts pass in `npm run test` |
 | Worktree at release closeout | Pending | Must be clean after this evidence commit |
 
@@ -25,16 +25,16 @@ Verdict: **No-Go — Week 1 and Week 2 are not complete.**
 | `npm run format:check` | Pass | All matched source files formatted |
 | `npm run audit:assets` | Pass | Asset budgets/provenance pass |
 | `node scripts/audit-release-01-catalog.mjs` | Pass, insufficient visual proof | 273 venues; 876 dishes; 5/273 image-backed venues (1.83%); 511/876 image-backed dishes (58.33%); 100% coordinates; 0 blocked URLs |
-| `npm run test` | Pass | 618 pass, 0 fail, 2 intentional credential-gated skips |
+| `npm run test` | Pass | 626 pass, 0 fail, 2 intentional credential-gated skips |
 | `npm run test:e2e` | Pass locally | 29 local browser scenarios pass; 2 authenticated staging fallback/no-results scenarios remain credential-gated and are not counted as release proof |
 | `npm run test:e2e:merchant-catalog` | Pass | 1/1, isolated Expo Web mock-development launcher path |
-| `npx expo-doctor --non-interactive` | Invalid command form | CLI treats `--non-interactive` as an invalid path; replacement `npx expo-doctor` passes 18/18 |
+| `npx expo-doctor@1.17.0` | Pass | 16/16 checks passed; the app-config sync check is intentionally disabled by project configuration |
 | `npm run audit:supabase:static` | Pass | Static RLS/grant/audit contract passes |
 | `npm run check:edge-functions` | Pass | Static edge-function checks passed |
 | `npm run security:audit` | Pass | 0 vulnerabilities |
 | `npm run security:gitleaks` | Pass | 0 staged leaks |
 | `npm run security:trufflehog` | Pass with scanner read warnings | 0 verified and 0 unverified secrets; scanner logged nonfatal malformed Brotli reads inside local Python bytecode |
-| `npm run release:ready:local` | Fail correctly | Stops on live Advisor findings; it must remain red until remote hardening is applied/rechecked |
+| `npm run release:ready:local` | Fail correctly | Local code checks pass, then it stops on the live Advisor findings; it must remain red until remote hardening is applied/rechecked |
 | `git diff --check` | Pass before evidence edits | Re-run required immediately before the evidence commit |
 
 ## 3. Staging Supabase
@@ -47,9 +47,9 @@ Verdict: **No-Go — Week 1 and Week 2 are not complete.**
 | Location smoke | Blocked | `get_discovery_feed_by_location` returned HTTP 402 `exceed_db_size_quota` |
 | Search smoke | Blocked | Not run after location gate returned HTTP 402; same remote capacity blocker |
 | RLS smoke | Blocked | Not run after location gate returned HTTP 402; same remote capacity blocker |
-| Advisor non-password gate | Fail | 22 unexpected app-owned findings; local hardening migration `20260724090000_release_01_advisor_hardening.sql` has not been reconciled/applied remotely |
+| Advisor non-password gate | Fail | 29 unexpected app-owned findings: 2 SECURITY DEFINER views, 8 mutable-search-path functions, and 19 app-role executable SECURITY DEFINER functions. Local hardening has not been safely reconciled/applied remotely. |
 | Active release / totals | Observed, not release proof | `68cd0682-1655-4ceb-bd53-043309c9aafb`; 119,232 venues / 156,351 dishes |
-| Migration state | Blocked | 12 remote-only and 8 local-only versions; reconcile before any migration apply |
+| Migration state | Blocked | 12 remote-only and 9 local-only versions, including this closeout quality-gate migration; reconcile before any migration apply |
 
 ## 4. Jurong East pilot and images
 
@@ -63,7 +63,7 @@ Verdict: **No-Go — Week 1 and Week 2 are not complete.**
 | Blocked image URLs in Excel audit | 0 | 0 | Pass |
 | Exact 10-dish / 10-venue manifest | Populated, blocked | 10 / 10 | See `release-0.1-pilot-catalog.md`; only three candidate pairs have approved/permitted media and none has final installed-app proof |
 
-The active raw release also has 38,966 unverified dish URLs, 212 placeholder dish URLs, 310 unverified venue URLs, `dsh-mock-*` rows on a third live dish page, and semantic venue duplicates. The strict media mapper now withholds all media lacking explicit approval and recognised rights; this fixes unsafe display but does not make live imagery release-ready.
+The active raw release also has 38,966 unverified dish URLs, 212 placeholder dish URLs, 310 unverified venue URLs, `dsh-mock-*` rows on a third live dish page, and semantic venue duplicates. `20260724113000_catalog_raw_publish_quality_gate.sql` now fails a candidate release before activation for mock/test IDs, blank names, non-consumer venues, exclusions, duplicate groups, count mismatch, or unapproved projected media; it is not live until history and quota remediation are complete.
 
 ## 5. Data-source behavior
 
@@ -108,7 +108,7 @@ The mapper rejects missing approval, unverified/placeholder/restricted rights, m
 
 | Platform | Final-SHA internal-alpha artifact | Install/device QA | Result |
 |---|---|---|---|
-| iOS | None | Prior Debug simulator login render is not final-SHA evidence; `eas build --profile internal-alpha --platform ios --non-interactive` refused because no suitable credential exists | Blocked: EAS iOS internal-distribution credential required |
+| iOS | None | The available simulator launches an Expo developer launcher, not a signed final-SHA artifact; an Xcode build timed out in the constrained local environment. `eas build --profile internal-alpha --platform ios --non-interactive` still lacks suitable internal-distribution credentials. | Blocked: EAS iOS internal-distribution credential required |
 | Android | `5090a020-c49b-47e9-ad9c-ce98521b4dda` (queued) | Internal Android build for `da3d6dd49`; no artifact/install/device evidence yet | Blocked until the queued final-SHA build completes and is installed |
 
 The earlier Android build `b4eb5445-f343-4d15-8f18-7efd5aeba1cb` is queued for old SHA `08b9fa…`; it is ineligible. The new Android build is currently `IN_QUEUE` and has no artifact. There are no iOS EAS builds. No accessibility, offline, source fallback, three-page, image, reduced-motion, VoiceOver, or TalkBack acceptance may be inferred from source tests.
@@ -131,14 +131,15 @@ The earlier Android build `b4eb5445-f343-4d15-8f18-7efd5aeba1cb` is queued for o
 | R01-IMG-01 | P0 | Raw catalog media requires explicit approval plus recognised rights state | Media contracts pass |
 | R01-PAGE-01 | P0 | Excel dish/stall three-page, cursor reset, source/release detail/menu and signed-out denial tests added | Targeted contracts pass |
 | R01-SEC-LOCAL | P0 | Updated Expo and transitive security dependencies | `npm audit` 0 vulnerabilities; Expo Doctor 18/18 |
-| R01-E2E-01 | P0 test harness | Isolated the mock-development launcher behind Expo config plus an E2E-only browser-storage request; release builds retain the signed-out pre-auth navigator | Full local Playwright suite passes; production-gate and mandatory-auth contracts pass |
+| R01-E2E-01 | P0 test harness | Launcher now requires compiled `development` config, mock E2E source, `HUNGRY_EXPO_E2E_WEBSERVER=1`, Web platform, and explicit browser storage. Internal-alpha, preview, production, iOS, Android, and normal Web cannot enable it. | 22 focused contracts; config output confirms E2E=true only for development Web and false for staging/production; local Playwright passes. |
+| R01-CATALOG-02 | P0 data release guard | Added release-scoped quarantine, deterministic mock/blank/non-consumer/exclusion/duplicate gates, approved-media-only raw projections, quality findings, and a three-page media/paging smoke. | 4 catalog quality contracts pass; static Supabase audit passes. Live apply is blocked safely by history drift and quota. |
 
 ## 11. Remaining blockers and owner action
 
 | Blocker | Owner | Required action |
 |---|---|---|
-| CI/Security zero-step failures | GitHub owner | Restore Actions billing/spend capacity; rerun both checks on the evidence SHA |
-| Advisor findings / drift | Supabase owner + Codex | Reconcile migration history; review/apply hardening migration; rerun Advisor gate |
+| CI/Security zero-step failures | GitHub owner | Restore Actions billing/spend capacity, add required `main` branch protection, and rerun CI/Security on the final PR head |
+| Advisor findings / drift | Supabase owner + Codex | Restore capacity; recover remote-only migration source/schema provenance; create an ordered forward reconciliation, then review/apply hardening and quality-gate migrations; rerun Advisor gate |
 | Database quota HTTP 402 | Supabase owner | Upgrade/remove spend cap or reduce database below quota; rerun location, search and RLS smokes with no skips |
 | Raw data quality | Catalog owner | Quarantine mock/duplicate/non-consumer data and publish a release with approved media projections |
 | Staging fallback/no-results | Release owner | Provide secure staging test account and base URL through approved secret environment |
