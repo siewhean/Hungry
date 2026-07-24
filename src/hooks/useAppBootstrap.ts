@@ -77,6 +77,7 @@ export function useAppBootstrap() {
   const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
   const isUserMode = !isDeveloperMode && !isMerchantMode;
   const previousAuth = useRef<boolean | undefined>(undefined);
+  const lastNetworkOffline = useRef(false);
   const [isDataSourceReady, setIsDataSourceReady] = useState(false);
   const hasTrackedLaunch = useRef(false);
   const hasConfiguredAnalyticsSink = useRef(false);
@@ -110,13 +111,19 @@ export function useAppBootstrap() {
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
-      // `null` means the native reachability probe has not resolved yet; do
-      // not show an offline screen until connectivity is known to be absent.
-      setOffline(isNetworkOffline(state));
+      // Authenticated users stay on their current catalog route so classified
+      // network failures can use the read-only Excel fallback. The global
+      // offline state is reserved for the signed-out/authentication shell.
+      lastNetworkOffline.current = isNetworkOffline(state);
+      setOffline(!useSessionStore.getState().isAuthenticated && lastNetworkOffline.current);
     });
 
     return unsubscribe;
   }, [setOffline]);
+
+  useEffect(() => {
+    setOffline(!isAuthenticated && lastNetworkOffline.current);
+  }, [isAuthenticated, setOffline]);
 
   useLayoutEffect(() => {
     if (!isUserMode) {
