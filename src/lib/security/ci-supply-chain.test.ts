@@ -34,16 +34,56 @@ test("release secrets are scoped to EAS steps, not install or workflow scope", (
   assert.doesNotMatch(installStep, /EXPO_TOKEN|SENTRY_AUTH_TOKEN/);
   assert.match(easJob, /npx --yes eas-cli@18\.12\.3 whoami/);
   assert.match(easJob, /npx --yes eas-cli@18\.12\.3 build/);
+  assert.match(easJob, /--profile internal-alpha/);
 });
 
-test("main CI uses the pinned Node runtime and fails closed for required release proof", () => {
+test("final-candidate CI uses the pinned Node runtime and fails closed for required release proof", () => {
   const ci = read(".github/workflows/ci.yml");
+  const qualityGates = ci.slice(ci.indexOf("quality-gates:"), ci.indexOf("eas-build-gate:"));
+  const easJob = ci.slice(ci.indexOf("eas-build-gate:"));
 
-  assert.equal(ci.match(/node-version: 22\.22\.1/g)?.length, 2);
-  assert.match(ci, /Supabase credentials missing on main; failing closed\./);
-  assert.match(ci, /EXPO_TOKEN missing on main; failing closed\./);
+  assert.equal(ci.match(/node-version: 22\.22\.1/g)?.length, 3);
+  assert.match(easJob, /github\.event\.pull_request\.head\.repo\.full_name == github\.repository/);
+  assert.match(easJob, /always\(\) && \(/);
+  assert.match(easJob, /needs: \[quality-gates, merge-compatibility\]/);
+  assert.match(ci, /Supabase credentials missing for a final-candidate PR or main push/);
+  assert.match(
+    easJob,
+    /Missing required release credentials for a final-candidate PR or main push/,
+  );
+  assert.match(easJob, /for name in EXPO_TOKEN SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD/);
+  assert.match(easJob, /Quality gates completed with/);
+  assert.match(easJob, /Merge compatibility completed with/);
+  assert.match(easJob, /EXPO_TOKEN missing for a final-candidate PR or main push/);
+  assert.match(easJob, /github\.event\.pull_request\.head\.sha \|\| github\.sha/);
+  assert.match(qualityGates, /github\.event\.pull_request\.head\.sha \|\| github\.sha/);
+  assert.ok(
+    easJob.indexOf("Require successful quality gates") <
+      easJob.indexOf("Validate final-candidate release credentials"),
+    "upstream failures should surface before release-credential validation",
+  );
+  assert.ok(
+    easJob.indexOf("Require merge compatibility for pull requests") <
+      easJob.indexOf("Validate final-candidate release credentials"),
+    "PR merge compatibility should block artifact dispatch before credential validation",
+  );
   assert.doesNotMatch(ci, /skipping EAS account validation/);
   assert.doesNotMatch(ci, /skipping EAS build gate/);
+});
+
+test("PR merge compatibility remains checked without changing final-head artifact provenance", () => {
+  const ci = read(".github/workflows/ci.yml");
+  const mergeCompatibility = ci.slice(
+    ci.indexOf("merge-compatibility:"),
+    ci.indexOf("eas-build-gate:"),
+  );
+
+  assert.match(mergeCompatibility, /if: github\.event_name == 'pull_request'/);
+  assert.match(mergeCompatibility, /Checkout GitHub PR merge commit/);
+  assert.doesNotMatch(mergeCompatibility, /pull_request\.head\.sha/);
+  assert.match(mergeCompatibility, /npm ci/);
+  assert.match(mergeCompatibility, /npm run typecheck/);
+  assert.doesNotMatch(mergeCompatibility, /EXPO_TOKEN|SUPABASE_ACCESS_TOKEN|SUPABASE_DB_PASSWORD/);
 });
 
 test("security workflow keeps dependency, gitleaks, and trufflehog gates", () => {

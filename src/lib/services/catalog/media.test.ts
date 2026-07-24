@@ -42,6 +42,10 @@ test("catalog image mapping retains a valid allowed image", () => {
     "https://cdn.example.com/dish.jpg",
   );
   assert.equal(
+    sanitizeCatalogMediaUrl("https://cdn.example.com/merchant.jpg", "merchant_owned", true),
+    "https://cdn.example.com/merchant.jpg",
+  );
+  assert.equal(
     sanitizeCatalogImageUrl("http://cdn.example.com/stall.jpg"),
     "http://cdn.example.com/stall.jpg",
   );

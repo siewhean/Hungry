@@ -43,6 +43,9 @@ export function sanitizeCatalogMediaUrl(
     "owned",
     "permitted",
     "permitted_api",
+    "merchant_owned",
+    "operator_owned",
+    "user_submitted",
   ]);
 
   // Raw catalog responses are untrusted by default. A URL is displayable only

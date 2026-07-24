@@ -1,4 +1,8 @@
 import Constants from "expo-constants";
+import { Platform } from "react-native";
+import { isE2eDeveloperLauncherBuildFor } from "./e2eDeveloperLauncherGate";
+
+export { isE2eDeveloperLauncherBuildFor } from "./e2eDeveloperLauncherGate";
 
 /**
  * The Developer Launcher is available to the dedicated Expo Web test build
@@ -7,7 +11,7 @@ import Constants from "expo-constants";
 export function isE2eDeveloperLauncherBuild() {
   const extra = Constants.expoConfig?.extra;
 
-  return extra?.appEnv === "development" && extra?.e2eDeveloperLauncherEnabled === true;
+  return isE2eDeveloperLauncherBuildFor(extra, Platform.OS);
 }
 
 export function isE2eDeveloperLauncherRequested() {

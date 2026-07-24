@@ -56,7 +56,9 @@ module.exports = ({ config } = {}) => {
       ...(resolvedConfig.extra || {}),
       appEnv,
       e2eDeveloperLauncherEnabled:
-        appEnv === "development" && process.env.EXPO_PUBLIC_HUNGRY_E2E_DATA_SOURCE === "mock",
+        appEnv === "development" &&
+        process.env.EXPO_PUBLIC_HUNGRY_E2E_DATA_SOURCE === "mock" &&
+        process.env.HUNGRY_EXPO_E2E_WEBSERVER === "1",
     };
   }
 

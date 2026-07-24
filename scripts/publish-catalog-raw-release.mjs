@@ -19,7 +19,13 @@ const output = execFileSync(
 process.stdout.write(output);
 
 const result = JSON.parse(output);
-if (result.rows?.[0]?.status !== "active") {
-  process.stderr.write("Catalog release was not activated; investigate the reported release status.\n");
+const release = result.rows?.[0];
+if (
+  result.rows?.[0]?.status !== "active" ||
+  (Array.isArray(release?.quality_findings) && release.quality_findings.length)
+) {
+  process.stderr.write(
+    `Catalog release was not activated; investigate the quality findings: ${JSON.stringify(release?.quality_findings ?? [])}\n`,
+  );
   process.exitCode = 1;
 }

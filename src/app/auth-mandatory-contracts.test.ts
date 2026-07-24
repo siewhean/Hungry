@@ -11,11 +11,14 @@ test("the signed-out app mounts only Splash, Onboarding, and Auth outside the is
   const appBody = read("src/app/AppBody.tsx");
   const preAuth = read("src/app/navigation/PreAuthNavigator.tsx");
   const e2eRuntime = read("src/lib/runtime/e2eDeveloperLauncher.ts");
+  const e2eGate = read("src/lib/runtime/e2eDeveloperLauncherGate.ts");
 
   assert.match(appBody, /isAuthenticated \|\| isE2eDeveloperLauncherAvailable/);
   assert.match(appBody, /<PreAuthNavigator theme=\{theme\} \/>/);
-  assert.match(e2eRuntime, /extra\?\.appEnv === "development"/);
-  assert.match(e2eRuntime, /extra\?\.e2eDeveloperLauncherEnabled === true/);
+  assert.match(e2eRuntime, /isE2eDeveloperLauncherBuildFor\(extra, Platform\.OS\)/);
+  assert.match(e2eGate, /platform === "web"/);
+  assert.match(e2eGate, /extra\?\.appEnv === "development"/);
+  assert.match(e2eGate, /extra\?\.e2eDeveloperLauncherEnabled === true/);
   assert.match(preAuth, /name="Splash"/);
   assert.match(preAuth, /name="OnboardingStack"/);
   assert.match(preAuth, /name="AuthStack"/);
