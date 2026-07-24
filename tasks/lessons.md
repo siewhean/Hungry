@@ -133,3 +133,4 @@
 - Web E2E for non-map flows should force the mock map branch and keep Mapbox lazy-loaded; a live token or top-level Mapbox import can crash unrelated composer/feed tests before assertions run.
 - Mock cross-account E2E identities should be deterministic per email, and profile sync should preserve an already-hydrated matching profile id; time-based mock user ids and broad profile rehydration can make ownership/follow assertions unstable.
 - A protected GitHub Environment is not sufficient for a manually dispatched release workflow: enforce that the workflow itself runs from the trusted default ref before any approved secret-bearing job can execute candidate code.
+- For EAS CLI 21.1.0, choose the build environment in the EAS profile; `eas update` accepts `--environment`, but `eas build` rejects that flag.

@@ -1,6 +1,6 @@
 # Hungry Release 0.1 — Week 1 and Week 2 Completion Report
 
-Final implementation SHA: `c364c1ad02342239dbefb71859844ec9bb78d1e8`
+Final implementation SHA: `b3dc409acaa9007fdfb9185d049b7ea68af29eef`
 Evidence update: Week 1–2 P0 remediation evidence recorded after the implementation commit
 Report date: 2026-07-24
 Verdict: **No-Go — Week 1 and Week 2 are not complete.**
@@ -125,7 +125,7 @@ The mapper rejects missing approval, unverified/placeholder/restricted rights, m
 | Platform | Final-SHA internal-alpha artifact                                                          | Install/device QA                                                                                                                                                                                                                                                                                                  | Result                                                                    |
 | -------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
 | iOS      | None                                                                                       | The available simulator launches an Expo developer launcher, not a signed final-SHA artifact; an Xcode build timed out in the constrained local environment. With the repaired `eas-cli@21.1.0`, EAS reaches remote credentials then reports no suitable internal-distribution credential in non-interactive mode. | Blocked: EAS iOS internal-distribution credential required                |
-| Android  | `f6269e8d-0d81-45ac-808a-ecb34376032e`, `f7c26feb-88c3-45b4-b914-dded3d127fd4` in progress | Current internal-alpha remote Android candidates have no artifact yet; they cannot count until finished, source-bound, installed, and device-QA checked. Earlier `5090a020-c49b-47e9-ad9c-ce98521b4dda` is for `da3d6dd49` and is ineligible.                                                                      | Blocked until a final implementation candidate completes and is installed |
+| Android  | None for `b3dc409acaa9007fdfb9185d049b7ea68af29eef`                                        | The final-head dispatch reached the EAS `preview` environment and Android credentials, then local upload archive creation failed because the host temporary volume had 159 MiB free. No remote artifact was created; older candidates are ineligible.                                                                                         | Blocked until a final implementation candidate completes and is installed |
 
 The earlier Android build `b4eb5445-f343-4d15-8f18-7efd5aeba1cb` is queued for old SHA `08b9fa…`; it is ineligible. The new Android build is currently `IN_QUEUE` and has no artifact. There are no iOS EAS builds. No accessibility, offline, source fallback, three-page, image, reduced-motion, VoiceOver, or TalkBack acceptance may be inferred from source tests.
 
