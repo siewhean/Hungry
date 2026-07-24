@@ -134,3 +134,4 @@
 - Mock cross-account E2E identities should be deterministic per email, and profile sync should preserve an already-hydrated matching profile id; time-based mock user ids and broad profile rehydration can make ownership/follow assertions unstable.
 - A protected GitHub Environment is not sufficient for a manually dispatched release workflow: enforce that the workflow itself runs from the trusted default ref before any approved secret-bearing job can execute candidate code.
 - For EAS CLI 21.1.0, choose the build environment in the EAS profile; `eas update` accepts `--environment`, but `eas build` rejects that flag.
+- EAS applies `.easignore` after cloning the repository. Use it to reduce upload payload, but reserve a separate temporary volume for the clone rather than presenting it as a low-disk workaround.
