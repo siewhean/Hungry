@@ -1,0 +1,94 @@
+name: Beta session report
+description: Record a completed Hungry closed-beta journey.
+title: "[Beta Session] "
+labels:
+  - beta-session
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use a tester alias. Never include passwords, verification codes, access tokens, private messages, or unnecessary personal data.
+  - type: input
+    id: tester_alias
+    attributes:
+      label: Tester alias
+      placeholder: T01
+    validations:
+      required: true
+  - type: input
+    id: implementation_sha
+    attributes:
+      label: Implementation SHA
+    validations:
+      required: true
+  - type: input
+    id: build_id
+    attributes:
+      label: EAS build ID and app version
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Platform, device and OS
+    validations:
+      required: true
+  - type: checkboxes
+    id: journey
+    attributes:
+      label: Journey completed
+      options:
+        - label: Installed and launched the supplied build.
+        - label: Completed onboarding and account authentication.
+        - label: Used Jurong East discovery or area selection.
+        - label: Opened a dish and matching stall/menu.
+        - label: Submitted a different search and handled the result/no-results state.
+        - label: Browsed more than one page of results.
+        - label: Force-quit and restored the session.
+        - label: Signed out and confirmed protected content was blocked.
+  - type: dropdown
+    id: completion
+    attributes:
+      label: Overall completion
+      options:
+        - Completed without help
+        - Completed with a workaround
+        - Blocked
+    validations:
+      required: true
+  - type: input
+    id: time
+    attributes:
+      label: Approximate time to complete
+      placeholder: 8 minutes
+  - type: dropdown
+    id: trust
+    attributes:
+      label: How trustworthy did the food/stall data feel?
+      options:
+        - Very trustworthy
+        - Mostly trustworthy
+        - Mixed
+        - Mostly untrustworthy
+        - Could not evaluate
+    validations:
+      required: true
+  - type: textarea
+    id: confusing
+    attributes:
+      label: Most confusing or frustrating moment
+  - type: textarea
+    id: data_issue
+    attributes:
+      label: Any incorrect or missing food/stall data
+  - type: textarea
+    id: general
+    attributes:
+      label: Other feedback
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy confirmation
+      options:
+        - label: This report contains no credentials or unnecessary personal data.
+          required: true
