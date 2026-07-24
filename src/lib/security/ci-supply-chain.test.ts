@@ -32,8 +32,8 @@ test("release secrets are scoped to EAS steps, not install or workflow scope", (
 
   assert.doesNotMatch(easJob.split("steps:")[0], /EXPO_TOKEN|SENTRY_AUTH_TOKEN/);
   assert.doesNotMatch(installStep, /EXPO_TOKEN|SENTRY_AUTH_TOKEN/);
-  assert.match(easJob, /npx --yes eas-cli@18\.12\.3 whoami/);
-  assert.match(easJob, /npx --yes eas-cli@18\.12\.3 build/);
+  assert.match(easJob, /npx --yes eas-cli@21\.1\.0 whoami/);
+  assert.match(easJob, /npx --yes eas-cli@21\.1\.0 build/);
   assert.match(easJob, /--profile internal-alpha/);
 });
 

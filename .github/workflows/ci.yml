@@ -190,7 +190,7 @@ jobs:
             echo "EXPO_TOKEN missing for a final-candidate PR or main push; configure the repository Actions secret. Failing closed."
             exit 1
           fi
-          npx --yes eas-cli@18.12.3 whoami --non-interactive
+          npx --yes eas-cli@21.1.0 whoami --non-interactive
 
       - name: Trigger EAS build gates
         env:
@@ -203,4 +203,4 @@ jobs:
             echo "EXPO_TOKEN missing for a final-candidate PR or main push; configure the repository Actions secret. Failing closed."
             exit 1
           fi
-          npx --yes eas-cli@18.12.3 build --platform all --profile internal-alpha --non-interactive --no-wait
+          npx --yes eas-cli@21.1.0 build --platform all --profile internal-alpha --non-interactive --no-wait

@@ -41,7 +41,7 @@ const result = spawnSync(
   process.platform === "win32" ? "npx.cmd" : "npx",
   [
     "--yes",
-    "eas-cli@18.12.3",
+    "eas-cli@21.1.0",
     "update",
     "--channel",
     release.channel,
