@@ -14,17 +14,18 @@ Updated: 2026-07-24
 
 ## Matrix
 
-| Concern | Development | Internal alpha | Preview/staging | Production |
-|---|---|---|---|---|
-| `EXPO_PUBLIC_APP_ENV` | `development` | `staging` | `staging` | `production` |
-| Supabase project | local/dev or staging | staging | staging | production |
-| `EXPO_PUBLIC_HUNGRY_DATA_SOURCE` | selectable for dev/test | `supabase` | `supabase` | `supabase` |
-| Catalog V2 | local opt-in | enabled | enabled | enabled |
-| Catalog diagnostics UI | enabled | enabled | enabled | disabled by default |
-| Deferred feature flags | available for development | all off | all off unless one focused QA override | all off |
-| Distribution | local/dev client | EAS internal | EAS internal/TestFlight/Play internal | stores |
-| Test data | fixtures/staging | staging | staging | production-only validated data |
-| Destructive writes | local only unless approved | prohibited by default | controlled/approved only | production operations only |
+| Concern                          | Development                   | Internal alpha               | Preview/staging                        | Production                     |
+| -------------------------------- | ----------------------------- | ---------------------------- | -------------------------------------- | ------------------------------ |
+| `EXPO_PUBLIC_APP_ENV`            | `development`                 | `staging`                    | `staging`                              | `production`                   |
+| Supabase project                 | local/dev or staging          | staging                      | staging                                | production                     |
+| `EXPO_PUBLIC_HUNGRY_DATA_SOURCE` | selectable for dev/test       | `supabase`                   | `supabase`                             | `supabase`                     |
+| Catalog V2                       | local opt-in                  | enabled                      | enabled                                | enabled                        |
+| Catalog diagnostics UI           | enabled                       | enabled                      | enabled                                | disabled by default            |
+| Deferred feature flags           | available for development     | all off                      | all off unless one focused QA override | all off                        |
+| EAS channel / environment        | `development` / `development` | `internal-alpha` / `preview` | `preview` / `preview`                  | `production` / `production`    |
+| Distribution                     | local/dev client              | EAS internal                 | EAS internal/TestFlight/Play internal  | stores                         |
+| Test data                        | fixtures/staging              | staging                      | staging                                | production-only validated data |
+| Destructive writes               | local only unless approved    | prohibited by default        | controlled/approved only               | production operations only     |
 
 ## Release 0.1 client-visible variables
 
@@ -75,15 +76,15 @@ Do not add server-only values to `EXPO_PUBLIC_*` variables.
 
 ## Required owner proof
 
-| Platform | Development | Staging/internal alpha | Production | Evidence |
-|---|---:|---:|---:|---|
-| Supabase | [ ] | [ ] | [ ] | Project refs and configured secret names, no values |
-| EAS | [ ] | [ ] | [ ] | Environment/profile screenshot or sanitized export |
-| GitHub Actions | [ ] | [ ] | [ ] | Environment/secret-name list and protection status |
-| Sentry | [ ] | [ ] | [ ] | Project/release/source-map proof |
-| PostHog/analytics | [ ] | [ ] | [ ] | Project and event proof |
-| App Store Connect | n/a | [ ] | [ ] | Reviewer access/build proof |
-| Play Console | n/a | [ ] | [ ] | Internal-test/build proof |
+| Platform          | Development | Staging/internal alpha | Production | Evidence                                            |
+| ----------------- | ----------: | ---------------------: | ---------: | --------------------------------------------------- |
+| Supabase          |         [ ] |                    [ ] |        [ ] | Project refs and configured secret names, no values |
+| EAS               |         [ ] |                    [ ] |        [ ] | Environment/profile screenshot or sanitized export  |
+| GitHub Actions    |         [ ] |                    [ ] |        [ ] | Environment/secret-name list and protection status  |
+| Sentry            |         [ ] |                    [ ] |        [ ] | Project/release/source-map proof                    |
+| PostHog/analytics |         [ ] |                    [ ] |        [ ] | Project and event proof                             |
+| App Store Connect |         n/a |                    [ ] |        [ ] | Reviewer access/build proof                         |
+| Play Console      |         n/a |                    [ ] |        [ ] | Internal-test/build proof                           |
 
 ## Build commands
 
@@ -99,14 +100,18 @@ eas build --profile preview --platform all
 eas build --profile production --platform all
 ```
 
+`eas.json` pins EAS CLI `>= 21.1.0` and selects the EAS `preview` environment for both staging profiles. That environment must contain the staging `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`; the committed profile values only select `staging` and the Supabase provider and never carry credential values.
+
+Released EAS builds run `eas-build-pre-install` in their isolated build worktree. For `internal-alpha`, `preview`, and `production` it excludes the deferred Mapbox, media, image-picker, audio, and dev-client native modules; strips camera, microphone, photo/video, legacy-storage, local-network, and background-audio declarations; and keeps only location, Internet, and haptics permissions. Development remains intentionally broader for local feature work. The hook does not mutate a developer checkout.
+
 ## Failure expectations
 
-| Failure | Expected app behavior |
-|---|---|
-| Missing released-build Supabase URL/key | Blocking service/configuration state |
-| Auth unavailable | Stay in auth; retry/support state |
-| Signed out | Auth only; no Excel catalog access |
-| Invalid/revoked session | Clear account state; auth only |
-| Auth healthy, catalog RPC/network unavailable | Authenticated read-only Excel catalog |
-| Successful catalog query with zero matches | No-results state |
-| Supabase write unavailable | Clear unavailable/retry state; no false success |
+| Failure                                       | Expected app behavior                           |
+| --------------------------------------------- | ----------------------------------------------- |
+| Missing released-build Supabase URL/key       | Blocking service/configuration state            |
+| Auth unavailable                              | Stay in auth; retry/support state               |
+| Signed out                                    | Auth only; no Excel catalog access              |
+| Invalid/revoked session                       | Clear account state; auth only                  |
+| Auth healthy, catalog RPC/network unavailable | Authenticated read-only Excel catalog           |
+| Successful catalog query with zero matches    | No-results state                                |
+| Supabase write unavailable                    | Clear unavailable/retry state; no false success |
