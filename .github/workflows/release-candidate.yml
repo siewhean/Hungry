@@ -169,7 +169,9 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           npx --yes eas-cli@21.1.0 whoami --non-interactive
-          npx --yes eas-cli@21.1.0 build --platform all --profile internal-alpha --environment preview --non-interactive --no-wait --json | tee eas-builds.json
+          # `environment` is selected by the internal-alpha build profile in
+          # eas.json. eas build 21.1.0 does not accept an --environment flag.
+          npx --yes eas-cli@21.1.0 build --platform all --profile internal-alpha --non-interactive --no-wait --json | tee eas-builds.json
           printf 'candidate_sha=%s\n\n' "${{ needs.validate-candidate.outputs.candidate_sha }}" >> "${GITHUB_STEP_SUMMARY}"
           printf 'EAS build dispatch output is attached as release-candidate-eas-builds.\n' >> "${GITHUB_STEP_SUMMARY}"
 

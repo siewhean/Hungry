@@ -74,7 +74,8 @@ test("release secrets and live checks are isolated behind the approved environme
   assert.match(releaseCandidate, /Credentialed staging fallback and no-results Playwright/);
   assert.match(releaseCandidate, /npx supabase db push --dry-run/);
   assert.match(releaseCandidate, /npx --yes eas-cli@21\.1\.0 build/);
-  assert.match(releaseCandidate, /--profile internal-alpha --environment preview/);
+  assert.match(releaseCandidate, /--profile internal-alpha --non-interactive --no-wait --json/);
+  assert.doesNotMatch(releaseCandidate, /eas-cli@21\.1\.0 build[^\n]*--environment/);
   assert.match(releaseCandidate, /release-candidate-eas-builds/);
   assert.doesNotMatch(ci, /EXPO_TOKEN|SUPABASE_ACCESS_TOKEN|SUPABASE_DB_PASSWORD/);
 });
