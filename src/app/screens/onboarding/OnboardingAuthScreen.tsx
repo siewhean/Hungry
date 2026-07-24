@@ -74,8 +74,10 @@ export function OnboardingAuthScreen({ navigation }: Props) {
 
   const applySessionProfile = async (
     sessionProfile: Parameters<typeof applySignedInProfile>[0],
+    profileReady?: Promise<Parameters<typeof applySignedInProfile>[0]>,
   ) => {
-    await applySignedInProfile(sessionProfile, {
+    return applySignedInProfile(sessionProfile, {
+      profileReady,
       onSyncWarning: () => {
         showToast({
           message: "Signed in, but your taste profile could not sync. Try updating it again later.",
@@ -111,7 +113,8 @@ export function OnboardingAuthScreen({ navigation }: Props) {
           });
           return;
         }
-        await applySessionProfile(session.profile);
+        const migration = await applySessionProfile(session.profile, session.profileReady);
+        if (migration.status === "failed") return;
         completeAuth({ authProvider: "email", completedOnboarding: true, trackSignInEvent: false });
         finishOnboarding();
         return;
@@ -143,7 +146,8 @@ export function OnboardingAuthScreen({ navigation }: Props) {
       const dataSource = getConfiguredDataSource();
       if (dataSource === "supabase") {
         const session = await getHungryService().auth.signIn(values.email, values.password);
-        await applySessionProfile(session.profile);
+        const migration = await applySessionProfile(session.profile, session.profileReady);
+        if (migration.status === "failed") return;
         completeAuth({ authProvider: "email", completedOnboarding: true, trackSignInEvent: false });
         finishOnboarding();
         return;
@@ -164,7 +168,8 @@ export function OnboardingAuthScreen({ navigation }: Props) {
           provider === "google"
             ? await service.auth.signInWithGoogle()
             : await service.auth.signInWithApple();
-        await applySessionProfile(session.profile);
+        const migration = await applySessionProfile(session.profile, session.profileReady);
+        if (migration.status === "failed") return;
       }
       showToast({ message: getSignUpProviderSuccessMessage(provider), tone: "success" });
       completeAuth({ authProvider: provider, completedOnboarding: true, trackSignInEvent: false });

@@ -3,14 +3,15 @@ import { spawnSync } from "node:child_process";
 const profile = process.argv[2];
 const isPrintConfig = process.argv.includes("--print-config");
 const releasedProfiles = {
-  preview: { appEnv: "staging", channel: "preview" },
-  production: { appEnv: "production", channel: "production" },
+  "internal-alpha": { appEnv: "staging", channel: "internal-alpha", environment: "preview" },
+  preview: { appEnv: "staging", channel: "preview", environment: "preview" },
+  production: { appEnv: "production", channel: "production", environment: "production" },
 };
 const release = releasedProfiles[profile];
 
 if (!release) {
   process.stderr.write(
-    "Usage: node scripts/publish-eas-update.mjs <preview|production> [--print-config]\n",
+    "Usage: node scripts/publish-eas-update.mjs <internal-alpha|preview|production> [--print-config]\n",
   );
   process.exit(1);
 }
@@ -29,6 +30,7 @@ if (isPrintConfig) {
     `${JSON.stringify({
       appEnv: environment.EXPO_PUBLIC_APP_ENV,
       channel: release.channel,
+      environment: release.environment,
       e2eDataSource: environment.EXPO_PUBLIC_HUNGRY_E2E_DATA_SOURCE ?? null,
       e2eWebserver: environment.HUNGRY_EXPO_E2E_WEBSERVER ?? null,
       source: environment.EXPO_PUBLIC_HUNGRY_DATA_SOURCE,
@@ -43,6 +45,8 @@ const result = spawnSync(
     "--yes",
     "eas-cli@21.1.0",
     "update",
+    "--environment",
+    release.environment,
     "--channel",
     release.channel,
     "--message",

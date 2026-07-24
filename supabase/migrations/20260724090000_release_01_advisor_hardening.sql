@@ -2,6 +2,37 @@
 -- catalog lane. The conditional view changes cover legacy linked-project
 -- objects that predate the migration history.
 
+-- This migration must follow the Versioned Raw Catalog Reads chain. A clear
+-- prerequisite failure is safer than applying only a subset of the grant
+-- hardening to an unreconciled remote schema.
+do $$
+declare
+  function_signature text;
+  missing_signatures text[] := '{}';
+begin
+  foreach function_signature in array array[
+    'public.catalog_raw_release_for_read(uuid)',
+    'public.catalog_raw_require_authenticated()',
+    'public.catalog_raw_cursor(jsonb)',
+    'public.catalog_raw_cursor_value(text)',
+    'public.catalog_raw_dishes_page(text,double precision,double precision,integer,text[],text[],numeric,boolean,text,text,uuid,integer,text,text[])',
+    'public.catalog_raw_venue_menu_page(text,double precision,double precision,integer,text[],text[],numeric,boolean,text,text,uuid,integer,text,text[])',
+    'public.catalog_raw_venues_page(text,double precision,double precision,integer,text[],text[],numeric,boolean,text,text,uuid,integer,text[])',
+    'public.catalog_raw_dish_detail(text,uuid)',
+    'public.catalog_raw_venue_detail(text,uuid)',
+    'public.catalog_raw_map_view(double precision,double precision,double precision,double precision,double precision,uuid,double precision,double precision,integer,text[],text[],boolean,numeric)'
+  ] loop
+    if to_regprocedure(function_signature) is null then
+      missing_signatures := array_append(missing_signatures, function_signature);
+    end if;
+  end loop;
+
+  if cardinality(missing_signatures) > 0 then
+    raise exception 'release advisor hardening prerequisites are absent: %', array_to_string(missing_signatures, ', ');
+  end if;
+end;
+$$;
+
 do $$
 begin
   if to_regclass('public.v_venue_data_quality') is not null then

@@ -1,11 +1,9 @@
 import { similarityScore } from "@/lib/ai/similarityScore";
 import {
   CatalogAuthenticationRequiredError,
-  CatalogConfigurationError,
-  CatalogNetworkError,
-  CatalogRpcError,
   CatalogSessionInvalidError,
   CatalogUnavailableError,
+  classifyCatalogAccessError,
   isCatalogAuthenticationError,
   isCatalogFallbackEligibleError,
   type CatalogPage,
@@ -58,35 +56,6 @@ function expireRejectedSession(error: unknown): void {
   if (state.isAuthenticated) state.expireSession();
 }
 
-function discoveryError(error: unknown) {
-  if (error instanceof Error) {
-    const message = error.message.toLowerCase();
-    if (message.includes("not configured") || message.includes("missing configuration")) {
-      return new CatalogConfigurationError(error.message, error);
-    }
-    if (
-      message.includes("jwt") ||
-      message.includes("unauthorized") ||
-      message.includes("forbidden") ||
-      message.includes("invalid session") ||
-      message.includes("refresh token")
-    ) {
-      return new CatalogSessionInvalidError(error.message, error);
-    }
-    if (
-      message.includes("network") ||
-      message.includes("fetch") ||
-      message.includes("timeout") ||
-      message.includes("connection") ||
-      message.includes("socket")
-    ) {
-      return new CatalogNetworkError(error.message, error);
-    }
-    return new CatalogRpcError(error.message, error);
-  }
-  return new CatalogRpcError("The online discovery request failed.", error);
-}
-
 function requireCatalogRelease<T>(page: CatalogPage<T>): CatalogPage<T> {
   if (!page.releaseId) {
     throw new CatalogUnavailableError("No active Hungry catalog release is available.");
@@ -118,14 +87,14 @@ async function runAuthenticatedCatalogFallback<T>(
   }
 }
 
-async function runAuthenticatedDiscoveryFallback<T>(
+export async function runAuthenticatedDiscoveryFallback<T>(
   primary: () => Promise<T>,
   fallback: () => Promise<T>,
 ): Promise<T> {
   try {
     return await primary();
   } catch (error) {
-    const classified = discoveryError(error);
+    const classified = classifyCatalogAccessError(error, "rpc");
     expireRejectedSession(classified);
     if (!isCatalogFallbackEligibleError(classified)) throw classified;
     requireAuthenticatedCatalogFallbackSession();
@@ -155,13 +124,10 @@ function createResilientDiscoveryService(primary: DiscoveryService): DiscoverySe
       );
     },
     async countVenuesInArea(...args) {
-      const result = await runAuthenticatedDiscoveryFallback(
+      return runAuthenticatedDiscoveryFallback(
         () => primary.countVenuesInArea(...args),
         () => getFallback().countVenuesInArea(...args),
       );
-      if (result !== undefined) return result;
-      requireAuthenticatedCatalogFallbackSession();
-      return getFallback().countVenuesInArea(...args);
     },
     async getVenue(...args) {
       return runAuthenticatedDiscoveryFallback(
@@ -194,22 +160,16 @@ function createResilientDiscoveryService(primary: DiscoveryService): DiscoverySe
       );
     },
     async listDiscoveryFeedByLocation(...args) {
-      const result = await runAuthenticatedDiscoveryFallback(
+      return runAuthenticatedDiscoveryFallback(
         () => primary.listDiscoveryFeedByLocation(...args),
         () => getFallback().listDiscoveryFeedByLocation(...args),
       );
-      if (result !== undefined) return result;
-      requireAuthenticatedCatalogFallbackSession();
-      return getFallback().listDiscoveryFeedByLocation(...args);
     },
     async searchVenuesByLocation(...args) {
-      const result = await runAuthenticatedDiscoveryFallback(
+      return runAuthenticatedDiscoveryFallback(
         () => primary.searchVenuesByLocation(...args),
         () => getFallback().searchVenuesByLocation(...args),
       );
-      if (result !== undefined) return result;
-      requireAuthenticatedCatalogFallbackSession();
-      return getFallback().searchVenuesByLocation(...args);
     },
     async searchDishes(...args) {
       return runAuthenticatedDiscoveryFallback(

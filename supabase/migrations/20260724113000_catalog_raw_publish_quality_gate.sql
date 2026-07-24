@@ -4,18 +4,79 @@
 alter table public.catalog_releases
   add column if not exists quality_findings jsonb not null default '[]'::jsonb;
 
+-- Keep failed-release diagnostics compact on the release row. The full,
+-- row-level evidence is retained in catalog_raw_release_quarantines instead.
+alter table public.catalog_releases
+  add column if not exists quality_summary jsonb not null default '{}'::jsonb,
+  add column if not exists source_manifest_version text,
+  add column if not exists source_manifest_checksum text;
+
+-- The publisher reads source totals from this immutable, versioned manifest;
+-- callers cannot supply ad-hoc counts. A new source snapshot gets a new
+-- manifest version rather than mutating a previously published expectation.
+create table if not exists public.catalog_raw_release_manifests (
+  manifest_version text primary key,
+  source_kind text not null,
+  source_checksum text not null check (source_checksum ~ '^[0-9a-f]{64}$'),
+  expected_venue_total integer not null check (expected_venue_total >= 0),
+  expected_dish_total integer not null check (expected_dish_total >= 0),
+  created_at timestamptz not null default now()
+);
+
+alter table public.catalog_raw_release_manifests enable row level security;
+revoke all on table public.catalog_raw_release_manifests from public, anon, authenticated;
+
 alter table public.catalog_raw_venue_cards
-  add column if not exists media_approved_for_display boolean not null default false;
+  add column if not exists media_approved_for_display boolean;
 
 alter table public.catalog_raw_dish_cards
-  add column if not exists media_approved_for_display boolean not null default false;
+  add column if not exists media_approved_for_display boolean;
+
+-- Do not blank known-safe media on the currently active release during this
+-- additive schema change. This migration is one transaction, so clients see
+-- either the old projection or the fully backfilled flags. New releases below
+-- remain stricter: their cards only receive explicitly approved source media.
+update public.catalog_raw_venue_cards
+set media_approved_for_display = public.catalog_display_image_url(
+  image_url, true, media_rights_status, media_source_url
+) is not null
+where media_approved_for_display is null;
+
+update public.catalog_raw_dish_cards
+set media_approved_for_display = public.catalog_display_image_url(
+  image_url, true, media_rights_status, media_source_url
+) is not null
+where media_approved_for_display is null;
+
+update public.catalog_raw_venue_cards
+set representative_dish = jsonb_set(
+  representative_dish,
+  '{media_approved_for_display}',
+  to_jsonb(public.catalog_display_image_url(
+    representative_dish->>'image_url',
+    true,
+    representative_dish->>'media_rights_status',
+    null
+  ) is not null),
+  true
+)
+where representative_dish is not null
+  and not (representative_dish ? 'media_approved_for_display');
+
+alter table public.catalog_raw_venue_cards
+  alter column media_approved_for_display set default false,
+  alter column media_approved_for_display set not null;
+
+alter table public.catalog_raw_dish_cards
+  alter column media_approved_for_display set default false,
+  alter column media_approved_for_display set not null;
 
 create table if not exists public.catalog_raw_release_quarantines (
   release_id uuid not null references public.catalog_releases(id) on delete cascade,
   entity_type text not null check (entity_type in ('building', 'venue', 'dish', 'media')),
   entity_id text not null,
   reason text not null check (reason in (
-    'mock_id', 'blank_name', 'non_consumer', 'semantic_duplicate', 'manual_exclusion'
+    'mock_id', 'blank_name', 'non_consumer', 'semantic_duplicate', 'manual_exclusion', 'unsafe_media'
   )),
   details jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
@@ -148,25 +209,46 @@ as $$
 $$;
 
 -- Replace the original publisher only after the provenance helper is present.
--- It fails before the active-pointer switch, preserves expected source totals,
--- and only writes explicitly display-approved media into raw projections.
+-- It fails the whole candidate before the active-pointer switch: a partial
+-- catalog must never silently replace a complete active release. Detailed
+-- quarantines remain available for remediation; the release row is compact.
+drop function if exists public.catalog_raw_publish_release(integer, integer);
+
 create or replace function public.catalog_raw_publish_release(
-  p_expected_venues integer default null,
-  p_expected_dishes integer default null
+  p_manifest_version text
 )
 returns uuid
 language plpgsql
 security definer
-set search_path = public, extensions
+set search_path = public, extensions, pg_catalog
 as $$
 declare
   v_release_id uuid := gen_random_uuid();
+  v_manifest public.catalog_raw_release_manifests%rowtype;
   v_venue_total integer;
   v_dish_total integer;
   v_quality_findings jsonb := '[]'::jsonb;
+  v_quality_summary jsonb := '{}'::jsonb;
   v_projection_findings jsonb := '[]'::jsonb;
 begin
-  insert into public.catalog_releases (id, status) values (v_release_id, 'building');
+  if not pg_try_advisory_xact_lock(hashtext('hungry.catalog_raw_publish_release')) then
+    raise exception 'catalog publisher is already running' using errcode = '55P03';
+  end if;
+
+  select *
+  into v_manifest
+  from public.catalog_raw_release_manifests
+  where manifest_version = nullif(trim(p_manifest_version), '');
+
+  if not found then
+    raise exception 'catalog source manifest is unavailable' using errcode = 'P0001';
+  end if;
+
+  insert into public.catalog_releases (
+    id, status, source_manifest_version, source_manifest_checksum
+  ) values (
+    v_release_id, 'building', v_manifest.manifest_version, v_manifest.source_checksum
+  );
 
   insert into public.catalog_raw_release_quarantines (
     release_id, entity_type, entity_id, reason, details
@@ -190,14 +272,34 @@ begin
   from public.catalog_raw_publish_quality_findings() finding
   cross join lateral unnest(finding.entity_ids) entity_id;
 
-  select coalesce(jsonb_agg(details order by entity_type, entity_id, reason), '[]'::jsonb)
-  into v_quality_findings
-  from public.catalog_raw_release_quarantines
-  where release_id = v_release_id;
+  select
+    coalesce(jsonb_agg(jsonb_build_object(
+      'code', code,
+      'entity_type', entity_type,
+      'count', finding_count,
+      'sample_entity_ids', sample_entity_ids,
+      'detail', detail
+    ) order by code, entity_type), '[]'::jsonb),
+    jsonb_build_object(
+      'finding_groups', count(*),
+      'quarantined_rows', coalesce(sum(finding_count), 0)
+    )
+  into v_quality_findings, v_quality_summary
+  from (
+    select
+      details->>'code' as code,
+      entity_type,
+      count(*)::integer as finding_count,
+      (array_agg(entity_id order by entity_id))[1:20] as sample_entity_ids,
+      min(details->>'detail') as detail
+    from public.catalog_raw_release_quarantines
+    where release_id = v_release_id
+    group by details->>'code', entity_type
+  ) compact_findings;
 
   if jsonb_array_length(v_quality_findings) > 0 then
     update public.catalog_releases
-    set status = 'failed', quality_findings = v_quality_findings
+    set status = 'failed', quality_findings = v_quality_findings, quality_summary = v_quality_summary
     where id = v_release_id;
     return v_release_id;
   end if;
@@ -334,50 +436,80 @@ begin
 
   select count(*)::integer into v_venue_total from public.catalog_raw_venue_cards where release_id = v_release_id;
   select count(*)::integer into v_dish_total from public.catalog_raw_dish_cards where release_id = v_release_id;
-  if (p_expected_venues is not null and v_venue_total <> p_expected_venues)
-     or (p_expected_dishes is not null and v_dish_total <> p_expected_dishes) then
+  if v_venue_total <> v_manifest.expected_venue_total
+     or v_dish_total <> v_manifest.expected_dish_total then
     update public.catalog_releases
     set status = 'failed', venue_total = v_venue_total, dish_total = v_dish_total,
       quality_findings = jsonb_build_array(jsonb_build_object(
         'code', 'source_count_mismatch',
         'entity_type', 'release',
-        'detail', format('expected venues=%s dishes=%s; projected venues=%s dishes=%s',
-          p_expected_venues, p_expected_dishes, v_venue_total, v_dish_total)
-      ))
+        'count', 1,
+        'sample_entity_ids', array[]::text[],
+        'detail', format('manifest=%s expected venues=%s dishes=%s; projected venues=%s dishes=%s',
+          v_manifest.manifest_version,
+          v_manifest.expected_venue_total,
+          v_manifest.expected_dish_total,
+          v_venue_total,
+          v_dish_total)
+      )),
+      quality_summary = jsonb_build_object(
+        'finding_groups', 1,
+        'quarantined_rows', 0,
+        'manifest_version', v_manifest.manifest_version
+      )
     where id = v_release_id;
     return v_release_id;
   end if;
 
-  select coalesce(jsonb_agg(jsonb_build_object('code', finding.code, 'entity_type', finding.entity_type,
-    'entity_ids', finding.entity_ids, 'detail', finding.detail)), '[]'::jsonb)
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'code', compact_findings.code,
+    'entity_type', compact_findings.entity_type,
+    'count', compact_findings.finding_count,
+    'sample_entity_ids', compact_findings.sample_entity_ids,
+    'detail', compact_findings.detail
+  ) order by compact_findings.code, compact_findings.entity_type), '[]'::jsonb)
   into v_projection_findings
   from (
-    select 'unsafe_card_media'::text as code, 'venue'::text as entity_type, array[id] as entity_ids,
+    select
+      code,
+      entity_type,
+      count(*)::integer as finding_count,
+      (array_agg(entity_id order by entity_id))[1:20] as sample_entity_ids,
+      min(detail) as detail
+    from (
+      select 'unsafe_card_media'::text as code, 'venue'::text as entity_type, id as entity_id,
       'venue image is not explicitly approved for display'::text as detail
-    from public.catalog_raw_venue_cards
-    where release_id = v_release_id
-      and image_url is not null
-      and (media_approved_for_display = false
-        or public.catalog_display_image_url(image_url, true, media_rights_status, media_source_url) is null)
-    union all
-    select 'unsafe_card_media', 'dish', array[id], 'dish image is not explicitly approved for display'
-    from public.catalog_raw_dish_cards
-    where release_id = v_release_id
-      and image_url is not null
-      and (media_approved_for_display = false
-        or public.catalog_display_image_url(image_url, true, media_rights_status, media_source_url) is null)
-    union all
-    select 'unsafe_detail_media', 'dish', array[dish_id], 'dish detail media is not explicitly approved for display'
-    from public.catalog_raw_dish_media
-    where release_id = v_release_id
-      and (approved_for_display = false
-        or public.catalog_display_image_url(url, true, rights_status, source_url) is null)
-  ) finding;
+      from public.catalog_raw_venue_cards
+      where release_id = v_release_id
+        and image_url is not null
+        and (media_approved_for_display = false
+          or public.catalog_display_image_url(image_url, true, media_rights_status, media_source_url) is null)
+      union all
+      select 'unsafe_card_media', 'dish', id, 'dish image is not explicitly approved for display'
+      from public.catalog_raw_dish_cards
+      where release_id = v_release_id
+        and image_url is not null
+        and (media_approved_for_display = false
+          or public.catalog_display_image_url(image_url, true, media_rights_status, media_source_url) is null)
+      union all
+      select 'unsafe_detail_media', 'dish', dish_id, 'dish detail media is not explicitly approved for display'
+      from public.catalog_raw_dish_media
+      where release_id = v_release_id
+        and (approved_for_display = false
+          or public.catalog_display_image_url(url, true, rights_status, source_url) is null)
+    ) finding
+    group by code, entity_type
+  ) compact_findings;
 
   if jsonb_array_length(v_projection_findings) > 0 then
     update public.catalog_releases
     set status = 'failed', venue_total = v_venue_total, dish_total = v_dish_total,
-      quality_findings = v_projection_findings
+      quality_findings = v_projection_findings,
+      quality_summary = jsonb_build_object(
+        'finding_groups', jsonb_array_length(v_projection_findings),
+        'quarantined_rows', 0,
+        'manifest_version', v_manifest.manifest_version
+      )
     where id = v_release_id;
     return v_release_id;
   end if;
@@ -387,7 +519,13 @@ begin
   where status = 'active';
   update public.catalog_releases
   set status = 'active', venue_total = v_venue_total, dish_total = v_dish_total,
-    quality_findings = '[]'::jsonb, activated_at = now()
+    quality_findings = '[]'::jsonb,
+    quality_summary = jsonb_build_object(
+      'finding_groups', 0,
+      'quarantined_rows', 0,
+      'manifest_version', v_manifest.manifest_version
+    ),
+    activated_at = now()
   where id = v_release_id;
   return v_release_id;
 end;
@@ -400,7 +538,9 @@ revoke all on function public.catalog_raw_normalize_identity(text) from public, 
 revoke all on function public.catalog_raw_is_mock_id(text) from public, anon, authenticated;
 revoke all on function public.catalog_raw_non_consumer_reason(text) from public, anon, authenticated;
 revoke all on function public.catalog_raw_publish_quality_findings() from public, anon, authenticated;
+revoke all on function public.catalog_raw_publish_release(text) from public, anon, authenticated;
 grant execute on function public.catalog_raw_normalize_identity(text) to service_role;
 grant execute on function public.catalog_raw_is_mock_id(text) to service_role;
 grant execute on function public.catalog_raw_non_consumer_reason(text) to service_role;
 grant execute on function public.catalog_raw_publish_quality_findings() to service_role;
+grant execute on function public.catalog_raw_publish_release(text) to service_role;

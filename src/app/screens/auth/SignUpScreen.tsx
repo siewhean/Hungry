@@ -60,7 +60,7 @@ export function SignUpScreen({ navigation }: Props) {
           });
           return;
         }
-        await applySignedInProfile(session.profile, {
+        const migration = await applySignedInProfile(session.profile, {
           profileReady: session.profileReady,
           onSyncWarning: () =>
             showToast({
@@ -69,6 +69,7 @@ export function SignUpScreen({ navigation }: Props) {
               tone: "warning",
             }),
         });
+        if (migration.status === "failed") return;
         completeAuth({
           authProvider: "email",
           completedOnboarding: hasCompletedOnboarding,
@@ -132,7 +133,7 @@ export function SignUpScreen({ navigation }: Props) {
           provider === "google"
             ? await service.auth.signInWithGoogle()
             : await service.auth.signInWithApple();
-        await applySignedInProfile(session.profile, {
+        const migration = await applySignedInProfile(session.profile, {
           profileReady: session.profileReady,
           onSyncWarning: () =>
             showToast({
@@ -140,6 +141,7 @@ export function SignUpScreen({ navigation }: Props) {
               tone: "warning",
             }),
         });
+        if (migration.status === "failed") return;
       }
       showToast({ message: getSignUpProviderSuccessMessage(provider), tone: "success" });
       completeAuth({

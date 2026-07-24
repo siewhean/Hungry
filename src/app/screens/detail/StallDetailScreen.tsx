@@ -22,6 +22,7 @@ import {
   MessageCircleMore,
   Send,
   Star,
+  Utensils,
 } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
@@ -45,6 +46,7 @@ import {
 } from "@/features/merchantClaim/submitClaimFromStall";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { sanitizeCatalogImageUrl } from "@/lib/services/catalog/media";
 import {
   getDataRepository,
   getHungryService,
@@ -192,6 +194,13 @@ function StallMenuDishCard({
 }) {
   const { componentRadii, palette, spacing } = useHungryTheme();
   const slides = useMemo(() => getStallDishCycleSlides(dish, dishes), [dish, dishes]);
+  const safeImageUrls = useMemo(
+    () =>
+      slides
+        .map((slide) => sanitizeCatalogImageUrl(slide.imageUrl))
+        .filter((imageUrl): imageUrl is string => Boolean(imageUrl)),
+    [slides],
+  );
   const [activeIndex, setActiveIndex] = useState(0);
   const activeDish = slides[activeIndex] ?? dish;
   const handleActiveIndexChange = useCallback((nextIndex: number) => {
@@ -213,17 +222,34 @@ function StallMenuDishCard({
       style={{ width }}
     >
       <View style={{ gap: spacing[2] }}>
-        <CyclingGridImage
-          images={slides.map((slide) => slide.imageUrl)}
-          cycleMs={CYCLING_GRID_IMAGE_INTERVAL_MS}
-          startDelayMs={(index % 4) * 350}
-          onActiveIndexChange={handleActiveIndexChange}
-          style={{
-            width: "100%",
-            height: 120,
-            borderRadius: componentRadii.card,
-          }}
-        />
+        {safeImageUrls.length > 0 ? (
+          <CyclingGridImage
+            images={safeImageUrls}
+            cycleMs={CYCLING_GRID_IMAGE_INTERVAL_MS}
+            startDelayMs={(index % 4) * 350}
+            onActiveIndexChange={handleActiveIndexChange}
+            style={{
+              borderRadius: componentRadii.card,
+              height: 120,
+              width: "100%",
+            }}
+          />
+        ) : (
+          <View
+            accessibilityRole="image"
+            accessibilityLabel={`${activeDish.name} photo unavailable`}
+            style={{
+              alignItems: "center",
+              backgroundColor: palette.surfaceRaised,
+              borderRadius: componentRadii.card,
+              height: 120,
+              justifyContent: "center",
+              width: "100%",
+            }}
+          >
+            <Utensils color={palette.orange} size={28} />
+          </View>
+        )}
         <View style={{ gap: spacing[1] }}>
           <AppText variant="bodyBold" numberOfLines={1}>
             {activeDish.name}
@@ -288,6 +314,10 @@ export function StallDetailScreen({ navigation, route }: Props) {
     hydratedDishes ?? (serviceProviderMode === "supabase" ? EMPTY_DISHES : cachedDishes);
   const dishIdsKey = useMemo(() => dishes.map((dish) => dish.id).join("|"), [dishes]);
   const leadDish = dishes[0];
+  const leadDishImageUrl = sanitizeCatalogImageUrl(leadDish?.imageUrl);
+  // Release 0.1 details are read-only in staging and production. Development
+  // keeps the deferred write surfaces for their individual implementation gates.
+  const showDeferredDetailControls = !FEATURE_FLAGS.release01CoreOnly;
 
   const profile = useProfileStore((state) => state.profile);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
@@ -338,14 +368,14 @@ export function StallDetailScreen({ navigation, route }: Props) {
       postId: "",
       title: venue?.name ?? "Stall",
       subtitle: `${buildingLocation.name ?? "Hungry"} · ${venue?.unitNumber ?? ""}`.trim(),
-      imageUrl: leadDish?.imageUrl ?? "",
+      imageUrl: leadDishImageUrl ?? "",
       authorName: profile.displayName,
       message: `Check out ${venue?.name ?? "this stall"} at ${buildingLocation.name ?? "Hungry"}!`,
       link: `https://hungry.sg/stall/${venue?.id ?? ""}`,
     };
   }, [
     buildingLocation.name,
-    leadDish?.imageUrl,
+    leadDishImageUrl,
     profile.displayName,
     venue?.id,
     venue?.name,
@@ -397,6 +427,12 @@ export function StallDetailScreen({ navigation, route }: Props) {
 
   useEffect(() => {
     let active = true;
+    if (!showDeferredDetailControls) {
+      setActivePromotions([]);
+      return () => {
+        active = false;
+      };
+    }
     if (!venue) {
       setActivePromotions([]);
       return () => {
@@ -416,10 +452,10 @@ export function StallDetailScreen({ navigation, route }: Props) {
     return () => {
       active = false;
     };
-  }, [venue]);
+  }, [showDeferredDetailControls, venue]);
 
   useEffect(() => {
-    if (!venue || activePromotions.length === 0) return;
+    if (!showDeferredDetailControls || !venue || activePromotions.length === 0) return;
     activePromotions.forEach((promotion) => {
       const eventKey = `${venue.id}:${promotion.id}`;
       if (trackedPromotionEvents.current.has(eventKey)) return;
@@ -439,7 +475,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
         userId: isAuthenticated ? profile.id : undefined,
       });
     });
-  }, [activePromotions, isAuthenticated, profile.id, venue]);
+  }, [activePromotions, isAuthenticated, profile.id, showDeferredDetailControls, venue]);
 
   useEffect(() => {
     let active = true;
@@ -774,7 +810,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
             />
             <View style={{ flex: 1 }} />
             <View style={{ flexDirection: "row", gap: spacing[2] }}>
-              {FEATURE_FLAGS.favouritesEnabled ? (
+              {showDeferredDetailControls && FEATURE_FLAGS.favouritesEnabled ? (
                 <IconButton
                   variant="floating"
                   accessibilityLabel={
@@ -816,16 +852,18 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   }}
                 />
               ) : null}
-              <IconButton
-                variant="floating"
-                accessibilityLabel="Share stall"
-                onPress={openShareSheet}
-                icon={<Send color={palette.text} size={20} />}
-                style={{
-                  backgroundColor: headerButtonColor,
-                  borderColor: headerButtonBorderColor,
-                }}
-              />
+              {showDeferredDetailControls ? (
+                <IconButton
+                  variant="floating"
+                  accessibilityLabel="Share stall"
+                  onPress={openShareSheet}
+                  icon={<Send color={palette.text} size={20} />}
+                  style={{
+                    backgroundColor: headerButtonColor,
+                    borderColor: headerButtonBorderColor,
+                  }}
+                />
+              ) : null}
             </View>
           </View>
 
@@ -843,12 +881,29 @@ export function StallDetailScreen({ navigation, route }: Props) {
                 position: "relative",
               }}
             >
-              <AccessibleImage
-                source={{ uri: leadDish?.imageUrl }}
-                style={StyleSheet.absoluteFill}
-                contentFit="cover"
-                accessibilityLabel={`${venue.name} hero dish photo`}
-              />
+              {leadDishImageUrl ? (
+                <AccessibleImage
+                  source={{ uri: leadDishImageUrl }}
+                  style={StyleSheet.absoluteFill}
+                  contentFit="cover"
+                  accessibilityLabel={`${venue.name} hero dish photo`}
+                />
+              ) : (
+                <View
+                  accessibilityRole="image"
+                  accessibilityLabel={`${venue.name} hero dish photo unavailable`}
+                  style={[
+                    StyleSheet.absoluteFill,
+                    {
+                      alignItems: "center",
+                      backgroundColor: palette.surfaceRaised,
+                      justifyContent: "center",
+                    },
+                  ]}
+                >
+                  <Utensils color={palette.orange} size={44} />
+                </View>
+              )}
             </View>
 
             <View
@@ -868,7 +923,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   padding: spacing[3],
                 }}
               >
-                <StallLogoMark logoUrl={venue.logoUrl} name={venue.name} />
+                <StallLogoMark logoUrl={sanitizeCatalogImageUrl(venue.logoUrl)} name={venue.name} />
                 <View style={{ flex: 1, gap: spacing[1] }}>
                   <AppText variant="h2" numberOfLines={1}>
                     {venue.name}
@@ -887,7 +942,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
               </Card>
 
               {/* Save / Visited / Add-to-List */}
-              {isAuthenticated && venue && !FEATURE_FLAGS.release01CoreOnly ? (
+              {showDeferredDetailControls && isAuthenticated && venue ? (
                 <StallInteractionBar
                   stallId={venue.id}
                   userId={profile.id}
@@ -897,7 +952,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                 />
               ) : null}
 
-              {FEATURE_FLAGS.collectionsEnabled ? (
+              {showDeferredDetailControls && FEATURE_FLAGS.collectionsEnabled ? (
                 <DetailSaveActionsCard
                   title="Save this stall"
                   body="Add this stall to your trying list or keep it in a private Hungry Portfolio."
@@ -956,11 +1011,11 @@ export function StallDetailScreen({ navigation, route }: Props) {
                 </Card>
               </View>
 
-              {FEATURE_FLAGS.socialFeedEnabled ? (
+              {showDeferredDetailControls && FEATURE_FLAGS.socialFeedEnabled ? (
                 <PopularVisitorsSection venueId={venue.id} horizontalPadding={0} />
               ) : null}
 
-              {activePromotions.length > 0 ? (
+              {showDeferredDetailControls && activePromotions.length > 0 ? (
                 <View style={{ gap: spacing[3] }}>
                   <AppText variant="h2">Active promotions</AppText>
                   {activePromotions.map((promotion) => (
@@ -1052,7 +1107,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     >
                       No menu available for this stall yet.
                     </AppText>
-                    {isAuthenticated && FEATURE_FLAGS.reviewCreationEnabled ? (
+                    {showDeferredDetailControls &&
+                    isAuthenticated &&
+                    FEATURE_FLAGS.reviewCreationEnabled ? (
                       <Button
                         label="Add a menu photo"
                         variant="secondary"
@@ -1069,7 +1126,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
               </View>
 
               {/* Community Reviews */}
-              {FEATURE_FLAGS.reviewCreationEnabled ? (
+              {showDeferredDetailControls && FEATURE_FLAGS.reviewCreationEnabled ? (
                 <View style={{ gap: spacing[4] }}>
                   <AppText variant="h2">Recent Reviews</AppText>
                   {communityReviews.length > 0 ? (
@@ -1228,7 +1285,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                 </View>
               ) : null}
 
-              {FEATURE_FLAGS.merchantClaimCtaEnabled ? (
+              {showDeferredDetailControls && FEATURE_FLAGS.merchantClaimCtaEnabled ? (
                 <Card style={{ padding: spacing[4], gap: spacing[4] }}>
                   <View
                     style={{
@@ -1264,17 +1321,19 @@ export function StallDetailScreen({ navigation, route }: Props) {
             </View>
           </ScrollView>
 
-          <ReviewShareSheet
-            activeReview={activeShareReview}
-            innerRef={shareSheetRef}
-            bottomInset={insets.bottom}
-            onDismiss={() => {
-              setActiveShareReview(null);
-            }}
-            onShared={(postId, channel) => {
-              incrementShare(postId, channel);
-            }}
-          />
+          {showDeferredDetailControls ? (
+            <ReviewShareSheet
+              activeReview={activeShareReview}
+              innerRef={shareSheetRef}
+              bottomInset={insets.bottom}
+              onDismiss={() => {
+                setActiveShareReview(null);
+              }}
+              onShared={(postId, channel) => {
+                incrementShare(postId, channel);
+              }}
+            />
+          ) : null}
         </View>
       </SafeAreaView>
     </FeedErrorBoundary>

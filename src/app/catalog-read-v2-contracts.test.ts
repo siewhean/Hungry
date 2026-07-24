@@ -133,6 +133,6 @@ test("raw map excludes non-consumer venues at the RPC boundary", () => {
 
 test("catalog release publisher fails when count validation does not activate a release", () => {
   const publisher = read("scripts/publish-catalog-raw-release.mjs");
-  assert.match(publisher, /result\.rows\?\.\[0\]\?\.status !== "active"/);
+  assert.match(publisher, /release\?\.status !== "active"/);
   assert.match(publisher, /process\.exitCode = 1/);
 });

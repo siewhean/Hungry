@@ -35,13 +35,15 @@ test("Supabase auth responses hydrate the app profile store", () => {
   const supabaseService = read("src/lib/services/supabase/supabaseService.ts");
 
   assert.match(profileStore, /applyProfile: \(profile: UserProfile\) => void/);
-  assert.match(profileHelper, /useProfileStore\.getState\(\)\.applyProfile\(mergedProfile\)/);
+  assert.match(profileHelper, /useProfileStore\.getState\(\)\.applyProfile\(result\.profile\)/);
+  assert.match(profileHelper, /runProvisionalOnboardingMigration/);
   assert.match(loginScreen, /applySignedInProfile\(session\.profile/);
   assert.match(signUpScreen, /applySignedInProfile\(session\.profile/);
   assert.match(
     bootstrap,
     /runAfterIdle\(\(\) => \{[\s\S]*getHungryService\(\)\s*\.profile\.getProfile\(\)/,
   );
+  assert.match(bootstrap, /await applySignedInProfile\(profile\)/);
   assert.match(
     bootstrap,
     /applyAuthStateFromSession\(\{[\s\S]*isAuthenticated: true,[\s\S]*userId: user\.id,[\s\S]*\}\);[\s\S]*runAfterIdle/,

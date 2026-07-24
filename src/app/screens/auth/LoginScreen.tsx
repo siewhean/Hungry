@@ -51,7 +51,7 @@ export function LoginScreen({ navigation }: Props) {
     try {
       if (getConfiguredDataSource() === "supabase") {
         const session = await getHungryService().auth.signIn(values.email, values.password);
-        await applySignedInProfile(session.profile, {
+        const migration = await applySignedInProfile(session.profile, {
           profileReady: session.profileReady,
           onSyncWarning: () =>
             showToast({
@@ -59,6 +59,7 @@ export function LoginScreen({ navigation }: Props) {
               tone: "warning",
             }),
         });
+        if (migration.status === "failed") return;
       } else {
         const failure = getMockLoginFailure(values.email, values.password);
         if (failure) {
@@ -106,7 +107,7 @@ export function LoginScreen({ navigation }: Props) {
           provider === "google"
             ? await service.auth.signInWithGoogle()
             : await service.auth.signInWithApple();
-        await applySignedInProfile(session.profile, {
+        const migration = await applySignedInProfile(session.profile, {
           profileReady: session.profileReady,
           onSyncWarning: () =>
             showToast({
@@ -114,6 +115,7 @@ export function LoginScreen({ navigation }: Props) {
               tone: "warning",
             }),
         });
+        if (migration.status === "failed") return;
       }
       finishLogin(provider);
     } catch (err) {

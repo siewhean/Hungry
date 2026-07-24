@@ -109,7 +109,7 @@ test("only the Playwright Expo Web config can compile the E2E launcher", () => {
     extra?: { appEnv?: string; e2eDeveloperLauncherEnabled?: boolean };
   };
   const eas = JSON.parse(readRepoFile("eas.json")) as {
-    build: Record<string, { env?: Record<string, string> }>;
+    build: Record<string, { environment?: string; env?: Record<string, string> }>;
   };
 
   const e2eConfig = withEnv(
@@ -132,14 +132,15 @@ test("only the Playwright Expo Web config can compile the E2E launcher", () => {
   );
   assert.equal(normalDevelopmentWebConfig.extra?.e2eDeveloperLauncherEnabled, false);
 
-  for (const [profile, appEnv] of [
-    ["internal-alpha", "staging"],
-    ["preview", "staging"],
-    ["production", "production"],
+  for (const [profile, appEnv, environment] of [
+    ["internal-alpha", "staging", "preview"],
+    ["preview", "staging", "preview"],
+    ["production", "production", "production"],
   ] as const) {
     assert.equal(eas.build[profile]?.env?.EXPO_PUBLIC_APP_ENV, appEnv);
     assert.equal(eas.build[profile]?.env?.EXPO_PUBLIC_HUNGRY_DATA_SOURCE, "supabase");
     assert.equal(eas.build[profile]?.env?.HUNGRY_EXPO_E2E_WEBSERVER, undefined);
+    assert.equal(eas.build[profile]?.environment, environment);
 
     const releasedConfig = withEnv(
       {
@@ -170,8 +171,9 @@ test("released EAS Update publication strips E2E inputs and pins Supabase", () =
   assertSourceIncludes(
     publisher,
     [
-      /preview: \{ appEnv: "staging", channel: "preview" \}/,
-      /production: \{ appEnv: "production", channel: "production" \}/,
+      /"internal-alpha": \{ appEnv: "staging", channel: "internal-alpha", environment: "preview" \}/,
+      /preview: \{ appEnv: "staging", channel: "preview", environment: "preview" \}/,
+      /production: \{ appEnv: "production", channel: "production", environment: "production" \}/,
       /EXPO_PUBLIC_HUNGRY_DATA_SOURCE: "supabase"/,
       /delete environment\.EXPO_PUBLIC_HUNGRY_E2E_DATA_SOURCE/,
       /delete environment\.HUNGRY_EXPO_E2E_WEBSERVER/,
@@ -179,9 +181,10 @@ test("released EAS Update publication strips E2E inputs and pins Supabase", () =
     "released EAS Update publisher",
   );
 
-  for (const [profile, appEnv] of [
-    ["preview", "staging"],
-    ["production", "production"],
+  for (const [profile, appEnv, environment] of [
+    ["internal-alpha", "staging", "preview"],
+    ["preview", "staging", "preview"],
+    ["production", "production", "production"],
   ] as const) {
     const output = execFileSync(
       process.execPath,
@@ -201,6 +204,7 @@ test("released EAS Update publication strips E2E inputs and pins Supabase", () =
     assert.deepEqual(config, {
       appEnv,
       channel: profile,
+      environment,
       e2eDataSource: null,
       e2eWebserver: null,
       source: "supabase",

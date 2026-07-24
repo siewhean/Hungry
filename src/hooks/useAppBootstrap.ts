@@ -2,6 +2,7 @@ import NetInfo from "@react-native-community/netinfo";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { setAnalyticsSink, trackAnalyticsEvent } from "@/lib/analytics";
+import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
 import { isNetworkOffline } from "@/lib/network/connectivity";
 import {
   getConfiguredDataSource,
@@ -16,7 +17,6 @@ import {
 import { useMerchantStore } from "@/store/useMerchantStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
-import type { UserProfile } from "@/types/domain";
 
 function shouldEnablePostHogSink() {
   return (
@@ -29,10 +29,6 @@ function getProfileStoreState() {
   const { useProfileStore } =
     require("@/store/useProfileStore") as typeof import("@/store/useProfileStore");
   return useProfileStore.getState();
-}
-
-function applyProfile(profile: UserProfile) {
-  getProfileStoreState().applyProfile(profile);
 }
 
 function syncProfile(isAuthenticated: boolean, userId?: string | null) {
@@ -209,8 +205,11 @@ export function useAppBootstrap() {
         const cancelProfileHydration = runAfterIdle(() => {
           void getHungryService()
             .profile.getProfile()
-            .then((profile) => {
-              if (active) applyProfile(profile);
+            .then(async (profile) => {
+              if (!active) return;
+              // Retry a durable provisional onboarding migration after a cold
+              // restore before accepting a potentially older profile read.
+              await applySignedInProfile(profile);
             })
             .catch(() => undefined);
         });

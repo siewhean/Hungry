@@ -1,6 +1,6 @@
 {
   "cli": {
-    "version": ">= 18.5.0",
+    "version": ">= 21.1.0",
     "appVersionSource": "remote"
   },
   "build": {
@@ -8,6 +8,7 @@
       "developmentClient": true,
       "distribution": "internal",
       "channel": "development",
+      "environment": "development",
       "env": {
         "EXPO_PUBLIC_APP_ENV": "development",
         "EXPO_PUBLIC_HUNGRY_DATA_SOURCE": "supabase"
@@ -16,6 +17,7 @@
     "internal-alpha": {
       "distribution": "internal",
       "channel": "internal-alpha",
+      "environment": "preview",
       "env": {
         "EXPO_PUBLIC_APP_ENV": "staging",
         "EXPO_PUBLIC_HUNGRY_DATA_SOURCE": "supabase",
@@ -32,7 +34,8 @@
     },
     "preview": {
       "distribution": "internal",
-      "channel": "staging",
+      "channel": "preview",
+      "environment": "preview",
       "env": {
         "EXPO_PUBLIC_APP_ENV": "staging",
         "EXPO_PUBLIC_HUNGRY_DATA_SOURCE": "supabase",
@@ -49,6 +52,7 @@
     },
     "production": {
       "channel": "production",
+      "environment": "production",
       "env": {
         "EXPO_PUBLIC_APP_ENV": "production",
         "EXPO_PUBLIC_HUNGRY_DATA_SOURCE": "supabase",
