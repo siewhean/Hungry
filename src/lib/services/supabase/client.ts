@@ -19,8 +19,10 @@ export function getAppEnvironment(): HungryAppEnvironment {
   if (explicit === "staging" || explicit === "production" || explicit === "development") {
     return explicit;
   }
-  // EAS profiles set EXPO_PUBLIC_APP_ENV explicitly. Treat unspecified Node,
-  // test, and local processes as development so test fixtures remain usable.
+  // EAS profiles set EXPO_PUBLIC_APP_ENV explicitly. A compiled non-development
+  // bundle without that value must fail closed as a released build rather than
+  // inheriting development/mock provider behavior.
+  if (typeof __DEV__ !== "undefined" && !__DEV__) return "production";
   return "development";
 }
 
