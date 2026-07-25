@@ -135,3 +135,4 @@
 - A protected GitHub Environment is not sufficient for a manually dispatched release workflow: enforce that the workflow itself runs from the trusted default ref before any approved secret-bearing job can execute candidate code.
 - For EAS CLI 21.1.0, choose the build environment in the EAS profile; `eas update` accepts `--environment`, but `eas build` rejects that flag.
 - EAS applies `.easignore` after cloning the repository. Use it to reduce upload payload, but reserve a separate temporary volume for the clone rather than presenting it as a low-disk workaround.
+- Re-check generated native manifests as well as Expo config: removing a released permission only from the config is insufficient when the EAS pre-install hook can preserve it in Android output.

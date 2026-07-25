@@ -14,6 +14,7 @@ const REMOVED_ANDROID_PERMISSIONS = new Set([
   "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
   "android.permission.MODIFY_AUDIO_SETTINGS",
   "android.permission.READ_EXTERNAL_STORAGE",
+  "android.permission.READ_MEDIA_IMAGES",
   "android.permission.READ_MEDIA_VIDEO",
   "android.permission.RECORD_AUDIO",
   "android.permission.SYSTEM_ALERT_WINDOW",

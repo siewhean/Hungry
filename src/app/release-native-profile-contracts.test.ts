@@ -112,7 +112,6 @@ test("released config retains only nearby-discovery native permissions", () => {
       "android.permission.ACCESS_COARSE_LOCATION",
       "android.permission.ACCESS_FINE_LOCATION",
       "android.permission.INTERNET",
-      "android.permission.READ_MEDIA_IMAGES",
       "android.permission.VIBRATE",
     ]);
     assert.equal(config.ios?.infoPlist?.NSLocationWhenInUseUsageDescription !== undefined, true);
@@ -165,13 +164,13 @@ test("EAS pre-install strips release-only native capabilities in its isolated wo
     for (const value of [
       "android.permission.CAMERA",
       "android.permission.RECORD_AUDIO",
+      "READ_MEDIA_IMAGES",
       "READ_MEDIA_VIDEO",
       "AudioControlsService",
     ]) {
       assert.equal(manifest.includes(value), false);
     }
     assert.equal(manifest.includes("android.permission.ACCESS_FINE_LOCATION"), true);
-    assert.equal(manifest.includes("android.permission.READ_MEDIA_IMAGES"), true);
   } finally {
     rmSync(fixture, { force: true, recursive: true });
   }

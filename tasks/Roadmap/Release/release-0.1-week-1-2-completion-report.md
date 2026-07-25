@@ -1,8 +1,9 @@
 # Hungry Release 0.1 — Week 1 and Week 2 Completion Report
 
-Final implementation SHA: `3c74cd16b48a7e59e1b2695042f9d26365af1cd7`
-Evidence update: Week 1–2 P0 remediation evidence recorded after the implementation commit
-Report date: 2026-07-24
+Baseline implementation SHA: `3c74cd16b48a7e59e1b2695042f9d26365af1cd7`
+Current gated-execution preparation head: `a2d53e3c4ea6aa425e6a959a992a5e8c11e19e66`
+Evidence update: Week 1–2 P0 remediation evidence recorded after the implementation commit; current revalidation is recorded in the task ledgers.
+Report date: 2026-07-26
 Verdict: **No-Go — Week 1 and Week 2 are not complete.**
 
 ## 1. Branch and integration
@@ -31,7 +32,7 @@ Verdict: **No-Go — Week 1 and Week 2 are not complete.**
 | `npx expo-doctor`                           |                            Pass | 18/18 checks passed; the app-config sync check is intentionally disabled by project configuration                                                   |
 | `npm run audit:supabase:static`             |                            Pass | Static RLS/grant/audit contract passes                                                                                                              |
 | `npm run check:edge-functions`              |                            Pass | Static edge-function checks passed                                                                                                                  |
-| `npm run security:audit`                    |                            Pass | 0 vulnerabilities                                                                                                                                   |
+| `npm run security:audit`                    |                         Blocked | Current audit reports 35 high / 0 critical findings. The available comprehensive remediation requires an unapproved Expo 57 / React Native 0.86 upgrade; do not downgrade runtime dependencies or waive the release gate. |
 | `npm run security:gitleaks`                 |                            Pass | 0 staged leaks                                                                                                                                      |
 | `npm run security:trufflehog`               |                            Pass | 0 verified and 0 unverified secrets; generated worktrees, binary workbook catalogs, and Python virtualenvs are excluded from the repository scan    |
 | `npm run release:ready:local`               |                  Fail correctly | Local code checks pass, then it stops on the live Advisor findings; it must remain red until remote hardening is applied/rechecked                  |
