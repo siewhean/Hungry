@@ -6,6 +6,18 @@
 
 ## Current Focus
 
+- `REL-01-PR44-GATES` — In progress, release remains **No-Go**. The checkout is
+  at the Week 3–8 preparation head `a2d53e3c4ea6aa425e6a959a992a5e8c11e19e66`;
+  Week 3 must not start until Week 1–2 external gates pass. On 2026-07-26,
+  Actions SHA pinning and strict `main` protections were configured, and the
+  released Android profile stopped requesting photo-library access. Remaining
+  gates are owner/host controlled: Actions billing plus an eligible independent
+  environment reviewer and release secrets; Supabase capacity/provenance and
+  Advisor remediation; a >=4 GiB external EAS build volume; final-head native
+  artifacts/device QA; and authentic tester journeys. The current dependency
+  audit also reports 35 high findings whose safe remediation requires the
+  separately-approved Expo/RN major upgrade.
+
 - `CATALOG-RAW-READS-01` — Linked Supabase release active for the reconciled
   `119,232 / 156,351` raw snapshot. Adds versioned full-catalog projections and authenticated,
   cursor-paged dish/venue/detail/menu/map RPCs behind `catalogReadV2` (default off). Search, Browse,

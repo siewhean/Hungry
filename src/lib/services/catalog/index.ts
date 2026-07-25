@@ -1,7 +1,17 @@
-import { getSupabaseClient } from "@/lib/services/supabase/client";
+import { getSupabaseClient, isSupabaseConfigured } from "@/lib/services/supabase/client";
+import { sanitizeCatalogMediaUrl } from "./media";
 
 export type CatalogVerificationStatus = "raw" | "verified" | "approved";
 export type CatalogSort = "nearby" | "relevance" | "quality";
+export type CatalogErrorKind =
+  | "authentication_required"
+  | "session_invalid"
+  | "authorization"
+  | "configuration"
+  | "contract"
+  | "network"
+  | "rpc"
+  | "unavailable";
 
 export interface CatalogCoordinate {
   latitude: number;
@@ -27,10 +37,7 @@ export interface CatalogPage<T> {
   items: T[];
   nextCursor?: string;
   releaseId: string;
-  totals: {
-    venues: number;
-    dishes: number;
-  };
+  totals: { venues: number; dishes: number };
 }
 
 export interface CatalogRawMedia {
@@ -58,6 +65,7 @@ export interface CatalogRawDishCard {
   reviewCount?: number;
   cuisineTags: string[];
   dietaryFlags: string[];
+  sectionTags: string[];
   isOpen?: boolean;
   verificationStatus: CatalogVerificationStatus;
   menuRightsStatus: string;
@@ -143,10 +151,218 @@ const pageCache = new Map<string, CacheEntry<unknown>>();
 const detailCache = new Map<string, CacheEntry<unknown>>();
 
 export class CatalogAccessError extends Error {
-  constructor(message: string) {
-    super(message);
+  readonly kind: CatalogErrorKind;
+  readonly fallbackEligible: boolean;
+
+  constructor(
+    message: string,
+    options: {
+      kind?: CatalogErrorKind;
+      fallbackEligible?: boolean;
+      cause?: unknown;
+    } = {},
+  ) {
+    super(message, options.cause === undefined ? undefined : { cause: options.cause });
     this.name = "CatalogAccessError";
+    this.kind = options.kind ?? "unavailable";
+    this.fallbackEligible = options.fallbackEligible ?? false;
   }
+}
+
+export class CatalogAuthenticationRequiredError extends CatalogAccessError {
+  constructor(message = "Sign in to browse Hungry.", cause?: unknown) {
+    super(message, { kind: "authentication_required", fallbackEligible: false, cause });
+    this.name = "CatalogAuthenticationRequiredError";
+  }
+}
+
+export class CatalogSessionInvalidError extends CatalogAccessError {
+  constructor(message = "Your session is no longer valid. Sign in again.", cause?: unknown) {
+    super(message, { kind: "session_invalid", fallbackEligible: false, cause });
+    this.name = "CatalogSessionInvalidError";
+  }
+}
+
+/**
+ * A valid signed-in user is not permitted to read this catalog resource. This
+ * is deliberately distinct from an expired session: RLS must not silently
+ * sign the user out or make the bundled catalog appear to be an authorised
+ * substitute for Supabase.
+ */
+export class CatalogAuthorizationError extends CatalogAccessError {
+  constructor(message = "You are not authorised to access this catalog.", cause?: unknown) {
+    super(message, { kind: "authorization", fallbackEligible: false, cause });
+    this.name = "CatalogAuthorizationError";
+  }
+}
+
+export class CatalogConfigurationError extends CatalogAccessError {
+  constructor(
+    message = "Hungry's account service is not configured for this build.",
+    cause?: unknown,
+  ) {
+    super(message, { kind: "configuration", fallbackEligible: false, cause });
+    this.name = "CatalogConfigurationError";
+  }
+}
+
+/** A malformed request or response is a release defect, never an outage. */
+export class CatalogContractError extends CatalogAccessError {
+  constructor(message = "The catalog response could not be processed.", cause?: unknown) {
+    super(message, { kind: "contract", fallbackEligible: false, cause });
+    this.name = "CatalogContractError";
+  }
+}
+
+export class CatalogNetworkError extends CatalogAccessError {
+  constructor(message = "The online catalog could not be reached.", cause?: unknown) {
+    super(message, { kind: "network", fallbackEligible: true, cause });
+    this.name = "CatalogNetworkError";
+  }
+}
+
+export class CatalogRpcError extends CatalogAccessError {
+  constructor(message = "The online catalog request failed.", cause?: unknown) {
+    // Only classified transient failures can reach Excel. An opaque RPC error
+    // might be a contract, permissions, or application defect.
+    super(message, { kind: "rpc", fallbackEligible: false, cause });
+    this.name = "CatalogRpcError";
+  }
+}
+
+export class CatalogUnavailableError extends CatalogAccessError {
+  constructor(message = "The online catalog is temporarily unavailable.", cause?: unknown) {
+    super(message, { kind: "unavailable", fallbackEligible: true, cause });
+    this.name = "CatalogUnavailableError";
+  }
+}
+
+export function isCatalogFallbackEligibleError(error: unknown): boolean {
+  return error instanceof CatalogAccessError && error.fallbackEligible;
+}
+
+export function isCatalogAuthenticationError(error: unknown): boolean {
+  return (
+    error instanceof CatalogAuthenticationRequiredError ||
+    error instanceof CatalogSessionInvalidError
+  );
+}
+
+function errorRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+}
+
+function errorMessage(value: unknown): string {
+  if (value instanceof Error) return value.message;
+  const row = errorRecord(value);
+  return typeof row.message === "string" ? row.message : String(value ?? "");
+}
+
+function errorStatus(value: unknown): number | undefined {
+  const status = Number(errorRecord(value).status);
+  return Number.isInteger(status) ? status : undefined;
+}
+
+function errorCode(value: unknown): string {
+  return String(errorRecord(value).code ?? "").toLowerCase();
+}
+
+function looksLikeNetworkFailure(value: unknown): boolean {
+  const row = errorRecord(value);
+  const message = errorMessage(value).toLowerCase();
+  const code = String(row.code ?? "").toLowerCase();
+  const status = errorStatus(value);
+  return (
+    (status !== undefined && status >= 500 && status <= 599) ||
+    code === "57014" ||
+    ["etimedout", "econnreset", "econnrefused", "enotfound", "eai_again"].includes(code) ||
+    errorRecord(value).name === "AbortError" ||
+    code.includes("timeout") ||
+    message.includes("network request failed") ||
+    message.includes("failed to fetch") ||
+    message.includes("fetch failed") ||
+    message.includes("timed out") ||
+    message.includes("timeout") ||
+    message.includes("aborted") ||
+    message.includes("socket") ||
+    message.includes("connection")
+  );
+}
+
+function looksLikeInvalidSession(value: unknown): boolean {
+  const status = errorStatus(value);
+  const code = errorCode(value);
+  const message = errorMessage(value).toLowerCase();
+  return (
+    status === 401 ||
+    code === "pgrst301" ||
+    code.includes("jwt") ||
+    message.includes("invalid jwt") ||
+    message.includes("jwt expired") ||
+    message.includes("invalid claim") ||
+    message.includes("refresh token") ||
+    message.includes("session_not_found")
+  );
+}
+
+function looksLikeAuthorizationFailure(value: unknown): boolean {
+  const status = errorStatus(value);
+  const code = errorCode(value);
+  const message = errorMessage(value).toLowerCase();
+  return (
+    status === 403 ||
+    code === "42501" ||
+    message.includes("row-level security") ||
+    message.includes("permission denied") ||
+    message.includes("not authorized") ||
+    message.includes("not authorised") ||
+    message.includes("forbidden")
+  );
+}
+
+function looksLikeConfigurationFailure(value: unknown): boolean {
+  const message = errorMessage(value).toLowerCase();
+  return message.includes("not configured") || message.includes("missing configuration");
+}
+
+function looksLikeContractFailure(value: unknown): boolean {
+  const status = errorStatus(value);
+  const code = errorCode(value);
+  const message = errorMessage(value).toLowerCase();
+  return (
+    value instanceof SyntaxError ||
+    value instanceof TypeError ||
+    status === 400 ||
+    status === 409 ||
+    status === 422 ||
+    code.startsWith("pgrst") ||
+    code === "22p02" ||
+    message.includes("invalid request") ||
+    message.includes("failed to parse") ||
+    message.includes("parse error") ||
+    message.includes("schema cache") ||
+    (message.includes("function") && message.includes("does not exist"))
+  );
+}
+
+/**
+ * Classifies only failures with an unambiguous catalog meaning. Opaque errors
+ * remain intact so callers cannot turn programming and integration defects
+ * into an authenticated Excel fallback.
+ */
+export function classifyCatalogAccessError(value: unknown, context: "session" | "rpc"): unknown {
+  if (value instanceof CatalogAccessError) return value;
+  const message = errorMessage(value) || "The online catalog request failed.";
+  if (looksLikeConfigurationFailure(value)) return new CatalogConfigurationError(message, value);
+  if (looksLikeInvalidSession(value)) return new CatalogSessionInvalidError(message, value);
+  if (looksLikeAuthorizationFailure(value)) return new CatalogAuthorizationError(message, value);
+  if (looksLikeNetworkFailure(value)) return new CatalogNetworkError(message, value);
+  if (looksLikeContractFailure(value)) return new CatalogContractError(message, value);
+
+  // getSession may return an unrecognised failure object. Treating that as an
+  // invalid session would destroy a valid session; preserve it for diagnostics.
+  void context;
+  return value;
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -187,6 +403,7 @@ function verificationStatus(value: unknown): CatalogVerificationStatus {
 
 function mapDishCard(value: unknown): CatalogRawDishCard {
   const row = asRecord(value);
+  const mediaRightsStatus = asString(row.media_rights_status) ?? "unverified";
   return {
     id: asString(row.id) ?? "",
     venueId: asString(row.venue_id) ?? "",
@@ -198,16 +415,21 @@ function mapDishCard(value: unknown): CatalogRawDishCard {
     description: asString(row.description),
     price: asNumber(row.price),
     priceRange: asString(row.price_range),
-    imageUrl: asString(row.image_url),
+    imageUrl: sanitizeCatalogMediaUrl(
+      asString(row.image_url),
+      mediaRightsStatus,
+      asBoolean(row.media_approved_for_display),
+    ),
     distanceMeters: asNumber(row.distance_meters),
     rating: asNumber(row.rating),
     reviewCount: asNumber(row.review_count),
     cuisineTags: asStringArray(row.cuisine_tags),
     dietaryFlags: asStringArray(row.dietary_flags),
+    sectionTags: asStringArray(row.section_tags),
     isOpen: asBoolean(row.is_open),
     verificationStatus: verificationStatus(row.verification_status),
     menuRightsStatus: asString(row.menu_rights_status) ?? "unverified",
-    mediaRightsStatus: asString(row.media_rights_status) ?? "unverified",
+    mediaRightsStatus,
     menuSourceUrl: asString(row.menu_source_url),
     mediaSourceUrl: asString(row.media_source_url),
     updatedAt: asString(row.updated_at),
@@ -217,6 +439,8 @@ function mapDishCard(value: unknown): CatalogRawDishCard {
 function mapVenueCard(value: unknown): CatalogRawVenueCard {
   const row = asRecord(value);
   const representative = asRecord(row.representative_dish);
+  const mediaRightsStatus = asString(row.media_rights_status) ?? "unverified";
+  const representativeRightsStatus = asString(representative.media_rights_status) ?? "unverified";
   return {
     id: asString(row.id) ?? "",
     buildingId: asString(row.building_id) ?? "",
@@ -225,7 +449,11 @@ function mapVenueCard(value: unknown): CatalogRawVenueCard {
     buildingType: asString(row.building_type),
     unitNumber: asString(row.unit_number),
     floor: asString(row.floor),
-    imageUrl: asString(row.image_url),
+    imageUrl: sanitizeCatalogMediaUrl(
+      asString(row.image_url),
+      mediaRightsStatus,
+      asBoolean(row.media_approved_for_display),
+    ),
     latitude: asNumber(row.latitude),
     longitude: asNumber(row.longitude),
     distanceMeters: asNumber(row.distance_meters),
@@ -235,14 +463,18 @@ function mapVenueCard(value: unknown): CatalogRawVenueCard {
       ? {
           id: asString(representative.id) ?? "",
           name: asString(representative.name) ?? "Unnamed dish",
-          imageUrl: asString(representative.image_url),
+          imageUrl: sanitizeCatalogMediaUrl(
+            asString(representative.image_url),
+            representativeRightsStatus,
+            asBoolean(representative.media_approved_for_display),
+          ),
           price: asNumber(representative.price),
           verificationStatus: verificationStatus(representative.verification_status),
         }
       : undefined,
     verificationStatus: verificationStatus(row.verification_status),
     menuRightsStatus: asString(row.menu_rights_status) ?? "unverified",
-    mediaRightsStatus: asString(row.media_rights_status) ?? "unverified",
+    mediaRightsStatus,
     menuSourceUrl: asString(row.menu_source_url),
     mediaSourceUrl: asString(row.media_source_url),
     updatedAt: asString(row.updated_at),
@@ -251,11 +483,13 @@ function mapVenueCard(value: unknown): CatalogRawVenueCard {
 
 function mapMedia(value: unknown): CatalogRawMedia {
   const row = asRecord(value);
+  const rightsStatus = asString(row.rights_status) ?? "unverified";
+  const approvedForDisplay = asBoolean(row.approved_for_display) ?? false;
   return {
-    url: asString(row.url) ?? "",
+    url: sanitizeCatalogMediaUrl(asString(row.url), rightsStatus, approvedForDisplay) ?? "",
     sourceUrl: asString(row.source_url),
-    rightsStatus: asString(row.rights_status) ?? "unverified",
-    approvedForDisplay: asBoolean(row.approved_for_display) ?? false,
+    rightsStatus,
+    approvedForDisplay,
     sortOrder: asNumber(row.sort_order) ?? 0,
   };
 }
@@ -307,21 +541,30 @@ function writeCache<T>(
 }
 
 async function requireAuthenticatedClient() {
+  if (!isSupabaseConfigured()) throw new CatalogConfigurationError();
   const client = getSupabaseClient();
-  if (!client)
-    throw new CatalogAccessError("Catalog is unavailable because Supabase is not configured.");
-  const { data, error } = await client.auth.getSession();
-  if (error || !data.session?.user) {
-    throw new CatalogAccessError("Sign in to browse the complete Hungry directory.");
+  if (!client) throw new CatalogConfigurationError();
+
+  let result;
+  try {
+    result = await client.auth.getSession();
+  } catch (error) {
+    throw classifyCatalogAccessError(error, "session");
   }
+  if (result.error) throw classifyCatalogAccessError(result.error, "session");
+  if (!result.data.session?.user) throw new CatalogAuthenticationRequiredError();
   return client;
 }
 
 async function callRawRpc<T>(name: string, args: Record<string, unknown>): Promise<T> {
   const client = await requireAuthenticatedClient();
-  const { data, error } = await client.rpc(name, args);
-  if (error) throw new CatalogAccessError(error.message);
-  return data as T;
+  try {
+    const { data, error } = await client.rpc(name, args);
+    if (error) throw classifyCatalogAccessError(error, "rpc");
+    return data as T;
+  } catch (error) {
+    throw classifyCatalogAccessError(error, "rpc");
+  }
 }
 
 function mapPage<T>(value: unknown, mapItem: (item: unknown) => T): CatalogPage<T> {
@@ -372,6 +615,7 @@ export const catalogRawService = {
         p_release_id: releaseId ?? null,
       }),
     );
+    if (!asString(row.id)) throw new CatalogUnavailableError("Dish details are unavailable.");
     const detail: CatalogRawDishDetail = {
       ...mapDishCard(row),
       media: Array.isArray(row.media) ? row.media.map(mapMedia) : [],
@@ -389,6 +633,7 @@ export const catalogRawService = {
         p_release_id: releaseId ?? null,
       }),
     );
+    if (!asString(row.id)) throw new CatalogUnavailableError("Stall details are unavailable.");
     const detail: CatalogRawVenueDetail = {
       ...mapVenueCard(row),
       address: asString(row.address),

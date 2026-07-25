@@ -63,7 +63,7 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
       /getHungryService\(\)\.auth\.signIn\(/,
       /service\.auth\.signInWithGoogle\(/,
       /service\.auth\.signInWithApple\(/,
-      /completeAuth\(\{ completedOnboarding: true, skippedTasteQuiz: true \}\)/,
+      /const finishLogin = \(authProvider: "email" \| AuthProvider, trackSignInEvent = true\) => \{[\s\S]*completedOnboarding: true,[\s\S]*skippedTasteQuiz: true/,
     ],
     "LoginScreen",
   );
@@ -72,8 +72,8 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
     [
       /getHungryService\(\)\.auth\.signUp\(/,
       /navigation\.navigate\("EmailVerification"/,
-      /completeAuth\(\{[\s\S]*completedOnboarding: false/,
-      /navigation\.getParent\(\)\?\.reset\(\{[\s\S]*OnboardingStack/,
+      /completeAuth\(\{[\s\S]*completedOnboarding: hasCompletedOnboarding/,
+      /navigation\.navigate\("EmailVerification", \{[\s\S]*completedOnboarding: hasCompletedOnboarding/,
     ],
     "SignUpScreen",
   );
@@ -273,7 +273,7 @@ test("dish and stall details expose correct detail surfaces without user-mode ma
       /height: screenWidth \* 0\.75/,
       /const stallAddress =/,
       /import \{ StallLogoMark \} from "@\/components\/stall\/StallLogoMark"/,
-      /logoUrl=\{venue\.logoUrl\}/,
+      /logoUrl=\{sanitizeCatalogImageUrl\(venue\.logoUrl\)\}/,
       /<ChevronRight color=\{palette\.textMuted\} size=\{24\} \/>/,
       /<AppText variant="h2">Address<\/AppText>/,
       /\{stallAddress\}/,

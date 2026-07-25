@@ -23,15 +23,17 @@ test("production route gates keep advanced surfaces behind MVP-safe flags", () =
   const linking = read("src/app/navigation/linking.ts");
 
   assert.match(flags, /prototypeRoutesEnabled/);
-  assert.match(flags, /directMessagesEnabled: nonProductionSurfaceEnabled/);
-  assert.match(flags, /gamificationEnabled: nonProductionSurfaceEnabled/);
-  assert.match(flags, /collectionsEnabled: nonProductionSurfaceEnabled/);
-  assert.match(flags, /storiesEnabled: nonProductionSurfaceEnabled/);
-  assert.match(flags, /commentsEnabled: nonProductionSurfaceEnabled/);
-  assert.match(flags, /const merchantCentreEnabled = nonProductionSurfaceEnabled/);
-  assert.match(flags, /const merchantClaimCtaEnabled = nonProductionSurfaceEnabled/);
-  assert.match(flags, /oauthProvidersEnabled: nonProductionSurfaceEnabled/);
+  assert.match(flags, /const advancedDevelopmentSurfaceEnabled = isDevelopment/);
+  assert.match(flags, /directMessagesEnabled: advancedDevelopmentSurfaceEnabled/);
+  assert.match(flags, /gamificationEnabled: advancedDevelopmentSurfaceEnabled/);
+  assert.match(flags, /collectionsEnabled: advancedDevelopmentSurfaceEnabled/);
+  assert.match(flags, /storiesEnabled: advancedDevelopmentSurfaceEnabled/);
+  assert.match(flags, /commentsEnabled: advancedDevelopmentSurfaceEnabled/);
+  assert.match(flags, /merchantCentreEnabled: advancedDevelopmentSurfaceEnabled/);
+  assert.match(flags, /merchantClaimCtaEnabled: advancedDevelopmentSurfaceEnabled/);
+  assert.match(flags, /oauthProvidersEnabled: advancedDevelopmentSurfaceEnabled/);
   assert.match(flags, /floorplansEnabled: false/);
+  assert.match(flags, /favouritesEnabled: advancedDevelopmentSurfaceEnabled/);
   assert.match(flags, /appEnv !== "production"/);
   assert.match(rootNavigator, /FEATURE_FLAGS\.prototypeRoutesEnabled \? \(/);
   for (const routeName of [
@@ -79,6 +81,32 @@ test("production route gates keep advanced surfaces behind MVP-safe flags", () =
   assert.match(rootNavigator, /name="BuildingDrillDown"/);
   assert.match(rootNavigator, /name="BuildingDrillDownV2"/);
   assert.match(rootNavigator, /name="VenueDirectory"/);
+  for (const [flag, routeName] of [
+    ["mapEnabled", "DiscoverMap"],
+    ["mapEnabled", "MapZoomedIn"],
+    ["postCreationEnabled", "Post"],
+    ["readsEnabled", "BlogPost"],
+    ["reviewCreationEnabled", "ReviewStack"],
+    ["hungryWheelEnabled", "WheelStack"],
+    ["hungryWheelEnabled", "MusicSelection"],
+    ["hungryWheelEnabled", "DecideForMeResult"],
+    ["activityEnabled", "ActivityInbox"],
+    ["activityEnabled", "ActivityPostDetail"],
+  ]) {
+    assert.match(
+      rootNavigator,
+      new RegExp(`FEATURE_FLAGS\\.${flag} \\? \\([\\s\\S]*name="${routeName}"`),
+      `${routeName} should be registered only when ${flag} is enabled`,
+    );
+  }
+  assert.match(rootNavigator, /!FEATURE_FLAGS\.release01CoreOnly \? \([\s\S]*name="QuickBites"/);
+  assert.match(rootNavigator, /FEATURE_FLAGS\.favouritesEnabled \? \([\s\S]*name="Favourites"/);
+  assert.match(
+    rootNavigator,
+    /FEATURE_FLAGS\.reviewCreationEnabled \? \([\s\S]*name="ReviewHistory"/,
+  );
+  assert.match(rootNavigator, /FEATURE_FLAGS\.socialFeedEnabled \? \([\s\S]*name="UserProfile"/);
+  assert.match(rootNavigator, /function isReleaseRouteAvailable/);
 });
 
 test("floorplan entry points are hidden behind the floorplans flag", () => {
@@ -106,11 +134,8 @@ test("signed-out app entry starts at login while public routes stay unprotected"
     "BrowseDishes",
     "BrowseStalls",
     "TasteFilter",
-    "DiscoverMap",
-    "MapZoomedIn",
     "DishDetail",
     "StallDetail",
-    "BlogPost",
   ]) {
     assert.doesNotMatch(
       protectedRoutes,
@@ -134,13 +159,14 @@ test("signed-out app entry starts at login while public routes stay unprotected"
   assert.doesNotMatch(profileHome, /Unlock your taste profile|Sign In \/ Create Account/);
   assert.match(
     rootNavigator,
-    /if \(currentTopRoute === "OnboardingStack" && hasCompletedOnboarding\) \{\s*navigateHome\(\);\s*\}/,
+    /if \(currentTopRoute === "OnboardingStack" && hasCompletedOnboarding\) \{[\s\S]*if \(isAuthenticated\) \{[\s\S]*navigateHome\(\);[\s\S]*name: "AuthStack"[\s\S]*screen: "Login"/,
   );
   assert.match(rootNavigator, /const isDeveloperMode = useMerchantStore/);
   assert.match(rootNavigator, /const isMerchantMode = useMerchantStore/);
+  assert.match(rootNavigator, /const authDataSource = useSessionStore/);
   assert.match(
     rootNavigator,
-    /currentTopRoute === "DeveloperLauncher"[\s\S]*isAuthenticated[\s\S]*hasCompletedOnboarding[\s\S]*!isDeveloperMode[\s\S]*!isMerchantMode[\s\S]*navigateHome\(\)/,
+    /currentTopRoute === "DeveloperLauncher"[\s\S]*isAuthenticated[\s\S]*hasCompletedOnboarding[\s\S]*authDataSource === "supabase"[\s\S]*!isDeveloperMode[\s\S]*!isMerchantMode[\s\S]*navigateHome\(\)/,
   );
   assert.match(
     developerLauncher,
@@ -176,20 +202,28 @@ test("protected actions preserve return routes before auth", () => {
   assert.match(rootNavigator, /setReturnRoute\(/);
   assert.match(rootNavigator, /navigationRef\.resetRoot\(\{[\s\S]*name: "AuthStack"/);
   const rootReturnRestore = rootNavigator.slice(
-    rootNavigator.indexOf("else if (isRootRouteName(returnRoute))"),
+    rootNavigator.indexOf(
+      "else if (isRootRouteName(returnRoute) && isReleaseRouteAvailable(returnRoute))",
+    ),
     rootNavigator.indexOf(
       "} else {",
-      rootNavigator.indexOf("else if (isRootRouteName(returnRoute))"),
+      rootNavigator.indexOf(
+        "else if (isRootRouteName(returnRoute) && isReleaseRouteAvailable(returnRoute))",
+      ),
     ),
   );
   assert.match(rootReturnRestore, /index: 1/);
   assert.match(rootReturnRestore, /name: "MainTabs", params: \{ screen: "Home" \}/);
   assert.match(rootReturnRestore, /name: returnRoute/);
   const parameterizedRootReturnRestore = rootNavigator.slice(
-    rootNavigator.indexOf("else if (isRootRouteName(returnRoute.name))"),
+    rootNavigator.indexOf(
+      "else if (isRootRouteName(returnRoute.name) && isReleaseRouteAvailable(returnRoute.name))",
+    ),
     rootNavigator.indexOf(
       "} else {",
-      rootNavigator.indexOf("else if (isRootRouteName(returnRoute.name))"),
+      rootNavigator.indexOf(
+        "else if (isRootRouteName(returnRoute.name) && isReleaseRouteAvailable(returnRoute.name))",
+      ),
     ),
   );
   assert.match(parameterizedRootReturnRestore, /index: 1/);
@@ -198,9 +232,6 @@ test("protected actions preserve return routes before auth", () => {
     parameterizedRootReturnRestore,
     /name: returnRoute\.name, params: returnRoute\.params/,
   );
-  assert.match(
-    tabs,
-    /const composerRoute = FEATURE_FLAGS\.prototypeRoutesEnabled \? "PostComposerV2" : "Post"/,
-  );
-  assert.match(tabs, /setReturnRoute\(\{ name: composerRoute \}\)/);
+  assert.match(tabs, /FEATURE_FLAGS\.postCreationEnabled/);
+  assert.match(tabs, /rootNavigation\?\.navigate\("Post"\)/);
 });

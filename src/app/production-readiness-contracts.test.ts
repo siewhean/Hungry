@@ -86,10 +86,7 @@ test("deep links expose only public discovery routes and redirect protected acti
   assert.equal(screens.PortfolioPublicView, undefined);
   assert.deepEqual(linking.getStateFromPath("merchant"), undefined);
   assert.deepEqual(linking.getStateFromPath("portfolio/example"), undefined);
-  assert.deepEqual(linking.getStateFromPath("order")?.routes?.[0], {
-    name: "AuthStack",
-    params: { screen: "Login" },
-  });
+  assert.equal(linking.getStateFromPath("order"), undefined);
 });
 
 test("auth/session storage and logout cleanup keep credentials out of plaintext persisted state", () => {

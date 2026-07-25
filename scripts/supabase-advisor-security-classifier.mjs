@@ -16,6 +16,14 @@ const installedSupabaseCli =
 const args = ["db", "advisors", "--linked", "--type", "security", "--level", "warn", "-o", "json"];
 const command = installedSupabaseCli || npxCommand;
 const commandArgs = installedSupabaseCli ? args : [...npxInstallArgs, "supabase", ...args];
+const AUTHENTICATED_RAW_CATALOG_RPCS = new Set([
+  "catalog_raw_dishes_page",
+  "catalog_raw_venue_menu_page",
+  "catalog_raw_venues_page",
+  "catalog_raw_dish_detail",
+  "catalog_raw_venue_detail",
+  "catalog_raw_map_view",
+]);
 
 function isRequired() {
   return process.argv.includes("--require-network") || process.env[REQUIRED_ENV] === "1";
@@ -82,6 +90,20 @@ function fail(message, details) {
   console.error(`[supabase-advisor-security-classifier] ${message}`);
   if (details?.trim()) console.error(details.trim());
   process.exit(1);
+}
+
+function expectedAppReason(finding) {
+  const metadata = finding.metadata || {};
+
+  if (
+    finding.name === "authenticated_security_definer_function_executable" &&
+    metadata.schema === "public" &&
+    AUTHENTICATED_RAW_CATALOG_RPCS.has(metadata.name)
+  ) {
+    return "intentional authenticated catalog raw-read RPC; body requires auth.uid() and projection tables deny direct reads";
+  }
+
+  return null;
 }
 
 function externalReason(finding) {
@@ -160,9 +182,11 @@ if (!Array.isArray(findings)) {
 
 const classified = findings.map((finding) => ({
   finding,
+  expectedAppReason: expectedAppReason(finding),
   externalReason: externalReason(finding),
 }));
-const unexpected = classified.filter((item) => !item.externalReason);
+const unexpected = classified.filter((item) => !item.externalReason && !item.expectedAppReason);
+const expectedAppFindings = classified.filter((item) => item.expectedAppReason);
 const ignoredExternal = shouldIgnoreLeakedPassword()
   ? classified.filter((item) => item.finding.name === "auth_leaked_password_protection")
   : [];
@@ -180,9 +204,9 @@ if (unexpected.length > 0) {
 }
 
 if (external.length === 0) {
-  if (ignoredExternal.length > 0) {
+  if (ignoredExternal.length > 0 || expectedAppFindings.length > 0) {
     console.log(
-      `[supabase-advisor-security-classifier] passed; ignored leaked-password protection findings: ${ignoredExternal.length}`,
+      `[supabase-advisor-security-classifier] passed; expected authenticated catalog RPC findings: ${expectedAppFindings.length}; ignored leaked-password protection findings: ${ignoredExternal.length}`,
     );
   } else {
     console.log("[supabase-advisor-security-classifier] passed; no Security Advisor findings.");

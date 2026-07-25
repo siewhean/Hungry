@@ -148,7 +148,7 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
                       });
                       return;
                     }
-                    await applySignedInProfile(session.profile, {
+                    const migration = await applySignedInProfile(session.profile, {
                       profileReady: session.profileReady,
                       onSyncWarning: () => {
                         showToast({
@@ -158,6 +158,7 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
                         });
                       },
                     });
+                    if (migration.status === "failed") return;
                   }
                   trackAnalyticsEvent("sign_up_completed", {
                     method: "email",

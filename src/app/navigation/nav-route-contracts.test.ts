@@ -54,22 +54,15 @@ test("root and nested route targets avoid stale or unregistered screens", () => 
   assert.doesNotMatch(merchantSettings, /navigation\.navigate\("Profile" as never\)/);
 });
 
-test("synthetic create tab targets root routes without registering a fake tab route", () => {
+test("synthetic post action stays behind the Release 0.1 post flag", () => {
   const tabs = read("src/app/navigation/SwipeableTabNavigator.tsx");
   const types = read("src/app/navigation/navigationTypes.ts");
 
   assert.doesNotMatch(tabs, /<Tab\.Screen name="Create"/);
   assert.doesNotMatch(types, /^\s+Create: undefined;/m);
   assert.match(tabs, /navigation\.getParent<NavigationProp<RootStackParamList>>\(\)/);
-  assert.match(
-    tabs,
-    /const composerRoute = FEATURE_FLAGS\.prototypeRoutesEnabled \? "PostComposerV2" : "Post"/,
-  );
-  assert.match(
-    tabs,
-    /rootNavigation\?\.navigate\("PostComposerV2"\)[\s\S]*rootNavigation\?\.navigate\("Post"\)/,
-  );
-  assert.match(tabs, /rootNavigation\?\.navigate\("AuthStack", \{ screen: "Login" \}\)/);
-  assert.doesNotMatch(tabs, /navigation\.getParent\(\)\?\.navigate\("PostComposerV2"\)/);
-  assert.doesNotMatch(tabs, /navigation\.navigate\("AuthStack", \{ screen: "Login" \}\)/);
+  assert.match(tabs, /FEATURE_FLAGS\.postCreationEnabled[\s\S]*key: "Create"/);
+  assert.match(tabs, /rootNavigation\?\.navigate\("Post"\)/);
+  assert.match(tabs, /preloadRoute\(rootNavigation, "Post"\)/);
+  assert.doesNotMatch(tabs, /PostComposerV2/);
 });

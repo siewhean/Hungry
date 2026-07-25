@@ -23,6 +23,7 @@ import {
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { buildDishGallery } from "@/features/detail/detailTransforms";
 import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
+import { sanitizeCatalogImageUrl } from "@/lib/services/catalog/media";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore, getTasteSimilarityWithDish } from "@/store/useProfileStore";
 import { useFoodCredStore } from "@/store/useFoodCredStore";
@@ -31,6 +32,7 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import { TASTE_DIMENSIONS } from "@/constants/taste";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { AccessibleImage, AppText, Button, EmptyState, FeedErrorBoundary } from "@/components/ui";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useHungryTheme } from "@/theme";
@@ -228,8 +230,16 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const [hasLoadedVenueDetail, setHasLoadedVenueDetail] = useState(Boolean(cachedVenue));
   const venue = hydratedVenue ?? cachedVenue;
 
-  const gallery = useMemo(() => (dish ? buildDishGallery(dish) : []), [dish]);
-  const heroImage = gallery[0] ?? dish?.imageUrl;
+  const gallery = useMemo(
+    () =>
+      dish
+        ? buildDishGallery(dish)
+            .map((imageUrl) => sanitizeCatalogImageUrl(imageUrl))
+            .filter((imageUrl): imageUrl is string => Boolean(imageUrl))
+        : [],
+    [dish],
+  );
+  const heroImage = gallery[0] ?? sanitizeCatalogImageUrl(dish?.imageUrl);
   const tasteMatch = useMemo(
     () => (dish ? getTasteSimilarityWithDish(profile, dish) : 0),
     [dish, profile],
@@ -397,7 +407,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     postId: "",
     title: dish.name,
     subtitle: `${venue.name} · ${venue.unitNumber}`,
-    imageUrl: gallery[0] ?? dish.imageUrl,
+    imageUrl: heroImage ?? "",
     authorName: profile.displayName,
     message: `${dish.name} at ${venue.name}. ${formatBasePrice(dish.price)}. ${tasteMatch}% taste match.`,
     link: canonicalDishUrl,
@@ -517,13 +527,21 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     }
   };
 
+  // Staging and production are a read-only Release 0.1 catalog experience.
+  // Keep deferred write and social controls available for local development,
+  // but never render them from a released build even when an unrelated flag
+  // is accidentally enabled for targeted QA.
+  const showDeferredDetailControls = !FEATURE_FLAGS.release01CoreOnly;
+
   return (
     <FeedErrorBoundary title="Dish details unavailable" body="Couldn't load this dish - try again.">
       <SafeAreaView style={{ backgroundColor: palette.bg, flex: 1 }} edges={["left", "right"]}>
         <View style={{ flex: 1 }}>
           <ScrollView
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: insets.bottom + 104 }}
+            contentContainerStyle={{
+              paddingBottom: insets.bottom + (showDeferredDetailControls ? 104 : spacing[6]),
+            }}
           >
             <View style={{ height: heroHeight }}>
               {heroImage ? (
@@ -832,12 +850,27 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         width: signatureGridItemWidth,
                       }}
                     >
-                      <AccessibleImage
-                        source={{ uri: item.imageUrl }}
-                        contentFit="cover"
-                        style={{ flex: 1 }}
-                        decorative
-                      />
+                      {sanitizeCatalogImageUrl(item.imageUrl) ? (
+                        <AccessibleImage
+                          source={{ uri: sanitizeCatalogImageUrl(item.imageUrl) }}
+                          contentFit="cover"
+                          style={{ flex: 1 }}
+                          decorative
+                        />
+                      ) : (
+                        <View
+                          accessibilityRole="image"
+                          accessibilityLabel={`${item.name} photo unavailable`}
+                          style={{
+                            alignItems: "center",
+                            backgroundColor: palette.surfaceRaised,
+                            flex: 1,
+                            justifyContent: "center",
+                          }}
+                        >
+                          <Utensils color={palette.orange} size={32} />
+                        </View>
+                      )}
                       <LinearGradient
                         colors={["transparent", palette.detailImageOverlay]}
                         style={{
@@ -933,7 +966,11 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                 ) : (
                   <EmptyState
                     title="No reviews yet"
-                    body="Be the first to add one."
+                    body={
+                      showDeferredDetailControls
+                        ? "Be the first to add one."
+                        : "Reviews from diners will appear here when available."
+                    }
                     icon={<Star size={36} color={palette.textMuted} />}
                   />
                 )}
@@ -941,87 +978,93 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             </View>
           </ScrollView>
 
-          <View
-            style={{
-              backgroundColor: palette.bg,
-              borderTopColor: palette.border,
-              borderTopWidth: 1,
-              bottom: 0,
-              flexDirection: "row",
-              justifyContent: "flex-end",
-              gap: spacing[3],
-              left: 0,
-              paddingBottom: Math.max(insets.bottom, spacing[4]),
-              paddingHorizontal: spacing[4],
-              paddingTop: spacing[3],
-              position: "absolute",
-              right: 0,
-            }}
-          >
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={isSaved ? "Unsave this dish" : "Save this dish"}
-              onPress={handleSave}
+          {showDeferredDetailControls ? (
+            <View
               style={{
-                alignItems: "center",
-                paddingHorizontal: spacing[1],
-                height: 42,
-                justifyContent: "center",
-                width: undefined,
+                backgroundColor: palette.bg,
+                borderTopColor: palette.border,
+                borderTopWidth: 1,
+                bottom: 0,
+                flexDirection: "row",
+                justifyContent: "flex-end",
+                gap: spacing[3],
+                left: 0,
+                paddingBottom: Math.max(insets.bottom, spacing[4]),
+                paddingHorizontal: spacing[4],
+                paddingTop: spacing[3],
+                position: "absolute",
+                right: 0,
               }}
             >
-              <Bookmark
-                color={isSaved ? palette.white : palette.text}
-                size={reviewIconSize}
-                fill={isSaved ? palette.white : "none"}
-              />
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Mark this food as tried"
-              onPress={handleTryFood}
-              disabled={isTryingFood}
-              style={({ pressed }) => {
-                const backgroundColor = isDishTried
-                  ? palette.surface
-                  : pressed
-                    ? palette.bg
-                    : palette.bgSoft;
-                const normalizedBackgroundColor = backgroundColor.toLowerCase().replace("#", "");
-                const isWhiteOrBlackBackground =
-                  !isDishTried &&
-                  (normalizedBackgroundColor === "ffffff" ||
-                    normalizedBackgroundColor === "000000");
-                return {
-                  alignItems: "center",
-                  backgroundColor,
-                  borderColor: isWhiteOrBlackBackground ? palette.orange : "transparent",
-                  borderWidth: isWhiteOrBlackBackground ? 1 : 0,
-                  paddingHorizontal: spacing[1],
-                  borderRadius: componentRadii.iconButton,
-                  height: 42,
-                  justifyContent: "center",
-                  width: undefined,
-                };
-              }}
-            >
-              <CheckCircle color={palette.text} fill="none" size={reviewIconSize} />
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Write a review"
-              onPress={handleReview}
-              style={{
-                alignItems: "center",
-                paddingHorizontal: spacing[1],
-                height: 42,
-                justifyContent: "center",
-                width: undefined,
-              }}
-            >
-              <CommentIcon color={palette.text} size={reviewIconSize} />
-            </Pressable>
-          </View>
+              {FEATURE_FLAGS.favouritesEnabled ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={isSaved ? "Unsave this dish" : "Save this dish"}
+                  onPress={handleSave}
+                  style={{
+                    alignItems: "center",
+                    height: 42,
+                    justifyContent: "center",
+                    paddingHorizontal: spacing[1],
+                    width: undefined,
+                  }}
+                >
+                  <Bookmark
+                    color={isSaved ? palette.white : palette.text}
+                    size={reviewIconSize}
+                    fill={isSaved ? palette.white : "none"}
+                  />
+                </Pressable>
+              ) : null}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Mark this food as tried"
+                disabled={isTryingFood}
+                onPress={handleTryFood}
+                style={({ pressed }) => {
+                  const backgroundColor = isDishTried
+                    ? palette.surface
+                    : pressed
+                      ? palette.bg
+                      : palette.bgSoft;
+                  const normalizedBackgroundColor = backgroundColor.toLowerCase().replace("#", "");
+                  const isWhiteOrBlackBackground =
+                    !isDishTried &&
+                    (normalizedBackgroundColor === "ffffff" ||
+                      normalizedBackgroundColor === "000000");
+                  return {
+                    alignItems: "center",
+                    backgroundColor,
+                    borderColor: isWhiteOrBlackBackground ? palette.orange : "transparent",
+                    borderRadius: componentRadii.iconButton,
+                    borderWidth: isWhiteOrBlackBackground ? 1 : 0,
+                    height: 42,
+                    justifyContent: "center",
+                    paddingHorizontal: spacing[1],
+                    width: undefined,
+                  };
+                }}
+              >
+                <CheckCircle color={palette.text} fill="none" size={reviewIconSize} />
+              </Pressable>
+              {FEATURE_FLAGS.reviewCreationEnabled ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Write a review"
+                  onPress={handleReview}
+                  style={{
+                    alignItems: "center",
+                    height: 42,
+                    justifyContent: "center",
+                    paddingHorizontal: spacing[1],
+                    width: undefined,
+                  }}
+                >
+                  <CommentIcon color={palette.text} size={reviewIconSize} />
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
 
           <View
             style={{
@@ -1052,36 +1095,40 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             >
               <ArrowLeft color={palette.text} size={22} />
             </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Share ${dish.name}`}
-              onPress={openShareSheet}
-              style={{
-                alignItems: "center",
-                backgroundColor: headerButtonBackground,
-                borderColor: headerButtonBorder,
-                borderRadius: componentRadii.iconButton,
-                borderWidth: 1,
-                height: 40,
-                justifyContent: "center",
-                width: 40,
-              }}
-            >
-              <Send color={palette.text} size={21} />
-            </Pressable>
+            {showDeferredDetailControls ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Share ${dish.name}`}
+                onPress={openShareSheet}
+                style={{
+                  alignItems: "center",
+                  backgroundColor: headerButtonBackground,
+                  borderColor: headerButtonBorder,
+                  borderRadius: componentRadii.iconButton,
+                  borderWidth: 1,
+                  height: 40,
+                  justifyContent: "center",
+                  width: 40,
+                }}
+              >
+                <Send color={palette.text} size={21} />
+              </Pressable>
+            ) : null}
           </View>
 
-          <ReviewShareSheet
-            activeReview={activeShareReview}
-            innerRef={shareSheetRef}
-            bottomInset={insets.bottom}
-            onDismiss={() => {
-              setActiveShareReview(null);
-            }}
-            onShared={(postId, channel) => {
-              incrementShare(postId, channel);
-            }}
-          />
+          {showDeferredDetailControls ? (
+            <ReviewShareSheet
+              activeReview={activeShareReview}
+              innerRef={shareSheetRef}
+              bottomInset={insets.bottom}
+              onDismiss={() => {
+                setActiveShareReview(null);
+              }}
+              onShared={(postId, channel) => {
+                incrementShare(postId, channel);
+              }}
+            />
+          ) : null}
         </View>
       </SafeAreaView>
     </FeedErrorBoundary>

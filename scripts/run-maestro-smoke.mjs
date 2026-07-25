@@ -12,7 +12,8 @@ const METRO_STATUS_TIMEOUT_MS = 1500;
 const FLOW_MAP = {
   "ios-launch": [".maestro/ios-app-launch-smoke.yaml"],
   "ios-auth": [".maestro/ios-auth-smoke.yaml"],
-  "ios-guest": [".maestro/ios-guest-browse-smoke.yaml"],
+  "ios-mandatory-auth": [".maestro/ios-mandatory-auth-smoke.yaml"],
+  "ios-authenticated-fallback": [".maestro/ios-authenticated-fallback-smoke.yaml"],
   "ios-location-denied": [".maestro/ios-location-denied-smoke.yaml"],
   "ios-review-post": [".maestro/ios-review-post-smoke.yaml"],
   "ios-chat": [".maestro/ios-chat-smoke.yaml"],
@@ -20,34 +21,20 @@ const FLOW_MAP = {
   "ios-interactions": [".maestro/ios-discovery-search-smoke.yaml"],
   ios: [
     ".maestro/ios-app-launch-smoke.yaml",
-    ".maestro/ios-guest-browse-smoke.yaml",
-    ".maestro/ios-auth-smoke.yaml",
-    ".maestro/ios-location-denied-smoke.yaml",
-    ".maestro/ios-media-picker-permission.yaml",
-    ".maestro/ios-review-post-smoke.yaml",
-    ".maestro/ios-chat-smoke.yaml",
-    ".maestro/ios-discovery-search-smoke.yaml",
+    ".maestro/ios-mandatory-auth-smoke.yaml",
   ],
   "android-launch": [".maestro/android-app-launch-smoke.yaml"],
-  "android-guest": [".maestro/android-guest-browse-smoke.yaml"],
+  "android-mandatory-auth": [".maestro/android-mandatory-auth-smoke.yaml"],
   "android-media": [".maestro/android-media-permission-smoke.yaml"],
   android: [
     ".maestro/android-app-launch-smoke.yaml",
-    ".maestro/android-guest-browse-smoke.yaml",
-    ".maestro/android-media-permission-smoke.yaml",
+    ".maestro/android-mandatory-auth-smoke.yaml",
   ],
   all: [
     ".maestro/ios-app-launch-smoke.yaml",
-    ".maestro/ios-guest-browse-smoke.yaml",
-    ".maestro/ios-auth-smoke.yaml",
-    ".maestro/ios-location-denied-smoke.yaml",
-    ".maestro/ios-media-picker-permission.yaml",
-    ".maestro/ios-review-post-smoke.yaml",
-    ".maestro/ios-chat-smoke.yaml",
-    ".maestro/ios-discovery-search-smoke.yaml",
+    ".maestro/ios-mandatory-auth-smoke.yaml",
     ".maestro/android-app-launch-smoke.yaml",
-    ".maestro/android-guest-browse-smoke.yaml",
-    ".maestro/android-media-permission-smoke.yaml",
+    ".maestro/android-mandatory-auth-smoke.yaml",
   ],
 };
 
@@ -110,6 +97,17 @@ function materializeFlow(flowPath, metroUrl) {
   return { tempDir, tempFlowPath };
 }
 
+function maestroEnvironmentArgs(appId) {
+  const variables = {
+    APP_ID: appId,
+    STAGING_EMAIL: process.env.HUNGRY_STAGING_EMAIL,
+    STAGING_PASSWORD: process.env.HUNGRY_STAGING_PASSWORD,
+  };
+  return Object.entries(variables).flatMap(([key, value]) =>
+    value?.trim() ? ["-e", `${key}=${value.trim()}`] : [],
+  );
+}
+
 function runFlow(flowPath, appId, metroUrl) {
   if (!existsSync(resolve(process.cwd(), flowPath))) {
     fail(`missing flow ${flowPath}`);
@@ -117,10 +115,14 @@ function runFlow(flowPath, appId, metroUrl) {
 
   const { tempDir, tempFlowPath } = materializeFlow(flowPath, metroUrl);
   try {
-    const result = spawnSync("maestro", ["test", "-e", `APP_ID=${appId}`, tempFlowPath], {
-      encoding: "utf8",
-      stdio: "inherit",
-    });
+    const result = spawnSync(
+      "maestro",
+      ["test", ...maestroEnvironmentArgs(appId), tempFlowPath],
+      {
+        encoding: "utf8",
+        stdio: "inherit",
+      },
+    );
     if (result.status !== 0) {
       fail(`${flowPath} failed with exit code ${result.status ?? "unknown"}`);
     }
@@ -137,6 +139,15 @@ async function main() {
 
   if (!flows) {
     fail(`unknown target "${target}". Use one of: ${Object.keys(FLOW_MAP).join(", ")}`);
+  }
+
+  if (
+    target === "ios-authenticated-fallback" &&
+    (!process.env.HUNGRY_STAGING_EMAIL?.trim() || !process.env.HUNGRY_STAGING_PASSWORD?.trim())
+  ) {
+    fail(
+      "ios-authenticated-fallback requires HUNGRY_STAGING_EMAIL and HUNGRY_STAGING_PASSWORD",
+    );
   }
 
   const appId = getAppId(target);

@@ -1,4 +1,6 @@
 ^\.git/
+^\.claude/worktrees/
+^data/.*\.xlsx$
 ^\.env$
 ^\.env\.local$
 ^\.env\..*\.local$
@@ -16,3 +18,4 @@
 ^marketing/website/web-v2/\.next/
 ^data/processed/
 ^data/cache/
+^scripts/venv/

@@ -3,87 +3,104 @@ import test from "node:test";
 
 import { resolveFeatureFlags } from "@/constants/featureFlags";
 
-test("merchantClaimCtaEnabled is true in staging", () => {
-  const flags = resolveFeatureFlags("staging");
-  assert.equal(flags.merchantClaimCtaEnabled, true);
-});
+const RELEASE_DISABLED_FLAGS = [
+  "socialFeedEnabled",
+  "postCreationEnabled",
+  "reviewCreationEnabled",
+  "activityEnabled",
+  "readsEnabled",
+  "mapEnabled",
+  "hungryWheelEnabled",
+  "craveEnabled",
+  "directMessagesEnabled",
+  "commentsEnabled",
+  "oauthProvidersEnabled",
+  "gamificationEnabled",
+  "collectionsEnabled",
+  "storiesEnabled",
+  "merchantCentreEnabled",
+  "merchantClaimCtaEnabled",
+  "prototypeRoutesEnabled",
+] as const;
 
-test("merchantClaimCtaEnabled is false in production", () => {
-  const flags = resolveFeatureFlags("production");
-  assert.equal(flags.merchantClaimCtaEnabled, false);
-});
+test("staging and production default to the narrow Release 0.1 surface", () => {
+  for (const appEnv of ["staging", "production"] as const) {
+    const flags = resolveFeatureFlags(appEnv, "production", {});
 
-test("merchantClaimCtaEnabled is available only outside production", () => {
-  assert.equal(resolveFeatureFlags("development").merchantClaimCtaEnabled, true);
-  assert.equal(resolveFeatureFlags(undefined, "test").merchantClaimCtaEnabled, false);
-  assert.equal(resolveFeatureFlags("qa", "test").merchantClaimCtaEnabled, false);
-  assert.equal(resolveFeatureFlags(undefined, "development").merchantClaimCtaEnabled, true);
-  assert.equal(resolveFeatureFlags("production").merchantClaimCtaEnabled, false);
-});
-
-test("merchantCentreEnabled is available only outside production", () => {
-  assert.equal(resolveFeatureFlags("development").merchantCentreEnabled, true);
-  assert.equal(resolveFeatureFlags("staging").merchantCentreEnabled, true);
-  assert.equal(resolveFeatureFlags("production").merchantCentreEnabled, false);
-  assert.equal(resolveFeatureFlags(undefined, "test").merchantCentreEnabled, false);
-  assert.equal(resolveFeatureFlags("qa", "test").merchantCentreEnabled, false);
-  assert.equal(resolveFeatureFlags(undefined, "development").merchantCentreEnabled, true);
-});
-
-test("prototypeRoutesEnabled is available outside production only", () => {
-  assert.equal(resolveFeatureFlags("development").prototypeRoutesEnabled, true);
-  assert.equal(resolveFeatureFlags("staging").prototypeRoutesEnabled, true);
-  assert.equal(resolveFeatureFlags(undefined, "test").prototypeRoutesEnabled, false);
-  assert.equal(resolveFeatureFlags("qa", "test").prototypeRoutesEnabled, false);
-  assert.equal(resolveFeatureFlags(undefined, "development").prototypeRoutesEnabled, true);
-  assert.equal(resolveFeatureFlags("production").prototypeRoutesEnabled, false);
-});
-
-test("advanced social and gamification surfaces are disabled in production", () => {
-  const flags = resolveFeatureFlags("production");
-
-  assert.equal(flags.directMessagesEnabled, false);
-  assert.equal(flags.commentsEnabled, false);
-  assert.equal(flags.gamificationEnabled, false);
-  assert.equal(flags.collectionsEnabled, false);
-  assert.equal(flags.storiesEnabled, false);
-  assert.equal(flags.merchantCentreEnabled, false);
-  assert.equal(flags.merchantClaimCtaEnabled, false);
-  assert.equal(flags.oauthProvidersEnabled, false);
-  assert.equal(flags.floorplansEnabled, false);
-});
-
-test("audited social and gamification surfaces are available in explicit non-production environments", () => {
-  for (const env of ["development", "staging"]) {
-    const flags = resolveFeatureFlags(env);
-
-    assert.equal(flags.directMessagesEnabled, true);
-    assert.equal(flags.commentsEnabled, true);
-    assert.equal(flags.oauthProvidersEnabled, true);
-    assert.equal(flags.gamificationEnabled, true);
-    assert.equal(flags.collectionsEnabled, true);
-    assert.equal(flags.storiesEnabled, true);
+    assert.equal(flags.release01CoreOnly, true);
+    assert.equal(flags.catalogReadV2, true);
+    assert.equal(flags.favouritesEnabled, false);
+    for (const flag of RELEASE_DISABLED_FLAGS) {
+      assert.equal(flags[flag], false, `${flag} must fail closed in ${appEnv}`);
+    }
   }
 });
 
-test("unknown or missing environments fail closed outside local development", () => {
-  for (const env of [undefined, "qa"]) {
-    const flags = resolveFeatureFlags(env, "test");
+test("development retains the wider implementation surface", () => {
+  const flags = resolveFeatureFlags("development", "development", {});
 
-    assert.equal(flags.directMessagesEnabled, false);
-    assert.equal(flags.commentsEnabled, false);
-    assert.equal(flags.oauthProvidersEnabled, false);
-    assert.equal(flags.gamificationEnabled, false);
-    assert.equal(flags.collectionsEnabled, false);
-    assert.equal(flags.storiesEnabled, false);
-    assert.equal(flags.merchantCentreEnabled, false);
-    assert.equal(flags.merchantClaimCtaEnabled, false);
-    assert.equal(flags.prototypeRoutesEnabled, false);
+  assert.equal(flags.release01CoreOnly, false);
+  assert.equal(flags.socialFeedEnabled, true);
+  assert.equal(flags.postCreationEnabled, true);
+  assert.equal(flags.reviewCreationEnabled, true);
+  assert.equal(flags.activityEnabled, true);
+  assert.equal(flags.readsEnabled, true);
+  assert.equal(flags.mapEnabled, true);
+  assert.equal(flags.hungryWheelEnabled, true);
+  assert.equal(flags.craveEnabled, true);
+  assert.equal(flags.favouritesEnabled, true);
+  assert.equal(flags.directMessagesEnabled, true);
+  assert.equal(flags.commentsEnabled, true);
+  assert.equal(flags.oauthProvidersEnabled, true);
+  assert.equal(flags.gamificationEnabled, true);
+  assert.equal(flags.collectionsEnabled, true);
+  assert.equal(flags.storiesEnabled, true);
+  assert.equal(flags.merchantCentreEnabled, true);
+  assert.equal(flags.merchantClaimCtaEnabled, true);
+  assert.equal(flags.prototypeRoutesEnabled, true);
+  assert.equal(flags.catalogDiagnosticsEnabled, true);
+});
+
+test("staging permits explicit, one-feature-at-a-time QA opt-ins", () => {
+  const flags = resolveFeatureFlags("staging", "production", {
+    EXPO_PUBLIC_ENABLE_MAP: "1",
+    EXPO_PUBLIC_ENABLE_REVIEWS: "1",
+  });
+
+  assert.equal(flags.mapEnabled, true);
+  assert.equal(flags.reviewCreationEnabled, true);
+  assert.equal(flags.socialFeedEnabled, false);
+  assert.equal(flags.postCreationEnabled, false);
+  assert.equal(flags.prototypeRoutesEnabled, false);
+});
+
+test("catalog diagnostics remain unavailable in public production", () => {
+  assert.equal(
+    resolveFeatureFlags("development", "development", {}).catalogDiagnosticsEnabled,
+    true,
+  );
+  assert.equal(resolveFeatureFlags("staging", "production", {}).catalogDiagnosticsEnabled, true);
+  assert.equal(
+    resolveFeatureFlags("production", "production", {}).catalogDiagnosticsEnabled,
+    false,
+  );
+});
+
+test("unknown or missing environments fail closed outside local development", () => {
+  for (const appEnv of [undefined, "qa"]) {
+    const flags = resolveFeatureFlags(appEnv, "test", {});
+
+    assert.equal(flags.appEnv, "production");
+    assert.equal(flags.release01CoreOnly, true);
+    assert.equal(flags.catalogReadV2, true);
+    for (const flag of RELEASE_DISABLED_FLAGS) {
+      assert.equal(flags[flag], false, `${flag} must fail closed when the environment is unknown`);
+    }
   }
 });
 
 test("indoor floorplans stay disabled in every environment until launch gates pass", () => {
-  for (const env of ["development", "staging", "production", undefined, "qa"]) {
-    assert.equal(resolveFeatureFlags(env, "test").floorplansEnabled, false);
+  for (const appEnv of ["development", "staging", "production", undefined, "qa"]) {
+    assert.equal(resolveFeatureFlags(appEnv, "test", {}).floorplansEnabled, false);
   }
 });

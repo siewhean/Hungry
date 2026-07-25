@@ -6,6 +6,8 @@ import * as Haptics from "expo-haptics";
 
 import { AppText, Button } from "@/components/ui";
 import { HUNGRY_LOGO_ICON, HUNGRY_LOGO_STANDARD_SIZE } from "@/constants/brandAssets";
+import { getRootNavigation } from "@/app/navigation/getRootNavigation";
+import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
 import type { OnboardingStackParamList } from "./OnboardingStack";
 
@@ -22,6 +24,7 @@ const VALUE_PROPS = [
 export function WelcomeScreen({ navigation }: Props) {
   const { palette } = useHungryTheme();
   const insets = useSafeAreaInsets();
+  const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
 
   const logoAnim = useRef(new Animated.Value(0)).current;
   const headlineAnim = useRef(new Animated.Value(0)).current;
@@ -45,6 +48,14 @@ export function WelcomeScreen({ navigation }: Props) {
   const handleStart = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     navigation.navigate("OnboardingIntro1");
+  };
+
+  const handleExistingAccountSignIn = () => {
+    // An existing account has already completed the account journey. Persist
+    // that intent before leaving onboarding so protected deep links and an
+    // app reload return to authentication rather than the welcome screen.
+    completeOnboarding();
+    getRootNavigation(navigation).navigate("AuthStack", { screen: "Login" });
   };
 
   return (
@@ -200,7 +211,7 @@ export function WelcomeScreen({ navigation }: Props) {
       >
         <Button label="Get started" onPress={handleStart} variant="primary" />
         <Pressable
-          onPress={() => navigation.navigate("OnboardingAuth")}
+          onPress={handleExistingAccountSignIn}
           accessibilityRole="button"
           accessibilityLabel="Sign in to existing account"
           style={{ alignItems: "center", marginTop: 16, paddingVertical: 8 }}

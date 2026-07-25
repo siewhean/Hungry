@@ -24,13 +24,13 @@ import { useMerchantStore } from "@/store/useMerchantStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { isE2eDeveloperLauncherBuild } from "@/lib/runtime/e2eDeveloperLauncher";
 import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
 import { SwipeableTabNavigator } from "./SwipeableTabNavigator";
 import { createRootLinking } from "./linking";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
-const isMockE2eDataSource = process.env.EXPO_PUBLIC_HUNGRY_E2E_DATA_SOURCE === "mock";
 
 type RootRouteName = keyof RootStackParamList;
 type MainTabRouteName = keyof MainTabParamList;
@@ -122,6 +122,40 @@ function isMainTabRouteName(value: string): value is MainTabRouteName {
 
 function isRootRouteName(value: string): value is RootRouteName {
   return ROOT_ROUTE_NAMES.has(value as RootRouteName);
+}
+
+function isReleaseRouteAvailable(routeName: RootRouteName | MainTabRouteName): boolean {
+  switch (routeName) {
+    case "Review":
+    case "ReviewHistory":
+    case "ReviewStack":
+      return FEATURE_FLAGS.reviewCreationEnabled;
+    case "Favourites":
+      return FEATURE_FLAGS.favouritesEnabled;
+    case "UserProfile":
+      return FEATURE_FLAGS.socialFeedEnabled;
+    case "DiscoverMap":
+    case "MapZoomedIn":
+      return FEATURE_FLAGS.mapEnabled;
+    case "Post":
+      return FEATURE_FLAGS.postCreationEnabled;
+    case "BlogPost":
+      return FEATURE_FLAGS.readsEnabled;
+    case "WheelStack":
+    case "MusicSelection":
+    case "DecideForMeResult":
+      return FEATURE_FLAGS.hungryWheelEnabled;
+    case "ActivityInbox":
+    case "ActivityPostDetail":
+      return FEATURE_FLAGS.activityEnabled;
+    case "ChatDetail":
+    case "DirectMessages":
+      return FEATURE_FLAGS.directMessagesEnabled;
+    case "Crave":
+      return FEATURE_FLAGS.craveEnabled;
+    default:
+      return true;
+  }
 }
 
 function getMainTabScreen(params: unknown): MainTabRouteName {
@@ -417,9 +451,11 @@ function CredEarnedToastHost() {
 }
 
 export function RootNavigator({ theme }: { theme: Theme }) {
+  const isDeveloperLauncherAvailable = __DEV__ || isE2eDeveloperLauncherBuild();
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const isAuthReady = useSessionStore((state) => state.isAuthReady);
   const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
+  const authDataSource = useSessionStore((state) => state.authDataSource);
   const sessionExpired = useSessionStore((state) => state.sessionExpired);
   const dismissSessionExpiry = useSessionStore((state) => state.dismissSessionExpiry);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
@@ -454,12 +490,12 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     }
 
     if (typeof returnRoute === "string") {
-      if (isMainTabRouteName(returnRoute)) {
+      if (isMainTabRouteName(returnRoute) && isReleaseRouteAvailable(returnRoute)) {
         navigationRef.resetRoot({
           index: 0,
           routes: [{ name: "MainTabs", params: { screen: returnRoute } }],
         });
-      } else if (isRootRouteName(returnRoute)) {
+      } else if (isRootRouteName(returnRoute) && isReleaseRouteAvailable(returnRoute)) {
         navigationRef.resetRoot({
           index: 1,
           routes: [{ name: "MainTabs", params: { screen: "Home" } }, { name: returnRoute }],
@@ -470,7 +506,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           routes: [{ name: "MainTabs", params: { screen: "Home" } }],
         });
       }
-    } else if (isRootRouteName(returnRoute.name)) {
+    } else if (isRootRouteName(returnRoute.name) && isReleaseRouteAvailable(returnRoute.name)) {
       navigationRef.resetRoot({
         index: 1,
         routes: [
@@ -505,13 +541,13 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     const rootState = navigationRef.getRootState();
     const currentTopRoute = rootState.routes[rootState.index]?.name;
     if (
-      __DEV__ &&
+      isDeveloperLauncherAvailable &&
       currentTopRoute === "DeveloperLauncher" &&
       isAuthenticated &&
       hasCompletedOnboarding &&
+      authDataSource === "supabase" &&
       !isDeveloperMode &&
-      !isMerchantMode &&
-      !isMockE2eDataSource
+      !isMerchantMode
     ) {
       navigateHome();
       return;
@@ -532,10 +568,18 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     }
 
     if (currentTopRoute === "OnboardingStack" && hasCompletedOnboarding) {
-      navigateHome();
+      if (isAuthenticated) {
+        navigateHome();
+      } else {
+        navigationRef.resetRoot({
+          index: 0,
+          routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+        });
+      }
     }
   }, [
     hasCompletedOnboarding,
+    authDataSource,
     isAuthenticated,
     isAuthReady,
     isDeveloperMode,
@@ -610,10 +654,10 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       >
         <RootStack.Navigator
           id="Root"
-          initialRouteName={__DEV__ ? "DeveloperLauncher" : "Splash"}
+          initialRouteName={isDeveloperLauncherAvailable ? "DeveloperLauncher" : "Splash"}
           screenOptions={{ headerShown: false }}
         >
-          {__DEV__ ? (
+          {isDeveloperLauncherAvailable ? (
             <RootStack.Screen getComponent={loadDeveloperLauncherScreen} name="DeveloperLauncher" />
           ) : null}
           <RootStack.Screen component={SplashScreen} name="Splash" />
@@ -641,18 +685,30 @@ export function RootNavigator({ theme }: { theme: Theme }) {
             options={{ animation: "none" }}
           />
           <RootStack.Screen getComponent={loadTasteFilterScreen} name="TasteFilter" />
-          <RootStack.Screen
-            getComponent={loadHomeMapScreen}
-            name="DiscoverMap"
-            options={{ gestureEnabled: true }}
-          />
-          <RootStack.Screen getComponent={loadMapZoomedInScreen} name="MapZoomedIn" />
-          <RootStack.Screen getComponent={loadPostComposerScreen} name="Post" />
+          {FEATURE_FLAGS.mapEnabled ? (
+            <>
+              <RootStack.Screen
+                getComponent={loadHomeMapScreen}
+                name="DiscoverMap"
+                options={{ gestureEnabled: true }}
+              />
+              <RootStack.Screen getComponent={loadMapZoomedInScreen} name="MapZoomedIn" />
+            </>
+          ) : null}
+          {FEATURE_FLAGS.postCreationEnabled ? (
+            <RootStack.Screen getComponent={loadPostComposerScreen} name="Post" />
+          ) : null}
           <RootStack.Screen getComponent={loadEditProfileScreen} name="EditProfile" />
-          <RootStack.Screen getComponent={loadFavouritesScreen} name="Favourites" />
-          <RootStack.Screen getComponent={loadReviewHistoryScreen} name="ReviewHistory" />
+          {FEATURE_FLAGS.favouritesEnabled ? (
+            <RootStack.Screen getComponent={loadFavouritesScreen} name="Favourites" />
+          ) : null}
+          {FEATURE_FLAGS.reviewCreationEnabled ? (
+            <RootStack.Screen getComponent={loadReviewHistoryScreen} name="ReviewHistory" />
+          ) : null}
           <RootStack.Screen getComponent={loadSettingsScreen} name="Settings" />
-          <RootStack.Screen component={UserProfileScreen} name="UserProfile" />
+          {FEATURE_FLAGS.socialFeedEnabled ? (
+            <RootStack.Screen component={UserProfileScreen} name="UserProfile" />
+          ) : null}
           <RootStack.Screen getComponent={loadDishDetailScreenV2} name="DishDetail" />
           <RootStack.Screen getComponent={loadCatalogRawDetailScreen} name="CatalogRawDetail" />
           <RootStack.Screen getComponent={loadStallDetailScreen} name="StallDetail" />
@@ -667,11 +723,31 @@ export function RootNavigator({ theme }: { theme: Theme }) {
               }}
             />
           ) : null}
-          <RootStack.Screen component={BlogPostRouteScreen} name="BlogPost" />
-          <RootStack.Screen getComponent={loadReviewStack} name="ReviewStack" />
-          <RootStack.Screen getComponent={loadWheelStack} name="WheelStack" />
-          <RootStack.Screen getComponent={loadActivityInboxScreen} name="ActivityInbox" />
-          <RootStack.Screen getComponent={loadActivityPostDetailScreen} name="ActivityPostDetail" />
+          {FEATURE_FLAGS.readsEnabled ? (
+            <RootStack.Screen component={BlogPostRouteScreen} name="BlogPost" />
+          ) : null}
+          {FEATURE_FLAGS.reviewCreationEnabled ? (
+            <RootStack.Screen getComponent={loadReviewStack} name="ReviewStack" />
+          ) : null}
+          {FEATURE_FLAGS.hungryWheelEnabled ? (
+            <>
+              <RootStack.Screen getComponent={loadWheelStack} name="WheelStack" />
+              <RootStack.Screen getComponent={loadMusicSelectionScreen} name="MusicSelection" />
+              <RootStack.Screen
+                getComponent={loadDecideForMeResultScreen}
+                name="DecideForMeResult"
+              />
+            </>
+          ) : null}
+          {FEATURE_FLAGS.activityEnabled ? (
+            <>
+              <RootStack.Screen getComponent={loadActivityInboxScreen} name="ActivityInbox" />
+              <RootStack.Screen
+                getComponent={loadActivityPostDetailScreen}
+                name="ActivityPostDetail"
+              />
+            </>
+          ) : null}
           {FEATURE_FLAGS.directMessagesEnabled ? (
             <>
               <RootStack.Screen getComponent={loadChatDetailScreen} name="ChatDetail" />
@@ -681,14 +757,14 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           {FEATURE_FLAGS.craveEnabled ? (
             <RootStack.Screen getComponent={loadCraveScreen} name="Crave" />
           ) : null}
-          <RootStack.Screen getComponent={loadMusicSelectionScreen} name="MusicSelection" />
-          <RootStack.Screen getComponent={loadDecideForMeResultScreen} name="DecideForMeResult" />
           {FEATURE_FLAGS.floorplansEnabled ? (
             <RootStack.Screen getComponent={loadBuildingDrillDownScreen} name="BuildingDrillDown" />
           ) : null}
           <RootStack.Screen getComponent={loadOfflineStateScreen} name="Offline" />
           <RootStack.Screen getComponent={loadNotFoundScreen} name="NotFound" />
-          <RootStack.Screen getComponent={loadQuickBitesScreen} name="QuickBites" />
+          {!FEATURE_FLAGS.release01CoreOnly ? (
+            <RootStack.Screen getComponent={loadQuickBitesScreen} name="QuickBites" />
+          ) : null}
           {FEATURE_FLAGS.prototypeRoutesEnabled ? (
             <>
               <RootStack.Screen getComponent={loadDishDetailScreenV2} name="DishDetailV2" />
@@ -755,8 +831,10 @@ export function RootNavigator({ theme }: { theme: Theme }) {
         </RootStack.Navigator>
       </NavigationContainer>
       <GlobalScrollBackButton />
-      <QuickReviewModalHost />
-      <ReviewSuccessModalHost onOpenHistory={() => navigationRef.navigate("ReviewHistory")} />
+      {FEATURE_FLAGS.reviewCreationEnabled ? <QuickReviewModalHost /> : null}
+      {FEATURE_FLAGS.reviewCreationEnabled ? (
+        <ReviewSuccessModalHost onOpenHistory={() => navigationRef.navigate("ReviewHistory")} />
+      ) : null}
       <FloatingToast />
       <CredEarnedToastHost />
     </>

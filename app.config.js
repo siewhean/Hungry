@@ -1,5 +1,33 @@
 const baseConfig = require("./app.json").expo;
 
+const RELEASED_ANDROID_PERMISSIONS = [
+  "android.permission.ACCESS_COARSE_LOCATION",
+  "android.permission.ACCESS_FINE_LOCATION",
+  "android.permission.INTERNET",
+  "android.permission.VIBRATE",
+];
+
+const RELEASED_NATIVE_MODULES = new Set([
+  "expo-dev-client",
+  "expo-audio",
+  "expo-video",
+  "@rnmapbox/maps",
+]);
+
+const RELEASED_INFO_PLIST_KEYS = [
+  "DEV_CLIENT_TRY_TO_LAUNCH_LAST_BUNDLE",
+  "NSBonjourServices",
+  "NSLocalNetworkUsageDescription",
+  "NSLocationAlwaysUsageDescription",
+  "NSLocationAlwaysAndWhenInUseUsageDescription",
+  "NSFaceIDUsageDescription",
+  "NSCameraUsageDescription",
+  "NSMicrophoneUsageDescription",
+  "NSPhotoLibraryAddUsageDescription",
+  "UIBackgroundModes",
+  "CADisableMinimumFrameDurationOnPhone",
+];
+
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
@@ -43,11 +71,19 @@ function withSentryPluginEnv(plugins) {
   });
 }
 
+function withReleasedImagePicker(plugins) {
+  return plugins.map((plugin) => {
+    if (pluginName(plugin) !== "expo-image-picker") return plugin;
+    const existingOptions = Array.isArray(plugin) && plugin[1] ? plugin[1] : {};
+    return ["expo-image-picker", { photosPermission: existingOptions.photosPermission }];
+  });
+}
+
 module.exports = ({ config } = {}) => {
   const sourceConfig = config && Object.keys(config).length ? config : baseConfig;
   const resolvedConfig = sourceConfig === config ? { ...config } : clone(baseConfig);
   const appEnv = resolveAppEnv();
-  const isProduction = appEnv === "production";
+  const isReleasedProfile = appEnv === "staging" || appEnv === "production";
 
   resolvedConfig.plugins = withSentryPluginEnv(resolvedConfig.plugins || []);
 
@@ -55,17 +91,24 @@ module.exports = ({ config } = {}) => {
     resolvedConfig.extra = {
       ...(resolvedConfig.extra || {}),
       appEnv,
+      e2eDeveloperLauncherEnabled:
+        appEnv === "development" &&
+        process.env.EXPO_PUBLIC_HUNGRY_E2E_DATA_SOURCE === "mock" &&
+        process.env.HUNGRY_EXPO_E2E_WEBSERVER === "1",
     };
   }
 
-  if (!isProduction) {
+  if (!isReleasedProfile) {
     return resolvedConfig;
   }
 
-  resolvedConfig.plugins = withoutPlugins(
-    resolvedConfig.plugins || [],
-    new Set(["expo-dev-client", "expo-audio"]),
-  );
+  resolvedConfig.plugins = withoutPlugins(resolvedConfig.plugins || [], RELEASED_NATIVE_MODULES);
+  resolvedConfig.plugins = withReleasedImagePicker(resolvedConfig.plugins);
+
+  resolvedConfig.android = {
+    ...(resolvedConfig.android || {}),
+    permissions: RELEASED_ANDROID_PERMISSIONS,
+  };
 
   resolvedConfig.ios = {
     ...(resolvedConfig.ios || {}),
@@ -74,15 +117,10 @@ module.exports = ({ config } = {}) => {
     },
   };
 
-  const productionInfoPlist = resolvedConfig.ios.infoPlist;
-  delete productionInfoPlist.DEV_CLIENT_TRY_TO_LAUNCH_LAST_BUNDLE;
-  delete productionInfoPlist.NSBonjourServices;
-  delete productionInfoPlist.NSLocalNetworkUsageDescription;
-  delete productionInfoPlist.NSLocationAlwaysUsageDescription;
-  delete productionInfoPlist.NSLocationAlwaysAndWhenInUseUsageDescription;
-  delete productionInfoPlist.NSFaceIDUsageDescription;
-  delete productionInfoPlist.UIBackgroundModes;
-  delete productionInfoPlist.CADisableMinimumFrameDurationOnPhone;
+  const releasedInfoPlist = resolvedConfig.ios.infoPlist;
+  for (const key of RELEASED_INFO_PLIST_KEYS) {
+    delete releasedInfoPlist[key];
+  }
 
   return resolvedConfig;
 };

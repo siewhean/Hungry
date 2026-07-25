@@ -1,10 +1,24 @@
 import { NEUTRAL_TASTE_PROFILE, NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
+import { useLocationStore } from "@/store/useLocationStore";
+import { type ProvisionalOnboardingMigration, useProfileStore } from "@/store/useProfileStore";
 import type { TasteKey, TasteProfile, TasteVector, UserProfile } from "@/types/domain";
-import { useProfileStore } from "@/store/useProfileStore";
-import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 
 const TASTE_KEYS: TasteKey[] = ["sweet", "spicy", "sour", "salty", "rich", "aromatic"];
+
+export type ProfileMigrationStatus = "synced" | "partial_retry_queued" | "failed";
+
+export interface ProfileMigrationResult {
+  status: ProfileMigrationStatus;
+  profile: UserProfile;
+  error?: unknown;
+}
+
+type ProfileMigrationOperations = {
+  awaitProfile: () => Promise<UserProfile>;
+  updateTasteProfile: (profile: TasteProfile) => Promise<void>;
+  updateDietaryPreferences: (preferences: UserProfile["dietaryPreferences"]) => Promise<void>;
+};
 
 function vectorsMatch(left: TasteVector, right: TasteVector) {
   return TASTE_KEYS.every((key) => left[key] === right[key]);
@@ -21,10 +35,7 @@ function tasteProfilesMatch(left: TasteProfile, right: TasteProfile) {
   );
 }
 
-function hasMeaningfulGuestTaste(profile: UserProfile, tasteProfile: TasteProfile) {
-  if (profile.id !== "guest-user") {
-    return false;
-  }
+function hasMeaningfulProvisionalTaste(profile: UserProfile, tasteProfile: TasteProfile) {
   return (
     (profile.recommendationSignals?.signalCount ?? 0) > 0 ||
     !vectorsMatch(profile.tasteVector, NEUTRAL_TASTE_VECTOR) ||
@@ -32,53 +43,159 @@ function hasMeaningfulGuestTaste(profile: UserProfile, tasteProfile: TasteProfil
   );
 }
 
-function hasMeaningfulGuestDietaryPreferences(profile: UserProfile) {
-  return profile.id === "guest-user" && profile.dietaryPreferences.length > 0;
+function isProvisionalOnboardingProfile(profile: UserProfile) {
+  return profile.id === "guest-user";
 }
 
-export function applySignedInProfile(
-  sessionProfile: UserProfile,
-  options: { onSyncWarning?: () => void; profileReady?: Promise<UserProfile> } = {},
-) {
-  const profileState = useProfileStore.getState();
-  const guestProfile = profileState.profile;
-  const guestTasteProfile = guestProfile.tasteProfile ?? profileState.tasteProfile;
-  const shouldMergeTaste = hasMeaningfulGuestTaste(guestProfile, guestTasteProfile);
-  const shouldMergeDietary = hasMeaningfulGuestDietaryPreferences(guestProfile);
-  const mergedProfile: UserProfile = {
-    ...sessionProfile,
-    tasteVector: shouldMergeTaste ? guestProfile.tasteVector : sessionProfile.tasteVector,
-    tasteProfile: shouldMergeTaste ? guestTasteProfile : sessionProfile.tasteProfile,
-    dietaryPreferences: shouldMergeDietary
-      ? guestProfile.dietaryPreferences
-      : sessionProfile.dietaryPreferences,
+function copyLocationSnapshot() {
+  const location = useLocationStore.getState();
+  return {
+    permission: location.permission,
+    currentLocation: { ...location.currentLocation },
+    manualLocation: location.manualLocation,
+    manualCoordinate: location.manualCoordinate ? { ...location.manualCoordinate } : undefined,
+    gpsBadgeState: location.gpsBadgeState,
   };
+}
 
-  useProfileStore.getState().applyProfile(mergedProfile);
-
-  if (getServiceProvider().mode === "mock") {
-    return;
+function createProvisionalMigration(
+  userId: string,
+  profile: UserProfile,
+  tasteProfile: TasteProfile,
+): ProvisionalOnboardingMigration | undefined {
+  if (!isProvisionalOnboardingProfile(profile)) {
+    return undefined;
   }
 
-  scheduleIdleWork(
-    () => {
-      void Promise.all([
-        shouldMergeTaste
-          ? getHungryService().profile.updateTasteProfile(guestTasteProfile)
-          : Promise.resolve(),
-        shouldMergeDietary
-          ? getHungryService().profile.updateDietaryPreferences(guestProfile.dietaryPreferences)
-          : Promise.resolve(),
-      ])
-        .catch(() => options.onSyncWarning?.())
-        .then(() => options.profileReady ?? getHungryService().profile.getProfile())
-        .then((profile) => {
-          if (useProfileStore.getState().profile.id === sessionProfile.id) {
-            useProfileStore.getState().applyProfile(profile);
-          }
-        })
-        .catch(() => undefined);
-    },
-    { fallbackDelayMs: 0 },
+  return {
+    userId,
+    onboardingVersion: 1,
+    capturedAt: new Date().toISOString(),
+    tasteProfile: hasMeaningfulProvisionalTaste(profile, tasteProfile) ? tasteProfile : undefined,
+    dietaryPreferences: [...profile.dietaryPreferences],
+    location: copyLocationSnapshot(),
+  };
+}
+
+/**
+ * A server read is never allowed to replace an onboarding snapshot that is
+ * still being migrated. This is also used for retry-after-restart, where the
+ * original guest profile is no longer the active store profile.
+ */
+export function mergeServerProfileWithProvisional(
+  serverProfile: UserProfile,
+  provisional?: ProvisionalOnboardingMigration,
+): UserProfile {
+  if (!provisional || provisional.userId !== serverProfile.id) return serverProfile;
+
+  return {
+    ...serverProfile,
+    tasteVector: provisional.tasteProfile?.vector ?? serverProfile.tasteVector,
+    tasteProfile: provisional.tasteProfile ?? serverProfile.tasteProfile,
+    dietaryPreferences:
+      provisional.dietaryPreferences.length > 0
+        ? provisional.dietaryPreferences
+        : serverProfile.dietaryPreferences,
+  };
+}
+
+export async function runProvisionalOnboardingMigration(
+  sessionProfile: UserProfile,
+  provisional: ProvisionalOnboardingMigration | undefined,
+  operations: ProfileMigrationOperations,
+): Promise<ProfileMigrationResult> {
+  let profileReady: UserProfile;
+  try {
+    profileReady = await operations.awaitProfile();
+  } catch (error) {
+    return {
+      status: "failed",
+      profile: mergeServerProfileWithProvisional(sessionProfile, provisional),
+      error,
+    };
+  }
+
+  if (!provisional || provisional.userId !== sessionProfile.id) {
+    return { status: "synced", profile: profileReady };
+  }
+
+  const writes = await Promise.allSettled([
+    provisional.tasteProfile
+      ? operations.updateTasteProfile(provisional.tasteProfile)
+      : Promise.resolve(),
+    provisional.dietaryPreferences.length > 0
+      ? operations.updateDietaryPreferences(provisional.dietaryPreferences)
+      : Promise.resolve(),
+  ]);
+  const rejected = writes.find(
+    (result): result is PromiseRejectedResult => result.status === "rejected",
   );
+  const mergedProfile = mergeServerProfileWithProvisional(profileReady, provisional);
+
+  if (rejected) {
+    return { status: "partial_retry_queued", profile: mergedProfile, error: rejected.reason };
+  }
+
+  return { status: "synced", profile: mergedProfile };
+}
+
+function profileMigrationOperations(
+  options: Pick<ApplySignedInProfileOptions, "profileReady">,
+): ProfileMigrationOperations {
+  return {
+    awaitProfile: () => options.profileReady ?? getHungryService().profile.getProfile(),
+    updateTasteProfile: (profile) => getHungryService().profile.updateTasteProfile(profile),
+    updateDietaryPreferences: (preferences) =>
+      getHungryService().profile.updateDietaryPreferences(preferences),
+  };
+}
+
+export interface ApplySignedInProfileOptions {
+  onSyncWarning?: () => void;
+  profileReady?: Promise<UserProfile>;
+}
+
+/**
+ * Applies a signed-in profile only after the local onboarding snapshot has
+ * either been confirmed by Supabase or durably queued for idempotent retry.
+ */
+export async function applySignedInProfile(
+  sessionProfile: UserProfile,
+  options: ApplySignedInProfileOptions = {},
+): Promise<ProfileMigrationResult> {
+  const profileState = useProfileStore.getState();
+  const provisionalFromStore = profileState.provisionalOnboardingMigration;
+  const currentProfile = profileState.profile;
+  const currentTasteProfile = currentProfile.tasteProfile ?? profileState.tasteProfile;
+  const provisional =
+    provisionalFromStore?.userId === sessionProfile.id
+      ? provisionalFromStore
+      : createProvisionalMigration(sessionProfile.id, currentProfile, currentTasteProfile);
+
+  if (provisional && provisional !== provisionalFromStore) {
+    profileState.setProvisionalOnboardingMigration(provisional);
+  }
+
+  if (getServiceProvider().mode === "mock") {
+    const profile = mergeServerProfileWithProvisional(sessionProfile, provisional);
+    useProfileStore.getState().applyProfile(profile);
+    if (provisional)
+      useProfileStore.getState().clearProvisionalOnboardingMigration(sessionProfile.id);
+    return { status: "synced", profile };
+  }
+
+  const result = await runProvisionalOnboardingMigration(
+    sessionProfile,
+    provisional,
+    profileMigrationOperations(options),
+  );
+  useProfileStore.getState().applyProfile(result.profile);
+
+  if (result.status === "synced") {
+    useProfileStore.getState().clearProvisionalOnboardingMigration(sessionProfile.id);
+  } else {
+    options.onSyncWarning?.();
+  }
+
+  return result;
 }

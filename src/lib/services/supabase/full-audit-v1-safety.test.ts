@@ -210,6 +210,8 @@ test("Supabase Security Advisor classifier fails new app-owned findings only", (
   assert.match(advisorSecurityClassifierScript, /postgis/);
   assert.match(advisorSecurityClassifierScript, /st_estimatedextent/);
   assert.match(advisorSecurityClassifierScript, /auth_leaked_password_protection/);
+  assert.match(advisorSecurityClassifierScript, /expectedAppReason/);
+  assert.match(advisorSecurityClassifierScript, /AUTHENTICATED_RAW_CATALOG_RPCS/);
   assert.match(advisorSecurityClassifierScript, /release_reserved_order/);
   assert.match(advisorSecurityClassifierScript, /submit_payment_proof/);
   assert.match(advisorSecurityClassifierScript, /legacy linked Supabase payment RPC/);

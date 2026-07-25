@@ -16,6 +16,7 @@ import {
 import type { ExplicitFeedbackInput } from "@/lib/services/types";
 import type {
   DietaryFlag,
+  Coordinate,
   DishDetail,
   RecommendationSurface,
   ProfileVisibility,
@@ -46,6 +47,27 @@ const SUPABASE_USER_GUEST_PROFILE: UserProfile = {
     followingCount: 0,
   },
 };
+
+/**
+ * A durable snapshot of onboarding choices that have not yet been confirmed
+ * by the authenticated profile write. Device location intentionally remains a
+ * device preference, but it is captured alongside the shared choices so a
+ * failed profile migration never loses the completed onboarding state.
+ */
+export interface ProvisionalOnboardingMigration {
+  userId: string;
+  onboardingVersion: 1;
+  capturedAt: string;
+  tasteProfile?: TasteProfile;
+  dietaryPreferences: DietaryFlag[];
+  location: {
+    permission: "unknown" | "granted" | "denied";
+    currentLocation: Coordinate;
+    manualLocation?: string;
+    manualCoordinate?: Coordinate;
+    gpsBadgeState: "live" | "manual" | "denied";
+  };
+}
 
 function isUuidLikeProfileId(value: unknown): value is string {
   return (
@@ -103,7 +125,10 @@ interface ProfileState {
     string,
     { rating: number; text: string; tags: string[]; createdAt: string }
   >;
+  provisionalOnboardingMigration?: ProvisionalOnboardingMigration;
   applyProfile: (profile: UserProfile) => void;
+  setProvisionalOnboardingMigration: (migration: ProvisionalOnboardingMigration) => void;
+  clearProvisionalOnboardingMigration: (userId: string) => void;
   syncProfile: (isAuthenticated: boolean, userId?: string | null) => void;
   toggleFavourite: (dish: DishDetail) => void;
   updateProfile: (next: Partial<Pick<UserProfile, "displayName" | "email" | "avatarUrl">>) => void;
@@ -349,6 +374,7 @@ export const useProfileStore = create<ProfileState>()(
       tasteProfile: NEUTRAL_TASTE_PROFILE,
       tasteInteractionEvents: [],
       reviewEntries: {},
+      provisionalOnboardingMigration: undefined,
       applyProfile: (profile) =>
         set({
           profile: withNeutralTasteProfile(ensureSupabaseCompatibleProfile(profile)),
@@ -357,6 +383,14 @@ export const useProfileStore = create<ProfileState>()(
             vector: profile.tasteVector,
           },
         }),
+      setProvisionalOnboardingMigration: (migration) =>
+        set({ provisionalOnboardingMigration: migration }),
+      clearProvisionalOnboardingMigration: (userId) =>
+        set((state) =>
+          state.provisionalOnboardingMigration?.userId === userId
+            ? { provisionalOnboardingMigration: undefined }
+            : {},
+        ),
       syncProfile: (isAuthenticated, userId) => {
         const currentProfile = get().profile;
         const authenticatedUserId =
@@ -836,6 +870,7 @@ export const useProfileStore = create<ProfileState>()(
           tasteProfile: NEUTRAL_TASTE_PROFILE,
           tasteInteractionEvents: [],
           reviewEntries: {},
+          provisionalOnboardingMigration: undefined,
         }),
     }),
     {
@@ -861,6 +896,7 @@ export const useProfileStore = create<ProfileState>()(
         tasteProfile: state.tasteProfile,
         tasteInteractionEvents: state.tasteInteractionEvents,
         reviewEntries: state.reviewEntries,
+        provisionalOnboardingMigration: state.provisionalOnboardingMigration,
       }),
     },
   ),

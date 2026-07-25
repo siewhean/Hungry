@@ -1,6 +1,6 @@
 {
   "cli": {
-    "version": ">= 18.5.0",
+    "version": ">= 21.1.0",
     "appVersionSource": "remote"
   },
   "build": {
@@ -8,25 +8,63 @@
       "developmentClient": true,
       "distribution": "internal",
       "channel": "development",
+      "environment": "development",
       "env": {
         "EXPO_PUBLIC_APP_ENV": "development",
         "EXPO_PUBLIC_HUNGRY_DATA_SOURCE": "supabase"
       }
     },
-    "preview": {
+    "internal-alpha": {
       "distribution": "internal",
-      "channel": "staging",
+      "channel": "internal-alpha",
+      "environment": "preview",
       "env": {
         "EXPO_PUBLIC_APP_ENV": "staging",
-        "EXPO_PUBLIC_HUNGRY_DATA_SOURCE": "supabase"
+        "EXPO_PUBLIC_HUNGRY_DATA_SOURCE": "supabase",
+        "EXPO_PUBLIC_CATALOG_READ_V2": "1",
+        "EXPO_PUBLIC_ENABLE_SOCIAL_FEED": "0",
+        "EXPO_PUBLIC_ENABLE_POSTS": "0",
+        "EXPO_PUBLIC_ENABLE_REVIEWS": "0",
+        "EXPO_PUBLIC_ENABLE_ACTIVITY": "0",
+        "EXPO_PUBLIC_ENABLE_READS": "0",
+        "EXPO_PUBLIC_ENABLE_MAP": "0",
+        "EXPO_PUBLIC_ENABLE_WHEEL": "0",
+        "EXPO_PUBLIC_ENABLE_CRAVE": "0"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "channel": "preview",
+      "environment": "preview",
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "staging",
+        "EXPO_PUBLIC_HUNGRY_DATA_SOURCE": "supabase",
+        "EXPO_PUBLIC_CATALOG_READ_V2": "1",
+        "EXPO_PUBLIC_ENABLE_SOCIAL_FEED": "0",
+        "EXPO_PUBLIC_ENABLE_POSTS": "0",
+        "EXPO_PUBLIC_ENABLE_REVIEWS": "0",
+        "EXPO_PUBLIC_ENABLE_ACTIVITY": "0",
+        "EXPO_PUBLIC_ENABLE_READS": "0",
+        "EXPO_PUBLIC_ENABLE_MAP": "0",
+        "EXPO_PUBLIC_ENABLE_WHEEL": "0",
+        "EXPO_PUBLIC_ENABLE_CRAVE": "0"
       }
     },
     "production": {
       "channel": "production",
+      "environment": "production",
       "env": {
         "EXPO_PUBLIC_APP_ENV": "production",
         "EXPO_PUBLIC_HUNGRY_DATA_SOURCE": "supabase",
-        "EXPO_PUBLIC_CATALOG_READ_V2": "1"
+        "EXPO_PUBLIC_CATALOG_READ_V2": "1",
+        "EXPO_PUBLIC_ENABLE_SOCIAL_FEED": "0",
+        "EXPO_PUBLIC_ENABLE_POSTS": "0",
+        "EXPO_PUBLIC_ENABLE_REVIEWS": "0",
+        "EXPO_PUBLIC_ENABLE_ACTIVITY": "0",
+        "EXPO_PUBLIC_ENABLE_READS": "0",
+        "EXPO_PUBLIC_ENABLE_MAP": "0",
+        "EXPO_PUBLIC_ENABLE_WHEEL": "0",
+        "EXPO_PUBLIC_ENABLE_CRAVE": "0"
       }
     }
   },

@@ -48,7 +48,7 @@ test("root navigation keeps heavy routes lazy-loaded", () => {
   assert.doesNotMatch(tabs, /ActivityIndicator/);
   assert.doesNotMatch(tabs, /preloadRoute\(navigation, route\.name\)/);
   assert.match(tabs, /tabPreloadEnabled/);
-  assert.match(tabs, /const MAIN_TAB_PRELOAD_DISTANCE = 3/);
+  assert.match(tabs, /const MAIN_TAB_PRELOAD_DISTANCE = 2/);
   assert.match(tabs, /const MAIN_TAB_WARMUP_TIMEOUT_MS = 350/);
   assert.match(tabs, /fallbackDelayMs: MAIN_TAB_WARMUP_FALLBACK_DELAY_MS/);
   assert.match(tabs, /lazyPreloadDistance:\s*tabPreloadEnabled \? MAIN_TAB_PRELOAD_DISTANCE : 0/);

@@ -1,6 +1,9 @@
 import NetInfo from "@react-native-community/netinfo";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+
 import { setAnalyticsSink, trackAnalyticsEvent } from "@/lib/analytics";
+import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
+import { isNetworkOffline } from "@/lib/network/connectivity";
 import {
   getConfiguredDataSource,
   getSupabaseClient,
@@ -11,11 +14,9 @@ import {
   setMockServiceProvider,
   setSupabaseServiceProvider,
 } from "@/lib/services/serviceProvider";
-import { isNetworkOffline } from "@/lib/network/connectivity";
+import { useMerchantStore } from "@/store/useMerchantStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
-import { useMerchantStore } from "@/store/useMerchantStore";
-import type { UserProfile } from "@/types/domain";
 
 function shouldEnablePostHogSink() {
   return (
@@ -30,22 +31,15 @@ function getProfileStoreState() {
   return useProfileStore.getState();
 }
 
-function applyProfile(profile: UserProfile) {
-  getProfileStoreState().applyProfile(profile);
-}
-
 function syncProfile(isAuthenticated: boolean, userId?: string | null) {
   getProfileStoreState().syncProfile(isAuthenticated, userId);
 }
 
 type BrowserIdleHandle = number;
-type ApplyAuthStateFromSession = ReturnType<
-  typeof useSessionStore.getState
->["applyAuthStateFromSession"];
 
 function isUuidLikeAuthUserId(value?: string | null): value is string {
   return Boolean(
-    value?.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i),
+    value?.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i),
   );
 }
 
@@ -55,9 +49,7 @@ function runAfterIdle(callback: () => void) {
     const handle = requestIdle(callback) as BrowserIdleHandle;
     const cancel = globalThis.cancelIdleCallback;
     return () => {
-      if (typeof cancel === "function") {
-        cancel(handle);
-      }
+      if (typeof cancel === "function") cancel(handle);
     };
   }
 
@@ -67,22 +59,6 @@ function runAfterIdle(callback: () => void) {
 
 function shouldWarmLegacyRepositoryCache() {
   return process.env.EXPO_PUBLIC_HUNGRY_LEGACY_CACHE_WARMUP === "1";
-}
-
-function preserveRestoredAuthState(applyAuthStateFromSession: ApplyAuthStateFromSession): boolean {
-  const restoredSession = useSessionStore.getState();
-  const userId = restoredSession.authenticatedUserId;
-  const isValidUuid = isUuidLikeAuthUserId(userId);
-
-  if (restoredSession.isAuthenticated && restoredSession.authenticatedUserId && isValidUuid) {
-    applyAuthStateFromSession({
-      isAuthenticated: true,
-      userId: restoredSession.authenticatedUserId,
-    });
-    return true;
-  }
-
-  return false;
 }
 
 export function useAppBootstrap() {
@@ -97,22 +73,17 @@ export function useAppBootstrap() {
   const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
   const isUserMode = !isDeveloperMode && !isMerchantMode;
   const previousAuth = useRef<boolean | undefined>(undefined);
+  const lastNetworkOffline = useRef(false);
   const [isDataSourceReady, setIsDataSourceReady] = useState(false);
   const hasTrackedLaunch = useRef(false);
   const hasConfiguredAnalyticsSink = useRef(false);
 
   useEffect(() => {
-    if (hasConfiguredAnalyticsSink.current) {
-      return;
-    }
-
+    if (hasConfiguredAnalyticsSink.current) return;
     hasConfiguredAnalyticsSink.current = true;
 
     const cancelTask = runAfterIdle(() => {
-      if (!shouldEnablePostHogSink()) {
-        return;
-      }
-
+      if (!shouldEnablePostHogSink()) return;
       const { posthogSink } =
         require("@/lib/analytics/posthogSink") as typeof import("@/lib/analytics/posthogSink");
       setAnalyticsSink(posthogSink);
@@ -122,9 +93,7 @@ export function useAppBootstrap() {
   }, []);
 
   useEffect(() => {
-    if (hasTrackedLaunch.current) {
-      return;
-    }
+    if (hasTrackedLaunch.current) return;
     hasTrackedLaunch.current = true;
 
     const cancelTask = runAfterIdle(() => {
@@ -138,13 +107,19 @@ export function useAppBootstrap() {
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
-      // `null` means the native reachability probe has not resolved yet; do
-      // not show an offline screen until connectivity is known to be absent.
-      setOffline(isNetworkOffline(state));
+      // Authenticated users stay on their current catalog route so classified
+      // network failures can use the read-only Excel fallback. The global
+      // offline state is reserved for the signed-out/authentication shell.
+      lastNetworkOffline.current = isNetworkOffline(state);
+      setOffline(!useSessionStore.getState().isAuthenticated && lastNetworkOffline.current);
     });
 
     return unsubscribe;
   }, [setOffline]);
+
+  useEffect(() => {
+    setOffline(!isAuthenticated && lastNetworkOffline.current);
+  }, [isAuthenticated, setOffline]);
 
   useLayoutEffect(() => {
     if (!isUserMode) {
@@ -155,9 +130,7 @@ export function useAppBootstrap() {
         (authDataSource === "mock" ||
           (authDataSource !== "supabase" && !isUuidLikeAuthUserId(authenticatedUserId)));
 
-      if (restoredMockSession) {
-        setMockServiceProvider();
-      }
+      if (restoredMockSession) setMockServiceProvider();
       setIsDataSourceReady(true);
       return;
     }
@@ -172,23 +145,19 @@ export function useAppBootstrap() {
       return;
     }
 
-    // Supabase-configured user mode uses live data instead of prior mock sessions.
-    const hasValidSupabaseAuth = isAuthenticated && isUuidLikeAuthUserId(authenticatedUserId);
+    // Released user mode is always Supabase-authenticated. Excel is exposed
+    // only inside the authenticated read wrapper, never as the app provider.
+    const hasValidSupabaseAuth =
+      isAuthenticated && authDataSource === "supabase" && isUuidLikeAuthUserId(authenticatedUserId);
     setConfiguredDataSource("supabase");
     setSupabaseServiceProvider();
     if (isAuthenticated && !hasValidSupabaseAuth) {
-      applyAuthStateFromSession({ isAuthenticated: false });
+      applyAuthStateFromSession({ isAuthenticated: false, userId: null });
     }
 
-    // Ensure profile surface resolves against Supabase data immediately after
-    // provider swap, so user-mode entry screens do not briefly render
-    // legacy mock profiles.
     syncProfile(hasValidSupabaseAuth, authenticatedUserId);
-
-    // Discovery/detail routes hydrate through bounded RPCs. The legacy cache
-    // loads the whole catalog, so it is opt-in for diagnostics only and never
-    // starts work on the interactive application shell by default.
     setIsDataSourceReady(true);
+
     if (shouldWarmLegacyRepositoryCache()) {
       const cancelWarmup = runAfterIdle(() => {
         const { refreshSupabaseRepositoryCache } =
@@ -200,9 +169,7 @@ export function useAppBootstrap() {
   }, [authDataSource, applyAuthStateFromSession, authenticatedUserId, isAuthenticated, isUserMode]);
 
   useEffect(() => {
-    if (!hasHydrated) {
-      return;
-    }
+    if (!hasHydrated) return;
 
     if (getConfiguredDataSource() !== "supabase") {
       markAuthReady();
@@ -211,8 +178,7 @@ export function useAppBootstrap() {
 
     const client = getSupabaseClient();
     if (!client) {
-      applyAuthStateFromSession({ isAuthenticated: false });
-      markAuthReady();
+      applyAuthStateFromSession({ isAuthenticated: false, userId: null });
       return;
     }
 
@@ -220,17 +186,18 @@ export function useAppBootstrap() {
 
     void client.auth
       .getSession()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
         if (!active) return;
+        if (error) throw error;
         const user = data.session?.user;
         if (!user) {
-          if (preserveRestoredAuthState(applyAuthStateFromSession)) {
-            return;
-          }
           applyAuthStateFromSession({ isAuthenticated: false, userId: null });
           return;
         }
 
+        // This user id came from the SecureStore-backed Supabase session, not
+        // from persisted app metadata. It is therefore valid for offline catalog
+        // continuity while the access token remains restored locally.
         applyAuthStateFromSession({
           isAuthenticated: true,
           userId: user.id,
@@ -238,8 +205,11 @@ export function useAppBootstrap() {
         const cancelProfileHydration = runAfterIdle(() => {
           void getHungryService()
             .profile.getProfile()
-            .then((profile) => {
-              if (active) applyProfile(profile);
+            .then(async (profile) => {
+              if (!active) return;
+              // Retry a durable provisional onboarding migration after a cold
+              // restore before accepting a potentially older profile read.
+              await applySignedInProfile(profile);
             })
             .catch(() => undefined);
         });
@@ -247,27 +217,18 @@ export function useAppBootstrap() {
       })
       .catch(() => {
         if (!active) return;
-        // Network/storage failures during bootstrap should not force a logout
-        // when a prior local session was already restored. The next successful
-        // auth event will reconcile Supabase state; explicit sign-out still
-        // clears both Supabase tokens and the local session store.
-        if (preserveRestoredAuthState(applyAuthStateFromSession)) {
-          return;
-        }
-
-        applyAuthStateFromSession({
-          isAuthenticated: false,
-          userId: null,
-        });
+        // A storage/session read failure is not proof of a valid session. Fail
+        // closed instead of trusting the separately persisted metadata store.
+        applyAuthStateFromSession({ isAuthenticated: false, userId: null });
       });
 
     const { data: subscription } = client.auth.onAuthStateChange((event, session) => {
       const user = session?.user;
       if (!user) {
-        if (event !== "SIGNED_OUT" && preserveRestoredAuthState(applyAuthStateFromSession)) {
-          return;
-        }
-        applyAuthStateFromSession({ isAuthenticated: false, userId: null });
+        applyAuthStateFromSession({
+          isAuthenticated: false,
+          userId: null,
+        });
         return;
       }
 
@@ -275,9 +236,11 @@ export function useAppBootstrap() {
         isAuthenticated: true,
         userId: user.id,
       });
-      // Interactive sign-in already applies the session profile (and may be
-      // merging guest preferences). Do not race that merge with a second
-      // stale server read; cold-session restoration above hydrates once idle.
+      // Interactive sign-in applies its session profile. Cold-session restoration
+      // above performs one idle profile hydration without racing that merge.
+      if (event === "TOKEN_REFRESHED") {
+        // The authenticated state already carries the refreshed local session.
+      }
     });
 
     return () => {
@@ -293,8 +256,8 @@ export function useAppBootstrap() {
       !isUuidLikeAuthUserId(getProfileStoreState().profile.id) &&
       getProfileStoreState().profile.id !== "guest-user";
 
-    // Keep persisted profile customisations on cold start.
-    // Only resync base profile when auth state actually changes.
+    // Keep persisted profile customisations on cold start. Only resync the base
+    // profile when auth state actually changes or an old fixture id is present.
     if (previousAuth.current === undefined) {
       if (profileNeedsRepair) {
         syncProfile(
@@ -306,13 +269,11 @@ export function useAppBootstrap() {
       return;
     }
 
-    if (!profileNeedsRepair && previousAuth.current === isAuthenticated) {
-      return;
-    }
+    if (!profileNeedsRepair && previousAuth.current === isAuthenticated) return;
 
     syncProfile(isAuthenticated, authenticatedUserId);
     previousAuth.current = isAuthenticated;
-  }, [authenticatedUserId, isAuthenticated]);
+  }, [authenticatedUserId, isAuthenticated, isUserMode]);
 
   return isDataSourceReady;
 }

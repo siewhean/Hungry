@@ -9,10 +9,15 @@ const offlineScreen = readFileSync(
   "utf8",
 );
 
-test("app bootstrap derives offline state from NetInfo and cleans up its subscription", () => {
+test("app bootstrap keeps authenticated catalog routes mounted during NetInfo outages", () => {
   assert.match(source, /import NetInfo from "@react-native-community\/netinfo"/);
   assert.match(source, /const unsubscribe = NetInfo\.addEventListener/);
-  assert.match(source, /setOffline\(isNetworkOffline\(state\)\)/);
+  assert.match(source, /lastNetworkOffline\.current = isNetworkOffline\(state\)/);
+  assert.match(
+    source,
+    /setOffline\(!useSessionStore\.getState\(\)\.isAuthenticated && lastNetworkOffline\.current\)/,
+  );
+  assert.match(source, /setOffline\(!isAuthenticated && lastNetworkOffline\.current\)/);
   assert.match(source, /return unsubscribe;/);
   assert.doesNotMatch(source, /setOffline\(false\);/);
 });

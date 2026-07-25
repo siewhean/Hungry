@@ -26,11 +26,20 @@ test("catalog read v2 uses RPC pages instead of the BrowseIndex in its active br
     /initialFoodTypeTag=\{route\.params\?\.foodTypeTag \?\? storedCatalogCategory\}/,
   );
   assert.match(source, /request\.releaseId = cursor \? releaseIdRef\.current : undefined/);
+  assert.match(
+    source,
+    /useEffect\(\(\) => \{[\s\S]*?requestVersion\.current \+= 1;[\s\S]*?releaseIdRef\.current = undefined;[\s\S]*?setReleaseId\(undefined\);[\s\S]*?void loadPage\(\);/,
+  );
 });
 
-test("raw catalog service is authenticated, cursor-paged, and non-persistent", () => {
+test("raw catalog service is authenticated, typed, cursor-paged, and non-persistent", () => {
   const source = read("src/lib/services/catalog/index.ts");
   assert.match(source, /client\.auth\.getSession\(\)/);
+  assert.match(source, /CatalogAuthenticationRequiredError/);
+  assert.match(source, /CatalogSessionInvalidError/);
+  assert.match(source, /CatalogConfigurationError/);
+  assert.match(source, /CatalogNetworkError/);
+  assert.match(source, /CatalogRpcError/);
   assert.match(source, /catalog_raw_dishes_page/);
   assert.match(source, /catalog_raw_venues_page/);
   assert.match(source, /catalog_raw_map_view/);
@@ -74,11 +83,13 @@ test("raw catalog migration preserves a separate authenticated release lane", ()
   );
 });
 
-test("V2 discovery entry points do not warm the legacy browse index and map passes viewport filters", () => {
+test("V2 Discover consumes bounded authenticated catalog pages and never hydrates the legacy index", () => {
   const prefetch = read("src/features/navigation/prefetch.ts");
   const searchHome = read("src/app/screens/search/DishSearchScreen.tsx");
-  const discoverHome = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const discoverEntry = read("src/app/screens/discover/DiscoverEntryScreen.tsx");
+  const catalogDiscoverHome = read("src/app/screens/discover/CatalogDiscoverHome.tsx");
   const map = read("src/app/screens/discover/HomeMapScreen.tsx");
+
   assert.match(prefetch, /FEATURE_FLAGS\.catalogReadV2[\s\S]*return;/);
   assert.match(
     prefetch,
@@ -91,10 +102,21 @@ test("V2 discovery entry points do not warm the legacy browse index and map pass
   assert.match(searchHome, /shouldUseCatalogReadV2[\s\S]*getDiscoverStallCollections/);
   assert.doesNotMatch(searchHome, /FEATURE_FLAGS\.catalogReadV2 && isAuthenticated/);
   assert.match(
-    discoverHome,
-    /if \(shouldUseCatalogReadV2\) \{\s*return;\s*\}[\s\S]*refreshPopularNearby/,
+    discoverEntry,
+    /return useCatalog \? <CatalogDiscoverHome \/> : <DiscoverHomeScreen \/>/,
   );
-  assert.doesNotMatch(discoverHome, /FEATURE_FLAGS\.catalogReadV2 && isAuthenticated/);
+  assert.match(catalogDiscoverHome, /service\.listDishes\(request\)/);
+  assert.match(catalogDiscoverHome, /service\.listVenues\(\{ \.\.\.request, limit: 24 \}\)/);
+  assert.match(catalogDiscoverHome, /radiusMeters: 3_000/);
+  assert.match(catalogDiscoverHome, /limit: 24/);
+  assert.match(catalogDiscoverHome, /CatalogRawDetail/);
+  assert.match(catalogDiscoverHome, /requestVersion/);
+  assert.match(catalogDiscoverHome, /No nearby matches/);
+  assert.match(catalogDiscoverHome, /catalog-source-excel/);
+  assert.doesNotMatch(
+    catalogDiscoverHome,
+    /getHungryService|getDataRepository|listDiscoveryFeedByLocation|getBrowseIndex|DishDetail/,
+  );
   assert.match(map, /onViewportChange/);
   assert.match(map, /buildingTypes/);
   assert.match(map, /openOnly: mapFilters\.openNow/);
@@ -102,8 +124,15 @@ test("V2 discovery entry points do not warm the legacy browse index and map pass
   assert.match(map, /candidate\.kind === "venue" \? "stall" : candidate\.kind/);
 });
 
+test("raw map excludes non-consumer venues at the RPC boundary", () => {
+  const migration = read("supabase/migrations/20260715020000_catalog_raw_map_exclusion.sql");
+  assert.match(migration, /catalog_raw_map_view/);
+  assert.match(migration, /catalog_raw_excluded_venues/);
+  assert.match(migration, /where e\.venue_id = id/);
+});
+
 test("catalog release publisher fails when count validation does not activate a release", () => {
   const publisher = read("scripts/publish-catalog-raw-release.mjs");
-  assert.match(publisher, /result\.rows\?\.\[0\]\?\.status !== "active"/);
+  assert.match(publisher, /release\?\.status !== "active"/);
   assert.match(publisher, /process\.exitCode = 1/);
 });

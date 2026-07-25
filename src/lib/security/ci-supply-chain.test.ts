@@ -10,7 +10,11 @@ function read(relativePath: string): string {
 }
 
 test("GitHub Actions are SHA-pinned and least-privilege", () => {
-  for (const workflow of [".github/workflows/ci.yml", ".github/workflows/security.yml"]) {
+  for (const workflow of [
+    ".github/workflows/ci.yml",
+    ".github/workflows/security.yml",
+    ".github/workflows/release-candidate.yml",
+  ]) {
     const source = read(workflow);
     assert.match(source, /permissions:\n\s+contents: read/);
 
@@ -22,28 +26,76 @@ test("GitHub Actions are SHA-pinned and least-privilege", () => {
   }
 });
 
-test("release secrets are scoped to EAS steps, not install or workflow scope", () => {
+test("ordinary CI is secretless and never dispatches live release work", () => {
   const ci = read(".github/workflows/ci.yml");
-  const easJob = ci.slice(ci.indexOf("eas-build-gate:"));
-  const installStep = easJob.slice(
-    easJob.indexOf("Install dependencies"),
-    easJob.indexOf("Validate Expo account access"),
+  assert.doesNotMatch(ci, /secrets\./);
+  assert.doesNotMatch(
+    ci,
+    /EXPO_TOKEN|SUPABASE_ACCESS_TOKEN|SUPABASE_DB_PASSWORD|SENTRY_AUTH_TOKEN/,
   );
-
-  assert.doesNotMatch(easJob.split("steps:")[0], /EXPO_TOKEN|SENTRY_AUTH_TOKEN/);
-  assert.doesNotMatch(installStep, /EXPO_TOKEN|SENTRY_AUTH_TOKEN/);
-  assert.match(easJob, /npx --yes eas-cli@18\.12\.3 whoami/);
-  assert.match(easJob, /npx --yes eas-cli@18\.12\.3 build/);
+  assert.doesNotMatch(ci, /eas-cli|supabase db push|advisor-security/);
+  assert.match(ci, /Mock\/local Playwright suite/);
+  assert.match(ci, /npm run test:e2e/);
+  assert.match(ci, /npm run audit:supabase:static/);
 });
 
-test("main CI uses the pinned Node runtime and fails closed for required release proof", () => {
-  const ci = read(".github/workflows/ci.yml");
+test("protected release-candidate workflow validates immutable same-repository candidates", () => {
+  const releaseCandidate = read(".github/workflows/release-candidate.yml");
 
+  assert.match(releaseCandidate, /workflow_dispatch:/);
+  assert.match(releaseCandidate, /if: github\.ref == 'refs\/heads\/main'/);
+  assert.match(releaseCandidate, /candidate_sha:/);
+  assert.match(releaseCandidate, /pull_request_number:/);
+  assert.match(releaseCandidate, /environment: release-candidate/);
+  assert.match(releaseCandidate, /candidate_sha must be a full lowercase 40-character SHA/);
+  assert.match(releaseCandidate, /git merge-base --is-ancestor origin\/main/);
+  assert.match(releaseCandidate, /current head of an open same-repository PR targeting main/);
+  assert.match(
+    releaseCandidate,
+    /pull\.head\?\.repo\?\.full_name === process\.env\.GITHUB_REPOSITORY/,
+  );
+  assert.match(releaseCandidate, /test "\$\(git rev-parse HEAD\)" = "\$\{CANDIDATE_SHA\}"/);
+  assert.doesNotMatch(releaseCandidate, /pull_request_target/);
+});
+
+test("release secrets and live checks are isolated behind the approved environment", () => {
+  const ci = read(".github/workflows/ci.yml");
+  const releaseCandidate = read(".github/workflows/release-candidate.yml");
+
+  assert.match(releaseCandidate, /EXPO_TOKEN: \$\{\{ secrets\.EXPO_TOKEN \}\}/);
+  assert.match(
+    releaseCandidate,
+    /SUPABASE_ACCESS_TOKEN: \$\{\{ secrets\.SUPABASE_ACCESS_TOKEN \}\}/,
+  );
+  assert.match(releaseCandidate, /SUPABASE_DB_PASSWORD: \$\{\{ secrets\.SUPABASE_DB_PASSWORD \}\}/);
+  assert.match(releaseCandidate, /HUNGRY_SUPABASE_ADVISOR_REQUIRED: "1"/);
+  assert.match(releaseCandidate, /HUNGRY_SUPABASE_ADVISOR_FAIL_ON_EXTERNAL: "1"/);
+  assert.match(releaseCandidate, /HUNGRY_SUPABASE_SMOKE_REQUIRED: "1"/);
+  assert.match(releaseCandidate, /Credentialed staging fallback and no-results Playwright/);
+  assert.match(releaseCandidate, /npx supabase db push --dry-run/);
+  assert.match(releaseCandidate, /npx --yes eas-cli@21\.1\.0 build/);
+  assert.match(releaseCandidate, /--profile internal-alpha --non-interactive --no-wait --json/);
+  assert.doesNotMatch(releaseCandidate, /eas-cli@21\.1\.0 build[^\n]*--environment/);
+  assert.match(releaseCandidate, /release-candidate-eas-builds/);
+  assert.doesNotMatch(ci, /EXPO_TOKEN|SUPABASE_ACCESS_TOKEN|SUPABASE_DB_PASSWORD/);
+});
+
+test("normal CI and security workflows remain SHA-pinned with no pull_request_target", () => {
+  const ci = read(".github/workflows/ci.yml");
+  const security = read(".github/workflows/security.yml");
+  const releaseCandidate = read(".github/workflows/release-candidate.yml");
+  const mergeCompatibility = ci.slice(ci.indexOf("merge-compatibility:"));
+
+  assert.match(mergeCompatibility, /if: github\.event_name == 'pull_request'/);
+  assert.match(mergeCompatibility, /Checkout GitHub PR merge commit/);
+  assert.doesNotMatch(mergeCompatibility, /pull_request\.head\.sha/);
+  assert.match(mergeCompatibility, /npm ci/);
+  assert.match(mergeCompatibility, /npm run typecheck/);
+  assert.doesNotMatch(mergeCompatibility, /EXPO_TOKEN|SUPABASE_ACCESS_TOKEN|SUPABASE_DB_PASSWORD/);
+  for (const source of [ci, security, releaseCandidate]) {
+    assert.doesNotMatch(source, /pull_request_target/);
+  }
   assert.equal(ci.match(/node-version: 22\.22\.1/g)?.length, 2);
-  assert.match(ci, /Supabase credentials missing on main; failing closed\./);
-  assert.match(ci, /EXPO_TOKEN missing on main; failing closed\./);
-  assert.doesNotMatch(ci, /skipping EAS account validation/);
-  assert.doesNotMatch(ci, /skipping EAS build gate/);
 });
 
 test("security workflow keeps dependency, gitleaks, and trufflehog gates", () => {
@@ -63,6 +115,9 @@ test("security workflow keeps dependency, gitleaks, and trufflehog gates", () =>
   assert.match(trufflehogRunner, /filesystem",[\s\S]*"--only-verified",[\s\S]*"\."/);
 
   const trufflehogExcludes = read("scripts/trufflehog-exclude-paths.txt");
+  assert.match(trufflehogExcludes, /\^\\\.claude\/worktrees\//);
+  assert.match(trufflehogExcludes, /\^data\/\.\*\\\.xlsx\$/);
+  assert.match(trufflehogExcludes, /\^scripts\/venv\//);
   assert.match(trufflehogExcludes, /\^\\\.env\$/);
   assert.match(trufflehogExcludes, /\^\\\.env\\\.local\$/);
   assert.match(trufflehogExcludes, /\^\\\.env\\\.\.\*\\\.local\$/);
@@ -71,6 +126,7 @@ test("security workflow keeps dependency, gitleaks, and trufflehog gates", () =>
 test("release checklist includes the Supabase Advisor regression guard", () => {
   const releaseChecklist = read("scripts/release_ready_checklist.sh");
   const ci = read(".github/workflows/ci.yml");
+  const releaseCandidate = read(".github/workflows/release-candidate.yml");
   const packageJson = read("package.json");
   const advisorClassifier = read("scripts/supabase-advisor-security-classifier.mjs");
   const releaseGates = read("references/release-gates.md");
@@ -105,9 +161,10 @@ test("release checklist includes the Supabase Advisor regression guard", () => {
   assert.match(releaseEvidenceExample, /ANDROID_EAS_PROOF=0/);
   assert.match(releaseEvidenceExample, /DIRTY_WORKTREE_RECONCILED=0/);
   assert.match(releaseEvidenceExample, /MERCH_P0_ANALYTICS_PROOF=0/);
-  assert.match(ci, /Supabase Security Advisor guard/);
-  assert.match(ci, /npm run audit:supabase:advisor-security/);
-  assert.match(ci, /SUPABASE_NPX_ALLOW_INSTALL: "1"/);
+  assert.doesNotMatch(ci, /Supabase Security Advisor guard/);
+  assert.match(releaseCandidate, /Supabase Security Advisor/);
+  assert.match(releaseCandidate, /npm run audit:supabase:advisor-security/);
+  assert.match(releaseCandidate, /SUPABASE_NPX_ALLOW_INSTALL: "1"/);
   assert.match(advisorClassifier, /unexpected app-owned Advisor findings/);
   assert.match(advisorClassifier, /HUNGRY_SUPABASE_ADVISOR_FAIL_ON_EXTERNAL/);
   assert.match(advisorClassifier, /SUPABASE_NPX_ALLOW_INSTALL/);

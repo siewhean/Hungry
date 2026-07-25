@@ -64,6 +64,11 @@ import type {
   CatalogRawDishCard,
   CatalogRawVenueCard,
 } from "@/lib/services/catalog";
+import { CatalogAccessError } from "@/lib/services/catalog";
+import {
+  recordCatalogDiagnostic,
+  summarizeCatalogRequest,
+} from "@/lib/services/catalog/diagnostics";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -407,6 +412,7 @@ function RawCatalogBrowseGrid({
   const loadPage = useCallback(
     async (cursor?: string, append = false) => {
       if (!service || !isAuthenticated) return;
+      const startedAt = Date.now();
       const version = requestVersion.current;
       if (append) setIsLoadingMore(true);
       else setIsLoading(true);
@@ -427,10 +433,52 @@ function RawCatalogBrowseGrid({
         setNextCursor(page.nextCursor);
         releaseIdRef.current = page.releaseId || undefined;
         setReleaseId(releaseIdRef.current);
+        recordCatalogDiagnostic({
+          operation:
+            mode === "dishes"
+              ? searchQuery.trim()
+                ? "search-dishes"
+                : "browse-dishes"
+              : searchQuery.trim()
+                ? "search-stalls"
+                : "browse-stalls",
+          durationMs: Date.now() - startedAt,
+          releaseId: page.releaseId,
+          request: summarizeCatalogRequest(request),
+          resultCount: page.items.length,
+          succeeded: true,
+        });
       } catch (loadError) {
         if (requestVersion.current === version) {
           setError(loadError instanceof Error ? loadError.message : "Could not load the catalog.");
           if (!append) setItems([]);
+          const request = rawCatalogRequest(
+            mode,
+            searchQuery,
+            selectedFilter,
+            currentLocation,
+            cursor,
+          );
+          recordCatalogDiagnostic({
+            operation:
+              mode === "dishes"
+                ? searchQuery.trim()
+                  ? "search-dishes"
+                  : "browse-dishes"
+                : searchQuery.trim()
+                  ? "search-stalls"
+                  : "browse-stalls",
+            durationMs: Date.now() - startedAt,
+            errorKind:
+              loadError instanceof CatalogAccessError
+                ? loadError.kind
+                : loadError instanceof Error
+                  ? loadError.name
+                  : "unknown",
+            request: summarizeCatalogRequest(request),
+            resultCount: 0,
+            succeeded: false,
+          });
         }
       } finally {
         if (requestVersion.current === version) {
