@@ -2845,7 +2845,9 @@ export const supabaseService: HungryService = {
         user_id: userId,
         reason: request?.reason ?? "user_initiated_settings_flow",
       });
-      if (error) throw error;
+      // 23505 = uniq_account_deletion_requests_active_user: a request is already
+      // queued for this user, so a repeat tap is treated as success (idempotent).
+      if (error && error.code !== "23505") throw error;
 
       await this.signOut();
     },

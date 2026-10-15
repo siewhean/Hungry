@@ -5,6 +5,20 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
 type JsonObject = Record<string, unknown>;
 
 const MAX_BATCH_SIZE = 25;
+const STORAGE_LIST_PAGE_SIZE = 100;
+const STORAGE_REMOVE_CHUNK_SIZE = 100;
+
+// Buckets whose objects are written under a `<auth uid>/` prefix by storage RLS
+// (0014, 0016, 0023, 20260527113000). merchant-verification-evidence is excluded on
+// purpose: verification evidence is retained for fraud/legal review.
+const USER_PREFIXED_BUCKETS = [
+  "avatars",
+  "review-media",
+  "bites-media",
+  "post-media",
+  "menu-photos",
+  "user-stall-submission-images",
+];
 
 function toJson(status: number, body: JsonObject): Response {
   return new Response(JSON.stringify(body), {
@@ -18,6 +32,23 @@ function getBearerToken(request: Request): string {
   return header.toLowerCase().startsWith("bearer ") ? header.slice(7).trim() : "";
 }
 
+// Constant-time secret comparison: hash both sides to equal-length digests, then
+// XOR every byte so timing does not reveal how many leading characters matched.
+async function timingSafeEqualString(provided: string, expected: string): Promise<boolean> {
+  const encoder = new TextEncoder();
+  const [left, right] = await Promise.all([
+    crypto.subtle.digest("SHA-256", encoder.encode(provided)),
+    crypto.subtle.digest("SHA-256", encoder.encode(expected)),
+  ]);
+  const leftBytes = new Uint8Array(left);
+  const rightBytes = new Uint8Array(right);
+  let diff = leftBytes.length ^ rightBytes.length;
+  for (let index = 0; index < leftBytes.length; index += 1) {
+    diff |= leftBytes[index] ^ rightBytes[index];
+  }
+  return diff === 0;
+}
+
 function parseLimit(value: unknown): number {
   const parsed = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(parsed)) return 5;
@@ -27,6 +58,74 @@ function parseLimit(value: unknown): number {
 function isAlreadyDeletedAuthError(error: unknown): boolean {
   const message = String((error as { message?: unknown } | null)?.message ?? error).toLowerCase();
   return message.includes("not found") || message.includes("no user");
+}
+
+function isMissingBucketError(error: unknown): boolean {
+  const message = String((error as { message?: unknown } | null)?.message ?? error).toLowerCase();
+  return message.includes("bucket not found");
+}
+
+async function listUserObjectPaths(
+  client: ReturnType<typeof createClient>,
+  bucket: string,
+  userId: string,
+): Promise<string[]> {
+  const files: string[] = [];
+  const folders = [userId];
+  while (folders.length > 0) {
+    const folder = folders.pop() as string;
+    for (let offset = 0; ; offset += STORAGE_LIST_PAGE_SIZE) {
+      const { data, error } = await client.storage
+        .from(bucket)
+        .list(folder, { limit: STORAGE_LIST_PAGE_SIZE, offset });
+      if (error) {
+        if (isMissingBucketError(error)) return [];
+        throw error;
+      }
+      const entries = Array.isArray(data) ? data : [];
+      for (const entry of entries) {
+        const fullPath = `${folder}/${entry.name}`;
+        // Storage list() returns folders as entries with a null id.
+        if (entry.id === null || entry.id === undefined) folders.push(fullPath);
+        else files.push(fullPath);
+      }
+      if (entries.length < STORAGE_LIST_PAGE_SIZE) break;
+    }
+  }
+  return files;
+}
+
+async function deleteUserStorageObjects(
+  client: ReturnType<typeof createClient>,
+  userId: string,
+  retained: Set<string>,
+): Promise<Record<string, number>> {
+  const removedByBucket: Record<string, number> = {};
+  for (const bucket of USER_PREFIXED_BUCKETS) {
+    const paths = (await listUserObjectPaths(client, bucket, userId)).filter(
+      (path) => !retained.has(`${bucket}/${path}`),
+    );
+    for (let index = 0; index < paths.length; index += STORAGE_REMOVE_CHUNK_SIZE) {
+      const { error } = await client.storage
+        .from(bucket)
+        .remove(paths.slice(index, index + STORAGE_REMOVE_CHUNK_SIZE));
+      if (error) throw error;
+    }
+    removedByBucket[bucket] = paths.length;
+  }
+  return removedByBucket;
+}
+
+function toRetainedObjectKeys(purgeResult: unknown): Set<string> {
+  const retained = (purgeResult as { retained_storage_objects?: unknown } | null)
+    ?.retained_storage_objects;
+  const keys = new Set<string>();
+  for (const item of Array.isArray(retained) ? retained : []) {
+    const bucket = String((item as { bucket?: unknown })?.bucket ?? "");
+    const path = String((item as { path?: unknown })?.path ?? "");
+    if (bucket && path) keys.add(`${bucket}/${path}`);
+  }
+  return keys;
 }
 
 async function markFailure(
@@ -59,7 +158,7 @@ Deno.serve(async (request) => {
   }
 
   const workerToken = Deno.env.get("ACCOUNT_DELETION_WORKER_TOKEN") ?? "";
-  if (!workerToken || getBearerToken(request) !== workerToken) {
+  if (!workerToken || !(await timingSafeEqualString(getBearerToken(request), workerToken))) {
     return toJson(401, { error: "unauthorized" });
   }
 
@@ -97,6 +196,20 @@ Deno.serve(async (request) => {
       });
       if (anonymizeError) throw anonymizeError;
 
+      const { data: purgeResult, error: purgeError } = await client.rpc(
+        "purge_account_deletion_residual_data",
+        { p_request_id: requestId, p_worker_id: workerId },
+      );
+      if (purgeError) throw purgeError;
+
+      // Every step is idempotent, so a failure here leaves the request claimable and
+      // the next run safely repeats anonymize/purge before retrying auth deletion.
+      const storageRemoved = await deleteUserStorageObjects(
+        client,
+        userId,
+        toRetainedObjectKeys(purgeResult),
+      );
+
       const { error: deleteError } = await client.auth.admin.deleteUser(userId);
       if (deleteError && !isAlreadyDeletedAuthError(deleteError)) {
         throw deleteError;
@@ -109,7 +222,7 @@ Deno.serve(async (request) => {
       });
       if (completeError) throw completeError;
 
-      results.push({ requestId, userId, status: "completed" });
+      results.push({ requestId, userId, status: "completed", storageRemoved });
     } catch (error) {
       await markFailure(client, requestId, userId, workerId, error);
       results.push({

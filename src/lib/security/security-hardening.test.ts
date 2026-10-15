@@ -488,6 +488,23 @@ test("store policy controls cover account deletion, UGC moderation, and location
   assert.match(worker, /anonymize_account_deletion_request/);
   assert.match(worker, /auth\.admin\.deleteUser/);
   assert.match(worker, /complete_account_deletion_request/);
+  assert.match(worker, /purge_account_deletion_residual_data/);
+  assert.match(worker, /\.storage[\s\S]*\.remove\(/);
+  assert.doesNotMatch(worker, /getBearerToken\(request\) !== workerToken/);
+  assert.match(worker, /timingSafeEqualString\(getBearerToken\(request\), workerToken\)/);
+  const residualPurge = readRepoFile(
+    "supabase/migrations/20261015120000_account_deletion_residual_purge.sql",
+  );
+  assert.match(residualPurge, /set avatar_url = null/);
+  assert.match(
+    residualPurge,
+    /revoke all on function public\.purge_account_deletion_residual_data[\s\S]*from public, anon, authenticated/,
+  );
+  assert.match(residualPurge, /processing_attempts < 10/);
+  assert.match(supabaseService, /error\.code !== "23505"/);
+  const deletionRunner = readRepoFile("scripts/run-account-deletion-worker.mjs");
+  assert.match(deletionRunner, /ACCOUNT_DELETION_WORKER_TOKEN/);
+  assert.match(deletionRunner, /\/functions\/v1\/process-account-deletions/);
   assert.match(settingsScreen, /getHungryService\(\)\.auth\.requestAccountDeletion/);
   assert.match(settingsScreen, /https:\/\/hungry\.sg\/account\/delete/);
   assert.match(webV2Footer, /Account Deletion/);

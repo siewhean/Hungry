@@ -86,6 +86,23 @@ async function sha256Hex(raw: string): Promise<string> {
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+// Constant-time secret comparison: hash both sides to equal-length digests, then
+// XOR every byte so timing does not reveal how many leading characters matched.
+async function timingSafeEqualString(provided: string, expected: string): Promise<boolean> {
+  const encoder = new TextEncoder();
+  const [left, right] = await Promise.all([
+    crypto.subtle.digest("SHA-256", encoder.encode(provided)),
+    crypto.subtle.digest("SHA-256", encoder.encode(expected)),
+  ]);
+  const leftBytes = new Uint8Array(left);
+  const rightBytes = new Uint8Array(right);
+  let diff = leftBytes.length ^ rightBytes.length;
+  for (let index = 0; index < leftBytes.length; index += 1) {
+    diff |= leftBytes[index] ^ rightBytes[index];
+  }
+  return diff === 0;
+}
+
 function normalizeTtlHours(input?: number): number {
   if (typeof input !== "number" || !Number.isFinite(input)) {
     return DEFAULT_TTL_HOURS;
@@ -158,7 +175,8 @@ Deno.serve(async (request) => {
     );
   }
 
-  if (request.headers.get("x-guest-session-key") !== configuredApiKey) {
+  const providedApiKey = request.headers.get("x-guest-session-key") ?? "";
+  if (!(await timingSafeEqualString(providedApiKey, configuredApiKey))) {
     return toJsonResponse(
       401,
       {
