@@ -82,6 +82,12 @@ function renderSql(manifest) {
   return rendered;
 }
 
+// Self-hosted Supabase: target the database explicitly instead of a CLI-linked cloud project.
+const dbUrl = process.env.SUPABASE_DB_URL?.trim();
+if (!dbUrl) {
+  fail("SUPABASE_DB_URL is required (Postgres connection string for the target Supabase database)");
+}
+
 const manifest = readManifest();
 const tempDirectory = mkdtempSync(resolve(tmpdir(), "hungry-catalog-publish-"));
 const renderedSqlPath = resolve(tempDirectory, "catalog_raw_release.sql");
@@ -95,7 +101,8 @@ try {
       "supabase",
       "db",
       "query",
-      "--linked",
+      "--db-url",
+      dbUrl,
       "--file",
       renderedSqlPath,
       "--output",

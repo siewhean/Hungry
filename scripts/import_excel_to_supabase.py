@@ -42,6 +42,7 @@ DEFAULT_OUTPUT = Path("/tmp/hungry-excel-food-business-staging.sql")
 IMPORT_URL_ENV = "HUNGRY_SUPABASE_IMPORT_URL"
 IMPORT_SERVICE_ROLE_ENV = "HUNGRY_SUPABASE_IMPORT_SERVICE_ROLE_KEY"
 IMPORT_PROJECT_REF_ENV = "HUNGRY_SUPABASE_IMPORT_PROJECT_REF"
+ALLOWED_HOSTS_ENV = "HUNGRY_SUPABASE_ALLOWED_HOSTS"
 IMPORT_OPT_IN_ENV = "HUNGRY_ALLOW_SERVICE_ROLE_IMPORT"
 
 STAGING_COLUMNS = [
@@ -499,13 +500,22 @@ def require_import_env() -> tuple[str, str]:
     url = clean(os.environ.get(IMPORT_URL_ENV))
     key = clean(os.environ.get(IMPORT_SERVICE_ROLE_ENV))
     project_ref = clean(os.environ.get(IMPORT_PROJECT_REF_ENV))
-    missing = [name for name, value in [(IMPORT_URL_ENV, url), (IMPORT_SERVICE_ROLE_ENV, key), (IMPORT_PROJECT_REF_ENV, project_ref)] if not value]
+    missing = [name for name, value in [(IMPORT_URL_ENV, url), (IMPORT_SERVICE_ROLE_ENV, key)] if not value]
     if missing:
         raise SystemExit(f"Missing required import environment: {', '.join(missing)}")
-    hostname = parse.urlparse(url).hostname or ""
-    if hostname not in {"localhost", "127.0.0.1", "::1"} and hostname.split(".")[0] != project_ref:
-        raise SystemExit(f"{IMPORT_PROJECT_REF_ENV} does not match {IMPORT_URL_ENV} project ref.")
-    return url.rstrip("/"), key
+    hostname = (parse.urlparse(url).hostname or "").lower()
+    allowed_hosts = {host.strip().lower() for host in (os.environ.get(ALLOWED_HOSTS_ENV) or "").split(",") if host.strip()}
+    if hostname in {"localhost", "127.0.0.1", "::1"} or hostname in allowed_hosts:
+        return url.rstrip("/"), key
+    # Backward compatibility: Supabase Cloud URLs may still be confirmed by project ref.
+    if hostname.endswith(".supabase.co") and project_ref:
+        if hostname.split(".")[0] != project_ref:
+            raise SystemExit(f"{IMPORT_PROJECT_REF_ENV} does not match {IMPORT_URL_ENV} project ref.")
+        return url.rstrip("/"), key
+    raise SystemExit(
+        f"{IMPORT_URL_ENV} host {hostname or '(none)'} is not in {ALLOWED_HOSTS_ENV}; "
+        "add it (comma-separated) to confirm the intended import target."
+    )
 
 
 def apply_to_supabase(

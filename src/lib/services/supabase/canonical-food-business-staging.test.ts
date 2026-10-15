@@ -211,6 +211,11 @@ test("canonical CSV staging importer is guarded and exposes package scripts", ()
   assert.match(smokeWrapper, /canonical_food_business_staging_smoke_passed/);
   assert.match(smokeWrapper, /missing_\|unexpected_\|mismatch\|invalid_\|incomplete_/);
   assert.match(chunkApplyWrapper, /supabase",\s*"db",\s*"query"/);
+  for (const wrapper of [smokeWrapper, chunkApplyWrapper]) {
+    assert.match(wrapper, /SUPABASE_DB_URL/);
+    assert.match(wrapper, /"--db-url",\s*dbUrl/);
+    assert.doesNotMatch(wrapper, /--linked/);
+  }
   assert.ok(chunkApplyWrapper.includes("/^\\d{4}_.+\\.sql$/"));
 });
 

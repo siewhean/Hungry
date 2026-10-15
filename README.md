@@ -122,6 +122,7 @@ To override these locally, you can use `.env.development` or modify the constant
 | Offline + NotFound states           | Done                                                                                       |
 | Marketing launch kit                | Done                                                                                       |
 | Excel Ingestion & ETL Migration     | Done — reconciled workbook and rights-safe runtime catalog published                       |
+| Singapore F&B source refresh       | In progress — 38,584-record public-access Excel; 294 catalogue-linked websites reviewed with 507 menu and 2,682 image URL candidates in separate review-only tabs. 11 operator snapshots contribute 246 exact outlet joins, 461 brand menu items, and 553 operator/exact-venue image candidates. OSM contributes 132 strict plus 694 labelled tier-2 joins. Fresh outlet-level menus, ratings, image rights, and closure verification remain incomplete. |
 | Typecheck                           | Passing                                                                                    |
 | Expo Doctor                         | Passing (18/18)                                                                            |
 | Agent harness docs                  | Done                                                                                       |

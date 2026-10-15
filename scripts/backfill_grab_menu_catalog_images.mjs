@@ -11,6 +11,7 @@ const DEFAULT_ENV = path.join(ROOT, ".env.local");
 const IMPORT_URL_ENV = "HUNGRY_SUPABASE_IMPORT_URL";
 const IMPORT_KEY_ENV = "HUNGRY_SUPABASE_IMPORT_SERVICE_ROLE_KEY";
 const IMPORT_PROJECT_REF_ENV = "HUNGRY_SUPABASE_IMPORT_PROJECT_REF";
+const ALLOWED_HOSTS_ENV = "HUNGRY_SUPABASE_ALLOWED_HOSTS";
 const IMPORT_OPT_IN_ENV = "HUNGRY_ALLOW_SERVICE_ROLE_IMPORT";
 const GRAB_LICENSE_OPT_IN_ENV = "HUNGRY_ALLOW_GRAB_LICENSED_MEDIA";
 const PAGE_SIZE = 1000;
@@ -64,18 +65,28 @@ function requireImportEnv() {
   const missing = [
     [IMPORT_URL_ENV, baseUrl],
     [IMPORT_KEY_ENV, serviceKey],
-    [IMPORT_PROJECT_REF_ENV, expectedRef],
   ]
     .filter(([, value]) => !value)
     .map(([key]) => key);
   if (missing.length > 0) {
     throw new Error(`Missing required import environment: ${missing.join(", ")}`);
   }
-  const actualRef = new URL(baseUrl).hostname.split(".")[0];
-  if (actualRef !== expectedRef) {
-    throw new Error(`${IMPORT_PROJECT_REF_ENV} does not match ${IMPORT_URL_ENV} project ref.`);
+  const hostname = new URL(baseUrl).hostname.toLowerCase();
+  const allowedHosts = (process.env[ALLOWED_HOSTS_ENV] ?? "")
+    .split(",")
+    .map((host) => host.trim().toLowerCase())
+    .filter(Boolean);
+  if (allowedHosts.includes(hostname)) return { baseUrl, serviceKey };
+  // Backward compatibility: Supabase Cloud URLs may still be confirmed by project ref.
+  if (hostname.endsWith(".supabase.co") && expectedRef) {
+    if (hostname.split(".")[0] !== expectedRef) {
+      throw new Error(`${IMPORT_PROJECT_REF_ENV} does not match ${IMPORT_URL_ENV} project ref.`);
+    }
+    return { baseUrl, serviceKey };
   }
-  return { baseUrl, serviceKey };
+  throw new Error(
+    `${IMPORT_URL_ENV} host ${hostname} is not in ${ALLOWED_HOSTS_ENV}; add it (comma-separated) to confirm the intended import target.`,
+  );
 }
 
 function requireLicensedMediaApproval(args) {

@@ -66,6 +66,8 @@ test("Supabase chat smoke script is explicit, cleanup-safe, and service-role gat
   assert.match(script, /HUNGRY_SUPABASE_SMOKE_ANON_KEY/);
   assert.match(script, /HUNGRY_SUPABASE_SMOKE_SERVICE_ROLE_KEY/);
   assert.match(script, /HUNGRY_SUPABASE_SMOKE_PROJECT_REF/);
+  assert.match(script, /HUNGRY_SUPABASE_ALLOWED_HOSTS/);
+  assert.match(script, /is not in \$\{ALLOWED_HOSTS_ENV\}/);
   assert.match(script, /HUNGRY_ALLOW_SERVICE_ROLE_SMOKE/);
   assert.match(script, /assertSmokeTargetIsAllowed/);
   assert.match(script, /hostname\.split\("\."\)\[0\]/);
