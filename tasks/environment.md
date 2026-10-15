@@ -150,6 +150,19 @@ Configured in: `tsconfig.json` + `babel.config.js`
 | No new nav libraries   | React Navigation only                                                                                                                                                                             |
 | TypeScript strict      | `any` requires a comment justification                                                                                                                                                            |
 | Mock map               | `mockMapboxEnabled: false` → real Mapbox SDK; set `true` for CI/test env                                                                                                                          |
+| Secrets in env files   | Tracked `.env.development/.staging/.production` hold public/build config only; server secrets go in untracked `.env.local`, EAS/CI secrets, or Supabase function secrets (`.env.example` lists names) |
+
+## Account Deletion Worker (ACCDEL-01)
+
+Nothing inside Supabase schedules `process-account-deletions`; the host must. No pg_cron dependency.
+
+- Function secrets (Supabase secret store / self-hosted edge-runtime env): `ACCOUNT_DELETION_WORKER_TOKEN`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`.
+- `supabase/config.toml` sets `verify_jwt = false` for this function (the bearer is the worker token, not a JWT). On self-hosted, the edge-runtime main router must not enforce JWT for it (global `VERIFY_JWT=false`, or exempt this function).
+- Runner: `scripts/run-account-deletion-worker.mjs` (Node 22, no deps). Env file on the VM, root-owned `chmod 600`, e.g. `/etc/hungry/account-deletion-worker.env`, with names only from `.env.example`: `ACCOUNT_DELETION_WORKER_TOKEN`, `SUPABASE_URL` (or `ACCOUNT_DELETION_WORKER_URL`), optional `ACCOUNT_DELETION_WORKER_LIMIT`, `ACCOUNT_DELETION_WORKER_MAX_BATCHES`.
+- VM crontab (every 15 min; well inside the 30-day promise on `/account/delete`):
+  `*/15 * * * * /usr/bin/node --env-file=/etc/hungry/account-deletion-worker.env /opt/hungry/scripts/run-account-deletion-worker.mjs >> /var/log/hungry/account-deletion.log 2>&1`
+- Exit codes: `0` ok/empty queue, `1` a request or the call failed (alert on this), `2` missing config. Logs carry request ids only.
+- Per request: anonymize (0040 RPC) -> `purge_account_deletion_residual_data` (post-0040 tables, avatar URL) -> delete `<uid>/` objects in avatars, review-media, bites-media, post-media, menu-photos, user-stall-submission-images (accepted stall-submission images kept) -> `auth.admin.deleteUser` -> complete. Idempotent; failures retry next run; after 10 attempts a request stops auto-claiming and needs manual review (`last_error`, `account_deletion_processing_events`).
 
 ## Self-Hosted Supabase Targets
 

@@ -32,6 +32,8 @@ src/graphify-out/
 .env.staging.local
 .env.production.local
 .env.local
+# Any machine-local override file (secrets live here, never in tracked .env.*)
+*.local
 tasks/release-evidence/*.env
 !tasks/release-evidence/*.example.env
 *.watchman-cookie-*
