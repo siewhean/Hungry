@@ -29,7 +29,8 @@ test("staging and production default to the narrow Release 0.1 surface", () => {
 
     assert.equal(flags.release01CoreOnly, true);
     assert.equal(flags.catalogReadV2, true);
-    assert.equal(flags.favouritesEnabled, false);
+    // Favourites are Release 0.1 MVP scope and ship default-on (R01-SCOPE-01).
+    assert.equal(flags.favouritesEnabled, true);
     for (const flag of RELEASE_DISABLED_FLAGS) {
       assert.equal(flags[flag], false, `${flag} must fail closed in ${appEnv}`);
     }

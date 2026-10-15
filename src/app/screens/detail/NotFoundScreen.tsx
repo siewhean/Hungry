@@ -6,6 +6,7 @@ import { UtensilsCrossed } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Button, ExpandableSearchLauncher } from "@/components/ui";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 
 import { useHungryTheme } from "@/theme";
 
@@ -66,8 +67,12 @@ export function NotFoundScreen({ navigation, route }: Props) {
             {body}
           </AppText>
           <Button
-            label="Back to Feed"
-            onPress={() => navigation.navigate("MainTabs", { screen: "Home" })}
+            label={FEATURE_FLAGS.socialFeedEnabled ? "Back to Feed" : "Back to Discover"}
+            onPress={() =>
+              navigation.navigate("MainTabs", {
+                screen: FEATURE_FLAGS.socialFeedEnabled ? "Home" : "Discover",
+              })
+            }
             style={{ borderRadius: componentRadii.button, minHeight: 56, width: 220 }}
           />
           <ExpandableSearchLauncher

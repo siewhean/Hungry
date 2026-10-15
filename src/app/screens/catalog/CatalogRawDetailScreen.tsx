@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ArrowLeft, ExternalLink, MapPin } from "lucide-react-native";
+import { ArrowLeft, ExternalLink, Heart, MapPin } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AccessibleImage, AppText, EmptyState, Screen, Skeleton } from "@/components/ui";
+import { AccessibleImage, AppText, Button, EmptyState, Screen, Skeleton } from "@/components/ui";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { getCatalogRawService, getServiceProvider } from "@/lib/services/serviceProvider";
 import {
   CatalogAccessError,
@@ -17,7 +18,9 @@ import {
   recordCatalogDiagnostic,
   summarizeCatalogRequest,
 } from "@/lib/services/catalog/diagnostics";
+import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
+import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "CatalogRawDetail">;
@@ -40,6 +43,30 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const isDish = route.params.kind === "dish";
+  const isFavourite = useProfileStore((state) =>
+    state.profile.favouriteDishIds.includes(route.params.id),
+  );
+  const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
+  const showToast = useUIStore((state) => state.showToast);
+  const [isSavingFavourite, setIsSavingFavourite] = useState(false);
+
+  const handleToggleFavourite = async (dish: CatalogRawDishDetail) => {
+    setIsSavingFavourite(true);
+    try {
+      // Toast only after the authenticated write settles so failures are never hidden.
+      const result = await toggleFavourite({ id: dish.id, venueId: dish.venueId });
+      if (result.status === "failed") {
+        showToast({ message: result.message, tone: "error" });
+        return;
+      }
+      showToast({
+        message: result.status === "saved" ? "Saved to favourites." : "Removed from favourites.",
+        tone: "success",
+      });
+    } finally {
+      setIsSavingFavourite(false);
+    }
+  };
 
   const load = useCallback(async () => {
     const startedAt = Date.now();
@@ -229,6 +256,21 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
               </AppText>
             </>
           )}
+          {isDish && FEATURE_FLAGS.favouritesEnabled ? (
+            <Button
+              label={isFavourite ? "Remove from favourites" : "Save to favourites"}
+              variant={isFavourite ? "secondary" : "primary"}
+              loading={isSavingFavourite}
+              leftIcon={
+                <Heart
+                  color={isFavourite ? palette.error : palette.white}
+                  fill={isFavourite ? palette.error : "transparent"}
+                  size={18}
+                />
+              }
+              onPress={() => void handleToggleFavourite(detail as CatalogRawDishDetail)}
+            />
+          ) : null}
           {"description" in detail && detail.description ? (
             <AppText>{detail.description}</AppText>
           ) : null}

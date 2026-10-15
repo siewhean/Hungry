@@ -55,9 +55,9 @@ export function resolveFeatureFlags(
     mapEnabled,
     hungryWheelEnabled,
     craveEnabled,
-    // Saving is deferred from the Release 0.1 consumer loop until the
-    // authenticated write, rollback, and account-isolation journey is proven.
-    favouritesEnabled: advancedDevelopmentSurfaceEnabled,
+    // Favourites are Release 0.1 MVP scope (R01-SCOPE-01): on by default in every
+    // environment. Writes are authenticated and surface server success/failure.
+    favouritesEnabled: true,
     notificationsEnabled: false,
     catalogDiagnosticsEnabled: appEnv !== "production",
     // Staging and production must exercise the same release-versioned catalog

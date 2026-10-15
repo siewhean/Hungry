@@ -426,18 +426,22 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!isAuthenticated) {
       setReturnRoute({
-        name: "DishDetailV2",
+        name: "DishDetail",
         params: { dishId: dish.id },
       });
       navigation.navigate("AuthStack", { screen: "Login" });
       return;
     }
 
-    toggleFavourite(dish);
-    if (!isSaved) {
+    const result = await toggleFavourite(dish);
+    if (result.status === "failed") {
+      showToast({ message: result.message, tone: "error" });
+      return;
+    }
+    if (result.status === "saved") {
       void getHungryService().discovery.recordMerchantActionEvent({
         eventType: "save",
         venueId: dish.venueId,
@@ -446,7 +450,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       });
     }
     showToast({
-      message: isSaved ? "Removed from favourites." : "Saved to favourites!",
+      message: result.status === "saved" ? "Saved to favourites." : "Removed from favourites.",
       tone: "success",
     });
   };
@@ -478,7 +482,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
 
     if (!isAuthenticated) {
       setReturnRoute({
-        name: "DishDetailV2",
+        name: "DishDetail",
         params: { dishId: dish.id },
       });
       navigation.navigate("AuthStack", { screen: "Login" });
@@ -843,7 +847,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                       key={item.id}
                       accessibilityRole="button"
                       accessibilityLabel={`Open ${item.name}`}
-                      onPress={() => navigation.navigate("DishDetailV2", { dishId: item.id })}
+                      onPress={() => navigation.navigate("DishDetail", { dishId: item.id })}
                       style={{
                         height: signatureGridItemHeight,
                         overflow: "hidden",
@@ -1000,7 +1004,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={isSaved ? "Unsave this dish" : "Save this dish"}
-                  onPress={handleSave}
+                  onPress={() => void handleSave()}
                   style={{
                     alignItems: "center",
                     height: 42,

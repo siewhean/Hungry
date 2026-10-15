@@ -1,0 +1,128 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import test from "node:test";
+
+import { resolveFeatureFlags } from "@/constants/featureFlags";
+
+const root = process.cwd();
+
+function read(relativePath: string): string {
+  return readFileSync(path.join(root, relativePath), "utf8");
+}
+
+type EasProfile = { env?: Record<string, string> };
+
+const RELEASE_PROFILES = ["internal-alpha", "preview", "production"] as const;
+
+test("R01-SCOPE-01: favourites ship default-on in every eas release profile", () => {
+  const eas = JSON.parse(read("eas.json")) as { build: Record<string, EasProfile> };
+
+  for (const name of RELEASE_PROFILES) {
+    const env = eas.build[name]?.env ?? {};
+    const flags = resolveFeatureFlags(env.EXPO_PUBLIC_APP_ENV, "production", env);
+
+    assert.equal(flags.release01CoreOnly, true, `${name} must be a released environment`);
+    assert.equal(flags.favouritesEnabled, true, `${name} must expose favourites`);
+    // Release flags and eas.json must agree: catalog reads on, cut surfaces off.
+    assert.equal(flags.catalogReadV2, true, `${name} must read the versioned catalog`);
+    assert.equal(env.EXPO_PUBLIC_CATALOG_READ_V2, "1", `${name} env must not contradict flags`);
+    for (const [key, value] of Object.entries(env)) {
+      if (key.startsWith("EXPO_PUBLIC_ENABLE_")) {
+        assert.equal(value, "0", `${name} must keep ${key} closed for Release 0.1`);
+      }
+    }
+    assert.equal(flags.socialFeedEnabled, false);
+    assert.equal(flags.reviewCreationEnabled, false);
+    assert.equal(flags.activityEnabled, false);
+  }
+});
+
+test("R01-WRITE-01: favourite writes resolve only after the authenticated write settles", () => {
+  const store = read("src/store/useProfileStore.ts");
+
+  assert.match(
+    store,
+    /toggleFavourite: \(dish: FavouriteDishInput\) => Promise<FavouriteToggleResult>/,
+  );
+  assert.match(store, /toggleFavourite: async \(dish\) => \{/);
+  assert.match(
+    store,
+    /const saved = await getHungryService\(\)\.profile\.toggleFavourite\(dishId\);[\s\S]*?return \{ status: saved \? "saved" : "removed" \};/,
+  );
+  assert.match(store, /catch \(error\) \{[\s\S]*?reason: "sync_failed"/);
+  assert.match(store, /reason: "signed_out"/);
+});
+
+test("R01-WRITE-01: favourite toasts follow the write result, never an optimistic guess", () => {
+  const catalogDetail = read("src/app/screens/catalog/CatalogRawDetailScreen.tsx");
+  const dishDetail = read("src/app/screens/detail/DishDetailScreenV2.tsx");
+  const favourites = read("src/app/screens/profile/FavouritesScreen.tsx");
+
+  assert.match(catalogDetail, /\{isDish && FEATURE_FLAGS\.favouritesEnabled \? \(/);
+  assert.match(
+    catalogDetail,
+    /const result = await toggleFavourite\(\{ id: dish\.id, venueId: dish\.venueId \}\);[\s\S]*?result\.status === "failed"[\s\S]*?tone: "error"/,
+  );
+
+  assert.match(
+    dishDetail,
+    /const result = await toggleFavourite\(dish\);\s*if \(result\.status === "failed"\) \{\s*showToast\(\{ message: result\.message, tone: "error" \}\);/,
+  );
+  assert.doesNotMatch(dishDetail, /Saved to favourites!/);
+
+  assert.match(favourites, /<CatalogFavouritesScreen \{\.\.\.props\} \/>/);
+  assert.match(
+    favourites,
+    /rootNavigation\.navigate\("CatalogRawDetail", \{ kind: "dish", id: dish\.id \}\)/,
+  );
+  assert.match(
+    favourites,
+    /result\.status === "failed"\s*\? \{ message: result\.message, tone: "error" \}/,
+  );
+});
+
+test("release-reachable screens hide controls for cut features behind their flags", () => {
+  const settings = read("src/app/screens/profile/SettingsScreen.tsx");
+  const notFound = read("src/app/screens/detail/NotFoundScreen.tsx");
+  const search = read("src/app/screens/search/DishSearchScreen.tsx");
+  const dishDetail = read("src/app/screens/detail/DishDetailScreenV2.tsx");
+
+  assert.match(settings, /const showSocialPrivacySettings = FEATURE_FLAGS\.socialFeedEnabled;/);
+  assert.match(
+    settings,
+    /\{showSocialPrivacySettings \? \([\s\S]*?label="Profile visibility"[\s\S]*?label="Hide reviewed dishes from public feed"/,
+  );
+  assert.match(
+    settings,
+    /\{FEATURE_FLAGS\.activityEnabled \? \(\s*<SettingsRow\s*label="Show activity feed"/,
+  );
+  // Unwired preferences (no reader outside useUIStore) stay dev-only via the prototype flag.
+  assert.match(
+    settings,
+    /const showUnwiredPreferenceSettings = FEATURE_FLAGS\.prototypeRoutesEnabled;/,
+  );
+  for (const label of ["Show location badge", "Dietary filters", "Show only favourite dishes"]) {
+    assert.match(
+      settings,
+      new RegExp(`\\{showUnwiredPreferenceSettings \\? \\(\\s*<SettingsRow\\s*label="${label}"`),
+      `${label} must be gated behind showUnwiredPreferenceSettings`,
+    );
+  }
+  // Left-handed mode keeps "Feed and discovery settings" non-empty and closes the section.
+  assert.match(
+    settings,
+    /onToggle=\{setLeftHandedMode\}\s*isLast=\{!showUnwiredPreferenceSettings\}/,
+  );
+
+  assert.match(
+    notFound,
+    /label=\{FEATURE_FLAGS\.socialFeedEnabled \? "Back to Feed" : "Back to Discover"\}/,
+  );
+
+  assert.match(search, /\{!shouldUseCatalogReadV2 \? \(\s*<Pressable[\s\S]*?SUGGESTED FOR TONIGHT/);
+
+  // DishDetailV2 is a prototype-only route; release detail links must use DishDetail.
+  assert.doesNotMatch(dishDetail, /navigate\("DishDetailV2"/);
+  assert.doesNotMatch(dishDetail, /name: "DishDetailV2"/);
+});
