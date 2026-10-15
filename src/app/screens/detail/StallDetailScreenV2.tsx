@@ -220,14 +220,18 @@ export function StallDetailScreenV2({ route }: Props) {
   const formatDeliveryPlatform = (platform: DeliveryLink["platform"]) =>
     platform === "grabfood" ? "GrabFood" : "Foodpanda";
 
-  const handleSaveStall = () => {
+  const handleSaveStall = async () => {
     if (!leadDish) {
       showToast({ message: "No dish is available to save for this stall.", tone: "info" });
       return;
     }
 
-    toggleFavourite(leadDish);
-    if (!isSaved) {
+    const result = await toggleFavourite(leadDish);
+    if (result.status === "failed") {
+      showToast({ message: result.message, tone: "error" });
+      return;
+    }
+    if (result.status === "saved") {
       void getHungryService().discovery.recordMerchantActionEvent({
         eventType: "save",
         venueId: venue.id,
@@ -236,7 +240,8 @@ export function StallDetailScreenV2({ route }: Props) {
       });
     }
     showToast({
-      message: isSaved ? "Removed from favourites." : "Saved top dish to favourites.",
+      message:
+        result.status === "saved" ? "Saved top dish to favourites." : "Removed from favourites.",
       tone: "success",
     });
   };
@@ -323,7 +328,7 @@ export function StallDetailScreenV2({ route }: Props) {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={isSaved ? "Remove top dish from favourites" : "Save top dish"}
-              onPress={handleSaveStall}
+              onPress={() => void handleSaveStall()}
               style={{
                 width: 36,
                 height: 36,

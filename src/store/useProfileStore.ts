@@ -130,7 +130,7 @@ interface ProfileState {
   setProvisionalOnboardingMigration: (migration: ProvisionalOnboardingMigration) => void;
   clearProvisionalOnboardingMigration: (userId: string) => void;
   syncProfile: (isAuthenticated: boolean, userId?: string | null) => void;
-  toggleFavourite: (dish: DishDetail) => void;
+  toggleFavourite: (dish: FavouriteDishInput) => Promise<FavouriteToggleResult>;
   updateProfile: (next: Partial<Pick<UserProfile, "displayName" | "email" | "avatarUrl">>) => void;
   setProfileVisibility: (profileVisibility: ProfileVisibility) => void;
   setTasteVector: (tasteVector: TasteVector) => void;
@@ -178,6 +178,39 @@ const FEEDBACK_CONFIDENCE_DELTAS: Record<ExplicitFeedbackEvent["type"], number> 
 };
 
 const pendingFavouriteDishToggles = new Set<string>();
+
+/** Legacy screens pass a full dish; Release 0.1 catalog screens pass only ids. */
+export type FavouriteDishInput = DishDetail | Pick<DishDetail, "id" | "venueId">;
+
+/** Resolved only after the authenticated write settles, so UI never claims an unsaved write. */
+export type FavouriteToggleResult =
+  | { status: "saved" | "removed" }
+  | { status: "failed"; reason: "pending" | "signed_out" | "sync_failed"; message: string };
+
+function isFullFavouriteDish(dish: FavouriteDishInput): dish is DishDetail {
+  return "tasteVector" in dish && Boolean(dish.tasteVector);
+}
+
+function setFavouriteMembership(
+  set: (fn: (state: ProfileState) => Partial<ProfileState>) => void,
+  dishId: string,
+  isFavourite: boolean,
+) {
+  set((state) => {
+    const hasDish = state.profile.favouriteDishIds.includes(dishId);
+    if (hasDish === isFavourite) return {};
+    const nextIds = isFavourite
+      ? [...state.profile.favouriteDishIds, dishId]
+      : state.profile.favouriteDishIds.filter((id) => id !== dishId);
+    return {
+      profile: {
+        ...state.profile,
+        favouriteDishIds: nextIds,
+        stats: { ...state.profile.stats, favouritesCount: nextIds.length },
+      },
+    };
+  });
+}
 
 function clampConfidence(value: number) {
   return Math.max(0, Math.min(1, Number(value.toFixed(3))));
@@ -439,14 +472,18 @@ export const useProfileStore = create<ProfileState>()(
         });
         rehydrateFavouriteDishIds();
       },
-      toggleFavourite: (dish) => {
+      toggleFavourite: async (dish) => {
         const dishId = dish.id;
         if (pendingFavouriteDishToggles.has(dishId)) {
-          return;
+          return {
+            status: "failed",
+            reason: "pending",
+            message: "Still saving your last change. Try again in a moment.",
+          };
         }
         if (!getSessionStoreState().isAuthenticated) {
           console.warn("Favourite toggle ignored because the user is signed out.");
-          return;
+          return { status: "failed", reason: "signed_out", message: "Sign in to save favourites." };
         }
         pendingFavouriteDishToggles.add(dishId);
         const previousSnapshot = {
@@ -454,6 +491,9 @@ export const useProfileStore = create<ProfileState>()(
           tasteProfile: get().tasteProfile,
           tasteInteractionEvents: get().tasteInteractionEvents,
         };
+        const wasFavourite = previousSnapshot.profile.favouriteDishIds.includes(dishId);
+        // Catalog (release) dishes carry no taste vector; they only toggle membership.
+        const tasteDish = isFullFavouriteDish(dish) ? dish : undefined;
         let recordedEvent: TasteInteractionEvent | undefined;
         let interactionInput: RecordTasteInteractionInput | undefined;
         set((state) => {
@@ -462,12 +502,32 @@ export const useProfileStore = create<ProfileState>()(
             ? state.profile.favouriteDishIds.filter((id) => id !== dishId)
             : [...state.profile.favouriteDishIds, dishId];
           const feedbackType: ExplicitFeedbackEvent["type"] = isFavourite ? "unsaved" : "saved";
+
+          trackAnalyticsEvent(isFavourite ? "dish_unfavourited" : "dish_favourited", {
+            dish_id: dish.id,
+            venue_id: dish.venueId,
+          });
+
+          if (!tasteDish) {
+            return {
+              profile: {
+                ...state.profile,
+                favouriteDishIds: nextIds,
+                stats: { ...state.profile.stats, favouritesCount: nextIds.length },
+              },
+            };
+          }
+
           const updatedTasteVector = processExplicitFeedback(state.profile.tasteVector, {
             type: feedbackType,
-            dishVector: dish.tasteVector,
+            dishVector: tasteDish.tasteVector,
             timestamp: Date.now(),
           });
-          interactionInput = { type: isFavourite ? "unsaved" : "saved", surface: "profile", dish };
+          interactionInput = {
+            type: isFavourite ? "unsaved" : "saved",
+            surface: "profile",
+            dish: tasteDish,
+          };
           const event = createTasteEvent(
             interactionInput,
             state.profile.tasteVector,
@@ -475,11 +535,6 @@ export const useProfileStore = create<ProfileState>()(
             true,
           );
           recordedEvent = event;
-
-          trackAnalyticsEvent(isFavourite ? "dish_unfavourited" : "dish_favourited", {
-            dish_id: dish.id,
-            venue_id: dish.venueId,
-          });
 
           const nextProfile = {
             ...state.profile,
@@ -504,19 +559,30 @@ export const useProfileStore = create<ProfileState>()(
         if (interactionInput) {
           persistTasteInteraction(interactionInput, recordedEvent);
         }
-        if (getServiceProvider().mode !== "mock") {
-          const optimisticProfile = get().profile;
-          void getHungryService()
-            .profile.toggleFavourite(dishId)
-            .catch((error) => {
-              console.error("Failed to sync favourite toggle", error);
-              if (get().profile !== optimisticProfile) return;
-              set(previousSnapshot);
-            })
-            .finally(() => {
-              pendingFavouriteDishToggles.delete(dishId);
-            });
-        } else {
+        if (getServiceProvider().mode === "mock") {
+          pendingFavouriteDishToggles.delete(dishId);
+          return { status: wasFavourite ? "removed" : "saved" };
+        }
+
+        const optimisticProfile = get().profile;
+        try {
+          const saved = await getHungryService().profile.toggleFavourite(dishId);
+          // The server toggles its own row; if local state was stale, adopt the server result.
+          setFavouriteMembership(set, dishId, saved);
+          return { status: saved ? "saved" : "removed" };
+        } catch (error) {
+          console.error("Failed to sync favourite toggle", error);
+          if (get().profile === optimisticProfile) {
+            set(previousSnapshot);
+          } else {
+            setFavouriteMembership(set, dishId, wasFavourite);
+          }
+          return {
+            status: "failed",
+            reason: "sync_failed",
+            message: "Couldn't update your favourites. Check your connection and try again.",
+          };
+        } finally {
           pendingFavouriteDishToggles.delete(dishId);
         }
       },

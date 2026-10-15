@@ -593,7 +593,7 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.match(source, /formatBasePrice\(item\.price\)/);
   assert.doesNotMatch(source, /\{dish\.priceRange\}/);
   assert.doesNotMatch(source, /\{item\.priceRange\}/);
-  assert.match(source, /navigation\.navigate\(\"DishDetailV2\", \{ dishId: item\.id \}\)/);
+  assert.match(source, /navigation\.navigate\(\"DishDetail\", \{ dishId: item\.id \}\)/);
   assert.match(navigatorSource, /const loadDishDetailScreenV2 =/);
   assert.match(navigatorSource, /getComponent=\{loadDishDetailScreenV2\} name="DishDetailV2"/);
   assert.match(navigationTypes, /DishDetailV2: \{ dishId\?: string; id\?: string \};/);

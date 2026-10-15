@@ -136,73 +136,76 @@ export function DishSearchScreen() {
           onPress={() => navigation.navigate("TasteFilter")}
         />
         <Button label="View search results" onPress={() => navigation.navigate("SearchResults")} />
-        <Pressable
-          onPress={() => {
-            if (suggestedDish) {
-              setDecideForMe(suggestedDish);
-              navigation.navigate("DishDetail", { dishId: suggestedDish.id });
-            }
-          }}
-          disabled={!suggestedDish}
-          accessibilityRole="button"
-          accessibilityLabel={
-            suggestedDish
-              ? `Open suggested dish ${suggestedDish.name}`
-              : "Suggested dish unavailable"
-          }
-          accessibilityHint="Opens this dish detail page"
-          accessibilityState={{ disabled: !suggestedDish }}
-          style={({ pressed }) => [
-            {
-              backgroundColor: pressed ? palette.bgSoft : palette.surface,
-              borderRadius: componentRadii.card,
-              borderWidth: 1,
-              borderColor: palette.border,
-              overflow: "hidden",
-            },
-            shadows.card,
-          ]}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              gap: spacing[4],
-              padding: spacing[4],
+        {/* Catalog mode renders no local suggestion; hide the card instead of a disabled dead end. */}
+        {!shouldUseCatalogReadV2 ? (
+          <Pressable
+            onPress={() => {
+              if (suggestedDish) {
+                setDecideForMe(suggestedDish);
+                navigation.navigate("DishDetail", { dishId: suggestedDish.id });
+              }
             }}
+            disabled={!suggestedDish}
+            accessibilityRole="button"
+            accessibilityLabel={
+              suggestedDish
+                ? `Open suggested dish ${suggestedDish.name}`
+                : "Suggested dish unavailable"
+            }
+            accessibilityHint="Opens this dish detail page"
+            accessibilityState={{ disabled: !suggestedDish }}
+            style={({ pressed }) => [
+              {
+                backgroundColor: pressed ? palette.bgSoft : palette.surface,
+                borderRadius: componentRadii.card,
+                borderWidth: 1,
+                borderColor: palette.border,
+                overflow: "hidden",
+              },
+              shadows.card,
+            ]}
           >
-            <View style={{ flex: 1, gap: spacing[1] }}>
-              <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
-                SUGGESTED FOR TONIGHT
-              </AppText>
-              <AppText variant="h2" style={{ marginTop: spacing[1] }}>
-                Craving {suggestedDish?.name ?? "something special"}?
-              </AppText>
-              <AppText variant="bodySmall" tone="secondary" style={{ marginTop: spacing[1] }}>
-                Best match within 2km. Start strong, widen later if needed.
-              </AppText>
-              <View
-                style={{
-                  alignSelf: "flex-start",
-                  marginTop: spacing[3],
-                  backgroundColor: palette.orangeLight,
-                  paddingHorizontal: spacing[3],
-                  paddingVertical: spacing[2],
-                  borderRadius: radii.pill,
-                }}
-              >
-                <AppText variant="micro" style={{ color: palette.accentText, fontWeight: "700" }}>
-                  BROWSE DISH
+            <View
+              style={{
+                flexDirection: "row",
+                gap: spacing[4],
+                padding: spacing[4],
+              }}
+            >
+              <View style={{ flex: 1, gap: spacing[1] }}>
+                <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
+                  SUGGESTED FOR TONIGHT
                 </AppText>
+                <AppText variant="h2" style={{ marginTop: spacing[1] }}>
+                  Craving {suggestedDish?.name ?? "something special"}?
+                </AppText>
+                <AppText variant="bodySmall" tone="secondary" style={{ marginTop: spacing[1] }}>
+                  Best match within 2km. Start strong, widen later if needed.
+                </AppText>
+                <View
+                  style={{
+                    alignSelf: "flex-start",
+                    marginTop: spacing[3],
+                    backgroundColor: palette.orangeLight,
+                    paddingHorizontal: spacing[3],
+                    paddingVertical: spacing[2],
+                    borderRadius: radii.pill,
+                  }}
+                >
+                  <AppText variant="micro" style={{ color: palette.accentText, fontWeight: "700" }}>
+                    BROWSE DISH
+                  </AppText>
+                </View>
               </View>
+              <AccessibleImage
+                source={{ uri: suggestedDish?.imageUrl }}
+                style={{ borderRadius: radii.md, height: 120, width: 100 }}
+                contentFit="cover"
+                decorative
+              />
             </View>
-            <AccessibleImage
-              source={{ uri: suggestedDish?.imageUrl }}
-              style={{ borderRadius: radii.md, height: 120, width: 100 }}
-              contentFit="cover"
-              decorative
-            />
-          </View>
-        </Pressable>
+          </Pressable>
+        ) : null}
 
         <View style={{ gap: spacing[3] }}>
           <AppText variant="h2">Stalls worth checking</AppText>

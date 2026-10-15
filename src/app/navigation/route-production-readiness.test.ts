@@ -33,7 +33,7 @@ test("production route gates keep advanced surfaces behind MVP-safe flags", () =
   assert.match(flags, /merchantClaimCtaEnabled: advancedDevelopmentSurfaceEnabled/);
   assert.match(flags, /oauthProvidersEnabled: advancedDevelopmentSurfaceEnabled/);
   assert.match(flags, /floorplansEnabled: false/);
-  assert.match(flags, /favouritesEnabled: advancedDevelopmentSurfaceEnabled/);
+  assert.match(flags, /favouritesEnabled: true,/);
   assert.match(flags, /appEnv !== "production"/);
   assert.match(rootNavigator, /FEATURE_FLAGS\.prototypeRoutesEnabled \? \(/);
   for (const routeName of [

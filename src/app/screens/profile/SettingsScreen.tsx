@@ -94,6 +94,11 @@ export function SettingsScreen() {
   const isProfilePrivate = profile.profileVisibility === "private";
   const showNotificationSettings = FEATURE_FLAGS.notificationsEnabled;
   const showGamificationSettings = FEATURE_FLAGS.gamificationEnabled;
+  // Profile visibility and public-feed controls only matter when social surfaces ship.
+  const showSocialPrivacySettings = FEATURE_FLAGS.socialFeedEnabled;
+  // Location badge, dietary filters, and favourites-only are persisted but not yet read by
+  // any screen, store, or service. Keep them dev-only (prototype flag) until they are wired.
+  const showUnwiredPreferenceSettings = FEATURE_FLAGS.prototypeRoutesEnabled;
 
   const normalizedThemePreference: ThemePreference =
     themePreference === "system" || themePreference === "light" || themePreference === "dark"
@@ -293,50 +298,56 @@ export function SettingsScreen() {
         />
       </SettingsSection>
 
-      <SettingsSection title="Privacy">
-        <SettingsRow
-          label="Profile visibility"
-          icon={
-            isProfilePrivate ? (
-              <Lock size={20} color={palette.orange} />
-            ) : (
-              <Globe size={20} color={palette.orange} />
-            )
-          }
-          type="navigation"
-          value={isProfilePrivate ? "Private" : "Public"}
-          onPress={showProfileVisibilityDialog}
-          isLast={false}
-        />
-        <SettingsRow
-          label="Hide reviewed dishes from public feed"
-          icon={<Bell size={20} color={palette.orange} />}
-          type="toggle"
-          isEnabled={hideReviewedDishesFromFeed}
-          onToggle={setHideReviewedDishesFromFeed}
-          isLast={!showGamificationSettings}
-        />
-        {showGamificationSettings ? (
-          <>
-            <SettingsRow
-              label="Show Food Cred tier"
-              icon={<Star size={20} color={palette.orange} />}
-              type="toggle"
-              isEnabled={showCredTier}
-              onToggle={setShowCredTier}
-              isLast={false}
-            />
-            <SettingsRow
-              label="Show Passport progress"
-              icon={<Globe size={20} color={palette.orange} />}
-              type="toggle"
-              isEnabled={showPassportProgress}
-              onToggle={setShowPassportProgress}
-              isLast
-            />
-          </>
-        ) : null}
-      </SettingsSection>
+      {showSocialPrivacySettings || showGamificationSettings ? (
+        <SettingsSection title="Privacy">
+          {showSocialPrivacySettings ? (
+            <>
+              <SettingsRow
+                label="Profile visibility"
+                icon={
+                  isProfilePrivate ? (
+                    <Lock size={20} color={palette.orange} />
+                  ) : (
+                    <Globe size={20} color={palette.orange} />
+                  )
+                }
+                type="navigation"
+                value={isProfilePrivate ? "Private" : "Public"}
+                onPress={showProfileVisibilityDialog}
+                isLast={false}
+              />
+              <SettingsRow
+                label="Hide reviewed dishes from public feed"
+                icon={<Bell size={20} color={palette.orange} />}
+                type="toggle"
+                isEnabled={hideReviewedDishesFromFeed}
+                onToggle={setHideReviewedDishesFromFeed}
+                isLast={!showGamificationSettings}
+              />
+            </>
+          ) : null}
+          {showGamificationSettings ? (
+            <>
+              <SettingsRow
+                label="Show Food Cred tier"
+                icon={<Star size={20} color={palette.orange} />}
+                type="toggle"
+                isEnabled={showCredTier}
+                onToggle={setShowCredTier}
+                isLast={false}
+              />
+              <SettingsRow
+                label="Show Passport progress"
+                icon={<Globe size={20} color={palette.orange} />}
+                type="toggle"
+                isEnabled={showPassportProgress}
+                onToggle={setShowPassportProgress}
+                isLast
+              />
+            </>
+          ) : null}
+        </SettingsSection>
+      ) : null}
 
       <SettingsSection title="Location & Discovery">
         <SettingsRow
@@ -356,14 +367,16 @@ export function SettingsScreen() {
           onToggle={handleLocationPermissionToggle}
           isLast={false}
         />
-        <SettingsRow
-          label="Show location badge"
-          icon={<MapPin size={20} color={palette.orange} />}
-          type="toggle"
-          isEnabled={showLocationBadge}
-          onToggle={setShowLocationBadge}
-          isLast={false}
-        />
+        {showUnwiredPreferenceSettings ? (
+          <SettingsRow
+            label="Show location badge"
+            icon={<MapPin size={20} color={palette.orange} />}
+            type="toggle"
+            isEnabled={showLocationBadge}
+            onToggle={setShowLocationBadge}
+            isLast={false}
+          />
+        ) : null}
         <SettingsRow
           label="Reset selected location"
           icon={<RefreshCw size={20} color={palette.orange} />}
@@ -373,38 +386,44 @@ export function SettingsScreen() {
       </SettingsSection>
 
       <SettingsSection title="Feed and discovery settings">
-        <SettingsRow
-          label="Dietary filters"
-          icon={<Shield size={20} color={palette.orange} />}
-          type="toggle"
-          isEnabled={dietaryFiltersEnabled}
-          onToggle={setDietaryFiltersEnabled}
-          isLast={false}
-        />
-        <SettingsRow
-          label="Show activity feed"
-          icon={<Star size={20} color={palette.orange} />}
-          type="toggle"
-          isEnabled={activityFeedEnabled}
-          onToggle={setActivityFeedEnabled}
-          isLast={false}
-        />
+        {showUnwiredPreferenceSettings ? (
+          <SettingsRow
+            label="Dietary filters"
+            icon={<Shield size={20} color={palette.orange} />}
+            type="toggle"
+            isEnabled={dietaryFiltersEnabled}
+            onToggle={setDietaryFiltersEnabled}
+            isLast={false}
+          />
+        ) : null}
+        {FEATURE_FLAGS.activityEnabled ? (
+          <SettingsRow
+            label="Show activity feed"
+            icon={<Star size={20} color={palette.orange} />}
+            type="toggle"
+            isEnabled={activityFeedEnabled}
+            onToggle={setActivityFeedEnabled}
+            isLast={false}
+          />
+        ) : null}
         <SettingsRow
           label="Left-handed mode"
           icon={<HandMetal size={20} color={palette.orange} />}
           type="toggle"
           isEnabled={profile.leftHandedMode}
           onToggle={setLeftHandedMode}
-          isLast={false}
+          isLast={!showUnwiredPreferenceSettings}
         />
-        <SettingsRow
-          label="Show only favourite dishes"
-          icon={<Globe size={20} color={palette.orange} />}
-          type="toggle"
-          isEnabled={showOnlyFavoriteDishes}
-          onToggle={setShowOnlyFavoriteDishes}
-          isLast
-        />
+        {showUnwiredPreferenceSettings ? (
+          <SettingsRow
+            label="Show only favourite dishes"
+            icon={<Globe size={20} color={palette.orange} />}
+            type="toggle"
+            isEnabled={showOnlyFavoriteDishes}
+            onToggle={setShowOnlyFavoriteDishes}
+            isLast
+          />
+        ) : null}
       </SettingsSection>
 
       {showNotificationSettings || showGamificationSettings ? (
