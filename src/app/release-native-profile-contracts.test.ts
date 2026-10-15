@@ -120,6 +120,59 @@ test("released config retains only nearby-discovery native permissions", () => {
   }
 });
 
+test("released config blocks library-merged Android permissions", () => {
+  const loadConfig = require("../../app.config.js") as () => {
+    android?: { permissions?: string[]; blockedPermissions?: string[] };
+    plugins?: unknown[];
+  };
+  const development = withEnv({ EXPO_PUBLIC_APP_ENV: "development", NODE_ENV: "development" }, () =>
+    loadConfig(),
+  );
+  const staging = withEnv({ EXPO_PUBLIC_APP_ENV: "staging", NODE_ENV: "production" }, () =>
+    loadConfig(),
+  );
+  const production = withEnv({ EXPO_PUBLIC_APP_ENV: "production", NODE_ENV: "production" }, () =>
+    loadConfig(),
+  );
+
+  // Every permission the EAS pre-install hook strips from the native manifest must
+  // also be blocked at config level, so manifest merging cannot reintroduce it.
+  const hookSource = read("scripts/configure-eas-native-profile.mjs");
+  const removedBlock = hookSource.match(/REMOVED_ANDROID_PERMISSIONS = new Set\(\[([\s\S]*?)\]\)/);
+  assert.ok(removedBlock, "EAS hook declares REMOVED_ANDROID_PERMISSIONS");
+  const hookRemoved = [...removedBlock[1].matchAll(/"(android\.permission\.[A-Z_]+)"/g)].map(
+    (match) => match[1],
+  );
+  assert.ok(hookRemoved.length > 0);
+
+  assert.equal(development.android?.blockedPermissions, undefined);
+  for (const config of [staging, production]) {
+    const kept = config.android?.permissions ?? [];
+    const blocked = config.android?.blockedPermissions ?? [];
+    for (const permission of [
+      ...hookRemoved,
+      "android.permission.CAMERA",
+      "android.permission.READ_MEDIA_IMAGES",
+      "android.permission.READ_MEDIA_AUDIO",
+      "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+      "android.permission.ACCESS_BACKGROUND_LOCATION",
+      "android.permission.SYSTEM_ALERT_WINDOW",
+      "android.permission.USE_BIOMETRIC",
+    ]) {
+      assert.ok(blocked.includes(permission), `${permission} must be blocked in release`);
+    }
+    for (const permission of kept) {
+      assert.equal(blocked.includes(permission), false, `${permission} is both kept and blocked`);
+    }
+    assert.equal(blocked.includes("android.permission.ACCESS_NETWORK_STATE"), false);
+    const imagePicker = (config.plugins ?? []).find(
+      (plugin) => Array.isArray(plugin) && plugin[0] === "expo-image-picker",
+    ) as [string, Record<string, unknown>] | undefined;
+    assert.equal(imagePicker?.[1].cameraPermission, false);
+    assert.equal(imagePicker?.[1].microphonePermission, false);
+  }
+});
+
 test("EAS pre-install strips release-only native capabilities in its isolated worktree", () => {
   const fixture = mkdtempSync(join(tmpdir(), "hungry-native-profile-"));
   try {
