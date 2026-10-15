@@ -7,6 +7,30 @@ const RELEASED_ANDROID_PERMISSIONS = [
   "android.permission.VIBRATE",
 ];
 
+// Library-merged permissions with no released feature behind them; blocked so
+// manifest merging cannot reintroduce them. CAMERA is blocked because the
+// quick-review menu photo is development-only. Gallery picking uses the system
+// photo picker, so no storage/media read permission is needed. ACCESS_NETWORK_STATE
+// (Sentry/expo-updates) is intentionally left unblocked.
+const RELEASED_ANDROID_BLOCKED_PERMISSIONS = [
+  "android.permission.CAMERA",
+  "android.permission.RECORD_AUDIO",
+  "android.permission.MODIFY_AUDIO_SETTINGS",
+  "android.permission.READ_EXTERNAL_STORAGE",
+  "android.permission.WRITE_EXTERNAL_STORAGE",
+  "android.permission.READ_MEDIA_IMAGES",
+  "android.permission.READ_MEDIA_VIDEO",
+  "android.permission.READ_MEDIA_AUDIO",
+  "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+  "android.permission.ACCESS_BACKGROUND_LOCATION",
+  "android.permission.FOREGROUND_SERVICE",
+  "android.permission.FOREGROUND_SERVICE_LOCATION",
+  "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+  "android.permission.SYSTEM_ALERT_WINDOW",
+  "android.permission.USE_BIOMETRIC",
+  "android.permission.USE_FINGERPRINT",
+];
+
 const RELEASED_NATIVE_MODULES = new Set([
   "expo-dev-client",
   "expo-audio",
@@ -75,7 +99,15 @@ function withReleasedImagePicker(plugins) {
   return plugins.map((plugin) => {
     if (pluginName(plugin) !== "expo-image-picker") return plugin;
     const existingOptions = Array.isArray(plugin) && plugin[1] ? plugin[1] : {};
-    return ["expo-image-picker", { photosPermission: existingOptions.photosPermission }];
+    // `false` keeps the plugin from re-adding RECORD_AUDIO and blocks CAMERA/RECORD_AUDIO.
+    return [
+      "expo-image-picker",
+      {
+        photosPermission: existingOptions.photosPermission,
+        cameraPermission: false,
+        microphonePermission: false,
+      },
+    ];
   });
 }
 
@@ -107,7 +139,9 @@ module.exports = ({ config } = {}) => {
 
   resolvedConfig.android = {
     ...(resolvedConfig.android || {}),
-    permissions: RELEASED_ANDROID_PERMISSIONS,
+    // Copies: config plugins push into these arrays during resolution.
+    permissions: [...RELEASED_ANDROID_PERMISSIONS],
+    blockedPermissions: [...RELEASED_ANDROID_BLOCKED_PERMISSIONS],
   };
 
   resolvedConfig.ios = {
