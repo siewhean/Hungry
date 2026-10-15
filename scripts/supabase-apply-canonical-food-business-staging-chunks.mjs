@@ -7,13 +7,21 @@ import { spawn } from "node:child_process";
 const defaultDir = "/tmp/hungry-canonical-food-business-staging-sql";
 const chunkDir = resolve(process.argv[2] ?? defaultDir);
 const command = process.platform === "win32" ? "npx.cmd" : "npx";
+// Self-hosted Supabase: target the database explicitly instead of a CLI-linked cloud project.
+const dbUrl = process.env.SUPABASE_DB_URL?.trim();
+if (!dbUrl) {
+  console.error(
+    "[canonical-food-business-staging] SUPABASE_DB_URL is required (Postgres connection string for the target Supabase database).",
+  );
+  process.exit(1);
+}
 
 function runQuery(filePath, index, total) {
   return new Promise((resolveRun) => {
     console.log(`[canonical-food-business-staging] applying ${index}/${total}: ${filePath}`);
     const child = spawn(
       command,
-      ["--no-install", "supabase", "db", "query", "--linked", "-f", filePath, "-o", "table"],
+      ["--no-install", "supabase", "db", "query", "--db-url", dbUrl, "-f", filePath, "-o", "table"],
       {
         cwd: process.cwd(),
         env: process.env,

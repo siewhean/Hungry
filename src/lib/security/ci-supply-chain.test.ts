@@ -31,7 +31,7 @@ test("ordinary CI is secretless and never dispatches live release work", () => {
   assert.doesNotMatch(ci, /secrets\./);
   assert.doesNotMatch(
     ci,
-    /EXPO_TOKEN|SUPABASE_ACCESS_TOKEN|SUPABASE_DB_PASSWORD|SENTRY_AUTH_TOKEN/,
+    /EXPO_TOKEN|SUPABASE_ACCESS_TOKEN|SUPABASE_DB_PASSWORD|SUPABASE_DB_URL|SENTRY_AUTH_TOKEN/,
   );
   assert.doesNotMatch(ci, /eas-cli|supabase db push|advisor-security/);
   assert.match(ci, /Mock\/local Playwright suite/);
@@ -63,21 +63,20 @@ test("release secrets and live checks are isolated behind the approved environme
   const releaseCandidate = read(".github/workflows/release-candidate.yml");
 
   assert.match(releaseCandidate, /EXPO_TOKEN: \$\{\{ secrets\.EXPO_TOKEN \}\}/);
-  assert.match(
-    releaseCandidate,
-    /SUPABASE_ACCESS_TOKEN: \$\{\{ secrets\.SUPABASE_ACCESS_TOKEN \}\}/,
-  );
-  assert.match(releaseCandidate, /SUPABASE_DB_PASSWORD: \$\{\{ secrets\.SUPABASE_DB_PASSWORD \}\}/);
+  assert.match(releaseCandidate, /SUPABASE_DB_URL: \$\{\{ secrets\.SUPABASE_DB_URL \}\}/);
+  // Self-hosted Supabase: no Management API token, linked project, or separate DB password.
+  assert.doesNotMatch(releaseCandidate, /SUPABASE_ACCESS_TOKEN|SUPABASE_DB_PASSWORD|_PROJECT_REF/);
+  assert.doesNotMatch(releaseCandidate, /--linked/);
   assert.match(releaseCandidate, /HUNGRY_SUPABASE_ADVISOR_REQUIRED: "1"/);
   assert.match(releaseCandidate, /HUNGRY_SUPABASE_ADVISOR_FAIL_ON_EXTERNAL: "1"/);
   assert.match(releaseCandidate, /HUNGRY_SUPABASE_SMOKE_REQUIRED: "1"/);
   assert.match(releaseCandidate, /Credentialed staging fallback and no-results Playwright/);
-  assert.match(releaseCandidate, /npx supabase db push --dry-run/);
+  assert.match(releaseCandidate, /npx supabase db push --dry-run --db-url "\$SUPABASE_DB_URL"/);
   assert.match(releaseCandidate, /npx --yes eas-cli@21\.1\.0 build/);
   assert.match(releaseCandidate, /--profile internal-alpha --non-interactive --no-wait --json/);
   assert.doesNotMatch(releaseCandidate, /eas-cli@21\.1\.0 build[^\n]*--environment/);
   assert.match(releaseCandidate, /release-candidate-eas-builds/);
-  assert.doesNotMatch(ci, /EXPO_TOKEN|SUPABASE_ACCESS_TOKEN|SUPABASE_DB_PASSWORD/);
+  assert.doesNotMatch(ci, /EXPO_TOKEN|SUPABASE_ACCESS_TOKEN|SUPABASE_DB_PASSWORD|SUPABASE_DB_URL/);
 });
 
 test("normal CI and security workflows remain SHA-pinned with no pull_request_target", () => {
@@ -91,7 +90,10 @@ test("normal CI and security workflows remain SHA-pinned with no pull_request_ta
   assert.doesNotMatch(mergeCompatibility, /pull_request\.head\.sha/);
   assert.match(mergeCompatibility, /npm ci/);
   assert.match(mergeCompatibility, /npm run typecheck/);
-  assert.doesNotMatch(mergeCompatibility, /EXPO_TOKEN|SUPABASE_ACCESS_TOKEN|SUPABASE_DB_PASSWORD/);
+  assert.doesNotMatch(
+    mergeCompatibility,
+    /EXPO_TOKEN|SUPABASE_ACCESS_TOKEN|SUPABASE_DB_PASSWORD|SUPABASE_DB_URL/,
+  );
   for (const source of [ci, security, releaseCandidate]) {
     assert.doesNotMatch(source, /pull_request_target/);
   }
@@ -168,6 +170,7 @@ test("release checklist includes the Supabase Advisor regression guard", () => {
   assert.match(advisorClassifier, /unexpected app-owned Advisor findings/);
   assert.match(advisorClassifier, /HUNGRY_SUPABASE_ADVISOR_FAIL_ON_EXTERNAL/);
   assert.match(advisorClassifier, /SUPABASE_NPX_ALLOW_INSTALL/);
+  assert.match(releaseCandidate, /Supabase Security Advisor\n\s+env:\n\s+SUPABASE_DB_URL:/);
 });
 
 test("service-role smoke scripts require explicit opt-in and smoke env names", () => {

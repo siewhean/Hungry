@@ -151,6 +151,17 @@ Configured in: `tsconfig.json` + `babel.config.js`
 | TypeScript strict      | `any` requires a comment justification                                                                                                                                                            |
 | Mock map               | `mockMapboxEnabled: false` → real Mapbox SDK; set `true` for CI/test env                                                                                                                          |
 
+## Self-Hosted Supabase Targets
+
+Hungry's Supabase runs self-hosted (docker compose); there is no linked Supabase Cloud project or Management API. Set values locally or as CI secrets only, never in the repo.
+
+| Env var                         | Used by                                                                                                                                              |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SUPABASE_DB_URL`               | Postgres connection string for `supabase db query/advisors/push --db-url` (DB smokes, Advisor classifier/snapshot, catalog publish, staging chunks, release-candidate dry run) |
+| `HUNGRY_SUPABASE_ALLOWED_HOSTS` | Comma-separated API hostnames that service-role smoke/import scripts may target; `*_PROJECT_REF` is still honoured only for `*.supabase.co` URLs     |
+
+Leaked-password protection is a self-host auth setting (`GOTRUE_PASSWORD_HIBP_ENABLED`); `npm run security:supabase:enable-leaked-password` is retired.
+
 ---
 
 ## TypeScript Strict Rules

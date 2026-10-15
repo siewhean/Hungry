@@ -4,13 +4,17 @@ import { spawn } from "node:child_process";
 
 const REQUIRED_ENV = "HUNGRY_SUPABASE_SMOKE_REQUIRED";
 const smokeSqlPath = "supabase/smoke/canonical_food_business_staging.sql";
+// Self-hosted Supabase: target the database explicitly instead of a CLI-linked cloud project.
+const DB_URL_ENV = "SUPABASE_DB_URL";
+const dbUrl = process.env[DB_URL_ENV]?.trim() ?? "";
 const command = process.platform === "win32" ? "npx.cmd" : "npx";
 const args = [
   "--no-install",
   "supabase",
   "db",
   "query",
-  "--linked",
+  "--db-url",
+  dbUrl,
   "-f",
   smokeSqlPath,
   "-o",
@@ -67,12 +71,25 @@ function writeIfPresent(text, stream) {
   if (text.trim()) stream.write(text.endsWith("\n") ? text : `${text}\n`);
 }
 
+if (!dbUrl) {
+  if (isRequired()) {
+    console.error(
+      `[supabase-canonical-food-business-staging-smoke] ${DB_URL_ENV} is required (Postgres connection string for the target Supabase database).`,
+    );
+    process.exit(1);
+  }
+  console.log(
+    `[supabase-canonical-food-business-staging-smoke] skipped; ${DB_URL_ENV} is not set. Set ${REQUIRED_ENV}=1 to make this a hard failure.`,
+  );
+  process.exit(0);
+}
+
 const result = await runSupabaseQuery();
 
 if (result.code !== 0) {
   if (!isRequired() && isSkippableEnvironmentError(result.stderr)) {
     console.log(
-      `[supabase-canonical-food-business-staging-smoke] skipped; linked Supabase is not reachable from this environment. Set ${REQUIRED_ENV}=1 to make this a hard failure.`,
+      `[supabase-canonical-food-business-staging-smoke] skipped; target Supabase database is not reachable from this environment. Set ${REQUIRED_ENV}=1 to make this a hard failure.`,
     );
     process.exit(0);
   }

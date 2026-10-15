@@ -57,6 +57,9 @@ test("release publisher exposes machine-readable quality findings to the invocat
   assert.match(publisher, /mkdtempSync/);
   assert.match(publisher, /release\?\.status !== "active"/);
   assert.match(publisher, /release\?\.quality_findings/);
+  assert.match(publisher, /SUPABASE_DB_URL is required/);
+  assert.match(publisher, /"--db-url",\s*dbUrl/);
+  assert.doesNotMatch(publisher, /--linked/);
 });
 
 test("versioned release manifest pins workbook checksum and expected source totals", () => {
