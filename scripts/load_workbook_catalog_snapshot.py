@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Load the canonical workbook catalog snapshot into buildings/venues/dishes.
+r"""Load the canonical workbook catalog snapshot into buildings/venues/dishes.
 
 Reads the "Supabase Venues" and "Supabase Dishes" sheets of the Hungry F&B
 workbook, validates them against the catalog raw release manifest, derives one
@@ -9,10 +9,11 @@ and either:
   --dry-run  validate + derive in memory and print a JSON report, including a
              local estimate of catalog_raw_publish_quality_findings(); no files
              and no database writes.
-  --apply    stream all three tables to psql as inline COPY FROM STDIN blocks
-             in ONE transaction, ordered buildings -> venues -> dishes. No
-             intermediate CSVs are needed (disk-friendly); --csv-dir optionally
-             writes them for inspection.
+  --apply    write each table to a private temp CSV file and load them with
+             psql `\copy ... from '<file>'` in ONE transaction, ordered
+             buildings -> venues -> dishes. Data never passes through psql's
+             script parser (see the injection note below); the temp files are
+             deleted afterwards. --csv-dir optionally writes them for inspection.
 
 Workbook rows are loaded as-is. The loader never drops, merges, or rewrites
 venue/dish rows to satisfy the publish quality gate; it only performs type
@@ -29,6 +30,14 @@ Safety:
   * The dishes INSERT guard trigger (enforce_merchant_dish_write_guard) allows
     postgres/supabase_admin/service_role; the transaction asserts current_user
     is one of those instead of disabling triggers (no session_replication_role).
+  * Injection: workbook values are never written into the psql script. Inline
+    `COPY ... FROM STDIN` blocks would let a value containing a `\.` line end
+    the COPY early and have the following lines run as psql meta-commands
+    (e.g. `\!` shell). The script only contains fixed SQL plus `\copy` lines
+    naming loader-created temp files; psql streams those files to the server
+    over the COPY protocol, so their contents are parsed only as CSV data.
+    Every non-NULL field is CSV-quoted; NUL bytes are rejected in validate().
+    subprocess is always called with list args (no shell).
 """
 
 from __future__ import annotations
@@ -41,6 +50,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
 from collections import Counter, defaultdict
 from datetime import date, datetime
@@ -431,6 +441,8 @@ def validate(venues: list[dict], dishes: list[dict], manifest: dict | None) -> l
         for value in row.values():
             if isinstance(value, str) and re.search(r"(^|\n)\\\.(\r?\n|$)", value):
                 errors.append(f"row {row['id']} contains a COPY end-of-data marker line")
+            if isinstance(value, str) and "\x00" in value:
+                errors.append(f"row {row['id']} contains a NUL byte (not storable in Postgres text)")
     if manifest:
         if len(venues) != manifest.get("expectedVenueTotal"):
             errors.append(
@@ -754,19 +766,51 @@ def build_postamble(n_buildings: int, n_venues: int, n_dishes: int) -> str:
     )
 
 
-def copy_block(table: str, columns: list[str], rows: Iterable[dict]) -> Iterator[str]:
-    yield f"copy public.{table} ({', '.join(columns)}) from stdin with (format csv);\n"
-    yield from csv_lines(rows, columns)
-    yield "\\.\n"
+SAFE_COPY_PATH = re.compile(r"^[A-Za-z0-9_./ -]+$")
 
 
-def load_script(buildings: list[dict], venues: list[dict], dishes: list[dict], replace: bool) -> Iterator[str]:
-    """Yield the full psql script: one transaction, buildings -> venues -> dishes."""
+def write_copy_file(path: Path, columns: list[str], rows: Iterable[dict]) -> None:
+    """Write header-less COPY CSV data; values never enter the psql script."""
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        handle.writelines(csv_lines(rows, columns))
+
+
+def copy_block(table: str, columns: list[str], path: Path) -> str:
+    # The path is loader-created (mkdtemp), never data-derived; still refuse
+    # anything that could break out of the quoted \copy filename.
+    if not SAFE_COPY_PATH.match(str(path)):
+        raise LoaderError(f"unsafe temp path for \\copy: {path!r}")
+    return f"\\copy public.{table} ({', '.join(columns)}) from {sql_literal(str(path))} with (format csv)\n"
+
+
+def load_script(replace: bool, paths: dict[str, Path], counts: dict[str, int]) -> Iterator[str]:
+    """Yield the full psql script: one transaction, buildings -> venues -> dishes.
+
+    Contains only fixed SQL and \\copy lines naming temp files; no row data.
+    """
     yield build_preamble(replace)
-    yield from copy_block("buildings", BUILDING_COLUMNS, buildings)
-    yield from copy_block("venues", VENUE_COLUMNS, venues)
-    yield from copy_block("dishes", DISH_COLUMNS, dishes)
-    yield build_postamble(len(buildings), len(venues), len(dishes))
+    yield copy_block("buildings", BUILDING_COLUMNS, paths["buildings"])
+    yield copy_block("venues", VENUE_COLUMNS, paths["venues"])
+    yield copy_block("dishes", DISH_COLUMNS, paths["dishes"])
+    yield build_postamble(counts["buildings"], counts["venues"], counts["dishes"])
+
+
+def load_via_temp_files(
+    env: dict[str, str], buildings: list[dict], venues: list[dict], dishes: list[dict], replace: bool,
+) -> None:
+    with tempfile.TemporaryDirectory(prefix="hungry-catalog-load-") as tmp:  # mode 0700
+        tmp_dir = Path(tmp)
+        paths: dict[str, Path] = {}
+        for name, columns, rows in (
+            ("buildings", BUILDING_COLUMNS, buildings),
+            ("venues", VENUE_COLUMNS, venues),
+            ("dishes", DISH_COLUMNS, dishes),
+        ):
+            paths[name] = tmp_dir / f"{name}.csv"
+            write_copy_file(paths[name], columns, rows)
+            log.info("staged %s (%d bytes)", name, paths[name].stat().st_size)
+        counts = {"buildings": len(buildings), "venues": len(venues), "dishes": len(dishes)}
+        run_psql_stream(env, load_script(replace, paths, counts))
 
 
 def run_psql_stream(env: dict[str, str], chunks: Iterable[str]) -> None:
@@ -890,7 +934,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.apply and pg_env is not None:
         started = time.monotonic()
-        run_psql_stream(pg_env, load_script(buildings, venues, dishes, args.replace))
+        load_via_temp_files(pg_env, buildings, venues, dishes, args.replace)
         timings["load_s"] = round(time.monotonic() - started, 2)
         counts = run_psql_query(
             pg_env,
