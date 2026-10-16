@@ -8,15 +8,15 @@ type Props = NativeStackScreenProps<OnboardingStackParamList, "OnboardingIntro2"
 export function OnboardingIntro2Screen({ navigation }: Props) {
   return (
     <OnboardingIntroTemplate
-      title="See what people are actually eating"
-      subtitle="The Home feed and Bites surface help you spot what's trending before you commit to any stall."
+      title="Find the dish, then the stall"
+      subtitle="Search for what you're craving and see exactly which stall serves it before you head over."
       stepIndex={2}
       totalSteps={3}
-      eyebrow="Social cues without the noise"
+      eyebrow="Search and details"
       bullets={[
-        "Short dish clips and photos from real stalls — no sponsored content.",
-        "Save dishes you like and build your personal shortlist for the next meal.",
-        "Read stories and guides when you want context beyond a raw directory.",
+        "Search dishes by name or craving across nearby stalls.",
+        "Open dish and stall details to see what's on offer and where it is.",
+        "Save dishes you like to your favourites for the next meal.",
       ]}
       navigation={navigation}
       nextScreen="OnboardingIntro3"

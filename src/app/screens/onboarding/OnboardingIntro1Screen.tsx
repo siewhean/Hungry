@@ -15,7 +15,7 @@ export function OnboardingIntro1Screen({ navigation }: Props) {
       eyebrow="Dish-first discovery"
       bullets={[
         "See a dish that looks good before you commit to walking there.",
-        "Filter by mood, taste, or distance — not just restaurant name.",
+        "Search by dish or craving — not just restaurant name.",
         "Works across hawker centres, food courts, kopitiams, and malls.",
       ]}
       navigation={navigation}

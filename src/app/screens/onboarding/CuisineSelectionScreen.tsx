@@ -67,12 +67,14 @@ function CuisineCard({
           overflow: "hidden",
           borderWidth: isSelected ? 2.5 : 1.5,
           borderColor: isSelected ? palette.orange : palette.border,
+          backgroundColor: palette.surfaceRaised,
         }}
       >
         <AccessibleImage
           source={cuisine.imageSource}
           style={{ width: "100%", height: "100%" }}
           contentFit="cover"
+          transition={150}
           decorative
         />
         {/* Dark scrim at bottom */}
@@ -195,7 +197,7 @@ export function CuisineSelectionScreen({ navigation }: Props) {
             {"What do you\nlove?"}
           </AppText>
           <AppText style={{ color: palette.textSecondary, fontSize: 15, lineHeight: 22 }}>
-            Pick your go-to cuisines to shape your feed.
+            Pick your go-to cuisines to shape your dish suggestions.
           </AppText>
         </View>
 

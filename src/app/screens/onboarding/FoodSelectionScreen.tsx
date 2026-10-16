@@ -68,12 +68,14 @@ function DishCard({
           overflow: "hidden",
           borderWidth: isSelected ? 2.5 : 1.5,
           borderColor: isSelected ? palette.orange : palette.border,
+          backgroundColor: palette.surfaceRaised,
         }}
       >
         <AccessibleImage
           source={dish.imageSource as never}
           style={{ width: "100%", height: "100%" }}
           contentFit="cover"
+          transition={150}
           decorative
         />
         {/* Dark scrim */}
@@ -195,6 +197,12 @@ export function FoodSelectionScreen({ navigation, route }: Props) {
 
   const toggle = (id: string) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Picks carried over from an earlier visit to this cuisine (after Back) live in
+    // the accumulated set; deselecting must remove them from there too.
+    if (accumulatedSelectedIds.includes(id)) {
+      setAccumulatedSelectedIds((prev) => prev.filter((x) => x !== id));
+      return;
+    }
     setCurrentCuisineSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
@@ -225,10 +233,14 @@ export function FoodSelectionScreen({ navigation, route }: Props) {
     }
   };
 
-  const isNextDisabled =
-    currentCuisineSelectedIds.length === 0 &&
-    currentIndex === 0 &&
-    accumulatedSelectedIds.length === 0;
+  // Every cuisine step requires at least one dish: the user chose this cuisine on
+  // the previous screen, so an empty step would add no taste signal. This keeps
+  // "Next Cuisine" behaving the same on step 1 and later steps.
+  const currentStepSelectionCount = filteredDishes.filter(
+    (dish) =>
+      currentCuisineSelectedIds.includes(dish.id) || accumulatedSelectedIds.includes(dish.id),
+  ).length;
+  const isNextDisabled = currentStepSelectionCount === 0;
 
   // Pair dishes into rows of 2
   const rows: (typeof filteredDishes)[] = [];
@@ -356,7 +368,7 @@ export function FoodSelectionScreen({ navigation, route }: Props) {
           borderTopColor: palette.border,
         }}
       >
-        {currentCuisineSelectedIds.length > 0 && (
+        {currentStepSelectionCount > 0 && (
           <AppText
             style={{
               color: palette.orange,
@@ -366,8 +378,8 @@ export function FoodSelectionScreen({ navigation, route }: Props) {
               textAlign: "center",
             }}
           >
-            {currentCuisineSelectedIds.length} dish
-            {currentCuisineSelectedIds.length !== 1 ? "es" : ""} selected
+            {currentStepSelectionCount} dish
+            {currentStepSelectionCount !== 1 ? "es" : ""} selected
           </AppText>
         )}
         <Button

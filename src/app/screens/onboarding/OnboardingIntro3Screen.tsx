@@ -16,7 +16,7 @@ export function OnboardingIntro3Screen({ navigation }: Props) {
       bullets={[
         "Set your flavor profile in seconds with the taste quiz.",
         "Choose dietary preferences to keep recommendations relevant.",
-        "Location + taste together gives better dish suggestions instantly.",
+        "Share your location to see dishes near you first.",
       ]}
       navigation={navigation}
       nextScreen="CuisineSelection"

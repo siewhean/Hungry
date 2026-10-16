@@ -2,6 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  getPasswordRuleStatuses,
+  getPasswordRules,
+  PASSWORD_MIN_LENGTH,
   validateConfirmPassword,
   validateEmail,
   validatePassword,
@@ -42,4 +45,29 @@ test("validateConfirmPassword requires matching values", () => {
   assert.equal(validateConfirmPassword("abcdefgh", ""), "Confirm password is required");
   assert.equal(validateConfirmPassword("abcdefgh", "abcdefgz"), "Passwords do not match");
   assert.equal(validateConfirmPassword("abcdefgh", "abcdefgh"), true);
+});
+
+test("password rule checklist is driven by the same rules as validatePassword", () => {
+  const rules = getPasswordRules();
+  assert.deepEqual(
+    rules.map((rule) => rule.id),
+    ["length", "uppercase", "lowercase", "number", "special"],
+  );
+  assert.equal(rules[0].label, `At least ${PASSWORD_MIN_LENGTH} characters`);
+
+  assert.ok(getPasswordRuleStatuses("").every((status) => !status.met));
+  assert.ok(getPasswordRuleStatuses("AaAaAaAaAaA1!").every((status) => status.met));
+
+  // Every partially-valid password reports exactly the first unmet rule's error at submit.
+  for (const sample of ["short", "aaaaaaaaaaaa", "AAAAAAAAAAA1", "AaAaAaAaAaAa", "AaAaAaAaAaA1"]) {
+    const firstUnmet = getPasswordRuleStatuses(sample).find((status) => !status.met);
+    const rule = rules.find((candidate) => candidate.id === firstUnmet?.id);
+    assert.equal(validatePassword(sample), rule?.error);
+  }
+
+  const statuses = getPasswordRuleStatuses("abcdefghijkl");
+  assert.deepEqual(
+    statuses.filter((status) => status.met).map((status) => status.id),
+    ["length", "lowercase"],
+  );
 });

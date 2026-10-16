@@ -8,6 +8,7 @@ import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
 import { getMockSignUpFailure } from "@/features/auth/mockAuth";
+import { setPendingSignUp } from "@/features/auth/pendingSignUp";
 import { validateEmail, validatePassword, validateRequired } from "@/features/auth/validation";
 import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -18,6 +19,7 @@ import { useHungryTheme } from "@/theme";
 import type { AuthStackParamList } from "./AuthStack";
 import { AuthProviderButton } from "./AuthProviderButton";
 import { AuthScreenShell } from "./AuthScreenShell";
+import { PasswordRequirements } from "./PasswordRequirements";
 import {
   AUTH_COPY,
   getAuthProviderUnavailableMessage,
@@ -38,7 +40,7 @@ export function SignUpScreen({ navigation }: Props) {
   const {
     control,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     defaultValues: { displayName: "", email: "", password: "" },
   });
@@ -53,6 +55,12 @@ export function SignUpScreen({ navigation }: Props) {
           values.displayName,
         );
         if (!session) {
+          // Held in memory only so "I verified my email" can finish sign-in.
+          setPendingSignUp({
+            email: values.email,
+            password: values.password,
+            completedOnboarding: hasCompletedOnboarding,
+          });
           showToast({ message: AUTH_COPY.signUp.emailVerificationToast, tone: "success" });
           navigation.navigate("EmailVerification", {
             email: values.email,
@@ -164,7 +172,6 @@ export function SignUpScreen({ navigation }: Props) {
         title={AUTH_COPY.signUp.title}
         subtitle={AUTH_COPY.signUp.subtitle}
         compact
-        scroll={false}
         wordmarkColor={colorScheme === "dark" ? palette.white : palette.navy}
         footer={
           <View style={{ alignItems: "center", gap: spacing[4] }}>
@@ -256,12 +263,9 @@ export function SignUpScreen({ navigation }: Props) {
                     value={value}
                     onChangeText={onChange}
                     leftIcon={<User color={palette.textMuted} size={18} />}
+                    error={!!errors.displayName}
+                    errorText={errors.displayName?.message}
                   />
-                  {errors.displayName ? (
-                    <AppText variant="bodySmall" style={{ color: palette.error }}>
-                      {errors.displayName.message}
-                    </AppText>
-                  ) : null}
                 </View>
               )}
             />
@@ -278,12 +282,9 @@ export function SignUpScreen({ navigation }: Props) {
                     autoCapitalize="none"
                     keyboardType="email-address"
                     leftIcon={<Mail color={palette.textMuted} size={18} />}
+                    error={!!errors.email}
+                    errorText={errors.email?.message}
                   />
-                  {errors.email ? (
-                    <AppText variant="bodySmall" style={{ color: palette.error }}>
-                      {errors.email.message}
-                    </AppText>
-                  ) : null}
                 </View>
               )}
             />
@@ -319,18 +320,20 @@ export function SignUpScreen({ navigation }: Props) {
                         )}
                       </Pressable>
                     }
+                    error={!!errors.password}
+                    errorText={errors.password?.message}
                   />
-                  {errors.password ? (
-                    <AppText variant="bodySmall" style={{ color: palette.error }}>
-                      {errors.password.message}
-                    </AppText>
-                  ) : null}
+                  <PasswordRequirements password={value} />
                 </View>
               )}
             />
           </View>
 
-          <Button label={AUTH_COPY.signUp.primaryButton} onPress={handleSignUp} />
+          <Button
+            label={AUTH_COPY.signUp.primaryButton}
+            onPress={handleSignUp}
+            loading={isSubmitting}
+          />
         </View>
       </AuthScreenShell>
     </FeedErrorBoundary>

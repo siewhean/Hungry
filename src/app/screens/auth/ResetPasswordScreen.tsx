@@ -1,47 +1,90 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Controller, useForm } from "react-hook-form";
 import { Pressable, View } from "react-native";
-import { ArrowLeft, CheckCircle2, Eye, EyeOff } from "lucide-react-native";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react-native";
 import { useState } from "react";
 
-import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
+import { AppText, Button, FeedErrorBoundary, InlineBanner, Input } from "@/components/ui";
 import { validateConfirmPassword, validatePassword } from "@/features/auth/validation";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
+import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { AuthStackParamList } from "./AuthStack";
 import { AuthScreenShell } from "./AuthScreenShell";
+import { PasswordRequirements } from "./PasswordRequirements";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "ResetPassword">;
 type FormValues = { password: string; confirmPassword: string };
 
+const INVALID_LINK_MESSAGE =
+  "This password reset link is invalid or has expired. Request a new link to continue.";
+const EXPIRED_LINK_MESSAGE =
+  "This password reset link has expired. Request a new link to continue.";
+
 export function ResetPasswordScreen({ navigation, route }: Props) {
-  const { colorScheme, componentRadii, palette, spacing, radii } = useHungryTheme();
+  const { colorScheme, componentRadii, palette, spacing } = useHungryTheme();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const showToast = useUIStore((state) => state.showToast);
+  const isSupabaseMode = getConfiguredDataSource() === "supabase";
+  const recoveryCode = route.params?.code ?? "";
+  // The PKCE code is single-use. Once exchanged, retries update the password on
+  // the recovery session instead of re-sending the consumed code.
+  const [codeExchanged, setCodeExchanged] = useState(false);
+  const [linkError, setLinkError] = useState<string | null>(() => {
+    if (!isSupabaseMode) return null;
+    if (route.params?.error === "expired") return EXPIRED_LINK_MESSAGE;
+    if (route.params?.error || !recoveryCode) return INVALID_LINK_MESSAGE;
+    return null;
+  });
   const {
     control,
     handleSubmit,
     watch,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     defaultValues: { password: "", confirmPassword: "" },
   });
   const passwordValue = watch("password");
 
   const handleReset = handleSubmit(async ({ password }) => {
+    if (!isSupabaseMode) {
+      navigation.navigate("ResetPasswordSuccess");
+      return;
+    }
+    const session = useSessionStore.getState();
+    // Exchanging the code signs the user in; hold the navigator until done.
+    session.beginPasswordRecovery();
     try {
-      if (getConfiguredDataSource() === "supabase") {
-        await getHungryService().auth.resetPassword(route.params?.code ?? "", password);
-      }
-      showToast({ message: "Password updated. Sign in with your new password.", tone: "success" });
+      await getHungryService().auth.resetPassword(codeExchanged ? "" : recoveryCode, password);
+      // Recovery flag stays set: the success screen releases it on Continue.
       navigation.navigate("ResetPasswordSuccess");
     } catch {
-      showToast({ message: "Password reset failed. Please try again.", tone: "error" });
+      const recoverySession = await getHungryService()
+        .auth.getCurrentSession()
+        .catch(() => null);
+      if (recoverySession) {
+        setCodeExchanged(true);
+        showToast({
+          message: "Couldn't update your password. Choose a different password and try again.",
+          tone: "error",
+        });
+        return;
+      }
+      session.endPasswordRecovery();
+      setLinkError(INVALID_LINK_MESSAGE);
     }
   });
+
+  const leaveRecovery = (target: "Login" | "ForgotPassword") => {
+    const session = useSessionStore.getState();
+    // Abandoning after the code was exchanged must not leave a silent sign-in.
+    if (codeExchanged) session.signOut();
+    session.endPasswordRecovery();
+    navigation.navigate(target);
+  };
 
   return (
     <FeedErrorBoundary
@@ -51,14 +94,13 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
       <AuthScreenShell
         title=""
         wordmarkColor={colorScheme === "dark" ? palette.white : palette.navy}
-        scroll={false}
         footer={
           <Pressable
             accessible
             accessibilityRole="button"
             accessibilityLabel="Back to Sign In"
             accessibilityHint="Returns to the sign in screen"
-            onPress={() => navigation.navigate("Login")}
+            onPress={() => leaveRecovery("Login")}
             style={{
               alignItems: "center",
               flexDirection: "row",
@@ -74,6 +116,16 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
         }
       >
         <View style={{ gap: spacing[4] }}>
+          {linkError ? (
+            <View style={{ gap: spacing[3] }}>
+              <InlineBanner message={linkError} tone="error" />
+              <Button
+                label="Request a new link"
+                variant="secondary"
+                onPress={() => leaveRecovery("ForgotPassword")}
+              />
+            </View>
+          ) : null}
           <Controller
             control={control}
             name="password"
@@ -155,31 +207,19 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
             style={{
               backgroundColor: palette.surfaceRaised,
               borderRadius: componentRadii.card,
-              gap: spacing[2],
               padding: spacing[4],
             }}
           >
-            <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-              <CheckCircle2 color={palette.orange} size={12} />
-              <AppText variant="bodySmall">At least 12 characters</AppText>
-            </View>
-            <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-              <View
-                style={{
-                  borderColor: palette.border,
-                  borderRadius: radii.pill,
-                  borderWidth: 1,
-                  height: 10,
-                  width: 10,
-                }}
-              />
-              <AppText variant="bodySmall" tone="muted">
-                Include uppercase, lowercase, number, and special character
-              </AppText>
-            </View>
+            <PasswordRequirements password={passwordValue ?? ""} />
           </View>
 
-          <Button label="Update Password" onPress={handleReset} style={{ minHeight: 56 }} />
+          <Button
+            label="Update Password"
+            onPress={handleReset}
+            loading={isSubmitting}
+            disabled={Boolean(linkError)}
+            style={{ minHeight: 56 }}
+          />
         </View>
       </AuthScreenShell>
     </FeedErrorBoundary>

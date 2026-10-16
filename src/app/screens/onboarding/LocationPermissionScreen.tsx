@@ -9,9 +9,9 @@ import { WordmarkLogoV2 } from "@/components/icons/brand/WordmarkLogoV2";
 import { AccessibleImage } from "@/components/ui/AccessibleImage";
 import { HUNGRY_LOGO_STANDARD_WORDMARK_SIZE } from "@/constants/brandAssets";
 import { useLocationStore } from "@/store/useLocationStore";
-import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
 import type { OnboardingStackParamList } from "./OnboardingStack";
+import { useFinishLocationStep } from "./finishLocationStep";
 import {
   ONBOARDING_ACTIONS_BOTTOM_PADDING,
   ONBOARDING_ACTIONS_GAP,
@@ -33,16 +33,16 @@ const FEATURE_ROWS = [
   },
   {
     key: "navigation",
-    title: "Food Navigation",
-    description: "Get precise directions to the exact stall in busy food streets.",
+    title: "Stalls Near You",
+    description: "See which hawker centre or mall each dish is at and how far away it is.",
     icon: Compass,
     iconTone: "warning",
     iconBgTone: "amberLight",
   },
   {
     key: "wait",
-    title: "Local Favorites",
-    description: "Use timing cues to plan around busier nearby stalls and dishes.",
+    title: "Save Your Favourites",
+    description: "Keep a shortlist of nearby dishes you want to try next.",
     icon: Clock3,
     iconTone: "error",
     iconBgTone: "errorSoft",
@@ -53,26 +53,8 @@ export function LocationPermissionScreen({ navigation }: Props) {
   const { palette, radii, shadows, spacing } = useHungryTheme();
   const grantLocation = useLocationStore((state) => state.grantLocation);
   const manualLocation = useLocationStore((state) => state.manualLocation);
-  const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
-  const hasSkippedTasteQuiz = useSessionStore((state) => state.hasSkippedTasteQuiz);
-  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const [isContinuing, setIsContinuing] = useState(false);
-
-  const finish = () => {
-    completeOnboarding(hasSkippedTasteQuiz);
-    if (isAuthenticated) {
-      const rootNav = navigation.getParent();
-      if (rootNav && typeof (rootNav as { reset?: (state: object) => void }).reset === "function") {
-        (rootNav as { reset: (state: object) => void }).reset({
-          index: 0,
-          routes: [{ name: "MainTabs", params: { screen: "Home" } }],
-        });
-      }
-      return;
-    }
-
-    navigation.navigate("OnboardingAuth");
-  };
+  const finish = useFinishLocationStep(navigation);
 
   const allowDeviceLocation = async () => {
     try {

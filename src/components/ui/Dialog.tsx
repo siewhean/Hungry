@@ -89,8 +89,10 @@ export function Dialog({ visible, title, message, buttons, onClose }: DialogProp
                 key={index}
                 label={btn.text}
                 variant={
+                  // Destructive uses the AA-checked destructive fill + light label
+                  // (was primary + red override: dark text on red, ~3.3:1).
                   btn.style === "destructive"
-                    ? "primary"
+                    ? "destructive"
                     : btn.style === "cancel"
                       ? "ghost"
                       : "secondary"
@@ -99,7 +101,6 @@ export function Dialog({ visible, title, message, buttons, onClose }: DialogProp
                   btn.onPress?.();
                   onClose();
                 }}
-                style={btn.style === "destructive" ? { backgroundColor: palette.error } : undefined}
                 fullWidth
               />
             ))}
