@@ -1,14 +1,6 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Animated,
-  Easing,
-  Pressable,
-  StyleSheet,
-  TextInput,
-  View,
-  useWindowDimensions,
-} from "react-native";
-import { Search, X, SlidersHorizontal, Star } from "lucide-react-native";
+import { memo, useCallback, useRef, useState } from "react";
+import { Pressable, TextInput, View } from "react-native";
+import { ArrowLeft, Search, X, SlidersHorizontal, Star } from "lucide-react-native";
 import { FlashList } from "@shopify/flash-list";
 
 import { AccessibleImage, AppText, EmptyState, Skeleton } from "@/components/ui";
@@ -21,6 +13,7 @@ interface SearchResultsViewProps {
   query: string;
   onQueryChange: (query: string) => void;
   onClear: () => void;
+  onBack?: () => void;
   onSubmitQuery?: (query: string) => void;
   onTasteFilterPress: () => void;
   results: DishDetail[];
@@ -113,6 +106,7 @@ export function SearchResultsView({
   query,
   onQueryChange,
   onClear,
+  onBack,
   onSubmitQuery,
   onTasteFilterPress,
   results,
@@ -120,32 +114,14 @@ export function SearchResultsView({
   onResultPressIn,
   onResultPress,
 }: SearchResultsViewProps) {
-  const { palette, radii, spacing, shadows } = useHungryTheme();
-  const { width: screenWidth } = useWindowDimensions();
+  const { palette, radii, spacing } = useHungryTheme();
   const [activeTab, setActiveTab] = useState<FilterTab>("All");
-  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const searchInputRef = useRef<TextInput | null>(null);
-  const searchRevealProgress = useRef(new Animated.Value(0)).current;
-  const searchBarWidth = useMemo(
-    () => Math.max(screenWidth - spacing[4] * 2, 240),
-    [screenWidth, spacing],
-  );
-  const searchIconSize = 56;
-  const searchEntryWidth = searchRevealProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, searchBarWidth],
-    extrapolate: "clamp",
-  });
-  const searchInputOpacity = searchRevealProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
-    extrapolate: "clamp",
-  });
-  const searchInputScale = searchRevealProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.85, 1],
-    extrapolate: "clamp",
-  });
+  const handleClear = useCallback(() => {
+    onClear();
+    // Keep focus in the field so the user can type the next query straight away.
+    searchInputRef.current?.focus();
+  }, [onClear]);
   const TABS: FilterTab[] = ["All", "Dishes"];
   const renderResult = useCallback(
     ({ item: dish }: { item: DishDetail }) => (
@@ -158,148 +134,74 @@ export function SearchResultsView({
     ? "Try another dish or taste filter."
     : "Search for a dish, stall, or craving.";
 
-  const revealSearch = useCallback(() => {
-    if (isSearchExpanded) return;
-    setIsSearchExpanded(true);
-    searchRevealProgress.stopAnimation();
-    searchRevealProgress.setValue(0);
-    Animated.timing(searchRevealProgress, {
-      toValue: 1,
-      duration: 340,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start(() => {
-      searchInputRef.current?.focus();
-    });
-  }, [isSearchExpanded, searchRevealProgress]);
-
-  const hideSearch = useCallback(() => {
-    if (!isSearchExpanded) {
-      return;
-    }
-
-    searchRevealProgress.stopAnimation(() =>
-      Animated.timing(searchRevealProgress, {
-        toValue: 0,
-        duration: 260,
-        easing: Easing.in(Easing.cubic),
-        useNativeDriver: false,
-      }).start(() => {
-        setIsSearchExpanded(false);
-        searchInputRef.current?.blur();
-      }),
-    );
-  }, [isSearchExpanded, searchRevealProgress]);
-
-  useEffect(() => {
-    return () => {
-      searchRevealProgress.stopAnimation();
-      searchRevealProgress.setValue(0);
-    };
-  }, [searchRevealProgress]);
-
   return (
-    <View style={{ flex: 1, backgroundColor: palette.bg, position: "relative" }}>
-      {isSearchExpanded ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Dismiss search"
-          onPress={hideSearch}
-          style={searchResultsStyles.searchDismissOverlay}
-        />
-      ) : null}
-      <View style={{ paddingHorizontal: spacing[4], paddingVertical: spacing[2] }}>
+    <View style={{ flex: 1, backgroundColor: palette.bg }}>
+      {/* Always-visible header: back + search field + clear. The previous
+          collapsed reveal-on-tap search rendered as an empty band (QA #17). */}
+      <View
+        style={{
+          alignItems: "center",
+          flexDirection: "row",
+          gap: spacing[2],
+          paddingHorizontal: spacing[4],
+          paddingVertical: spacing[2],
+        }}
+      >
+        {onBack ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            hitSlop={12}
+            onPress={onBack}
+            style={{ alignItems: "center", height: 44, justifyContent: "center", width: 32 }}
+          >
+            <ArrowLeft color={palette.text} size={24} />
+          </Pressable>
+        ) : null}
         <View
           style={{
             alignItems: "center",
-            position: "relative",
-            width: isSearchExpanded ? searchBarWidth : searchIconSize,
-            zIndex: 30,
+            backgroundColor: palette.surface,
+            borderColor: palette.border,
+            borderRadius: radii.pill,
+            borderWidth: 1,
+            flex: 1,
+            flexDirection: "row",
+            gap: spacing[2],
+            height: 48,
+            paddingHorizontal: spacing[3],
           }}
         >
-          <View
+          <Search color={palette.orange} size={20} />
+          <TextInput
+            ref={searchInputRef}
+            accessibilityLabel="Search dishes"
+            value={query}
+            onChangeText={onQueryChange}
+            onSubmitEditing={() => onSubmitQuery?.(query)}
+            placeholder="Search dishes, stalls, or your cravings"
+            placeholderTextColor={palette.textMuted}
+            returnKeyType="search"
+            autoCorrect={false}
             style={{
-              width: searchBarWidth,
-              height: 56,
-              alignItems: "center",
-              justifyContent: "flex-start",
-              flexDirection: "row",
+              color: palette.text,
+              flex: 1,
+              fontFamily: "Nunito_400Regular",
+              fontSize: 16,
+              height: 48,
+              padding: 0,
+              textAlignVertical: "center",
             }}
-          >
+          />
+          {query.length > 0 ? (
             <Pressable
+              onPress={handleClear}
               accessibilityRole="button"
-              accessibilityLabel="Search"
-              onPress={isSearchExpanded ? hideSearch : revealSearch}
-              style={{
-                width: searchIconSize,
-                height: 56,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
+              accessibilityLabel="Clear search"
+              hitSlop={12}
             >
-              <Search color={palette.orange} size={20} />
+              <X color={palette.textMuted} size={20} />
             </Pressable>
-          </View>
-
-          {isSearchExpanded ? (
-            <Animated.View
-              pointerEvents="auto"
-              style={{
-                position: "absolute",
-                right: 0,
-                top: 0,
-                height: 56,
-                borderRadius: radii.pill,
-                overflow: "hidden",
-                width: searchEntryWidth,
-                backgroundColor: palette.surface,
-                borderWidth: 1,
-                borderColor: palette.orange,
-                ...shadows.card,
-                flexDirection: "row",
-                alignItems: "center",
-                gap: spacing[2],
-                paddingHorizontal: spacing[3],
-              }}
-            >
-              <Animated.View
-                style={{
-                  flex: 1,
-                  opacity: searchInputOpacity,
-                  transform: [{ scale: searchInputScale }],
-                }}
-              >
-                <TextInput
-                  ref={searchInputRef}
-                  value={query}
-                  onChangeText={onQueryChange}
-                  onSubmitEditing={() => onSubmitQuery?.(query)}
-                  onBlur={hideSearch}
-                  placeholder="Search dishes, stalls, or your cravings"
-                  placeholderTextColor={palette.textMuted}
-                  returnKeyType="search"
-                  style={{
-                    color: palette.text,
-                    fontFamily: "Nunito_400Regular",
-                    fontSize: 16,
-                    height: 56,
-                    padding: 0,
-                    textAlignVertical: "center",
-                  }}
-                />
-              </Animated.View>
-              <Animated.View style={{ opacity: searchInputOpacity }}>
-                {query.length > 0 ? (
-                  <Pressable
-                    onPress={onClear}
-                    accessibilityRole="button"
-                    accessibilityLabel="Clear search"
-                  >
-                    <X color={palette.textMuted} size={20} />
-                  </Pressable>
-                ) : null}
-              </Animated.View>
-            </Animated.View>
           ) : null}
         </View>
       </View>
@@ -365,6 +267,8 @@ export function SearchResultsView({
       ) : (
         <FlashList
           data={results}
+          // Taps on rows/clear work on the first tap while the keyboard is up.
+          keyboardShouldPersistTaps="handled"
           keyExtractor={(dish) => dish.id}
           renderItem={renderResult}
           ItemSeparatorComponent={() => <View style={{ height: spacing[4] }} />}
@@ -384,11 +288,3 @@ export function SearchResultsView({
     </View>
   );
 }
-
-const searchResultsStyles = StyleSheet.create({
-  searchDismissOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "transparent",
-    zIndex: 20,
-  },
-});

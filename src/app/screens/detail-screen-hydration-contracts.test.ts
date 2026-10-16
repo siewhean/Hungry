@@ -25,7 +25,7 @@ test("detail screens hydrate specific Supabase records before showing not-found 
   assert.match(dishDetailV2, /discovery\.getDish\(dishId\)/);
   assert.match(dishDetailV2, /discovery\.getVenue\(dish\.venueId\)/);
   assert.match(dishDetailV2, /accessibilityLabel=\{`Open \$\{venue\.name\} stall details`\}/);
-  assert.match(dishDetailV2, /navigation\.navigate\("StallDetail", \{ venueId: dish\.venueId \}\)/);
+  assert.match(dishDetailV2, /openStallFromDish\(navigation, dish\.venueId\)/);
   assert.match(dishDetailV2, /!dish && !hasLoadedDishDetail/);
   assert.match(dishDetailV2, /!venue && !hasLoadedVenueDetail/);
 

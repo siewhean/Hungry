@@ -22,6 +22,7 @@ import {
   AccessibleImage,
   AppText,
   Avatar,
+  Button,
   EmptyState,
   FilterChipRail,
   Screen,
@@ -54,6 +55,7 @@ import {
   type BrowseIndex,
 } from "@/features/search/browseIndex";
 import { dedupeNearestVenueCandidates } from "@/features/search/venueDedupe";
+import { appendUniqueById } from "@/lib/services/catalog/paging";
 import {
   getCatalogRawService,
   getDataRepository,
@@ -404,7 +406,9 @@ function RawCatalogBrowseGrid({
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
   const requestVersion = useRef(0);
+  const rawSearchInputRef = useRef<TextInput | null>(null);
   const releaseIdRef = useRef<string | undefined>(undefined);
   const service = getCatalogRawService();
   const itemWidth = width / 2;
@@ -417,6 +421,7 @@ function RawCatalogBrowseGrid({
       if (append) setIsLoadingMore(true);
       else setIsLoading(true);
       setError(null);
+      setLoadMoreError(null);
       try {
         const request = rawCatalogRequest(
           mode,
@@ -429,7 +434,9 @@ function RawCatalogBrowseGrid({
         const page =
           mode === "dishes" ? await service.listDishes(request) : await service.listVenues(request);
         if (requestVersion.current !== version) return;
-        setItems((current) => (append ? [...current, ...page.items] : page.items));
+        // Defensive dedupe: FlashList keys must stay unique even if a source
+        // repeats a row across pages.
+        setItems((current) => (append ? appendUniqueById(current, page.items) : page.items));
         setNextCursor(page.nextCursor);
         releaseIdRef.current = page.releaseId || undefined;
         setReleaseId(releaseIdRef.current);
@@ -450,8 +457,15 @@ function RawCatalogBrowseGrid({
         });
       } catch (loadError) {
         if (requestVersion.current === version) {
-          setError(loadError instanceof Error ? loadError.message : "Could not load the catalog.");
-          if (!append) setItems([]);
+          const message =
+            loadError instanceof Error ? loadError.message : "Could not load the catalog.";
+          // A failed continuation keeps the rows already shown (same source) and
+          // offers a retry for the same cursor instead of switching source.
+          if (append) setLoadMoreError(message);
+          else {
+            setError(message);
+            setItems([]);
+          }
           const request = rawCatalogRequest(
             mode,
             searchQuery,
@@ -528,26 +542,44 @@ function RawCatalogBrowseGrid({
             >
               <ArrowLeft color={palette.text} size={24} />
             </Pressable>
-            <TextInput
-              accessibilityLabel={`Search ${mode}`}
-              autoCorrect={false}
-              onChangeText={setSearchQuery}
-              placeholder={mode === "dishes" ? "Search all dishes" : "Search all stalls"}
-              placeholderTextColor={palette.textMuted}
-              style={[
-                browseStyles.textInput,
-                {
-                  backgroundColor: palette.surface,
-                  borderColor: palette.border,
-                  borderRadius: 18,
-                  borderWidth: 1,
-                  color: palette.text,
-                  height: 48,
-                  paddingHorizontal: spacing[3],
-                },
-              ]}
-              value={searchQuery}
-            />
+            <View style={{ flex: 1, height: 48, justifyContent: "center" }}>
+              <TextInput
+                ref={rawSearchInputRef}
+                accessibilityLabel={`Search ${mode}`}
+                autoCorrect={false}
+                onChangeText={setSearchQuery}
+                placeholder={mode === "dishes" ? "Search all dishes" : "Search all stalls"}
+                placeholderTextColor={palette.textMuted}
+                style={[
+                  browseStyles.textInput,
+                  {
+                    backgroundColor: palette.surface,
+                    borderColor: palette.border,
+                    borderRadius: 18,
+                    borderWidth: 1,
+                    color: palette.text,
+                    height: 48,
+                    paddingLeft: spacing[3],
+                    paddingRight: spacing[3] + 28,
+                  },
+                ]}
+                value={searchQuery}
+              />
+              {searchQuery.length > 0 ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear search"
+                  hitSlop={12}
+                  onPress={() => {
+                    setSearchQuery("");
+                    rawSearchInputRef.current?.focus();
+                  }}
+                  style={{ position: "absolute", right: spacing[3] }}
+                >
+                  <X color={palette.textMuted} size={20} />
+                </Pressable>
+              ) : null}
+            </View>
           </View>
           <FilterChipRail
             options={RAW_BROWSE_FILTER_OPTIONS}
@@ -557,12 +589,15 @@ function RawCatalogBrowseGrid({
         </View>
         <FlashList
           data={items}
+          keyboardShouldPersistTaps="handled"
           // @ts-ignore FlashList v2 supports this runtime prop but its bundled type omits it.
           estimatedItemSize={itemWidth * 1.25}
           keyExtractor={(item) => item.id}
           numColumns={2}
           onEndReached={() => {
-            if (nextCursor && !isLoadingMore && !isLoading) void loadPage(nextCursor, true);
+            if (nextCursor && !isLoadingMore && !isLoading && !loadMoreError) {
+              void loadPage(nextCursor, true);
+            }
           }}
           onEndReachedThreshold={0.6}
           renderItem={({ item }) => (
@@ -597,6 +632,20 @@ function RawCatalogBrowseGrid({
             isLoadingMore ? (
               <View style={{ paddingVertical: spacing[4] }}>
                 <ActivityIndicator color={palette.orange} />
+              </View>
+            ) : loadMoreError && nextCursor ? (
+              <View
+                accessibilityLiveRegion="polite"
+                style={{ alignItems: "center", gap: spacing[2], paddingVertical: spacing[4] }}
+              >
+                <AppText tone="secondary" variant="bodySmall">
+                  {"Couldn't load more results."}
+                </AppText>
+                <Button
+                  label="Retry"
+                  variant="secondary"
+                  onPress={() => void loadPage(nextCursor, true)}
+                />
               </View>
             ) : null
           }
@@ -1206,7 +1255,10 @@ function LegacyBrowseGridScreen({
                         accessibilityRole="button"
                         accessibilityLabel="Clear browse search"
                         hitSlop={8}
-                        onPress={() => setSearchQuery("")}
+                        onPress={() => {
+                          setSearchQuery("");
+                          searchInputRef.current?.focus();
+                        }}
                       >
                         <X color={palette.textMuted} size={18} />
                       </Pressable>
@@ -1232,6 +1284,7 @@ function LegacyBrowseGridScreen({
 
         <FlashList
           data={filteredFeedItems}
+          keyboardShouldPersistTaps="handled"
           renderItem={renderBrowseItem}
           keyExtractor={(item) => item.id}
           onViewableItemsChanged={handleFullyVisibleFeedItemsChanged}
@@ -1409,6 +1462,11 @@ function LegacySearchResultsScreen() {
         query={filters.query}
         onQueryChange={updateQuery}
         onClear={() => updateQuery("")}
+        onBack={() =>
+          navigation.canGoBack()
+            ? navigation.goBack()
+            : navigation.navigate("MainTabs", { screen: "Discover" })
+        }
         onSubmitQuery={recordCommittedSearchQuery}
         onTasteFilterPress={() => navigation.navigate("TasteFilter")}
         results={results}

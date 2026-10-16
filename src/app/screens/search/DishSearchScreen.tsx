@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Animated, Easing, Pressable, View } from "react-native";
-import { ArrowLeft, Search as SearchIcon } from "lucide-react-native";
+import { Animated, Easing, Pressable, TextInput, View } from "react-native";
+import { ArrowLeft, Search as SearchIcon, X } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
@@ -34,6 +34,11 @@ const SEARCH_CATEGORY_OPTIONS = SEARCH_CATEGORIES.map((category) => ({
   id: category,
   label: category.replace(/\b\w/g, (char) => char.toUpperCase()),
 }));
+// The catalog search RPC only understands these categories (mapped to cuisine
+// tags in SearchResults); other chips would be silently ignored.
+const CATALOG_SEARCH_CATEGORY_OPTIONS = SEARCH_CATEGORY_OPTIONS.filter((option) =>
+  ["noodles", "rice"].includes(option.id),
+);
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
 export function DishSearchScreen() {
@@ -47,6 +52,7 @@ export function DishSearchScreen() {
   const toggleCategory = useSearchStore((state) => state.toggleCategory);
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
   const [searchText, setSearchText] = useState("");
+  const searchInputRef = useRef<TextInput | null>(null);
   const shouldUseCatalogReadV2 =
     FEATURE_FLAGS.catalogReadV2 && getServiceProvider().mode === "supabase";
   // Search results own the raw, paged catalog request. Keeping this landing
@@ -76,7 +82,8 @@ export function DishSearchScreen() {
   }, [entryOpacity, entryY, motion.screenTransition]);
 
   return (
-    <Screen>
+    // "handled" lets the clear (x) work on the first tap while the keyboard is up.
+    <Screen keyboardShouldPersistTaps="handled">
       <Animated.View
         style={{
           gap: spacing[4],
@@ -109,7 +116,25 @@ export function DishSearchScreen() {
         </View>
 
         <Input
+          ref={searchInputRef}
           leftIcon={<SearchIcon color={palette.textMuted} size={18} />}
+          rightIcon={
+            searchText.length > 0 ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Clear search"
+                hitSlop={12}
+                onPress={() => {
+                  setSearchText("");
+                  updateQuery("");
+                  // Keep the user typing: clearing should not drop focus/keyboard.
+                  searchInputRef.current?.focus();
+                }}
+              >
+                <X color={palette.textMuted} size={18} />
+              </Pressable>
+            ) : undefined
+          }
           placeholder="Laksa, satay, Tian Tian..."
           accessibilityLabel="Search dishes, stalls, or hawker centres"
           value={searchText}
@@ -126,15 +151,20 @@ export function DishSearchScreen() {
           }}
         />
         <ChipGroup
-          options={SEARCH_CATEGORY_OPTIONS}
+          options={
+            shouldUseCatalogReadV2 ? CATALOG_SEARCH_CATEGORY_OPTIONS : SEARCH_CATEGORY_OPTIONS
+          }
           selectedIds={selectedCategories}
           onSelect={toggleCategory}
         />
-        <Button
-          label="Adjust taste filter"
-          variant="secondary"
-          onPress={() => navigation.navigate("TasteFilter")}
-        />
+        {/* The taste filter only re-ranks local recommendations; catalog search ignores it. */}
+        {!shouldUseCatalogReadV2 ? (
+          <Button
+            label="Adjust taste filter"
+            variant="secondary"
+            onPress={() => navigation.navigate("TasteFilter")}
+          />
+        ) : null}
         <Button label="View search results" onPress={() => navigation.navigate("SearchResults")} />
         {/* Catalog mode renders no local suggestion; hide the card instead of a disabled dead end. */}
         {!shouldUseCatalogReadV2 ? (
@@ -207,67 +237,69 @@ export function DishSearchScreen() {
           </Pressable>
         ) : null}
 
-        <View style={{ gap: spacing[3] }}>
-          <AppText variant="h2">Stalls worth checking</AppText>
-          {collections.map((collection) => (
-            <Pressable
-              key={collection.venue.id}
-              onPress={() =>
-                navigation.navigate("StallDetail", {
-                  venueId: collection.venue.id,
-                })
-              }
-              accessibilityRole="button"
-              accessibilityLabel={`Open ${collection.venue.name} stall details`}
-              accessibilityHint="Opens this stall page with menu and dish information"
-              style={{
-                backgroundColor: palette.surface,
-                borderColor: palette.border,
-                borderRadius: componentRadii.card,
-                borderWidth: 1,
-                overflow: "hidden",
-              }}
-            >
-              <View
+        {collections.length > 0 ? (
+          <View style={{ gap: spacing[3] }}>
+            <AppText variant="h2">Stalls worth checking</AppText>
+            {collections.map((collection) => (
+              <Pressable
+                key={collection.venue.id}
+                onPress={() =>
+                  navigation.navigate("StallDetail", {
+                    venueId: collection.venue.id,
+                  })
+                }
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${collection.venue.name} stall details`}
+                accessibilityHint="Opens this stall page with menu and dish information"
                 style={{
-                  flexDirection: "row",
-                  gap: spacing[3],
-                  padding: spacing[4],
+                  backgroundColor: palette.surface,
+                  borderColor: palette.border,
+                  borderRadius: componentRadii.card,
+                  borderWidth: 1,
+                  overflow: "hidden",
                 }}
               >
-                <AccessibleImage
-                  source={{ uri: collection.posts[0]?.mediaUrl }}
-                  style={{ borderRadius: radii.md, height: 84, width: 84 }}
-                  contentFit="cover"
-                  decorative
-                />
-                <View style={{ flex: 1, gap: spacing[1] }}>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      gap: spacing[2],
-                    }}
-                  >
-                    <AppText variant="h3" numberOfLines={1} style={{ flex: 1 }}>
-                      {collection.venue.name}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    gap: spacing[3],
+                    padding: spacing[4],
+                  }}
+                >
+                  <AccessibleImage
+                    source={{ uri: collection.posts[0]?.mediaUrl }}
+                    style={{ borderRadius: radii.md, height: 84, width: 84 }}
+                    contentFit="cover"
+                    decorative
+                  />
+                  <View style={{ flex: 1, gap: spacing[1] }}>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        gap: spacing[2],
+                      }}
+                    >
+                      <AppText variant="h3" numberOfLines={1} style={{ flex: 1 }}>
+                        {collection.venue.name}
+                      </AppText>
+                      <AppText variant="bodySmall">
+                        {Math.round(collection.affinity * 100)}% match
+                      </AppText>
+                    </View>
+                    <AppText variant="bodySmall" tone="secondary">
+                      {collection.location} · {collection.venue.floor} {collection.venue.unitNumber}
                     </AppText>
-                    <AppText variant="bodySmall">
-                      {Math.round(collection.affinity * 100)}% match
+                    <AppText variant="bodySmall" tone="secondary" numberOfLines={2}>
+                      {collection.topDishes[0]?.name} ·{" "}
+                      {collection.topDishes[0]?.tasteTags.slice(0, 2).join(" · ")}
                     </AppText>
                   </View>
-                  <AppText variant="bodySmall" tone="secondary">
-                    {collection.location} · {collection.venue.floor} {collection.venue.unitNumber}
-                  </AppText>
-                  <AppText variant="bodySmall" tone="secondary" numberOfLines={2}>
-                    {collection.topDishes[0]?.name} ·{" "}
-                    {collection.topDishes[0]?.tasteTags.slice(0, 2).join(" · ")}
-                  </AppText>
                 </View>
-              </View>
-            </Pressable>
-          ))}
-        </View>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
       </Animated.View>
     </Screen>
   );

@@ -335,6 +335,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
     Record<string, ReviewReply[]>
   >({});
   const [isSubmittingClaim, setIsSubmittingClaim] = useState(false);
+  // Once the hero scrolls away, the absolute top nav gets a solid background so
+  // content never renders under the status bar / floating buttons.
+  const [isTopNavSolid, setIsTopNavSolid] = useState(false);
   const [isClaimPending, setIsClaimPending] = useState(() => hasPendingClaimForProfile(profile.id));
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
   const [reviewsByDishId, setReviewsByDishId] = useState<Record<string, DishDetail["reviews"]>>({});
@@ -663,6 +666,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
   };
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const shouldSolidifyTopNav =
+      event.nativeEvent.contentOffset.y > screenWidth * 0.75 - (insets.top + 56);
+    if (shouldSolidifyTopNav !== isTopNavSolid) setIsTopNavSolid(shouldSolidifyTopNav);
     if (!hasMoreMenuItems) return;
     const contentBodyLayout = contentBodyLayoutRef.current;
     const menuSectionLayout = menuSectionLayoutRef.current;
@@ -792,11 +798,12 @@ export function StallDetailScreen({ navigation, route }: Props) {
             style={[
               styles.topNav,
               {
-                backgroundColor: "transparent",
+                backgroundColor: isTopNavSolid ? palette.bg : "transparent",
+                borderBottomColor: palette.border,
                 height: insets.top + 56,
                 paddingTop: insets.top,
                 paddingHorizontal: spacing[3],
-                borderBottomWidth: 0,
+                borderBottomWidth: isTopNavSolid ? StyleSheet.hairlineWidth : 0,
                 zIndex: zIndex.overlay,
               },
             ]}
@@ -870,7 +877,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
           <ScrollView
             showsVerticalScrollIndicator={false}
             onScroll={handleScroll}
-            scrollEventThrottle={120}
+            scrollEventThrottle={32}
             contentContainerStyle={{ paddingBottom: insets.bottom + spacing[8] }}
           >
             {/* Hero image */}

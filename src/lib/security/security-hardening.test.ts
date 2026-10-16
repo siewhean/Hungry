@@ -506,7 +506,11 @@ test("store policy controls cover account deletion, UGC moderation, and location
   assert.match(deletionRunner, /ACCOUNT_DELETION_WORKER_TOKEN/);
   assert.match(deletionRunner, /\/functions\/v1\/process-account-deletions/);
   assert.match(settingsScreen, /getHungryService\(\)\.auth\.requestAccountDeletion/);
-  assert.match(settingsScreen, /https:\/\/hungry\.sg\/account\/delete/);
+  assert.match(settingsScreen, /openTrustedExternalUrl\(PUBLIC_LINKS\.accountDeletion\)/);
+  assert.match(
+    readRepoFile("src/constants/supportLinks.ts"),
+    /accountDeletion: `\$\{PUBLIC_SITE_ORIGIN\}\/account\/delete`/,
+  );
   assert.match(webV2Footer, /Account Deletion/);
   assert.match(webFooter, /Account Deletion/);
   assert.match(webV2DeletePage, /Delete your Hungry account/);

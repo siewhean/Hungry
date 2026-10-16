@@ -1,5 +1,12 @@
 import type { PropsWithChildren, ReactNode, RefObject } from "react";
-import { ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import {
+  ScrollView,
+  StyleSheet,
+  View,
+  type ScrollViewProps,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
@@ -17,6 +24,8 @@ interface ScreenProps {
   contentContainerStyle?: StyleProp<ViewStyle>;
   fullWidth?: boolean;
   scrollRef?: RefObject<ScrollView>;
+  /** Set to "handled" on screens with in-content buttons (e.g. a search clear) so they work on the first tap while the keyboard is up. */
+  keyboardShouldPersistTaps?: ScrollViewProps["keyboardShouldPersistTaps"];
 }
 
 export function Screen({
@@ -31,6 +40,7 @@ export function Screen({
   contentContainerStyle,
   fullWidth = false,
   scrollRef,
+  keyboardShouldPersistTaps,
 }: PropsWithChildren<ScreenProps>) {
   const { palette, spacing, semanticSpacing } = useHungryTheme();
   const styles = createStyles(spacing);
@@ -58,6 +68,7 @@ export function Screen({
         <ScrollView
           style={styles.flex}
           ref={scrollRef}
+          keyboardShouldPersistTaps={keyboardShouldPersistTaps}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             styles.content,

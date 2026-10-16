@@ -39,6 +39,7 @@ import { useHungryTheme } from "@/theme";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
 import type { DishDetail } from "@/types/domain";
 import { isVenueOpenFromHours } from "@/utils/stallStatus";
+import { openStallFromDish } from "./stallNavigation";
 
 const CommentIcon = MessageCircle ?? MessageCircleMore;
 
@@ -315,6 +316,15 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     });
   }, [dish, isAuthenticated, profile.id]);
 
+  // Deep links can open a missing dish with no history; never leave a dead end.
+  const leaveDetail = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    navigation.navigate("MainTabs", { screen: "Discover" });
+  };
+
   const isDetailLoading =
     (Boolean(dishId) && !dish && !hasLoadedDishDetail) ||
     (Boolean(dish?.venueId) && !venue && !hasLoadedVenueDetail);
@@ -346,6 +356,17 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
         body="Couldn't load this dish - try again."
       >
         <SafeAreaView style={{ backgroundColor: palette.bg, flex: 1 }} edges={["top"]}>
+          <View style={{ paddingHorizontal: spacing[4], paddingTop: spacing[3] }}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              hitSlop={12}
+              onPress={leaveDetail}
+              style={{ alignSelf: "flex-start" }}
+            >
+              <ArrowLeft color={palette.text} size={24} />
+            </Pressable>
+          </View>
           <EmptyState
             title="Dish not found"
             body="This dish is no longer available in the current dataset."
@@ -594,7 +615,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={`Open ${venue.name} stall details`}
-                  onPress={() => navigation.navigate("StallDetail", { venueId: dish.venueId })}
+                  onPress={() => openStallFromDish(navigation, dish.venueId)}
                   hitSlop={8}
                   style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
                 >
@@ -847,7 +868,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                       key={item.id}
                       accessibilityRole="button"
                       accessibilityLabel={`Open ${item.name}`}
-                      onPress={() => navigation.navigate("DishDetail", { dishId: item.id })}
+                      onPress={() => navigation.push("DishDetail", { dishId: item.id })}
                       style={{
                         height: signatureGridItemHeight,
                         overflow: "hidden",
@@ -1013,10 +1034,12 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                     width: undefined,
                   }}
                 >
+                  {/* Saved = filled brand-orange bookmark; the bar sits on palette.bg in
+                      both themes, so white-on-light made the saved state vanish. */}
                   <Bookmark
-                    color={isSaved ? palette.white : palette.text}
+                    color={isSaved ? palette.orange : palette.text}
                     size={reviewIconSize}
-                    fill={isSaved ? palette.white : "none"}
+                    fill={isSaved ? palette.orange : "none"}
                   />
                 </Pressable>
               ) : null}

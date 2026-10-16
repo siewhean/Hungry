@@ -1,7 +1,13 @@
 import { Alert, Linking } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 
-const ALLOWED_HOSTS = new Set(["hungry.sg", "www.hungry.sg"]);
+const ALLOWED_HOSTS = new Set([
+  "hungry.sg",
+  "www.hungry.sg",
+  // Live marketing/support site (see src/constants/supportLinks.ts).
+  "usehungry.com",
+  "www.usehungry.com",
+]);
 const ALLOWED_SCHEMES = new Set(["https"]);
 const ALLOWED_BLOG_HOSTS = new Set(["hungry.sg", "www.hungry.sg"]);
 const ALLOWED_MAPS_HOSTS = new Set(["www.google.com", "maps.google.com"]);

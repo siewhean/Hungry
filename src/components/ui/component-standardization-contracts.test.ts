@@ -58,7 +58,7 @@ test("primary user filter surfaces use shared chip primitives", () => {
   );
   assertSourceIncludes(
     dishSearch,
-    [/<ChipGroup[\s\S]*options=\{SEARCH_CATEGORY_OPTIONS\}/],
+    [/<ChipGroup[\s\S]*options=\{[\s\S]*SEARCH_CATEGORY_OPTIONS[\s\S]*\}/],
     "Dish Search",
   );
   assertSourceIncludes(

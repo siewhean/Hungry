@@ -1,11 +1,13 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { View, Pressable } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ChevronRight, Camera } from "lucide-react-native";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { AccessibleImage, AppText, Button, Card, Input } from "@/components/ui";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { getConfiguredDataSource } from "@/lib/services/supabase/client";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -34,12 +36,25 @@ function loadImagePickerModule() {
 
 export function EditProfileScreen({ navigation }: Props) {
   const profile = useProfileStore((state) => state.profile);
-  const applyProfile = useProfileStore((state) => state.applyProfile);
+  const applySavedProfileEdits = useProfileStore((state) => state.applySavedProfileEdits);
   const showToast = useUIStore((state) => state.showToast);
   const { palette, spacing, radii } = useHungryTheme();
-  const [displayName, setDisplayName] = useState(profile.displayName);
+  // The store is the source of truth. A local draft exists only while the user
+  // is typing; it is cleared on every focus, so a screen instance mounted early
+  // (ProfileHome preloads this route on press-in) or reopened after a save never
+  // shows a stale name snapshot.
+  const [displayNameDraft, setDisplayNameDraft] = useState<string | null>(null);
+  const displayName = displayNameDraft ?? profile.displayName;
   const [avatarUri, setAvatarUri] = useState<string | undefined>(undefined);
+  useFocusEffect(
+    useCallback(() => {
+      setDisplayNameDraft(null);
+      setAvatarUri(undefined);
+    }, []),
+  );
   const [isSaving, setIsSaving] = useState(false);
+  const [isSendingReset, setIsSendingReset] = useState(false);
+  const trimmedDisplayName = displayName.trim();
   const avatarPreviewUri = avatarUri ?? profile.avatarUrl;
   const avatarSize = spacing[20];
   const avatarInitials = useMemo(
@@ -99,18 +114,41 @@ export function EditProfileScreen({ navigation }: Props) {
     showToast({ message: "Photo selected. Save changes to upload it.", tone: "info" });
   };
 
-  const handleChangePassword = () => {
-    const rootNavigation = getRootNavigation(navigation);
-    rootNavigation.navigate("AuthStack", {
-      screen: "ResetPassword",
-      params: { email: profile.email, code: "profile-settings" },
-    });
+  // MVP password change: email a reset link to the account email (same flow as
+  // Forgot password). The link opens hungry://auth/callback → ResetPassword.
+  const handleSendPasswordReset = async () => {
+    if (isSendingReset) return;
+    const email = profile.email?.trim();
+    if (!email) {
+      showToast({ message: "No account email is available for a reset link.", tone: "warning" });
+      return;
+    }
+    setIsSendingReset(true);
+    try {
+      if (getConfiguredDataSource() === "supabase") {
+        await getHungryService().auth.forgotPassword(email);
+      }
+      showToast({
+        message: `Password reset link sent to ${email}. Open it on this device to set a new password.`,
+        tone: "success",
+      });
+    } catch {
+      showToast({
+        message: "Could not send a password reset link right now. Please try again.",
+        tone: "error",
+      });
+    } finally {
+      setIsSendingReset(false);
+    }
   };
 
   return (
     <ProfileScreenShell title="Edit profile">
       <View style={{ alignItems: "center", marginBottom: spacing[2] }}>
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Change profile photo"
+          accessibilityHint="Opens your photo library to choose a new avatar"
           style={{ position: "relative" }}
           onPress={() => {
             void handlePickAvatar();
@@ -173,7 +211,13 @@ export function EditProfileScreen({ navigation }: Props) {
 
       <Card>
         <View style={{ gap: spacing[3] }}>
-          <Input label="Display name" value={displayName} onChangeText={setDisplayName} />
+          <Input
+            label="Display name"
+            value={displayName}
+            onChangeText={setDisplayNameDraft}
+            error={!trimmedDisplayName}
+            errorText={trimmedDisplayName ? undefined : "Display name is required."}
+          />
           <View style={{ gap: spacing[1] }}>
             <Input
               label="Email"
@@ -187,7 +231,14 @@ export function EditProfileScreen({ navigation }: Props) {
             </AppText>
           </View>
           <Pressable
-            onPress={handleChangePassword}
+            accessibilityRole="button"
+            accessibilityLabel="Reset password"
+            accessibilityHint="Emails a password reset link to your account email"
+            accessibilityState={{ disabled: isSendingReset, busy: isSendingReset }}
+            disabled={isSendingReset}
+            onPress={() => {
+              void handleSendPasswordReset();
+            }}
             style={{
               flexDirection: "row",
               justifyContent: "space-between",
@@ -195,7 +246,9 @@ export function EditProfileScreen({ navigation }: Props) {
               paddingVertical: spacing[2],
             }}
           >
-            <AppText style={{ fontWeight: "600" }}>Change Password</AppText>
+            <AppText style={{ fontWeight: "600" }}>
+              {isSendingReset ? "Sending reset link…" : "Reset password"}
+            </AppText>
             <ChevronRight size={18} color={palette.textMuted} />
           </Pressable>
         </View>
@@ -203,16 +256,19 @@ export function EditProfileScreen({ navigation }: Props) {
       <Button
         label="Save changes"
         loading={isSaving}
+        disabled={!trimmedDisplayName}
         onPress={() => {
+          if (!trimmedDisplayName) return;
           void (async () => {
             setIsSaving(true);
             try {
               const savedProfile = await getHungryService().profile.updateProfile({
-                displayName,
-                avatarUrl: avatarUri,
+                displayName: trimmedDisplayName,
+                ...(avatarUri ? { avatarUrl: avatarUri } : {}),
                 dietaryPreferences: profile.dietaryPreferences,
               });
-              applyProfile(savedProfile);
+              applySavedProfileEdits(savedProfile);
+              setDisplayNameDraft(null);
               setAvatarUri(undefined);
               showToast({ message: "Profile updated.", tone: "success" });
               navigation.goBack();

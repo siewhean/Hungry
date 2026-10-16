@@ -5,7 +5,7 @@ import type {
   MaterialTopTabBarProps,
   MaterialTopTabNavigationProp,
 } from "@react-navigation/material-top-tabs";
-import { useNavigation, type NavigationProp } from "@react-navigation/native";
+import { useFocusEffect, useNavigation, type NavigationProp } from "@react-navigation/native";
 import { BookOpenText, Compass, House, Plus, User } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -189,14 +189,23 @@ const DiscoverWrapper = createDeferredTabScreen(discoverScreenLoader);
 const ReviewWrapper = createDeferredTabScreen(reviewScreenLoader);
 const ProfileWrapper = createDeferredTabScreen(profileScreenLoader);
 
+/**
+ * Release builds keep the Home/Review routes registered (many flows reset to
+ * `MainTabs > Home`) but hide them from the tab bar. The redirect must stay
+ * inert: it renders no Discover instance (that would mount extra
+ * CatalogDiscoverHome trees and duplicate catalog requests) and only redirects
+ * while focused, so tab preloading can never bounce the user off Profile.
+ */
 function ReleaseLandingRedirect() {
   const navigation = useNavigation<MaterialTopTabNavigationProp<MainTabParamList>>();
 
-  useEffect(() => {
-    navigation.navigate("Discover");
-  }, [navigation]);
+  useFocusEffect(
+    useCallback(() => {
+      navigation.navigate("Discover");
+    }, [navigation]),
+  );
 
-  return <DiscoverWrapper />;
+  return <TabScreenLoadingPlaceholder />;
 }
 
 function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
