@@ -127,6 +127,12 @@ interface ProfileState {
   >;
   provisionalOnboardingMigration?: ProvisionalOnboardingMigration;
   applyProfile: (profile: UserProfile) => void;
+  /**
+   * Merge a profile returned by `profile.updateProfile` after an Edit Profile save.
+   * Only identity fields are adopted; favourites, stats and taste state stay with their
+   * own sources of truth (the mock backend never receives favourite toggles).
+   */
+  applySavedProfileEdits: (savedProfile: UserProfile) => void;
   setProvisionalOnboardingMigration: (migration: ProvisionalOnboardingMigration) => void;
   clearProvisionalOnboardingMigration: (userId: string) => void;
   syncProfile: (isAuthenticated: boolean, userId?: string | null) => void;
@@ -179,13 +185,36 @@ const FEEDBACK_CONFIDENCE_DELTAS: Record<ExplicitFeedbackEvent["type"], number> 
 
 const pendingFavouriteDishToggles = new Set<string>();
 
+/**
+ * Bumped whenever the in-memory profile is cleared or replaced by another account.
+ * Async writes capture it before awaiting and drop their result if it changed, so a
+ * slow response for user A can never mutate (or persist into) user B's profile.
+ */
+let profileAccountEpoch = 0;
+
+function bumpProfileAccountEpoch() {
+  profileAccountEpoch += 1;
+}
+
 /** Legacy screens pass a full dish; Release 0.1 catalog screens pass only ids. */
 export type FavouriteDishInput = DishDetail | Pick<DishDetail, "id" | "venueId">;
 
 /** Resolved only after the authenticated write settles, so UI never claims an unsaved write. */
 export type FavouriteToggleResult =
   | { status: "saved" | "removed" }
-  | { status: "failed"; reason: "pending" | "signed_out" | "sync_failed"; message: string };
+  | {
+      status: "failed";
+      reason: "pending" | "signed_out" | "sync_failed" | "stale";
+      message: string;
+    };
+
+function staleFavouriteResult(): FavouriteToggleResult {
+  return {
+    status: "failed",
+    reason: "stale",
+    message: "Your account changed before this favourite finished saving.",
+  };
+}
 
 function isFullFavouriteDish(dish: FavouriteDishInput): dish is DishDetail {
   return "tasteVector" in dish && Boolean(dish.tasteVector);
@@ -416,6 +445,21 @@ export const useProfileStore = create<ProfileState>()(
             vector: profile.tasteVector,
           },
         }),
+      applySavedProfileEdits: (savedProfile) =>
+        set((state) => {
+          // Ignore a late save result for an account that is no longer active.
+          if (savedProfile.id !== state.profile.id) return {};
+          return {
+            profile: {
+              ...state.profile,
+              displayName: savedProfile.displayName,
+              email: savedProfile.email ?? state.profile.email,
+              avatarUrl: savedProfile.avatarUrl ?? state.profile.avatarUrl,
+              dietaryPreferences:
+                savedProfile.dietaryPreferences ?? state.profile.dietaryPreferences,
+            },
+          };
+        }),
       setProvisionalOnboardingMigration: (migration) =>
         set({ provisionalOnboardingMigration: migration }),
       clearProvisionalOnboardingMigration: (userId) =>
@@ -462,6 +506,7 @@ export const useProfileStore = create<ProfileState>()(
           return;
         }
 
+        bumpProfileAccountEpoch();
         set({
           profile: withNeutralTasteProfile(
             ensureSupabaseCompatibleProfile(
@@ -481,10 +526,22 @@ export const useProfileStore = create<ProfileState>()(
             message: "Still saving your last change. Try again in a moment.",
           };
         }
-        if (!getSessionStoreState().isAuthenticated) {
+        const session = getSessionStoreState();
+        if (!session.isAuthenticated) {
           console.warn("Favourite toggle ignored because the user is signed out.");
           return { status: "failed", reason: "signed_out", message: "Sign in to save favourites." };
         }
+        // Capture the owning account before any await; never re-read it afterwards.
+        const ownerUserId = session.authenticatedUserId ?? undefined;
+        const ownerEpoch = profileAccountEpoch;
+        const isStillOwner = () => {
+          const current = getSessionStoreState();
+          return (
+            profileAccountEpoch === ownerEpoch &&
+            current.isAuthenticated &&
+            (current.authenticatedUserId ?? undefined) === ownerUserId
+          );
+        };
         pendingFavouriteDishToggles.add(dishId);
         const previousSnapshot = {
           profile: get().profile,
@@ -566,11 +623,13 @@ export const useProfileStore = create<ProfileState>()(
 
         const optimisticProfile = get().profile;
         try {
-          const saved = await getHungryService().profile.toggleFavourite(dishId);
+          const saved = await getHungryService().profile.toggleFavourite(dishId, ownerUserId);
+          if (!isStillOwner()) return staleFavouriteResult();
           // The server toggles its own row; if local state was stale, adopt the server result.
           setFavouriteMembership(set, dishId, saved);
           return { status: saved ? "saved" : "removed" };
         } catch (error) {
+          if (!isStillOwner()) return staleFavouriteResult();
           console.error("Failed to sync favourite toggle", error);
           if (get().profile === optimisticProfile) {
             set(previousSnapshot);
@@ -928,7 +987,8 @@ export const useProfileStore = create<ProfileState>()(
             onboardingSelectedDishIds: dishIds,
           },
         })),
-      clearProfile: () =>
+      clearProfile: () => {
+        bumpProfileAccountEpoch();
         set({
           profile: withNeutralTasteProfile(
             ensureSupabaseCompatibleProfile(getDataRepository().getProfile(false)),
@@ -937,7 +997,8 @@ export const useProfileStore = create<ProfileState>()(
           tasteInteractionEvents: [],
           reviewEntries: {},
           provisionalOnboardingMigration: undefined,
-        }),
+        });
+      },
     }),
     {
       name: "hungry-profile-v1",

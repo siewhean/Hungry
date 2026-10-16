@@ -48,10 +48,28 @@ test("R01-WRITE-01: favourite writes resolve only after the authenticated write 
   assert.match(store, /toggleFavourite: async \(dish\) => \{/);
   assert.match(
     store,
-    /const saved = await getHungryService\(\)\.profile\.toggleFavourite\(dishId\);[\s\S]*?return \{ status: saved \? "saved" : "removed" \};/,
+    /const saved = await getHungryService\(\)\.profile\.toggleFavourite\(dishId, ownerUserId\);\s*if \(!isStillOwner\(\)\) return staleFavouriteResult\(\);[\s\S]*?return \{ status: saved \? "saved" : "removed" \};/,
   );
-  assert.match(store, /catch \(error\) \{[\s\S]*?reason: "sync_failed"/);
+  assert.match(
+    store,
+    /catch \(error\) \{\s*if \(!isStillOwner\(\)\) return staleFavouriteResult\(\);[\s\S]*?reason: "sync_failed"/,
+  );
   assert.match(store, /reason: "signed_out"/);
+});
+
+test("R01-WRITE-01: favourite results are dropped when the account changes mid-write", () => {
+  const store = read("src/store/useProfileStore.ts");
+  const supabase = read("src/lib/services/supabase/supabaseService.ts");
+
+  assert.match(store, /clearProfile: \(\) => \{\s*bumpProfileAccountEpoch\(\);/);
+  assert.match(
+    store,
+    /bumpProfileAccountEpoch\(\);\s*set\(\{\s*profile: withNeutralTasteProfile\(/,
+  );
+  assert.match(
+    supabase,
+    /async toggleFavourite\(dishId: string, expectedUserId\?: string\)[\s\S]*?if \(expectedUserId && userId !== expectedUserId\) \{\s*throw/,
+  );
 });
 
 test("R01-WRITE-01: favourite toasts follow the write result, never an optimistic guess", () => {
