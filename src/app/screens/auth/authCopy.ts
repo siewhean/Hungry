@@ -18,6 +18,9 @@ export const AUTH_COPY = {
     emailNotConfirmedToast: "Please verify your email before signing in.",
     invalidCredentialsToast: "Incorrect email or password.",
     genericErrorToast: "Sign in failed. Please try again.",
+    tooManyAttemptsToast: "Too many sign-in attempts. Please wait a moment and try again.",
+    networkErrorToast: "Can't reach Hungry right now. Check your connection and try again.",
+    accountUnavailableToast: "This account can't sign in right now. Please contact support.",
     providerCancelledToast: "Sign in was cancelled.",
     passwordValidationLabel: "Password",
   },
@@ -46,7 +49,7 @@ export const AUTH_COPY = {
     invalidEmailToast: "Please use a valid email address.",
     genericErrorToast: "Could not continue sign-up. Please try again.",
     providerCancelledToast: "Sign-up was cancelled.",
-    displayNameValidationLabel: "Display name",
+    displayNameValidationLabel: "Full name",
   },
   forgotPassword: {
     errorTitle: "Password recovery unavailable",

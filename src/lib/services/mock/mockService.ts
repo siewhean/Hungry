@@ -1364,6 +1364,11 @@ export const hungryService: HungryService = {
       return resolve(undefined);
     },
 
+    async confirmEmail(_code) {
+      if (!_isAuthenticated) return resolve(null);
+      return resolve(mockSession(_profile));
+    },
+
     async requestAccountDeletion() {
       // Mock-safe stub: production uses external deletion endpoint + legal workflow.
       _isAuthenticated = false;

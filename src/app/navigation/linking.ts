@@ -30,7 +30,18 @@ function sanitizeRouteParams(name: string, params: unknown): Record<string, unkn
   const next =
     params && typeof params === "object" ? { ...(params as Record<string, unknown>) } : {};
 
-  if ((name === "DishDetail" || name === "StallDetail") && !isSafeDeepLinkId(next.id)) {
+  if (name === "DishDetail" && !isSafeDeepLinkId(next.dishId ?? next.id)) {
+    return undefined;
+  }
+
+  if (name === "StallDetail" && !isSafeDeepLinkId(next.venueId ?? next.id)) {
+    return undefined;
+  }
+
+  if (
+    name === "CatalogRawDetail" &&
+    (!isSafeDeepLinkId(next.id) || (next.kind !== "dish" && next.kind !== "venue"))
+  ) {
     return undefined;
   }
 
@@ -54,8 +65,53 @@ function decodePathSegment(value: string | undefined): string | undefined {
   }
 }
 
+export type AuthCallbackError = "expired" | "invalid";
+
+/**
+ * Reads the Supabase PKCE callback params (`?code=` or `?error=&error_code=`)
+ * from a deep-link path. Supabase may put errors in the query or the fragment.
+ * Only a safe opaque code and a coarse error kind are forwarded to screens.
+ */
+export function parseAuthCallbackParams(rawPath: string): {
+  code?: string;
+  error?: AuthCallbackError;
+} {
+  const [beforeHash, hash = ""] = rawPath.split("#");
+  const queryIndex = beforeHash.indexOf("?");
+  const query = queryIndex >= 0 ? beforeHash.slice(queryIndex + 1) : "";
+  const queryParams = new URLSearchParams(query);
+  const hashParams = new URLSearchParams(hash);
+  const read = (key: string) => queryParams.get(key) ?? hashParams.get(key) ?? undefined;
+
+  const errorValue = read("error");
+  const errorCode = read("error_code");
+  if (errorValue || errorCode) {
+    return { error: errorCode === "otp_expired" ? "expired" : "invalid" };
+  }
+
+  const code = read("code");
+  if (code === undefined) return {};
+  return isSafeDeepLinkId(code) ? { code } : { error: "invalid" };
+}
+
 function createState(name: string, params?: Record<string, unknown>): LinkingState {
   return { routes: [params && Object.keys(params).length > 0 ? { name, params } : { name }] };
+}
+
+/**
+ * Released catalog reads (catalogReadV2 on the Supabase provider) render dish and
+ * venue detail from catalog rows, whose ids copy public.dishes/venues ids.
+ * Required lazily so linking stays importable without the service graph.
+ */
+function isCatalogDeepLinkMode(): boolean {
+  if (!FEATURE_FLAGS.catalogReadV2) return false;
+  try {
+    const { getServiceProvider } =
+      require("@/lib/services/serviceProvider") as typeof import("@/lib/services/serviceProvider");
+    return getServiceProvider().mode === "supabase";
+  } catch {
+    return false;
+  }
 }
 
 function buildStateFromPath(rawPath: string): LinkingState | undefined {
@@ -67,17 +123,41 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
   if (path === "login") return createState("AuthStack", { screen: "Login" });
   if (path === "signup") return createState("AuthStack", { screen: "SignUp" });
   if (path === "forgot-password") return createState("AuthStack", { screen: "ForgotPassword" });
-  if (path === "auth/callback") return createState("AuthStack", { screen: "ResetPassword" });
+  if (path === "auth/callback") {
+    const callback = parseAuthCallbackParams(rawPath);
+    return createState("AuthStack", {
+      screen: "ResetPassword",
+      ...(Object.keys(callback).length > 0 ? { params: callback } : {}),
+    });
+  }
+  if (path === "auth/confirm") {
+    const callback = parseAuthCallbackParams(rawPath);
+    return createState("AuthStack", {
+      screen: "EmailVerification",
+      ...(Object.keys(callback).length > 0 ? { params: callback } : {}),
+    });
+  }
   if (path === "auth/reset/success") {
     return createState("AuthStack", { screen: "ResetPasswordSuccess" });
   }
+  if (parts[0] === "catalog") {
+    const kind = parts[1];
+    const id = decodePathSegment(parts[2]);
+    return id ? createState("CatalogRawDetail", { kind, id }) : undefined;
+  }
   if (parts[0] === "dish") {
-    const id = decodePathSegment(parts[1]);
-    return id ? createState("DishDetail", { id }) : undefined;
+    const dishId = decodePathSegment(parts[1]);
+    if (!dishId) return undefined;
+    return isCatalogDeepLinkMode()
+      ? createState("CatalogRawDetail", { kind: "dish", id: dishId })
+      : createState("DishDetail", { dishId });
   }
   if (parts[0] === "venue") {
-    const id = decodePathSegment(parts[1]);
-    return id ? createState("StallDetail", { id }) : undefined;
+    const venueId = decodePathSegment(parts[1]);
+    if (!venueId) return undefined;
+    return isCatalogDeepLinkMode()
+      ? createState("CatalogRawDetail", { kind: "venue", id: venueId })
+      : createState("StallDetail", { venueId });
   }
   if (FEATURE_FLAGS.postCreationEnabled && path === "order") {
     return createState("Post", parseOrderDeepLinkQuery(rawPath));
@@ -138,12 +218,19 @@ export function createRootLinking(
             Login: "login",
             SignUp: "signup",
             ForgotPassword: "forgot-password",
+            // EmailVerification is intentionally not mapped here: auth/confirm is
+            // parsed in buildStateFromPath only, so in-app navigation to the
+            // verification screen never writes /auth/confirm into the web URL
+            // (which would re-open AuthStack when the signed-in navigator mounts).
             ResetPassword: "auth/callback",
             ResetPasswordSuccess: "auth/reset/success",
           },
         },
-        DishDetail: "dish/:id",
-        StallDetail: "venue/:id",
+        // Param names match what callers pass (dishId/venueId) so generated URLs
+        // never render as /venue/undefined.
+        DishDetail: "dish/:dishId",
+        StallDetail: "venue/:venueId",
+        CatalogRawDetail: "catalog/:kind/:id",
         ...(FEATURE_FLAGS.postCreationEnabled ? { Post: "order" } : {}),
         ...(FEATURE_FLAGS.prototypeRoutesEnabled
           ? { PortfolioPublicView: "portfolio/:portfolioId" }

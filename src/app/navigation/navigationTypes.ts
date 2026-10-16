@@ -3,9 +3,18 @@ import type { NavigatorScreenParams } from "@react-navigation/native";
 export type AuthStackParamList = {
   Login: undefined;
   SignUp: undefined;
-  EmailVerification: { email: string; completedOnboarding?: boolean } | undefined;
+  // `code` / `error` arrive from the hungry://auth/confirm and
+  // hungry://auth/callback Supabase PKCE deep links (see linking.ts).
+  EmailVerification:
+    | {
+        email?: string;
+        completedOnboarding?: boolean;
+        code?: string;
+        error?: "expired" | "invalid";
+      }
+    | undefined;
   ForgotPassword: undefined;
-  ResetPassword: { email?: string; code?: string } | undefined;
+  ResetPassword: { email?: string; code?: string; error?: "expired" | "invalid" } | undefined;
   ResetPasswordSuccess: undefined;
 };
 

@@ -669,10 +669,13 @@ export interface HungryService {
   auth: {
     signUp(email: string, password: string, name: string): Promise<Session | null>;
     resendVerificationEmail(email: string): Promise<void>;
+    /** Exchanges the hungry://auth/confirm PKCE code; null when no session results. */
+    confirmEmail(code: string): Promise<Session | null>;
     signIn(email: string, password: string): Promise<Session>;
     signInWithGoogle(): Promise<Session>;
     signInWithApple(): Promise<Session>;
     signOut(): Promise<void>;
+    /** Queues deletion only; callers purge local data and sign out afterwards. */
     requestAccountDeletion(request?: AccountDeletionRequest): Promise<void>;
     forgotPassword(email: string): Promise<void>;
     resetPassword(token: string, password: string): Promise<void>;
@@ -755,7 +758,11 @@ export interface HungryService {
     updateProfile(updates: Partial<UserProfile>): Promise<UserProfile>;
     updateDietaryPreferences(flags: DietaryFlag[]): Promise<void>;
     getGuestProfile(): Promise<UserProfile>;
-    toggleFavourite(dishId: string): Promise<boolean>;
+    /**
+     * `expectedUserId` pins the write to the account that initiated it; the
+     * implementation must refuse to write if the live session belongs to anyone else.
+     */
+    toggleFavourite(dishId: string, expectedUserId?: string): Promise<boolean>;
     getFavouriteDishIds(): Promise<string[]>;
     updateTasteVector(vector: TasteVector): Promise<void>;
     updateTasteProfile(profile: TasteProfile): Promise<void>;

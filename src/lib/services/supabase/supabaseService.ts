@@ -1676,6 +1676,12 @@ function getAuthEmailRedirectTo(): string {
   return process.env.EXPO_PUBLIC_AUTH_REDIRECT_URL?.trim() || "hungry://auth/callback";
 }
 
+// Sign-up confirmation must not share the password-recovery callback, or the
+// confirmation link opens the "new password" form.
+function getAuthEmailConfirmRedirectTo(): string {
+  return process.env.EXPO_PUBLIC_AUTH_CONFIRM_REDIRECT_URL?.trim() || "hungry://auth/confirm";
+}
+
 function getMerchantAnalyticsSince(dateRange: MerchantAnalytics["dateRange"]): string | null {
   const now = new Date();
   if (dateRange === "today") {
@@ -2792,7 +2798,7 @@ export const supabaseService: HungryService = {
         password,
         options: {
           data: { display_name: name },
-          emailRedirectTo: getAuthEmailRedirectTo(),
+          emailRedirectTo: getAuthEmailConfirmRedirectTo(),
         },
       });
       if (error) throw error;
@@ -2807,10 +2813,19 @@ export const supabaseService: HungryService = {
         type: "signup",
         email,
         options: {
-          emailRedirectTo: getAuthEmailRedirectTo(),
+          emailRedirectTo: getAuthEmailConfirmRedirectTo(),
         },
       });
       if (error) throw error;
+    },
+
+    async confirmEmail(code) {
+      const client = requireSupabaseClient();
+      const trimmed = code.trim();
+      if (!trimmed) throw new Error("Email confirmation link did not include a code.");
+      const { error } = await client.auth.exchangeCodeForSession(trimmed);
+      if (error) throw error;
+      return await toAppSession(client);
     },
 
     async signIn(email, password) {
@@ -2848,8 +2863,8 @@ export const supabaseService: HungryService = {
       // 23505 = uniq_account_deletion_requests_active_user: a request is already
       // queued for this user, so a repeat tap is treated as success (idempotent).
       if (error && error.code !== "23505") throw error;
-
-      await this.signOut();
+      // No sign-out here: the caller purges local data first, records a
+      // confirmation notice, then signs out through the session store.
     },
 
     async forgotPassword(email) {
@@ -3175,10 +3190,13 @@ export const supabaseService: HungryService = {
       return DEFAULT_GUEST_PROFILE;
     },
 
-    async toggleFavourite(dishId: string) {
+    async toggleFavourite(dishId: string, expectedUserId?: string) {
       const client = requireSupabaseClient();
       const userId = await getCurrentSupabaseUserId();
       if (!userId) throw new Error("You must be signed in to favourite dishes.");
+      if (expectedUserId && userId !== expectedUserId) {
+        throw new Error("Account changed before the favourite could be saved.");
+      }
 
       const { data } = await client
         .from("user_favourite_dishes")

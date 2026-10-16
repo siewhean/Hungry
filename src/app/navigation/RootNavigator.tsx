@@ -457,7 +457,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
   const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
   const authDataSource = useSessionStore((state) => state.authDataSource);
   const sessionExpired = useSessionStore((state) => state.sessionExpired);
-  const dismissSessionExpiry = useSessionStore((state) => state.dismissSessionExpiry);
+  const passwordRecoveryInProgress = useSessionStore((state) => state.passwordRecoveryInProgress);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
   const isMerchantMode = useMerchantStore((state) => state.account !== null);
@@ -525,16 +525,20 @@ export function RootNavigator({ theme }: { theme: Theme }) {
   useEffect(() => {
     if (sessionExpired && navigationRef.isReady()) {
       setReturnRoute("Home");
+      // LoginScreen consumes and clears the expiry flag after showing the notice.
       navigationRef.navigate("AuthStack", { screen: "Login" });
-      dismissSessionExpiry();
     }
-  }, [dismissSessionExpiry, sessionExpired, setReturnRoute]);
+  }, [sessionExpired, setReturnRoute]);
 
   useEffect(() => {
     if (!navigationRef.isReady()) {
       return;
     }
     if (!isAuthReady) {
+      return;
+    }
+    // Keep a signed-in user on the reset form while a recovery update is running.
+    if (passwordRecoveryInProgress) {
       return;
     }
 
@@ -585,6 +589,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     isDeveloperMode,
     isMerchantMode,
     navigateHome,
+    passwordRecoveryInProgress,
   ]);
 
   useEffect(() => {

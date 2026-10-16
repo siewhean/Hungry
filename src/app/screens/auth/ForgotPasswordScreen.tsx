@@ -22,7 +22,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
   const {
     control,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<FormValues>({ defaultValues: { email: "" } });
 
   const handleSend = handleSubmit(async ({ email }) => {
@@ -111,7 +111,11 @@ export function ForgotPasswordScreen({ navigation }: Props) {
               />
             )}
           />
-          <Button label={AUTH_COPY.forgotPassword.primaryButton} onPress={handleSend} />
+          <Button
+            label={AUTH_COPY.forgotPassword.primaryButton}
+            onPress={handleSend}
+            loading={isSubmitting}
+          />
         </View>
       </AuthScreenShell>
     </FeedErrorBoundary>

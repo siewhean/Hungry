@@ -27,9 +27,9 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
     [
       /Login: undefined/,
       /SignUp: undefined/,
-      /EmailVerification: \{ email: string; completedOnboarding\?: boolean \} \| undefined/,
+      /EmailVerification:\s*\|\s*\{\s*email\?: string;\s*completedOnboarding\?: boolean;\s*code\?: string;/,
       /ForgotPassword: undefined/,
-      /ResetPassword: \{ email\?: string; code\?: string \} \| undefined/,
+      /ResetPassword: \{ email\?: string; code\?: string; error\?: "expired" \| "invalid" \} \| undefined/,
       /TasteQuiz: \{ mode\?: "onboarding" \| "profile"; initialPhase\?: "taste" \| "dietary" \} \| undefined/,
       /LocationPermission: undefined/,
       /ManualLocationPicker: undefined/,
@@ -82,9 +82,10 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
     [
       /const handleDeleteAccount = \(\) =>/,
       /purgePersistedAccountData\(\)/,
-      /clearSession\(\)/,
-      /clearProfile\(\)/,
-      /rootNavigation\.navigate\("AuthStack", \{ screen: "SignUp" \}\)/,
+      // signOut() clears session, profile and every account-scoped store and
+      // signs out of Supabase; Login then shows the deletion confirmation.
+      /setAuthNotice\(/,
+      /signOut\(\);\s*resetToLogin\(\);/,
     ],
     "SettingsScreen delete account",
   );
@@ -102,13 +103,18 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
   );
   assertSourceIncludes(
     locationPermission,
-    [/grantLocation\(\)/, /completeOnboarding\(hasSkippedTasteQuiz\)/, /ManualLocationPicker/],
+    [/grantLocation\(\)/, /useFinishLocationStep\(navigation\)/, /ManualLocationPicker/],
     "LocationPermissionScreen",
   );
   assertSourceIncludes(
     manualLocation,
-    [/setManualSelection/, /completeOnboarding\(hasSkippedTasteQuiz\)/],
+    [/setManualSelection/, /finishLocationStep\(\)/],
     "ManualLocationPickerScreen",
+  );
+  assertSourceIncludes(
+    readRepoFile("src/app/screens/onboarding/finishLocationStep.ts"),
+    [/completeOnboarding\(hasSkippedTasteQuiz\)/, /navigation\.navigate\("OnboardingAuth"\)/],
+    "finishLocationStep",
   );
 });
 

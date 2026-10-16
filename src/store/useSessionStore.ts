@@ -14,6 +14,16 @@ export interface PendingRoute {
   params?: Record<string, unknown>;
 }
 
+export interface AuthNotice {
+  message: string;
+  tone: "info" | "success" | "warning" | "error";
+}
+
+export const SESSION_EXPIRED_NOTICE: AuthNotice = {
+  message: "Your session expired. Sign in again to continue.",
+  tone: "warning",
+};
+
 interface SessionState {
   hasHydrated: boolean;
   isAuthReady: boolean;
@@ -24,6 +34,15 @@ interface SessionState {
   authDataSource?: HungryDataSource | null;
   returnRoute?: string | PendingRoute;
   sessionExpired: boolean;
+  /**
+   * True while a password-recovery code exchange + password update is running.
+   * The exchange emits SIGNED_IN/PASSWORD_RECOVERY; AppBody holds the current
+   * navigator while this is set so the reset form is not unmounted mid-flow.
+   * Never persisted.
+   */
+  passwordRecoveryInProgress: boolean;
+  /** One-shot message shown on the Login screen after a signed-out transition. */
+  authNotice?: AuthNotice | null;
   completeAuth: (options?: {
     completedOnboarding?: boolean;
     skippedTasteQuiz?: boolean;
@@ -34,6 +53,11 @@ interface SessionState {
   expireSession: () => void;
   dismissSessionExpiry: () => void;
   setReturnRoute: (route?: string | PendingRoute) => void;
+  beginPasswordRecovery: () => void;
+  endPasswordRecovery: () => void;
+  setAuthNotice: (notice: AuthNotice | null) => void;
+  /** Returns the pending sign-in notice (session expiry first) and clears it. */
+  consumeAuthNotice: () => AuthNotice | null;
   setSkippedTasteQuiz: (skipped: boolean) => void;
   signOut: () => void;
   clearSession: () => void;
@@ -57,6 +81,8 @@ const initialState = {
   authDataSource: null,
   returnRoute: undefined,
   sessionExpired: false,
+  passwordRecoveryInProgress: false,
+  authNotice: null,
 } as const;
 
 function getProfileStoreState() {
@@ -107,6 +133,13 @@ function clearAccountScopedStores(): void {
   useActivityStore.getState().clearAccountScopedState();
   usePublishedPostStore.getState().clearPosts();
   useStallInteractionStore.getState()._reset();
+  // Search history and review drafts are account-scoped too: every sign-out
+  // path (Settings, Profile tab, merchant, expiry, account switch) clears them.
+  const { useSearchStore } = require("./useSearchStore") as typeof import("./useSearchStore");
+  const { useReviewDraftStore } =
+    require("./useReviewDraftStore") as typeof import("./useReviewDraftStore");
+  useSearchStore.getState().clearSearchState();
+  useReviewDraftStore.getState().resetDraft();
 }
 
 function clearAuthenticatedProfile(): void {
@@ -217,10 +250,20 @@ export const useSessionStore = create<SessionState>()(
       },
       dismissSessionExpiry: () => set({ sessionExpired: false }),
       setReturnRoute: (returnRoute) => set({ returnRoute }),
+      beginPasswordRecovery: () => set({ passwordRecoveryInProgress: true }),
+      endPasswordRecovery: () => set({ passwordRecoveryInProgress: false }),
+      setAuthNotice: (authNotice) => set({ authNotice }),
+      consumeAuthNotice: (): AuthNotice | null => {
+        const { sessionExpired, authNotice }: SessionState = useSessionStore.getState();
+        const notice = sessionExpired ? SESSION_EXPIRED_NOTICE : (authNotice ?? null);
+        if (sessionExpired || authNotice) set({ sessionExpired: false, authNotice: null });
+        return notice;
+      },
       setSkippedTasteQuiz: (hasSkippedTasteQuiz) => set({ hasSkippedTasteQuiz }),
       signOut: () => {
         const profileId = getSafeProfileId();
-        const { hasCompletedOnboarding, hasSkippedTasteQuiz } = useSessionStore.getState();
+        const { hasCompletedOnboarding, hasSkippedTasteQuiz, authNotice }: SessionState =
+          useSessionStore.getState();
         if (getConfiguredDataSource() === "supabase") {
           void getHungryService()
             .auth.signOut()
@@ -231,6 +274,7 @@ export const useSessionStore = create<SessionState>()(
           isAuthReady: true,
           hasCompletedOnboarding,
           hasSkippedTasteQuiz,
+          authNotice,
         });
         clearAccountScopedStores();
         clearAuthenticatedProfile();
@@ -315,13 +359,14 @@ export const useSessionStore = create<SessionState>()(
         }
 
         const profileId = getSafeProfileId();
+        // Do not reset sessionExpired here: Supabase emits SIGNED_OUT right after
+        // expireSession(), and the Login screen still needs to show that notice.
         set({
           isAuthenticated: false,
           isAuthReady: true,
           authenticatedUserId: null,
           authDataSource: null,
           returnRoute: undefined,
-          sessionExpired: false,
         });
         if (currentlyAuthenticated) {
           clearAccountScopedStores();

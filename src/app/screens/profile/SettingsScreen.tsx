@@ -24,9 +24,10 @@ import {
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { Button } from "@/components/ui";
+import { Button, Dialog } from "@/components/ui";
 import { SettingsSection, SettingsRow } from "@/components/settings";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { PUBLIC_LINKS } from "@/constants/supportLinks";
 import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useLocationStore } from "@/store/useLocationStore";
@@ -44,8 +45,7 @@ export function SettingsScreen() {
   const rootNavigation = getRootNavigation(navigation);
   const { palette, spacing } = useHungryTheme();
 
-  const clearSession = useSessionStore((state) => state.clearSession);
-  const clearProfile = useProfileStore((state) => state.clearProfile);
+  const setAuthNotice = useSessionStore((state) => state.setAuthNotice);
   const resetDraft = useReviewDraftStore((state) => state.resetDraft);
   const clearSearchState = useSearchStore((state) => state.clearSearchState);
   const resetLocationState = useLocationStore((state) => state.resetLocationState);
@@ -120,41 +120,51 @@ export function SettingsScreen() {
     ]);
   };
 
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      "Delete account",
-      "Hungry will queue deletion of your account and associated personal data. Some security, moderation, or legal retention records may still remain in anonymized form. This action is permanent.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Request deletion",
-          style: "destructive",
-          onPress: () => {
-            void (async () => {
-              try {
-                setDeletionRequested(true);
-                await getHungryService().auth.requestAccountDeletion({
-                  reason: "user_initiated_settings_flow",
-                });
-                await purgePersistedAccountData();
-                clearSession();
-                clearProfile();
-                clearSearchState();
-                resetDraft();
-                resetLocationState();
-                rootNavigation.navigate("AuthStack", { screen: "SignUp" });
-              } catch {
-                setDeletionRequested(false);
-                Alert.alert(
-                  "Deletion request failed",
-                  "We could not queue your account deletion request. Please try again or contact support.",
-                );
-              }
-            })();
-          },
-        },
-      ],
-    );
+  const [accountDialog, setAccountDialog] = useState<
+    "signOut" | "deleteAccount" | "deleteFailed" | null
+  >(null);
+
+  const resetToLogin = () => {
+    // Only matters when the signed-in navigator stays mounted (E2E launcher);
+    // otherwise AppBody swaps to the pre-auth navigator on sign-out.
+    rootNavigation.reset({
+      index: 0,
+      routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+    });
+  };
+
+  const handleDeleteAccount = () => setAccountDialog("deleteAccount");
+
+  const runAccountDeletion = async () => {
+    setDeletionRequested(true);
+    try {
+      await getHungryService().auth.requestAccountDeletion({
+        reason: "user_initiated_settings_flow",
+      });
+    } catch {
+      setDeletionRequested(false);
+      setAccountDialog("deleteFailed");
+      return;
+    }
+
+    // The deletion request is queued at this point. A local purge failure must
+    // not be reported as a failed deletion request.
+    let purgeFailed = false;
+    try {
+      await purgePersistedAccountData();
+    } catch {
+      purgeFailed = true;
+    }
+
+    // Shown on Login after sign-out (the Settings screen unmounts on sign-out).
+    setAuthNotice({
+      message: purgeFailed
+        ? "Account deletion requested and you've been signed out. Some data saved on this device could not be cleared; reinstall Hungry to remove it."
+        : "Account deletion requested. Hungry will delete your account and personal data, and you've been signed out.",
+      tone: "success",
+    });
+    signOut();
+    resetToLogin();
   };
 
   const cycleTheme = () => {
@@ -246,23 +256,13 @@ export function SettingsScreen() {
     ]);
   };
 
-  const handleSignOut = () => {
-    Alert.alert("Sign out", "You will be signed out from Hungry on this device.", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Sign out",
-        style: "destructive",
-        onPress: () => {
-          signOut();
-          clearSearchState();
-          resetDraft();
-          rootNavigation.reset({
-            index: 0,
-            routes: [{ name: "AuthStack", params: { screen: "Login" } }],
-          });
-        },
-      },
-    ]);
+  const handleSignOut = () => setAccountDialog("signOut");
+
+  const runSignOut = () => {
+    // useSessionStore.signOut clears every account-scoped store (search, review
+    // draft, location, social, profile) so all sign-out entry points match.
+    signOut();
+    resetToLogin();
   };
 
   return (
@@ -526,7 +526,7 @@ export function SettingsScreen() {
         <SettingsRow
           label="Data controls"
           icon={<Shield size={20} color={palette.orange} />}
-          onPress={() => void openTrustedExternalUrl("https://hungry.sg/account/delete")}
+          onPress={() => void openTrustedExternalUrl(PUBLIC_LINKS.accountDeletion)}
           isLast={false}
         />
         <SettingsRow
@@ -540,17 +540,17 @@ export function SettingsScreen() {
       <SettingsSection title="Support">
         <SettingsRow
           label="Help Center"
-          onPress={() => void openTrustedExternalUrl("https://hungry.sg/help")}
+          onPress={() => void openTrustedExternalUrl(PUBLIC_LINKS.helpCenter)}
           isLast={false}
         />
         <SettingsRow
           label="Privacy Policy"
-          onPress={() => void openTrustedExternalUrl("https://hungry.sg/privacy")}
+          onPress={() => void openTrustedExternalUrl(PUBLIC_LINKS.privacy)}
           isLast={false}
         />
         <SettingsRow
           label="Terms of Service"
-          onPress={() => void openTrustedExternalUrl("https://hungry.sg/terms")}
+          onPress={() => void openTrustedExternalUrl(PUBLIC_LINKS.terms)}
           isLast
         />
       </SettingsSection>
@@ -560,7 +560,7 @@ export function SettingsScreen() {
         <SettingsRow
           label="Hungry support"
           icon={<CircleHelp size={20} color={palette.orange} />}
-          onPress={() => void openTrustedExternalUrl("mailto:support@hungry.sg")}
+          onPress={() => void openTrustedExternalUrl(PUBLIC_LINKS.support)}
           isLast
         />
       </SettingsSection>
@@ -574,6 +574,43 @@ export function SettingsScreen() {
           leftIcon={<Trash2 size={20} color={palette.white} />}
         />
       </View>
+
+      {/* Cross-platform confirm (Alert.alert is a no-op on web, so E2E can't drive it). */}
+      <Dialog
+        visible={accountDialog === "signOut"}
+        title="Sign out"
+        message="You will be signed out from Hungry on this device."
+        buttons={[
+          { text: "Sign out", style: "destructive", onPress: runSignOut },
+          { text: "Cancel", style: "cancel" },
+        ]}
+        onClose={() => setAccountDialog(null)}
+      />
+      <Dialog
+        visible={accountDialog === "deleteAccount"}
+        title="Delete account"
+        message="Hungry will queue deletion of your account and associated personal data. Some security, moderation, or legal retention records may still remain in anonymized form. This action is permanent."
+        buttons={[
+          {
+            text: "Request deletion",
+            style: "destructive",
+            onPress: () => {
+              void runAccountDeletion();
+            },
+          },
+          { text: "Cancel", style: "cancel" },
+        ]}
+        onClose={() =>
+          setAccountDialog((current) => (current === "deleteAccount" ? null : current))
+        }
+      />
+      <Dialog
+        visible={accountDialog === "deleteFailed"}
+        title="Deletion request failed"
+        message="We could not queue your account deletion request. Please try again or contact support."
+        buttons={[{ text: "OK", style: "cancel" }]}
+        onClose={() => setAccountDialog(null)}
+      />
     </ProfileScreenShell>
   );
 }

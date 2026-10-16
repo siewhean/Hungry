@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
@@ -18,10 +18,20 @@ export function AppBody() {
   const isBootstrapReady = useAppBootstrap();
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const isAuthReady = useSessionStore((state) => state.isAuthReady);
+  const passwordRecoveryInProgress = useSessionStore((state) => state.passwordRecoveryInProgress);
   const { colorScheme, theme, palette, spacing, fontsLoaded } = useHungryTheme();
   const [fontGraceReached, setFontGraceReached] = useState(false);
   const configurationError = getReleasedSupabaseConfigurationError();
   const isE2eDeveloperLauncherAvailable = isE2eDeveloperLauncherRequested();
+  const wantsRootNavigator = isAuthenticated || isE2eDeveloperLauncherAvailable;
+  // A password-recovery code exchange signs the user in before the new password
+  // is saved. Hold whichever navigator is mounted until recovery finishes so the
+  // reset form (and its success screen) is not unmounted by the auth swap.
+  const mountedNavigatorIsRoot = useRef(wantsRootNavigator);
+  if (!passwordRecoveryInProgress) mountedNavigatorIsRoot.current = wantsRootNavigator;
+  const showRootNavigator = passwordRecoveryInProgress
+    ? mountedNavigatorIsRoot.current
+    : wantsRootNavigator;
 
   useEffect(() => {
     if (fontsLoaded) {
@@ -74,11 +84,7 @@ export function AppBody() {
     <View style={{ flex: 1, backgroundColor: palette.bg }}>
       <BottomSheetModalProvider>
         <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-        {isAuthenticated || isE2eDeveloperLauncherAvailable ? (
-          <RootNavigator theme={theme} />
-        ) : (
-          <PreAuthNavigator theme={theme} />
-        )}
+        {showRootNavigator ? <RootNavigator theme={theme} /> : <PreAuthNavigator theme={theme} />}
       </BottomSheetModalProvider>
     </View>
   );

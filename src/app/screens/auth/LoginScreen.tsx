@@ -2,22 +2,23 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Controller, useForm } from "react-hook-form";
 import { Pressable, View } from "react-native";
 import { Eye, EyeOff, Lock, Mail, ArrowRight } from "lucide-react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
+import { AppText, Button, FeedErrorBoundary, InlineBanner, Input } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
 import { getMockLoginFailure } from "@/features/auth/mockAuth";
 import { validateEmail, validateRequired } from "@/features/auth/validation";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
-import { useSessionStore } from "@/store/useSessionStore";
+import { useSessionStore, type AuthNotice } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { AuthStackParamList } from "./AuthStack";
 import { AuthProviderButton } from "./AuthProviderButton";
 import { AuthScreenShell } from "./AuthScreenShell";
 import { AUTH_COPY, getAuthProviderUnavailableMessage, type AuthProvider } from "./authCopy";
+import { getAuthErrorLogContext, getLoginErrorMessage } from "./authErrors";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
 type FormValues = { email: string; password: string };
@@ -27,12 +28,23 @@ export function LoginScreen({ navigation }: Props) {
   const oauthProvidersEnabled = FEATURE_FLAGS.oauthProvidersEnabled;
   const [showPassword, setShowPassword] = useState(false);
   const completeAuth = useSessionStore((state) => state.completeAuth);
+  const sessionExpired = useSessionStore((state) => state.sessionExpired);
+  const pendingAuthNotice = useSessionStore((state) => state.authNotice);
   const showToast = useUIStore((state) => state.showToast);
+  const [authNotice, setAuthNotice] = useState<AuthNotice | null>(null);
+
+  // One-shot notices (session expiry, account deletion confirmation) are set
+  // before the signed-out navigator mounts; show them here, then clear them.
+  useEffect(() => {
+    if (!sessionExpired && !pendingAuthNotice) return;
+    const notice = useSessionStore.getState().consumeAuthNotice();
+    if (notice) setAuthNotice(notice);
+  }, [pendingAuthNotice, sessionExpired]);
 
   const {
     control,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<FormValues>({ defaultValues: { email: "", password: "" } });
 
   const finishLogin = (authProvider: "email" | AuthProvider, trackSignInEvent = true) => {
@@ -69,16 +81,9 @@ export function LoginScreen({ navigation }: Props) {
       }
       finishLogin("email");
     } catch (err) {
-      const code =
-        (err as { error_code?: string; code?: string })?.error_code ??
-        (err as { error_code?: string; code?: string })?.code;
-      if (code === "email_not_confirmed") {
-        showToast({ message: AUTH_COPY.login.emailNotConfirmedToast, tone: "error" });
-      } else if (code === "invalid_credentials") {
-        showToast({ message: AUTH_COPY.login.invalidCredentialsToast, tone: "error" });
-      } else {
-        showToast({ message: AUTH_COPY.login.genericErrorToast, tone: "error" });
-      }
+      // Diagnostics only: provider code/status, never the email or password.
+      console.warn("[auth] Email sign-in failed", getAuthErrorLogContext(err));
+      showToast({ message: getLoginErrorMessage(err), tone: "error" });
     }
   });
 
@@ -131,7 +136,6 @@ export function LoginScreen({ navigation }: Props) {
     <FeedErrorBoundary title={AUTH_COPY.login.errorTitle} body={AUTH_COPY.login.errorBody}>
       <AuthScreenShell
         title={AUTH_COPY.login.title}
-        scroll={false}
         compact
         contentOffsetTop={spacing[16]}
         wordmarkColor={colorScheme === "dark" ? palette.white : palette.navy}
@@ -160,6 +164,7 @@ export function LoginScreen({ navigation }: Props) {
         }
       >
         <View style={{ gap: spacing[4] }}>
+          {authNotice ? <InlineBanner message={authNotice.message} tone={authNotice.tone} /> : null}
           <View style={{ gap: spacing[2] }}>
             <Controller
               control={control}
@@ -238,8 +243,8 @@ export function LoginScreen({ navigation }: Props) {
           <Button
             label={AUTH_COPY.login.primaryButton}
             onPress={handleLogin}
-            rightIcon={<ArrowRight size={18} color={palette.white} />}
-            labelColor={palette.white}
+            loading={isSubmitting}
+            rightIcon={<ArrowRight size={18} color={palette.textOnOrange} />}
           />
 
           <View
