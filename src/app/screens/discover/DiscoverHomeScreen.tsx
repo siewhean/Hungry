@@ -2259,13 +2259,15 @@ export function DiscoverHomeScreen() {
               <AppText variant="h1" style={{ color: themeTints.text }} numberOfLines={1}>
                 {discoverLocationLabel}
               </AppText>
-              {discoverAreaCount === null ? (
-                <Skeleton width={150} height={14} borderRadius={radii.sm} />
-              ) : (
-                <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
-                  {`${discoverAreaCount} places to eat in this area`}
-                </AppText>
-              )}
+              {
+                discoverAreaCount === null ? (
+                  <Skeleton width={150} height={14} borderRadius={radii.sm} />
+                ) : discoverAreaCount > 0 ? (
+                  <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
+                    {`${discoverAreaCount} places to eat in this area`}
+                  </AppText>
+                ) : null /* 0 in-area venues: the page shows city-wide fallbacks, so "0 places" misleads. */
+              }
             </View>
             {isUserMode ? null : (
               <View style={{ marginTop: -spacing[0.5] }}>

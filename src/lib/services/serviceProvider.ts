@@ -283,33 +283,84 @@ function isExcelFallbackRelease(releaseId?: string): boolean {
   return Boolean(releaseId?.startsWith("excel-fallback"));
 }
 
-function createResilientCatalogReadService(): CatalogReadService {
-  const { catalogRawService: primary } =
-    require("@/lib/services/catalog") as typeof import("@/lib/services/catalog");
-  const fallback = getExcelCatalogFallbackService();
+/** Excel cursors are offset tokens prefixed with `excel:`; anything else is a live RPC cursor. */
+export function isExcelCatalogCursor(cursor?: string): boolean {
+  return Boolean(cursor?.startsWith("excel:"));
+}
 
+/**
+ * Raised when a continuation page of an online cursor chain fails. The caller
+ * keeps the rows it already has and offers a retry; the request is never
+ * re-served from Excel because an online cursor has no meaning there and would
+ * silently restart (and duplicate) the list from a different source.
+ */
+export class CatalogPaginationError extends CatalogUnavailableError {
+  constructor(
+    message = "Couldn't load more results. Check your connection and try again.",
+    cause?: unknown,
+  ) {
+    super(message, cause);
+    this.name = "CatalogPaginationError";
+  }
+}
+
+type PagedCatalogRequest = { cursor?: string; releaseId?: string };
+
+/**
+ * Routes one paged catalog read so a cursor is only ever sent to the source
+ * that issued it:
+ * - Excel release or Excel cursor -> Excel only.
+ * - Live continuation cursor -> online only; failures surface as a retryable
+ *   CatalogPaginationError instead of switching source mid-list.
+ * - First page (no cursor) -> online with the classified Excel fallback.
+ */
+async function runPagedCatalogRead<T>(
+  request: PagedCatalogRequest,
+  primary: () => Promise<CatalogPage<T>>,
+  fallback: () => Promise<CatalogPage<T>>,
+): Promise<CatalogPage<T>> {
+  if (isExcelFallbackRelease(request.releaseId) || isExcelCatalogCursor(request.cursor)) {
+    requireAuthenticatedCatalogFallbackSession();
+    return fallback();
+  }
+  if (request.cursor) {
+    requireAuthenticatedCatalogFallbackSession();
+    try {
+      return requireCatalogRelease(await primary());
+    } catch (error) {
+      expireRejectedSession(error);
+      if (!isCatalogFallbackEligibleError(error)) throw error;
+      throw new CatalogPaginationError(undefined, error);
+    }
+  }
+  return runAuthenticatedCatalogFallback(
+    async () => requireCatalogRelease(await primary()),
+    fallback,
+  );
+}
+
+export function createResilientCatalogReadService(
+  primary: CatalogReadService = (
+    require("@/lib/services/catalog") as typeof import("@/lib/services/catalog")
+  ).catalogRawService,
+  fallback: CatalogReadService = getExcelCatalogFallbackService(),
+): CatalogReadService {
   return {
     clearCache() {
       primary.clearCache();
       fallback.clearCache();
     },
     async listDishes(request) {
-      if (isExcelFallbackRelease(request.releaseId)) {
-        requireAuthenticatedCatalogFallbackSession();
-        return fallback.listDishes(request);
-      }
-      return runAuthenticatedCatalogFallback(
-        async () => requireCatalogRelease(await primary.listDishes(request)),
+      return runPagedCatalogRead(
+        request,
+        () => primary.listDishes(request),
         () => fallback.listDishes(request),
       );
     },
     async listVenues(request) {
-      if (isExcelFallbackRelease(request.releaseId)) {
-        requireAuthenticatedCatalogFallbackSession();
-        return fallback.listVenues(request);
-      }
-      return runAuthenticatedCatalogFallback(
-        async () => requireCatalogRelease(await primary.listVenues(request)),
+      return runPagedCatalogRead(
+        request,
+        () => primary.listVenues(request),
         () => fallback.listVenues(request),
       );
     },
@@ -334,12 +385,9 @@ function createResilientCatalogReadService(): CatalogReadService {
       );
     },
     async listVenueMenu(venueId, request = {}) {
-      if (isExcelFallbackRelease(request.releaseId)) {
-        requireAuthenticatedCatalogFallbackSession();
-        return fallback.listVenueMenu(venueId, request);
-      }
-      return runAuthenticatedCatalogFallback(
-        async () => requireCatalogRelease(await primary.listVenueMenu(venueId, request)),
+      return runPagedCatalogRead(
+        request,
+        () => primary.listVenueMenu(venueId, request),
         () => fallback.listVenueMenu(venueId, request),
       );
     },

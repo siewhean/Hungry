@@ -18,6 +18,7 @@ import {
   recordCatalogDiagnostic,
   summarizeCatalogRequest,
 } from "@/lib/services/catalog/diagnostics";
+import { appendUniqueById } from "@/lib/services/catalog/paging";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -25,6 +26,37 @@ import { useHungryTheme } from "@/theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "CatalogRawDetail">;
 type Detail = CatalogRawDishDetail | CatalogRawVenueDetail;
+
+const VENUE_MENU_PAGE_SIZE = 24;
+
+function DetailHeader({ title, onBack }: { title?: string; onBack: () => void }) {
+  const { palette, spacing } = useHungryTheme();
+  return (
+    <View
+      style={{
+        alignItems: "center",
+        flexDirection: "row",
+        gap: spacing[3],
+        paddingHorizontal: spacing[4],
+        paddingTop: spacing[3],
+      }}
+    >
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
+        hitSlop={12}
+        onPress={onBack}
+      >
+        <ArrowLeft color={palette.text} size={24} />
+      </Pressable>
+      {title ? (
+        <AppText numberOfLines={1} style={{ flex: 1 }} variant="h2">
+          {title}
+        </AppText>
+      ) : null}
+    </View>
+  );
+}
 
 function statusLabel(status: Detail["verificationStatus"]) {
   return status === "approved"
@@ -49,6 +81,75 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const showToast = useUIStore((state) => state.showToast);
   const [isSavingFavourite, setIsSavingFavourite] = useState(false);
+  const [isLoadingMoreMenu, setIsLoadingMoreMenu] = useState(false);
+  const [menuError, setMenuError] = useState<string | null>(null);
+
+  // Deep links can open this screen with no history; never leave a dead end.
+  const goBack = useCallback(() => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    navigation.navigate("MainTabs", { screen: "Discover" });
+  }, [navigation]);
+
+  // push (not navigate): React Navigation 7 would otherwise update this
+  // CatalogRawDetail entry in place and Back would skip the previous record.
+  const openRecord = useCallback(
+    (kind: "dish" | "venue", id: string, releaseId?: string) => {
+      navigation.push("CatalogRawDetail", { kind, id, releaseId });
+    },
+    [navigation],
+  );
+
+  const loadMoreMenu = useCallback(async () => {
+    if (!service || !menu?.nextCursor || isLoadingMoreMenu) return;
+    const startedAt = Date.now();
+    setIsLoadingMoreMenu(true);
+    setMenuError(null);
+    try {
+      const nextPage = await service.listVenueMenu(route.params.id, {
+        cursor: menu.nextCursor,
+        limit: VENUE_MENU_PAGE_SIZE,
+        releaseId: menu.releaseId,
+      });
+      setMenu((current) =>
+        current
+          ? {
+              ...nextPage,
+              items: appendUniqueById(current.items, nextPage.items),
+            }
+          : nextPage,
+      );
+      recordCatalogDiagnostic({
+        operation: "venue-menu",
+        durationMs: Date.now() - startedAt,
+        releaseId: nextPage.releaseId,
+        resultCount: nextPage.items.length,
+        succeeded: true,
+        request: summarizeCatalogRequest({ releaseId: menu.releaseId, cursor: menu.nextCursor }),
+      });
+    } catch (loadError) {
+      setMenuError(
+        loadError instanceof Error ? loadError.message : "Couldn't load more menu items.",
+      );
+      recordCatalogDiagnostic({
+        operation: "venue-menu",
+        durationMs: Date.now() - startedAt,
+        errorKind:
+          loadError instanceof CatalogAccessError
+            ? loadError.kind
+            : loadError instanceof Error
+              ? loadError.name
+              : "unknown",
+        resultCount: 0,
+        succeeded: false,
+        request: summarizeCatalogRequest({ releaseId: menu.releaseId, cursor: menu.nextCursor }),
+      });
+    } finally {
+      setIsLoadingMoreMenu(false);
+    }
+  }, [isLoadingMoreMenu, menu, route.params.id, service]);
 
   const handleToggleFavourite = async (dish: CatalogRawDishDetail) => {
     setIsSavingFavourite(true);
@@ -85,6 +186,7 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
     }
     setIsLoading(true);
     setError(null);
+    setMenuError(null);
     try {
       const next = isDish
         ? await service.getDish(route.params.id, route.params.releaseId)
@@ -100,7 +202,7 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
       });
       if (!isDish) {
         const menuPage = await service.listVenueMenu(route.params.id, {
-          limit: 24,
+          limit: VENUE_MENU_PAGE_SIZE,
           releaseId: route.params.releaseId,
         });
         setMenu(menuPage);
@@ -144,7 +246,11 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
   if (isLoading) {
     return (
       <Screen scroll={false}>
-        <View style={{ gap: spacing[4], padding: spacing[4] }}>
+        <DetailHeader onBack={goBack} />
+        <View
+          accessibilityLabel="Loading catalog record"
+          style={{ gap: spacing[4], padding: spacing[4] }}
+        >
           <Skeleton width="100%" height={260} borderRadius={0} />
           <Skeleton width="70%" height={28} />
           <ActivityIndicator color={palette.orange} />
@@ -156,6 +262,7 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
   if (!detail || error) {
     return (
       <Screen scroll={false}>
+        <DetailHeader onBack={goBack} />
         <EmptyState
           title="Catalog record unavailable"
           body={error ?? "This record was not found in the active catalog release."}
@@ -174,26 +281,7 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
   return (
     <Screen scroll={false} fullWidth style={{ backgroundColor: palette.bg }}>
       <ScrollView contentContainerStyle={{ gap: spacing[4], paddingBottom: spacing[8] }}>
-        <View
-          style={{
-            alignItems: "center",
-            flexDirection: "row",
-            gap: spacing[3],
-            paddingHorizontal: spacing[4],
-            paddingTop: spacing[3],
-          }}
-        >
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            onPress={() => navigation.goBack()}
-          >
-            <ArrowLeft color={palette.text} size={24} />
-          </Pressable>
-          <AppText numberOfLines={1} style={{ flex: 1 }} variant="h2">
-            {detail.name}
-          </AppText>
-        </View>
+        <DetailHeader title={detail.name} onBack={goBack} />
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -239,7 +327,28 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
           </View>
           {isDish ? (
             <>
-              <AppText tone="secondary">{(detail as CatalogRawDishDetail).venueName}</AppText>
+              {(detail as CatalogRawDishDetail).venueId ? (
+                <Pressable
+                  accessibilityRole="link"
+                  accessibilityLabel={`Open stall ${(detail as CatalogRawDishDetail).venueName}`}
+                  accessibilityHint="Opens this stall's menu"
+                  hitSlop={8}
+                  onPress={() =>
+                    openRecord(
+                      "venue",
+                      (detail as CatalogRawDishDetail).venueId,
+                      route.params.releaseId,
+                    )
+                  }
+                  style={{ alignSelf: "flex-start" }}
+                >
+                  <AppText style={{ color: palette.orange, textDecorationLine: "underline" }}>
+                    {(detail as CatalogRawDishDetail).venueName}
+                  </AppText>
+                </Pressable>
+              ) : (
+                <AppText tone="secondary">{(detail as CatalogRawDishDetail).venueName}</AppText>
+              )}
               {(detail as CatalogRawDishDetail).price !== undefined ? (
                 <AppText style={{ color: palette.orange }} variant="h2">
                   S${(detail as CatalogRawDishDetail).price?.toFixed(2)}
@@ -282,13 +391,7 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
                   key={item.id}
                   accessibilityLabel={`Open ${item.name}`}
                   accessibilityRole="button"
-                  onPress={() =>
-                    navigation.navigate("CatalogRawDetail", {
-                      kind: "dish",
-                      id: item.id,
-                      releaseId: menu.releaseId,
-                    })
-                  }
+                  onPress={() => openRecord("dish", item.id, menu.releaseId)}
                   style={{
                     backgroundColor: palette.bgSoft,
                     borderRadius: 12,
@@ -302,10 +405,18 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
                   </AppText>
                 </Pressable>
               ))}
-              {menu.nextCursor ? (
-                <AppText tone="muted" variant="micro">
-                  More menu items are available in this catalog release.
+              {menuError ? (
+                <AppText accessibilityLiveRegion="polite" tone="secondary" variant="bodySmall">
+                  {"Couldn't load more menu items."}
                 </AppText>
+              ) : null}
+              {menu.nextCursor ? (
+                <Button
+                  label={menuError ? "Retry" : "Show more dishes"}
+                  variant="secondary"
+                  loading={isLoadingMoreMenu}
+                  onPress={() => void loadMoreMenu()}
+                />
               ) : null}
             </View>
           ) : null}

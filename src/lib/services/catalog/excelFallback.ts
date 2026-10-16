@@ -17,6 +17,7 @@ import type {
   CatalogRawVenueCard,
   CatalogRawVenueDetail,
 } from "@/lib/services/catalog";
+import { CatalogContractError } from "@/lib/services/catalog";
 import { sanitizeCatalogImageUrl } from "@/lib/services/catalog/media";
 import type { Coordinate, DietaryFlag, DishDetail } from "@/types/domain";
 
@@ -312,9 +313,17 @@ function filterVenues(request: CatalogPageRequest): CatalogRawVenueCard[] {
 }
 
 function cursorOffset(cursor: string | undefined): number {
-  if (!cursor?.startsWith("excel:")) return 0;
+  if (!cursor) return 0;
+  // A live RPC cursor has no meaning here. Treating it as offset 0 would
+  // silently restart the list from Excel and duplicate rows the caller holds.
+  if (!cursor.startsWith("excel:")) {
+    throw new CatalogContractError("An online catalog cursor cannot continue an offline list.");
+  }
   const parsed = Number(cursor.slice("excel:".length));
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new CatalogContractError("The offline catalog cursor is invalid.");
+  }
+  return parsed;
 }
 
 function pageFromItems<T>(

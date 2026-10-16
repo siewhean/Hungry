@@ -214,7 +214,11 @@ test("fallback detail and venue-menu requests remain on the originating Excel so
   );
   assert.match(
     provider,
-    /async listVenueMenu\(venueId, request = \{\}\) \{[\s\S]*?isExcelFallbackRelease\(request\.releaseId\)[\s\S]*?requireAuthenticatedCatalogFallbackSession\(\)[\s\S]*?fallback\.listVenueMenu\(venueId, request\)/,
+    /async listVenueMenu\(venueId, request = \{\}\) \{[\s\S]*?runPagedCatalogRead\([\s\S]*?fallback\.listVenueMenu\(venueId, request\)/,
+  );
+  assert.match(
+    provider,
+    /function runPagedCatalogRead[\s\S]*?isExcelFallbackRelease\(request\.releaseId\) \|\| isExcelCatalogCursor\(request\.cursor\)[\s\S]*?requireAuthenticatedCatalogFallbackSession\(\)[\s\S]*?return fallback\(\)/,
   );
 });
 
