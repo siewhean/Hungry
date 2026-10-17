@@ -1,73 +1,104 @@
 ---
-description: Design system enforcer — verify all screens use tokens correctly and none bypass the design system
+description: Design system enforcer — audit Hungry token, primitive, and component consistency
 ---
 
 # Design System Enforcer Agent
 
-You are a Design System Enforcer Agent for the **Hungry** food discovery app. Your job is to ensure all screens strictly follow the design token system defined in `src/theme/tokens.ts` and surfaced through `useHungryTheme()`.
+Keep Hungry visually and behaviorally consistent without applying brittle “zero literal” rules that ignore geometry, platform constraints, or existing primitives.
 
 ## Source of truth
 
+```text
+src/theme/
+src/components/ui/
+tasks/design-system.md
+docs/DESIGN_STANDARDS.md
+PROJECT_INSTRUCTIONS.md
+approved task-specific design source
 ```
-src/theme/tokens.ts          — all design tokens
-src/theme/useHungryTheme.ts  — hook that returns typed theme
-src/components/ui/           — pre-built UI primitives
-```
 
-## Rules (must never be violated)
+Inspect the current exports before assuming token or hook names.
 
-1. **No hardcoded hex colors** — every color must come from `palette.*`
-2. **No hardcoded border radius** — must use `radii.*`
-3. **No hardcoded spacing** — must use `spacing[N]` (N is a token key)
-4. **No raw `<Text>`** — always use `<AppText>`
-5. **No raw `<View>` with `flex: 1` as a screen root** — wrap in `<Screen>`
-6. **No inline `fontFamily`** — only allowed in `AppText` variant prop logic
-7. **No `StyleSheet.create` with hardcoded values** — all values must reference tokens
+## Core rules
 
-## Grep checks (run these)
+1. Use theme palette, semantic spacing, radii, typography, motion, shadow, and z-index tokens when an appropriate token exists.
+2. Use shared primitives for repeated behavior and accessibility: text, buttons, inputs, chips, cards, images, empty states, dialogs, sheets, tabs, and headers.
+3. Do not create a second component or token system for one screen.
+4. Raw React Native primitives are allowed when the shared primitive cannot express required native behavior; document reusable patterns and extract them when repetition appears.
+5. Named local constants are allowed for media ratios, geometry, safe-area calculations, animation interpolation, and platform-specific dimensions.
+6. Hardcoded brand colours, arbitrary typography, duplicated shadows/radii, or unexplained spacing in product screens are violations.
+7. Shared components must preserve accessible names, roles, states, text scaling, reduced motion, and dark-mode behavior.
+
+## Audit checklist
+
+### Tokens and colours
+
+- no unapproved hex/rgb colour in product screens;
+- contrast-sensitive semantic pairs use tested tokens;
+- status colours are paired with labels/icons, not colour alone;
+- light/dark mode paths do not embed one-mode assumptions.
+
+### Typography
+
+- user-facing text uses `AppText` or an approved equivalent;
+- variants and weights follow hierarchy;
+- price/code/unit typography is consistent;
+- large-text behavior is intentional and tested.
+
+### Spacing, radii, and layout
+
+- repeated spacing/radius/elevation uses tokens;
+- local geometry constants have descriptive names and a clear reason;
+- screens use shared safe-area/screen shells where compatible;
+- list/sheet/modal spacing is consistent without excessive blank space.
+
+### Components
+
+Search for repeated one-off implementations of:
+
+- CTA buttons;
+- icon buttons;
+- filter chips and rails;
+- inputs/search fields;
+- cards/media shells;
+- loading/empty/error states;
+- modal/sheet headers and dismiss controls;
+- bottom tabs and settings rows.
+
+Prefer extending an existing primitive over copying styles into another screen, but do not make a shared component overly generic for a single use.
+
+### Assets and media
+
+- use canonical brand assets;
+- production catalog cards use approved menu/stall imagery;
+- no generic stock/Unsplash fallback;
+- image treatment and unavailable states are consistent.
+
+## Suggested searches
+
+Use repository search and focused lint/contracts rather than assuming every numeric literal is wrong. Examples:
 
 ```bash
-# Find hardcoded hex colors
-grep -rn "#[0-9a-fA-F]\{6\}" src/app/screens/ --include="*.tsx"
-
-# Find hardcoded border radius
-grep -rn "borderRadius: [0-9]" src/app/screens/ --include="*.tsx"
-
-# Find raw Text usage
-grep -rn "<Text " src/app/screens/ --include="*.tsx"
-
-# Find hardcoded spacing (px values not from tokens)
-grep -rn "padding: [0-9]" src/app/screens/ --include="*.tsx"
+git grep -nE '#[0-9a-fA-F]{6,8}' -- 'src/**/*.ts' 'src/**/*.tsx'
+git grep -nE '<(Text|TextInput)([ >])' -- 'src/app/**/*.tsx' 'src/components/**/*.tsx'
+git grep -nE 'borderRadius: [0-9]|fontFamily:|shadowOpacity:' -- 'src/app/**/*.tsx'
 ```
 
-Exceptions allowed:
-- `rgba(...)` in overlay gradients (for performance, cannot use tokens)
-- `opacity` values
-- `zIndex` values
-- `borderWidth: 1` (1px borders — acceptable)
+Review each result in context. Exempt generated data, tests, documented native constraints, and canonical token definitions.
 
-## Component usage rules
+## Execution
 
-| Component | When to use |
-|---|---|
-| `<Screen>` | Every screen root |
-| `<Card>` | Any elevated surface |
-| `<Button>` | All CTAs — never `<Pressable>` with styled text |
-| `<Badge>` | Status chips, count pills |
-| `<Input>` | Text input — never raw `<TextInput>` |
-| `<EmptyState>` | All empty list/null data states |
-| `<AppText>` | All text output |
-
-## Execution steps
-
-1. Run the grep checks above.
-2. For each violation, note the file and line number.
-3. Verify component usage in all screen files.
-4. Write violations to `design_system_report.md` with suggested fixes.
+1. Inventory the scoped screens and primitives.
+2. Run existing design/accessibility contracts and focused searches.
+3. Inspect rendered UI before proposing refactors.
+4. Consolidate genuine duplication and remove newly orphaned styles/components/imports.
+5. Re-run typecheck, lint, focused tests, and rendered QA.
+6. Record findings in the current task audit and proof in `tasks/verification.md`; do not create a loose root `design_system_report.md`.
 
 ## Pass criteria
 
-- Zero hardcoded hex colors in screen files.
-- Zero raw `<Text>` usage in screen files.
-- All screens use `<Screen>` wrapper.
-- All list empty states use `<EmptyState>`.
+- No competing token/component system.
+- No unexplained brand-colour, typography, radius, shadow, or repeated spacing drift.
+- Shared primitives remain accessible and platform-correct.
+- Any local exceptions are named, justified, and not duplicated.
+- Visual regression evidence confirms the refactor did not damage the UI.

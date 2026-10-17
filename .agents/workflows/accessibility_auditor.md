@@ -1,85 +1,110 @@
 ---
-description: Accessibility auditor — WCAG 2.1 AA compliance check for all screens
+description: Accessibility auditor — source and native WCAG-aligned audit for Hungry
 ---
 
 # Accessibility Auditor Agent
 
-You are an Accessibility Auditor Agent for the **Hungry** food discovery app. Ensure all screens meet **WCAG 2.1 AA** accessibility standards, with a focus on screen reader support and motor accessibility.
+Audit Hungry against WCAG 2.2 AA behavior where applicable, Apple and Android accessibility conventions, and the repository’s existing accessibility contracts. Automated checks are supporting evidence, not a replacement for VoiceOver/TalkBack testing.
+
+## Source order
+
+- `src/theme/`
+- `src/components/ui/`
+- registered navigator and screen files
+- existing accessibility contract tests
+- `docs/accessibility-style-guide.md`
+- current accessibility audit/evidence
+
+Do not audit obsolete guest screens as current product behavior. The signed-out shell contains Splash, Onboarding, and Auth only.
 
 ## Checklist
 
-### 1. Screen reader (VoiceOver / TalkBack)
+### 1. Accessible names, roles, states, and hints
 
-Every interactive element must have:
-- `accessibilityLabel` describing the action (not just the text shown)
-- `accessibilityRole` set (`"button"`, `"link"`, `"image"`, `"header"`, etc.)
-- `accessibilityHint` for non-obvious actions (e.g., double-tap to open)
-
-Check each screen's `Pressable` and `TouchableOpacity` elements.
-
-### 2. Touch targets
-
-All interactive elements: minimum **44×44pt** (Apple HIG) / **48×48dp** (Material).
-Run: use `take_snapshot` — verify all `Pressable` bounding boxes ≥ 44pt.
-
-Focus especially on:
-- Social action buttons (heart, comment, share, bookmark) in HomeFeed
-- Back/skip buttons in Onboarding
-- Close buttons on sheets and modals
-- Floor plan stall cells (may be < 44 if too many stalls on one floor)
-
-### 3. Color contrast
-
-Use the WCAG contrast ratio formula. Minimum ratios:
-- Normal text: 4.5:1
-- Large text (≥ 18pt or 14pt bold): 3:1
-- UI elements: 3:1
+Every interactive control needs a meaningful accessible name and correct role. Add hints only when the outcome is not obvious. Verify selected, disabled, expanded, busy, checked, and invalid state where applicable.
 
 Check:
-- `palette.orange` on `palette.bg` (dark background — likely OK)
-- `palette.textMuted` on `palette.bg` — may fail; verify
-- White text on orange background
 
-### 4. Focus management
+- bottom tabs and create action;
+- auth and password visibility controls;
+- onboarding selections and back/skip-quiz actions;
+- post/review social actions;
+- search results and filter chips;
+- map markers and building/stall cards;
+- media controls;
+- profile/settings/account deletion;
+- merchant/admin controls when enabled.
 
-After navigation:
-- [ ] Screen reader focus moves to the top of new screen
-- [ ] Modal focus is trapped inside the modal
-- [ ] GuestSoftGate focus does not leak to background
-- [ ] After modal closes, focus returns to trigger element
+Decorative images and icons must be hidden from assistive technology; meaningful media needs contextual labels.
 
-### 5. Dynamic type
+### 2. Touch and pointer targets
 
-Verify text scales with device font size settings (iOS: "Larger Text" accessibility setting).
-- All `fontSize` values in `AppText` must be relative (using `sp` or dynamic scaling).
-- Containers must not clip oversized text.
+- iOS target: at least 44×44pt.
+- Android target: at least 48×48dp where practical.
+- Web controls must support keyboard focus and activation.
 
-### 6. Motion sensitivity
+Inspect icon controls, close/back buttons, filter chips, carousel controls, floorplan/map targets, and nested social actions.
 
-For users with "Reduce Motion" enabled:
-- [ ] Splash animation should be skipped or shortened
-- [ ] Bites/Stories carousel should not auto-scroll
-- [ ] Any looping animations should pause
+### 3. Contrast and non-colour cues
 
-Check: `AccessibilityInfo.isReduceMotionEnabled()` before starting animations.
+Use computed token pairs rather than visual guesses.
 
-### 7. Semantic headings
+- normal text: 4.5:1;
+- large text: 3:1;
+- meaningful UI graphics/focus indicators: 3:1;
+- error, selected, open/closed, verification, and moderation state must not rely on colour alone.
 
-Screen readers use heading structure for navigation.
-Each screen should have: 1× `accessibilityRole="header"` for the screen title.
-Sections within a long screen: `accessibilityRole="header"` for each section heading.
+### 4. Focus and announcements
 
-## Execution steps
+- New screens announce a useful title or initial context.
+- Dialogs and sheets expose modal semantics and keep focus inside.
+- Dismissal restores focus to the trigger when possible.
+- Validation errors, loading completion, success, no-results, offline, and session-expiry states are announced.
+- The mandatory auth boundary must not leave hidden MainTabs elements reachable.
 
-1. Enable VoiceOver on iOS simulator.
-2. Navigate to each screen via DeveloperLauncher.
-3. Swipe right through all elements. Verify each has a meaningful label.
-4. Enable "Larger Text" at maximum size. Verify no text clips.
-5. Write findings to `accessibility_report.md`.
+### 5. Text scaling and layout
+
+Test at representative accessibility text sizes on iOS and Android.
+
+- no clipped titles, tab labels, inputs, buttons, prices, or errors;
+- essential text may wrap;
+- fixed-format elements use bounded scaling only when necessary and documented;
+- screen remains scrollable and operable;
+- landscape/tablet behavior is tested when supported.
+
+### 6. Motion, media, and flashing
+
+- Respect Reduce Motion.
+- Do not auto-advance critical content without pause/control.
+- Avoid excessive parallax, looping, or flashing.
+- Video/audio controls are labelled and reachable.
+- Splash and celebratory animation have reduced-motion behavior.
+
+### 7. Auth, error, and fallback states
+
+Manually complete with VoiceOver and TalkBack:
+
+- onboarding and mandatory account screen;
+- login/signup/verification/recovery;
+- Home, Discover, Search, Browse, detail, review, post, and profile/settings;
+- location and media permission denial;
+- legitimate no-results;
+- authenticated Excel catalog fallback;
+- signed-out offline state;
+- invalid-session and missing-configuration states.
+
+## Execution
+
+1. Run focused accessibility and contrast contracts.
+2. Inspect rendered UI hierarchy and screenshots.
+3. Complete native VoiceOver and TalkBack traversal on representative devices/simulators.
+4. Test keyboard/focus behavior on web surfaces.
+5. Capture issues with screen, element, steps, expected/actual, severity, and evidence.
+6. Record current findings in the task audit and exact proof in `tasks/verification.md`; do not create a new root `accessibility_report.md`.
 
 ## Pass criteria
 
-- All interactive elements have `accessibilityLabel` + `accessibilityRole`.
-- No touch targets < 44pt.
-- Primary text passes WCAG AA contrast (4.5:1).
-- No focus leaks from modals.
+- Core flows are completable with VoiceOver and TalkBack.
+- No P0/P1 missing name, role, state, focus, contrast, scaling, motion, or target-size issue.
+- Modal and auth boundaries do not leak focus.
+- Automated checks and manual assistive-technology proof are both recorded.

@@ -1,221 +1,174 @@
 # Hungry Workflow
 
-> Operating model for Claude, Codex, Gemini, and any future agents.
-> Goal: reduce status churn, keep one active task surface, and make verification repeatable.
+Operating model for Claude, Codex, Gemini, and future contributors. The goals are one active source of truth, bounded changes, repeatable verification, and clean branch/document lifecycles.
 
----
+## 1. Source-of-truth hierarchy
 
-## 1. Source-of-Truth Hierarchy
+1. Approved product/design source for the requested behavior.
+2. Current runtime code, migrations, and configuration.
+3. `tasks/backlog.md` — active status and ownership.
+4. `tasks/verification.md` — current evidence and blockers.
+5. `tasks/session-log.md` — chronological execution history.
+6. `tasks/todo.md` and `tasks/Roadmap/Archive/` — historical context only.
 
-1. Figma / approved design artifact
-2. `tasks/product-context.md`
-3. `tasks/backlog.md`
-4. `tasks/verification.md`
-5. `tasks/session-log.md`
-6. `tasks/todo.md` for historical audit trail and roadmap context
+Historical documents do not override current code or an approved product-policy change. Reconcile contradictions explicitly.
 
-Do not use `tasks/todo.md` as the live status source when `tasks/backlog.md` already contains the task row.
+## 2. Canonical task surface
 
----
-
-## 2. Role Split
-
-| Agent | Primary responsibility | Not primary responsibility |
-|------|-------------------------|----------------------------|
-| Claude | Scope, prioritization, acceptance criteria, product audit, final sign-off | Large implementation batches, repetitive repo verification |
-| Codex | Implementation, repo search, verification, technical cleanup, doc sync for changed work | Broad roadmap narration, repeated project-wide status synthesis |
-| Gemini | Visual direction, UX polish, copy variants, design QA | Core engineering execution, backlog governance |
-
----
-
-## 3. Canonical Task Surface
-
-Use `tasks/backlog.md` for active work.
-
-Each task row should contain:
+Use `tasks/backlog.md` for active work. Each row should contain:
 
 | Field | Meaning |
-|------|---------|
+|---|---|
 | `id` | Stable task ID |
-| `owner` | Claude / Codex / Gemini / Both / User |
-| `area` | Product area |
-| `status` | `Open`, `In Progress`, `Blocked`, `Done`, `Optional` |
-| `evidence` | File path or command proving completion |
-| `verification` | Required command or QA evidence |
-| `last_updated` | `YYYY-MM-DD` |
-| `notes` | Short residual note only |
+| `owner` | Responsible person/agent |
+| `area` | Product or engineering area |
+| `status` | Open, In Progress, Blocked, Done, Optional |
+| `evidence` | File, PR, command, screenshot, or external proof |
+| `verification` | Required checks |
+| `last_updated` | ISO date |
+| `notes` | Residual risk only |
 
 Rules:
-- One canonical row per active task ID.
-- Batch summaries and session logs must not restate task status as a second source of truth.
-- If a task is completed, update the canonical row first, then append the narrative log.
 
----
+- One canonical row per active task.
+- Update the canonical row before narrating status elsewhere.
+- Do not turn session logs or audit reports into parallel task trackers.
+- Archive or delete superseded planning documents after their active information is reconciled.
 
-## 4. Required Documents
+## 3. Roles
 
-| File | Purpose |
-|------|---------|
-| `tasks/backlog.md` | Active task surface |
-| `tasks/verification.md` | Current verification bundle evidence |
-| `tasks/session-log.md` | Chronological execution history |
-| `tasks/todo.md` | Historical roadmap, audit trail, detailed archive |
-| `ops/playbooks/implementation.md` | How to run an implementation block |
-| `ops/playbooks/verification.md` | Standard verification bundle |
-| `ops/playbooks/checklist-reconciliation.md` | How to sync code and docs |
-| `ops/playbooks/design-handoff.md` | Gemini → Codex design transfer pattern |
-| `ops/prompt-library.md` | Reusable prompts for each agent |
-| `ops/low-token-cheatsheet.md` | Default low-token operating rules for all LLM work |
+| Agent | Primary responsibility |
+|---|---|
+| Claude | Scope, requirements, prioritisation, product/legal ambiguity, final audit |
+| Codex | Implementation, repository search, testing, technical cleanup, code/doc reconciliation |
+| Gemini/design agent | Visual direction, UI polish, design comparison and copy alternatives |
+| Human owner | Credentials, production dashboards, legal sign-off, destructive branch/data decisions |
 
----
+Agents may cross roles when the task requires it, but evidence and source-of-truth rules remain unchanged.
 
-## 5. Standard Work Modes
+## 4. Work modes
 
-### Low-Token Mode
+### Planning
 
-Default to low-token mode for all Hungry work unless the user explicitly asks for a broad summary or deep narrative.
-
-Low-token mode means:
-- bounded scope first
-- one canonical source first
-- one relevant skill first
-- only the delta in output
-- direct execution over discussion when implementation is intended
-
-Read `ops/low-token-cheatsheet.md` when shaping prompts, summaries, or closeout responses.
-
-### Intent Routing
-
-Use `hungry-intent-router` as the default first-pass skill when:
-- the request is vague
-- the request is multi-step
-- the correct skill is not explicitly named
-- the user asks for broad help without a scoped task ID
-
-If the request is already precise, skip routing and use the direct relevant skill or direct execution path.
-
-`hungry-intent-router` should preserve low-token mode by default when it rewrites and routes a request.
-
-### Planning Mode
-
-Use when:
-- scope is unclear
-- architecture is changing
-- multiple agents are involved
-- more than 3 steps are needed
-
-Output:
-- scoped task rows in `tasks/backlog.md`
-- acceptance criteria
-- owner assignment
-
-### Execution Mode
-
-Use when:
-- task already has acceptance criteria
-- Codex can implement directly
-
-Output:
-- code changes
-- risk-appropriate verification selected
-- task row updated
-- session log appended
-
-### Closeout Mode
-
-Use when:
-- feature is nearly done
-- user asks “is this done?”
-- only verification/doc drift remains
+Use when architecture, product policy, branch reconciliation, or more than three dependent steps are involved.
 
 Required output:
-- what changed
-- what was verified
-- what remains open
-- exact task IDs updated
 
----
+- bounded scope;
+- acceptance criteria;
+- task ownership;
+- verification plan;
+- explicit destructive actions requiring owner approval.
 
-## 6. Verification Budget
+### Execution
 
-Default to the smallest check that gives useful evidence.
+Use when acceptance criteria are clear.
 
-| Scope | Use when | Verification |
-|------|----------|--------------|
-| Small iterative | Docs, copy, spacing, styling, one-screen polish, or narrow follow-up fixes | Do not run full QA/QC, `npm run ios`, full tests, or default `npm run typecheck`; run a focused check only if directly relevant, or state that checks were skipped by design |
-| Medium bounded | A few files with behavior, props, state, or route params | Run focused tests/contracts; add `npm run typecheck` only if TS contracts/imports/props changed |
-| Broad/risky/release | Shared services/stores, auth, Supabase, navigation architecture, dependencies, native config, many files, or release readiness | Run `npm run typecheck`, relevant tests, `NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor` for dependency/native health, and simulator smoke when runtime risk warrants it |
+Required output:
 
-Record results in `tasks/verification.md` for tracked task, release, security, or broad verification work. For small iterative work, a concise final-response note is enough unless a canonical task row is updated.
+- focused implementation;
+- removal of newly orphaned code/files;
+- risk-appropriate verification;
+- active-task and evidence updates.
 
----
+### Closeout
 
-## 7. Multi-LLM Sequence
+Use when implementation is complete or the user asks whether it is ready.
 
-### New feature
+Required output:
 
-1. Claude defines scope and acceptance criteria
-2. Gemini provides design direction if UI changes are required
-3. Codex implements
-4. Codex selects risk-appropriate verification
-5. Claude audits final result
+- changes made;
+- files removed/moved;
+- checks and exact results;
+- remaining manual/external blockers;
+- Go, Go Candidate, or No-Go verdict.
 
-### Closeout / bug-fix
+## 5. Branch and pull-request lifecycle
 
-1. Codex verifies actual code state
-2. Codex patches code and updates canonical task rows
-3. Claude validates any residual ambiguity
-4. Gemini only joins if a visual/UI issue remains
+`main` is the integration source of truth.
 
----
+### Creating work
 
-## 8. Anti-Patterns
+- Create one branch per coherent change set.
+- Open one PR from that branch to its actual integration base.
+- Avoid long chains of dependent PRs unless sequencing is unavoidable.
+- Name branches by purpose, not agent/session identity alone.
 
-Do not:
-- ask Codex broad “what is the status of everything?” questions when a bounded repo query would do
-- keep duplicate status rows in multiple docs
-- treat session logs as the canonical checklist
-- use Gemini for engineering closure
-- use Claude for repetitive code verification
+### Updating work
 
-Prefer:
-- bounded task-ID verification
-- evidence-based prompts
-- one canonical status row
-- append-only narrative logs
+- Rebase or update the active branch before final verification.
+- Resolve duplicated implementation rather than carrying both paths.
+- If another PR fully supersedes a branch, close the old PR with a disposition comment.
+- Do not merge a stale branch merely to preserve history; commits and closed PRs already preserve history.
 
----
+### Closing work
 
-## 9. Recommended Prompt Style
+- Merge only after required checks and review evidence pass.
+- Close superseded, duplicate, abandoned, or already-integrated PRs.
+- Delete merged/superseded branch refs after owner review when repository tooling permits.
+- Keep release branches only when an active release or rollback policy requires them.
 
-Good:
-- “Implement `C4` only. Update `tasks/backlog.md`, run the smallest relevant verification for the change, and record residual risk.”
-- “Verify `SEC-02` and `WEB-11` against current code and docs. Return only mismatches.”
-- “Run closeout mode for Sprint 10 staging smoke tasks.”
-- “Return only blockers for `OCR-DG-01`.”
+## 6. Repository and documentation lifecycle
 
-Bad:
-- “Summarize the whole repo again.”
-- “Check if everything is done.”
-- “What should we do next?” without naming the active sprint or task IDs.
+### Keep at repository root
 
-## 10. Automatic Skill Routing
+Only stable entrypoints, build/configuration files, security policy, and workspace manifests.
 
-Default Hungry routing order:
+### Keep under `tasks/`
 
-1. `hungry-intent-router`
-2. one Hungry-specific execution skill
-3. generic specialist skill only if needed
-4. direct tool execution
+- top level: active ledgers and stable product/engineering contracts;
+- `tasks/Roadmap/<Domain>/`: current domain plans and audits;
+- `tasks/Roadmap/Archive/`: unique historical material no longer active.
 
-This is the preferred automation path for Hungry work.
+### Delete instead of archive
 
-## 11. Token Discipline
+Delete files that are:
 
-Apply these rules by default:
+- exact duplicates;
+- generated logs/reports reproducible by a script or CI;
+- empty or temporary work products;
+- obsolete and unreferenced with no meaningful audit value;
+- stale screenshots containing no required release evidence.
 
-1. ask or operate by task ID, file, or bounded surface
-2. avoid full-project narration unless explicitly requested
-3. use `tasks/backlog.md`, `tasks/verification.md`, and `tasks/session-log.md` as the only active status surfaces
-4. prefer targeted shell reads over large prose summaries
-5. ask for and return only the delta when possible
+### Generated outputs
+
+Prefer CI artifacts or ignored local directories. Commit generated data only when it is an intentional runtime/release input with a documented generator and provenance.
+
+## 7. Verification budget
+
+Choose the smallest useful set, except broad cleanup/auth/navigation/service/database/release work requires broad verification.
+
+| Scope | Verification |
+|---|---|
+| Docs-only | reference/link audit, formatting/diff check |
+| Focused behavior | focused unit/contract test; typecheck if contracts changed |
+| Shared UI/state/navigation/service | focused tests, typecheck, lint, affected runtime smoke |
+| Supabase/security/data | static audit, focused tests, migration/RLS smoke, credential-backed proof where required |
+| Native/release | full relevant static checks, device/simulator smoke, build/store/monitoring proof |
+| Repository-wide cleanup | deleted-reference search, typecheck, lint, tests, asset audit, security scans, CI |
+
+Record results in `tasks/verification.md`. “Not run”, “skipped”, “blocked”, and “passed” are distinct states.
+
+## 8. Product safety boundaries
+
+- No guest mode in the app.
+- Main app surfaces require successful authentication.
+- Supabase is the authentication and shared-write authority.
+- Excel is an authenticated read-only catalog outage fallback only.
+- Mock providers are development/test-only.
+- Deep links and return routes must not bypass auth, feature flags, or role checks.
+- Disabled or unmoderated advanced features remain off in production.
+- Secrets and service-role credentials never enter client code or prompts.
+
+## 9. Session closeout checklist
+
+Before ending non-trivial work:
+
+- [ ] Changed files trace to the requested scope.
+- [ ] Obsolete imports, files, scripts, and references created by the change are removed.
+- [ ] Active backlog row is current.
+- [ ] Verification evidence and blockers are recorded.
+- [ ] Session log has a concise entry.
+- [ ] Documentation matches current code and product policy.
+- [ ] Superseded PR/branch disposition is recorded.
+- [ ] Final response distinguishes completed work from unverified or external gates.

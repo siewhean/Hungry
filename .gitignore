@@ -1,4 +1,6 @@
+# JavaScript / Expo
 node_modules/
+node_modules.bak_*/
 .expo/
 .expo-shared/
 dist/
@@ -6,52 +8,57 @@ web-build/
 coverage/
 playwright-report/
 test-results/
-.DS_Store
+.playwright-browsers/
+scripts/playwright-profile/
+
+# Local build and native artifacts
+.DerivedData/
+ios/build/
+*.xcresult/
+ios/.xcode.env.local
+ios/Hungry.xcworkspace/xcuserdata/
+build*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-build*.log
-.playwright-browsers/
-scripts/playwright-profile/
-.claude/worktrees/
-scripts/__pycache__/
-**/__pycache__/
-*.pyc
-*.tmp.json
-query_supabase*.ts
-ios/.xcode.env.local
-ios/Hungry.xcworkspace/xcuserdata/
+
+# Local environment and secrets
 .env
-# Graphify artifacts
-.graphify*
-graphify-out/
-src/graphify-out/
 .env.local
 .env.*.local
 .env.development.local
 .env.staging.local
 .env.production.local
-.env.local
+secrets*
 tasks/release-evidence/*.env
 !tasks/release-evidence/*.example.env
+
+# OS, editor, and agent state
+.DS_Store
 *.watchman-cookie-*
 .watchman-cookie-*
-node_modules.bak_*/
+.claude/worktrees/
 claude-mem/
 
-# Local build/cache artifacts (large)
-.DerivedData/
-ios/build/
-*.xcresult/
-
-# Local Python environment
+# Python and Supabase local state
 .venv/
-.env.local
+**/__pycache__/
+*.pyc
 supabase/.temp/
-secrets*
+
+# Generated analysis and scratch output
+.graphify*
+graphify-out/
+src/graphify-out/
+scratch/
+output/qa/*.txt
+output/qa/generated/
+*.tmp.json
+query_supabase*.ts
+scripts/temp_main.js
+scrape_orchestrator.log
 
 # Local/generated data work products
-scratch/
 data/~$*.xlsx
 data/*.backup*.xlsx
 data/*.xlsx.bak
@@ -59,7 +66,5 @@ data/menu_enrichment_results.json
 data/scrape_results.json
 data/stalls_to_enrich.json
 data/uris_to_check.json
-scrape_orchestrator.log
-scripts/temp_main.js
 tasks/Roadmap/Database/excel-source-quality-review-queue-*.csv
 tasks/Roadmap/Database/excel-source-quality-audit-*.json

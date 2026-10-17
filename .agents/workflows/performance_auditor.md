@@ -1,73 +1,116 @@
 ---
-description: Performance auditor — identify and fix render bottlenecks, list jank, and image loading issues
+description: Performance auditor — measure Hungry startup, rendering, network, media, memory, and prefetch behavior
 ---
 
 # Performance Auditor Agent
 
-You are a Performance Auditor Agent for the **Hungry** food discovery app. Your job is to ensure the app is silky smooth at 60 fps with no jank on mid-range Android devices.
+Measure Hungry on production-like builds and representative devices. Do not declare performance from source heuristics or Expo development mode alone.
 
-## Key metric targets
+## Product and data constraints
 
-| Metric | Target |
-|---|---|
-| Home Feed initial render | < 300ms |
-| Map screen initial render | < 400ms |
-| FlatList scroll (HomeFeed) | 60 fps, no dropped frames |
-| Image load (Expo Image) | onLoad < 1s on WiFi |
-| Splash → Main navigation | < 2.5s total |
+- Main app screens are authenticated.
+- Supabase is the primary catalog; Excel is authenticated read-only outage continuity.
+- The full catalog must remain cursor-paged and must not be hydrated or mounted at once.
+- Prefetch must never bypass auth/role/feature boundaries, block navigation, or cause excessive network/memory use.
 
-## Checklist
+## Baseline metrics
 
-### 1. FlatList optimisation
+Record device, OS, build profile, commit, dataset size, network condition, auth state, and sample count. Use agreed task targets; default investigation metrics include:
 
-All FlatList screens: HomeFeed, SearchResults, ReadsFeed, Favourites, ReviewHistory.
+- cold and warm start to interactive;
+- time to first meaningful Home/Discover content;
+- tab and route transition latency;
+- search/detail/feed p50/p95/p99 and error rate;
+- dropped frames and JS/UI thread stalls;
+- list memory growth and retained objects;
+- image load/cache hit/failure rate;
+- upload duration/failure/retry behavior;
+- network calls and bytes per screen/action;
+- battery/background work where applicable.
 
-- [ ] `keyExtractor` uses stable unique IDs (not array index).
-- [ ] `renderItem` is wrapped in `useCallback`.
-- [ ] `getItemLayout` provided for fixed-height lists (ReviewHistory, Favourites).
-- [ ] `initialNumToRender={6}` and `windowSize={5}` set.
-- [ ] `removeClippedSubviews={true}` on Android.
-- [ ] No anonymous objects in props (e.g., `style={{}}` inside renderItem — move to StyleSheet).
+## Audit checklist
 
-### 2. Image optimisation
+### 1. Startup and bootstrap
 
-- [ ] All images use `expo-image` (not `<Image>` from react-native).
-- [ ] `contentFit="cover"` set on all hero images.
-- [ ] `transition={200}` for smooth fade-in.
-- [ ] `priority="high"` on above-the-fold images.
-- [ ] No images wider than 800px loaded for 390px display width.
+- no full-catalog or unnecessary profile/social warm-up on the interactive path;
+- font, auth, configuration, and session restoration states do not create long blank screens;
+- production-like JS mode and release builds are measured;
+- missing configuration and signed-out states fail quickly and clearly.
 
-### 3. Re-render analysis
+### 2. Lists and feeds
 
-- [ ] Screens subscribe to minimal Zustand slices (use selector functions, not full store).
-- [ ] `useMemo` wraps expensive computations (feed generation, collection building, etc.).
-- [ ] No `useEffect` with missing dependency arrays (causes infinite loops).
-- [ ] `React.memo` on BiteCard, ReviewCard, DishCard.
+- stable keys and deduplication;
+- pagination/cursor behavior is correct;
+- appropriate FlatList/FlashList virtualization based on measured item behavior;
+- no unbounded nested lists or repeated expensive per-item queries;
+- memoization/selector changes are justified by profiler evidence, not applied mechanically;
+- no visible blanking, layout jumps, or scroll-position loss.
 
-### 4. Map screen
+### 3. Images and media
 
-- [ ] `FloorPlanViewer` re-renders only on `selectedStallId` change (memo).
-- [ ] Map pins are not re-rendered on scroll (static during pan).
-- [ ] SVG paths are not recalculated on every render.
+- correct display size/quality and content fit;
+- disk/memory caching where appropriate;
+- above-the-fold priority only when beneficial;
+- invalid/expired remote URLs fail safely;
+- no Unsplash/generic placeholder fallback;
+- media upload avoids unnecessary base64 copies and handles large files within limits;
+- video playback and preview do not leak players/listeners.
 
-### 5. Bundle size
+### 4. Network and Supabase
 
-Run: `npx expo export --platform ios` and check bundle.
-- Ensure no oversized libraries imported.
-- `lodash` — use tree-shaken imports (`import { clamp } from 'lodash/clamp'`).
-- No unused `lucide-react-native` icons (import individually, not `import * from`).
+- bounded RPCs and queries with required indexes;
+- no N+1 request pattern;
+- search input is debounced/cancellable where needed;
+- stale requests do not overwrite newer results;
+- cache TTL and invalidation are intentional;
+- retries use bounded backoff and do not duplicate writes;
+- staging load tests review Supabase Performance Advisor and slow-query evidence.
 
-## Execution steps
+### 5. Prefetch
 
-1. Run the app in Expo Go on a physical Android device.
-2. Open Flipper → Hermes Profiler. Record 10 seconds of HomeFeed scrolling.
-3. Look for frame drops below 60fps. Note problematic component renders.
-4. Apply fixes and re-profile.
-5. Write findings to `performance_report.md`.
+Verify:
+
+- duplicate images/routes/records are deduplicated;
+- blank or invalid queries do nothing;
+- prefetch failures are silent and non-blocking;
+- disabled routes are not prefetched;
+- merchant/admin data is not prefetched without authorization;
+- low-end Android memory/network behavior remains acceptable;
+- cache eviction prevents unbounded growth.
+
+### 6. Rendering and lifecycle
+
+- Zustand subscriptions select only needed state;
+- effects clean up timers, subscriptions, players, and listeners;
+- repeated background/foreground, app kill/reopen, and long sessions remain stable;
+- animations respect reduced motion and do not monopolize JS/UI threads;
+- map markers, geometry, and filters update incrementally rather than rebuilding unnecessarily.
+
+### 7. Bundle and native build
+
+Use the repository’s Expo/EAS configuration and production-like bundle commands. Review:
+
+- JS and asset contribution;
+- duplicate/unused dependencies;
+- source maps and release minification;
+- dev client/prototype assets excluded from production;
+- native dependency and permission cost.
+
+Do not use a universal bundle-size number without platform/build context.
+
+## Execution
+
+1. Establish a reproducible baseline before changes.
+2. Profile with production-like JS and preview/release native builds on at least one recent iPhone and one mid/lower Android device.
+3. Use profiler, network, memory, and backend query evidence to identify the bottleneck.
+4. Apply one focused optimization group.
+5. Rerun the same scenario and compare before/after results.
+6. Record metrics, traces, screenshots, and residual risk in the task-specific performance audit and `tasks/verification.md`; do not create a loose root `performance_report.md`.
 
 ## Pass criteria
 
-- No frames dropped below 55fps during list scrolling.
-- All images load within 1s on WiFi.
-- No `useEffect` infinite loops.
-- Bundle size < 10MB JS bundle.
+- No P0/P1 startup, memory, crash, jank, runaway network, or repeated-write issue.
+- Core latency and stability targets pass on representative devices and staging data.
+- Prefetch demonstrably helps or is removed/limited.
+- No unbounded catalog/list/cache behavior.
+- Before/after evidence supports every claimed optimization.

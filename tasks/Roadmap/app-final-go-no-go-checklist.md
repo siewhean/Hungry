@@ -1,63 +1,65 @@
 # Hungry App Final Go / No-Go Checklist
 
-Updated: 2026-06-25
-Production status: **No-Go** (Go Candidate on repo-local gates only)
+Updated: 2026-07-23  
+Production status: **No-Go**
 
-## Required Gates
+## 1. Evidence rule
 
-| Gate | Status | Notes |
+This file distinguishes historical proof from proof for the final reconciled release commit.
+
+- A prior passing command or binary remains useful history but does not certify new #44/#45 changes.
+- A skipped, credential-blocked, simulator-blocked, externally blocked or failing check is not a pass.
+- **Go** requires current evidence for the final commit/build plus every required external proof.
+- **Go Candidate** may describe a fully green candidate awaiting a small defined external set; the current branches have not reached that state.
+
+## 2. Current change lines
+
+| PR | Scope | Current state |
+|---|---|---:|
+| #44 | Mandatory auth, session/configuration hardening, authenticated read-only Excel fallback, catalog reconciliation | open; current automated/native/staging proof incomplete |
+| #45 | Repository/document organization and safe generated-output cleanup | draft; current automated proof incomplete |
+
+The branches overlap in policy documentation and must be updated/reconciled against `main` before final verification.
+
+## 3. Current mandatory gates
+
+| Gate | Status | Required proof |
 |---|---:|---|
-| `npm run typecheck` | ✅ pass | 0 TypeScript errors |
-| `npm run lint` | ✅ pass | 0 ESLint warnings |
-| `npm run format:check` | ✅ pass | Prettier check passed |
-| `npm run test` | ✅ pass | 541 pass / 2 skipped / 0 fail |
-| `npx expo-doctor` | ✅ pass | 18/18 checks passed |
-| `npm run audit:assets` | ✅ pass | asset audit passed |
-| `npm run audit:supabase:static` | ✅ pass | static audit passed; latest release cleanup migration `20260623161000_rls_performance_advisor_cleanup.sql` |
-| `npm run check:edge-functions` | ✅ pass | Edge Function static checks passed |
-| `npm run security:audit` | ✅ pass | 0 vulnerabilities |
-| `npm run security:gitleaks` | ✅ pass | nonignored tracked/untracked scan passed; no leaks found |
-| `npm run security:trufflehog` | ✅ pass | scanned ~4.41 GB; 0 verified and 0 unverified secrets |
-| `npm run release:ready:local` | ✅ pass | all local-only gates pass |
-| Supabase live proof | ✅ pass | linked advisory cleanup applied; non-password Security Advisor passes; Performance Advisor: no issues; full-audit, location, search, RLS, social/gamification, chat, OCR, canonical food-business staging smokes pass |
-| iOS simulator build/run | ✅ pass | prepared dev-client smoke on iPhone 17 Pro simulator with LAN Metro |
-| iOS prepared smoke | ✅ pass | `npm run smoke:native:ios:prepared` passed chat/activity/media flows |
-| PostComposerScreen error boundary | ✅ fixed 2026-06-25 | FeedErrorBoundary added |
-| Android permissions | ✅ fixed 2026-06-25 | CAMERA, READ_MEDIA_IMAGES, READ_MEDIA_VIDEO, READ_EXTERNAL_STORAGE added to `app.json` |
-| Android/EAS proof | ✅ preview artifact pass | `ANDROID_EAS_PROOF=1` means Android preview build `b04ac43f-9a06-43f9-9f38-709cbc17e418` finished and an APK artifact exists; it does not prove install/device/internal-track/production readiness |
-| Android native/install proof | blocked | `NATIVE_MAESTRO_ANDROID_PROOF=0`; no Android device/emulator install smoke, Play internal-track smoke, or Android production proof attached |
-| iOS EAS proof | blocked | no credentials suitable for internal distribution in non-interactive mode |
-| Store API credentials | blocked | App Store Connect API key/issuer/key path and Google Play service-account env vars missing |
-| Independent QA/QC agent | pass / No-Go upheld | no new repo-local P0 code defect; public launch remains blocked by external proof |
-| Production website secret proof | ✅ pass | Vercel production env validation passed; console Basic Auth enforced; deprecated `HUNGRY_CONSOLE_API_TOKEN` removed |
-| Production app secret proof | blocked | `PRODUCTION_SECRET_PROOF=0`; EAS/store release environment secret verification not attached |
-| Store console proof | blocked | `STORE_CONSOLE_PROOF=0` |
-| App Store Connect proof | blocked | `APP_STORE_CONNECT_PROOF=0`; metadata/privacy proof not attached |
-| Play Console proof | blocked | `PLAY_CONSOLE_PROOF=0`; metadata/Data Safety proof not attached |
-| Store ASO/reviewer/screenshot/policy approvals | blocked | `ASO_METADATA_APPROVAL_PROOF=0`; `REVIEWER_NOTES_APPROVAL_PROOF=0`; `STORE_SCREENSHOT_RIGHTS_PROOF=0`; `STORE_POLICY_CHECKLIST_APPROVAL_PROOF=0` |
-| Public privacy/account deletion URL proof | blocked | `PUBLIC_PRIVACY_URL_PROOF=0`; `PUBLIC_ACCOUNT_DELETION_URL_PROOF=0`; owner/store-console URL proof not attached |
-| UGC moderation proof | blocked | `UGC_MODERATION_PROOF=0`; full-platform live/report/block/moderation proof not attached |
-| Supabase SQL/advisor proof | ✅ pass | legacy RPC cleanup and app-owned RLS performance cleanup applied |
-| Supabase leaked-password proof | blocked by plan | Management API returned 402; leaked-password protection requires Supabase Pro or higher |
-| Dirty worktree reconciled | blocked | `DIRTY_WORKTREE_RECONCILED=0` |
-| SEC-06 runtime proof | blocked | `SEC_06_RUNTIME_PROOF=0` |
-| SEC-08 runtime proof | ✅ pass | live multi-user Supabase social/gamification, chat, RLS, storage/OCR, Edge-function smokes passed |
-| Merchant portal runtime proof | blocked | `MER_PORTAL_01_RUNTIME_PROOF=0` (not required for launch with `merchantCentreEnabled=false`) |
-| Legal/privacy sign-off | blocked | owner/legal proof required |
-| App Store metadata | blocked | App Store Connect proof required |
-| Play Store metadata | blocked | Play Console proof required |
-| Sentry staging crash proof | ✅ pass | `SENTRY_AUTH_TOKEN_2` confirms event access; latest unresolved queue = 0 after resolving four remaining groups |
-| Production monitoring proof | blocked | staging Sentry/PostHog rows may stay pass, but `SENTRY_PRODUCTION_SOURCEMAP_PROOF=0`, `RELEASE_TRACKING_PROOF=0`, and `ALERT_ROUTING_PROOF=0`; production source maps, release tracking, and alert routing proof remain pending |
-| Website production runtime proof | ✅ pass | Vercel deploy `dpl_G2N1y8tiwePNBQq2ELwD76oESURz` is aliased to `https://usehungry.com`; public routes 200; console routes 401 unauthenticated and 200 with Basic Auth |
-| PostHog staging event proof | ✅ pass | `/capture/` HTTP 200 confirmed |
-| Rollback rehearsal proof | blocked | `ROLLBACK_REHEARSAL_PROOF=0`; OTA, native binary, and DB rollback rehearsal remains pending |
-| VoiceOver/TalkBack smoke | blocked | manual QA proof required |
-| Demo account for store review | blocked | owner must provision reviewer credentials |
+| Mandatory onboarding → account flow | pending | fresh install on current iOS/Android builds |
+| No unauthenticated MainTabs/content | pending | source, Playwright, native and deep-link proof |
+| Secure session restore/invalidation | pending | valid, missing, invalid, revoked and signed-out scenarios |
+| Missing production configuration | pending | blocking state; no mock/Excel app-entry bypass |
+| Supabase authority for writes | pending | service/RLS/runtime proof; no false local success |
+| Authenticated Excel catalog fallback | pending | targeted catalog outage while auth remains valid |
+| Legitimate no-results | pending | no unrelated fallback substitution |
+| Feature/role/deep-link isolation | pending | consumer, merchant, wrong-merchant, admin/ops matrices |
+| Typecheck/lint/format/tests | pending | final reconciled commit |
+| Playwright | pending | mandatory-auth, route, catalog, merchant/admin suites |
+| Expo Doctor/assets/static audits | pending | final reconciled commit/environment |
+| Security scans | pending | npm audit, gitleaks, TruffleHog, Supabase/edge checks |
+| Live Supabase proof | pending | RLS/storage/RPC/function/advisor staging evidence |
+| iOS current build and smoke | pending | preview/production candidate, TestFlight and native scenarios |
+| Android current build and smoke | pending | AAB/internal track/install/pre-launch/native scenarios |
+| VoiceOver/TalkBack smoke | blocked | current manual iOS and Android proof |
+| Production monitoring proof | blocked | release/source maps, controlled error, alert routing |
+| Store/legal/privacy proof | blocked | consoles, policies, URLs, demo account, image rights, sign-off |
+| Rollback rehearsal | blocked | OTA, binary, web and database forward-fix/rollback evidence |
 
-## Release Evidence Keys
+## 4. Historical evidence retained for context
+
+| Evidence | Historical status | Current limitation |
+|---|---:|---|
+| Android/EAS proof | preview artifact pass | `ANDROID_EAS_PROOF=1` records an earlier preview artifact; it does not prove install/device/internal-track/production readiness or the current mandatory-auth commit |
+| Earlier iOS simulator smoke | prior development smoke | does not prove current release binary, mandatory auth, fallback or TestFlight |
+| Earlier repository checks | previously reported passes | must be rerun after #44/#45 reconciliation |
+| Earlier Supabase and monitoring checks | mixed prior evidence | must be tied to the final environment/schema/release and current privacy policy |
+
+## 5. Release evidence keys
+
+These remain conservative. A `1` may represent reusable historical evidence only where the note above says so; the final release decision still requires current-commit linkage.
 
 ```text
-NATIVE_MAESTRO_IOS_PROOF=1
+NATIVE_MAESTRO_IOS_PROOF=0
 IOS_EAS_PROOF=0
 IOS_RELEASE_BUILD_PROOF=0
 TESTFLIGHT_SMOKE_PROOF=0
@@ -78,12 +80,12 @@ SUPABASE_OWNER_PROOF=0
 PUSHED_CI_PROOF=0
 DIRTY_WORKTREE_RECONCILED=0
 SEC_06_RUNTIME_PROOF=0
-SEC_08_RUNTIME_PROOF=1
+SEC_08_RUNTIME_PROOF=0
 MER_PORTAL_01_RUNTIME_PROOF=0
 MERCH_P0_ANALYTICS_PROOF=0
-SENTRY_STAGING_CRASH_PROOF=1
+SENTRY_STAGING_CRASH_PROOF=0
 SENTRY_PRODUCTION_SOURCEMAP_PROOF=0
-POSTHOG_STAGING_PROOF=1
+POSTHOG_STAGING_PROOF=0
 RELEASE_TRACKING_PROOF=0
 ALERT_ROUTING_PROOF=0
 POST_COMPOSER_ERROR_BOUNDARY=1
@@ -92,29 +94,48 @@ UGC_MODERATION_PROOF=0
 ROLLBACK_REHEARSAL_PROOF=0
 ```
 
-## Verdict Rule
+## 6. Repository commands required on the final commit
 
-- **Go** only when every local gate passes and every external proof key is `1`.
-- **Go Candidate** is repo-local only: local gates may be green, but public launch remains blocked until every external proof key is `1`.
-- **No-Go** while any P0 local gate fails, dirty-worktree reconciliation is missing, or external proof keys remain `0`.
+```bash
+npm run typecheck
+npm run lint
+npm run format:check
+npm run test
+npm run test:e2e
+npm run test:e2e:merchant-catalog
+npx expo-doctor --non-interactive
+npm run audit:assets
+npm run audit:supabase:static
+npm run check:edge-functions
+npm run security:audit
+npm run security:gitleaks
+npm run security:trufflehog
+npm run release:ready:local
+npm run smoke:database:location
+npm run smoke:database:search
+npm run smoke:database:rls
+```
 
-## P0 Items Remaining
+Run current credential-backed Supabase advisor/full-audit checks and current iOS/Android build/device flows separately. Record commit, build ID, environment, account role, steps, evidence and exact result.
 
-1. Dirty worktree — reconcile and commit/stash before release tag
-2. Android install smoke — attach an Android emulator/device and install the finished preview APK
-3. iOS EAS preview — configure internal-distribution ASC credentials
-4. iOS + Android production build proofs
-5. Store-console metadata, Data Safety, privacy labels
-6. Legal/privacy sign-off
-7. Demo account for store review
-8. VoiceOver/TalkBack manual smoke sessions
-9. Production monitoring proof — source maps, release tracking, and alert routing
-10. Rollback rehearsal proof — OTA, native binary, and DB rollback
+## 7. External proof still required
 
-## Non-Blocking Pre-Launch Hardening Items
+- App Store Connect metadata and App Privacy.
+- Google Play listing, Data Safety, content/permissions declarations and pre-launch report.
+- Public support, privacy and account-deletion URLs.
+- Reviewer/demo account and account-requirement explanation.
+- Final screenshot and in-app media rights approval.
+- Legal/privacy/community/account-deletion sign-off.
+- Owner-controlled production app/web/Supabase/EAS/monitoring secrets and access proof.
+- Sentry release/source maps/alert routing and privacy-safe controlled error.
+- VoiceOver/TalkBack and representative-device manual QA.
+- UGC moderation/report/block/delete proof for every enabled public surface.
+- Rollout, stop thresholds, on-call owner and rollback/forward-fix rehearsal.
 
-- `useReduceMotion()` hook for 22 unguarded Reanimated animations
-- Systematic `accessibilityLabel` pass on primary screen Pressable elements
-- Gate 49 KB mock data behind `__DEV__` to exclude from production bundle
-- `eas.json submit.production` credentials populated
-- Enable OTA updates with `ON_ERROR_RECOVERY` after first stable release
+## 8. Verdict rule
+
+- **Go:** every applicable gate is current-pass and every external proof is attached.
+- **Go Candidate:** final commit is green and only a clearly enumerated non-code release action remains.
+- **No-Go:** any P0/P1, current test/build/staging/native gap, branch reconciliation gap or required external proof remains.
+
+Current verdict: **No-Go**.

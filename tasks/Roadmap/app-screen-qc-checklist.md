@@ -1,84 +1,140 @@
-# Hungry App Screen QC Checklist
+# Hungry App Screen QA/QC Checklist
 
-Updated: 2026-06-25
-Verdict: **Partial / No-Go**. Source coverage exists for core MVP screens; repo-local iOS runtime smoke and Android EAS artifact proof now exist, but public-launch QC still requires Android install/device smoke, iOS external build proof, manual accessibility proof, and owner/store-console evidence.
+> Product policy: mandatory authentication; no guest mode.  
+> Status rule: a screen is not passed until its current implementation has automated and appropriate native evidence.  
+> Use registered navigators and feature flags to generate the final inventory; do not rely on a static historical route list.
 
-## QC Table
+## 1. Entry and access matrix
 
-| Screen | iOS | Android | Loading | Empty | Error | Offline | Permission denied | Auth state | Accessibility | Security | Result |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Splash | pending runtime | pending runtime | n/a | n/a | pending | pending | n/a | pending | pending | pass source | pending |
-| Onboarding | pending runtime | pending runtime | pass source | n/a | pending | pending | location handled ✅ | guest | pending | pass source | pending |
-| Login | pending runtime | pending runtime | pass source | n/a | pass source | pending | n/a | guest | pending | pass source | pending |
-| SignUp | pending runtime | pending runtime | pass source | n/a | pass source | pending | n/a | guest | pending | pass source | pending |
-| EmailVerification | pending runtime | pending runtime | pass source | n/a | pending | pending | n/a | mixed | pending | pending external email | pending |
-| ForgotPassword | pending runtime | pending runtime | pass source | n/a | pending | pending | n/a | guest | pending | pending external email | pending |
-| ResetPassword | pending runtime | pending runtime | pass source | n/a | invalid callback source ✅ | pending | n/a | callback | pending | pass source | pending |
-| Home | pending runtime | pending runtime | pass source | pass source | pass source | pending | n/a | guest/auth | pending | pass source | pending |
-| Discover | pending runtime | pending runtime | pass source | pass source | pass source | pending | location denied source ✅ | guest/auth | pending | pass source | pending |
-| SearchHome | pending runtime | pending runtime | pass source | pass source | pass source | pending | n/a | guest/auth | pending | pass source | pending |
-| SearchResults | pending runtime | pending runtime | pass source | pass source | pass source | pending | n/a | guest/auth | pending | pass source | pending |
-| BrowseDishes | pending runtime | pending runtime | pass source | pass source | pass source | pending | n/a | guest/auth | pending | pass source | pending |
-| BrowseStalls | pending runtime | pending runtime | pass source | pass source | pass source | pending | n/a | guest/auth | pending | pass source | pending |
-| TasteFilter | pending runtime | pending runtime | pass source | n/a | pending | pending | n/a | guest/auth | pending | pass source | pending |
-| DishDetail | pending runtime | pending runtime | pass source | missing data source ✅ | pass source | pending | n/a | guest/auth | pending | pass source | pending |
-| StallDetail | pending runtime | pending runtime | pass source | missing data source ✅ | pass source | pending | maps pending | guest/auth | pending | pass source | pending |
-| DiscoverMap | pending runtime | pending runtime | pass source | pass source | pending | pending | pending runtime | guest/auth | pending | token runtime pending | pending |
-| DecideForMe/Wheel | pending runtime | pending runtime | pass source | pending | pending | pending | n/a | mixed | pending | join-code validation source ✅ | pending |
-| Review flow | pending runtime | pending runtime | pass source | pending | pass source | pending | media permission pending | auth required ✅ | pending | service-backed source ✅ | pending |
-| Post composer | pending runtime | pending runtime | pass source | pending | **FeedErrorBoundary fixed** ✅ | pending | media denied source ✅ | auth required ✅ | pending | service-backed source ✅ | pending |
-| Activity inbox | pending runtime | pending runtime | pass source | pending | pass source | pending | n/a | auth required ✅ | pending | auth/protected route source ✅ | pending |
-| Profile | pending runtime | pending runtime | pass source | pending | pending | pending | n/a | auth required ✅ | pending | source-backed ✅ | pending |
-| EditProfile | pending runtime | pending runtime | pass source | n/a | pending | pending | media pending | auth required ✅ | pending | source-backed ✅ | pending |
-| Settings | pending runtime | pending runtime | pass source | n/a | deletion error source ✅ | pending | n/a | auth required ✅ | pending | deletion request source ✅ | pending |
-| Favourites | pending runtime | pending runtime | pass source | pass source | pending | pending | n/a | auth required ✅ | pending | Supabase sync source ✅ | pending |
-| ReviewHistory | pending runtime | pending runtime | pass source | pass source | pending | pending | n/a | auth required ✅ | pending | Supabase sync source ✅ | pending |
-| Offline | pending runtime | pending runtime | n/a | n/a | n/a | pending runtime | n/a | guest/auth | pending | pass source ✅ | pending |
-| NotFound | pending runtime | pending runtime | n/a | n/a | pass source ✅ | pending | n/a | guest/auth | pending | safe missing route ✅ | pending |
-| MerchantTabs | disabled in prod ✅ | disabled in prod ✅ | pending | pending | pending | pending | media pending | merchant only | pending | production disabled ✅ | disabled |
-| DeveloperLauncher | dev only ✅ | dev only ✅ | n/a | n/a | n/a | n/a | n/a | dev only | n/a | dev only ✅ | disabled in prod |
-| Crave | pending runtime | pending runtime | pass source | pending | pending | pending | n/a | mixed | pending | pending | pending |
-| BlogPost/Reads | pending runtime | pending runtime | pass source | pass source | pending | pending | n/a | public | pending | safe-link tests | pending |
-| WheelHome/Lobby/Spin | pending runtime | pending runtime | pass source | pending | pending | pending | n/a | mixed | pending | join-code validation ✅ | pending |
+```text
+Fresh user: Splash → Onboarding → Create Account / Sign In → verification when required → authenticated app
+Returning user: Splash → secure session restoration → authenticated app, or Login
+```
 
-## Runtime Acceptance Requirements
+- Signed-out users can mount only Splash, Onboarding, and Auth.
+- MainTabs, details, search, map, reviews, posts, profile, merchant/admin, and advanced screens require authentication.
+- Missing released-build Supabase configuration shows a blocking configuration state.
+- Excel fallback is authenticated read-only catalog continuity for eligible catalog outages only.
 
-- iOS simulator smoke: prepared Maestro smoke passes ✅ as of 2026-06-25 (`tasks/verification.md`; `tasks/Roadmap/app-native-build-readiness-report.md`).
-- Android EAS artifact proof: preview build `b04ac43f-9a06-43f9-9f38-709cbc17e418` finished with APK artifact ✅ (`tasks/verification.md`; `tasks/Roadmap/app-native-build-readiness-report.md`).
-- Android emulator/device install smoke: **pending** — no Android device/emulator attached in local evidence.
-- Manual VoiceOver and TalkBack smoke.
-- Location denied and media denied proof.
-- No terminal/simulator console errors during smoke pass.
+## 2. Per-screen acceptance matrix
 
-## Runtime Evidence Refresh
+Complete one row for every registered screen, modal, sheet, dialog, tab, and deep-link state.
 
-| Platform / gate | Current evidence | Status |
-|---|---|---:|
-| iOS prepared simulator smoke | `npm run smoke:native:ios:prepared` passed chat/activity/media flows on iPhone 17 Pro simulator with LAN Metro; release evidence key `NATIVE_MAESTRO_IOS_PROOF=1`. | pass |
-| iOS external build/TestFlight | iOS EAS preview remains blocked by missing internal-distribution credentials; release evidence key `IOS_EAS_PROOF=0`. | blocked |
-| Android EAS preview artifact | Build `b04ac43f-9a06-43f9-9f38-709cbc17e418` finished; APK artifact URL is recorded in `tasks/Roadmap/app-native-build-readiness-report.md`. | pass |
-| Android install/device smoke | Local evidence says no Android emulator/device is attached, so APK install and device smoke remain pending. | pending |
-| Android permissions | `CAMERA`, `READ_MEDIA_IMAGES`, `READ_MEDIA_VIDEO`, and `READ_EXTERNAL_STORAGE` are recorded as added in `tasks/Roadmap/app-native-build-readiness-report.md`; release evidence key `ANDROID_PERMISSIONS_COMPLETE=1`. | pass |
-| Post composer error boundary | `PostComposerScreen` has `FeedErrorBoundary` coverage recorded in `tasks/Roadmap/app-final-go-no-go-checklist.md`; release evidence key `POST_COMPOSER_ERROR_BOUNDARY=1`. | pass |
+| Surface | iOS | Android | Web/Playwright | Loading | Empty/no-results | Error/retry | Offline/fallback | Permission denied | Auth/role/flag | Accessibility | Security/privacy | Result |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Splash/bootstrap | ☐ | ☐ | ☐ | ☐ | n/a | ☐ | ☐ | n/a | ☐ | ☐ | ☐ | ☐ |
+| Onboarding family | ☐ | ☐ | ☐ | ☐ | n/a | ☐ | ☐ | location | mandatory auth next | ☐ | ☐ | ☐ |
+| Create Account / Sign In | ☐ | ☐ | ☐ | ☐ | n/a | ☐ | internet required | n/a | signed-out only | ☐ | ☐ | ☐ |
+| Verification/recovery | ☐ | ☐ | ☐ | ☐ | n/a | ☐ | ☐ | n/a | signed-out/callback | ☐ | ☐ | ☐ |
+| Home | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | read/write behavior | n/a | authenticated | ☐ | ☐ | ☐ |
+| Discover | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | authenticated Excel read-only | location | authenticated | ☐ | ☐ | ☐ |
+| Search/Browse Dishes/Stalls | ☐ | ☐ | ☐ | ☐ | legitimate no-results | ☐ | authenticated Excel read-only | n/a | authenticated | ☐ | ☐ | ☐ |
+| Dish detail | ☐ | ☐ | ☐ | ☐ | missing ID/data | ☐ | read-only fallback | n/a | authenticated | ☐ | ☐ | ☐ |
+| Stall detail/menu | ☐ | ☐ | ☐ | ☐ | missing ID/data | ☐ | read-only fallback | map/location | authenticated | ☐ | ☐ | ☐ |
+| Map/location | ☐ | ☐ | ☐ | ☐ | no markers | ☐ | supported fallback | location | authenticated | ☐ | ☐ | ☐ |
+| Decide For Me/Wheel | ☐ | ☐ | ☐ | ☐ | no eligible result | ☐ | ☐ | location | authenticated + flag | ☐ | ☐ | ☐ |
+| Review flow | ☐ | ☐ | ☐ | ☐ | target missing | ☐ | writes unavailable | media | authenticated | ☐ | ☐ | ☐ |
+| Post composer | ☐ | ☐ | ☐ | ☐ | draft/target missing | ☐ | writes unavailable | media/camera | authenticated + flag | ☐ | ☐ | ☐ |
+| Activity/social | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | notifications if used | authenticated + flags | ☐ | ☐ | ☐ |
+| Profile/public profile | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | writes unavailable | media | authenticated/visibility | ☐ | ☐ | ☐ |
+| Edit profile/avatar | ☐ | ☐ | ☐ | ☐ | n/a | ☐ | writes unavailable | media | authenticated | ☐ | ☐ | ☐ |
+| Favourites/history | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | no false local success | n/a | authenticated | ☐ | ☐ | ☐ |
+| Settings/privacy/deletion | ☐ | ☐ | ☐ | ☐ | n/a | ☐ | ☐ | notifications/location | authenticated | ☐ | ☐ | ☐ |
+| Merchant routes | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | no false writes | media | merchant role + flag | ☐ | ☐ | ☐ |
+| Admin/ops/developer | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | n/a | role/dev/production gate | ☐ | ☐ | ☐ |
+| Offline/auth unavailable | ☐ | ☐ | ☐ | n/a | n/a | ☐ | canonical state | n/a | correct session policy | ☐ | ☐ | ☐ |
+| Configuration unavailable | ☐ | ☐ | ☐ | n/a | n/a | ☐ | n/a | n/a | blocks app entry | ☐ | ☐ | ☐ |
+| Unauthorized/disabled feature | ☐ | ☐ | ☐ | n/a | n/a | ☐ | n/a | n/a | correct role/flag | ☐ | ☐ | ☐ |
+| Not found/invalid deep link | ☐ | ☐ | ☐ | n/a | ☐ | ☐ | n/a | n/a | auth + safe params | ☐ | ☐ | ☐ |
 
-## Readiness Dependency Matrix
+## 3. Mandatory checks for every surface
 
-| Dependency | Proof key / evidence | Current state | Blocks |
-|---|---|---|---|
-| Repo-local source/runtime gates | `tasks/verification.md` 2026-06-25 release blockers full proof refresh | Go Candidate locally | Does not clear public launch without external proofs |
-| iOS native simulator smoke | `NATIVE_MAESTRO_IOS_PROOF=1` | pass | none for repo-local QC |
-| iOS external build proof | `IOS_EAS_PROOF=0` | blocked by internal-distribution credentials | App Store/TestFlight readiness |
-| Android EAS artifact | `ANDROID_EAS_PROOF=1`; build `b04ac43f-9a06-43f9-9f38-709cbc17e418` | artifact exists | APK install/device smoke still required |
-| Android install/device smoke | local Android device/emulator proof | pending | Google Play/internal-device readiness |
-| Android permission manifest completeness | `ANDROID_PERMISSIONS_COMPLETE=1` | pass | store declaration still must match final binary |
-| Post composer crash containment | `POST_COMPOSER_ERROR_BOUNDARY=1` | pass | none for this checklist |
-| Manual accessibility | VoiceOver/TalkBack owner QA | pending | public-launch QC sign-off |
-| Store/legal/owner evidence | store console, legal/privacy, demo account, pushed CI | pending/blocked | final Go |
+### Functionality
 
-## Source Coverage Verified
+- [ ] Every visible button, tab, link, chip, menu, sheet, field, gesture, and retry action works.
+- [ ] Navigation back/close/cancel behavior is deterministic.
+- [ ] Route params are validated and missing data does not crash.
+- [ ] Successful state appears only after the canonical backend confirms the operation.
+- [ ] Optimistic state rolls back on failure.
+- [ ] Repeated taps/submits do not duplicate writes.
 
-- Auth redirect gates: `isAuthenticated` + `setReturnRoute` in every mixed/private screen ✅
-- Error boundaries: `HomeFeedScreen`, `HomeMapScreen`, `DishDetailScreenV2`, `StallDetailScreen`, `ReviewScreen`, `PostComposerScreen` ✅ (PostComposer fixed 2026-06-25)
-- Offline handler: `useUIStore.isOffline` drives `OfflineStateScreen` redirect in `RootNavigator` ✅
-- Missing route params: `NotFound` screen handles gracefully ✅
-- Media permission denial: gallery permission graceful fallback in `PostComposerScreen` ✅
+### Data and integration
+
+- [ ] Shared data comes from Supabase and rehydrates across session/device where intended.
+- [ ] Zustand is cache/draft/optimistic state, not canonical shared storage.
+- [ ] Profile/avatar identity is consistent across posts, reviews, activity, and public profile views.
+- [ ] Cross-user visibility and RLS isolation both pass.
+- [ ] Catalog pages are bounded, paged, deduplicated, and source/freshness aware.
+- [ ] Successful empty search does not substitute unrelated fallback records.
+
+### Images and media
+
+- [ ] Dish cards use approved menu/gallery imagery.
+- [ ] Stall cards use logo → stall/venue image → representative menu dish.
+- [ ] No Unsplash or generic production placeholder host.
+- [ ] Aspect ratio, crop, caching, transition, and broken-image state are correct.
+- [ ] Upload validates MIME, size, duration/dimensions where relevant, and storage ownership.
+
+### Accessibility and visual quality
+
+- [ ] Safe areas, keyboard, custom tab bar, sheets and modals do not overlap content.
+- [ ] Large text, dark mode and reduced motion work.
+- [ ] VoiceOver/TalkBack names, roles, states, focus and announcements are correct.
+- [ ] Touch targets and contrast pass.
+- [ ] Loading skeletons match final geometry and do not flash for synchronous work.
+
+### Security and privacy
+
+- [ ] Signed-out/invalid-session users cannot mount the surface.
+- [ ] Role/feature-disabled routes are not reachable through deep link, stale state, return route or notification.
+- [ ] No private data or secret appears in UI, logs, screenshots, analytics or crash payloads.
+- [ ] Permission requests are minimal and denial leaves an appropriate path.
+- [ ] Public UGC includes required report/block/moderation/delete-own-content behavior.
+
+### Performance
+
+- [ ] No unbounded list or full-catalog hydration.
+- [ ] Requests are cancellable/deduplicated where needed.
+- [ ] Prefetch does not block navigation or bypass authorization.
+- [ ] Long scrolling, repeated navigation, media and app lifecycle do not leak memory/listeners.
+- [ ] Representative iOS and mid/lower Android performance evidence exists.
+
+## 4. Required scenarios
+
+1. Fresh install and mandatory authentication.
+2. Valid returning session.
+3. Failed auth and verification delay.
+4. Explicit sign-out online/offline.
+5. Invalid/revoked session.
+6. Missing production Supabase configuration.
+7. Supabase healthy catalog.
+8. Authenticated targeted catalog outage and Excel fallback.
+9. Signed-out outage with no fallback.
+10. Legitimate no-results.
+11. Location allow/deny/manual selection.
+12. Media permission allow/deny and failed upload.
+13. Cross-user post/review/favourite/profile visibility and isolation.
+14. Merchant/admin correct and incorrect roles.
+15. Production-disabled feature/deep-link attempts.
+
+## 5. Evidence
+
+For each completed row record:
+
+```text
+commit/build
+platform/device/OS
+account role
+data source/environment
+steps
+expected/actual
+screenshot/trace/video/log/query
+result and issue ID
+retest result
+```
+
+Playwright validates web behavior; Maestro and real simulator/device evidence validate native behavior. Source contracts alone do not pass a screen.
+
+## 6. Verdict
+
+This checklist remains **No-Go** until every production-enabled surface has current automated and appropriate native/manual evidence, all P0/P1 findings are resolved, and external store/security/privacy gates pass.

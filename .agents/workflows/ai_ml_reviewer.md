@@ -1,94 +1,113 @@
 ---
-description: AI/ML reviewer — audit taste engine correctness, fairness, and recommendation quality
+description: AI/ML reviewer — audit Hungry recommendation correctness, data quality, fairness, and explainability
 ---
 
 # AI/ML Reviewer Agent
 
-You are an AI/ML Reviewer Agent for the **Hungry** food discovery app. Your job is to audit the correctness and quality of the taste engine in `src/lib/ai/tasteEngine.ts`.
+Audit the recommendation and taste-profile system that exists in the current branch. Do not assume function names, a Jest setup, or mock-only data. Inspect the canonical domain/service contracts and existing Node test harness first.
 
-## Taste engine review
+## Scope
 
-### 1. Cosine similarity correctness
+Depending on the task, inspect:
 
-The `cosineSimilarity(a, b)` function must return 1.0 for identical vectors and 0.0 for orthogonal vectors.
+- `src/lib/ai/`;
+- recommendation and taste-profile service contracts;
+- onboarding/profile calibration flows;
+- canonical catalog taxonomy, dietary flags, taste vectors, location/availability inputs;
+- analytics/feedback updates;
+- Supabase functions/RPCs or Edge Functions used for ranking;
+- user-visible explanations and confidence/match copy.
 
-**Test cases:**
+## Review dimensions
 
-```typescript
-import { cosineSimilarity, blendedMatchScore } from '@/lib/ai/tasteEngine';
+### 1. Mathematical correctness
 
-// Identical vectors → 1.0
-const identical = { sweet: 5, spicy: 5, sour: 5, salty: 5, rich: 5, aromatic: 5 };
-assert(cosineSimilarity(identical, identical) === 1.0);
+Test relevant functions for:
 
-// Zero vector edge case → 0.0 (not NaN)
-const zero = { sweet: 0, spicy: 0, sour: 0, salty: 0, rich: 0, aromatic: 0 };
-assert(cosineSimilarity(zero, identical) === 0.0);
+- identical, orthogonal, zero, missing, malformed, and boundary vectors;
+- finite outputs and documented ranges;
+- deterministic ordering for identical inputs;
+- stable tie-breaking and pagination;
+- calibration/update direction, bounds, convergence, and recency/weight handling;
+- no division-by-zero, NaN, overflow, or accidental truthiness fallback.
 
-// Opposite vectors → low score
-const user  = { sweet: 10, spicy: 0, sour: 0, salty: 0, rich: 0, aromatic: 0 };
-const dish  = { sweet: 0, spicy: 10, sour: 0, salty: 0, rich: 0, aromatic: 0 };
-assert(cosineSimilarity(user, dish) === 0.0);
+Use the repository’s existing test runner and canonical `TasteVector` type.
 
-// blendedMatchScore always [0, 1]
-for (let i = 0; i < 100; i++) {
-  const a = randomVector();
-  const b = randomVector();
-  const score = blendedMatchScore(a, b);
-  assert(score >= 0 && score <= 1);
-}
-```
+### 2. Data validity
 
-### 2. Recommendation ordering
+- Recommendations use approved canonical dish/stall records, not placeholders or mock-only fixtures in released builds.
+- Missing taste vectors, dietary flags, prices, coordinates, hours, images, and verification state have explicit behavior.
+- Dietary and safety constraints are filters or hard constraints when required, not merely soft ranking signals.
+- Invalid/closed/excluded/non-consumer records are not surfaced.
+- Supabase and authenticated Excel fallback produce compatible ranking inputs without pretending fallback data is live.
 
-Given user `{ sweet: 10, spicy: 0, sour: 0, salty: 0, rich: 0, aromatic: 0 }`:
-- A sweet dish should rank above a spicy dish.
-- Ranking must be deterministic for the same inputs.
+### 3. Ranking quality
 
-### 3. Community calibration
+Build representative evaluation sets for:
 
-`calibrateVector` must:
-- Move toward the impression, not away.
-- Never produce values outside [0, 10].
-- Converge after repeated identical impressions.
+- neutral and strongly expressed taste profiles;
+- common dietary restrictions;
+- different Singapore areas and distance ranges;
+- budget and availability intents;
+- new/low-signal users;
+- sparse and dense catalog conditions;
+- legitimate no-results.
 
-```typescript
-const base = { sweet: 5, spicy: 5, sour: 5, salty: 5, rich: 5, aromatic: 5 };
-const impression = { sweet: 10, spicy: 10, sour: 10, salty: 10, rich: 10, aromatic: 10 };
-let profile = base;
-for (let i = 0; i < 100; i++) {
-  profile = calibrateVector(profile, impression, 0.05);
-}
-// After enough iterations should approach impression
-assert(profile.sweet > 9);
-```
+Measure at least relevance/constraint violations, diversity, repetition, coverage, and deterministic stability. Do not substitute unrelated fallback items for no-results.
 
-### 4. Fairness
+### 4. Fairness and representation
 
-Verify the engine does not systematically prefer:
-- Chinese dishes over Malay/Indian dishes (based on taste vector distribution).
-- Expensive dishes over cheap dishes.
-- Famous stalls over hidden gems.
+Check whether ranking or data coverage systematically disadvantages:
 
-**Test:** Sample 100 dishes from the mock repository. Verify that the top 10 recommendations for a neutral user (all values = 5) include dishes from at least 3 different cuisines.
+- cuisines or cultural food groups;
+- hawker stalls versus larger chains;
+- lower-priced venues;
+- less-reviewed but eligible stalls;
+- regions with thinner data;
+- users with dietary constraints;
+- new merchants or newly imported records.
 
-### 5. Explainability text quality
+Separate algorithm bias from source-data coverage and verification bias. Do not force quotas without a product decision; report the measured trade-off and mitigation options.
 
-`buildExplanation` (internal) must:
-- Always return a non-empty string.
-- Reference at least one taste dimension.
-- Not duplicate the dish name unnecessarily.
+### 5. Explainability and claims
 
-## Execution steps
+User-facing explanations must:
 
-1. Write a test file `src/lib/ai/__tests__/tasteEngine.test.ts`.
-2. Run `npx jest src/lib/ai/__tests__/tasteEngine.test.ts`.
-3. All assertions must pass.
-4. Write findings to `ai_ml_report.md`.
+- be non-empty and grounded in actual inputs;
+- identify useful factors such as taste, distance, dietary fit, price, or availability;
+- avoid unsupported percentages or “AI knows you” language;
+- distinguish live/verified versus fallback/stale context where material;
+- avoid exposing private profile attributes or precise location unnecessarily.
+
+### 6. Feedback and privacy
+
+- Explicit and implicit feedback is authenticated, scoped to the correct user, and validated.
+- Updates do not allow another user to poison a profile.
+- Analytics events are scrubbed and do not include unnecessary PII/precise coordinates.
+- Model/ranking changes are versioned or measurable enough to compare before/after behavior.
+- Cold-start defaults and reset/delete behavior are documented.
+
+### 7. Performance and resilience
+
+- Ranking is bounded and does not materialize the full catalog on-device.
+- Expensive work is server-side/batched where appropriate.
+- Timeouts, empty input, catalog outage, and partial data fail safely.
+- Prefetch/cache behavior does not cause stale ranking or cross-user leakage.
+
+## Execution
+
+1. Inventory actual ranking/calibration functions and existing tests.
+2. Add focused `node:test`/repository-harness tests beside the implementation rather than creating a new Jest structure.
+3. Validate against a rights-approved representative catalog sample and, where allowed, staging RPC results.
+4. Capture baseline metrics before changing behavior.
+5. Apply focused fixes and rerun the same evaluation set.
+6. Record findings, datasets, assumptions, metrics, and residual risk in the task-specific AI/recommendation audit and `tasks/verification.md`; do not create a loose root `ai_ml_report.md`.
 
 ## Pass criteria
 
-- Cosine similarity returns 1.0 for identical vectors and 0.0 for zero vector.
-- blendedMatchScore always in [0, 1].
-- Community calibration converges and never escapes [0, 10].
-- Top 10 recommendations for neutral user span ≥ 3 cuisines.
+- Mathematical edge cases and documented ranges pass.
+- Dietary/safety/location/availability constraints behave as designed.
+- Ranking is deterministic, bounded, and performant.
+- No measured P0/P1 representation or privacy issue remains unexplained.
+- Explanations are grounded and not misleading.
+- Evaluation evidence uses current canonical/staging data, not only hand-picked mock fixtures.
