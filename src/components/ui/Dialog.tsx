@@ -90,7 +90,7 @@ export function Dialog({ visible, title, message, buttons, onClose }: DialogProp
                 label={btn.text}
                 variant={
                   btn.style === "destructive"
-                    ? "primary"
+                    ? "destructive"
                     : btn.style === "cancel"
                       ? "ghost"
                       : "secondary"
@@ -99,7 +99,6 @@ export function Dialog({ visible, title, message, buttons, onClose }: DialogProp
                   btn.onPress?.();
                   onClose();
                 }}
-                style={btn.style === "destructive" ? { backgroundColor: palette.error } : undefined}
                 fullWidth
               />
             ))}
