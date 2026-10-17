@@ -1,5 +1,6 @@
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { WEB_BASE_URL } from "@/constants/links";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 
 const SAFE_DEEP_LINK_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const SAFE_JOIN_CODE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
@@ -151,6 +152,19 @@ function sanitizeLinkingState(state: LinkingState | undefined) {
   };
 }
 
+const SHARED_LINK_ROUTES = new Set([
+  "DishDetail",
+  "StallDetail",
+  "PortfolioPublicView",
+  "WheelStack",
+]);
+
+function trackSharedLinkOpened(state: LinkingState) {
+  const route = state.routes[state.routes.length - 1];
+  if (!route || !SHARED_LINK_ROUTES.has(String(route.name))) return;
+  trackAnalyticsEvent("shared_link_opened", { route: String(route.name) });
+}
+
 function isProtectedDeepLinkState(state: LinkingState | undefined): boolean {
   const activeRoute = state?.routes?.[state.routes.length - 1];
   return Boolean(activeRoute && PROTECTED_DEEP_LINK_ROUTES.has(String(activeRoute.name)));
@@ -210,6 +224,7 @@ export function createRootLinking(
       if (!state) {
         return undefined;
       }
+      trackSharedLinkOpened(state);
 
       const { isAuthReady, isAuthenticated, onAuthRedirect } = getAuthState();
       if (!isAuthReady && isProtectedDeepLinkState(state)) {
