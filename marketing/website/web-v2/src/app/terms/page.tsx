@@ -37,7 +37,7 @@ const sections = [
   {
     title: "7. Changes And Contact",
     body:
-      "Hungry may update these terms as the app and merchant tools evolve. For support, safety, privacy, or deletion requests, email hello@hungry.sg.",
+      "Hungry may update these terms as the app and merchant tools evolve. For support, safety, privacy, or deletion requests, email tryhungrysingapore@gmail.com.",
   },
 ];
 

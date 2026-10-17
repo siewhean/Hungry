@@ -34,7 +34,7 @@ const sections = [
   },
   {
     title: "8. Contact",
-    body: "For privacy, deletion, access, correction, or safety requests, email hello@hungry.sg. Include the email address used for your Hungry account when relevant so we can verify and process the request.",
+    body: "For privacy, deletion, access, correction, or safety requests, email tryhungrysingapore@gmail.com. Include the email address used for your Hungry account when relevant so we can verify and process the request.",
   },
 ];
 
