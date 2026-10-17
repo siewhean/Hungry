@@ -27,6 +27,13 @@
         "EXPO_PUBLIC_HUNGRY_DATA_SOURCE": "supabase"
       }
     },
+    "preview-simulator": {
+      "extends": "preview",
+      "ios": {
+        "simulator": true,
+        "image": "macos-sequoia-15.6-xcode-26.2"
+      }
+    },
     "production": {
       "channel": "production",
       "ios": {
