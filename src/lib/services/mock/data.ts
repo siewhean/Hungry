@@ -726,7 +726,7 @@ export const blogPosts: BlogPost[] = [
     sourceName: "Hungry Guide",
     sourceLogo: "H",
     imageUrl: FOOD_1,
-    url: "https://hungry.sg/blog/best-chicken-rice",
+    url: "https://usehungry.com/guides/best-chicken-rice",
     relatedVenueId: "venue-tian-tian",
   },
   {
@@ -737,7 +737,7 @@ export const blogPosts: BlogPost[] = [
     sourceName: "Foodie SG",
     sourceLogo: "F",
     imageUrl: FOOD_3,
-    url: "https://hungry.sg/blog/food-centre-showdown",
+    url: "https://usehungry.com/guides/food-centre-showdown",
   },
 ];
 

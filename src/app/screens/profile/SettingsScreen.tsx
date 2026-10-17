@@ -1,6 +1,6 @@
 import Constants from "expo-constants";
 import { useState } from "react";
-import { Alert, Linking, View } from "react-native";
+import { Alert, Linking, Share, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
@@ -8,6 +8,7 @@ import {
   Bell,
   CircleHelp,
   Database,
+  Download,
   HandMetal,
   Globe,
   Lock,
@@ -29,6 +30,8 @@ import { SettingsSection, SettingsRow } from "@/components/settings";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { ACCOUNT_DELETION_GRACE_DAYS } from "@/lib/services/types";
+import { buildMyDataExport } from "@/features/profile/exportMyData";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
@@ -38,6 +41,7 @@ import { ThemePreference, useUIStore } from "@/store/useUIStore";
 import { hungryPersistStorage } from "@/store/persistStorage";
 import { useHungryTheme } from "@/theme";
 import { ProfileScreenShell } from "./ProfileScreenShell";
+import { SUPPORT_EMAIL, WEB_LINKS } from "@/constants/links";
 
 export function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -101,6 +105,7 @@ export function SettingsScreen() {
       : "system";
 
   const [deletionRequested, setDeletionRequested] = useState(false);
+  const [isExportingData, setIsExportingData] = useState(false);
 
   const appVersion = Constants.expoConfig?.version ?? "0.1.0";
 
@@ -115,10 +120,30 @@ export function SettingsScreen() {
     ]);
   };
 
+  const handleExportData = () => {
+    void (async () => {
+      setIsExportingData(true);
+      try {
+        const exportData = await buildMyDataExport(getHungryService());
+        await Share.share({
+          title: "My Hungry data",
+          message: JSON.stringify(exportData, null, 2),
+        });
+      } catch {
+        Alert.alert(
+          "Export failed",
+          `We could not prepare your data right now. Please try again or email ${SUPPORT_EMAIL}.`,
+        );
+      } finally {
+        setIsExportingData(false);
+      }
+    })();
+  };
+
   const handleDeleteAccount = () => {
     Alert.alert(
       "Delete account",
-      "Hungry will queue deletion of your account and associated personal data. Some security, moderation, or legal retention records may still remain in anonymized form. This action is permanent.",
+      `Your account and personal data will be deleted in ${ACCOUNT_DELETION_GRACE_DAYS} days. Sign back in before then to keep your account. After that, deletion is permanent; some security, moderation, or legal records may remain in anonymized form.`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -505,9 +530,15 @@ export function SettingsScreen() {
           isLast={false}
         />
         <SettingsRow
+          label={isExportingData ? "Preparing your data…" : "Download my data"}
+          icon={<Download size={20} color={palette.orange} />}
+          onPress={isExportingData ? undefined : handleExportData}
+          isLast={false}
+        />
+        <SettingsRow
           label="Data controls"
           icon={<Shield size={20} color={palette.orange} />}
-          onPress={() => void openTrustedExternalUrl("https://hungry.sg/account/delete")}
+          onPress={() => void openTrustedExternalUrl(WEB_LINKS.accountDeletion)}
           isLast={false}
         />
         <SettingsRow
@@ -521,17 +552,17 @@ export function SettingsScreen() {
       <SettingsSection title="Support">
         <SettingsRow
           label="Help Center"
-          onPress={() => void openTrustedExternalUrl("https://hungry.sg/help")}
+          onPress={() => void openTrustedExternalUrl(WEB_LINKS.help)}
           isLast={false}
         />
         <SettingsRow
           label="Privacy Policy"
-          onPress={() => void openTrustedExternalUrl("https://hungry.sg/privacy")}
+          onPress={() => void openTrustedExternalUrl(WEB_LINKS.privacy)}
           isLast={false}
         />
         <SettingsRow
           label="Terms of Service"
-          onPress={() => void openTrustedExternalUrl("https://hungry.sg/terms")}
+          onPress={() => void openTrustedExternalUrl(WEB_LINKS.terms)}
           isLast
         />
       </SettingsSection>
@@ -541,7 +572,7 @@ export function SettingsScreen() {
         <SettingsRow
           label="Hungry support"
           icon={<CircleHelp size={20} color={palette.orange} />}
-          onPress={() => void openTrustedExternalUrl("mailto:support@hungry.sg")}
+          onPress={() => void openTrustedExternalUrl(`mailto:${SUPPORT_EMAIL}`)}
           isLast
         />
       </SettingsSection>

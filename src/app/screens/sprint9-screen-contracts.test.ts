@@ -542,7 +542,7 @@ test("Sprint 9 screen contract: routed dish detail uses gallery-backed share flo
 
   assert.match(source, /const repository = getDataRepository\(\)/);
   assert.match(source, /buildDishGallery\(dish\)/);
-  assert.match(source, /const canonicalDishUrl = `https:\/\/hungry\.sg\/dish\/\$\{dish\.id\}`/);
+  assert.match(source, /const canonicalDishUrl = webShareUrl\("dish", dish\.id\)/);
   assert.match(source, /ReviewShareSheet/);
   assert.match(source, /shareSheetRef\.current\?\.present\(\)/);
   assert.match(source, /link: canonicalDishUrl/);
