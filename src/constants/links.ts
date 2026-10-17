@@ -2,7 +2,7 @@
 // (Vercel); keep every in-app link on this host so safeLinking can allowlist it.
 export const WEB_HOST = "usehungry.com";
 export const WEB_BASE_URL = `https://${WEB_HOST}`;
-export const SUPPORT_EMAIL = "tryhungrysingapore@gmail.com";
+export const SUPPORT_EMAIL = "usehungrysingapore@gmail.com";
 
 export const WEB_LINKS = {
   help: `${WEB_BASE_URL}/contact`,

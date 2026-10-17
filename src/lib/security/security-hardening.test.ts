@@ -589,6 +589,6 @@ test("trusted external links stay on usehungry.com and allow only the support in
   assert.match(links, /WEB_HOST = "usehungry\.com"/);
   assert.match(source, /ALLOWED_HOSTS = new Set\(\[WEB_HOST, `www\.\$\{WEB_HOST\}`\]\)/);
   assert.match(source, /ALLOWED_MAILTO_ADDRESSES = new Set\(\[SUPPORT_EMAIL\]\)/);
-  assert.match(links, /SUPPORT_EMAIL = "tryhungrysingapore@gmail\.com"/);
+  assert.match(links, /SUPPORT_EMAIL = "usehungrysingapore@gmail\.com"/);
   assert.doesNotMatch(source, /hungry\.sg/);
 });

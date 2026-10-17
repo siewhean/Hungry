@@ -274,11 +274,11 @@ export function MarketingStaticPage({
             ))}
             <TextLink
               className="rounded-3xl border border-hungry-border px-4 py-3 transition-colors hover:border-hungry-orange"
-              href="mailto:tryhungrysingapore@gmail.com"
+              href="mailto:usehungrysingapore@gmail.com"
             >
               <span className="block text-sm font-bold text-hungry-navy">Contact</span>
               <span className="mt-1 block text-sm leading-6 text-hungry-text-secondary">
-                tryhungrysingapore@gmail.com
+                usehungrysingapore@gmail.com
               </span>
             </TextLink>
           </div>
