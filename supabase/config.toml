@@ -21,6 +21,11 @@ additional_redirect_urls = [
   "hungry://auth/reset",
   "hungry://auth/oauth",
   "hungry://auth/callback",
+  # Website (production and Vercel previews).
+  "https://hungry-siewheans-projects.vercel.app/",
+  "https://hungry-siewheans-projects.vercel.app/**",
+  "https://hungry-*-siewheans-projects.vercel.app",
+  "https://hungry-*-siewheans-projects.vercel.app/**",
 ]
 
 # Pinned so `supabase config push` cannot reset them to CLI defaults.
