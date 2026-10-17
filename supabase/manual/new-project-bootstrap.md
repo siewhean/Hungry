@@ -33,6 +33,10 @@ npx supabase functions deploy ops-dishes-draft
 (`hungry://auth/confirm`, `/reset`, `/oauth`, and the legacy `/callback`). The dashboard path is
 Authentication > URL Configuration if you prefer to set them by hand.
 
+`config push` applies every auth key, and any key missing from `config.toml` is reset to the
+CLI default. Check that the file pins every setting you care about before pushing, and answer
+each prompt explicitly.
+
 ## 3. Turn on the deletion cron
 
 The cron job (migration `20261017130000_account_deletion_worker_cron.sql`) runs every

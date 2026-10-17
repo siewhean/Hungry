@@ -23,6 +23,16 @@ additional_redirect_urls = [
   "hungry://auth/callback",
 ]
 
+# Pinned so `supabase config push` cannot reset them to CLI defaults.
+[auth.email]
+enable_confirmations = true
+otp_length = 8
+max_frequency = "60s"
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
 [functions.guest-sessions]
 verify_jwt = false
 
