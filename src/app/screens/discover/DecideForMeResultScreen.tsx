@@ -10,7 +10,15 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Sparkles, ChevronLeft, Shuffle, MapPin, Star } from "lucide-react-native";
+import {
+  Sparkles,
+  ChevronLeft,
+  Shuffle,
+  MapPin,
+  Star,
+  Heart,
+  Navigation,
+} from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -19,6 +27,8 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { AccessibleImage, AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
 import { findBuildingById } from "@/features/discovery/discovery";
+import { buildMapsSearchUrl, formatFullStallAddress } from "@/features/detail/stallLocation";
+import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
 import { blendedMatchScore, TASTE_LABELS } from "@/lib/ai/tasteEngine";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import type { DataRepository } from "@/lib/services/types";
@@ -131,8 +141,9 @@ function getCandidates(
   tasteVector: TasteVector,
   dietaryFlags: DietaryFlag[],
   radius: number,
+  maxDishBudget?: number,
 ) {
-  return repository.searchDishes(
+  const results = repository.searchDishes(
     {
       query: "",
       categories: [],
@@ -142,6 +153,21 @@ function getCandidates(
     },
     tasteVector,
   );
+  if (maxDishBudget === undefined) {
+    return results;
+  }
+  // Budget is a preference, not a hard rule: fall back to every match when nothing fits it.
+  const withinBudget = results.filter((dish) => dish.price <= maxDishBudget);
+  return withinBudget.length ? withinBudget : results;
+}
+
+function formatDistance(distanceMeters: number) {
+  if (!Number.isFinite(distanceMeters) || distanceMeters <= 0) {
+    return undefined;
+  }
+  return distanceMeters < 1000
+    ? `${Math.round(distanceMeters)} m away`
+    : `${(distanceMeters / 1000).toFixed(1)} km away`;
 }
 
 function getNextDistinctDish(candidates: DishDetail[], currentDishId?: string, currentIndex = 0) {
@@ -170,6 +196,7 @@ export function DecideForMeResultScreen() {
   const insets = useSafeAreaInsets();
   const profile = useProfileStore((state) => state.profile);
   const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
+  const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const selectedDish = useDiscoveryStore((state) => state.decideForMe);
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
   const showToast = useUIStore((state) => state.showToast);
@@ -181,8 +208,21 @@ export function DecideForMeResultScreen() {
   const scrollY = useRef(new Animated.Value(0)).current;
 
   const candidates = useMemo(
-    () => getCandidates(repository, profile.tasteVector, profile.dietaryPreferences, searchRadius),
-    [profile.dietaryPreferences, profile.tasteVector, repository, searchRadius],
+    () =>
+      getCandidates(
+        repository,
+        profile.tasteVector,
+        profile.dietaryPreferences,
+        searchRadius,
+        profile.maxDishBudget,
+      ),
+    [
+      profile.dietaryPreferences,
+      profile.maxDishBudget,
+      profile.tasteVector,
+      repository,
+      searchRadius,
+    ],
   );
 
   useEffect(() => {
@@ -322,6 +362,35 @@ export function DecideForMeResultScreen() {
 
   const venue = repository.getVenueById(dish.venueId);
   const building = findBuildingById(dish.buildingId);
+  const stallAddress = venue
+    ? formatFullStallAddress(venue, {
+        name: venue.buildingName ?? building?.name,
+        address: venue.address,
+        postalCode: venue.postalCode,
+      })
+    : "";
+  const distanceLabel = formatDistance(dish.distanceMeters);
+  const isSaved = profile.favouriteDishIds.includes(dish.id);
+
+  const handleDirections = () => {
+    if (!stallAddress) return;
+    trackAnalyticsEvent("directions_opened", {
+      dish_id: dish.id,
+      stall_id: dish.venueId,
+      source: "decide_for_me",
+    });
+    recordTasteInteraction({
+      type: "food_button_click",
+      surface: "decide",
+      dish,
+      buttonId: "directions",
+    });
+    void openTrustedMapsUrl(buildMapsSearchUrl(stallAddress));
+  };
+
+  const handleSave = () => {
+    toggleFavourite(dish);
+  };
   const tasteDims: { key: keyof TasteVector; label: string }[] = [
     { key: "sweet", label: "Sweet" },
     { key: "spicy", label: "Spicy" },
@@ -397,6 +466,11 @@ export function DecideForMeResultScreen() {
             <AppText variant="bodyLarge" tone="secondary">
               {venue?.name} · {venue?.unitNumber}
             </AppText>
+            {distanceLabel ? (
+              <AppText variant="body" tone="muted">
+                {distanceLabel}
+              </AppText>
+            ) : null}
           </View>
 
           {/* Why this dish? */}
@@ -444,6 +518,35 @@ export function DecideForMeResultScreen() {
           </View>
 
           <View style={{ gap: spacing[3] }}>
+            <View style={{ flexDirection: "row", gap: spacing[3] }}>
+              {stallAddress ? (
+                <Button
+                  label="Directions"
+                  variant="secondary"
+                  fullWidth={false}
+                  style={{ flex: 1 }}
+                  leftIcon={<Navigation size={18} color={palette.text} />}
+                  onPress={handleDirections}
+                />
+              ) : null}
+              <Button
+                label={isSaved ? "Saved" : "Save"}
+                variant="secondary"
+                fullWidth={false}
+                style={{ flex: 1 }}
+                accessibilityLabel={
+                  isSaved ? `Remove ${dish.name} from saved` : `Save ${dish.name}`
+                }
+                leftIcon={
+                  <Heart
+                    size={18}
+                    color={isSaved ? palette.orange : palette.text}
+                    fill={isSaved ? palette.orange : "transparent"}
+                  />
+                }
+                onPress={handleSave}
+              />
+            </View>
             <Button
               label="View Stall Details"
               variant="secondary"

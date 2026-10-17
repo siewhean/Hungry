@@ -16,7 +16,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Check, ChevronRight, Search } from "lucide-react-native";
 
-import { AccessibleImage, Button, AppText, Card, EmptyState, Input } from "@/components/ui";
+import { AccessibleImage, Button, AppText, Card, Chip, EmptyState, Input } from "@/components/ui";
 import { NEUTRAL_TASTE_VECTOR, TASTE_DIMENSIONS } from "@/constants/taste";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -124,12 +124,19 @@ const DIETARY_OPTIONS: {
   },
 ];
 
+const BUDGET_OPTIONS: { label: string; value: number | undefined }[] = [
+  { label: "Under $6", value: 6 },
+  { label: "Under $12", value: 12 },
+  { label: "Any price", value: undefined },
+];
+
 export function TasteQuizScreen({ navigation, route }: Props) {
   const { componentRadii, motion, palette, radii, spacing } = useHungryTheme();
   const { fontScale, width } = useWindowDimensions();
   const setTasteVector = useProfileStore((state) => state.setTasteVector);
   const profile = useProfileStore((state) => state.profile);
   const setDietaryPreferences = useProfileStore((state) => state.setDietaryPreferences);
+  const setMaxDishBudget = useProfileStore((state) => state.setMaxDishBudget);
   const setSkippedTasteQuiz = useSessionStore((state) => state.setSkippedTasteQuiz);
   const hasSkippedTasteQuiz = useSessionStore((state) => state.hasSkippedTasteQuiz);
   const showToast = useUIStore((state) => state.showToast);
@@ -140,6 +147,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   const [dietaryPreferences, setDietaryPreferencesState] = useState<DietaryFlag[]>(
     profile.dietaryPreferences,
   );
+  const [maxDishBudget, setMaxDishBudgetState] = useState(profile.maxDishBudget);
   const [dietaryQuery, setDietaryQuery] = useState("");
   const [step, setStep] = useState(0);
   const [phase, setPhase] = useState<"taste" | "dietary">(initialPhase);
@@ -218,6 +226,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   const handleFinish = () => {
     setTasteVector(values);
     setDietaryPreferences(dietaryPreferences);
+    setMaxDishBudget(maxDishBudget);
     if (flowMode === "profile") {
       setSkippedTasteQuiz(false);
       showToast({ message: "Taste profile updated.", tone: "success" });
@@ -353,6 +362,18 @@ export function TasteQuizScreen({ navigation, route }: Props) {
               }}
             >
               <Card style={{ flex: 1, gap: spacing[2], padding: spacing[3] }}>
+                <AppText variant="h3">Usual budget per dish</AppText>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+                  {BUDGET_OPTIONS.map((option) => (
+                    <Chip
+                      key={option.label}
+                      label={option.label}
+                      accessibilityLabel={`Budget ${option.label}`}
+                      selected={maxDishBudget === option.value}
+                      onPress={() => setMaxDishBudgetState(option.value)}
+                    />
+                  ))}
+                </View>
                 <AppText variant="h3">Select any that apply</AppText>
                 <Input
                   placeholder="Search dietary restrictions"

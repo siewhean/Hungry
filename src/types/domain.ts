@@ -367,6 +367,8 @@ export interface UserProfile {
   recommendationSignals?: RecommendationSignalState;
   leftHandedMode?: boolean;
   onboardingSelectedDishIds?: string[];
+  /** Usual max price per dish in SGD, set during onboarding. Undefined = no budget limit. */
+  maxDishBudget?: number;
 }
 
 export interface ReviewDraft {

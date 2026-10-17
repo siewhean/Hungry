@@ -114,6 +114,8 @@ interface ProfileState {
   setTasteVector: (tasteVector: TasteVector) => void;
   setTasteProfile: (tasteProfile: TasteProfile) => void;
   setDietaryPreferences: (dietaryPreferences: DietaryFlag[]) => void;
+  /** Local-only for now: profiles have no budget column on the backend yet. */
+  setMaxDishBudget: (maxDishBudget: number | undefined) => void;
   addReview: (dish: DishDetail) => void;
   addReviewedDish: (dishId: string) => void;
   removeReviewedDish: (dishId: string) => void;
@@ -658,6 +660,10 @@ export const useProfileStore = create<ProfileState>()(
             if (get().profile !== optimisticProfile) return;
             set({ profile: previousProfile });
           });
+      },
+      setMaxDishBudget: (maxDishBudget) => {
+        trackAnalyticsEvent("budget_preference_set", { max_dish_budget: maxDishBudget ?? null });
+        set((state) => ({ profile: { ...state.profile, maxDishBudget } }));
       },
       addReview: (dish) =>
         set((state) => {
