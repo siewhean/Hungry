@@ -50,6 +50,7 @@ import {
   formatFullStallAddress,
 } from "@/features/detail/stallLocation";
 import type { DishDetail, MerchantPromotion } from "@/types/domain";
+import { webShareUrl } from "@/constants/links";
 
 type Props = NativeStackScreenProps<RootStackParamList, "DishDetail">;
 
@@ -134,7 +135,7 @@ export function DishDetailScreen({ navigation, route }: Props) {
       message: `Check out ${dish?.name ?? "this dish"} at ${venue?.name ?? "this venue"} (${
         dish?.priceRange ?? "Price unavailable"
       }).`,
-      link: `https://hungry.sg/dish/${dish?.id ?? ""}`,
+      link: webShareUrl("dish", dish?.id ?? ""),
     };
   }, [dish, gallery, profile.displayName, venue?.name, venue?.unitNumber]);
 

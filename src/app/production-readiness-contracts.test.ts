@@ -88,7 +88,7 @@ test("deep links expose only public discovery routes and redirect protected acti
   assert.deepEqual(linking.getStateFromPath("portfolio/example"), undefined);
   assert.deepEqual(linking.getStateFromPath("order")?.routes?.[0], {
     name: "AuthStack",
-    params: { screen: "Login" },
+    params: { screen: "Login", pop: true },
   });
 });
 

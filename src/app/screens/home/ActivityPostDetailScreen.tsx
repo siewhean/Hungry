@@ -28,6 +28,7 @@ import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useSocialStore, type SocialComment } from "@/store/useSocialStore";
 import { useHungryTheme } from "@/theme";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { webShareUrl } from "@/constants/links";
 
 const CommentIcon = MessageCircle ?? MessageCircleMore;
 
@@ -276,7 +277,7 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
                     imageUrl: post.mediaUrl,
                     authorName: post.authorName,
                     message: `Check out ${title} on Hungry. ${post.caption ?? ""}`,
-                    link: `https://hungry.sg/post/${post.id}`,
+                    link: webShareUrl("post", post.id),
                   });
                   requestAnimationFrame(() => {
                     shareSheetRef.current?.present();

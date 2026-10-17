@@ -325,6 +325,39 @@ test("auth.requestAccountDeletion clears mock session", async () => {
   assert.equal(session, null);
 });
 
+test("account deletion stays cancellable during the grace period", async () => {
+  await hungryService.auth.signIn("delete-me@hungry.sg", "password");
+  await hungryService.auth.requestAccountDeletion({ reason: "test" });
+  assert.equal(await hungryService.auth.getPendingAccountDeletion(), null);
+
+  await hungryService.auth.signIn("delete-me@hungry.sg", "password");
+  const pending = await hungryService.auth.getPendingAccountDeletion();
+  assert.ok(pending);
+  const daysAway = (new Date(pending.scheduledFor).getTime() - Date.now()) / 86_400_000;
+  assert.ok(daysAway > 29.9 && daysAway <= 30);
+
+  assert.equal(await hungryService.auth.cancelAccountDeletion(), true);
+  assert.equal(await hungryService.auth.getPendingAccountDeletion(), null);
+  assert.equal(await hungryService.auth.cancelAccountDeletion(), false);
+  await hungryService.auth.signOut();
+});
+
+test("data export collects the signed-in user's profile and activity", async () => {
+  const { buildMyDataExport } = await import("@/features/profile/exportMyData");
+  await hungryService.auth.signIn("export-me@hungry.sg", "password");
+  try {
+    const exported = await buildMyDataExport(hungryService);
+    assert.equal(exported.exportVersion, 1);
+    assert.ok(exported.profile.id);
+    assert.equal(exported.reviews.ok, true);
+    assert.equal(exported.posts.ok, true);
+    assert.equal(exported.favouriteDishIds.ok, true);
+    assert.doesNotThrow(() => JSON.stringify(exported));
+  } finally {
+    await hungryService.auth.signOut();
+  }
+});
+
 test("profile.updateProfile persists mock profile visibility", async () => {
   const beforeProfile = await hungryService.profile.getProfile();
 

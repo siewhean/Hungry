@@ -1,4 +1,5 @@
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { WEB_BASE_URL } from "@/constants/links";
 
 const SAFE_DEEP_LINK_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const SAFE_JOIN_CODE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
@@ -25,6 +26,8 @@ const PROTECTED_DEEP_LINK_ROUTES = new Set([
 interface LinkingAuthState {
   isAuthReady: boolean;
   isAuthenticated: boolean;
+  /** Called with the protected route a signed-out user was sent to Login from. */
+  onAuthRedirect?: (route: LinkingRoute) => void;
 }
 
 interface LinkingRoute {
@@ -78,19 +81,37 @@ function createState(name: string, params?: Record<string, unknown>): LinkingSta
   return { routes: [params && Object.keys(params).length > 0 ? { name, params } : { name }] };
 }
 
+// `pop` makes the nested AuthStack navigate back to an existing Login/SignUp
+// screen instead of pushing a duplicate on every auth deep link.
+function createAuthState(screen: string, params?: Record<string, unknown>): LinkingState {
+  return createState("AuthStack", params ? { screen, params, pop: true } : { screen, pop: true });
+}
+
+function parseAuthCallbackCode(rawPath: string): Record<string, unknown> | undefined {
+  const queryIndex = rawPath.indexOf("?");
+  if (queryIndex < 0) return undefined;
+  const code = new URLSearchParams(rawPath.slice(queryIndex + 1).split("#")[0]).get("code");
+  return code && SAFE_DEEP_LINK_ID_PATTERN.test(code) ? { code } : undefined;
+}
+
 function buildStateFromPath(rawPath: string): LinkingState | undefined {
   const [pathWithoutHash] = rawPath.split("#");
   const [pathname] = pathWithoutHash.split("?");
   const path = pathname.replace(/^\/+|\/+$/g, "");
   const parts = path.split("/").filter(Boolean);
 
-  if (path === "login") return createState("AuthStack", { screen: "Login" });
-  if (path === "signup") return createState("AuthStack", { screen: "SignUp" });
-  if (path === "forgot-password") return createState("AuthStack", { screen: "ForgotPassword" });
-  if (path === "auth/callback") return createState("AuthStack", { screen: "ResetPassword" });
-  if (path === "auth/reset/success") {
-    return createState("AuthStack", { screen: "ResetPasswordSuccess" });
+  if (path === "login") return createAuthState("Login");
+  if (path === "signup") return createAuthState("SignUp");
+  if (path === "forgot-password") return createAuthState("ForgotPassword");
+  // auth/callback is the pre-split password-reset path, kept for old emails.
+  if (path === "auth/reset" || path === "auth/callback") {
+    return createAuthState("ResetPassword", parseAuthCallbackCode(rawPath));
   }
+  // Supabase confirms the address before redirecting; the user then signs in.
+  if (path === "auth/confirm") return createAuthState("Login");
+  // OAuth returns are consumed by WebBrowser.openAuthSessionAsync.
+  if (path === "auth/oauth") return undefined;
+  if (path === "auth/reset/success") return createAuthState("ResetPasswordSuccess");
   if (parts[0] === "dish") {
     const id = decodePathSegment(parts[1]);
     return id ? createState("DishDetail", { id }) : undefined;
@@ -143,7 +164,7 @@ export function createRootLinking(
   }),
 ) {
   return {
-    prefixes: [prefix, "hungry://", "https://hungry.sg"],
+    prefixes: [prefix, "hungry://", WEB_BASE_URL],
     config: {
       screens: {
         AuthStack: {
@@ -151,7 +172,7 @@ export function createRootLinking(
             Login: "login",
             SignUp: "signup",
             ForgotPassword: "forgot-password",
-            ResetPassword: "auth/callback",
+            ResetPassword: "auth/reset",
             ResetPasswordSuccess: "auth/reset/success",
           },
         },
@@ -190,14 +211,14 @@ export function createRootLinking(
         return undefined;
       }
 
-      const { isAuthReady, isAuthenticated } = getAuthState();
+      const { isAuthReady, isAuthenticated, onAuthRedirect } = getAuthState();
       if (!isAuthReady && isProtectedDeepLinkState(state)) {
         return undefined;
       }
       if (!isAuthenticated && isProtectedDeepLinkState(state)) {
-        return {
-          routes: [{ name: "AuthStack", params: { screen: "Login" } }],
-        };
+        const protectedRoute = state.routes[state.routes.length - 1];
+        if (protectedRoute) onAuthRedirect?.(protectedRoute);
+        return createAuthState("Login");
       }
 
       return state;

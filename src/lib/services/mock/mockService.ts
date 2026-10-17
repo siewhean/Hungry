@@ -59,6 +59,7 @@ import type {
   Session,
   SubmitReviewInput,
 } from "@/lib/services/types";
+import { ACCOUNT_DELETION_GRACE_DAYS } from "@/lib/services/types";
 import type {
   AIBusinessInsight,
   CustomerInteraction,
@@ -285,6 +286,7 @@ function createMockUserStallSubmission(input: SubmitUserStallSubmissionInput): U
 
 let _profile: UserProfile = { ...guestProfile };
 let _isAuthenticated = false;
+let _pendingDeletionScheduledFor: string | undefined;
 let _merchantAccount: MerchantAccount = clone(merchantAccount);
 let _merchantDishCounter = 0;
 let _merchantPromotionCounter = 0;
@@ -1365,10 +1367,24 @@ export const hungryService: HungryService = {
     },
 
     async requestAccountDeletion() {
-      // Mock-safe stub: production uses external deletion endpoint + legal workflow.
+      // Mock-safe stub: production queues the request for the deletion worker.
+      _pendingDeletionScheduledFor = new Date(
+        Date.now() + ACCOUNT_DELETION_GRACE_DAYS * 24 * 60 * 60 * 1000,
+      ).toISOString();
       _isAuthenticated = false;
       _profile = { ...guestProfile };
       return resolve(undefined);
+    },
+
+    async getPendingAccountDeletion() {
+      if (!_isAuthenticated || !_pendingDeletionScheduledFor) return resolve(null);
+      return resolve({ scheduledFor: _pendingDeletionScheduledFor });
+    },
+
+    async cancelAccountDeletion() {
+      const hadPending = _isAuthenticated && Boolean(_pendingDeletionScheduledFor);
+      if (hadPending) _pendingDeletionScheduledFor = undefined;
+      return resolve(hadPending);
     },
 
     async forgotPassword(_email) {
