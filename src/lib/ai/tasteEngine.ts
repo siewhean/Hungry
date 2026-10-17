@@ -322,6 +322,9 @@ function stage2CandidateGeneration<T extends DishSummary>(
  *   15% — Distance proximity (inverse normalized)
  *   10% — Community rating (normalized)
  *   10% — Novelty/diversity readiness
+ *
+ * A dish's taste weight is scaled by its tasteConfidence; the weight it loses
+ * moves to distance and rating in equal halves, so weights still sum to 1.
  */
 function stage3PrecisionScoring<T extends DishSummary & { _rawScore: number }>(
   candidates: T[],
@@ -338,11 +341,14 @@ function stage3PrecisionScoring<T extends DishSummary & { _rawScore: number }>(
     const ratingScore = (dish.rating ?? 0) / 5;
     const noveltyScore = isWildCardScore(tasteScore) ? 1 : 0.5;
 
+    const confidence = Math.min(1, Math.max(0, dish.tasteConfidence ?? 1));
+    const shiftedWeight = RECOMMENDATION_SCORE_WEIGHTS.taste * (1 - confidence);
+
     const precisionScore =
-      RECOMMENDATION_SCORE_WEIGHTS.taste * tasteScore +
+      RECOMMENDATION_SCORE_WEIGHTS.taste * confidence * tasteScore +
       RECOMMENDATION_SCORE_WEIGHTS.context * contextScore +
-      RECOMMENDATION_SCORE_WEIGHTS.distance * distanceScore +
-      RECOMMENDATION_SCORE_WEIGHTS.rating * ratingScore +
+      (RECOMMENDATION_SCORE_WEIGHTS.distance + shiftedWeight / 2) * distanceScore +
+      (RECOMMENDATION_SCORE_WEIGHTS.rating + shiftedWeight / 2) * ratingScore +
       RECOMMENDATION_SCORE_WEIGHTS.novelty * noveltyScore;
 
     return { ...dish, _precisionScore: precisionScore };

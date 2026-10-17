@@ -224,6 +224,8 @@ export interface DishSummary {
   liveCrowd?: "low" | "medium" | "high";
   tasteTags: string[];
   tasteVector: TasteVector;
+  /** 0-1 trust in tasteVector (AI tagging confidence); undefined = fully trusted. */
+  tasteConfidence?: number;
   dietaryFlags: DietaryFlag[];
   venueVerificationStatus?: VerificationStatus;
 }
