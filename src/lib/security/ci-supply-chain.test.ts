@@ -39,7 +39,7 @@ test("release secrets are scoped to EAS steps, not install or workflow scope", (
 test("main CI uses the pinned Node runtime and fails closed for required release proof", () => {
   const ci = read(".github/workflows/ci.yml");
 
-  assert.equal(ci.match(/node-version: 22\.22\.1/g)?.length, 2);
+  assert.equal(ci.match(/node-version: 22\.22\.1/g)?.length, 3);
   assert.match(ci, /Supabase credentials missing on main; failing closed\./);
   assert.match(ci, /EXPO_TOKEN missing on main; failing closed\./);
   assert.doesNotMatch(ci, /skipping EAS account validation/);
@@ -51,7 +51,10 @@ test("security workflow keeps dependency, gitleaks, and trufflehog gates", () =>
   const packageJson = read("package.json");
   const trufflehogRunner = read("scripts/run-trufflehog.mjs");
 
-  assert.match(security, /npm audit --audit-level=moderate/);
+  assert.match(security, /node scripts\/npm-audit-gate\.mjs/);
+  const auditGate = read("scripts/npm-audit-gate.mjs");
+  assert.match(auditGate, /\["audit", "--json"\]/);
+  assert.match(auditGate, /new Set\(\["moderate", "high", "critical"\]\)/);
   assert.match(security, /gitleaks\/gitleaks-action@/);
   assert.match(security, /trufflesecurity\/trufflehog@/);
   assert.match(packageJson, /"security:trufflehog": "node scripts\/run-trufflehog\.mjs"/);

@@ -28,6 +28,7 @@ import { useHungryTheme } from "@/theme";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
 import type { DeliveryLink, VenueSummary } from "@/types/domain";
 import { isVenueOpenFromHours } from "@/utils/stallStatus";
+import { webShareUrl } from "@/constants/links";
 
 type Props = NativeStackScreenProps<RootStackParamList, "StallDetailV2">;
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
@@ -140,7 +141,7 @@ export function StallDetailScreenV2({ route }: Props) {
       message: `Check out ${venue?.name ?? "this stall"} at ${
         venue ? formatBuildingLabel(venue) : "Hungry"
       }!`,
-      link: `https://hungry.sg/stall/${venue?.id ?? ""}`,
+      link: webShareUrl("stall", venue?.id ?? ""),
     };
   }, [leadDish?.imageUrl, profile.displayName, venue]);
 

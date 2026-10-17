@@ -43,6 +43,7 @@ import {
   type ReviewFeedItem,
 } from "@/features/review/reviewFeed";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { webShareUrl } from "@/constants/links";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -653,7 +654,7 @@ export function ReviewFeedScreen() {
         imageUrl: item.review.photos[0] ?? linkedDish?.imageUrl ?? linkedPost?.mediaUrl ?? "",
         authorName: item.review.authorName,
         message: `${item.review.authorName} reviewed ${item.dishName} at ${item.venueName} on Hungry: ${item.review.text}`,
-        link: `https://hungry.sg/reviews/${item.review.id}`,
+        link: webShareUrl("reviews", item.review.id),
       });
       requestAnimationFrame(() => {
         shareSheetRef.current?.present();

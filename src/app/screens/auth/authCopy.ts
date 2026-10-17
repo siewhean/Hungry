@@ -29,6 +29,8 @@ export const AUTH_COPY = {
     displayNamePlaceholder: "Full name",
     emailPlaceholder: "Email address",
     passwordPlaceholder: "Create password",
+    passwordRules:
+      "Use at least 12 characters with an uppercase letter, a lowercase letter, a number and a symbol.",
     primaryButton: "Create account",
     divider: "OR REGISTER WITH EMAIL",
     footerPrompt: "Already have an account? ",

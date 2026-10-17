@@ -26,6 +26,7 @@ import { useHungryTheme } from "@/theme";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
 import { SwipeableTabNavigator } from "./SwipeableTabNavigator";
+import { useAccountDeletionGracePrompt } from "@/features/auth/useAccountDeletionGracePrompt";
 import { createRootLinking } from "./linking";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -436,6 +437,9 @@ export function RootNavigator({ theme }: { theme: Theme }) {
         return {
           isAuthReady: state.isAuthReady,
           isAuthenticated: state.isAuthenticated,
+          onAuthRedirect: (route) => {
+            state.setReturnRoute({ name: route.name, params: route.params });
+          },
         };
       }),
     [prefix],
@@ -486,6 +490,14 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     }
   }, [setReturnRoute]);
 
+  useAccountDeletionGracePrompt(() => {
+    if (!navigationRef.isReady()) return;
+    navigationRef.resetRoot({
+      index: 0,
+      routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+    });
+  });
+
   useEffect(() => {
     if (sessionExpired && navigationRef.isReady()) {
       setReturnRoute("Home");
@@ -503,7 +515,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     }
 
     const rootState = navigationRef.getRootState();
-    const currentTopRoute = rootState.routes[rootState.index]?.name;
+    const currentTopRoute = rootState?.routes[rootState.index]?.name;
     if (
       __DEV__ &&
       currentTopRoute === "DeveloperLauncher" &&
@@ -552,7 +564,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     }
 
     const rootState = navigationRef.getRootState();
-    const activeRoute = rootState.routes[rootState.index];
+    const activeRoute = rootState?.routes[rootState.index];
 
     if (!isAuthenticated && activeRoute && isAuthRequiredRoute(activeRoute)) {
       const mainTabScreen =
@@ -583,7 +595,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     }
 
     const rootState = navigationRef.getRootState();
-    const currentTopRoute = rootState.routes[rootState.index]?.name;
+    const currentTopRoute = rootState?.routes[rootState.index]?.name;
 
     if (isOffline && currentTopRoute !== "Offline") {
       navigationRef.navigate("Offline");

@@ -8,7 +8,7 @@ test("root linking config exposes public dish, venue, and order entry points", (
   const screens = linking.config.screens as Record<string, unknown>;
   const authStack = screens.AuthStack as { screens: Record<string, string> };
 
-  assert.equal(authStack.screens.ResetPassword, "auth/callback");
+  assert.equal(authStack.screens.ResetPassword, "auth/reset");
   assert.equal(screens.DishDetail, "dish/:id");
   assert.equal(screens.StallDetail, "venue/:id");
   assert.equal(screens.Post, "order");
@@ -24,22 +24,68 @@ test("order deep link parses venueId query parameter", () => {
 });
 
 test("deep link state rejects unsafe params and redirects protected links after auth is ready", () => {
-  let authState = { isAuthReady: true, isAuthenticated: false };
+  const redirected: unknown[] = [];
+  const onAuthRedirect = (route: unknown) => redirected.push(route);
+  let authState = { isAuthReady: true, isAuthenticated: false, onAuthRedirect };
   const linking = createRootLinking("exp://127.0.0.1:8081/--/", () => authState);
   const getStateFromPath = linking.getStateFromPath;
   assert.equal(typeof getStateFromPath, "function");
 
-  const protectedState = getStateFromPath("order");
+  const protectedState = getStateFromPath("order?venueId=venue-tian-tian");
   assert.deepEqual(protectedState?.routes?.[0], {
     name: "AuthStack",
-    params: { screen: "Login" },
+    params: { screen: "Login", pop: true },
   });
+  assert.deepEqual(redirected, [{ name: "Post", params: { venueId: "venue-tian-tian" } }]);
 
-  authState = { isAuthReady: false, isAuthenticated: false };
+  authState = { isAuthReady: false, isAuthenticated: false, onAuthRedirect };
   assert.equal(getStateFromPath("order"), undefined);
 
-  authState = { isAuthReady: true, isAuthenticated: true };
+  authState = { isAuthReady: true, isAuthenticated: true, onAuthRedirect };
   assert.equal(getStateFromPath("dish/<script>alert(1)</script>"), undefined);
   assert.equal(getStateFromPath("dish/"), undefined);
   assert.equal(getStateFromPath("venue/"), undefined);
+});
+
+test("auth deep links pop to an existing auth screen instead of stacking a new one", () => {
+  const linking = createRootLinking("exp://127.0.0.1:8081/--/", () => ({
+    isAuthReady: true,
+    isAuthenticated: false,
+  }));
+  for (const [path, screen] of [
+    ["login", "Login"],
+    ["signup", "SignUp"],
+    ["forgot-password", "ForgotPassword"],
+  ]) {
+    assert.deepEqual(linking.getStateFromPath(path)?.routes?.[0], {
+      name: "AuthStack",
+      params: { screen, pop: true },
+    });
+  }
+});
+
+test("email confirm, password reset, and OAuth callbacks use separate paths", () => {
+  const linking = createRootLinking("exp://127.0.0.1:8081/--/", () => ({
+    isAuthReady: true,
+    isAuthenticated: false,
+  }));
+  const code = "4f1c2b7e-1a2b-4c3d-9e8f-0a1b2c3d4e5f";
+
+  assert.deepEqual(linking.getStateFromPath(`auth/reset?code=${code}`)?.routes?.[0], {
+    name: "AuthStack",
+    params: { screen: "ResetPassword", params: { code }, pop: true },
+  });
+  assert.deepEqual(linking.getStateFromPath(`auth/callback?code=${code}`)?.routes?.[0], {
+    name: "AuthStack",
+    params: { screen: "ResetPassword", params: { code }, pop: true },
+  });
+  assert.deepEqual(linking.getStateFromPath("auth/reset?code=<bad>")?.routes?.[0], {
+    name: "AuthStack",
+    params: { screen: "ResetPassword", pop: true },
+  });
+  assert.deepEqual(linking.getStateFromPath(`auth/confirm?code=${code}`)?.routes?.[0], {
+    name: "AuthStack",
+    params: { screen: "Login", pop: true },
+  });
+  assert.equal(linking.getStateFromPath(`auth/oauth?code=${code}`), undefined);
 });

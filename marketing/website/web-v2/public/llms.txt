@@ -39,7 +39,7 @@ Hungry is a Singapore food discovery app that helps foodies decide what to eat a
 
 ## Contact
 
-- General, privacy, and deletion requests: hello@hungry.sg
+- General, privacy, and deletion requests: tryhungrysingapore@gmail.com
 
 ## Full LLM Context
 

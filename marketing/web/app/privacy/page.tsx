@@ -66,16 +66,16 @@ export default function PrivacyPage() {
           description: "See how Hungry is thinking about hawker and merchant discovery.",
         },
         {
-          href: "mailto:hello@hungry.sg",
+          href: "mailto:tryhungrysingapore@gmail.com",
           label: "Contact",
-          description: "Email hello@hungry.sg for privacy, deletion, access, correction, or safety requests.",
+          description: "Email tryhungrysingapore@gmail.com for privacy, deletion, access, correction, or safety requests.",
         },
       ]}
       cta={{
         title: "Need something updated or removed?",
         body: "Use the in-app Delete account flow from Settings, visit the account deletion page, or email Hungry if you need help with privacy, access, correction, or deletion.",
-        primaryHref: "mailto:hello@hungry.sg",
-        primaryLabel: "Email hello@hungry.sg",
+        primaryHref: "mailto:tryhungrysingapore@gmail.com",
+        primaryLabel: "Email tryhungrysingapore@gmail.com",
         secondaryHref: "/account/delete",
         secondaryLabel: "Delete account help",
         note: "Last updated: May 18, 2026.",

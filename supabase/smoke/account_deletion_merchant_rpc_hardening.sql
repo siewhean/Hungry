@@ -16,7 +16,9 @@ with findings as (
       ('auth_deleted_at'),
       ('legal_hold'),
       ('retention_reason'),
-      ('last_error')
+      ('last_error'),
+      ('scheduled_for'),
+      ('cancelled_at')
   ) as required(column_name)
   where not exists (
     select 1

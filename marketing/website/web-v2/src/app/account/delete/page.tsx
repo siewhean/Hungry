@@ -14,7 +14,7 @@ const sections = [
   },
   {
     title: "Contact",
-    body: "Email hello@hungry.sg with the subject \"Account deletion\" for status updates, access questions, or correction requests.",
+    body: "Email tryhungrysingapore@gmail.com with the subject \"Account deletion\" for status updates, access questions, or correction requests.",
   },
 ];
 
@@ -41,7 +41,7 @@ export default function AccountDeletionPage() {
         </h1>
         <p style={{ color: "var(--color-text-secondary)", lineHeight: 1.8 }}>
           Signed-in users can request deletion in the Hungry app from Profile, Settings, Delete
-          account. If you cannot access the app, email hello@hungry.sg from the address linked to
+          account. If you cannot access the app, email tryhungrysingapore@gmail.com from the address linked to
           your Hungry account.
         </p>
         <section

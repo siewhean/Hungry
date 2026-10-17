@@ -37,6 +37,7 @@ import { useHungryTheme } from "@/theme";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
 import type { DishDetail } from "@/types/domain";
 import { isVenueOpenFromHours } from "@/utils/stallStatus";
+import { webShareUrl } from "@/constants/links";
 
 const CommentIcon = MessageCircle ?? MessageCircleMore;
 
@@ -384,7 +385,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const signatureGridItemWidth = width / 2;
   const signatureGridItemHeight = signatureGridItemWidth * 1.5;
   const reviewIconSize = 22;
-  const canonicalDishUrl = `https://hungry.sg/dish/${dish.id}`;
+  const canonicalDishUrl = webShareUrl("dish", dish.id);
   const heroGradientColors: readonly [ColorValue, ColorValue, ColorValue] = [
     palette.detailHeroGradientStart,
     palette.detailHeroGradientMid,

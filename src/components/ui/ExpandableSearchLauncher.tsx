@@ -148,10 +148,23 @@ export function ExpandableSearchLauncher({
     );
   }, [isSearchExpanded, motion.searchCollapse, onBlur, searchRevealProgress]);
 
+  // Pressing clear blurs the input first; keep the bar open so one tap clears.
+  const isClearingRef = useRef(false);
+  const handleClearPressIn = useCallback(() => {
+    isClearingRef.current = true;
+  }, []);
+
   const handleClear = useCallback(() => {
+    isClearingRef.current = false;
     onQueryChange("");
     onClear?.();
+    searchInputRef.current?.focus();
   }, [onClear, onQueryChange]);
+
+  const handleInputBlur = useCallback(() => {
+    if (isClearingRef.current) return;
+    hideSearch();
+  }, [hideSearch]);
 
   const handleSubmit = useCallback(() => {
     hideSearch();
@@ -271,7 +284,7 @@ export function ExpandableSearchLauncher({
               inputStyle,
             ]}
             onSubmitEditing={handleSubmit}
-            onBlur={hideSearch}
+            onBlur={handleInputBlur}
           />
         </Animated.View>
         <Animated.View style={{ opacity: searchInputOpacity }}>
@@ -280,6 +293,8 @@ export function ExpandableSearchLauncher({
               accessibilityRole="button"
               accessibilityLabel="Clear search"
               accessibilityHint="Clears the current search query"
+              hitSlop={8}
+              onPressIn={handleClearPressIn}
               onPress={handleClear}
             >
               <X color={palette.textMuted} size={18} />
