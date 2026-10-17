@@ -65,7 +65,7 @@ const sections = [
     body: (
       <p>
         If you need help with account deletion, safety reports, privacy requests, or app content,
-        contact Hungry at hello@hungry.sg so the request can be reviewed.
+        contact Hungry at tryhungrysingapore@gmail.com so the request can be reviewed.
       </p>
     ),
   },

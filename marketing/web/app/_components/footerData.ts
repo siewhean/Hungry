@@ -49,7 +49,7 @@ export const footerSections = [
     links: [
       waitlistLink,
       { href: "/for-merchants", label: "Merchant Support" },
-      { href: "mailto:hello@hungry.sg", label: "Contact Us" },
+      { href: "mailto:tryhungrysingapore@gmail.com", label: "Contact Us" },
     ],
   },
 ] as const;

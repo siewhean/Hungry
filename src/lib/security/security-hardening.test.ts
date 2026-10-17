@@ -582,12 +582,13 @@ test("merchant portal RLS hardening protects merchant-only surfaces", () => {
   );
 });
 
-test("trusted external links stay on usehungry.com and allow only the support mail domain", () => {
+test("trusted external links stay on usehungry.com and allow only the support inbox", () => {
   const source = readRepoFile("src/lib/security/safeLinking.ts");
   const links = readRepoFile("src/constants/links.ts");
 
   assert.match(links, /WEB_HOST = "usehungry\.com"/);
   assert.match(source, /ALLOWED_HOSTS = new Set\(\[WEB_HOST, `www\.\$\{WEB_HOST\}`\]\)/);
-  assert.match(source, /ALLOWED_MAILTO_DOMAINS/);
+  assert.match(source, /ALLOWED_MAILTO_ADDRESSES = new Set\(\[SUPPORT_EMAIL\]\)/);
+  assert.match(links, /SUPPORT_EMAIL = "tryhungrysingapore@gmail\.com"/);
   assert.doesNotMatch(source, /hungry\.sg/);
 });

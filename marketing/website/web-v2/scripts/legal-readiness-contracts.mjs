@@ -70,13 +70,13 @@ for (const [file, source] of [
   ["account/delete/page.tsx", accountDelete],
 ]) {
   requireMarker(source, "routeMetadata(", file, "Legal page metadata contract failed");
-  requireMarker(source, "hello@hungry.sg", file, "Legal support email contract failed");
+  requireMarker(source, "tryhungrysingapore@gmail.com", file, "Legal support email contract failed");
 }
 
 requireMarker(contact, "routeMetadata(", "contact/page.tsx", "Legal page metadata contract failed");
 requireMarker(contact, "siteConfig.contactEmail", "contact/page.tsx", "Legal support email contract failed");
 
-requireMarker(seo, 'contactEmail: "hello@hungry.sg"', "seo.ts", "Canonical support email contract failed");
+requireMarker(seo, 'contactEmail: "tryhungrysingapore@gmail.com"', "seo.ts", "Canonical support email contract failed");
 requireMarker(contact, "mailto:${siteConfig.contactEmail}", "contact/page.tsx", "Contact email source-of-truth contract failed");
 requireMarker(contact, "/account/delete", "contact/page.tsx", "Contact deletion fallback contract failed");
 

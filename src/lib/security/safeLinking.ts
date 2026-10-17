@@ -1,10 +1,10 @@
 import { Alert, Linking } from "react-native";
 import * as WebBrowser from "expo-web-browser";
-import { WEB_HOST } from "@/constants/links";
+import { SUPPORT_EMAIL, WEB_HOST } from "@/constants/links";
 
 const ALLOWED_HOSTS = new Set([WEB_HOST, `www.${WEB_HOST}`]);
 const ALLOWED_SCHEMES = new Set(["https"]);
-const ALLOWED_MAILTO_DOMAINS = new Set([WEB_HOST]);
+const ALLOWED_MAILTO_ADDRESSES = new Set([SUPPORT_EMAIL]);
 const ALLOWED_BLOG_HOSTS = new Set([WEB_HOST, `www.${WEB_HOST}`]);
 const ALLOWED_MAPS_HOSTS = new Set(["www.google.com", "maps.google.com"]);
 const ALLOWED_DELIVERY_SCHEMES: Record<string, Set<string>> = {
@@ -25,10 +25,9 @@ function parseUrl(url: string): URL {
 export async function openTrustedExternalUrl(url: string): Promise<void> {
   try {
     if (url.toLowerCase().startsWith("mailto:")) {
-      const address = url.slice("mailto:".length).split("?")[0] ?? "";
-      const domain = address.split("@")[1]?.toLowerCase() ?? "";
-      if (!ALLOWED_MAILTO_DOMAINS.has(domain)) {
-        throw new Error("Blocked non-allowlisted email domain.");
+      const address = (url.slice("mailto:".length).split("?")[0] ?? "").toLowerCase();
+      if (!ALLOWED_MAILTO_ADDRESSES.has(address)) {
+        throw new Error("Blocked non-allowlisted email address.");
       }
       await Linking.openURL(url);
       return;

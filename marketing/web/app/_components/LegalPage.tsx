@@ -60,9 +60,9 @@ export function LegalPage({ eyebrow, title, intro, lastUpdated, sections }: Lega
           </p>
           <a
             className="mt-8 inline-flex rounded-[18px] bg-hungry-orange px-8 py-4 text-lg font-bold text-white transition-colors hover:bg-hungry-orange-dark"
-            href="mailto:hello@hungry.sg"
+            href="mailto:tryhungrysingapore@gmail.com"
           >
-            Email hello@hungry.sg
+            Email tryhungrysingapore@gmail.com
           </a>
         </div>
       </section>
