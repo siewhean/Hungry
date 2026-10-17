@@ -3,12 +3,11 @@ title = "Hungry gitleaks configuration"
 [extend]
 useDefault = true
 
-[[allowlists]]
-description = "Deterministic Singapore Food Agency venue identifiers in the generated Excel catalog"
+# Legacy single [allowlist] table so older gitleaks releases in CI also apply it.
+[allowlist]
+description = "SFA venue identifiers in the generated Excel catalog; the Supabase anon key (public by design, shipped in every app build, role=anon, RLS enforced)"
 regexTarget = "secret"
-regexes = ['''^ven-SFA-[A-Z0-9]+$''']
-
-[[allowlists]]
-description = "Supabase anon key: public by design, shipped in every app build (role=anon, RLS enforced)"
-regexTarget = "secret"
-regexes = ['''^eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlybHhqZW92d3NsaXJzZWFqb216Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIyNDc3ODIsImV4cCI6MjEwNzgyMzc4Mn0\.HChJVQe3BIoDuuDG_ruT6XedpVuqJjB9oeyB40bYZPk$''']
+regexes = [
+  '''^ven-SFA-[A-Z0-9]+$''',
+  '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlybHhqZW92d3NsaXJzZWFqb216Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIyNDc3ODIsImV4cCI6MjEwNzgyMzc4Mn0\.HChJVQe3BIoDuuDG_ruT6XedpVuqJjB9oeyB40bYZPk$''',
+]
