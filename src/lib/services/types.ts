@@ -531,6 +531,14 @@ export interface AccountDeletionRequest {
   reason?: string;
 }
 
+/** Account deletion runs after a grace period; until then the owner can cancel. */
+export const ACCOUNT_DELETION_GRACE_DAYS = 30;
+
+export interface PendingAccountDeletion {
+  /** ISO timestamp when the deletion worker may process the request. */
+  scheduledFor: string;
+}
+
 export type ContentReportTargetType =
   | "review"
   | "bite"
@@ -674,6 +682,8 @@ export interface HungryService {
     signInWithApple(): Promise<Session>;
     signOut(): Promise<void>;
     requestAccountDeletion(request?: AccountDeletionRequest): Promise<void>;
+    getPendingAccountDeletion(): Promise<PendingAccountDeletion | null>;
+    cancelAccountDeletion(): Promise<boolean>;
     forgotPassword(email: string): Promise<void>;
     resetPassword(token: string, password: string): Promise<void>;
     getCurrentSession(): Promise<Session | null>;

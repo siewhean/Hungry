@@ -25,6 +25,7 @@ import type {
   MerchantTeamMember,
   MerchantWeeklySummary,
 } from "@/types/domain";
+import { WEB_LINKS } from "@/constants/links";
 
 const TEAM_ROLE_OPTIONS: {
   id: Extract<MerchantTeamMember["role"], "manager" | "staff">;
@@ -439,7 +440,7 @@ export function MerchantSettingsScreen() {
           <SettingsRow
             label="Help & Support"
             icon={<HelpCircle size={20} color={palette.textSecondary} />}
-            onPress={() => void openTrustedExternalUrl("https://hungry.sg/help")}
+            onPress={() => void openTrustedExternalUrl(WEB_LINKS.help)}
             isLast
           />
         </SettingsSection>

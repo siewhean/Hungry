@@ -15,6 +15,7 @@ import {
   runRecommendationPipeline,
 } from "@/lib/ai/tasteEngine";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
+import { AUTH_REDIRECTS } from "@/constants/links";
 import {
   countVenuesInAreaViaRpc,
   getDishByIdViaRpc,
@@ -562,6 +563,19 @@ async function fetchFavouriteDishIdsForUser(
     .filter((dishId): dishId is string => Boolean(dishId));
 }
 
+async function getSessionEmailForUser(
+  client: SupabaseClient,
+  userId: string,
+): Promise<string | undefined> {
+  try {
+    const { data } = await client.auth.getSession();
+    const user = data.session?.user;
+    return user?.id === userId ? (user.email ?? undefined) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 async function fetchUserProfile(client: SupabaseClient, userId: string, email?: string) {
   const { data } = await client.from("user_profiles").select("*").eq("id", userId).maybeSingle();
   const { data: privacyData } = await client
@@ -571,6 +585,10 @@ async function fetchUserProfile(client: SupabaseClient, userId: string, email?: 
     .maybeSingle();
   const row = (data ?? {}) as Row;
   const privacyRow = (privacyData ?? {}) as Row;
+  // user_profiles.email is often null (OAuth/new sign-ups), so fall back to the
+  // auth session's address; otherwise Edit Profile reopens with an empty email.
+  const resolvedEmail =
+    asString(row.email) ?? email ?? (await getSessionEmailForUser(client, userId));
   const favouriteDishIds = await fetchFavouriteDishIdsForUser(client, userId);
   const reviewedDishIds = asStringArray(row.reviewed_dish_ids);
   const accountVisibility = asString(privacyRow.account_visibility);
@@ -581,7 +599,7 @@ async function fetchUserProfile(client: SupabaseClient, userId: string, email?: 
       asString(row.display_name) ??
       asString(row.displayName) ??
       DEFAULT_AUTH_PROFILE_BASE.displayName,
-    email: asString(row.email) ?? email ?? "",
+    email: resolvedEmail ?? "",
     avatarUrl: asString(row.avatar_url),
     profileVisibility: accountVisibility === "private" ? "private" : "public",
     tasteVector: toTasteVector(row),
@@ -1672,10 +1690,6 @@ function normalizeMenuEntry(value: string): string {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
-function getAuthEmailRedirectTo(): string {
-  return process.env.EXPO_PUBLIC_AUTH_REDIRECT_URL?.trim() || "hungry://auth/callback";
-}
-
 function getMerchantAnalyticsSince(dateRange: MerchantAnalytics["dateRange"]): string | null {
   const now = new Date();
   if (dateRange === "today") {
@@ -1770,7 +1784,7 @@ async function exchangeRecoveryCodeIfPresent(client: SupabaseClient, token: stri
   let code = trimmed;
   try {
     const parsed = new URL(trimmed);
-    if (!callbackBaseMatches(parsed.toString(), getAuthEmailRedirectTo())) {
+    if (!callbackBaseMatches(parsed.toString(), AUTH_REDIRECTS.passwordReset)) {
       throw new Error("Password recovery callback URL was not trusted.");
     }
     const {
@@ -2487,7 +2501,7 @@ function buildWeeklySummaryFromAnalytics(
 
 async function signInWithOAuthProvider(provider: "google" | "apple"): Promise<Session> {
   const client = requireSupabaseClient();
-  const redirectTo = getAuthEmailRedirectTo();
+  const redirectTo = AUTH_REDIRECTS.oauth;
   const { data, error } = await client.auth.signInWithOAuth({
     provider,
     options: {
@@ -2792,7 +2806,7 @@ export const supabaseService: HungryService = {
         password,
         options: {
           data: { display_name: name },
-          emailRedirectTo: getAuthEmailRedirectTo(),
+          emailRedirectTo: AUTH_REDIRECTS.emailConfirm,
         },
       });
       if (error) throw error;
@@ -2807,7 +2821,7 @@ export const supabaseService: HungryService = {
         type: "signup",
         email,
         options: {
-          emailRedirectTo: getAuthEmailRedirectTo(),
+          emailRedirectTo: AUTH_REDIRECTS.emailConfirm,
         },
       });
       if (error) throw error;
@@ -2850,10 +2864,35 @@ export const supabaseService: HungryService = {
       await this.signOut();
     },
 
+    async getPendingAccountDeletion() {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) return null;
+
+      const { data, error } = await client
+        .from("account_deletion_requests")
+        .select("scheduled_for")
+        .eq("user_id", userId)
+        .eq("status", "requested")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      const scheduledFor = asString((data as Row | null)?.scheduled_for);
+      return scheduledFor ? { scheduledFor } : null;
+    },
+
+    async cancelAccountDeletion() {
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("cancel_my_account_deletion");
+      if (error) throw error;
+      return data === true;
+    },
+
     async forgotPassword(email) {
       const client = requireSupabaseClient();
       const { error } = await client.auth.resetPasswordForEmail(email, {
-        redirectTo: getAuthEmailRedirectTo(),
+        redirectTo: AUTH_REDIRECTS.passwordReset,
       });
       if (error) throw error;
     },

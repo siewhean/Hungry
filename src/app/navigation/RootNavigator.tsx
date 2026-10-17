@@ -26,6 +26,7 @@ import { useHungryTheme } from "@/theme";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
 import { SwipeableTabNavigator } from "./SwipeableTabNavigator";
+import { useAccountDeletionGracePrompt } from "@/features/auth/useAccountDeletionGracePrompt";
 import { createRootLinking } from "./linking";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -436,6 +437,9 @@ export function RootNavigator({ theme }: { theme: Theme }) {
         return {
           isAuthReady: state.isAuthReady,
           isAuthenticated: state.isAuthenticated,
+          onAuthRedirect: (route) => {
+            state.setReturnRoute({ name: route.name, params: route.params });
+          },
         };
       }),
     [prefix],
@@ -485,6 +489,14 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       });
     }
   }, [setReturnRoute]);
+
+  useAccountDeletionGracePrompt(() => {
+    if (!navigationRef.isReady()) return;
+    navigationRef.resetRoot({
+      index: 0,
+      routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+    });
+  });
 
   useEffect(() => {
     if (sessionExpired && navigationRef.isReady()) {

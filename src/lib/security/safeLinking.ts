@@ -1,9 +1,11 @@
 import { Alert, Linking } from "react-native";
 import * as WebBrowser from "expo-web-browser";
+import { WEB_HOST } from "@/constants/links";
 
-const ALLOWED_HOSTS = new Set(["hungry.sg", "www.hungry.sg"]);
+const ALLOWED_HOSTS = new Set([WEB_HOST, `www.${WEB_HOST}`]);
 const ALLOWED_SCHEMES = new Set(["https"]);
-const ALLOWED_BLOG_HOSTS = new Set(["hungry.sg", "www.hungry.sg"]);
+const ALLOWED_MAILTO_DOMAINS = new Set([WEB_HOST]);
+const ALLOWED_BLOG_HOSTS = new Set([WEB_HOST, `www.${WEB_HOST}`]);
 const ALLOWED_MAPS_HOSTS = new Set(["www.google.com", "maps.google.com"]);
 const ALLOWED_DELIVERY_SCHEMES: Record<string, Set<string>> = {
   grabfood: new Set(["grab"]),
@@ -22,6 +24,15 @@ function parseUrl(url: string): URL {
 
 export async function openTrustedExternalUrl(url: string): Promise<void> {
   try {
+    if (url.toLowerCase().startsWith("mailto:")) {
+      const address = url.slice("mailto:".length).split("?")[0] ?? "";
+      const domain = address.split("@")[1]?.toLowerCase() ?? "";
+      if (!ALLOWED_MAILTO_DOMAINS.has(domain)) {
+        throw new Error("Blocked non-allowlisted email domain.");
+      }
+      await Linking.openURL(url);
+      return;
+    }
     const parsed = parseUrl(url);
     if (!ALLOWED_SCHEMES.has(parsed.protocol.replace(":", ""))) {
       throw new Error("Blocked non-HTTPS URL.");
