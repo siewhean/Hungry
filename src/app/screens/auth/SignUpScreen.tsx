@@ -180,7 +180,6 @@ export function SignUpScreen({ navigation }: Props) {
         title={AUTH_COPY.signUp.title}
         subtitle={AUTH_COPY.signUp.subtitle}
         compact
-        scroll={false}
         wordmarkColor={colorScheme === "dark" ? palette.white : palette.navy}
         footer={
           <View style={{ alignItems: "center", gap: spacing[4] }}>
@@ -321,6 +320,7 @@ export function SignUpScreen({ navigation }: Props) {
                     value={value}
                     onChangeText={onChange}
                     secureTextEntry={!showPassword}
+                    accessibilityHint={AUTH_COPY.signUp.passwordRules}
                     leftIcon={<Lock color={palette.textMuted} size={18} />}
                     rightIcon={
                       <Pressable
@@ -347,7 +347,11 @@ export function SignUpScreen({ navigation }: Props) {
                     <AppText variant="bodySmall" style={{ color: palette.error }}>
                       {errors.password.message}
                     </AppText>
-                  ) : null}
+                  ) : (
+                    <AppText variant="bodySmall" tone="secondary">
+                      {AUTH_COPY.signUp.passwordRules}
+                    </AppText>
+                  )}
                 </View>
               )}
             />
