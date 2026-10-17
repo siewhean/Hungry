@@ -130,6 +130,29 @@ function externalReason(finding) {
   return null;
 }
 
+// SECURITY DEFINER RPCs that signed-in users are meant to call; each checks auth.uid() itself.
+const INTENDED_AUTHENTICATED_RPCS = [
+  "cancel_my_account_deletion",
+  "catalog_raw_dish_detail",
+  "catalog_raw_dishes_page",
+  "catalog_raw_map_view",
+  "catalog_raw_venue_detail",
+  "catalog_raw_venue_menu_page",
+  "catalog_raw_venues_page",
+];
+
+function intendedReason(finding) {
+  const metadata = finding.metadata || {};
+  if (
+    finding.name === "authenticated_security_definer_function_executable" &&
+    metadata.schema === "public" &&
+    INTENDED_AUTHENTICATED_RPCS.includes(metadata.name)
+  ) {
+    return "intended authenticated RPC";
+  }
+  return null;
+}
+
 function summarizeFinding(finding) {
   return `${finding.level || "UNKNOWN"} ${finding.name || "unknown"} ${finding.cache_key || ""}`.trim();
 }
@@ -161,8 +184,9 @@ if (!Array.isArray(findings)) {
 const classified = findings.map((finding) => ({
   finding,
   externalReason: externalReason(finding),
+  intendedReason: intendedReason(finding),
 }));
-const unexpected = classified.filter((item) => !item.externalReason);
+const unexpected = classified.filter((item) => !item.externalReason && !item.intendedReason);
 const ignoredExternal = shouldIgnoreLeakedPassword()
   ? classified.filter((item) => item.finding.name === "auth_leaked_password_protection")
   : [];
