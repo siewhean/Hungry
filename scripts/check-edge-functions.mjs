@@ -7,6 +7,7 @@ const functionsDir = path.join(repoRoot, "supabase", "functions");
 const authGuards = [
   /auth\.getUser\(\)/,
   /ACCOUNT_DELETION_WORKER_TOKEN/,
+  /TASTE_TAGGING_WORKER_TOKEN/,
   /GUEST_SESSION_API_KEY/,
   /app_can_make_ops_request/,
 ];
