@@ -1,0 +1,20 @@
+# EAS clones the repository before applying this file. These exclusions keep
+# the uploaded native build context small; they must never exclude runtime
+# source, native projects, app configuration, assets, or build scripts.
+.claude/
+.agents/
+Research/
+data/
+design/
+docs/
+marketing/
+output/
+supabase/
+tasks/
+tests/
+
+# Local development and QA outputs.
+coverage/
+playwright-report/
+test-results/
+scripts/playwright-profile/

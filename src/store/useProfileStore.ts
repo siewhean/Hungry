@@ -27,6 +27,7 @@ import type {
 } from "@/types/domain";
 import { NEUTRAL_TASTE_PROFILE, NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { hungryPersistStorage } from "./persistStorage";
+import { useUIStore } from "./useUIStore";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
 
 const SUPABASE_USER_GUEST_PROFILE: UserProfile = {
@@ -103,6 +104,8 @@ interface ProfileState {
     string,
     { rating: number; text: string; tags: string[]; createdAt: string }
   >;
+  /** True when the last attempt to load favourites from the backend failed. Not persisted. */
+  favouritesRehydrationFailed: boolean;
   applyProfile: (profile: UserProfile) => void;
   syncProfile: (isAuthenticated: boolean, userId?: string | null) => void;
   toggleFavourite: (dish: DishDetail) => void;
@@ -111,6 +114,8 @@ interface ProfileState {
   setTasteVector: (tasteVector: TasteVector) => void;
   setTasteProfile: (tasteProfile: TasteProfile) => void;
   setDietaryPreferences: (dietaryPreferences: DietaryFlag[]) => void;
+  /** Local-only for now: profiles have no budget column on the backend yet. */
+  setMaxDishBudget: (maxDishBudget: number | undefined) => void;
   addReview: (dish: DishDetail) => void;
   addReviewedDish: (dishId: string) => void;
   removeReviewedDish: (dishId: string) => void;
@@ -349,6 +354,7 @@ export const useProfileStore = create<ProfileState>()(
       tasteProfile: NEUTRAL_TASTE_PROFILE,
       tasteInteractionEvents: [],
       reviewEntries: {},
+      favouritesRehydrationFailed: false,
       applyProfile: (profile) =>
         set({
           profile: withNeutralTasteProfile(ensureSupabaseCompatibleProfile(profile)),
@@ -374,6 +380,7 @@ export const useProfileStore = create<ProfileState>()(
               set((state) => {
                 if (state.profile.id !== targetUserId) return {};
                 return {
+                  favouritesRehydrationFailed: false,
                   profile: withNeutralTasteProfile({
                     ...state.profile,
                     favouriteDishIds: ids,
@@ -387,6 +394,7 @@ export const useProfileStore = create<ProfileState>()(
             })
             .catch((error) => {
               console.warn("Failed to rehydrate favourite dish IDs", error);
+              set({ favouritesRehydrationFailed: true });
             });
         };
 
@@ -478,6 +486,10 @@ export const useProfileStore = create<ProfileState>()(
               console.error("Failed to sync favourite toggle", error);
               if (get().profile !== optimisticProfile) return;
               set(previousSnapshot);
+              useUIStore.getState().showToast({
+                message: "Couldn't update your favourites. Please try again.",
+                tone: "error",
+              });
             })
             .finally(() => {
               pendingFavouriteDishToggles.delete(dishId);
@@ -648,6 +660,10 @@ export const useProfileStore = create<ProfileState>()(
             if (get().profile !== optimisticProfile) return;
             set({ profile: previousProfile });
           });
+      },
+      setMaxDishBudget: (maxDishBudget) => {
+        trackAnalyticsEvent("budget_preference_set", { max_dish_budget: maxDishBudget ?? null });
+        set((state) => ({ profile: { ...state.profile, maxDishBudget } }));
       },
       addReview: (dish) =>
         set((state) => {
@@ -836,6 +852,7 @@ export const useProfileStore = create<ProfileState>()(
           tasteProfile: NEUTRAL_TASTE_PROFILE,
           tasteInteractionEvents: [],
           reviewEntries: {},
+          favouritesRehydrationFailed: false,
         }),
     }),
     {

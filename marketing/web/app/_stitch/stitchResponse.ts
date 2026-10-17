@@ -71,7 +71,7 @@ function resolveRouteFromLabel(rawLabel: string) {
   }
 
   if (value.includes("contact us")) {
-    return "mailto:hello@hungry.sg";
+    return "mailto:usehungrysingapore@gmail.com";
   }
 
   return null;
@@ -310,7 +310,7 @@ function injectNavigationScript(html: string): string {
     if (value.includes("hawker centre") || value.includes("hawker centres")) return "/for-foodies#hawker-centres";
     if (value.includes("nearby makan")) return "/for-foodies#nearby-makan";
     if (value.includes("merchant support")) return "/for-merchants";
-    if (value.includes("contact us")) return "mailto:hello@hungry.sg";
+    if (value.includes("contact us")) return "mailto:usehungrysingapore@gmail.com";
     if (value.includes("register interest")) return "/join-waitlist?joining_as=hawker";
     if (value.includes("join") || value.includes("waitlist") || value.includes("early access")) return "/join-waitlist";
     if (value.includes("terms of service") || value.includes("privacy policy")) return "/privacy";
@@ -493,7 +493,7 @@ function enhanceForFoodiesPage(html: string): string {
     .replace('href="#">Hawker Centres', 'href="/for-foodies#hawker-centres">Hawker Centres')
     .replace('href="#">Nearby Makan', 'href="/for-foodies#nearby-makan">Nearby Makan')
     .replace('href="#">Merchant Support', 'href="/for-merchants">Merchant Support')
-    .replace('href="#">Contact Us', 'href="mailto:hello@hungry.sg">Contact Us');
+    .replace('href="#">Contact Us', 'href="mailto:usehungrysingapore@gmail.com">Contact Us');
 }
 
 function enhanceForMerchantsPage(html: string): string {
@@ -523,7 +523,7 @@ function enhanceForMerchantsPage(html: string): string {
     .replace('href="#">Hawker Centres', 'href="/for-foodies#hawker-centres">Hawker Centres')
     .replace('href="#">Nearby Makan', 'href="/for-foodies#nearby-makan">Nearby Makan')
     .replace('href="#">Merchant Support', 'href="/for-merchants">Merchant Support')
-    .replace('href="#">Contact Us', 'href="mailto:hello@hungry.sg">Contact Us')
+    .replace('href="#">Contact Us', 'href="mailto:usehungrysingapore@gmail.com">Contact Us')
     .replace('href="#">Terms of Service', 'href="/privacy">Terms of Service')
     .replace('href="#">Privacy Policy', 'href="/privacy">Privacy Policy');
 }

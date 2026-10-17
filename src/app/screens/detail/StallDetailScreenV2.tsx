@@ -17,6 +17,7 @@ import {
   getHungryService,
   getServiceProvider,
 } from "@/lib/services/serviceProvider";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { openTrustedDeliveryUrl } from "@/lib/security/safeLinking";
 import { PopularVisitorsSection } from "@/components/stall/PopularVisitorsSection";
 import { useCartStore } from "@/store/useCartStore";
@@ -264,6 +265,11 @@ export function StallDetailScreenV2({ route }: Props) {
   };
 
   const handleDirections = () => {
+    trackAnalyticsEvent("directions_opened", {
+      stall_id: venue.id,
+      dish_id: leadDish?.id,
+      source: "stall_detail",
+    });
     void getHungryService().discovery.recordMerchantActionEvent({
       eventType: "direction_tap",
       venueId: venue.id,

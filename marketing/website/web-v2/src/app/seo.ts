@@ -30,7 +30,7 @@ export const siteConfig = {
     "Hungry helps Singapore diners find dishes faster and helps food businesses keep menus, photos, hours, and profiles up to date.",
   locale: "en_SG",
   language: "en-SG",
-  contactEmail: "hello@hungry.sg",
+  contactEmail: "usehungrysingapore@gmail.com",
   openGraphImage: "/images/food/stalls-restaurants-wide.png",
   keywords: [
     "Hungry",

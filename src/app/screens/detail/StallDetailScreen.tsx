@@ -51,6 +51,7 @@ import {
   getServiceProvider,
 } from "@/lib/services/serviceProvider";
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
 import {
   buildMapsSearchUrl,
@@ -614,6 +615,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
 
   const openStallMaps = () => {
     if (!stallAddress) return;
+    trackAnalyticsEvent("directions_opened", { stall_id: venue?.id, source: "stall_detail" });
     void openTrustedMapsUrl(buildMapsSearchUrl(stallAddress));
   };
 
