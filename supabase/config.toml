@@ -1,4 +1,5 @@
-project_id = "vlqfgmrsprbrgzteixsj"
+# Local stack name only. The cloud project is chosen by `supabase link --project-ref <ref>`.
+project_id = "hungry"
 
 [api]
 enabled = true
@@ -11,6 +12,11 @@ max_rows = 1000
 port = 54322
 shadow_port = 54320
 major_version = 17
+
+[auth]
+site_url = "hungry://auth/callback"
+# App deep links Supabase may redirect to after email confirm, magic link, OAuth and password reset.
+additional_redirect_urls = ["hungry://auth/callback", "hungry://auth/confirm"]
 
 [functions.guest-sessions]
 verify_jwt = false
