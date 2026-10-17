@@ -42,7 +42,7 @@ export function Footer() {
             <a href="/account/delete" className="transition-colors hover:text-hungry-navy">
               Delete account
             </a>
-            <a href="mailto:tryhungrysingapore@gmail.com" className="transition-colors hover:text-hungry-navy">
+            <a href="mailto:usehungrysingapore@gmail.com" className="transition-colors hover:text-hungry-navy">
               Contact
             </a>
           </div>
