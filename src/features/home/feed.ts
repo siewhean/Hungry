@@ -63,6 +63,7 @@ export function getHomeFeedBundleCacheKey(
 ) {
   return JSON.stringify({
     dietary: [...profile.dietaryPreferences].sort(),
+    favourites: [...profile.favouriteDishIds].sort(),
     followedAuthors: sortedEnabledKeys(options?.followedAuthors),
     followedUserIds: sortedEnabledKeys(options?.followedUserIds),
     profileId: profile.id,
@@ -84,6 +85,7 @@ function rankHomeFeedItems(items: HomeFeedItem[], profile: UserProfile): HomeFee
     dietaryFlags: profile.dietaryPreferences,
     neophiliaIndex: profile.tasteProfile?.neophiliaIndex ?? 5,
     radiusMeters: Number.MAX_SAFE_INTEGER,
+    likedDishIds: [...profile.favouriteDishIds, ...(profile.onboardingSelectedDishIds ?? [])],
   });
   const ranks = new Map(ranked.map((result, index) => [result.dishId, index]));
 
