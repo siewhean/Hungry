@@ -1,4 +1,5 @@
-project_id = "vlqfgmrsprbrgzteixsj"
+# Local stack name only. The cloud project is chosen by `supabase link --project-ref <ref>`.
+project_id = "hungry"
 
 [api]
 enabled = true
@@ -11,6 +12,16 @@ max_rows = 1000
 port = 54322
 shadow_port = 54320
 major_version = 17
+
+[auth]
+site_url = "hungry://auth/confirm"
+# App deep links for email confirm, password reset and OAuth. auth/callback is the pre-split path kept for old emails.
+additional_redirect_urls = [
+  "hungry://auth/confirm",
+  "hungry://auth/reset",
+  "hungry://auth/oauth",
+  "hungry://auth/callback",
+]
 
 [functions.guest-sessions]
 verify_jwt = false
