@@ -31,6 +31,7 @@ type DishPresentation = {
   gallery: string[];
   dietaryFlags: DietaryFlag[];
   tasteVector?: TasteVector;
+  tasteConfidence?: number;
 };
 
 const DEFAULT_AUTH_PROFILE_BASE: Omit<UserProfile, "id"> = {
@@ -241,6 +242,7 @@ function mapDish(row: Row, venue?: VenueSummary, presentation?: DishPresentation
       rich: 5,
       aromatic: 5,
     },
+    tasteConfidence: presentation?.tasteConfidence,
     dietaryFlags: presentation?.dietaryFlags ?? [],
     gallery: gallery.length > 0 ? gallery : imageUrl ? [imageUrl] : [],
     description: toString(row.description) || undefined,
@@ -583,7 +585,10 @@ function buildDishPresentationMap(
   tasteVectorRows.forEach((row) => {
     const dishId = toString(row.dish_id);
     if (!dishId) return;
-    ensurePresentation(dishId).tasteVector = mapTasteVector(row);
+    const presentation = ensurePresentation(dishId);
+    presentation.tasteVector = mapTasteVector(row);
+    // Older databases have no confidence column; treat their vectors as fully trusted.
+    presentation.tasteConfidence = row.confidence == null ? undefined : toNumber(row.confidence);
   });
 
   dishDietaryFlagRows.forEach((row) => {
@@ -630,7 +635,7 @@ async function refreshCache(force = false): Promise<void> {
             "dish_id,url,sort_order,media_approved_for_display,media_rights_status,media_source_url",
           )
           .order("sort_order"),
-        client.from("dish_taste_vectors").select("dish_id,sweet,spicy,sour,salty,rich,aromatic"),
+        client.from("dish_taste_vectors").select("*"),
         client.from("dish_dietary_flags").select("dish_id,dietary_flag_id"),
         client.from("dietary_flags").select("id,slug"),
         client.from("blog_posts").select("*"),
