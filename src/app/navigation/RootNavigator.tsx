@@ -503,7 +503,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     }
 
     const rootState = navigationRef.getRootState();
-    const currentTopRoute = rootState.routes[rootState.index]?.name;
+    const currentTopRoute = rootState?.routes[rootState.index]?.name;
     if (
       __DEV__ &&
       currentTopRoute === "DeveloperLauncher" &&
@@ -552,7 +552,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     }
 
     const rootState = navigationRef.getRootState();
-    const activeRoute = rootState.routes[rootState.index];
+    const activeRoute = rootState?.routes[rootState.index];
 
     if (!isAuthenticated && activeRoute && isAuthRequiredRoute(activeRoute)) {
       const mainTabScreen =
@@ -583,7 +583,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     }
 
     const rootState = navigationRef.getRootState();
-    const currentTopRoute = rootState.routes[rootState.index]?.name;
+    const currentTopRoute = rootState?.routes[rootState.index]?.name;
 
     if (isOffline && currentTopRoute !== "Offline") {
       navigationRef.navigate("Offline");
