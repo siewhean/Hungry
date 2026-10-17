@@ -22,11 +22,15 @@ openssl rand -hex 32                 # use as ACCOUNT_DELETION_WORKER_TOKEN
 npx supabase secrets set ACCOUNT_DELETION_WORKER_TOKEN=<token> \
   GUEST_SESSION_API_KEY=<random> GUEST_SESSION_ALLOWED_ORIGINS=<origins> \
   INGEST_MENU_PHOTO_ALLOWED_ORIGINS=<origins> OPS_DISHES_DRAFT_ALLOWED_ORIGINS=<origins> \
-  GOOGLE_CLOUD_VISION_API_KEY=<key>
+  GOOGLE_CLOUD_VISION_API_KEY=<key> \
+  ANTHROPIC_API_KEY=<key> TASTE_TAGGING_WORKER_TOKEN=<random> \
+  NOTIFICATION_WORKER_TOKEN=<random> EXPO_ACCESS_TOKEN=<optional>
 npx supabase functions deploy process-account-deletions --no-verify-jwt
 npx supabase functions deploy guest-sessions --no-verify-jwt
 npx supabase functions deploy ingest-menu-photo
 npx supabase functions deploy ops-dishes-draft
+npx supabase functions deploy tag-dishes --no-verify-jwt
+npx supabase functions deploy send-notifications --no-verify-jwt
 ```
 
 `config push` sets `site_url` and `additional_redirect_urls`
@@ -37,14 +41,18 @@ Authentication > URL Configuration if you prefer to set them by hand.
 CLI default. Check that the file pins every setting you care about before pushing, and answer
 each prompt explicitly.
 
-## 3. Turn on the deletion cron
+## 3. Turn on the cron jobs
 
-The cron job (migration `20261017130000_account_deletion_worker_cron.sql`) runs every
-15 minutes and does nothing until these Vault secrets exist. Run in the SQL editor:
+The `process-account-deletions` cron (migration `20261017130000_account_deletion_worker_cron.sql`,
+every 15 minutes) and the `send-notifications` cron (migration
+`20261017200000_retention_follows_push_alerts.sql`) do nothing until their Vault secrets exist.
+Run in the SQL editor:
 
 ```sql
 select vault.create_secret('https://<ref>.supabase.co/functions/v1/process-account-deletions', 'account_deletion_worker_url');
 select vault.create_secret('<ACCOUNT_DELETION_WORKER_TOKEN>', 'account_deletion_worker_token');
+select vault.create_secret('https://<ref>.supabase.co/functions/v1/send-notifications', 'notification_worker_url');
+select vault.create_secret('<NOTIFICATION_WORKER_TOKEN>', 'notification_worker_token');
 ```
 
 Check it: `select * from cron.job_run_details order by start_time desc limit 5;` and
