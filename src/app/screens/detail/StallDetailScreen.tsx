@@ -77,6 +77,7 @@ import {
   DetailSaveActionsCard,
   useDetailSaveActions,
 } from "@/features/checklistPortfolio/DetailSaveActions";
+import { webShareUrl } from "@/constants/links";
 
 const CommentIcon = MessageCircle ?? MessageCircleMore;
 const INITIAL_MENU_ITEM_COUNT = 10;
@@ -341,7 +342,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
       imageUrl: leadDish?.imageUrl ?? "",
       authorName: profile.displayName,
       message: `Check out ${venue?.name ?? "this stall"} at ${buildingLocation.name ?? "Hungry"}!`,
-      link: `https://hungry.sg/stall/${venue?.id ?? ""}`,
+      link: webShareUrl("stall", venue?.id ?? ""),
     };
   }, [
     buildingLocation.name,
