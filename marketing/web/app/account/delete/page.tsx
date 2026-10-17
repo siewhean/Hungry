@@ -21,7 +21,7 @@ const sections = [
     title: "If you cannot access the app",
     body: (
       <p>
-        Email tryhungrysingapore@gmail.com from the email address linked to your Hungry account with the subject
+        Email usehungrysingapore@gmail.com from the email address linked to your Hungry account with the subject
         &quot;Account deletion&quot;. We may ask for verification before processing the request.
       </p>
     ),
