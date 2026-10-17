@@ -95,6 +95,28 @@ jobs:
       - name: Expo Doctor
         run: npx expo-doctor
 
+  merge-compatibility:
+    # Branch protection requires this check. It typechecks GitHub's synthetic
+    # PR merge commit without any credentials.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout GitHub PR merge commit
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.22.1
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck merge commit
+        run: npm run typecheck
+
   eas-build-gate:
     needs: quality-gates
     runs-on: ubuntu-latest
