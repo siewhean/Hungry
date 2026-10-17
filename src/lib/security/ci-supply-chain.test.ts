@@ -39,7 +39,7 @@ test("release secrets are scoped to EAS steps, not install or workflow scope", (
 test("main CI uses the pinned Node runtime and fails closed for required release proof", () => {
   const ci = read(".github/workflows/ci.yml");
 
-  assert.equal(ci.match(/node-version: 22\.22\.1/g)?.length, 2);
+  assert.equal(ci.match(/node-version: 22\.22\.1/g)?.length, 3);
   assert.match(ci, /Supabase credentials missing on main; failing closed\./);
   assert.match(ci, /EXPO_TOKEN missing on main; failing closed\./);
   assert.doesNotMatch(ci, /skipping EAS account validation/);
