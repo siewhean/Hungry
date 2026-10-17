@@ -181,7 +181,7 @@
     "expo": "$expo",
     "ws": "8.21.0",
     "esbuild": "0.28.1",
-    "js-yaml": "4.3.1",
+    "js-yaml": "4.3.2",
     "postcss": "8.5.30",
     "@xmldom/xmldom": "0.8.15",
     "uuid": "14.0.0"

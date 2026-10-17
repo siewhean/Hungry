@@ -51,7 +51,10 @@ test("security workflow keeps dependency, gitleaks, and trufflehog gates", () =>
   const packageJson = read("package.json");
   const trufflehogRunner = read("scripts/run-trufflehog.mjs");
 
-  assert.match(security, /npm audit --audit-level=moderate/);
+  assert.match(security, /node scripts\/npm-audit-gate\.mjs/);
+  const auditGate = read("scripts/npm-audit-gate.mjs");
+  assert.match(auditGate, /\["audit", "--json"\]/);
+  assert.match(auditGate, /new Set\(\["moderate", "high", "critical"\]\)/);
   assert.match(security, /gitleaks\/gitleaks-action@/);
   assert.match(security, /trufflesecurity\/trufflehog@/);
   assert.match(packageJson, /"security:trufflehog": "node scripts\/run-trufflehog\.mjs"/);
