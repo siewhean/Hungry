@@ -269,3 +269,18 @@ test("released updates use the matching EAS environment and never retain E2E inp
     });
   }
 });
+
+test("every EAS build profile pins the iOS build image to an Xcode 26 image", () => {
+  // iOS 27 SDK (Xcode 27) builds crash at launch until the app adopts the UIScene lifecycle
+  // (Expo SDK 57.0.23+/58). Keep an explicit Xcode 26 image so builds cannot drift to Xcode 27.
+  const eas = JSON.parse(read("eas.json")) as {
+    build: Record<string, { ios?: { image?: string } }>;
+  };
+
+  const profiles = Object.keys(eas.build);
+  assert.ok(profiles.length > 0);
+  for (const profile of profiles) {
+    const image = eas.build[profile]?.ios?.image;
+    assert.match(image ?? "", /^macos-[a-z]+-[\d.]+-xcode-26(\.\d+)*$/, `${profile} ios.image`);
+  }
+});
