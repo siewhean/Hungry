@@ -8,6 +8,9 @@
       "developmentClient": true,
       "distribution": "internal",
       "channel": "development",
+      "ios": {
+        "image": "macos-sequoia-15.6-xcode-26.2"
+      },
       "env": {
         "EXPO_PUBLIC_APP_ENV": "development",
         "EXPO_PUBLIC_HUNGRY_DATA_SOURCE": "supabase"
@@ -16,13 +19,26 @@
     "preview": {
       "distribution": "internal",
       "channel": "staging",
+      "ios": {
+        "image": "macos-sequoia-15.6-xcode-26.2"
+      },
       "env": {
         "EXPO_PUBLIC_APP_ENV": "staging",
         "EXPO_PUBLIC_HUNGRY_DATA_SOURCE": "supabase"
       }
     },
+    "preview-simulator": {
+      "extends": "preview",
+      "ios": {
+        "simulator": true,
+        "image": "macos-sequoia-15.6-xcode-26.2"
+      }
+    },
     "production": {
       "channel": "production",
+      "ios": {
+        "image": "macos-sequoia-15.6-xcode-26.2"
+      },
       "env": {
         "EXPO_PUBLIC_APP_ENV": "production",
         "EXPO_PUBLIC_HUNGRY_DATA_SOURCE": "supabase",

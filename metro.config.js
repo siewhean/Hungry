@@ -1,8 +1,8 @@
 const { getSentryExpoConfig } = require("@sentry/react-native/metro");
-const { getDefaultConfig, mergeConfig } = require("@react-native/metro-config");
 const path = require("path");
 
-const config = mergeConfig(getDefaultConfig(__dirname), getSentryExpoConfig(__dirname));
+// getSentryExpoConfig extends expo/metro-config, which resolves the tsconfig "@/..." paths.
+const config = getSentryExpoConfig(__dirname);
 
 config.resolver.extraNodeModules = {
   ...(config.resolver.extraNodeModules || {}),
