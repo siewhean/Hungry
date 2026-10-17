@@ -14,9 +14,14 @@ shadow_port = 54320
 major_version = 17
 
 [auth]
-site_url = "hungry://auth/callback"
-# App deep links Supabase may redirect to after email confirm, magic link, OAuth and password reset.
-additional_redirect_urls = ["hungry://auth/callback", "hungry://auth/confirm"]
+site_url = "hungry://auth/confirm"
+# App deep links for email confirm, password reset and OAuth. auth/callback is the pre-split path kept for old emails.
+additional_redirect_urls = [
+  "hungry://auth/confirm",
+  "hungry://auth/reset",
+  "hungry://auth/oauth",
+  "hungry://auth/callback",
+]
 
 [functions.guest-sessions]
 verify_jwt = false

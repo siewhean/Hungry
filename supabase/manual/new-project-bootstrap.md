@@ -30,12 +30,12 @@ npx supabase functions deploy ops-dishes-draft
 ```
 
 `config push` sets `site_url` and `additional_redirect_urls`
-(`hungry://auth/callback`, `hungry://auth/confirm`). The dashboard path is
+(`hungry://auth/confirm`, `/reset`, `/oauth`, and the legacy `/callback`). The dashboard path is
 Authentication > URL Configuration if you prefer to set them by hand.
 
 ## 3. Turn on the deletion cron
 
-The cron job (migration `20261017120000_account_deletion_worker_cron.sql`) runs every
+The cron job (migration `20261017130000_account_deletion_worker_cron.sql`) runs every
 15 minutes and does nothing until these Vault secrets exist. Run in the SQL editor:
 
 ```sql
