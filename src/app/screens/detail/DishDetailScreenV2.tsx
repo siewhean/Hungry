@@ -38,6 +38,7 @@ import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/R
 import type { DishDetail } from "@/types/domain";
 import { isVenueOpenFromHours } from "@/utils/stallStatus";
 import { webShareUrl } from "@/constants/links";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 
 const CommentIcon = MessageCircle ?? MessageCircleMore;
 
@@ -437,7 +438,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       });
     }
     showToast({
-      message: isSaved ? "Removed from favourites." : "Saved to favourites!",
+      message: isSaved ? "Removed from Want to try." : "Saved to Want to try.",
       tone: "success",
     });
   };
@@ -482,6 +483,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
 
       if (didMark.isTried) {
         addReviewedDish(dish.id);
+        trackAnalyticsEvent("dish_marked_tried", { dish_id: dish.id, stall_id: dish.venueId });
         showToast({
           message:
             didMark.pointsAwarded > 0

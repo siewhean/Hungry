@@ -35,6 +35,10 @@ export function resolveFeatureFlags(
     craveEnabled: true,
     gamificationEnabled: nonProductionSurfaceEnabled,
     collectionsEnabled: nonProductionSurfaceEnabled,
+    // Hungry Portfolios (user lists) and their public share links ship in production.
+    portfoliosEnabled: true,
+    // Opt-in push alerts when a followed stall's merchant changes its menu.
+    stallAlertsEnabled: true,
     storiesEnabled: nonProductionSurfaceEnabled,
     merchantClaimCtaEnabled,
     merchantCentreEnabled,

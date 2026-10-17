@@ -12,9 +12,7 @@
     "orientation": "portrait",
     "scheme": "hungry",
     "userInterfaceStyle": "automatic",
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "app.hungry.mobile",
@@ -26,11 +24,7 @@
         "NSPhotoLibraryUsageDescription": "Hungry accesses your photo library so you can attach photos to reviews and profile.",
         "NSPhotoLibraryAddUsageDescription": "Hungry saves shared dish images to your photo library when you choose to download them.",
         "ITSAppUsesNonExemptEncryption": false,
-        "LSApplicationQueriesSchemes": [
-          "grab",
-          "foodpanda",
-          "deliveroo"
-        ]
+        "LSApplicationQueriesSchemes": ["grab", "foodpanda", "deliveroo"]
       }
     },
     "android": {
@@ -64,6 +58,12 @@
       "expo-web-browser",
       "expo-location",
       "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "color": "#E8531E"
+        }
+      ],
       [
         "@rnmapbox/maps",
         {

@@ -63,6 +63,7 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import { PopularVisitorsSection } from "@/components/stall/PopularVisitorsSection";
 import { StallInteractionBar } from "@/components/stall/StallInteractionBar";
+import { FollowStallButton } from "@/components/stall/FollowStallButton";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -897,6 +898,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   onReviewRequired={handleReviewRequiredForTried}
                 />
               )}
+              {isAuthenticated && venue ? (
+                <FollowStallButton stallId={venue.id} stallName={venue.name} />
+              ) : null}
 
               {FEATURE_FLAGS.collectionsEnabled ? (
                 <DetailSaveActionsCard

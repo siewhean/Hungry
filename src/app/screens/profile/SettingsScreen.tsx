@@ -27,6 +27,7 @@ import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { Button } from "@/components/ui";
 import { SettingsSection, SettingsRow } from "@/components/settings";
+import { StallAlertsSettings } from "@/components/settings/StallAlertsSettings";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -54,6 +55,7 @@ export function SettingsScreen() {
   const clearSearchState = useSearchStore((state) => state.clearSearchState);
   const resetLocationState = useLocationStore((state) => state.resetLocationState);
   const signOut = useSessionStore((state) => state.signOut);
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const grantLocation = useLocationStore((state) => state.grantLocation);
   const denyLocation = useLocationStore((state) => state.denyLocation);
   const setProfileVisibility = useProfileStore((state) => state.setProfileVisibility);
@@ -455,6 +457,12 @@ export function SettingsScreen() {
             />
           ) : null}
         </SettingsSection>
+      ) : null}
+
+      {FEATURE_FLAGS.stallAlertsEnabled && isAuthenticated ? (
+        <StallAlertsSettings
+          onOpenFollowedStalls={() => navigation.navigate("FollowedStalls" as any)}
+        />
       ) : null}
 
       <SettingsSection title="App settings">
