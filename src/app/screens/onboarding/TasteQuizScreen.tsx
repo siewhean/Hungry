@@ -139,7 +139,6 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   const setDietaryPreferences = useProfileStore((state) => state.setDietaryPreferences);
   const setMaxDishBudget = useProfileStore((state) => state.setMaxDishBudget);
   const setSkippedTasteQuiz = useSessionStore((state) => state.setSkippedTasteQuiz);
-  const hasSkippedTasteQuiz = useSessionStore((state) => state.hasSkippedTasteQuiz);
   const showToast = useUIStore((state) => state.showToast);
   const flowMode = route.params?.mode ?? "onboarding";
   const isDietaryRoute = route.name === "DietaryPreferences";
@@ -240,12 +239,9 @@ export function TasteQuizScreen({ navigation, route }: Props) {
       navigation.goBack();
       return;
     }
-    if (hasSkippedTasteQuiz) {
-      navigation.navigate("LocationPermission");
-      return;
-    }
+    // Finishing the quiz means it was not skipped; go straight to the result.
     setSkippedTasteQuiz(false);
-    navigation.navigate("TasteProfileLoading");
+    navigation.navigate("TasteProfileResult");
   };
 
   const isLast = step === STEPS.length - 1;
@@ -727,8 +723,13 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                     label="Skip"
                     variant="ghost"
                     onPress={() => {
+                      if (flowMode === "profile") {
+                        navigation.goBack();
+                        return;
+                      }
+                      // Skipping the quiz goes straight to location; dietary stays editable later.
                       setSkippedTasteQuiz(true);
-                      setPhase("dietary");
+                      navigation.navigate("LocationPermission");
                     }}
                     style={{ width: BACK_BUTTON_WIDTH }}
                   />

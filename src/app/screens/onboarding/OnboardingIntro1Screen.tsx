@@ -11,15 +11,15 @@ export function OnboardingIntro1Screen({ navigation }: Props) {
       title="Start with the dish, not the brand"
       subtitle="Hungry shows you the meal first — you only dig into the stall when it looks worth the queue."
       stepIndex={1}
-      totalSteps={3}
+      totalSteps={1}
       eyebrow="Dish-first discovery"
       bullets={[
         "See a dish that looks good before you commit to walking there.",
-        "Filter by mood, taste, or distance — not just restaurant name.",
-        "Works across hawker centres, food courts, kopitiams, and malls.",
+        "Save dishes you like and see what people near you are eating.",
+        "A one-minute taste setup tunes picks to your cravings and diet.",
       ]}
       navigation={navigation}
-      nextScreen="OnboardingIntro2"
+      nextScreen="CuisineSelection"
     />
   );
 }

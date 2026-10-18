@@ -1,3 +1,4 @@
+import type { NavigationProp } from "@react-navigation/native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Controller, useForm } from "react-hook-form";
 import { Pressable, View } from "react-native";
@@ -14,6 +15,7 @@ import { getConfiguredDataSource } from "@/lib/services/supabase/client";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
+import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import type { AuthStackParamList } from "./AuthStack";
 import { AuthProviderButton } from "./AuthProviderButton";
 import { AuthScreenShell } from "./AuthScreenShell";
@@ -40,6 +42,14 @@ export function LoginScreen({ navigation }: Props) {
   } = useForm<FormValues>({
     defaultValues: { email: "", password: "" },
   });
+
+  // Sign-in is optional: guests can browse and are asked to sign in on demand.
+  const continueAsGuest = () => {
+    navigation.getParent<NavigationProp<RootStackParamList>>()?.reset({
+      index: 0,
+      routes: [{ name: "MainTabs", params: { screen: "Home" } }],
+    });
+  };
 
   const handleLogin = handleSubmit(async (values) => {
     try {
@@ -142,24 +152,38 @@ export function LoginScreen({ navigation }: Props) {
         contentOffsetTop={spacing[16]}
         wordmarkColor={colorScheme === "dark" ? palette.white : palette.navy}
         footer={
-          <View
-            style={{
-              alignItems: "center",
-              flexDirection: "row",
-              justifyContent: "center",
-              marginTop: spacing[2],
-            }}
-          >
-            <AppText tone="secondary">{AUTH_COPY.login.footerPrompt}</AppText>
+          <View style={{ alignItems: "center", gap: spacing[1] }}>
+            <View
+              style={{
+                alignItems: "center",
+                flexDirection: "row",
+                justifyContent: "center",
+                marginTop: spacing[2],
+              }}
+            >
+              <AppText tone="secondary">{AUTH_COPY.login.footerPrompt}</AppText>
+              <Pressable
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={AUTH_COPY.login.footerAction}
+                accessibilityHint="Opens the account creation screen"
+                onPress={() => navigation.navigate("SignUp")}
+              >
+                <AppText variant="bodyBold" tone="accent">
+                  {AUTH_COPY.login.footerAction}
+                </AppText>
+              </Pressable>
+            </View>
             <Pressable
               accessible
               accessibilityRole="button"
-              accessibilityLabel={AUTH_COPY.login.footerAction}
-              accessibilityHint="Opens the account creation screen"
-              onPress={() => navigation.navigate("SignUp")}
+              accessibilityLabel={AUTH_COPY.login.continueAsGuest}
+              accessibilityHint="Opens Hungry without signing in"
+              onPress={continueAsGuest}
+              style={{ justifyContent: "center", minHeight: 44, paddingHorizontal: spacing[3] }}
             >
-              <AppText variant="bodyBold" tone="accent">
-                {AUTH_COPY.login.footerAction}
+              <AppText tone="secondary" style={{ textDecorationLine: "underline" }}>
+                {AUTH_COPY.login.continueAsGuest}
               </AppText>
             </Pressable>
           </View>

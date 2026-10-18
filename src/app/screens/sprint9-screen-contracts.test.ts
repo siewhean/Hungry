@@ -133,12 +133,19 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
   assert.match(manualLocation, /accessibilityLabel="Search Singapore location"/);
   assert.match(manualLocation, /accessibilityLabel=\{`Choose \$\{area\.name\}`\}/);
   assert.match(manualLocation, /accessibilityHint="Sets this as your Hungry discovery location"/);
-  assert.match(tasteProfileResult, /accessibilityLabel=\{`Save \$\{dish\.name\}`\}/);
   assert.match(
     tasteProfileResult,
-    /accessibilityHint="Create or sign in to an account before saving this dish"/,
+    /accessibilityLabel=\{`\$\{isSaved \? "Unsave" : "Save"\} \$\{dish\.name\}`\}/,
   );
-  assert.match(tasteProfileResult, /navigation\.navigate\("OnboardingAuth"\)/);
+  assert.match(tasteProfileResult, /"Create or sign in to an account before saving this dish"/);
+  // Signed-in users save for real; only guests are sent to the auth prompt.
+  assert.match(
+    tasteProfileResult,
+    /if \(isAuthenticated\) \{\s*toggleFavourite\(dish\);\s*return;\s*\}[\s\S]*navigation\.navigate\("OnboardingAuth"\)/,
+  );
+  // Result is ranked by the quiz taste vector, not a fixed popular list.
+  assert.match(tasteProfileResult, /searchDishes\([\s\S]*tasteValues: tasteVector/);
+  assert.doesNotMatch(tasteProfileResult, /generated food photo/);
   assert.match(
     tasteQuiz,
     /accessibilityRole="button"[\s\S]*accessibilityLabel=\{`\$\{labels\[index\]\} \$\{QUESTIONS\[currentKey\]\}`\}/,

@@ -1,11 +1,14 @@
 import { useEffect, useRef } from "react";
 import { View, Animated, Pressable, Dimensions } from "react-native";
+import type { NavigationProp } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 
 import { AppText, Button } from "@/components/ui";
 import { HUNGRY_LOGO_ICON, HUNGRY_LOGO_STANDARD_SIZE } from "@/constants/brandAssets";
+import type { RootStackParamList } from "@/app/navigation/navigationTypes";
+import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
 import type { OnboardingStackParamList } from "./OnboardingStack";
 
@@ -16,12 +19,13 @@ const { height: SCREEN_H } = Dimensions.get("window");
 const VALUE_PROPS = [
   { emoji: "🍜", text: "Discover dishes, not just restaurants" },
   { emoji: "📍", text: "Find the best hawker stalls near you" },
-  { emoji: "✨", text: "Personalised to your taste" },
+  { emoji: "🎯", text: "Personalised to your taste" },
 ];
 
 export function WelcomeScreen({ navigation }: Props) {
   const { palette } = useHungryTheme();
   const insets = useSafeAreaInsets();
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
 
   const logoAnim = useRef(new Animated.Value(0)).current;
   const headlineAnim = useRef(new Animated.Value(0)).current;
@@ -44,7 +48,13 @@ export function WelcomeScreen({ navigation }: Props) {
 
   const handleStart = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    navigation.navigate("OnboardingIntro1");
+    navigation.navigate("CuisineSelection");
+  };
+
+  const handleSignIn = () => {
+    navigation
+      .getParent<NavigationProp<RootStackParamList>>()
+      ?.navigate("AuthStack", { screen: "Login" });
   };
 
   return (
@@ -199,25 +209,27 @@ export function WelcomeScreen({ navigation }: Props) {
         }}
       >
         <Button label="Get started" onPress={handleStart} variant="primary" />
-        <Pressable
-          onPress={() => navigation.navigate("OnboardingAuth")}
-          accessibilityRole="button"
-          accessibilityLabel="Sign in to existing account"
-          style={{ alignItems: "center", marginTop: 16, paddingVertical: 8 }}
-        >
-          <AppText style={{ color: palette.textSecondary, fontSize: 14 }}>
-            Already have an account?{" "}
-            <AppText
-              style={{
-                color: palette.orange,
-                fontFamily: "Nunito_700Bold",
-                fontSize: 14,
-              }}
-            >
-              Sign in
+        {isAuthenticated ? null : (
+          <Pressable
+            onPress={handleSignIn}
+            accessibilityRole="button"
+            accessibilityLabel="Sign in to existing account"
+            style={{ alignItems: "center", marginTop: 16, paddingVertical: 8 }}
+          >
+            <AppText style={{ color: palette.textSecondary, fontSize: 14 }}>
+              Already have an account?{" "}
+              <AppText
+                style={{
+                  color: palette.orange,
+                  fontFamily: "Nunito_700Bold",
+                  fontSize: 14,
+                }}
+              >
+                Sign in
+              </AppText>
             </AppText>
-          </AppText>
-        </Pressable>
+          </Pressable>
+        )}
       </Animated.View>
     </View>
   );

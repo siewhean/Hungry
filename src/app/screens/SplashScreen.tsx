@@ -5,11 +5,15 @@
  *  0ms  – screen appears (dark bg)
  *  200ms – logo scales in
  *  700ms – tagline fades in
- *  1000ms – orange dot pulses
- *  1800ms – navigate to onboarding or main tabs
+ *  ~600ms – orange dot pulses
+ *
+ * The splash only stays up until auth/bootstrap is ready, with a short
+ * minimum (motion.splashTotal) so the logo animation does not flash.
+ * New users go to onboarding; everyone else lands in the app (as a guest when
+ * signed out). Sign-in is asked for on demand (Profile, save, post, review).
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { View, Animated, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import Constants from "expo-constants";
@@ -24,7 +28,6 @@ type Props = NativeStackScreenProps<RootStackParamList, "Splash">;
 
 export function SplashScreen({ navigation }: Props) {
   const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
-  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const isAuthReady = useSessionStore((state) => state.isAuthReady);
   const { palette, motion, spacing, radii, typography } = useHungryTheme();
   const appVersion = Constants.expoConfig?.version ?? "0.1.0";
@@ -36,6 +39,7 @@ export function SplashScreen({ navigation }: Props) {
   const taglineOpacity = useRef(new Animated.Value(0)).current;
   const dotScale = useRef(new Animated.Value(0.6)).current;
   const dotOpacity = useRef(new Animated.Value(0)).current;
+  const [mountedAt] = useState(() => Date.now());
 
   useEffect(() => {
     // Staggered entrance animation
@@ -75,21 +79,25 @@ export function SplashScreen({ navigation }: Props) {
         }),
       ]),
     ]).start();
+  }, [
+    dotOpacity,
+    dotScale,
+    logoOpacity,
+    logoScale,
+    motion.splashDot,
+    motion.splashFast,
+    motion.splashReveal,
+    taglineOpacity,
+  ]);
 
-    // Navigate after full animation
+  // Leave as soon as auth/bootstrap is ready, keeping only a short minimum.
+  useEffect(() => {
+    if (!isAuthReady) {
+      return;
+    }
+
+    const remaining = Math.max(0, motion.splashTotal - (Date.now() - mountedAt));
     const timer = setTimeout(() => {
-      if (!isAuthReady) {
-        return;
-      }
-
-      if (!isAuthenticated) {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "AuthStack", params: { screen: "Login" } }],
-        });
-        return;
-      }
-
       if (!hasCompletedOnboarding) {
         navigation.reset({
           index: 0,
@@ -107,19 +115,10 @@ export function SplashScreen({ navigation }: Props) {
           },
         ],
       });
-    }, motion.splashTotal);
+    }, remaining);
 
     return () => clearTimeout(timer);
-  }, [
-    hasCompletedOnboarding,
-    isAuthenticated,
-    isAuthReady,
-    motion.splashDot,
-    motion.splashFast,
-    motion.splashReveal,
-    motion.splashTotal,
-    navigation,
-  ]);
+  }, [hasCompletedOnboarding, isAuthReady, motion.splashTotal, mountedAt, navigation]);
 
   return (
     <View style={styles.root}>
