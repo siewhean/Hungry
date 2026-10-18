@@ -302,6 +302,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const shareSheetRef = useRef<BottomSheetModal>(null);
   const incrementShare = useSocialStore((state) => state.incrementShare);
+  // Review replies are local-only (no backend), so keep them out of production builds.
+  const reviewRepliesEnabled = FEATURE_FLAGS.prototypeRoutesEnabled;
   const [activeReplyReviewId, setActiveReplyReviewId] = useState<string | null>(null);
   const [replyDraftByReviewId, setReplyDraftByReviewId] = useState<Record<string, string>>({});
   const [localRepliesByReviewId, setLocalRepliesByReviewId] = useState<
@@ -1130,34 +1132,36 @@ export function StallDetailScreen({ navigation, route }: Props) {
                         {review.text}
                       </AppText>
 
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          marginTop: spacing[2],
-                        }}
-                      >
-                        <Pressable
-                          accessibilityRole="button"
-                          accessibilityLabel={`Reply to review by ${review.authorName}`}
-                          onPress={() =>
-                            setActiveReplyReviewId((current) =>
-                              current === review.id ? null : review.id,
-                            )
-                          }
+                      {reviewRepliesEnabled ? (
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            marginTop: spacing[2],
+                          }}
                         >
-                          <AppText variant="micro" tone="accent">
-                            Reply
-                          </AppText>
-                        </Pressable>
-                        {(localRepliesByReviewId[review.id]?.length ?? 0) > 0 ? (
-                          <AppText variant="micro" tone="muted">
-                            {localRepliesByReviewId[review.id]?.length} repl
-                            {(localRepliesByReviewId[review.id]?.length ?? 0) === 1 ? "y" : "ies"}
-                          </AppText>
-                        ) : null}
-                      </View>
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel={`Reply to review by ${review.authorName}`}
+                            onPress={() =>
+                              setActiveReplyReviewId((current) =>
+                                current === review.id ? null : review.id,
+                              )
+                            }
+                          >
+                            <AppText variant="micro" tone="accent">
+                              Reply
+                            </AppText>
+                          </Pressable>
+                          {(localRepliesByReviewId[review.id]?.length ?? 0) > 0 ? (
+                            <AppText variant="micro" tone="muted">
+                              {localRepliesByReviewId[review.id]?.length} repl
+                              {(localRepliesByReviewId[review.id]?.length ?? 0) === 1 ? "y" : "ies"}
+                            </AppText>
+                          ) : null}
+                        </View>
+                      ) : null}
 
                       {(localRepliesByReviewId[review.id] ?? []).length > 0 ? (
                         <View
@@ -1191,7 +1195,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                         </View>
                       ) : null}
 
-                      {activeReplyReviewId === review.id ? (
+                      {reviewRepliesEnabled && activeReplyReviewId === review.id ? (
                         <View
                           style={{
                             gap: spacing[2],

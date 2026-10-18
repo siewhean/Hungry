@@ -296,7 +296,7 @@ function PostComposerScreenInner({ navigation, route }: Props) {
   return (
     <Screen
       title="Create post"
-      subtitle="Share a quick dish update without turning the app into a creator platform."
+      subtitle="Share a photo or video of what you ate."
     >
       <Card>
         <View style={{ gap: spacing[3] }}>

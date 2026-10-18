@@ -15,7 +15,7 @@ test("selected stale-branch fixes preserve FDO visuals while restoring behavior"
 
   assert.match(wheelEntry, /new Set<DietaryFlag>\(\)/);
   assert.doesNotMatch(wheelEntry, /dietaryFlags\.includes\(pref as any\)/);
-  assert.match(review, /<StarRating[^>]*onChange=\{actions\.setRating\}[^>]*editable/);
+  assert.match(review, /<StarRating[^>]*onChange=\{setRating\}[^>]*editable/);
   assert.match(composer, /<FeedErrorBoundary[\s\S]*screenName="PostComposerScreen"/);
   assert.match(building, /\[repository, tenantPolygons, venueById\]/);
 });

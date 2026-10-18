@@ -62,6 +62,7 @@ import type {
   SearchResult,
   Session,
   SubmitReviewInput,
+  RecentReviewFeedEntry,
 } from "@/lib/services/types";
 import type {
   AIBusinessInsight,
@@ -870,6 +871,8 @@ async function uploadReviewPhotos(
   photos: string[],
 ): Promise<Row[]> {
   const uploaded: Row[] = [];
+  // Uploads never overwrite, so a retried submission needs fresh object paths.
+  const attempt = Date.now().toString(36);
   for (let index = 0; index < photos.length; index += 1) {
     const uri = photos[index];
     if (!uri) continue;
@@ -877,7 +880,7 @@ async function uploadReviewPhotos(
       throw new Error("Review photos must be uploaded from local device files.");
     }
     const extension = uri.split(".").pop()?.toLowerCase() || "jpg";
-    const path = `${userId}/${reviewId}/photo-${index}.${extension}`;
+    const path = `${userId}/${reviewId}/photo-${index}-${attempt}.${extension}`;
     const asset = await uploadImageFromUri({
       client,
       bucket: "review-media",
@@ -3168,28 +3171,71 @@ export const supabaseService: HungryService = {
       const userId = await getCurrentSupabaseUserId();
       if (!userId) throw new Error("You must be signed in to submit reviews.");
 
-      const { data, error } = await client
-        .from("reviews")
-        .insert({
-          user_id: userId,
-          dish_id: draft.dishId,
-          venue_id: draft.venueId,
-          rating: draft.rating,
-          text: draft.text,
-          tags: draft.tags,
-          would_recommend: true,
-        })
-        .select("id")
-        .maybeSingle();
-      if (error || !data?.id) {
-        throw error ?? new Error("Review insert failed.");
+      const reviewRow: Row = {
+        user_id: userId,
+        dish_id: draft.dishId,
+        venue_id: draft.venueId,
+        rating: draft.rating,
+        text: draft.text,
+        tags: draft.tags,
+        would_recommend: draft.wouldRecommend ?? true,
+      };
+      if (draft.clientReviewId) {
+        reviewRow.id = draft.clientReviewId;
       }
 
-      const uploadedPhotos = await uploadReviewPhotos(client, userId, data.id, draft.photos);
+      const { data, error } = await client
+        .from("reviews")
+        .insert(reviewRow)
+        .select("id")
+        .maybeSingle();
+      let reviewId = asString(data?.id);
+      let isResumedSubmission = false;
+      if (error || !reviewId) {
+        // A retry reuses the client id, so a unique violation means an earlier attempt
+        // already created this review: resume with the remaining steps instead of duplicating it.
+        if (!draft.clientReviewId || error?.code !== "23505") {
+          throw error ?? new Error("Review insert failed.");
+        }
+        const { data: existing, error: existingError } = await client
+          .from("reviews")
+          .select("id")
+          .eq("id", draft.clientReviewId)
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (existingError || !existing?.id) {
+          throw existingError ?? error;
+        }
+        reviewId = draft.clientReviewId;
+        isResumedSubmission = true;
+        // Keep any edits made between attempts.
+        const { error: updateError } = await client
+          .from("reviews")
+          .update({
+            rating: reviewRow.rating,
+            text: reviewRow.text,
+            tags: reviewRow.tags,
+            would_recommend: reviewRow.would_recommend,
+          })
+          .eq("id", reviewId)
+          .eq("user_id", userId);
+        if (updateError) throw updateError;
+      }
+
+      if (isResumedSubmission) {
+        const { count, error: photoCountError } = await client
+          .from("review_photos")
+          .select("id", { count: "exact", head: true })
+          .eq("review_id", reviewId);
+        if (photoCountError) throw photoCountError;
+        if ((count ?? 0) > 0) return;
+      }
+
+      const uploadedPhotos = await uploadReviewPhotos(client, userId, reviewId, draft.photos);
       if (uploadedPhotos.length > 0) {
         const { error: photoInsertError } = await client.from("review_photos").insert(
           uploadedPhotos.map((photo, index) => ({
-            review_id: data.id,
+            review_id: reviewId,
             url: photo.url,
             storage_bucket: photo.storage_bucket,
             storage_path: photo.storage_path,
@@ -3198,6 +3244,81 @@ export const supabaseService: HungryService = {
         );
         if (photoInsertError) throw photoInsertError;
       }
+    },
+
+    async listRecentReviews(options) {
+      const client = requireSupabaseClient();
+      const limit = Math.min(Math.max(Math.floor(options?.limit ?? 50), 1), 100);
+      let query = client
+        .from("reviews")
+        .select(
+          "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend",
+        )
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      if (options?.before) {
+        query = query.lt("created_at", options.before);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      const rows = Array.isArray(data) ? (data as Row[]) : [];
+      if (rows.length === 0) return [];
+
+      const dishIds = Array.from(
+        new Set(rows.map((row) => asString(row.dish_id)).filter((id): id is string => !!id)),
+      );
+      const { data: dishRows, error: dishError } = await client
+        .from("dishes")
+        .select("id,name,venue_id")
+        .in("id", dishIds);
+      if (dishError) throw dishError;
+      const dishById = new Map<string, { name: string; venueId?: string }>();
+      for (const dishRow of (Array.isArray(dishRows) ? dishRows : []) as Row[]) {
+        const id = asString(dishRow.id);
+        if (!id) continue;
+        dishById.set(id, {
+          name: asString(dishRow.name) ?? "Dish",
+          venueId: asString(dishRow.venue_id),
+        });
+      }
+
+      const venueIds = Array.from(
+        new Set(
+          [
+            ...rows.map((row) => asString(row.venue_id)),
+            ...Array.from(dishById.values()).map((dish) => dish.venueId),
+          ].filter((id): id is string => !!id),
+        ),
+      );
+      const venueNameById = new Map<string, string>();
+      if (venueIds.length > 0) {
+        const { data: venueRows } = await client
+          .from("venues")
+          .select("id,name")
+          .in("id", venueIds);
+        for (const venueRow of (Array.isArray(venueRows) ? venueRows : []) as Row[]) {
+          const id = asString(venueRow.id);
+          const name = asString(venueRow.name);
+          if (id && name) venueNameById.set(id, name);
+        }
+      }
+
+      const reviews = await mapSupabaseReviewRows(client, rows);
+      return reviews.flatMap((review): RecentReviewFeedEntry[] => {
+        const dish = review.dishId ? dishById.get(review.dishId) : undefined;
+        // Reviews of dishes the catalog cannot display are skipped.
+        if (!review.dishId || !dish) return [];
+        const venueId = review.venueId ?? dish.venueId ?? "";
+        return [
+          {
+            review,
+            dishId: review.dishId,
+            dishName: dish.name,
+            venueId,
+            venueName: venueNameById.get(venueId) ?? "",
+          },
+        ];
+      });
     },
   },
 
