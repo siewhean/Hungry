@@ -647,6 +647,25 @@ export interface ExplicitFeedbackEvent {
   timestamp?: number;
   /** Optional: hawker tags applied with this feedback */
   hawkerTags?: HawkerTasteTag[];
+  /** The dish's tasteConfidence (0-1); 0 means its vector is a placeholder. */
+  dishConfidence?: number;
+}
+
+const NEUTRAL_TASTE_VALUE = 5;
+
+/** True when a vector is the all-5 neutral default (untagged dish, or a user with no taste signal). */
+export function isNeutralTasteVector(vector: TasteVector | undefined | null): boolean {
+  if (!vector) return true;
+  return (Object.keys(vector) as (keyof TasteVector)[]).every(
+    (key) => vector[key] === NEUTRAL_TASTE_VALUE,
+  );
+}
+
+/** True when a dish carries a real taste signal: non-zero confidence and not the neutral default. */
+export function hasDishTasteSignal(
+  dish: Pick<DishSummary, "tasteVector" | "tasteConfidence">,
+): boolean {
+  return (dish.tasteConfidence ?? 1) > 0 && !isNeutralTasteVector(dish.tasteVector);
 }
 
 function applyFeedbackRecencyDecay(weight: number, timestamp?: number): number {
@@ -685,6 +704,13 @@ export function processExplicitFeedback(
   currentVector: TasteVector,
   event: ExplicitFeedbackEvent,
 ): TasteVector {
+  // An untagged dish carries the neutral default vector; learning from it would only drag
+  // the user back toward neutral, so it gets no weight.
+  if (
+    !hasDishTasteSignal({ tasteVector: event.dishVector, tasteConfidence: event.dishConfidence })
+  ) {
+    return currentVector;
+  }
   const alpha = applyFeedbackRecencyDecay(FEEDBACK_WEIGHTS[event.type], event.timestamp);
   if (alpha === 0) return currentVector;
 

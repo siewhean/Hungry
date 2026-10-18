@@ -250,3 +250,30 @@ test("runRecommendationPipeline enforces venue and dominant-axis diversity caps"
     assert.ok(count <= 2, `Dominant dimension ${dimension} exceeded diversity cap`);
   }
 });
+
+test("processExplicitFeedback ignores untagged neutral or zero-confidence dishes", () => {
+  const spicyUser: TasteVector = { ...BASE_VECTOR, spicy: 9, sweet: 2 };
+
+  const fromNeutral = processExplicitFeedback(spicyUser, {
+    type: "saved",
+    dishVector: { ...BASE_VECTOR },
+    timestamp: Date.now(),
+  });
+  assert.deepEqual(fromNeutral, spicyUser, "Saving an untagged dish must not drag toward neutral");
+
+  const fromUntrusted = processExplicitFeedback(spicyUser, {
+    type: "rating_5_star",
+    dishVector: { ...BASE_VECTOR, rich: 9 },
+    dishConfidence: 0,
+    timestamp: Date.now(),
+  });
+  assert.deepEqual(fromUntrusted, spicyUser, "Zero-confidence vectors carry no weight");
+
+  const fromTagged = processExplicitFeedback(spicyUser, {
+    type: "saved",
+    dishVector: { ...BASE_VECTOR, rich: 9 },
+    dishConfidence: 0.8,
+    timestamp: Date.now(),
+  });
+  assert.ok(fromTagged.rich > spicyUser.rich, "Tagged dishes still update the vector");
+});

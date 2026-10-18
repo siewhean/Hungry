@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Pressable, ScrollView, View } from "react-native";
-import { Sparkles } from "lucide-react-native";
 
-import { buildWeeklyPicks, getWeeklyPicksKey } from "@/features/home/weeklyPicks";
+import {
+  buildWeeklyPicks,
+  getWeeklyPicksKey,
+  isWeeklyPicksPersonalised,
+} from "@/features/home/weeklyPicks";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
 import { AccessibleImage, AppText, Button } from "../ui";
+import { NoDishPhoto } from "./NoDishPhoto";
 
 interface WeeklyPicksRailProps {
   horizontalPadding: number;
@@ -28,7 +32,7 @@ export function WeeklyPicksRail({
   const weekKey = getWeeklyPicksKey();
   const lastTrackedWeek = useRef<string | null>(null);
 
-  const picks = useMemo(() => {
+  const { picks, personalised } = useMemo(() => {
     const candidates = getDataRepository().searchDishes(
       {
         query: "",
@@ -39,7 +43,10 @@ export function WeeklyPicksRail({
       },
       profile.tasteVector,
     );
-    return buildWeeklyPicks(candidates, profile, weekKey);
+    return {
+      picks: buildWeeklyPicks(candidates, profile, weekKey),
+      personalised: isWeeklyPicksPersonalised(profile.tasteVector, candidates),
+    };
   }, [profile, weekKey]);
 
   useEffect(() => {
@@ -51,18 +58,15 @@ export function WeeklyPicksRail({
   return (
     <View style={{ gap: spacing[3], paddingBottom: spacing[4], paddingTop: spacing[2] }}>
       <View style={{ paddingHorizontal: horizontalPadding }}>
-        <Button
-          label="Decide for me"
-          leftIcon={<Sparkles size={18} color={palette.white} />}
-          onPress={onDecideForMe}
-        />
+        <Button label="Decide for me" onPress={onDecideForMe} />
       </View>
       {picks.length ? (
         <>
           <View style={{ gap: spacing[1], paddingHorizontal: horizontalPadding }}>
             <AppText variant="h3">Your {picks.length} dishes to try this week</AppText>
             <AppText variant="bodySmall" tone="muted">
-              Picked for your taste. New picks every Monday.
+              {personalised ? "Picked for your taste." : "Popular near you."} New picks every
+              Monday.
             </AppText>
           </View>
           <ScrollView
@@ -92,12 +96,16 @@ export function WeeklyPicksRail({
                   width: CARD_WIDTH,
                 }}
               >
-                <AccessibleImage
-                  source={{ uri: dish.imageUrl }}
-                  style={{ height: 100, width: "100%" }}
-                  contentFit="cover"
-                  decorative
-                />
+                {dish.imageUrl ? (
+                  <AccessibleImage
+                    source={{ uri: dish.imageUrl }}
+                    style={{ height: 100, width: "100%" }}
+                    contentFit="cover"
+                    decorative
+                  />
+                ) : (
+                  <NoDishPhoto dishName={dish.name} style={{ height: 100, width: "100%" }} />
+                )}
                 <View style={{ gap: spacing[1], padding: spacing[2] }}>
                   <AppText variant="bodyBold" numberOfLines={1}>
                     {dish.name}

@@ -69,3 +69,30 @@ test("public lists ship in production with real share actions", () => {
     );
   }
 });
+
+test("weekly picks push is a separate opt-out that reuses the outbox, cap and quiet hours", () => {
+  const migration = read("supabase/migrations/20261018092000_weekly_picks_push.sql");
+  assert.match(migration, /add column if not exists weekly_picks boolean not null default true/);
+  assert.match(migration, /check \(category in \('stall_update', 'weekly_picks'\)\)/);
+  assert.match(migration, /from \(select distinct user_id from public\.user_push_tokens\) t/);
+  assert.match(migration, /where coalesce\(np\.weekly_picks, true\)/);
+  assert.match(migration, /'IYYY-"W"IW'/);
+  assert.match(migration, /on conflict \(dedupe_key\) do nothing/);
+  assert.match(migration, /'Your new picks are ready'/);
+  assert.match(migration, /'https:\/\/usehungry\.com\/home'/);
+  assert.match(migration, /security definer\s+set search_path = ''/);
+  assert.match(migration, /'weekly-picks-notifications',\s*'0 3 \* \* 1'/);
+  assert.match(
+    migration,
+    /revoke all on function public\.enqueue_weekly_picks_notifications\(\) from public, anon, authenticated/,
+  );
+
+  const worker = read("supabase/functions/send-notifications/index.ts");
+  assert.match(worker, /weekly_picks: true/);
+  assert.match(
+    worker,
+    /isWeeklyPicks \? !pref\.weekly_picks : !pref\.stall_updates\) skipReason = "opted_out"/,
+  );
+  assert.match(worker, /!isWeeklyPicks && \(!dish \|\| isSoldOut/);
+  assert.match(worker, /sentThisWeek\.get\(job\.user_id\) \?\? 0\) >= pref\.weekly_cap/);
+});

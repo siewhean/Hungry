@@ -64,6 +64,7 @@ import {
   Input,
   Skeleton,
 } from "@/components/ui";
+import { DishCard } from "@/components/dish/DishCard";
 import { WeeklyPicksRail } from "@/components/dish/WeeklyPicksRail";
 import {
   BitesCarousel,
@@ -102,8 +103,9 @@ import { useStoryStore } from "@/store/useStoryStore";
 import { useSocialStore, type SocialComment, type SocialReply } from "@/store/useSocialStore";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useUIStore } from "@/store/useUIStore";
+import { useLocationStore } from "@/store/useLocationStore";
 import { useHungryTheme, type HungryTheme } from "@/theme";
-import type { StoryItem } from "@/types/domain";
+import type { DishDetail, StoryItem } from "@/types/domain";
 
 type HapticsModule = typeof import("expo-haptics");
 
@@ -141,6 +143,67 @@ function FeedSkeleton() {
         <Skeleton width={280} height={200} borderRadius={radii.lg} />
         <Skeleton width={280} height={200} borderRadius={radii.lg} />
       </ScrollView>
+    </View>
+  );
+}
+
+const EMPTY_FEED_DISH_COUNT = 6;
+
+interface HomeEmptyFeedProps {
+  title: string;
+  ctaLabel: string;
+  onCtaPress: () => void;
+  onOpenDish: (dishId: string) => void;
+}
+
+/** Empty feed: a CTA plus the top-rated dishes nearby, so Home is never a dead end. */
+function HomeEmptyFeed({ title, ctaLabel, onCtaPress, onOpenDish }: HomeEmptyFeedProps) {
+  const { spacing, semanticSpacing } = useHungryTheme();
+  const currentLocation = useLocationStore((state) => state.currentLocation);
+  const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
+  const coordinate = manualCoordinate ?? currentLocation;
+  const [dishes, setDishes] = useState<DishDetail[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    getHungryService()
+      .discovery.listPopularNearby(coordinate?.latitude, coordinate?.longitude)
+      .then((nearby) => {
+        if (cancelled) return;
+        setDishes(
+          [...nearby]
+            .sort((left, right) => right.rating - left.rating)
+            .slice(0, EMPTY_FEED_DISH_COUNT),
+        );
+      })
+      .catch(() => {
+        // The CTA still works without dishes; nothing to surface here.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [coordinate?.latitude, coordinate?.longitude]);
+
+  return (
+    <View style={{ gap: spacing[4], paddingBottom: spacing[4] }}>
+      <EmptyState
+        title={title}
+        body={
+          dishes.length
+            ? "While it fills up, here are the top-rated dishes near you."
+            : "Share a dish you loved to get things going."
+        }
+        ctaLabel={ctaLabel}
+        onPress={onCtaPress}
+      />
+      {dishes.length ? (
+        <View style={{ gap: spacing[3], paddingHorizontal: semanticSpacing.screenEdge }}>
+          <AppText variant="h3">Top rated near you</AppText>
+          {dishes.map((dish) => (
+            <DishCard key={dish.id} dish={dish} onPress={() => onOpenDish(dish.id)} />
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -260,6 +323,20 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     navigation.navigate("AuthStack", { screen: "Login" });
     return false;
   }, [isAuthenticated, navigation, setReturnRoute, showToast]);
+
+  const composerRoute = FEATURE_FLAGS.prototypeRoutesEnabled ? "PostComposerV2" : "Post";
+  const openComposerFromEmptyFeed = useCallback(() => {
+    if (!isAuthenticated) {
+      setReturnRoute({ name: composerRoute });
+      navigation.navigate("AuthStack", { screen: "Login" });
+      return;
+    }
+    navigation.navigate(composerRoute);
+  }, [composerRoute, isAuthenticated, navigation, setReturnRoute]);
+  const openDishFromEmptyFeed = useCallback(
+    (dishId: string) => navigation.navigate("DishDetail", { dishId }),
+    [navigation],
+  );
 
   useEffect(() => {
     if (serviceProviderMode === "mock") return;
@@ -1056,7 +1133,11 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         <WeeklyPicksRail
           horizontalPadding={semanticSpacing.screenEdge}
           onOpenDish={(dishId) => navigation.navigate("DishDetail", { dishId })}
-          onDecideForMe={() => navigation.navigate("DecideForMeResult")}
+          onDecideForMe={() =>
+            // `surface` is read by DecideForMeResult for decide_for_me_triggered; the route's
+            // param type is widened in navigationTypes.ts separately.
+            navigation.navigate("DecideForMeResult", { surface: "home" } as never)
+          }
         />
         {storiesEnabled ? (
           shouldShowStories ? (
@@ -2008,7 +2089,14 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
               renderItem={({ item, index }) => renderFeedCard(item, "social", index)}
               // @ts-ignore
               estimatedItemSize={500}
-              ListEmptyComponent={<EmptyState title="No posts yet" body="Be the first to post." />}
+              ListEmptyComponent={
+                <HomeEmptyFeed
+                  title="No posts yet"
+                  ctaLabel="Share a dish"
+                  onCtaPress={openComposerFromEmptyFeed}
+                  onOpenDish={openDishFromEmptyFeed}
+                />
+              }
               contentContainerStyle={{
                 gap: spacing[2],
                 paddingBottom: spacing[16] + insets.bottom + spacing[6],
@@ -2082,10 +2170,11 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
             </View>
 
             {sections.length === 0 && (
-              <FeedStateView
-                state="empty"
-                title="Feed is taking a break"
-                body="We're still gathering the latest food stories for you. Check back shortly for new recommendations near you!"
+              <HomeEmptyFeed
+                title="No reviews yet"
+                ctaLabel="Share a dish"
+                onCtaPress={openComposerFromEmptyFeed}
+                onOpenDish={openDishFromEmptyFeed}
               />
             )}
           </Animated.ScrollView>

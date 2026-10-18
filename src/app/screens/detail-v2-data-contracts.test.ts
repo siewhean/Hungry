@@ -53,3 +53,24 @@ test("dish detail V2 avoids invented wait times and fake hours", () => {
   assert.match(legacyDish, /We do not have verified delivery links for this stall yet\./);
   assert.doesNotMatch(legacyDish, /Dine-in only/);
 });
+
+test("dish detail V2 action dock is labelled, stateful and meets 44px targets", () => {
+  const dish = read("src/app/screens/detail/DishDetailScreenV2.tsx");
+
+  assert.match(dish, /const dockTargetSize = 44;/);
+  assert.doesNotMatch(dish, /height: (40|42),/);
+  assert.doesNotMatch(dish, /Missing dish data for ID/);
+  assert.doesNotMatch(dish, /Sparkles/);
+  assert.match(dish, /We can't find this dish/);
+  assert.match(
+    dish,
+    /accessibilityLabel=\{isSaved \? "Saved" : "Save"\}[\s\S]*accessibilityState=\{\{ selected: isSaved \}\}/,
+  );
+  assert.match(dish, /color=\{isSaved \? palette\.orange : palette\.text\}/);
+  assert.doesNotMatch(dish, /isSaved \? palette\.white/);
+  assert.match(
+    dish,
+    /accessibilityRole="checkbox"\s*accessibilityLabel="Tried"\s*accessibilityState=\{\{ checked: isDishTried/,
+  );
+  assert.match(dish, /accessibilityLabel="Write a review"[\s\S]*?>\s*Review\s*<\/AppText>/);
+});
