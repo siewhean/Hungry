@@ -2,12 +2,23 @@
 /* eslint-disable import/no-unresolved */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
 
-// Drains public.notification_jobs (filled by the dishes trigger) and sends
-// Expo pushes. Each job is rechecked before sending: the user still opted in,
-// the dish still exists and is not sold out, outside the user's quiet hours
-// (Singapore time), under their weekly cap, and not older than 48 hours.
+// Drains public.notification_jobs (filled by the dishes trigger and the weekly
+// picks cron) and sends Expo pushes. Each job is rechecked before sending: the
+// user still opted in, the dish (if any) still exists and is not sold out,
+// outside the user's quiet hours (Singapore time), under their weekly cap, and
+// not older than 48 hours.
 
 type JsonObject = Record<string, unknown>;
+
+// Matches the column defaults in notification_preferences; used when a user
+// has a push token but never saved preferences (weekly picks is on by default).
+const DEFAULT_PREFERENCES = {
+  stall_updates: false,
+  weekly_picks: true,
+  quiet_start_hour: 22,
+  quiet_end_hour: 8,
+  weekly_cap: 3,
+};
 
 const MAX_BATCH_SIZE = 500;
 const MAX_ATTEMPTS = 3;
@@ -123,14 +134,16 @@ Deno.serve(async (request) => {
   };
 
   for (const job of jobs) {
-    const pref = prefsByUser.get(job.user_id);
+    const pref = { ...DEFAULT_PREFERENCES, ...(prefsByUser.get(job.user_id) ?? {}) };
+    const isWeeklyPicks = job.category === "weekly_picks";
     const dish = job.dish_id ? dishesById.get(job.dish_id) : null;
     let skipReason: string | null = null;
 
-    if (!pref?.stall_updates) skipReason = "opted_out";
+    if (isWeeklyPicks ? !pref.weekly_picks : !pref.stall_updates) skipReason = "opted_out";
     else if (now.getTime() - new Date(job.created_at).getTime() > STALE_AFTER_MS)
       skipReason = "stale";
-    else if (!dish || isSoldOut(dish.availability_flags)) skipReason = "no_longer_relevant";
+    else if (!isWeeklyPicks && (!dish || isSoldOut(dish.availability_flags)))
+      skipReason = "no_longer_relevant";
     else if ((sentThisWeek.get(job.user_id) ?? 0) >= pref.weekly_cap) skipReason = "weekly_cap";
     else if (!(tokensByUser.get(job.user_id) ?? []).length) skipReason = "no_device";
 
