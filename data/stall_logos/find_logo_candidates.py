@@ -14,7 +14,7 @@ Sources, in priority order:
      1 request/second per host, 10 s timeout.  URLs are recorded only.
   c) Everything else: no candidate -> merchant upload via the merchant portal.
 """
-import argparse, csv, html, json, re, sys, threading, time, urllib.parse, urllib.request, urllib.robotparser
+import argparse, csv, html, ipaddress, json, re, socket, sys, threading, time, urllib.parse, urllib.request, urllib.robotparser
 from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from html.parser import HTMLParser
@@ -72,6 +72,66 @@ def host_of(url: str) -> str:
         url = "http://" + url
     h = urllib.parse.urlparse(url.strip()).netloc.lower().split("@")[-1].split(":")[0]
     return h[4:] if h.startswith("www.") else h
+
+
+FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
+ALLOWED_SCHEMES = ("http", "https")
+
+
+def safe_cell(v):
+    """Neutralise spreadsheet formula injection: third-party strings starting with = + - @ TAB CR get a leading '."""
+    if isinstance(v, str) and v.startswith(FORMULA_PREFIXES):
+        return "'" + v
+    return v
+
+
+def _ip_blocked(ip) -> bool:
+    ip = ipaddress.ip_address(ip)
+    if getattr(ip, "ipv4_mapped", None):
+        ip = ip.ipv4_mapped
+    return (ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast or ip.is_reserved
+            or ip.is_unspecified)
+
+
+def candidate_url_ok(url: str) -> bool:
+    """Recorded candidate URLs: http(s) only, a host, and no private/loopback/etc IP literal."""
+    try:
+        u = urllib.parse.urlparse(url)
+        host = u.hostname
+    except ValueError:
+        return False
+    if u.scheme.lower() not in ALLOWED_SCHEMES or not host:
+        return False
+    try:
+        return not _ip_blocked(host)
+    except ValueError:  # not an IP literal -> hostname
+        return True
+
+
+def fetch_url_ok(url: str, resolve=socket.getaddrinfo) -> bool:
+    """URLs we actually fetch: candidate_url_ok plus every resolved address must be public."""
+    if not candidate_url_ok(url):
+        return False
+    u = urllib.parse.urlparse(url)
+    try:
+        infos = resolve(u.hostname, u.port or (443 if u.scheme.lower() == "https" else 80), proto=socket.IPPROTO_TCP)
+    except (OSError, ValueError):
+        return False
+    addrs = {i[4][0].split("%")[0] for i in infos}
+    try:
+        return bool(addrs) and not any(_ip_blocked(a) for a in addrs)
+    except ValueError:
+        return False
+
+
+class _SafeRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if not fetch_url_ok(urllib.parse.urljoin(req.full_url, newurl)):
+            raise urllib.error.HTTPError(newurl, code, "redirect to disallowed URL", headers, fp)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+SITE_OPENER = urllib.request.build_opener(_SafeRedirect)
 
 
 def http_json(url, params, ua=WIKI_UA, retries=5):
@@ -283,15 +343,19 @@ def jsonld_logos(blob):
 
 def fetch_site(host, start_url):
     """robots.txt check, then a single homepage GET. Returns (status, candidates)."""
+    if re.match(r"^[a-z][a-z0-9+.\-]*:(?!\d)", start_url.strip(), re.I) and "://" not in start_url:
+        return "bad_scheme", []  # javascript:, data:, mailto: ...
     base = start_url if "://" in start_url else "https://" + start_url
     parsed = urllib.parse.urlparse(base)
     scheme = parsed.scheme or "https"
     root = f"{scheme}://{parsed.netloc}"
     home = root + "/"
+    if not fetch_url_ok(home):
+        return "blocked_url", []
     rp = urllib.robotparser.RobotFileParser()
     try:
         req = urllib.request.Request(root + "/robots.txt", headers={"User-Agent": UA})
-        with urllib.request.urlopen(req, timeout=10) as r:
+        with SITE_OPENER.open(req, timeout=10) as r:
             rp.parse(r.read(200_000).decode("utf-8", "replace").splitlines())
     except urllib.error.HTTPError as e:
         rp.parse([] if e.code >= 400 and e.code != 401 and e.code != 403 else [])
@@ -304,8 +368,10 @@ def fetch_site(host, start_url):
     time.sleep(1.0)  # 1 req/s per host
     try:
         req = urllib.request.Request(home, headers={"User-Agent": UA, "Accept": "text/html"})
-        with urllib.request.urlopen(req, timeout=10) as r:
+        with SITE_OPENER.open(req, timeout=10) as r:
             final = r.geturl()
+            if not fetch_url_ok(final):
+                return "blocked_redirect", []
             if "html" not in (r.headers.get("Content-Type") or "html"):
                 return "not_html", []
             body = r.read(2_000_000).decode(r.headers.get_content_charset() or "utf-8", "replace")
@@ -333,7 +399,7 @@ def fetch_site(host, start_url):
             cands.append(("official_site_favicon", j(href), sizes))
     seen, out = set(), []
     for c in cands:
-        if c[1] not in seen and not c[1].startswith("data:"):
+        if c[1] not in seen and candidate_url_ok(c[1]):
             seen.add(c[1])
             out.append(c)
     return "ok", out
@@ -503,7 +569,7 @@ def main():
             continue
         sc_ = site_cache.get(h, {"status": "not_fetched", "cands": []})
         site_status[sc_["status"].split(":")[0]] += 1
-        cands = best_per_source([tuple(c) for c in sc_["cands"]])
+        cands = best_per_source([tuple(c) for c in sc_["cands"] if candidate_url_ok(c[1])])
         if cands:
             hosts_with_cands += 1
         disp = Counter(v["name"] for v in vs).most_common(1)[0][0]
@@ -543,7 +609,7 @@ def main():
     with open(f"{args.out}/stall_logo_candidates.csv", "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=cols)
         w.writeheader()
-        w.writerows(rows)
+        w.writerows({k: safe_cell(v) for k, v in r.items()} for r in rows)
 
     commons_rows = [r for r in rows if r["source"] == "wikimedia_commons"]
     venues_with_site = sum(len(v) for v in host_venues.values())
@@ -599,7 +665,10 @@ def main():
         fills = {"cleared_open_licence": "E2F0D9", "trademark_review": "FFF2CC",
                  "needs_merchant_permission": "FCE4D6", "merchant_upload_required": "EDEDED"}
         for r in rows:
-            ws.append([r[c] for c in cols])
+            ws.append([safe_cell(r[c]) for c in cols])
+            for cell in ws[ws.max_row]:
+                if isinstance(cell.value, str) and cell.value.startswith("'"):
+                    cell.data_type = "s"
             f = fills.get(r["rights_status"])
             if f:
                 ws.cell(ws.max_row, cols.index("rights_status") + 1).fill = PatternFill("solid", fgColor=f)
