@@ -27,7 +27,11 @@ test("Review feed cards do not render bottom bites sections", () => {
   assert.match(reviewFeed, /const reviewReactionsEnabled = serviceProviderMode === "mock"/);
   assert.match(reviewFeed, /toggleLike/);
   assert.match(reviewFeed, /toggleSave\(item\.interactionId\)/);
-  assert.match(reviewFeed, /toggleFavourite\(item\.dish\)/);
+  assert.match(
+    reviewFeed,
+    /const localDish = item\.dish \?\? repository\.getDishById\(item\.dishId\)/,
+  );
+  assert.match(reviewFeed, /toggleFavourite\(localDish\)/);
   assert.match(reviewFeed, /saved: favouriteDishIds\.includes\(item\.dishId\)/);
   assert.match(reviewFeed, /saveCount: baseInteraction\.saveCount/);
   assert.match(reviewFeed, /incrementShare/);

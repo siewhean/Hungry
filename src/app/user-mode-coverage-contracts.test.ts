@@ -323,7 +323,7 @@ test("review tab covers loading state, review cards, and bite card icon/sheet bo
   assertSourceIncludes(
     reviewFeed,
     [
-      /useDelayedLoadingSkeleton\(isInitialLoading/,
+      /useDelayedLoadingSkeleton\(\s*isInitialLoading/,
       /ReviewFeedSkeleton/,
       /ReviewCommentsSheet/,
       /ReviewShareSheet/,
