@@ -3345,6 +3345,18 @@ export const supabaseService: HungryService = {
         .upsert({ id: userId, taste_profile: profile }, { onConflict: "id" });
       if (error) throw error;
     },
+
+    async recordQuizResponse(responses: Record<string, unknown>, tasteVector: TasteVector) {
+      const client = getSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!client || !userId) return;
+      const { error } = await client.from("quiz_responses").insert({
+        user_id: userId,
+        responses,
+        generated_taste_vector: tasteVectorToArray(tasteVector),
+      });
+      if (error) console.warn("Failed to save quiz responses", error.message);
+    },
   },
 
   push: {

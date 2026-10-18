@@ -1674,6 +1674,10 @@ export const hungryService: HungryService = {
       };
       return resolve(undefined);
     },
+
+    async recordQuizResponse() {
+      return resolve(undefined);
+    },
   },
 
   // ── Push notifications ──────────────────────────────────────────────────────
