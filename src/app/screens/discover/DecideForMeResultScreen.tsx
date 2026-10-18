@@ -33,7 +33,7 @@ import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
 import { shareLink } from "@/features/share/messagingShare";
 import { webShareUrl } from "@/constants/links";
 import { blendedMatchScore, TASTE_LABELS } from "@/lib/ai/tasteEngine";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import type { DataRepository } from "@/lib/services/types";
 import { useCartStore } from "@/store/useCartStore";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
@@ -253,6 +253,13 @@ export function DecideForMeResultScreen() {
   }, [candidates, resultIndex, selectedDish, setDecideForMe]);
 
   const dish = candidates[resultIndex] ?? selectedDish;
+
+  useEffect(() => {
+    if (!dish) return;
+    void getHungryService()
+      .recommendations.recordImpression("decide", [dish.id])
+      .catch(() => undefined);
+  }, [dish?.id]);
   const match = dish
     ? Math.round(blendedMatchScore(profile.tasteVector, dish.tasteVector) * 100)
     : 0;

@@ -886,6 +886,8 @@ export interface HungryService {
 
   recommendations: {
     getSlate(request: RecommendationSlateRequest): Promise<RecommendationSlate>;
+    /** Best-effort log of the dishes a surface showed, for tap-rate measurement; skipped for guests. */
+    recordImpression(surface: RecommendationSurface, dishIds: string[]): Promise<void>;
     recordExplicitFeedback(
       feedback: ExplicitFeedbackInput,
     ): Promise<RecordRecommendationFeedbackResult>;

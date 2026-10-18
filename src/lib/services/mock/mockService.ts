@@ -2155,6 +2155,10 @@ export const hungryService: HungryService = {
       });
     },
 
+    async recordImpression() {
+      return resolve(undefined);
+    },
+
     async recordExplicitFeedback(feedback) {
       const dish = feedback.dishId ? dishes.find((item) => item.id === feedback.dishId) : undefined;
       if (!dish && feedback.feedbackType !== "search_query") {

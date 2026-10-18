@@ -5976,6 +5976,17 @@ export const supabaseService: HungryService = {
       };
     },
 
+    async recordImpression(surface, dishIds) {
+      const client = getSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      const ids = [...new Set(dishIds)].slice(0, 50);
+      if (!client || !userId || ids.length === 0) return;
+      const { error } = await client
+        .from("recommendation_impressions")
+        .insert({ user_id: userId, surface, dish_ids: ids });
+      if (error) console.warn("Failed to record recommendation impression", error.message);
+    },
+
     async recordExplicitFeedback(feedback) {
       const profile = await supabaseService.profile.getProfile();
       const vectorBefore = clampTasteVector(feedback.userVectorBefore ?? profile.tasteVector);
