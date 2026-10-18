@@ -11,10 +11,10 @@ export const WEB_LINKS = {
   accountDeletion: `${WEB_BASE_URL}/account/delete`,
 } as const;
 
-export function webShareUrl(
-  kind: "dish" | "stall" | "post" | "reviews" | "portfolio",
-  id: string,
-): string {
+// Share links are usehungry.com URLs so they work in any chat app. With the
+// app installed, iOS Universal Links / Android App Links open the matching
+// screen in the app (see linking.ts); otherwise the website page is shown.
+export function webShareUrl(kind: "dish" | "stall" | "post" | "portfolio", id: string): string {
   return `${WEB_BASE_URL}/${kind}/${encodeURIComponent(id)}`;
 }
 

@@ -3345,6 +3345,18 @@ export const supabaseService: HungryService = {
         .upsert({ id: userId, taste_profile: profile }, { onConflict: "id" });
       if (error) throw error;
     },
+
+    async recordQuizResponse(responses: Record<string, unknown>, tasteVector: TasteVector) {
+      const client = getSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!client || !userId) return;
+      const { error } = await client.from("quiz_responses").insert({
+        user_id: userId,
+        responses,
+        generated_taste_vector: tasteVectorToArray(tasteVector),
+      });
+      if (error) console.warn("Failed to save quiz responses", error.message);
+    },
   },
 
   push: {
@@ -5962,6 +5974,17 @@ export const supabaseService: HungryService = {
         generatedAt: new Date().toISOString(),
         items: liveItems ?? getRankedRecommendations(request, profile),
       };
+    },
+
+    async recordImpression(surface, dishIds) {
+      const client = getSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      const ids = [...new Set(dishIds)].slice(0, 50);
+      if (!client || !userId || ids.length === 0) return;
+      const { error } = await client
+        .from("recommendation_impressions")
+        .insert({ user_id: userId, surface, dish_ids: ids });
+      if (error) console.warn("Failed to record recommendation impression", error.message);
     },
 
     async recordExplicitFeedback(feedback) {

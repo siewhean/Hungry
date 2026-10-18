@@ -18,6 +18,7 @@ import { Check, ChevronRight, Search } from "lucide-react-native";
 
 import { AccessibleImage, Button, AppText, Card, Chip, EmptyState, Input } from "@/components/ui";
 import { NEUTRAL_TASTE_VECTOR, TASTE_DIMENSIONS } from "@/constants/taste";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -225,6 +226,12 @@ export function TasteQuizScreen({ navigation, route }: Props) {
 
   const handleFinish = () => {
     setTasteVector(values);
+    void getHungryService()
+      .profile.recordQuizResponse(
+        { answers: values, dietaryPreferences, maxDishBudget: maxDishBudget ?? null, flowMode },
+        values,
+      )
+      .catch(() => undefined);
     setDietaryPreferences(dietaryPreferences);
     setMaxDishBudget(maxDishBudget);
     if (flowMode === "profile") {

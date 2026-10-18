@@ -1674,6 +1674,10 @@ export const hungryService: HungryService = {
       };
       return resolve(undefined);
     },
+
+    async recordQuizResponse() {
+      return resolve(undefined);
+    },
   },
 
   // ── Push notifications ──────────────────────────────────────────────────────
@@ -2149,6 +2153,10 @@ export const hungryService: HungryService = {
         generatedAt: new Date().toISOString(),
         items: getRankedRecommendations(request),
       });
+    },
+
+    async recordImpression() {
+      return resolve(undefined);
     },
 
     async recordExplicitFeedback(feedback) {
