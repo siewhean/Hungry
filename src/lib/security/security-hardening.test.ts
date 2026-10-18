@@ -490,6 +490,7 @@ test("store policy controls cover account deletion, UGC moderation, and location
   assert.match(worker, /claim_account_deletion_requests/);
   assert.match(worker, /anonymize_account_deletion_request/);
   assert.match(worker, /auth\.admin\.deleteUser/);
+  assert.match(worker, /from\("menu_photo_submissions"\)\s*\.update\(\{ submitted_by: null \}\)/);
   assert.match(worker, /complete_account_deletion_request/);
   assert.match(settingsScreen, /getHungryService\(\)\.auth\.requestAccountDeletion/);
   assert.match(settingsScreen, /WEB_LINKS\.accountDeletion/);

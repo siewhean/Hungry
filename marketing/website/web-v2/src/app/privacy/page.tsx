@@ -26,11 +26,11 @@ const sections = [
   },
   {
     title: "6. Retention, Deletion, And Correction",
-    body: "Hungry keeps personal data only as long as needed for the feature, legal obligations, security, fraud prevention, moderation, or legitimate operational needs. You can request account deletion in the app under Settings or at hungry.sg/account/delete. Account deletion queues removal or anonymization of account-associated personal data. Some safety, fraud, legal, or audit records may be retained in minimized or anonymized form.",
+    body: "Hungry keeps personal data only as long as needed for the feature, legal obligations, security, fraud prevention, moderation, or legitimate operational needs. You can request account deletion in the app under Settings or at usehungry.com/account/delete. Deletion is scheduled 30 days after the request, and signing back in before then cancels it. After that, account-associated personal data is removed or anonymized. Menu photos you uploaded stay on the stall's page without your name, because they help other diners. Some safety, fraud, legal, or audit records may be retained in minimized or anonymized form.",
   },
   {
     title: "7. Singapore Privacy Rights",
-    body: "Hungry is designed for Singapore users and aims to follow the Personal Data Protection Act obligations for consent, purpose limitation, notification, access, correction, protection, retention limitation, accuracy, and accountability. Contact us if you want to access, correct, or delete personal data associated with your account.",
+    body: "Hungry is designed for Singapore users and aims to follow the Personal Data Protection Act obligations for consent, purpose limitation, notification, access, correction, protection, retention limitation, accuracy, and accountability. To get a copy of your data, use Download my data in the app under Settings; it covers your profile, reviews, posts, favourites, saves, and follows. For anything it does not include, or to correct or delete personal data, email usehungrysingapore@gmail.com and we will respond within 30 days.",
   },
   {
     title: "8. Contact",

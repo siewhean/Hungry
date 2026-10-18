@@ -6,15 +6,15 @@ export const metadata = routeMetadata("/account/delete");
 const sections = [
   {
     title: "What happens after a request",
-    body: "Hungry queues the request, signs the account out, and processes deletion or anonymization of account-associated personal data. Some safety, fraud-prevention, moderation, legal, or audit records may be retained in minimized or anonymized form.",
+    body: "Hungry schedules deletion 30 days after the request and signs the account out. Signing back in before then lets you keep your account. After that, account-associated personal data is deleted or anonymized. Menu photos you uploaded stay on the stall's page without your name. Some safety, fraud-prevention, moderation, legal, or audit records may be retained in minimized or anonymized form.",
   },
   {
     title: "Expected timeline",
-    body: "We aim to process verified deletion requests within 30 days unless a legal, safety, or abuse-prevention exception applies.",
+    body: "Deletion runs once the 30-day grace period ends, unless a legal, safety, or abuse-prevention exception applies.",
   },
   {
     title: "Contact",
-    body: "Email usehungrysingapore@gmail.com with the subject \"Account deletion\" for status updates, access questions, or correction requests.",
+    body: 'Email usehungrysingapore@gmail.com with the subject "Account deletion" for status updates, access questions, or correction requests.',
   },
 ];
 
@@ -41,8 +41,8 @@ export default function AccountDeletionPage() {
         </h1>
         <p style={{ color: "var(--color-text-secondary)", lineHeight: 1.8 }}>
           Signed-in users can request deletion in the Hungry app from Profile, Settings, Delete
-          account. If you cannot access the app, email usehungrysingapore@gmail.com from the address linked to
-          your Hungry account.
+          account. If you cannot access the app, email usehungrysingapore@gmail.com from the address
+          linked to your Hungry account.
         </p>
         <section
           style={{

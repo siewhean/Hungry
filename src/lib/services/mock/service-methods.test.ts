@@ -348,6 +348,7 @@ test("data export collects the signed-in user's profile and activity", async () 
   try {
     const exported = await buildMyDataExport(hungryService);
     assert.equal(exported.exportVersion, 1);
+    assert.match(exported.otherDataRequests, /usehungrysingapore@gmail\.com/);
     assert.ok(exported.profile.id);
     assert.equal(exported.reviews.ok, true);
     assert.equal(exported.posts.ok, true);

@@ -1,3 +1,4 @@
+import { SUPPORT_EMAIL } from "@/constants/links";
 import type { HungryService } from "@/lib/services/types";
 
 export const MY_DATA_EXPORT_VERSION = 1;
@@ -35,6 +36,7 @@ export async function buildMyDataExport(
   return {
     exportVersion: MY_DATA_EXPORT_VERSION,
     generatedAt: new Date().toISOString(),
+    otherDataRequests: `This export covers what the app can read. For any other personal data Hungry holds, email ${SUPPORT_EMAIL}.`,
     profile,
     reviews,
     posts,
