@@ -109,7 +109,7 @@ geo_rpc_search_paths as (
     ])
 )
 select jsonb_build_object(
-  'project_ref', 'vlqfgmrsprbrgzteixsj',
+  'project_ref', '${(process.env.SUPABASE_PROJECT_REF || "linked").replace(/'/g, "''")}',
   'generated_at', clock_timestamp(),
   'role_state', role_state.data,
   'spatial_ref_sys_state', spatial_ref_sys_state.data,
