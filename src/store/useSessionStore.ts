@@ -107,6 +107,9 @@ function clearAccountScopedStores(): void {
   useActivityStore.getState().clearAccountScopedState();
   usePublishedPostStore.getState().clearPosts();
   useStallInteractionStore.getState()._reset();
+  const { useStallFollowStore } =
+    require("./useStallFollowStore") as typeof import("./useStallFollowStore");
+  useStallFollowStore.getState()._reset();
 }
 
 function shouldEnablePostHogIdentity() {

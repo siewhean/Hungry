@@ -11,7 +11,10 @@ export const WEB_LINKS = {
   accountDeletion: `${WEB_BASE_URL}/account/delete`,
 } as const;
 
-export function webShareUrl(kind: "dish" | "stall" | "post" | "reviews", id: string): string {
+export function webShareUrl(
+  kind: "dish" | "stall" | "post" | "reviews" | "portfolio",
+  id: string,
+): string {
   return `${WEB_BASE_URL}/${kind}/${encodeURIComponent(id)}`;
 }
 

@@ -1,35 +1,43 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ArrowLeft } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Button, Card } from "@/components/ui";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import { usePortfolioStore } from "@/store/usePortfolioStore";
 import { useHungryTheme } from "@/theme";
+import type { Portfolio } from "@/types/domain";
 
 type Props = NativeStackScreenProps<RootStackParamList, "PortfolioPublicView">;
 
 export function PortfolioPublicViewScreen({ navigation, route }: Props) {
   const { palette, spacing } = useHungryTheme();
   const portfolioId = route.params.portfolioId;
-  const {
-    portfolios,
-    items,
-    follows,
-    loadPortfolios,
-    loadPortfolioItems,
-    followPortfolio,
-    unfollowPortfolio,
-  } = usePortfolioStore();
-  const portfolio = portfolios.find((entry) => entry.id === portfolioId);
+  const { items, follows, loadPortfolioItems, followPortfolio, unfollowPortfolio } =
+    usePortfolioStore();
+  // Shared links usually point at someone else's list, so load it by id
+  // instead of from the signed-in user's own portfolios.
+  const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const portfolioItems = items[portfolioId] ?? [];
   const isFollowing = follows[portfolioId] === true;
 
   useEffect(() => {
-    void loadPortfolios();
-    void loadPortfolioItems(portfolioId);
-  }, [loadPortfolioItems, loadPortfolios, portfolioId]);
+    let mounted = true;
+    void getHungryService()
+      .portfolio.getPortfolio(portfolioId)
+      .then((next) => {
+        if (mounted) setPortfolio(next);
+      })
+      .catch(() => {
+        if (mounted) setPortfolio(null);
+      });
+    void loadPortfolioItems(portfolioId).catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, [loadPortfolioItems, portfolioId]);
 
   return (
     <ScrollView

@@ -97,7 +97,9 @@ import type {
   PassportStamp,
   SubmitUserStallSubmissionInput,
   UserStallSubmission,
+  PushPreferences,
 } from "@/types/domain";
+import { DEFAULT_PUSH_PREFERENCES } from "@/types/domain";
 import { computeTasteProfileFromQuiz } from "@/lib/ai/tasteQuiz";
 import {
   runRecommendationPipeline,
@@ -285,6 +287,8 @@ function createMockUserStallSubmission(input: SubmitUserStallSubmissionInput): U
 // ─── Mutable in-memory state (mirrors what Supabase would persist) ─────────────
 
 let _profile: UserProfile = { ...guestProfile };
+let _followedStallIds = new Set<string>();
+let _pushPreferences: PushPreferences = { ...DEFAULT_PUSH_PREFERENCES };
 let _isAuthenticated = false;
 let _pendingDeletionScheduledFor: string | undefined;
 let _merchantAccount: MerchantAccount = clone(merchantAccount);
@@ -1647,6 +1651,16 @@ export const hungryService: HungryService = {
       return resolve([..._profile.favouriteDishIds]);
     },
 
+    async setStallFollow(stallId, following) {
+      if (following) _followedStallIds.add(stallId);
+      else _followedStallIds.delete(stallId);
+      return resolve(undefined);
+    },
+
+    async getFollowedStallIds() {
+      return resolve([..._followedStallIds]);
+    },
+
     async updateTasteVector(vector) {
       _profile = { ..._profile, tasteVector: vector };
       return resolve(undefined);
@@ -1658,6 +1672,27 @@ export const hungryService: HungryService = {
         tasteVector: profile.vector,
         tasteProfile: profile,
       };
+      return resolve(undefined);
+    },
+  },
+
+  // ── Push notifications ──────────────────────────────────────────────────────
+
+  push: {
+    async getPreferences() {
+      return resolve({ ..._pushPreferences });
+    },
+
+    async updatePreferences(updates) {
+      _pushPreferences = { ..._pushPreferences, ...updates };
+      return resolve({ ..._pushPreferences });
+    },
+
+    async registerPushToken() {
+      return resolve(undefined);
+    },
+
+    async markOpened() {
       return resolve(undefined);
     },
   },

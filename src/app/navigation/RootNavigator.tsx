@@ -28,6 +28,7 @@ import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
 import { SwipeableTabNavigator } from "./SwipeableTabNavigator";
 import { useAccountDeletionGracePrompt } from "@/features/auth/useAccountDeletionGracePrompt";
 import { createRootLinking } from "./linking";
+import { getInitialNotificationUrl, subscribeToNotificationOpens } from "@/lib/notifications/push";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
@@ -431,8 +432,8 @@ export function RootNavigator({ theme }: { theme: Theme }) {
 
   const prefix = Linking.createURL("/");
   const linking = useMemo(
-    () =>
-      createRootLinking(prefix, () => {
+    () => ({
+      ...createRootLinking(prefix, () => {
         const state = useSessionStore.getState();
         return {
           isAuthReady: state.isAuthReady,
@@ -442,6 +443,17 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           },
         };
       }),
+      // Tapped push notifications open their deep link through the same linking rules.
+      getInitialURL: async () => (await Linking.getInitialURL()) ?? getInitialNotificationUrl(),
+      subscribe: (listener: (url: string) => void) => {
+        const urlSubscription = Linking.addEventListener("url", ({ url }) => listener(url));
+        const unsubscribeNotifications = subscribeToNotificationOpens(listener);
+        return () => {
+          urlSubscription.remove();
+          unsubscribeNotifications();
+        };
+      },
+    }),
     [prefix],
   );
 
@@ -752,12 +764,14 @@ export function RootNavigator({ theme }: { theme: Theme }) {
               <RootStack.Screen getComponent={loadCollectionDetailScreen} name="CollectionDetail" />
             </>
           ) : null}
+          {FEATURE_FLAGS.portfoliosEnabled ? (
+            <RootStack.Screen
+              getComponent={loadPortfolioPublicViewScreen}
+              name="PortfolioPublicView"
+            />
+          ) : null}
           {FEATURE_FLAGS.prototypeRoutesEnabled ? (
             <>
-              <RootStack.Screen
-                getComponent={loadPortfolioPublicViewScreen}
-                name="PortfolioPublicView"
-              />
               <RootStack.Screen
                 getComponent={loadAdminPortfolioFlagsScreen}
                 name="AdminPortfolioFlags"
