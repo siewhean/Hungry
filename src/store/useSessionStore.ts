@@ -202,7 +202,9 @@ export const useSessionStore = create<SessionState>()(
           isAuthenticated: shouldAuthenticate,
           authenticatedUserId: shouldAuthenticate ? nextUserId : null,
           authDataSource: shouldAuthenticate ? authDataSource : null,
-          hasCompletedOnboarding: options?.completedOnboarding ?? state.hasCompletedOnboarding,
+          // Onboarding finished on this device (e.g. as a guest) stays done after sign-in.
+          hasCompletedOnboarding:
+            state.hasCompletedOnboarding || (options?.completedOnboarding ?? false),
           hasSkippedTasteQuiz: options?.skippedTasteQuiz ?? state.hasSkippedTasteQuiz,
           sessionExpired: false,
         }));
@@ -310,7 +312,8 @@ export const useSessionStore = create<SessionState>()(
             isAuthReady: true,
             authenticatedUserId: nextUserId,
             authDataSource: getConfiguredDataSource(),
-            hasCompletedOnboarding: session.completedOnboarding ?? state.hasCompletedOnboarding,
+            hasCompletedOnboarding:
+              state.hasCompletedOnboarding || (session.completedOnboarding ?? false),
             hasSkippedTasteQuiz: session.skippedTasteQuiz ?? state.hasSkippedTasteQuiz,
             sessionExpired: false,
           }));

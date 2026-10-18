@@ -160,12 +160,16 @@ export function SignUpScreen({ navigation }: Props) {
         completedOnboarding: false,
         trackSignInEvent: false,
       });
-      navigation.getParent()?.reset({
-        index: 0,
-        routes: [
-          { name: "OnboardingStack" as never, params: { screen: "OnboardingIntro1" } as never },
-        ],
-      });
+      // Guests who already finished onboarding on this device go straight home
+      // (RootNavigator handles that); everyone else continues Intro -> Cuisine -> ... -> Location.
+      if (!useSessionStore.getState().hasCompletedOnboarding) {
+        navigation.getParent()?.reset({
+          index: 0,
+          routes: [
+            { name: "OnboardingStack" as never, params: { screen: "OnboardingIntro1" } as never },
+          ],
+        });
+      }
     } catch (err) {
       const message = providerErrorMessage(err);
       showToast({

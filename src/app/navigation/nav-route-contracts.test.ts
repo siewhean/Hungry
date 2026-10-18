@@ -49,6 +49,10 @@ test("onboarding typed routes are registered and flow through cuisine, taste, an
   assert.match(quiz, /navigation\.navigate\("TasteProfileResult"\)/);
   assert.match(quiz, /setSkippedTasteQuiz\(true\);\s*navigation\.navigate\("LocationPermission"\)/);
   assert.match(result, /navigation\.navigate\("LocationPermission"\)/);
+  // Signing up mid-onboarding continues to Location instead of finishing early.
+  const onboardingAuth = read("src/app/screens/onboarding/OnboardingAuthScreen.tsx");
+  assert.match(onboardingAuth, /navigation\.navigate\("LocationPermission"\)/);
+  assert.doesNotMatch(onboardingAuth, /completeOnboarding\(/);
   assert.doesNotMatch(result, /completeOnboarding/);
 });
 

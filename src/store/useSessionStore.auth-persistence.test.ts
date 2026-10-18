@@ -72,6 +72,23 @@ test("durable app storage migrates legacy SecureStore session metadata", () => {
   );
 });
 
+test("a guest who finished onboarding locally is not sent through onboarding after sign-in", () => {
+  useSessionStore.setState({ hasCompletedOnboarding: true });
+
+  useSessionStore.getState().completeAuth({
+    completedOnboarding: false,
+    trackSignInEvent: false,
+  });
+  assert.equal(useSessionStore.getState().hasCompletedOnboarding, true);
+
+  useSessionStore.getState().applyAuthStateFromSession({
+    isAuthenticated: true,
+    userId: "guest-signin-user",
+    completedOnboarding: false,
+  });
+  assert.equal(useSessionStore.getState().hasCompletedOnboarding, true);
+});
+
 test("completeAuth records the Supabase user and data source for reload restoration", () => {
   setConfiguredDataSource("supabase");
   useProfileStore.setState({
