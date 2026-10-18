@@ -49,7 +49,7 @@ python3 scripts/enrich_from_open_data.py --sources osm,datagov,overture,foursqua
 
 Responses are cached in `data/open_data_cache/`, which is gitignored. `--offline` uses the cache only. Requests are rate-limited and send a `Hungry-open-data-enrichment` User-Agent; failed requests are retried with 2/4/8/16 s backoff.
 
-**Foursquare is gated.** To enable it, sign in to Hugging Face, accept the terms at https://huggingface.co/datasets/foursquare/fsq-os-places, create a read token, and `export HF_TOKEN=...` before running. Without a token the source is skipped and the skip is logged in `summary.json`.
+**Foursquare is gated.** To enable it, sign in to Hugging Face, accept the terms at https://huggingface.co/datasets/foursquare/fsq-os-places, create a read token, and `export HF_TOKEN=...` before running. Without a token the source is skipped and the skip is logged in `summary.json`. A valid token whose account has not been granted access gets HTTP 403. That is also logged, and the source is skipped. Access must be requested on the dataset page.
 
 **OneMap** search works without a token, so it is used for postal-code geocode checks only. Planning-area lookup needs a token and is skipped.
 

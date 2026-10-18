@@ -868,8 +868,13 @@ def fetch_foursquare(http: Http, vocab: set[str], log: list[str]) -> tuple[list[
             """)
             cols = [d[0] for d in cursor.description]
             rows = [dict(zip(cols, r)) for r in cursor.fetchall()]
-        except Exception as err:  # noqa: BLE001 - token/terms errors land here; message has no secret
-            log.append(f"foursquare: query failed ({type(err).__name__}); check HF_TOKEN and accepted terms")
+        except Exception as err:  # noqa: BLE001 - token/terms errors land here; never log the token
+            if "403" in str(err):
+                log.append("foursquare: HTTP 403, the token is valid but its account is not in the dataset's "
+                           f"authorized list. Request access at https://huggingface.co/datasets/{FSQ_DATASET} "
+                           "while signed in as the token's account, then rerun.")
+            else:
+                log.append(f"foursquare: query failed ({type(err).__name__}); check HF_TOKEN and accepted terms")
             return [], release
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         cache_path.write_text(json.dumps(rows, default=str))

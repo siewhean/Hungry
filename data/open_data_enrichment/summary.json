@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-18T13:43:09Z",
+  "generated_at": "2026-10-18T13:57:22Z",
   "venues_in_catalog": 29611,
   "overwrite": false,
   "priority": [
@@ -93,7 +93,7 @@
         "cuisine_tags": 0,
         "dietary_tags": 0
       },
-      "release": ""
+      "release": "2026-10-15"
     },
     "onemap": {
       "postal_codes_checked": 300,
@@ -134,9 +134,9 @@
   "venues_with_fill": 4863,
   "http": {
     "requests": 4,
-    "cache_hits": 442
+    "cache_hits": 443
   },
   "log": [
-    "foursquare: skipped, dataset is gated on Hugging Face. To enable: accept the terms at https://huggingface.co/datasets/foursquare/fsq-os-places with a Hugging Face account, create a read token, and export HF_TOKEN before running."
+    "foursquare: HTTP 403, the token is valid but its account is not in the dataset's authorized list. Request access at https://huggingface.co/datasets/foursquare/fsq-os-places while signed in as the token's account, then rerun."
   ]
 }
