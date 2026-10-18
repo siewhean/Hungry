@@ -1,4 +1,4 @@
-import { memo, useCallback, useRef, useState } from "react";
+import { memo, useCallback, useRef, useState, type ReactNode } from "react";
 import { Pressable, TextInput, View } from "react-native";
 import { ArrowLeft, Search, X, SlidersHorizontal, Star } from "lucide-react-native";
 import { FlashList } from "@shopify/flash-list";
@@ -10,6 +10,8 @@ import type { DishDetail } from "@/types/domain";
 type FilterTab = "All" | "Dishes";
 
 interface SearchResultsViewProps {
+  /** Rendered directly above the search row (e.g. the screen title). */
+  header?: ReactNode;
   query: string;
   onQueryChange: (query: string) => void;
   onClear: () => void;
@@ -70,7 +72,9 @@ const SearchResultRow = memo(function SearchResultRow({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Open ${dish.name}`}
+      accessibilityLabel={
+        dish.venueName ? `Open ${dish.name} from ${dish.venueName}` : `Open ${dish.name}`
+      }
       onPressIn={handlePressIn}
       onPress={handlePress}
       style={{ flexDirection: "row", gap: spacing[3] }}
@@ -87,6 +91,11 @@ const SearchResultRow = memo(function SearchResultRow({
         <AppText variant="bodyBold" numberOfLines={1}>
           {dish.name}
         </AppText>
+        {dish.venueName ? (
+          <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
+            {dish.venueName}
+          </AppText>
+        ) : null}
         <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
           <Star color={palette.amber} fill={palette.amber} size={14} />
           <AppText variant="micro" style={{ fontWeight: "700" }}>
@@ -105,6 +114,7 @@ const SearchResultRow = memo(function SearchResultRow({
 });
 
 export function SearchResultsView({
+  header,
   query,
   onQueryChange,
   onClear,
@@ -139,6 +149,8 @@ export function SearchResultsView({
 
   return (
     <View style={{ flex: 1, backgroundColor: palette.bg }}>
+      {/* Optional title row sits directly above the always-visible search row. */}
+      {header ? <View style={{ paddingHorizontal: spacing[4] }}>{header}</View> : null}
       {/* Always-visible header: back + search field + clear. The previous
           collapsed reveal-on-tap search rendered as an empty band (QA #17). */}
       <View

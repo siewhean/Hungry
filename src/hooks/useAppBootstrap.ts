@@ -100,17 +100,20 @@ export function useAppBootstrap() {
   }, []);
 
   useEffect(() => {
-    // Re-read GPS on launch and on each return to the foreground; the store
-    // skips it unless permission is granted and the last fix is stale.
+    // Re-read GPS on every launch and on each return to the foreground once the
+    // last fix is stale; the store skips it unless permission is granted.
     const refreshLocation = () => {
       void useLocationStore.getState().refreshLocation();
+    };
+    const refreshLocationOnLaunch = () => {
+      void useLocationStore.getState().refreshLocation({ force: true });
     };
     // The persisted permission must be restored before the launch check.
     let unsubscribeHydration: (() => void) | undefined;
     if (useLocationStore.persist.hasHydrated()) {
-      refreshLocation();
+      refreshLocationOnLaunch();
     } else {
-      unsubscribeHydration = useLocationStore.persist.onFinishHydration(refreshLocation);
+      unsubscribeHydration = useLocationStore.persist.onFinishHydration(refreshLocationOnLaunch);
     }
     const subscription = AppState.addEventListener("change", (state) => {
       if (state === "active") refreshLocation();

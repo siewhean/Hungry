@@ -30,11 +30,18 @@ import { blendedMatchScore, TASTE_LABELS } from "@/lib/ai/tasteEngine";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import type { DataRepository } from "@/lib/services/types";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
+import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
-import type { DietaryFlag, DishDetail, TasteVector } from "@/types/domain";
+import type {
+  Coordinate,
+  DietaryFlag,
+  DishDetail,
+  TasteVector,
+  VenueSummary,
+} from "@/types/domain";
 import { TASTE_DIMENSIONS } from "@/constants/taste";
 
 function TasteMiniBar({
@@ -136,8 +143,10 @@ function getCandidates(
   tasteVector: TasteVector,
   dietaryFlags: DietaryFlag[],
   radius: number,
+  location: Coordinate,
   maxDishBudget?: number,
 ) {
+  // Pass the user's location so the radius is measured from them, matching the radius chip.
   const results = repository.searchDishes(
     {
       query: "",
@@ -145,6 +154,8 @@ function getCandidates(
       dietaryFlags,
       tasteValues: tasteVector,
       radius,
+      latitude: location.latitude,
+      longitude: location.longitude,
     },
     tasteVector,
   );
@@ -236,6 +247,7 @@ export function DecideForMeResultScreen() {
   const showToast = useUIStore((state) => state.showToast);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
+  const currentLocation = useLocationStore((state) => state.currentLocation);
   const [searchRadius, setSearchRadius] = useState(500);
   const [resultIndex, setResultIndex] = useState(0);
   const route = useRoute<RouteProp<RootStackParamList, "DecideForMeResult">>();
@@ -260,9 +272,11 @@ export function DecideForMeResultScreen() {
         profile.tasteVector,
         profile.dietaryPreferences,
         searchRadius,
+        currentLocation,
         profile.maxDishBudget,
       ),
     [
+      currentLocation,
       profile.dietaryPreferences,
       profile.maxDishBudget,
       profile.tasteVector,
@@ -296,6 +310,24 @@ export function DecideForMeResultScreen() {
   }, [candidates, resultIndex, selectedDish, setDecideForMe]);
 
   const dish = candidates[resultIndex] ?? selectedDish;
+  const dishVenueId = dish?.venueId;
+  // The Supabase venue cache is partial, so fetch the stall when it is not cached.
+  const cachedVenue = dishVenueId ? repository.getVenueById(dishVenueId) : undefined;
+  const [fetchedVenue, setFetchedVenue] = useState<VenueSummary>();
+
+  useEffect(() => {
+    if (!dishVenueId || cachedVenue) return;
+    let active = true;
+    void getHungryService()
+      .discovery.getVenue(dishVenueId)
+      .then((nextVenue) => {
+        if (active) setFetchedVenue(nextVenue);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [cachedVenue, dishVenueId]);
 
   useEffect(() => {
     if (!dish) return;
@@ -418,7 +450,10 @@ export function DecideForMeResultScreen() {
     );
   }
 
-  const venue = repository.getVenueById(dish.venueId);
+  const venue = cachedVenue ?? (fetchedVenue?.id === dish.venueId ? fetchedVenue : undefined);
+  const stallLine = [venue?.name || dish.venueName, venue?.unitNumber || dish.unitNumber]
+    .filter(Boolean)
+    .join(" · ");
   const building = findBuildingById(dish.buildingId);
   const stallAddress = venue
     ? formatFullStallAddress(venue, {
@@ -537,9 +572,11 @@ export function DecideForMeResultScreen() {
             <AppText variant="h2" tone="secondary" style={{ color: palette.orange }}>
               S${dish.price.toFixed(2)}
             </AppText>
-            <AppText variant="bodyLarge" tone="secondary">
-              {venue?.name} · {venue?.unitNumber}
-            </AppText>
+            {stallLine ? (
+              <AppText variant="bodyLarge" tone="secondary">
+                {stallLine}
+              </AppText>
+            ) : null}
             {distanceLabel || updatedLabel ? (
               <AppText variant="body" tone="muted">
                 {[distanceLabel, updatedLabel].filter(Boolean).join(" · ")}

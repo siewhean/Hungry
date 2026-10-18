@@ -105,6 +105,9 @@ test("GPS refreshes on foreground and first follow asks for push inline", () => 
   const bootstrap = read("src/hooks/useAppBootstrap.ts");
   assert.match(bootstrap, /AppState\.addEventListener\("change"/);
   assert.match(bootstrap, /useLocationStore\.getState\(\)\.refreshLocation\(\)/);
+  // A cold launch always re-reads GPS so a user who moved isn't stuck on the old area.
+  assert.match(bootstrap, /onFinishHydration\(refreshLocationOnLaunch\)/);
+  assert.match(bootstrap, /refreshLocation\(\{ force: true \}\)/);
 
   const follow = read("src/components/stall/FollowStallButton.tsx");
   assert.match(follow, /registerForStallAlerts\(\)/);
