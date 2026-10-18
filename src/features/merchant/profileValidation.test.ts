@@ -43,3 +43,19 @@ test("validateMerchantProfileUpdates rejects exact privacy for home-based busine
     /Home-based businesses cannot use exact location privacy/,
   );
 });
+
+test("validateMerchantProfileUpdates normalizes social links and rejects bad URLs", () => {
+  const result = validateMerchantProfileUpdates({
+    socialLinks: [
+      { platform: " Website ", url: "laksa.sg" },
+      { platform: "instagram", url: "" },
+    ],
+  });
+  assert.deepEqual(result.socialLinks, [{ platform: "website", url: "https://laksa.sg" }]);
+
+  assert.throws(
+    () =>
+      validateMerchantProfileUpdates({ socialLinks: [{ platform: "website", url: "not a url" }] }),
+    /website link is not a valid web address/,
+  );
+});

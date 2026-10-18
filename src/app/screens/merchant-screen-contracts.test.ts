@@ -248,9 +248,16 @@ test("Merchant screen contract: profile, menu, and analytics use production-read
   const analytics = read("src/app/screens/merchant/MerchantAnalyticsScreen.tsx");
   const dashboard = read("src/app/screens/merchant/MerchantDashboardScreen.tsx");
 
+  const imageField = read("src/components/merchant/MerchantImageField.tsx");
+  const dishEditor = read("src/app/screens/merchant/DishEditorScreen.tsx");
+
   assert.match(profile, /BusinessTypeDropdown/);
-  assert.match(profile, /launchImageLibraryAsync/);
-  assert.match(profile, /BusinessImageField/);
+  assert.match(imageField, /launchImageLibraryAsync/);
+  assert.match(profile, /<MerchantImageField/);
+  assert.match(dishEditor, /<MerchantImageField/);
+  assert.doesNotMatch(dishEditor, /Paste image URL/);
+  assert.match(profile, /name="isLive"/);
+  assert.match(profile, /Show on Hungry/);
   assert.doesNotMatch(profile, /Profile image upload unavailable/);
   assert.match(verificationCentre, /launchImageLibraryAsync/);
   assert.match(verificationCentre, /submitVerification\(activeOutlet\.id/);
@@ -279,6 +286,8 @@ test("Merchant screen contract: profile, menu, and analytics use production-read
   assert.match(menu, /<FAB>/);
   assert.match(menu, /Add Menu Item Manually/);
   assert.match(menu, /Search menu/);
+  assert.match(menu, /hidden from diners until Hungry verifies your stall/);
+  assert.doesNotMatch(menu, /console\.error\(e\);\s*\}\s*\};/);
   assert.match(analytics, /showsVerticalScrollIndicator=\{false\}/);
   assert.match(analytics, /See More/);
   assert.match(dashboard, /getMerchantProfileGaps/);

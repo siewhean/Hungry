@@ -95,6 +95,7 @@ import type {
   PortfolioItem,
   ProfileVisibility,
   PromotionStatus,
+  PublicMerchantProfile,
   SearchFilters,
   TasteProfile,
   TasteInteractionEvent,
@@ -970,6 +971,12 @@ async function mapSupabaseReviewRows(
       tags: asStringArray(row.tags),
       wouldRecommend: asBoolean(row.would_recommend) ?? true,
       photos: photosByReviewId.get(id) ?? [],
+      merchantReply: asString(row.merchant_reply_text)
+        ? {
+            text: asString(row.merchant_reply_text) ?? "",
+            repliedAt: asString(row.merchant_replied_at) ?? asString(row.created_at) ?? "",
+          }
+        : undefined,
     };
   });
 }
@@ -1972,6 +1979,15 @@ async function fetchVerificationForOutlet(
   return toMerchantVerification(data as Row, evidence);
 }
 
+function toSocialLinks(value: unknown): MerchantOutlet["socialLinks"] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    const platform = asString((item as Row | null)?.platform);
+    const url = asString((item as Row | null)?.url);
+    return platform && url ? [{ platform, url }] : [];
+  });
+}
+
 async function toMerchantOutlet(client: SupabaseClient, row: Row): Promise<MerchantOutlet> {
   const venueId = asString(row.venue_id);
   const venue = venueId ? supabaseRepository.getVenueById(venueId) : undefined;
@@ -1979,6 +1995,7 @@ async function toMerchantOutlet(client: SupabaseClient, row: Row): Promise<Merch
   return {
     id: asString(row.id) ?? "",
     merchantAccountId: asString(row.merchant_account_id) ?? "",
+    venueId,
     name: asString(row.name) ?? venue?.name ?? "",
     businessType: (asString(row.business_type) as MerchantOutlet["businessType"]) ?? "hawker_stall",
     buildingId: asString(row.building_id) ?? venue?.buildingId,
@@ -1987,7 +2004,7 @@ async function toMerchantOutlet(client: SupabaseClient, row: Row): Promise<Merch
     locationPrivacy:
       (asString(row.location_privacy) as MerchantOutlet["locationPrivacy"]) ?? "approximate",
     description: asString(row.description) ?? "",
-    cuisineCategories: [],
+    cuisineCategories: asStringArray(row.cuisine_categories),
     operatingHours: asString(row.operating_hours) ?? venue?.operatingHours ?? "",
     temporaryClosure: asString(row.temporary_closure),
     profilePhotoUrl: asString(row.profile_photo_url),
@@ -1995,7 +2012,7 @@ async function toMerchantOutlet(client: SupabaseClient, row: Row): Promise<Merch
     galleryUrls: [],
     contactPhone: asString(row.contact_phone),
     contactEmail: asString(row.contact_email),
-    socialLinks: [],
+    socialLinks: toSocialLinks(row.social_links),
     deliveryLinks: venue?.deliveryLinks ?? [],
     dietaryLabels: [],
     tasteTags: [],
@@ -2338,6 +2355,10 @@ function buildDishUpdatePayload(updates: Partial<DishDetail>): Row {
   return payload;
 }
 
+function isMerchantDishImageUrl(url: string): boolean {
+  return /^https:\/\/[^/]+\/storage\/v1\/object\/public\/merchant-dish-images\//.test(url);
+}
+
 async function resolveMerchantDishGalleryUrls(
   client: SupabaseClient,
   outlet: Row,
@@ -2358,6 +2379,12 @@ async function resolveMerchantDishGalleryUrls(
 
   for (let index = 0; index < requestedUrls.length; index += 1) {
     const url = requestedUrls[index];
+    // Photos already uploaded to the merchant bucket are kept as they are, so
+    // editing a dish's name or price does not force a re-upload.
+    if (isMerchantDishImageUrl(url)) {
+      uploadedUrls.push(url);
+      continue;
+    }
     assertLocalUserMediaUri(url, "Merchant dish image");
     if (!userId) throw new Error("You must be signed in to upload merchant dish images.");
     const extension = extensionFromUri(url);
@@ -3051,6 +3078,29 @@ export const supabaseService: HungryService = {
       return (Array.isArray(data) ? (data as Row[]) : []).map(mapPromotion);
     },
 
+    async getPublicMerchantProfile(venueId) {
+      const client = getSupabaseClient();
+      if (!client || !venueId) return undefined;
+      const { data, error } = await client.rpc("get_public_merchant_profile", {
+        p_venue_id: venueId,
+      });
+      if (error) return undefined;
+      const row = (Array.isArray(data) ? (data as Row[]) : [])[0];
+      if (!row) return undefined;
+      return {
+        outletId: asString(row.outlet_id) ?? "",
+        description: asString(row.description),
+        contactPhone: asString(row.contact_phone),
+        contactEmail: asString(row.contact_email),
+        socialLinks: toSocialLinks(row.social_links),
+        cuisineCategories: asStringArray(row.cuisine_categories),
+        profilePhotoUrl: asString(row.profile_photo_url),
+        coverPhotoUrl: asString(row.cover_photo_url),
+        temporaryClosure: asString(row.temporary_closure),
+        isVerified: asBoolean(row.is_verified) ?? false,
+      } satisfies PublicMerchantProfile;
+    },
+
     async recordDishView(dishId, context) {
       const client = getSupabaseClient();
       if (!client) return;
@@ -3143,7 +3193,7 @@ export const supabaseService: HungryService = {
       const { data, error } = await client
         .from("reviews")
         .select(
-          "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend",
+          "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend,merchant_reply_text,merchant_replied_at",
         )
         .eq("dish_id", dishId)
         .order("created_at", { ascending: false });
@@ -5088,6 +5138,10 @@ export const supabaseService: HungryService = {
       }
       if (normalized.contactPhone !== undefined) payload.contact_phone = normalized.contactPhone;
       if (normalized.contactEmail !== undefined) payload.contact_email = normalized.contactEmail;
+      if (normalized.cuisineCategories !== undefined) {
+        payload.cuisine_categories = normalized.cuisineCategories;
+      }
+      if (normalized.socialLinks !== undefined) payload.social_links = normalized.socialLinks;
       if (normalized.profilePhotoUrl !== undefined) {
         payload.profile_photo_url = normalized.profilePhotoUrl || null;
         if (normalized.profilePhotoUrl && isLocalUri(normalized.profilePhotoUrl)) {

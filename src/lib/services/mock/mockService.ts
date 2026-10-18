@@ -73,6 +73,7 @@ import type {
   MerchantNotification,
   MerchantNotificationPreferences,
   MerchantPromotion,
+  PublicMerchantProfile,
   MerchantTeamMember,
   MerchantWeeklySummary,
   OCRDishDraft,
@@ -1483,6 +1484,31 @@ export const hungryService: HungryService = {
         (promotion) => getPromotionOutletVenueId(promotion) === input.venueId,
       );
       return resolve(clone(filterCustomerVisiblePromotions(promotions, { dishId: input.dishId })));
+    },
+
+    async getPublicMerchantProfile(venueId) {
+      const outlet = _merchantAccount.outlets.find(
+        (item) =>
+          item.isLive &&
+          (getMockMerchantVenueId(item.id) === venueId ||
+            item.signatureDishIds.some(
+              (dishId) => dishes.find((dish) => dish.id === dishId)?.venueId === venueId,
+            )),
+      );
+      if (!outlet) return resolve(undefined);
+      const isVerified = outlet.verification?.status === "verified";
+      return resolve({
+        outletId: outlet.id,
+        description: outlet.description || undefined,
+        contactPhone: outlet.contactPhone,
+        contactEmail: outlet.contactEmail,
+        socialLinks: clone(outlet.socialLinks),
+        cuisineCategories: [...outlet.cuisineCategories],
+        profilePhotoUrl: isVerified ? outlet.profilePhotoUrl : undefined,
+        coverPhotoUrl: isVerified ? outlet.coverPhotoUrl : undefined,
+        temporaryClosure: outlet.temporaryClosure,
+        isVerified,
+      } satisfies PublicMerchantProfile);
     },
 
     async recordDishView(dishId, context) {

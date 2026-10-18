@@ -26,6 +26,7 @@ import {
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import { getDishSection, hasAvailabilityFlag } from "@/features/merchant/menuSections";
 import type { DishDetail } from "@/types/domain";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 
@@ -38,11 +39,8 @@ const MENU_FILTER_OPTIONS: { id: MenuFilter; label: string }[] = [
   { id: "sold_out", label: "Sold Out" },
 ];
 
-function hasAvailabilityFlag(flags: readonly string[] | undefined, target: string): boolean {
-  const normalizedTarget = target.toLowerCase().replace(/[\s-]+/g, "_");
-  return (
-    flags?.some((flag) => flag.toLowerCase().replace(/[\s-]+/g, "_") === normalizedTarget) ?? false
-  );
+function showError(title: string, error: unknown) {
+  Alert.alert(title, error instanceof Error && error.message ? error.message : "Please try again.");
 }
 
 function formatDietaryFlag(flag: string): string {
@@ -112,8 +110,17 @@ export function MerchantMenuScreen() {
     } else if (filter === "sold_out") {
       result = result.filter((d) => hasAvailabilityFlag(d.availabilityFlags, "sold_out"));
     }
-    return result;
+    // Group by menu section (unsectioned last), keeping newest-first within a section.
+    return [...result].sort((left, right) => {
+      const leftSection = getDishSection(left.availabilityFlags);
+      const rightSection = getDishSection(right.availabilityFlags);
+      if (leftSection === rightSection) return 0;
+      if (!leftSection) return 1;
+      if (!rightSection) return -1;
+      return leftSection.localeCompare(rightSection);
+    });
   }, [menu, searchQuery, filter]);
+  const isVerified = activeOutlet?.verification?.status === "verified";
 
   useEffect(() => {
     prefetchImages(
@@ -124,6 +131,7 @@ export function MerchantMenuScreen() {
 
   const previewVenueId = useMemo(
     () =>
+      activeOutlet?.venueId ??
       menu[0]?.venueId ??
       activeOutlet?.signatureDishIds
         .map((dishId) => repository.getDishById(dishId)?.venueId)
@@ -171,17 +179,31 @@ export function MerchantMenuScreen() {
         }),
       );
     } catch (e) {
-      console.error(e);
+      showError("Could not update availability", e);
     }
   };
 
   const handleToggleFeatured = async (dish: DishDetail) => {
     if (!activeOutlet) return;
     try {
-      await getHungryService().merchant.toggleFeatured(activeOutlet.id, dish.id);
-      Alert.alert("Success", `${dish.name} featured status toggled.`);
+      const featured = await getHungryService().merchant.toggleFeatured(activeOutlet.id, dish.id);
+      setMenu((prev) =>
+        prev.map((d) =>
+          d.id === dish.id
+            ? {
+                ...d,
+                availabilityFlags: [
+                  ...(d.availabilityFlags || []).filter(
+                    (f) => !hasAvailabilityFlag([f], "featured"),
+                  ),
+                  ...(featured ? ["featured"] : []),
+                ],
+              }
+            : d,
+        ),
+      );
     } catch (e) {
-      console.error(e);
+      showError("Could not update featured dish", e);
     }
   };
 
@@ -197,7 +219,7 @@ export function MerchantMenuScreen() {
             await getHungryService().merchant.deleteDish(activeOutlet.id, dish.id);
             setMenu((prev) => prev.filter((d) => d.id !== dish.id));
           } catch (e) {
-            console.error(e);
+            showError("Could not delete dish", e);
           }
         },
       },
@@ -213,7 +235,12 @@ export function MerchantMenuScreen() {
           : "Mark Sold Out",
         onPress: () => handleToggleSoldOut(dish),
       },
-      { text: "Toggle Featured", onPress: () => handleToggleFeatured(dish) },
+      {
+        text: hasAvailabilityFlag(dish.availabilityFlags, "featured")
+          ? "Remove from Featured"
+          : "Feature Dish",
+        onPress: () => handleToggleFeatured(dish),
+      },
       { text: "Delete", style: "destructive", onPress: () => handleDelete(dish) },
       { text: "Cancel", style: "cancel" },
     ]);
@@ -247,6 +274,23 @@ export function MerchantMenuScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ gap: spacing[4], paddingBottom: spacing[20] }}
         >
+          <View
+            accessibilityRole="text"
+            style={{
+              backgroundColor: isVerified ? palette.successSoft : palette.bgSoft,
+              borderColor: isVerified ? palette.success : palette.border,
+              borderRadius: componentRadii.card,
+              borderWidth: 1,
+              padding: spacing[3],
+            }}
+          >
+            <AppText variant="bodySmall">
+              {isVerified
+                ? "Changes you make here show to diners straight away."
+                : "Your menu is saved but hidden from diners until Hungry verifies your stall."}
+            </AppText>
+          </View>
+
           <View style={{ paddingHorizontal: spacing[1] }}>
             <InlineSearchField
               accessibilityLabel="Search menu items"
@@ -364,7 +408,16 @@ export function MerchantMenuScreen() {
                           )}
                         </View>
                         <AppText variant="body" tone="muted" style={{ marginTop: 4 }}>
-                          {dish.priceRange} • {dish.tasteTags.slice(0, 3).join(", ")}
+                          {[
+                            dish.priceRange,
+                            getDishSection(dish.availabilityFlags),
+                            hasAvailabilityFlag(dish.availabilityFlags, "featured")
+                              ? "Featured"
+                              : undefined,
+                            dish.tasteTags.slice(0, 2).join(", "),
+                          ]
+                            .filter(Boolean)
+                            .join(" • ")}
                         </AppText>
                         {dish.dietaryFlags.length > 0 && (
                           <View
@@ -407,7 +460,7 @@ export function MerchantMenuScreen() {
               }}
             >
               <Button
-                label="Use Camera"
+                label="Review Photo Drafts"
                 variant="secondary"
                 fullWidth
                 leftIcon={<Camera size={16} color={palette.text} />}

@@ -10,6 +10,7 @@ export interface StallCommunityReview {
   text: string;
   createdAt: string;
   avatarUrl: string;
+  merchantReply?: { text: string; repliedAt: string };
 }
 
 const AVATAR_POOL = [
@@ -58,6 +59,7 @@ export function deriveStallCommunityReviews(dishes: DishDetail[]): StallCommunit
           text: review.text,
           createdAt: review.createdAt,
           avatarUrl: review.authorAvatarUrl ?? AVATAR_POOL[avatarIndex],
+          merchantReply: review.merchantReply,
         } satisfies StallCommunityReview;
       }),
     )
