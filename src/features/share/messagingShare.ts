@@ -3,6 +3,8 @@ import { Share } from "react-native";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { openTrustedMessagingShareUrl } from "@/lib/security/safeLinking";
 
+import { withShareSource } from "./shareAttribution";
+
 export type ShareChannel = "whatsapp" | "telegram" | "system_share";
 
 export interface ShareTarget {
@@ -23,14 +25,15 @@ export function buildTelegramShareUrl(message: string, url: string) {
 
 /** Shares a dish or list link through WhatsApp, Telegram or the system sheet and logs the channel. */
 export async function shareLink(target: ShareTarget, channel: ShareChannel) {
+  const url = withShareSource(target.url, channel);
   if (channel === "whatsapp") {
-    await openTrustedMessagingShareUrl(buildWhatsAppShareUrl(target.message, target.url));
+    await openTrustedMessagingShareUrl(buildWhatsAppShareUrl(target.message, url));
   } else if (channel === "telegram") {
-    await openTrustedMessagingShareUrl(buildTelegramShareUrl(target.message, target.url));
+    await openTrustedMessagingShareUrl(buildTelegramShareUrl(target.message, url));
   } else {
     const result = await Share.share({
-      message: `${target.message}\n${target.url}`,
-      url: target.url,
+      message: `${target.message}\n${url}`,
+      url,
     });
     if (result.action === Share.dismissedAction) return;
   }

@@ -11,6 +11,7 @@ import {
   ChevronUp,
   Clock3,
   CheckCircle,
+  ListPlus,
   MapPin,
   MessageCircleMore,
   MessageCircle,
@@ -21,7 +22,11 @@ import {
 } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
+import { useDetailSaveActions } from "@/features/checklistPortfolio/DetailSaveActions";
 import { buildDishGallery } from "@/features/detail/detailTransforms";
+import { formatDishUpdated } from "@/features/detail/dishFreshness";
+import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore, getTasteSimilarityWithDish } from "@/store/useProfileStore";
@@ -221,6 +226,15 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const shareSheetRef = useRef<BottomSheetModal>(null);
   const lastRecordedDishViewId = useRef<string | null>(null);
   const [isTryingFood, setIsTryingFood] = useState(false);
+  const { addToPortfolio, isAddingToPortfolio } = useDetailSaveActions({
+    navigation,
+    target: {
+      itemType: "dish",
+      id: dishId,
+      label: dish?.name ?? "This dish",
+      venueId: dish?.venueId,
+    },
+  });
 
   const cachedVenue = useMemo(
     () => (dish ? repository.getVenueById(dish.venueId) : undefined),
@@ -646,6 +660,11 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         ({dish.reviewCount} listed reviews)
                       </AppText>
                     </View>
+                    {formatDishUpdated(dish.updatedAt) ? (
+                      <AppText variant="bodySmall" tone="muted">
+                        {formatDishUpdated(dish.updatedAt)}
+                      </AppText>
+                    ) : null}
                   </View>
                 </View>
 
@@ -835,12 +854,16 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         width: signatureGridItemWidth,
                       }}
                     >
-                      <AccessibleImage
-                        source={{ uri: item.imageUrl }}
-                        contentFit="cover"
-                        style={{ flex: 1 }}
-                        decorative
-                      />
+                      {item.imageUrl ? (
+                        <AccessibleImage
+                          source={{ uri: item.imageUrl }}
+                          contentFit="cover"
+                          style={{ flex: 1 }}
+                          decorative
+                        />
+                      ) : (
+                        <NoDishPhoto dishName={item.name} style={{ flex: 1 }} />
+                      )}
                       <LinearGradient
                         colors={["transparent", palette.detailImageOverlay]}
                         style={{
@@ -961,6 +984,23 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
               right: 0,
             }}
           >
+            {FEATURE_FLAGS.portfoliosEnabled ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Add this dish to a list"
+                onPress={() => void addToPortfolio()}
+                disabled={isAddingToPortfolio}
+                style={{
+                  alignItems: "center",
+                  paddingHorizontal: spacing[1],
+                  height: 42,
+                  justifyContent: "center",
+                  width: undefined,
+                }}
+              >
+                <ListPlus color={palette.text} size={reviewIconSize} />
+              </Pressable>
+            ) : null}
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={isSaved ? "Unsave this dish" : "Save this dish"}

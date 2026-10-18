@@ -1,5 +1,6 @@
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { WEB_BASE_URL } from "@/constants/links";
+import { parseShareSource, rememberShareAttribution } from "@/features/share/shareAttribution";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 
 const SAFE_DEEP_LINK_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
@@ -168,10 +169,15 @@ const SHARED_LINK_ROUTES = new Set([
   "WheelStack",
 ]);
 
-function trackSharedLinkOpened(state: LinkingState) {
+function trackSharedLinkOpened(state: LinkingState, rawPath: string) {
   const route = state.routes[state.routes.length - 1];
   if (!route || !SHARED_LINK_ROUTES.has(String(route.name))) return;
-  trackAnalyticsEvent("shared_link_opened", { route: String(route.name) });
+  const source = parseShareSource(rawPath);
+  if (source) rememberShareAttribution({ source, route: String(route.name) });
+  trackAnalyticsEvent("shared_link_opened", {
+    route: String(route.name),
+    ...(source ? { share_source: source } : {}),
+  });
 }
 
 function isProtectedDeepLinkState(state: LinkingState | undefined): boolean {
@@ -234,7 +240,7 @@ export function createRootLinking(
       if (!state) {
         return undefined;
       }
-      trackSharedLinkOpened(state);
+      trackSharedLinkOpened(state, path);
 
       const { isAuthReady, isAuthenticated, onAuthRedirect } = getAuthState();
       if (!isAuthReady && isProtectedDeepLinkState(state)) {
