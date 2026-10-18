@@ -30,6 +30,9 @@ test("Decide For Me has no fake cart, routes back to Discover, and tracks its fu
   assert.match(screen, /navigation\.navigate\("MainTabs", \{ screen: "Discover" \}\)/);
   assert.doesNotMatch(screen, /navigate\("SearchHome"\)/);
   // Home does not track the trigger itself, so the screen does unless Discover opened it.
+  // The entry surface comes from the route params, not the screen below.
+  assert.match(screen, /const entrySurface = route\.params\?\.surface \?\? "direct";/);
+  assert.doesNotMatch(screen, /getEntrySurface/);
   assert.match(
     screen,
     /if \(entrySurface === "discover"\) return;[\s\S]*"decide_for_me_triggered"/,

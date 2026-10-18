@@ -1985,6 +1985,7 @@ export function DiscoverHomeScreen() {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const radiusMeters = 500;
     trackAnalyticsEvent("decide_for_me_triggered", {
+      surface: "discover",
       location_granted: locationPermission === "granted",
       radius_m: radiusMeters,
     });
@@ -2044,9 +2045,7 @@ export function DiscoverHomeScreen() {
       });
       setDecideForMe(picked);
     }
-    // `surface` is read by DecideForMeResult for decide_for_me_triggered; the route's
-    // param type is widened in navigationTypes.ts separately.
-    navigation.navigate("DecideForMeResult", { surface: "discover" } as never);
+    navigation.navigate("DecideForMeResult", { surface: "discover" });
   };
 
   const handleFoodStylePress = useCallback(

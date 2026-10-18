@@ -1133,11 +1133,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         <WeeklyPicksRail
           horizontalPadding={semanticSpacing.screenEdge}
           onOpenDish={(dishId) => navigation.navigate("DishDetail", { dishId })}
-          onDecideForMe={() =>
-            // `surface` is read by DecideForMeResult for decide_for_me_triggered; the route's
-            // param type is widened in navigationTypes.ts separately.
-            navigation.navigate("DecideForMeResult", { surface: "home" } as never)
-          }
+          onDecideForMe={() => navigation.navigate("DecideForMeResult", { surface: "home" })}
         />
         {storiesEnabled ? (
           shouldShowStories ? (

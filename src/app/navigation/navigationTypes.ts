@@ -12,15 +12,11 @@ export type AuthStackParamList = {
 export type OnboardingStackParamList = {
   OnboardingWelcome: undefined;
   OnboardingIntro1: undefined;
-  OnboardingIntro2: undefined;
-  OnboardingIntro3: undefined;
   CuisineSelection: undefined;
-  FoodSelection: { cuisines: string[] };
   TasteQuiz: { mode?: "onboarding" | "profile"; initialPhase?: "taste" | "dietary" } | undefined;
   DietaryPreferences:
     | { mode?: "onboarding" | "profile"; initialPhase?: "taste" | "dietary" }
     | undefined;
-  TasteProfileLoading: undefined;
   TasteProfileResult: undefined;
   LocationPermission: undefined;
   ManualLocationPicker: undefined;
@@ -124,7 +120,7 @@ export type RootStackParamList = {
   BrowseStalls: undefined;
   TasteFilter: undefined;
   DiscoverMap: undefined;
-  DecideForMeResult: undefined;
+  DecideForMeResult: { surface?: "home" | "discover" } | undefined;
   BuildingDrillDown: { buildingId: string };
   MapZoomedIn: { buildingId: string };
   BlogPost: { postId: string };

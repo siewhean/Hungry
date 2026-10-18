@@ -1048,7 +1048,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
             {[
               { label: "Intro 1", screen: "OnboardingIntro1" },
-              { label: "Intro 2", screen: "OnboardingIntro2" },
+              { label: "Cuisines", screen: "CuisineSelection" },
               { label: "Quiz", screen: "TasteQuiz" },
               { label: "Perms", screen: "LocationPermission" },
             ].map(({ label, screen }) => (

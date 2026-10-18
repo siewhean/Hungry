@@ -8,7 +8,7 @@ import {
   Pressable,
   useWindowDimensions,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ChevronLeft, Shuffle, MapPin, Star, Heart, Navigation, Share2 } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
@@ -131,23 +131,6 @@ function nextRadius(currentRadius: number) {
   return RADIUS_STEPS_METERS.find((value) => value > currentRadius);
 }
 
-/**
- * Where Decide-for-me was opened from, read from the screen below this one.
- * Discover already tracks `decide_for_me_triggered` before navigating; other
- * entry points (Home) do not, so this screen tracks those itself.
- */
-function getEntrySurface(navigation: RootNavigation): string {
-  const state = navigation.getState();
-  const previous = state?.routes[state.index - 1];
-  if (!previous) return "direct";
-  if (previous.name === "MainTabs") {
-    const tabs = previous.state;
-    const tabName = tabs?.routes[tabs.index ?? 0]?.name;
-    return (tabName ?? "Home").toLowerCase();
-  }
-  return previous.name;
-}
-
 function getCandidates(
   repository: DataRepository,
   tasteVector: TasteVector,
@@ -255,7 +238,10 @@ export function DecideForMeResultScreen() {
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const [searchRadius, setSearchRadius] = useState(500);
   const [resultIndex, setResultIndex] = useState(0);
-  const [entrySurface] = useState(() => getEntrySurface(navigation));
+  const route = useRoute<RouteProp<RootStackParamList, "DecideForMeResult">>();
+  // Where Decide-for-me was opened from. Discover tracks `decide_for_me_triggered`
+  // before navigating; every other entry point is tracked here, once per open.
+  const entrySurface = route.params?.surface ?? "direct";
 
   useEffect(() => {
     if (entrySurface === "discover") return; // Discover tracks the trigger itself.

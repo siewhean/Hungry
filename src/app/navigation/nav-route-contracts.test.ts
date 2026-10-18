@@ -32,6 +32,7 @@ test("onboarding typed routes are registered and flow through cuisine, taste, an
     "TasteProfileLoading",
   ]) {
     assert.doesNotMatch(stack, new RegExp(`name="${removed}"`));
+    assert.doesNotMatch(types, new RegExp(`\\b${removed}:`));
   }
   assert.match(welcome, /navigation\.navigate\("CuisineSelection"\)/);
   assert.match(intro1, /nextScreen="CuisineSelection"/);
