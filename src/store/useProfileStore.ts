@@ -439,6 +439,7 @@ export const useProfileStore = create<ProfileState>()(
           const updatedTasteVector = processExplicitFeedback(state.profile.tasteVector, {
             type: feedbackType,
             dishVector: dish.tasteVector,
+            dishConfidence: dish.tasteConfidence,
             timestamp: Date.now(),
           });
           interactionInput = { type: isFavourite ? "unsaved" : "saved", surface: "profile", dish };
@@ -796,6 +797,7 @@ export const useProfileStore = create<ProfileState>()(
           const updatedTasteVector = processExplicitFeedback(state.profile.tasteVector, {
             type: feedbackType,
             dishVector: interactionVector,
+            dishConfidence: input.dish?.tasteConfidence,
             timestamp: Date.now(),
           });
           const event = createTasteEvent(
