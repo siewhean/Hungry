@@ -42,6 +42,11 @@ test("bottom navigation puts create post in the center and review fourth", () =>
   assert.match(tabItem, /accessibilityRole=\{createAction \? "button" : "tab"\}/);
   assert.match(tabItem, /accessibilityState=\{createAction \? \{\} : \{ selected: focused \}\}/);
   assert.match(tabItem, /focused \? palette\.orangeText : palette\.textMuted/);
+  // Merchant tabs pass their own colour; it must use the same accessible token.
+  assert.match(
+    read("src/app/navigation/MerchantTabs.tsx"),
+    /isFocused \? palette\.orangeText : palette\.textMuted/,
+  );
   assert.match(
     tabItem,
     /\{showLabel && !createAction \? \(\s*<AppText[\s\S]*\{label\}[\s\S]*<\/AppText>\s*\) : null\}/,

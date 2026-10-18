@@ -282,7 +282,7 @@ function MerchantTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
                 : { icon: Store, label: "Profile" };
         const Icon = tabConfig.icon;
 
-        const color = isFocused ? palette.orange : palette.textMuted;
+        const color = isFocused ? palette.orangeText : palette.textMuted;
 
         return (
           <AppBottomTabItem
