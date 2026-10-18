@@ -50,6 +50,11 @@ KOPITIAM_TYPES = ("coffeeshop", "eating house")
 MALL_WORDS = ("mall", "plaza", "square", "point", "shopping", "hub", "atria", "junction", "city", "centre")
 
 
+def web_url(value: Any) -> str:
+    url = clean(value)
+    return url if re.match(r"https?://", url, re.I) else ""
+
+
 def clean(value: Any) -> str:
     return "" if value is None else str(value).strip()
 
@@ -233,7 +238,7 @@ def build(workbook: Path, out: Path) -> dict[str, int]:
             "unit_number": unit,
             "floor": floor_from_unit(unit),
             "hygiene_grade": hygiene_grade(clean(row.get("SFA Status / Hygiene Grade"))),
-            "operating_hours": clean(row.get("Opening Hours / Closed Days")),
+            "operating_hours": re.sub(r"^Hours:\s*", "", clean(row.get("Opening Hours / Closed Days"))),
             "business_id": licence,
             "licence_no": licence,
             "cuisine_tags": pg_array(cuisine_tags(clean(row.get("Cuisine")))),
@@ -243,6 +248,9 @@ def build(workbook: Path, out: Path) -> dict[str, int]:
             "postal_code": postal,
             "planning_area": area,
             "last_verified_at": excel_date(row.get("SFA Verified Date")),
+            "website_url": web_url(row.get("Website")),
+            "contact_phone": re.sub(r"^Contact:\s*", "", clean(row.get("Contact Details"))),
+            "menu_url": web_url(row.get("Menu URL")),
         }
 
     dishes: dict[str, dict[str, Any]] = {}
@@ -352,7 +360,7 @@ create temp table load_venues (
   id text, building_id text, name text, unit_number text, floor text, hygiene_grade text,
   operating_hours text, business_id text, licence_no text, cuisine_tags text[],
   latitude double precision, longitude double precision, address text, postal_code text,
-  planning_area text, last_verified_at text
+  planning_area text, last_verified_at text, website_url text, contact_phone text, menu_url text
 ) on commit drop;
 create temp table load_dishes (
   id text, venue_id text, building_id text, name text, price numeric, price_range text,
@@ -384,12 +392,13 @@ on conflict (id) do update set
 insert into venues (
   id, building_id, name, unit_number, floor, hygiene_grade, is_open, operating_hours,
   business_id, licence_no, cuisine_tags, latitude, longitude, address, postal_code,
-  planning_area, source_type, source_confidence, last_verified_at
+  planning_area, source_type, source_confidence, last_verified_at, website_url, contact_phone, menu_url
 )
 select id, building_id, name, coalesce(unit_number, ''), floor, hygiene_grade, true,
   coalesce(operating_hours, ''), business_id, licence_no, coalesce(cuisine_tags, '{}'),
   latitude, longitude, coalesce(address, ''), coalesce(postal_code, ''), coalesce(planning_area, ''),
-  'spreadsheet', 0.800, coalesce(nullif(last_verified_at, '')::date, current_date)
+  'spreadsheet', 0.800, coalesce(nullif(last_verified_at, '')::date, current_date),
+  nullif(website_url, ''), nullif(contact_phone, ''), nullif(menu_url, '')
 from load_venues
 on conflict (id) do update set
   building_id = excluded.building_id,
@@ -405,6 +414,9 @@ on conflict (id) do update set
   postal_code = excluded.postal_code,
   planning_area = excluded.planning_area,
   last_verified_at = excluded.last_verified_at,
+  website_url = excluded.website_url,
+  contact_phone = excluded.contact_phone,
+  menu_url = excluded.menu_url,
   updated_at = now();
 
 insert into dishes (
