@@ -141,6 +141,7 @@ const INTENDED_AUTHENTICATED_RPCS = [
   "catalog_raw_venues_page",
   "mark_notification_opened",
   "register_push_token",
+  "unregister_push_token",
 ];
 
 // SECURITY DEFINER RPCs signed-out visitors are meant to call; each returns only public rows.
