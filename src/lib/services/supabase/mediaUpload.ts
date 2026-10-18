@@ -53,6 +53,53 @@ async function fetchBlobFromUri(uri: string): Promise<Blob> {
   return response.blob();
 }
 
+type ImageManipulatorModule = typeof import("expo-image-manipulator");
+
+function loadImageManipulator(): ImageManipulatorModule | null {
+  try {
+    // Lazy so a binary built before expo-image-manipulator was added (or a non-RN test
+    // runtime) falls back to the original file instead of crashing at import time.
+    return require("expo-image-manipulator") as ImageManipulatorModule;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Re-encode an already-validated image so EXIF metadata (GPS location, device details)
+ * is not uploaded. PNG and WebP keep their format; JPEG and HEIC become JPEG.
+ * Returns null when re-encoding is unavailable or fails, so the caller uploads the original.
+ */
+async function reencodeImageWithoutMetadata(
+  uri: string,
+  contentType: string,
+): Promise<{ blob: Blob; contentType: string } | null> {
+  const manipulator = loadImageManipulator();
+  if (!manipulator) {
+    return null;
+  }
+
+  const { ImageManipulator, SaveFormat } = manipulator;
+  const format =
+    contentType === "image/png"
+      ? SaveFormat.PNG
+      : contentType === "image/webp"
+        ? SaveFormat.WEBP
+        : SaveFormat.JPEG;
+
+  try {
+    const rendered = await ImageManipulator.manipulate(uri).renderAsync();
+    const saved = await rendered.saveAsync({ format, compress: 0.9 });
+    const blob = await fetchBlobFromUri(saved.uri);
+    return { blob, contentType: `image/${format}` };
+  } catch (error) {
+    if (typeof __DEV__ !== "undefined" && __DEV__) {
+      console.warn("Image metadata stripping failed; uploading original image.", error);
+    }
+    return null;
+  }
+}
+
 async function uploadViaSignedUrl(
   client: SupabaseClient,
   bucket: string,
@@ -183,9 +230,13 @@ export async function uploadImageFromUri(params: {
   uri: string;
 }): Promise<UploadedAsset> {
   const { client, bucket, path, uri } = params;
-  const blob = await fetchBlobFromUri(uri);
-  const contentType = blob.type || guessContentType(uri);
-  await assertValidImageBlob(blob, contentType);
+  const originalBlob = await fetchBlobFromUri(uri);
+  const originalContentType = originalBlob.type || guessContentType(uri);
+  await assertValidImageBlob(originalBlob, originalContentType);
+
+  const stripped = await reencodeImageWithoutMetadata(uri, originalContentType);
+  const blob = stripped?.blob ?? originalBlob;
+  const contentType = stripped?.contentType ?? originalContentType;
 
   const signedSucceeded = await uploadViaSignedUrl(client, bucket, path, blob, contentType);
   if (!signedSucceeded) {
@@ -206,9 +257,15 @@ export async function uploadPostMediaFromUri(params: {
   uri: string;
 }): Promise<UploadedAsset & { contentType: string; sizeBytes?: number }> {
   const { client, bucket, path, uri } = params;
-  const blob = await fetchBlobFromUri(uri);
-  const contentType = blob.type || guessContentType(uri);
-  await assertValidPostMediaBlob(blob, contentType);
+  const originalBlob = await fetchBlobFromUri(uri);
+  const originalContentType = originalBlob.type || guessContentType(uri);
+  await assertValidPostMediaBlob(originalBlob, originalContentType);
+
+  const stripped = originalContentType.startsWith("image/")
+    ? await reencodeImageWithoutMetadata(uri, originalContentType)
+    : null;
+  const blob = stripped?.blob ?? originalBlob;
+  const contentType = stripped?.contentType ?? originalContentType;
 
   const signedSucceeded = await uploadViaSignedUrl(client, bucket, path, blob, contentType);
   if (!signedSucceeded) {
