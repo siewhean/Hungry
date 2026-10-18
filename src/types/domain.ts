@@ -1126,6 +1126,8 @@ export interface StallInteraction {
 /** Per-user push settings. Hours are Singapore time (0-23); quiet hours wrap past midnight. */
 export interface PushPreferences {
   stallUpdates: boolean;
+  /** Weekly "Your new picks are ready" push. On unless the user opts out. */
+  weeklyPicks: boolean;
   quietStartHour: number;
   quietEndHour: number;
   weeklyCap: number;
@@ -1133,6 +1135,7 @@ export interface PushPreferences {
 
 export const DEFAULT_PUSH_PREFERENCES: PushPreferences = {
   stallUpdates: false,
+  weeklyPicks: true,
   quietStartHour: 22,
   quietEndHour: 8,
   weeklyCap: 3,

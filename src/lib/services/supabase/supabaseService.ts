@@ -584,12 +584,14 @@ async function ensureCurrentUserProfileRow(
 
 function mapPushPreferencesRow(row: {
   stall_updates: boolean;
+  weekly_picks: boolean;
   quiet_start_hour: number;
   quiet_end_hour: number;
   weekly_cap: number;
 }): PushPreferences {
   return {
     stallUpdates: row.stall_updates,
+    weeklyPicks: row.weekly_picks,
     quietStartHour: row.quiet_start_hour,
     quietEndHour: row.quiet_end_hour,
     weeklyCap: row.weekly_cap,
@@ -3520,7 +3522,7 @@ export const supabaseService: HungryService = {
       if (!userId) return { ...DEFAULT_PUSH_PREFERENCES };
       const { data, error } = await client
         .from("notification_preferences")
-        .select("stall_updates,quiet_start_hour,quiet_end_hour,weekly_cap")
+        .select("stall_updates,weekly_picks,quiet_start_hour,quiet_end_hour,weekly_cap")
         .eq("user_id", userId)
         .maybeSingle();
       if (error) throw error;
@@ -3539,13 +3541,14 @@ export const supabaseService: HungryService = {
           {
             user_id: userId,
             stall_updates: next.stallUpdates,
+            weekly_picks: next.weeklyPicks,
             quiet_start_hour: next.quietStartHour,
             quiet_end_hour: next.quietEndHour,
             weekly_cap: next.weeklyCap,
           },
           { onConflict: "user_id" },
         )
-        .select("stall_updates,quiet_start_hour,quiet_end_hour,weekly_cap")
+        .select("stall_updates,weekly_picks,quiet_start_hour,quiet_end_hour,weekly_cap")
         .single();
       if (error) throw error;
       return mapPushPreferencesRow(data);

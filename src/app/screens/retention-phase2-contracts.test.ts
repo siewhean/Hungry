@@ -36,6 +36,15 @@ test("stall alerts only fire for verified merchant changes and respect user limi
 test("push alerts are opt-in and tapped alerts open through deep link rules", () => {
   assert.equal(DEFAULT_PUSH_PREFERENCES.stallUpdates, false);
   assert.match(read("src/app/screens/profile/SettingsScreen.tsx"), /<StallAlertsSettings/);
+  // Weekly picks is a separate opt-out (on by default, matching the DB default).
+  assert.equal(DEFAULT_PUSH_PREFERENCES.weeklyPicks, true);
+  const alerts = read("src/components/settings/StallAlertsSettings.tsx");
+  assert.match(alerts, /label="Weekly picks"/);
+  assert.match(alerts, /isEnabled=\{preferences\.weeklyPicks\}/);
+  assert.match(
+    read("src/lib/services/supabase/supabaseService.ts"),
+    /weekly_picks: next\.weeklyPicks/,
+  );
   const push = read("src/lib/notifications/push.ts");
   assert.match(push, /trackAnalyticsEvent\("notification_opened"/);
   assert.match(push, /push\.markOpened\(notificationId\)/);

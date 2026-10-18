@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BellRing, Store } from "lucide-react-native";
+import { BellRing, Sparkles, Store } from "lucide-react-native";
 
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { registerForStallAlerts } from "@/lib/notifications/push";
@@ -19,7 +19,10 @@ interface StallAlertsSettingsProps {
   onOpenFollowedStalls: () => void;
 }
 
-/** Opt-in alerts for verified menu changes at followed stalls. Off until the user turns it on. */
+/**
+ * Push alerts: opt-in menu changes at followed stalls (off until turned on) and
+ * the weekly picks push (on unless the user opts out).
+ */
 export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSettingsProps) {
   const { palette } = useHungryTheme();
   const showToast = useUIStore((state) => state.showToast);
@@ -39,29 +42,32 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
     };
   }, []);
 
-  const handleToggle = async (enabled: boolean) => {
+  const handleToggle = async (key: "stallUpdates" | "weeklyPicks", enabled: boolean) => {
     if (isSaving) return;
     setIsSaving(true);
     try {
       if (enabled && !(await registerForStallAlerts())) {
         showToast({
-          message: "Allow notifications for Hungry in your phone settings to get stall alerts.",
+          message: "Allow notifications for Hungry in your phone settings to get these alerts.",
           tone: "error",
         });
         return;
       }
-      const next = await getHungryService().push.updatePreferences({ stallUpdates: enabled });
+      const next = await getHungryService().push.updatePreferences({ [key]: enabled });
       setPreferences(next);
-      trackAnalyticsEvent("notification_preferences_updated", { stall_updates: enabled });
+      trackAnalyticsEvent(
+        "notification_preferences_updated",
+        key === "stallUpdates" ? { stall_updates: enabled } : { weekly_picks: enabled },
+      );
     } catch {
-      showToast({ message: "Couldn't update stall alerts. Please try again.", tone: "error" });
+      showToast({ message: "Couldn't update alerts. Please try again.", tone: "error" });
     } finally {
       setIsSaving(false);
     }
   };
 
   return (
-    <SettingsSection title="Stall alerts">
+    <SettingsSection title="Alerts">
       <SettingsRow
         label="Menu changes at followed stalls"
         description={`New dishes, price changes and restocks. Quiet ${formatHour(
@@ -70,7 +76,16 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
         icon={<BellRing size={20} color={palette.orange} />}
         type="toggle"
         isEnabled={preferences.stallUpdates}
-        onToggle={(value) => void handleToggle(value)}
+        onToggle={(value) => void handleToggle("stallUpdates", value)}
+        isLast={false}
+      />
+      <SettingsRow
+        label="Weekly picks"
+        description="A Monday nudge when your new dish picks are ready on Home."
+        icon={<Sparkles size={20} color={palette.orange} />}
+        type="toggle"
+        isEnabled={preferences.weeklyPicks}
+        onToggle={(value) => void handleToggle("weeklyPicks", value)}
         isLast={false}
       />
       <SettingsRow
