@@ -11,7 +11,7 @@ function read(path: string) {
 }
 
 test("stall alerts only fire for verified merchant changes and respect user limits", () => {
-  const migration = read("supabase/migrations/20261017200000_retention_follows_push_alerts.sql");
+  const migration = read("supabase/migrations/20261018003000_retention_follows_push_alerts.sql");
   assert.match(
     migration,
     /v_actor is null or not public\.merchant_can_manage_venue\(new\.venue_id\)/,

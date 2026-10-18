@@ -45,7 +45,7 @@ each prompt explicitly.
 
 The `process-account-deletions` cron (migration `20261017130000_account_deletion_worker_cron.sql`,
 every 15 minutes) and the `send-notifications` cron (migration
-`20261017200000_retention_follows_push_alerts.sql`) do nothing until their Vault secrets exist.
+`20261018003000_retention_follows_push_alerts.sql`) do nothing until their Vault secrets exist.
 Run in the SQL editor:
 
 ```sql
