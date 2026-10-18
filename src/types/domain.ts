@@ -1087,6 +1087,23 @@ export interface StallInteraction {
   reviewedAt?: string;
 }
 
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+/** Per-user push settings. Hours are Singapore time (0-23); quiet hours wrap past midnight. */
+export interface PushPreferences {
+  stallUpdates: boolean;
+  quietStartHour: number;
+  quietEndHour: number;
+  weeklyCap: number;
+}
+
+export const DEFAULT_PUSH_PREFERENCES: PushPreferences = {
+  stallUpdates: false,
+  quietStartHour: 22,
+  quietEndHour: 8,
+  weeklyCap: 3,
+};
+
 // ─── Helpful Voting ───────────────────────────────────────────────────────────
 
 export interface ReviewHelpfulVote {

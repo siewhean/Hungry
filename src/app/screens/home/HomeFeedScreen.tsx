@@ -64,6 +64,7 @@ import {
   Input,
   Skeleton,
 } from "@/components/ui";
+import { WeeklyPicksRail } from "@/components/dish/WeeklyPicksRail";
 import {
   BitesCarousel,
   CircleStoryCarousel,
@@ -1052,6 +1053,11 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
           horizontalPadding={semanticSpacing.screenEdge}
           style={{ minHeight: 68 }}
         />
+        <WeeklyPicksRail
+          horizontalPadding={semanticSpacing.screenEdge}
+          onOpenDish={(dishId) => navigation.navigate("DishDetail", { dishId })}
+          onDecideForMe={() => navigation.navigate("DecideForMeResult")}
+        />
         {storiesEnabled ? (
           shouldShowStories ? (
             <CircleStoryCarousel
@@ -1067,6 +1073,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       </View>
     ),
     [
+      navigation,
       handleAddStoryPress,
       handleStoryPress,
       holdOpeningStoryRing,

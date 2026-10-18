@@ -599,7 +599,7 @@ export function ProfileHomeScreen({
                   }}
                 />
               )}
-              {isAuthenticated && FEATURE_FLAGS.collectionsEnabled && (
+              {isAuthenticated && FEATURE_FLAGS.portfoliosEnabled && (
                 <MenuRow
                   label="Hungry Portfolios"
                   icon={<BarChart3 size={20} color={palette.orange} />}

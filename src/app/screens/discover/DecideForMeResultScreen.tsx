@@ -18,6 +18,7 @@ import {
   Star,
   Heart,
   Navigation,
+  Share2,
 } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -29,6 +30,8 @@ import { AccessibleImage, AppText, Badge, Button, Card, EmptyState, Screen } fro
 import { findBuildingById } from "@/features/discovery/discovery";
 import { buildMapsSearchUrl, formatFullStallAddress } from "@/features/detail/stallLocation";
 import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
+import { shareLink } from "@/features/share/messagingShare";
+import { webShareUrl } from "@/constants/links";
 import { blendedMatchScore, TASTE_LABELS } from "@/lib/ai/tasteEngine";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import type { DataRepository } from "@/lib/services/types";
@@ -391,6 +394,18 @@ export function DecideForMeResultScreen() {
   const handleSave = () => {
     toggleFavourite(dish);
   };
+
+  const handleShare = () => {
+    void shareLink(
+      {
+        kind: "dish",
+        id: dish.id,
+        message: `${dish.name}${venue?.name ? ` at ${venue.name}` : ""}, S$${dish.price.toFixed(2)}`,
+        url: webShareUrl("dish", dish.id),
+      },
+      "system_share",
+    );
+  };
   const tasteDims: { key: keyof TasteVector; label: string }[] = [
     { key: "sweet", label: "Sweet" },
     { key: "spicy", label: "Spicy" },
@@ -547,6 +562,12 @@ export function DecideForMeResultScreen() {
                 onPress={handleSave}
               />
             </View>
+            <Button
+              label="Share with friends"
+              variant="secondary"
+              leftIcon={<Share2 size={18} color={palette.text} />}
+              onPress={handleShare}
+            />
             <Button
               label="View Stall Details"
               variant="secondary"

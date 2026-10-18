@@ -65,14 +65,14 @@ test("production route gates keep advanced surfaces behind MVP-safe flags", () =
   assert.match(rootNavigator, /name="CollectionDetail"/);
   assert.match(
     rootNavigator,
-    /FEATURE_FLAGS\.prototypeRoutesEnabled \? \([\s\S]*name="PortfolioPublicView"/,
+    /FEATURE_FLAGS\.portfoliosEnabled \? \([\s\S]*name="PortfolioPublicView"/,
   );
   assert.match(
     rootNavigator,
     /FEATURE_FLAGS\.prototypeRoutesEnabled \? \([\s\S]*name="AdminPortfolioFlags"/,
   );
-  assert.match(linking, /FEATURE_FLAGS\.prototypeRoutesEnabled/);
   assert.match(linking, /FEATURE_FLAGS\.merchantCentreEnabled/);
+  assert.match(linking, /FEATURE_FLAGS\.portfoliosEnabled/);
   assert.match(linking, /PortfolioPublicView/);
   assert.match(linking, /MerchantTabs/);
   assert.match(rootNavigator, /FEATURE_FLAGS\.floorplansEnabled \? \(/);

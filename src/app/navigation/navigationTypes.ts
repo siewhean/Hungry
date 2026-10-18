@@ -34,6 +34,7 @@ export type ProfileStackParamList = {
   Followers: { userId?: string; userDisplayName?: string } | undefined;
   Following: { userId?: string; userDisplayName?: string } | undefined;
   VisitedStalls: undefined;
+  FollowedStalls: undefined;
   Settings: undefined;
   SocialGrid: { type: "liked" | "saved" };
   SocialPostDetail: { postId: string; type: "liked" | "saved" };

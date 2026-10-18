@@ -139,7 +139,12 @@ const INTENDED_AUTHENTICATED_RPCS = [
   "catalog_raw_venue_detail",
   "catalog_raw_venue_menu_page",
   "catalog_raw_venues_page",
+  "mark_notification_opened",
+  "register_push_token",
 ];
+
+// SECURITY DEFINER RPCs signed-out visitors are meant to call; each returns only public rows.
+const INTENDED_ANON_RPCS = ["get_public_portfolio"];
 
 function intendedReason(finding) {
   const metadata = finding.metadata || {};
@@ -149,6 +154,14 @@ function intendedReason(finding) {
     INTENDED_AUTHENTICATED_RPCS.includes(metadata.name)
   ) {
     return "intended authenticated RPC";
+  }
+  if (
+    (finding.name === "anon_security_definer_function_executable" ||
+      finding.name === "authenticated_security_definer_function_executable") &&
+    metadata.schema === "public" &&
+    INTENDED_ANON_RPCS.includes(metadata.name)
+  ) {
+    return "intended public read RPC";
   }
   return null;
 }

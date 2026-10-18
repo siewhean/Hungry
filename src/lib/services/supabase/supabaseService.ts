@@ -105,7 +105,9 @@ import type {
   UserStallSubmissionMenuItem,
   UserProfile,
   VerificationEvidence,
+  PushPreferences,
 } from "@/types/domain";
+import { DEFAULT_PUSH_PREFERENCES } from "@/types/domain";
 
 type Row = Record<string, unknown>;
 type DishPresentation = {
@@ -547,6 +549,20 @@ async function ensureCurrentUserProfileRow(
   if (error) {
     throw error;
   }
+}
+
+function mapPushPreferencesRow(row: {
+  stall_updates: boolean;
+  quiet_start_hour: number;
+  quiet_end_hour: number;
+  weekly_cap: number;
+}): PushPreferences {
+  return {
+    stallUpdates: row.stall_updates,
+    quietStartHour: row.quiet_start_hour,
+    quietEndHour: row.quiet_end_hour,
+    weeklyCap: row.weekly_cap,
+  };
 }
 
 async function fetchFavouriteDishIdsForUser(
@@ -3250,6 +3266,33 @@ export const supabaseService: HungryService = {
       return fetchFavouriteDishIdsForUser(client, userId);
     },
 
+    async setStallFollow(stallId: string, following: boolean) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to follow stalls.");
+      const { error } = following
+        ? await client
+            .from("stall_follows")
+            .upsert(
+              { user_id: userId, stall_id: stallId },
+              { onConflict: "user_id,stall_id", ignoreDuplicates: true },
+            )
+        : await client.from("stall_follows").delete().eq("user_id", userId).eq("stall_id", stallId);
+      if (error) throw error;
+    },
+
+    async getFollowedStallIds() {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) return [];
+      const { data, error } = await client
+        .from("stall_follows")
+        .select("stall_id")
+        .eq("user_id", userId);
+      if (error) throw error;
+      return (data ?? []).map((row: { stall_id: string }) => row.stall_id);
+    },
+
     async updateTasteVector(vector: TasteVector) {
       const client = requireSupabaseClient();
       const userId = await getCurrentSupabaseUserId();
@@ -3300,6 +3343,60 @@ export const supabaseService: HungryService = {
       const { error } = await client
         .from("user_profiles")
         .upsert({ id: userId, taste_profile: profile }, { onConflict: "id" });
+      if (error) throw error;
+    },
+  },
+
+  push: {
+    async getPreferences() {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) return { ...DEFAULT_PUSH_PREFERENCES };
+      const { data, error } = await client
+        .from("notification_preferences")
+        .select("stall_updates,quiet_start_hour,quiet_end_hour,weekly_cap")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (error) throw error;
+      return data ? mapPushPreferencesRow(data) : { ...DEFAULT_PUSH_PREFERENCES };
+    },
+
+    async updatePreferences(updates: Partial<PushPreferences>) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to change notification settings.");
+      const current = await supabaseService.push.getPreferences();
+      const next = { ...current, ...updates };
+      const { data, error } = await client
+        .from("notification_preferences")
+        .upsert(
+          {
+            user_id: userId,
+            stall_updates: next.stallUpdates,
+            quiet_start_hour: next.quietStartHour,
+            quiet_end_hour: next.quietEndHour,
+            weekly_cap: next.weeklyCap,
+          },
+          { onConflict: "user_id" },
+        )
+        .select("stall_updates,quiet_start_hour,quiet_end_hour,weekly_cap")
+        .single();
+      if (error) throw error;
+      return mapPushPreferencesRow(data);
+    },
+
+    async registerPushToken(token: string, platform: "ios" | "android") {
+      const client = requireSupabaseClient();
+      const { error } = await client.rpc("register_push_token", {
+        p_token: token,
+        p_platform: platform,
+      });
+      if (error) throw error;
+    },
+
+    async markOpened(notificationId: string) {
+      const client = requireSupabaseClient();
+      const { error } = await client.rpc("mark_notification_opened", { p_id: notificationId });
       if (error) throw error;
     },
   },

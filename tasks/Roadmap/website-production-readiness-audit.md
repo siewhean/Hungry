@@ -145,6 +145,7 @@ All P0 blockers resolved. All static predeploy gates pass.
 | `/about` | Public marketing | Public | No | Yes | Static content | Low | Keep public and cached |
 | `/account/delete` | Public legal | Public | No | Yes | Static legal/support copy | Low | Keep support route visible |
 | `/contact` | Public support | Public | No | Yes | Static contact CTAs | Low | Keep no sensitive storage |
+| `/dish/[id]` | Public share preview | Public | No | No (noindex) | Supabase anon REST (RLS) | Medium | Shared app links; no private data |
 | `/dishes/[dishSlug]` | Public SEO | Public | No | Conditional | Supabase/public fallback content | Medium | Noindex if thin or unsupported facts |
 | `/for-foodies` | Public marketing | Public | No | Yes | Static content | Low | Keep public and cached |
 | `/for-merchants` | Public marketing | Public | No | Yes | Static content | Low | Keep public and cached |
@@ -152,11 +153,13 @@ All P0 blockers resolved. All static predeploy gates pass.
 | `/hawker-centres/[centreSlug]` | Public SEO | Public | No | Conditional | Supabase/public fallback content | Medium | Noindex if thin or unsupported facts |
 | `/join-waitlist` | Public form | Public | No | Yes | Static form + `/api/waitlist` | Medium | Validate client and API payloads |
 | `/malls/[mallSlug]/food` | Public SEO | Public | No | Conditional | Supabase/public fallback content | Medium | Noindex if thin or unsupported facts |
+| `/portfolio/[id]` | Public share preview | Public | No | No (noindex) | get_public_portfolio RPC (public lists only) | Medium | Uncached so private lists disappear at once |
 | `/privacy` | Public legal | Public | No | Yes | Legal copy | Medium | Keep provider claims accurate |
 | `/singapore` | Public SEO | Public | No | Yes | Static Singapore index | Low | Keep public and cached |
 | `/singapore/[area]/[dish]` | Public SEO | Public | No | Conditional | Supabase/public fallback content | Medium | No fake ratings/hours |
 | `/singapore/[area]/food` | Public SEO | Public | No | Conditional | Supabase/public fallback content | Medium | Noindex if thin |
 | `/singapore/mrt/[station]/food` | Public SEO | Public | No | Conditional | Supabase/public fallback content | Medium | Noindex if thin |
+| `/stall/[id]` | Public share preview | Public | No | No (noindex) | Supabase anon REST (RLS) | Medium | Shared app links; no private data |
 | `/stalls/[stallSlug]` | Public SEO | Public | No | Conditional | Supabase/public fallback content | Medium | No fake verification |
 | `/terms` | Public legal | Public | No | Yes | Legal copy | Medium | Keep legal copy reviewed |
 | `/merchant` | Merchant private | Private | Yes | No | Merchant API/session | High | Server middleware block + noindex headers |

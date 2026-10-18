@@ -15,6 +15,7 @@ import type {
   CustomerInteraction,
   DishDetail,
   DietaryFlag,
+  PushPreferences,
   FoodCredAction,
   FoodCollection,
   HawkerTasteTag,
@@ -767,8 +768,19 @@ export interface HungryService {
     getGuestProfile(): Promise<UserProfile>;
     toggleFavourite(dishId: string): Promise<boolean>;
     getFavouriteDishIds(): Promise<string[]>;
+    /** Follow or unfollow a stall; followers get opt-in alerts when its menu changes. */
+    setStallFollow(stallId: string, following: boolean): Promise<void>;
+    getFollowedStallIds(): Promise<string[]>;
     updateTasteVector(vector: TasteVector): Promise<void>;
     updateTasteProfile(profile: TasteProfile): Promise<void>;
+  };
+
+  // Push notifications (opt-in)
+  push: {
+    getPreferences(): Promise<PushPreferences>;
+    updatePreferences(updates: Partial<PushPreferences>): Promise<PushPreferences>;
+    registerPushToken(token: string, platform: "ios" | "android"): Promise<void>;
+    markOpened(notificationId: string): Promise<void>;
   };
 
   // Social (Bites)

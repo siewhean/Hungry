@@ -127,7 +127,7 @@ test("root navigation and linking do not expose advanced production routes witho
   }
 
   assert.match(linking, /FEATURE_FLAGS\.merchantCentreEnabled/);
-  assert.match(linking, /FEATURE_FLAGS\.prototypeRoutesEnabled/);
+  assert.match(linking, /FEATURE_FLAGS\.portfoliosEnabled/);
   assert.doesNotMatch(linking, /DirectMessages:/);
 });
 

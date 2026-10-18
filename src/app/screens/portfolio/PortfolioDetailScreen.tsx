@@ -6,6 +6,8 @@ import { ArrowLeft, Flag, Plus, Share2 } from "lucide-react-native";
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import { PortfolioItemRow } from "@/components/portfolio";
 import { AppText, Button, Card, Input } from "@/components/ui";
+import { webShareUrl } from "@/constants/links";
+import { shareLink, type ShareChannel } from "@/features/share/messagingShare";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { usePortfolioStore } from "@/store/usePortfolioStore";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -344,16 +346,46 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
         <View style={styles.itemHeader}>
           <Share2 color={palette.orange} size={20} />
           <View style={{ flex: 1 }}>
-            <AppText variant="bodyBold">Share-ready link</AppText>
+            <AppText variant="bodyBold">Share this list</AppText>
             <AppText variant="bodySmall" tone="secondary">
-              Public portfolio links use the same detail screen until public web routing is wired.
+              {portfolio.visibility === "public"
+                ? "Anyone with the link can see it, no sign-in needed."
+                : "Make this list public to share a link with friends."}
             </AppText>
           </View>
         </View>
+        {portfolio.visibility === "public" ? (
+          <View style={[styles.actionRow, { marginTop: 12 }]}>
+            {SHARE_CHANNELS.map(({ channel, label }) => (
+              <Button
+                key={channel}
+                label={label}
+                variant="secondary"
+                onPress={() =>
+                  void shareLink(
+                    {
+                      kind: "portfolio",
+                      id: portfolio.id,
+                      message: `${portfolio.name} on Hungry`,
+                      url: webShareUrl("portfolio", portfolio.id),
+                    },
+                    channel,
+                  )
+                }
+              />
+            ))}
+          </View>
+        ) : null}
       </Card>
     </ScrollView>
   );
 }
+
+const SHARE_CHANNELS: { channel: ShareChannel; label: string }[] = [
+  { channel: "whatsapp", label: "WhatsApp" },
+  { channel: "telegram", label: "Telegram" },
+  { channel: "system_share", label: "More" },
+];
 
 const styles = StyleSheet.create({
   actionRow: {
