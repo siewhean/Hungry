@@ -98,7 +98,6 @@ export type RootStackParamList = {
   MerchantClaimExplainer: undefined;
   DishDetail: { dishId?: string; id?: string };
   CatalogRawDetail: { kind: "dish" | "venue"; id: string; releaseId?: string };
-  DishDetailV2: { dishId?: string; id?: string };
   SearchHome: undefined;
   SearchResults:
     | {
@@ -121,7 +120,6 @@ export type RootStackParamList = {
   TasteFilter: undefined;
   DiscoverMap: undefined;
   DecideForMeResult: { surface?: "home" | "discover" } | undefined;
-  BuildingDrillDown: { buildingId: string };
   MapZoomedIn: { buildingId: string };
   BlogPost: { postId: string };
   ReviewStack: NavigatorScreenParams<ReviewStackParamList>;
@@ -150,13 +148,9 @@ export type RootStackParamList = {
   ReviewHistory: undefined;
   Settings: undefined;
   EditProfile: undefined;
-  SplashV2: { variant?: "A" | "B"; stay?: boolean } | undefined;
   DesignGallery: undefined;
   // V2 Prototypes
   PostComposerV2: { venueId?: string; dishId?: string } | undefined;
-  StallDetailV2: { venueId?: string; id?: string };
-  BuildingDrillDownV2: { buildingId: string };
-  VenueDirectory: { venueId: string };
   StoryViewer: { initialStoryId: string };
   AddStory: undefined;
   // Gamification

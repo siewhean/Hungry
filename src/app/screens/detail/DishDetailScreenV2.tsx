@@ -161,7 +161,7 @@ function getTodayRows(rows: ListedHoursRow[]): ListedHoursRow[] {
   return rows.length ? [rows[0]] : [];
 }
 
-type Props = NativeStackScreenProps<RootStackParamList, "DishDetail" | "DishDetailV2">;
+type Props = NativeStackScreenProps<RootStackParamList, "DishDetail">;
 
 type Attribute = {
   label: string;
@@ -354,7 +354,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     return (
       <FeedErrorBoundary
         title="Dish details unavailable"
-        body="Couldn't load this dish - try again."
+        body="Couldn't load this dish — try again."
       >
         <SafeAreaView style={{ backgroundColor: palette.bg, flex: 1 }} edges={["top"]}>
           <EmptyState
@@ -442,7 +442,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const handleSave = () => {
     if (!isAuthenticated) {
       setReturnRoute({
-        name: "DishDetailV2",
+        name: "DishDetail",
         params: { dishId: dish.id },
       });
       navigation.navigate("AuthStack", { screen: "Login" });
@@ -491,7 +491,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
 
     if (!isAuthenticated) {
       setReturnRoute({
-        name: "DishDetailV2",
+        name: "DishDetail",
         params: { dishId: dish.id },
       });
       navigation.navigate("AuthStack", { screen: "Login" });
@@ -542,7 +542,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   };
 
   return (
-    <FeedErrorBoundary title="Dish details unavailable" body="Couldn't load this dish - try again.">
+    <FeedErrorBoundary title="Dish details unavailable" body="Couldn't load this dish — try again.">
       <SafeAreaView style={{ backgroundColor: palette.bg, flex: 1 }} edges={["left", "right"]}>
         <View style={{ flex: 1 }}>
           <ScrollView
@@ -854,7 +854,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                       key={item.id}
                       accessibilityRole="button"
                       accessibilityLabel={`Open ${item.name}`}
-                      onPress={() => navigation.navigate("DishDetailV2", { dishId: item.id })}
+                      onPress={() => navigation.navigate("DishDetail", { dishId: item.id })}
                       style={{
                         height: signatureGridItemHeight,
                         overflow: "hidden",

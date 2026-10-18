@@ -19,11 +19,9 @@ test("bottom navigation puts create post in the center and review fourth", () =>
     tabs,
     /key: "Home"[\s\S]*key: "Discover"[\s\S]*key: "Create"[\s\S]*key: "Review"[\s\S]*key: "Profile"/,
   );
-  assert.match(
-    tabs,
-    /const composerRoute = FEATURE_FLAGS\.prototypeRoutesEnabled \? "PostComposerV2" : "Post"/,
-  );
-  assert.match(tabs, /isCreateAction[\s\S]*navigate\("PostComposerV2"\)[\s\S]*navigate\("Post"\)/);
+  // Every environment opens the shipping composer (V1) from the create tab.
+  assert.match(tabs, /isCreateAction[\s\S]*rootNavigation\?\.navigate\("Post"\)/);
+  assert.doesNotMatch(tabs, /PostComposerV2/);
   assert.match(
     tabs,
     /height: componentSizes\.bottomTabBar \+ Math\.max\(insets\.bottom, spacing\[2\]\)/,

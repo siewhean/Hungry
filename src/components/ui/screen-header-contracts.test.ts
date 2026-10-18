@@ -973,7 +973,7 @@ test("Quick Bites contract: empty-state icon is not clipped", () => {
   assert.match(mockData, /id: "dish-wagyu-burger"[\s\S]*name: "Wagyu Burger"/);
   assert.match(mockData, /id: "dish-salmon-don"[\s\S]*name: "Salmon Don"/);
   assert.match(mockData, /id: "dish-mala-xiang-guo"[\s\S]*name: "Mala Xiang Guo"/);
-  const detail = read("src/app/screens/detail/DishDetailScreen.tsx");
+  const detail = read("src/app/screens/detail/DishDetailScreenV2.tsx");
   assert.doesNotMatch(detail, /fallbackDishes/);
   assert.doesNotMatch(detail, /fallbackVenues/);
   assert.match(

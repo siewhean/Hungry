@@ -280,13 +280,15 @@ test("remaining high-traffic profile, developer, and merchant links prefetch on 
   assert.match(profileHome, /onPressIn=\{\(\) => preloadRoute\(navigation, "Settings"\)\}/);
 
   assert.match(developerLauncher, /onV1PressIn\?: \(\) => void/);
-  assert.match(developerLauncher, /const prefetchSampleStallDetail =/);
-  assert.match(developerLauncher, /const prefetchSampleDishDetail =/);
-  assert.match(developerLauncher, /onV1PressIn=\{\(\) => prefetchSampleStallDetail\("v1"\)\}/);
-  assert.match(developerLauncher, /onV2PressIn=\{\(\) => prefetchSampleDishDetail\("v2"\)\}/);
+  assert.match(developerLauncher, /prefetchStallDetail\(sampleStallVenueId, repository\)/);
+  assert.match(developerLauncher, /prefetchDishDetail\(dish\.id, repository\)/);
   assert.match(
     developerLauncher,
-    /onV1PressIn=\{\(\) =>\s+preloadRoute\(navigation, "PostComposerV2"/,
+    /onV1PressIn=\{\(\) => preloadRoute\(navigation, "Post", getSampleComposerParams\(\)\)\}/,
+  );
+  assert.match(
+    developerLauncher,
+    /onV2PressIn=\{\(\) =>\s+preloadRoute\(navigation, "PostComposerV2"/,
   );
 });
 
@@ -300,7 +302,7 @@ test("developer and merchant surfaces defer non-selected work", () => {
   assert.doesNotMatch(developerLauncher, /from "@\/lib\/services\/mock\/data"/);
   assert.doesNotMatch(developerLauncher, /from "@\/features\/post\/useComposerStore"/);
   assert.match(developerLauncher, /function getLauncherRepository/);
-  assert.match(developerLauncher, /function SGBuildingPickerContent/);
+  assert.doesNotMatch(developerLauncher, /function SGBuildingPickerContent/);
   assert.match(developerLauncher, /function DataInspectorContent/);
   assert.match(developerLauncher, /function PostComposerSettingsContent/);
 

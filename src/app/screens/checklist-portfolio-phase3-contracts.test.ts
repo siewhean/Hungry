@@ -97,7 +97,7 @@ test("checklist and portfolio screens use reusable Phase 4 UI components", () =>
 
 test("dish and stall detail screens expose checklist and portfolio entry points", () => {
   const detailActions = read("src/features/checklistPortfolio/DetailSaveActions.tsx");
-  const dishDetail = read("src/app/screens/detail/DishDetailScreen.tsx");
+  const dishDetail = read("src/app/screens/detail/DishDetailScreenV2.tsx");
   const stallDetail = read("src/app/screens/detail/StallDetailScreen.tsx");
   const supabaseService = read("src/lib/services/supabase/supabaseService.ts");
   const migration = read("supabase/migrations/20260527103000_checklist_portfolio_passport.sql");
@@ -117,8 +117,7 @@ test("dish and stall detail screens expose checklist and portfolio entry points"
 
   assert.match(dishDetail, /useDetailSaveActions/);
   assert.match(dishDetail, /itemType: "dish"/);
-  assert.match(dishDetail, /<DetailSaveActionsCard/);
-  assert.match(dishDetail, /title="Save this dish"/);
+  assert.match(dishDetail, /addToPortfolio/);
 
   assert.match(stallDetail, /useDetailSaveActions/);
   assert.match(stallDetail, /itemType: "stall"/);

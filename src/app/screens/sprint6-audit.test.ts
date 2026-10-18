@@ -91,7 +91,7 @@ test("Sprint 6: required screens are wrapped by FeedErrorBoundary", () => {
     "src/app/screens/auth/ForgotPasswordScreen.tsx",
     "src/app/screens/auth/EmailVerificationScreen.tsx",
     "src/app/screens/auth/ResetPasswordScreen.tsx",
-    "src/app/screens/detail/DishDetailScreen.tsx",
+    "src/app/screens/detail/DishDetailScreenV2.tsx",
     "src/app/screens/detail/StallDetailScreen.tsx",
   ];
 
@@ -120,7 +120,7 @@ test("Sprint 6: environment template exists", () => {
 
 test("Sprint 6: detail fallback copy matches expected content", () => {
   const detailScreens = [
-    "src/app/screens/detail/DishDetailScreen.tsx",
+    "src/app/screens/detail/DishDetailScreenV2.tsx",
     "src/app/screens/detail/StallDetailScreen.tsx",
   ];
 

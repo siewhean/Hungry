@@ -22,7 +22,7 @@ test.describe("signed-out entry", () => {
     });
 
     await resetAppState(page);
-    await clickDevButton(page, "Dish V2", "Core app flow");
+    await clickDevButton(page, "Dish", "Core app flow");
     await expect(page.getByText("Chicken Rice", { exact: true }).first()).toBeVisible({
       timeout: CONTENT_TIMEOUT_MS,
     });

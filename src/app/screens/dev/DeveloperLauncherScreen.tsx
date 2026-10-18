@@ -2,22 +2,20 @@
  * DeveloperLauncherScreen — feature-rich debug panel
  *
  * Additions vs v1:
- *  - Feature flag toggles (floor plan, Bites, Decide-for-Me, AI recs)
+ *  - Feature flag toggles (Bites, Decide-for-Me, AI recs)
  *  - Network condition simulator (live / slow / offline)
- *  - Singapore building picker — jump directly to any building's floor plan
  *  - Data inspector: shows counts of mock entities
  *  - All section groups collapsed by default, expand on tap
  *  - V1 vs V2 side-by-side comparison grid with compact buttons
  */
 
 import { useState, useMemo } from "react";
-import { Pressable, ScrollView, Switch, View } from "react-native";
+import { Pressable, Switch, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ChevronDown, ChevronRight, Wifi, WifiOff, Zap } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Badge, Button, Card, Screen } from "@/components/ui";
-import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import {
   prefetchDishDetail,
   prefetchStallDetail,
@@ -37,18 +35,11 @@ import { useHungryTheme } from "@/theme";
 import type { DataRepository } from "@/lib/services/types";
 
 type Props = NativeStackScreenProps<RootStackParamList, "DeveloperLauncher">;
-type SingaporeBuilding =
-  (typeof import("@/lib/geo/singaporeBuildings"))["singaporeBuildings"][number];
 
 function getLauncherRepository(): DataRepository {
   const { getDataRepository } =
     require("@/lib/services/serviceProvider") as typeof import("@/lib/services/serviceProvider");
   return getDataRepository();
-}
-
-function getSingaporeBuildings(): SingaporeBuilding[] {
-  return (require("@/lib/geo/singaporeBuildings") as typeof import("@/lib/geo/singaporeBuildings"))
-    .singaporeBuildings;
 }
 
 function getMockData() {
@@ -270,48 +261,6 @@ function VersionPair({
   );
 }
 
-function SGBuildingPickerContent({
-  onOpenBuilding,
-}: {
-  onOpenBuilding: (buildingId: string) => void;
-}) {
-  const { palette, spacing, radii } = useHungryTheme();
-  const buildings = useMemo(() => getSingaporeBuildings().slice(0, 10), []);
-
-  return (
-    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled showsVerticalScrollIndicator={false}>
-      <View style={{ gap: spacing[1] }}>
-        {buildings.map((building) => (
-          <Pressable
-            key={building.id}
-            onPress={() => onOpenBuilding(building.id)}
-            style={{
-              backgroundColor: palette.surfaceRaised,
-              borderRadius: radii.md,
-              borderWidth: 1,
-              borderColor: palette.border,
-              padding: spacing[2],
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <View style={{ flex: 1 }}>
-              <AppText variant="micro" style={{ fontWeight: "700" }} numberOfLines={1}>
-                {building.name}
-              </AppText>
-            </View>
-            <Badge
-              label={building.type === "food_court" ? "FC" : "HC"}
-              tone={building.type === "food_court" ? "success" : "orange"}
-            />
-          </Pressable>
-        ))}
-      </View>
-    </ScrollView>
-  );
-}
-
 function DataInspectorContent() {
   const { spacing } = useHungryTheme();
   const stats = useMemo(() => {
@@ -445,8 +394,6 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
   const currentModeLabel = isDeveloperMode ? "Developer" : isMerchantMode ? "Merchant" : "User";
 
   // Discovery
-  const setSelectedBuilding = useDiscoveryStore((state) => state.setSelectedBuilding);
-  const setSelectedFloor = useDiscoveryStore((state) => state.setSelectedFloor);
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
 
   const hideReviewSuccess = useUIStore((state) => state.hideReviewSuccess);
@@ -619,29 +566,6 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     navigation.navigate("ActivityInbox", { initialTab: "messages" });
   };
 
-  const openBuilding = (buildingId: string) => {
-    if (!FEATURE_FLAGS.floorplansEnabled) {
-      showToast({ message: "Floorplan routes are disabled for this build.", tone: "info" });
-      return;
-    }
-
-    const building = getSingaporeBuildings().find((b) => b.id === buildingId);
-    if (!building) return;
-    const summary = {
-      id: building.id,
-      name: building.name,
-      type: building.type,
-      coordinate: building.coordinate,
-      floors: building.floors,
-      venueCount: building.venueCount,
-      isClosedToday: building.isClosedToday,
-      heroDishId: building.heroDishId ?? "",
-    };
-    setSelectedBuilding(summary);
-    setSelectedFloor(building.floors[0]);
-    navigation.navigate("BuildingDrillDown", { buildingId: building.id });
-  };
-
   const openProtected = (returnRoute: string | PendingRoute, navigate: () => void) => {
     if (!isAuthenticated) {
       setReturnRoute(returnRoute);
@@ -651,17 +575,12 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     navigate();
   };
 
-  const openSampleStallDetail = (version: "v1" | "v2" = "v1") => {
+  const openSampleStallDetail = () => {
     const sampleStallVenueId = getSampleVenueId();
-    if (version === "v2") {
-      navigation.navigate("StallDetailV2", { venueId: sampleStallVenueId });
-      return;
-    }
-
     navigation.navigate("StallDetail", { venueId: sampleStallVenueId });
   };
 
-  const openSampleDishDetail = (version: "v1" | "v2" = "v1") => {
+  const openSampleDishDetail = () => {
     const dish = getSampleDish();
     if (!dish) {
       showToast({ message: "No sample dish is available.", tone: "error" });
@@ -673,26 +592,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
       completeOnboarding(false);
     }
 
-    navigation.navigate(version === "v2" ? "DishDetailV2" : "DishDetail", { dishId: dish.id });
-  };
-
-  const prefetchSampleStallDetail = (version: "v1" | "v2" = "v1") => {
-    const repository = getLauncherRepository();
-    const sampleStallVenueId = getSampleVenueId(repository);
-    prefetchStallDetail(sampleStallVenueId, repository);
-    preloadRoute(navigation, version === "v2" ? "StallDetailV2" : "StallDetail", {
-      venueId: sampleStallVenueId,
-    });
-  };
-
-  const prefetchSampleDishDetail = (version: "v1" | "v2" = "v1") => {
-    const repository = getLauncherRepository();
-    const dish = getSampleDish(repository);
-    if (!dish) return;
-    prefetchDishDetail(dish.id, repository);
-    preloadRoute(navigation, version === "v2" ? "DishDetailV2" : "DishDetail", {
-      dishId: dish.id,
-    });
+    navigation.navigate("DishDetail", { dishId: dish.id });
   };
 
   return (
@@ -771,52 +671,18 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           defaultExpanded
         >
           <VersionPair
-            label="Stall Detail"
-            onV1PressIn={() => prefetchSampleStallDetail("v1")}
-            onV2PressIn={() => prefetchSampleStallDetail("v2")}
-            onV1={() => openSampleStallDetail("v1")}
-            onV2={() => openSampleStallDetail("v2")}
-          />
-          <VersionPair
-            label="Dish Detail"
-            onV1PressIn={() => prefetchSampleDishDetail("v1")}
-            onV2PressIn={() => prefetchSampleDishDetail("v2")}
-            onV1={() => openSampleDishDetail("v1")}
-            onV2={() => openSampleDishDetail("v2")}
-          />
-          {FEATURE_FLAGS.floorplansEnabled ? (
-            <VersionPair
-              label="Building"
-              onV1PressIn={() =>
-                preloadRoute(navigation, "BuildingDrillDown", { buildingId: "hc-maxwell" })
-              }
-              onV2PressIn={() =>
-                preloadRoute(navigation, "BuildingDrillDownV2", { buildingId: "hc-maxwell" })
-              }
-              onV1={() => openBuilding("hc-maxwell")}
-              onV2={() => navigation.navigate("BuildingDrillDownV2", { buildingId: "hc-maxwell" })}
-            />
-          ) : null}
-          <VersionPair
             label="Post Composer"
-            onV1PressIn={() =>
-              preloadRoute(navigation, "PostComposerV2", getSampleComposerParams())
-            }
+            onV1PressIn={() => preloadRoute(navigation, "Post", getSampleComposerParams())}
             onV2PressIn={() =>
               preloadRoute(navigation, "PostComposerV2", getSampleComposerParams())
             }
-            onV1={() => navigation.navigate("PostComposerV2" as any, getSampleComposerParams())}
+            onV1={() => navigation.navigate("Post", getSampleComposerParams())}
             onV2={() => navigation.navigate("PostComposerV2" as any, getSampleComposerParams())}
           />
           <VersionPair
             label="Settings"
             onV1={() => navigation.navigate("Settings")}
             onV2={() => navigation.navigate("Settings")}
-          />
-          <VersionPair
-            label="Splash"
-            onV1={() => navigation.navigate("Splash")}
-            onV2={() => navigation.navigate("SplashV2" as any, { variant: "A", stay: true })}
           />
 
           <View
@@ -952,7 +818,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
                 prefetchStallDetail(sampleStallVenueId, repository);
                 preloadRoute(navigation, "StallDetail", { venueId: sampleStallVenueId });
               }}
-              onPress={() => openSampleStallDetail("v1")}
+              onPress={() => openSampleStallDetail()}
             />
             <DevButton
               label="Dish"
@@ -964,19 +830,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
                   preloadRoute(navigation, "DishDetail", { dishId: dish.id });
                 }
               }}
-              onPress={() => openSampleDishDetail("v1")}
-            />
-            <DevButton
-              label="Dish V2"
-              onPressIn={() => {
-                const repository = getLauncherRepository();
-                const dish = getSampleDish(repository);
-                if (dish?.id) {
-                  prefetchDishDetail(dish.id, repository);
-                  preloadRoute(navigation, "DishDetailV2", { dishId: dish.id });
-                }
-              }}
-              onPress={() => openSampleDishDetail("v2")}
+              onPress={() => openSampleDishDetail()}
             />
             <DevButton
               label="Review"
@@ -1158,13 +1012,6 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
             })}
           </View>
         </CollapsibleSection>
-
-        {/* ── SG Building Picker ─────────────────────────── */}
-        {FEATURE_FLAGS.floorplansEnabled ? (
-          <CollapsibleSection title="SG Building Picker" subtitle="Jump to floor plan">
-            <SGBuildingPickerContent onOpenBuilding={openBuilding} />
-          </CollapsibleSection>
-        ) : null}
 
         {/* ── Data Inspector ─────────────────────────────── */}
         <CollapsibleSection title="Data inspector" badge="Mock">

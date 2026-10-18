@@ -51,7 +51,6 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "MerchantClaimExplainer",
   "DishDetail",
   "CatalogRawDetail",
-  "DishDetailV2",
   "SearchHome",
   "SearchResults",
   "BrowseDishes",
@@ -70,19 +69,14 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "DirectMessages",
   "Crave",
   "MusicSelection",
-  "BuildingDrillDown",
   "QuickBites",
   "DeveloperLauncher",
   "Favourites",
   "ReviewHistory",
   "Settings",
   "EditProfile",
-  "SplashV2",
   "DesignGallery",
   "PostComposerV2",
-  "StallDetailV2",
-  "BuildingDrillDownV2",
-  "VenueDirectory",
   "StoryViewer",
   "AddStory",
   "PassportScreen",
@@ -243,10 +237,6 @@ const loadDecideForMeResultScreen = () =>
   (
     require("@/app/screens/discover/DecideForMeResultScreen") as typeof import("@/app/screens/discover/DecideForMeResultScreen")
   ).DecideForMeResultScreen;
-const loadBuildingDrillDownScreen = () =>
-  (
-    require("@/app/screens/discover/BuildingDrillDownScreen") as typeof import("@/app/screens/discover/BuildingDrillDownScreen")
-  ).BuildingDrillDownScreen;
 const loadOfflineStateScreen = () =>
   (
     require("@/app/screens/detail/OfflineStateScreen") as typeof import("@/app/screens/detail/OfflineStateScreen")
@@ -255,21 +245,10 @@ const loadNotFoundScreen = () =>
   (
     require("@/app/screens/detail/NotFoundScreen") as typeof import("@/app/screens/detail/NotFoundScreen")
   ).NotFoundScreen;
-const loadStallDetailScreenV2 = () =>
-  (
-    require("@/app/screens/detail/StallDetailScreenV2") as typeof import("@/app/screens/detail/StallDetailScreenV2")
-  ).StallDetailScreenV2;
-const loadBuildingDrillDownScreenV2 = () =>
-  (
-    require("@/app/screens/discover/BuildingDrillDownScreenV2") as typeof import("@/app/screens/discover/BuildingDrillDownScreenV2")
-  ).BuildingDrillDownScreenV2;
 const loadQuickBitesScreen = () =>
   (
     require("@/app/screens/discover/QuickBitesScreen") as typeof import("@/app/screens/discover/QuickBitesScreen")
   ).QuickBitesScreen;
-const loadSplashScreenV2 = () =>
-  (require("@/app/screens/SplashScreenV2") as typeof import("@/app/screens/SplashScreenV2"))
-    .SplashScreenV2;
 const loadDesignGalleryScreen = () =>
   (
     require("@/app/screens/dev/DesignGalleryScreen") as typeof import("@/app/screens/dev/DesignGalleryScreen")
@@ -281,10 +260,6 @@ const loadPostComposerScreenV2 = () =>
   (
     require("@/app/screens/post/PostComposerScreenV2") as typeof import("@/app/screens/post/PostComposerScreenV2")
   ).PostComposerScreenV2;
-const loadVenueDirectoryScreen = () =>
-  (
-    require("@/app/screens/discover/VenueDirectoryScreen") as typeof import("@/app/screens/discover/VenueDirectoryScreen")
-  ).VenueDirectoryScreen;
 const loadStoryViewerScreen = () =>
   (
     require("@/app/screens/home/StoryViewerScreen") as typeof import("@/app/screens/home/StoryViewerScreen")
@@ -746,26 +721,11 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           ) : null}
           <RootStack.Screen getComponent={loadMusicSelectionScreen} name="MusicSelection" />
           <RootStack.Screen getComponent={loadDecideForMeResultScreen} name="DecideForMeResult" />
-          {FEATURE_FLAGS.floorplansEnabled ? (
-            <RootStack.Screen getComponent={loadBuildingDrillDownScreen} name="BuildingDrillDown" />
-          ) : null}
           <RootStack.Screen getComponent={loadOfflineStateScreen} name="Offline" />
           <RootStack.Screen getComponent={loadNotFoundScreen} name="NotFound" />
           <RootStack.Screen getComponent={loadQuickBitesScreen} name="QuickBites" />
           {FEATURE_FLAGS.prototypeRoutesEnabled ? (
             <>
-              <RootStack.Screen getComponent={loadDishDetailScreenV2} name="DishDetailV2" />
-              <RootStack.Screen getComponent={loadStallDetailScreenV2} name="StallDetailV2" />
-              {FEATURE_FLAGS.floorplansEnabled ? (
-                <>
-                  <RootStack.Screen
-                    getComponent={loadBuildingDrillDownScreenV2}
-                    name="BuildingDrillDownV2"
-                  />
-                  <RootStack.Screen getComponent={loadVenueDirectoryScreen} name="VenueDirectory" />
-                </>
-              ) : null}
-              <RootStack.Screen getComponent={loadSplashScreenV2} name="SplashV2" />
               <RootStack.Screen getComponent={loadDesignGalleryScreen} name="DesignGallery" />
               <RootStack.Screen
                 getComponent={loadPostComposerScreenV2}

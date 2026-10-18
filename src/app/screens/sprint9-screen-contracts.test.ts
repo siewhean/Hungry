@@ -191,7 +191,6 @@ test("Sprint 9 screen contract: stall menu cards expose dish actions", () => {
 test("Sprint 9 screen contract: Search cards expose actionable semantics", () => {
   const search = read("src/app/screens/search/DishSearchScreen.tsx");
   const collectionDetail = read("src/app/screens/discover/CollectionDetailScreen.tsx");
-  const buildingDrillDown = read("src/app/screens/discover/BuildingDrillDownScreen.tsx");
   const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
 
   assert.match(search, /accessibilityLabel="Search dishes, stalls, or hawker centres"/);
@@ -212,8 +211,6 @@ test("Sprint 9 screen contract: Search cards expose actionable semantics", () =>
     collectionDetail,
     /accessibilityHint="Opens this stall page with menu and dish information"/,
   );
-  assert.match(buildingDrillDown, /accessibilityLabel=\{`Show floor \$\{floor\}`\}/);
-  assert.match(buildingDrillDown, /accessibilityState=\{\{ selected \}\}/);
   assert.match(rootNavigator, /accessibilityLabel="Go back"/);
   assert.match(rootNavigator, /accessibilityHint="Returns to the previous screen"/);
 });
@@ -565,10 +562,7 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   const mockDataSource = read("src/lib/services/mock/data.ts");
 
   assert.match(source, /getDataRepository\(\)/);
-  assert.match(
-    source,
-    /type Props = NativeStackScreenProps<RootStackParamList, "DishDetail" \| "DishDetailV2">/,
-  );
+  assert.match(source, /type Props = NativeStackScreenProps<RootStackParamList, "DishDetail">/);
   assert.match(source, /buildDishGallery\(dish\)/);
   assert.match(source, /function formatBasePrice\(price: number\)/);
   assert.match(source, /formatBasePrice\(dish\.price\)/);
@@ -600,10 +594,11 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.match(source, /formatBasePrice\(item\.price\)/);
   assert.doesNotMatch(source, /\{dish\.priceRange\}/);
   assert.doesNotMatch(source, /\{item\.priceRange\}/);
-  assert.match(source, /navigation\.navigate\(\"DishDetailV2\", \{ dishId: item\.id \}\)/);
+  assert.match(source, /navigation\.navigate\("DishDetail", \{ dishId: item\.id \}\)/);
   assert.match(navigatorSource, /const loadDishDetailScreenV2 =/);
-  assert.match(navigatorSource, /getComponent=\{loadDishDetailScreenV2\} name="DishDetailV2"/);
-  assert.match(navigationTypes, /DishDetailV2: \{ dishId\?: string; id\?: string \};/);
+  // The redundant DishDetailV2 alias route was removed; DishDetail is the V2 screen.
+  assert.doesNotMatch(navigatorSource, /name="DishDetailV2"/);
+  assert.doesNotMatch(navigationTypes, /DishDetailV2:/);
   assert.match(
     mockDataSource,
     /const FOOD_1 =\s*"https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/7\/71\/Hainanese_Chicken_Rice\.jpg"/,
@@ -611,20 +606,10 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.match(launcherSource, /function getSampleDish\(repository = getLauncherRepository\(\)\)/);
   assert.match(launcherSource, /const \{ dishes \} = getMockData\(\);/);
   assert.match(launcherSource, /repository\.listPopularNearby\(\)\[0\] \?\? dishes\[0\]/);
-  assert.match(launcherSource, /const openSampleDishDetail = \(version: "v1" \| "v2" = "v1"\)/);
+  assert.match(launcherSource, /const openSampleDishDetail = \(\) =>/);
   assert.match(launcherSource, /completeAuth\(\);[\s\S]*completeOnboarding\(false\);/);
-  assert.match(
-    launcherSource,
-    /navigation\.navigate\(version === "v2" \? "DishDetailV2" : "DishDetail", \{ dishId: dish\.id \}\)/,
-  );
-  assert.match(
-    launcherSource,
-    /label="Dish Detail"[\s\S]*onV2=\{\(\) => openSampleDishDetail\("v2"\)\}/,
-  );
-  assert.match(
-    launcherSource,
-    /label="Dish V2"[\s\S]*onPress=\{\(\) => openSampleDishDetail\("v2"\)\}/,
-  );
+  assert.match(launcherSource, /navigation\.navigate\("DishDetail", \{ dishId: dish\.id \}\)/);
+  assert.match(launcherSource, /label="Dish"[\s\S]*onPress=\{\(\) => openSampleDishDetail\(\)\}/);
 });
 
 test("search home shows debounced inline results and keeps a see-all action", () => {

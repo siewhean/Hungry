@@ -10,7 +10,7 @@ const ROUTE_SMOKES = [
   { label: "Home", expectedText: "Chicken Rice" },
   { label: "Discover", expectedText: "Popular right now" },
   { label: "Search", expectedPlaceholder: "Laksa, satay, Tian Tian..." },
-  { label: "Dish V2", expectedText: "Chicken Rice" },
+  { label: "Dish", expectedText: "Chicken Rice" },
   { label: "Stall", expectedText: "Tian Tian Chicken Rice" },
   { label: "Review", expectedText: "Reviews" },
 ] as const;

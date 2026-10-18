@@ -9,39 +9,23 @@ function read(relativePath: string): string {
   return readFileSync(path.join(root, relativePath), "utf8");
 }
 
-test("stall detail V2 handles missing data and uses real venue/dish values", () => {
-  const stall = read("src/app/screens/detail/StallDetailScreenV2.tsx");
-  const legacyStall = read("src/app/screens/detail/StallDetailScreen.tsx");
+test("stall detail uses real venue hours and popular visitors", () => {
+  const stall = read("src/app/screens/detail/StallDetailScreen.tsx");
 
-  assert.match(stall, /EmptyState/);
-  assert.match(stall, /Stall not found/);
-  assert.doesNotMatch(stall, /if \(!venue\) return null/);
-  assert.match(stall, /Math\.max\(insets\.bottom, spacing\[4\]\)/);
-  assert.match(stall, /formatDistance\(leadDish\?\.distanceMeters\)/);
-  assert.match(stall, /formatVenueStatus\(venue\)/);
   assert.match(stall, /PopularVisitorsSection/);
-  assert.match(legacyStall, /PopularVisitorsSection/);
   assert.match(
     stall,
     /const isVenueOpen = isVenueOpenFromHours\(venue\.operatingHours, venue\.isOpen\)/,
   );
-  assert.doesNotMatch(stall, /style=\{\{ color: palette\.success \}\}[\s\S]*\{statusLabel\}/);
-  assert.match(stall, /Saved top dish to favourites/);
-  assert.doesNotMatch(stall, /Save stall/);
-  assert.match(
-    legacyStall,
-    /const isVenueOpen = isVenueOpenFromHours\(venue\.operatingHours, venue\.isOpen\)/,
-  );
-  assert.match(legacyStall, /formatWeeklyOperatingHours\(venue\.operatingHours\)/);
-  assert.match(legacyStall, /weeklyOperatingHours\.map/);
-  assert.doesNotMatch(legacyStall, /venue\.operatingHours\.split\(" – "\)/);
-  assert.doesNotMatch(legacyStall, /Open Now/);
-  assert.doesNotMatch(legacyStall, /Check Map/);
+  assert.match(stall, /formatWeeklyOperatingHours\(venue\.operatingHours\)/);
+  assert.match(stall, /weeklyOperatingHours\.map/);
+  assert.doesNotMatch(stall, /venue\.operatingHours\.split\(" – "\)/);
+  assert.doesNotMatch(stall, /Open Now/);
+  assert.doesNotMatch(stall, /Check Map/);
 });
 
 test("dish detail V2 avoids invented wait times and fake hours", () => {
   const dish = read("src/app/screens/detail/DishDetailScreenV2.tsx");
-  const legacyDish = read("src/app/screens/detail/DishDetailScreen.tsx");
 
   assert.match(dish, /const waitTime = formatWaitTime/);
   assert.match(dish, /\.\.\.\(waitTime/);
@@ -49,9 +33,7 @@ test("dish detail V2 avoids invented wait times and fake hours", () => {
   assert.doesNotMatch(dish, /Sat-Sun/);
   assert.doesNotMatch(dish, /signature order/);
   assert.doesNotMatch(dish, /listPopularNearby/);
-  assert.match(legacyDish, /No delivery links listed/);
-  assert.match(legacyDish, /We do not have verified delivery links for this stall yet\./);
-  assert.doesNotMatch(legacyDish, /Dine-in only/);
+  assert.doesNotMatch(dish, /Dine-in only/);
 });
 
 test("dish detail V2 action dock is labelled, stateful and meets 44px targets", () => {

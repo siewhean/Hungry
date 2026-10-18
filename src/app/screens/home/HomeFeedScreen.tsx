@@ -324,15 +324,14 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     return false;
   }, [isAuthenticated, navigation, setReturnRoute, showToast]);
 
-  const composerRoute = FEATURE_FLAGS.prototypeRoutesEnabled ? "PostComposerV2" : "Post";
   const openComposerFromEmptyFeed = useCallback(() => {
     if (!isAuthenticated) {
-      setReturnRoute({ name: composerRoute });
+      setReturnRoute({ name: "Post" });
       navigation.navigate("AuthStack", { screen: "Login" });
       return;
     }
-    navigation.navigate(composerRoute);
-  }, [composerRoute, isAuthenticated, navigation, setReturnRoute]);
+    navigation.navigate("Post");
+  }, [isAuthenticated, navigation, setReturnRoute]);
   const openDishFromEmptyFeed = useCallback(
     (dishId: string) => navigation.navigate("DishDetail", { dishId }),
     [navigation],

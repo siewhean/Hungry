@@ -11,7 +11,6 @@ import { AppBottomTabItem, Skeleton } from "@/components/ui";
 import { preloadRoute } from "@/features/navigation/prefetch";
 import { useHungryTheme } from "@/theme";
 import { useSessionStore } from "@/store/useSessionStore";
-import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 
@@ -201,7 +200,6 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const routeByName = new Map(state.routes.map((route) => [route.name, route]));
-  const composerRoute = FEATURE_FLAGS.prototypeRoutesEnabled ? "PostComposerV2" : "Post";
   const tabItems = [
     { key: "Home", route: routeByName.get("Home"), icon: House, label: "Home" },
     { key: "Discover", route: routeByName.get("Discover"), icon: Compass, label: "Discover" },
@@ -237,16 +235,13 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
         const onPress = () => {
           if (isCreateAction) {
             if (!isAuthenticated) {
-              setReturnRoute({ name: composerRoute });
+              setReturnRoute({ name: "Post" });
               rootNavigation?.navigate("AuthStack", { screen: "Login" });
               return;
             }
 
-            if (composerRoute === "PostComposerV2") {
-              rootNavigation?.navigate("PostComposerV2");
-            } else {
-              rootNavigation?.navigate("Post");
-            }
+            // Every environment opens the composer that ships (V1) so QA tests it.
+            rootNavigation?.navigate("Post");
             return;
           }
 
@@ -273,7 +268,7 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
 
         const onPressIn = () => {
           if (isCreateAction) {
-            preloadRoute(rootNavigation, composerRoute);
+            preloadRoute(rootNavigation, "Post");
             return;
           }
           // Module loading is synchronous in React Native. Keep it off the

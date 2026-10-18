@@ -11,7 +11,7 @@ function read(relativePath: string): string {
 
 test("V2 detail screens do not ship fabricated trust claims", () => {
   const sources = [
-    read("src/app/screens/detail/StallDetailScreenV2.tsx"),
+    read("src/app/screens/detail/StallDetailScreen.tsx"),
     read("src/app/screens/detail/DishDetailScreenV2.tsx"),
   ].join("\n");
 
@@ -31,13 +31,8 @@ test("V2 detail screens do not ship fabricated trust claims", () => {
 });
 
 test("V2 screens bind trust surfaces to venue and dish data", () => {
-  const stall = read("src/app/screens/detail/StallDetailScreenV2.tsx");
   const dish = read("src/app/screens/detail/DishDetailScreenV2.tsx");
 
-  assert.match(stall, /venue\.verificationStatus === "verified"/);
-  assert.match(stall, /dish\.reviewCount/);
-  assert.match(stall, /TASTE_DIMENSIONS/);
-  assert.match(stall, /reviewItems/);
   assert.match(dish, /if \(liveCrowd === "low"\) return "< 15 min";/);
   assert.match(dish, /return null;/);
 });
