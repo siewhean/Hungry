@@ -32,7 +32,11 @@ import {
   searchVenuesByLocationViaRpc,
   supabaseRepository,
 } from "@/lib/services/supabase/supabaseRepository";
-import { getSupabaseClient } from "@/lib/services/supabase/client";
+import { getConfiguredSupabaseUrl, getSupabaseClient } from "@/lib/services/supabase/client";
+import {
+  isOwnMerchantDishImageUrl,
+  UNLINKED_VENUE_SEGMENT,
+} from "@/lib/security/merchantDishImageUrl";
 import { hungryPersistStorage } from "@/store/persistStorage";
 import {
   assertValidMenuPhotoUpload,
@@ -2355,10 +2359,6 @@ function buildDishUpdatePayload(updates: Partial<DishDetail>): Row {
   return payload;
 }
 
-function isMerchantDishImageUrl(url: string): boolean {
-  return /^https:\/\/[^/]+\/storage\/v1\/object\/public\/merchant-dish-images\//.test(url);
-}
-
 async function resolveMerchantDishGalleryUrls(
   client: SupabaseClient,
   outlet: Row,
@@ -2373,15 +2373,21 @@ async function resolveMerchantDishGalleryUrls(
   if (requestedUrls.length === 0) return [];
 
   const userId = await getCurrentSupabaseUserId();
-  const venueId = asString(outlet.venue_id) ?? "unlinked";
+  const linkedVenueId = asString(outlet.venue_id) ?? null;
+  const venueId = linkedVenueId ?? UNLINKED_VENUE_SEGMENT;
   const safeDishId = sanitizeStorageSegment(dishId);
   const uploadedUrls: string[] = [];
+  const imageOwner = {
+    supabaseUrl: getConfiguredSupabaseUrl(),
+    userId,
+    venueId: linkedVenueId,
+  };
 
   for (let index = 0; index < requestedUrls.length; index += 1) {
     const url = requestedUrls[index];
     // Photos already uploaded to the merchant bucket are kept as they are, so
     // editing a dish's name or price does not force a re-upload.
-    if (isMerchantDishImageUrl(url)) {
+    if (isOwnMerchantDishImageUrl(url, imageOwner)) {
       uploadedUrls.push(url);
       continue;
     }

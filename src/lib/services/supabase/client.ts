@@ -36,6 +36,10 @@ export function setConfiguredDataSource(override?: HungryDataSource): void {
   configuredDataSourceOverride = override ?? null;
 }
 
+export function getConfiguredSupabaseUrl(): string {
+  return SUPABASE_URL;
+}
+
 export function isSupabaseConfigured(): boolean {
   return SUPABASE_URL.length > 0 && SUPABASE_ANON_KEY.length > 0;
 }

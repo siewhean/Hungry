@@ -142,6 +142,8 @@ const INTENDED_AUTHENTICATED_RPCS = [
   "mark_notification_opened",
   // Called by the merchant dish write guards (security invoker); returns a public verified flag.
   "merchant_venue_is_verified",
+  // Same, scoped to auth.uid(): true only for owners/managers of a verified outlet.
+  "merchant_venue_is_verified_for_current_user",
   "register_push_token",
   "unregister_push_token",
 ];
