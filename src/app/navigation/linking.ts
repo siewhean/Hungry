@@ -56,6 +56,10 @@ function sanitizeRouteParams(name: string, params: unknown): Record<string, unkn
     return undefined;
   }
 
+  if (name === "ActivityPostDetail" && !isSafeDeepLinkId(next.postId)) {
+    return undefined;
+  }
+
   if (name === "PortfolioPublicView" && !isSafeDeepLinkId(next.portfolioId)) {
     return undefined;
   }
@@ -121,6 +125,10 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
     const id = decodePathSegment(parts[1]);
     return id ? createState("StallDetail", { id }) : undefined;
   }
+  if (parts[0] === "post") {
+    const postId = decodePathSegment(parts[1]);
+    return postId ? createState("ActivityPostDetail", { postId }) : undefined;
+  }
   if (path === "order") return createState("Post", parseOrderDeepLinkQuery(rawPath));
   if (FEATURE_FLAGS.portfoliosEnabled && parts[0] === "portfolio") {
     return createState("PortfolioPublicView", { portfolioId: decodePathSegment(parts[1]) });
@@ -155,6 +163,7 @@ function sanitizeLinkingState(state: LinkingState | undefined) {
 const SHARED_LINK_ROUTES = new Set([
   "DishDetail",
   "StallDetail",
+  "ActivityPostDetail",
   "PortfolioPublicView",
   "WheelStack",
 ]);
@@ -192,6 +201,7 @@ export function createRootLinking(
         },
         DishDetail: "dish/:id",
         StallDetail: "venue/:id",
+        ActivityPostDetail: "post/:postId",
         Post: "order",
         ...(FEATURE_FLAGS.portfoliosEnabled
           ? { PortfolioPublicView: "portfolio/:portfolioId" }

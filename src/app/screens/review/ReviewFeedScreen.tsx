@@ -654,7 +654,7 @@ export function ReviewFeedScreen() {
         imageUrl: item.review.photos[0] ?? linkedDish?.imageUrl ?? linkedPost?.mediaUrl ?? "",
         authorName: item.review.authorName,
         message: `${item.review.authorName} reviewed ${item.dishName} at ${item.venueName} on Hungry: ${item.review.text}`,
-        link: webShareUrl("reviews", item.review.id),
+        link: webShareUrl("dish", item.dishId),
       });
       requestAnimationFrame(() => {
         shareSheetRef.current?.present();

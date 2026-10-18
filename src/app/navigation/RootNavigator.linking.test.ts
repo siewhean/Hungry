@@ -11,6 +11,7 @@ test("root linking config exposes public dish, venue, and order entry points", (
   assert.equal(authStack.screens.ResetPassword, "auth/reset");
   assert.equal(screens.DishDetail, "dish/:id");
   assert.equal(screens.StallDetail, "venue/:id");
+  assert.equal(screens.ActivityPostDetail, "post/:postId");
   assert.equal(screens.Post, "order");
   assert.equal(screens.MerchantTabs, undefined);
 });
@@ -45,6 +46,38 @@ test("deep link state rejects unsafe params and redirects protected links after 
   assert.equal(getStateFromPath("dish/<script>alert(1)</script>"), undefined);
   assert.equal(getStateFromPath("dish/"), undefined);
   assert.equal(getStateFromPath("venue/"), undefined);
+});
+
+test("usehungry.com share links open the matching app screen", () => {
+  const redirected: unknown[] = [];
+  let authState = {
+    isAuthReady: true,
+    isAuthenticated: true,
+    onAuthRedirect: (route: unknown) => redirected.push(route),
+  };
+  const linking = createRootLinking("exp://127.0.0.1:8081/--/", () => authState);
+
+  assert.deepEqual(linking.getStateFromPath("dish/dish-1")?.routes?.[0], {
+    name: "DishDetail",
+    params: { id: "dish-1" },
+  });
+  assert.deepEqual(linking.getStateFromPath("stall/venue-1")?.routes?.[0], {
+    name: "StallDetail",
+    params: { id: "venue-1" },
+  });
+  assert.deepEqual(linking.getStateFromPath("post/post-1")?.routes?.[0], {
+    name: "ActivityPostDetail",
+    params: { postId: "post-1" },
+  });
+  assert.equal(linking.getStateFromPath("post/<script>"), undefined);
+
+  // Posts need an account: signed-out people sign in, then land on the post.
+  authState = { ...authState, isAuthenticated: false };
+  assert.deepEqual(linking.getStateFromPath("post/post-1")?.routes?.[0], {
+    name: "AuthStack",
+    params: { screen: "Login", pop: true },
+  });
+  assert.deepEqual(redirected, [{ name: "ActivityPostDetail", params: { postId: "post-1" } }]);
 });
 
 test("auth deep links pop to an existing auth screen instead of stacking a new one", () => {
