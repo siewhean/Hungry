@@ -10,13 +10,15 @@ import {
   createNativeStackNavigator,
   type NativeStackScreenProps,
 } from "@react-navigation/native-stack";
-import { ArrowLeft } from "lucide-react-native";
+import NetInfo from "@react-native-community/netinfo";
+import { ArrowLeft, WifiOff } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SplashScreen } from "@/app/screens/SplashScreen";
 import { AuthStack } from "@/app/screens/auth/AuthStack";
 import { OnboardingStack } from "@/app/screens/onboarding/OnboardingStack";
-import { FloatingToast } from "@/components/ui";
+import { AppText, FloatingToast } from "@/components/ui";
+import { isNetworkOffline } from "@/lib/network/connectivity";
 import { UserProfileScreen } from "@/app/screens/profile/UserProfileScreen";
 
 import { useSessionStore } from "@/store/useSessionStore";
@@ -385,6 +387,65 @@ function GlobalScrollBackButton() {
   );
 }
 
+/**
+ * Non-blocking offline notice. Going offline used to replace the whole app with
+ * the Offline screen and reset to Home on reconnect, losing drafts and progress;
+ * now the current screen stays put and this banner sits on top until the
+ * connection returns.
+ */
+function OfflineBanner() {
+  const insets = useSafeAreaInsets();
+  const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
+  const isOffline = useUIStore((state) => state.isOffline);
+  const setOffline = useUIStore((state) => state.setOffline);
+
+  if (!isOffline) {
+    return null;
+  }
+
+  const retryConnection = async () => {
+    const state = await NetInfo.refresh();
+    setOffline(isNetworkOffline(state));
+  };
+
+  return (
+    <View pointerEvents="box-none" style={[styles.offlineBannerWrap, { zIndex: zIndex.toast }]}>
+      <View
+        accessibilityLiveRegion="polite"
+        accessibilityRole="alert"
+        style={[
+          styles.offlineBanner,
+          {
+            ...shadows.floating,
+            backgroundColor: palette.navy,
+            borderRadius: radii.pill,
+            gap: spacing[2],
+            marginHorizontal: spacing[4],
+            marginTop: insets.top + spacing[1],
+            paddingLeft: spacing[3],
+          },
+        ]}
+      >
+        <WifiOff color={palette.textOnDark} size={16} />
+        <AppText variant="bodySmall" style={{ color: palette.textOnDark, flex: 1 }}>
+          {"You're offline. Saved content stays visible."}
+        </AppText>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Retry connection"
+          hitSlop={4}
+          onPress={() => void retryConnection()}
+          style={{ justifyContent: "center", minHeight: 44, paddingHorizontal: spacing[3] }}
+        >
+          <AppText variant="bodySmallBold" style={{ color: palette.textOnDark }}>
+            Retry
+          </AppText>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 function QuickReviewModalHost() {
   const payload = useUIStore((state) => state.quickReview);
   if (!payload) {
@@ -428,7 +489,6 @@ export function RootNavigator({ theme }: { theme: Theme }) {
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
   const isMerchantMode = useMerchantStore((state) => state.account !== null);
   const resetScrollBack = useUIStore((state) => state.resetScrollBack);
-  const isOffline = useUIStore((state) => state.isOffline);
 
   const prefix = Linking.createURL("/");
   const linking = useMemo(
@@ -601,27 +661,6 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     }
   }, [isAuthenticated, isAuthReady, setReturnRoute]);
 
-  useEffect(() => {
-    if (!navigationRef.isReady()) {
-      return;
-    }
-
-    const rootState = navigationRef.getRootState();
-    const currentTopRoute = rootState?.routes[rootState.index]?.name;
-
-    if (isOffline && currentTopRoute !== "Offline") {
-      navigationRef.navigate("Offline");
-      return;
-    }
-
-    if (!isOffline && currentTopRoute === "Offline") {
-      navigationRef.resetRoot({
-        index: 0,
-        routes: [{ name: "MainTabs", params: { screen: "Home" } }],
-      });
-    }
-  }, [isOffline]);
-
   return (
     <>
       <NavigationContainer
@@ -781,6 +820,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
         </RootStack.Navigator>
       </NavigationContainer>
       <GlobalScrollBackButton />
+      <OfflineBanner />
       <QuickReviewModalHost />
       <ReviewSuccessModalHost onOpenHistory={() => navigationRef.navigate("ReviewHistory")} />
       <FloatingToast />
@@ -796,6 +836,16 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     top: 0,
+  },
+  offlineBannerWrap: {
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
+  },
+  offlineBanner: {
+    alignItems: "center",
+    flexDirection: "row",
   },
   globalBackButton: {
     alignItems: "center",
