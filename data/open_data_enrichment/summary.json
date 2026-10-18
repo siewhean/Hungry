@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-18T13:57:22Z",
+  "generated_at": "2026-10-18T14:04:49Z",
   "venues_in_catalog": 29611,
   "overwrite": false,
   "priority": [
@@ -81,16 +81,19 @@
       "min_confidence": 0.5
     },
     "foursquare": {
-      "records": 0,
-      "matched_records": 0,
-      "matched_venues": 0,
-      "match_methods": {},
-      "unmatched_records": 0,
+      "records": 76342,
+      "matched_records": 10528,
+      "matched_venues": 10057,
+      "match_methods": {
+        "postal_name": 7631,
+        "distance_name": 2897
+      },
+      "unmatched_records": 65814,
       "fields_offered": {
         "operating_hours": 0,
-        "website_url": 0,
-        "contact_phone": 0,
-        "cuisine_tags": 0,
+        "website_url": 1564,
+        "contact_phone": 2049,
+        "cuisine_tags": 5174,
         "dietary_tags": 0
       },
       "release": "2026-10-15"
@@ -110,9 +113,9 @@
   },
   "fields_filled": {
     "operating_hours": 324,
-    "website_url": 1990,
-    "contact_phone": 2943,
-    "cuisine_tags": 3483,
+    "website_url": 2565,
+    "contact_phone": 3736,
+    "cuisine_tags": 6906,
     "dietary_tags": 201
   },
   "fields_filled_by_source": {
@@ -129,14 +132,19 @@
       "contact_phone": 2808,
       "cuisine_tags": 2660,
       "dietary_tags": 0
+    },
+    "foursquare": {
+      "operating_hours": 0,
+      "website_url": 575,
+      "contact_phone": 793,
+      "cuisine_tags": 3423,
+      "dietary_tags": 0
     }
   },
-  "venues_with_fill": 4863,
+  "venues_with_fill": 8453,
   "http": {
     "requests": 4,
     "cache_hits": 443
   },
-  "log": [
-    "foursquare: HTTP 403, the token is valid but its account is not in the dataset's authorized list. Request access at https://huggingface.co/datasets/foursquare/fsq-os-places while signed in as the token's account, then rerun."
-  ]
+  "log": []
 }
