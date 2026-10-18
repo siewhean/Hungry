@@ -1,5 +1,6 @@
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { WEB_BASE_URL } from "@/constants/links";
+import { parseShareSource, rememberShareAttribution } from "@/features/share/shareAttribution";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 
 const SAFE_DEEP_LINK_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
@@ -53,6 +54,10 @@ function sanitizeRouteParams(name: string, params: unknown): Record<string, unkn
     params && typeof params === "object" ? { ...(params as Record<string, unknown>) } : {};
 
   if ((name === "DishDetail" || name === "StallDetail") && !isSafeDeepLinkId(next.id)) {
+    return undefined;
+  }
+
+  if (name === "ActivityPostDetail" && !isSafeDeepLinkId(next.postId)) {
     return undefined;
   }
 
@@ -121,6 +126,10 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
     const id = decodePathSegment(parts[1]);
     return id ? createState("StallDetail", { id }) : undefined;
   }
+  if (parts[0] === "post") {
+    const postId = decodePathSegment(parts[1]);
+    return postId ? createState("ActivityPostDetail", { postId }) : undefined;
+  }
   if (path === "order") return createState("Post", parseOrderDeepLinkQuery(rawPath));
   if (FEATURE_FLAGS.portfoliosEnabled && parts[0] === "portfolio") {
     return createState("PortfolioPublicView", { portfolioId: decodePathSegment(parts[1]) });
@@ -155,14 +164,20 @@ function sanitizeLinkingState(state: LinkingState | undefined) {
 const SHARED_LINK_ROUTES = new Set([
   "DishDetail",
   "StallDetail",
+  "ActivityPostDetail",
   "PortfolioPublicView",
   "WheelStack",
 ]);
 
-function trackSharedLinkOpened(state: LinkingState) {
+function trackSharedLinkOpened(state: LinkingState, rawPath: string) {
   const route = state.routes[state.routes.length - 1];
   if (!route || !SHARED_LINK_ROUTES.has(String(route.name))) return;
-  trackAnalyticsEvent("shared_link_opened", { route: String(route.name) });
+  const source = parseShareSource(rawPath);
+  if (source) rememberShareAttribution({ source, route: String(route.name) });
+  trackAnalyticsEvent("shared_link_opened", {
+    route: String(route.name),
+    ...(source ? { share_source: source } : {}),
+  });
 }
 
 function isProtectedDeepLinkState(state: LinkingState | undefined): boolean {
@@ -192,6 +207,7 @@ export function createRootLinking(
         },
         DishDetail: "dish/:id",
         StallDetail: "venue/:id",
+        ActivityPostDetail: "post/:postId",
         Post: "order",
         ...(FEATURE_FLAGS.portfoliosEnabled
           ? { PortfolioPublicView: "portfolio/:portfolioId" }
@@ -224,7 +240,7 @@ export function createRootLinking(
       if (!state) {
         return undefined;
       }
-      trackSharedLinkOpened(state);
+      trackSharedLinkOpened(state, path);
 
       const { isAuthReady, isAuthenticated, onAuthRedirect } = getAuthState();
       if (!isAuthReady && isProtectedDeepLinkState(state)) {

@@ -2,10 +2,16 @@ import { notFound } from "next/navigation";
 
 import styles from "@/components/seo/SeoPage.module.css";
 import { SharePreview, sharePreviewMetadata } from "@/components/share/SharePreview";
-import { formatPrice, formatUpdated, getSharedPortfolio } from "@/lib/share/sharedLinks";
+import {
+  formatPrice,
+  formatUpdated,
+  getSharedPortfolio,
+  readShareSource,
+} from "@/lib/share/sharedLinks";
 
 type PageProps = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ src?: string | string[] }>;
 };
 
 export async function generateMetadata({ params }: PageProps) {
@@ -23,11 +29,13 @@ export async function generateMetadata({ params }: PageProps) {
     portfolio.name,
     `${portfolio.items.length} picks${by} on Hungry.`,
     `/portfolio/${portfolio.id}`,
+    portfolio.items.find((item) => item.imageUrl)?.imageUrl,
   );
 }
 
-export default async function SharedPortfolioPage({ params }: PageProps) {
+export default async function SharedPortfolioPage({ params, searchParams }: PageProps) {
   const { id } = await params;
+  const shareSource = readShareSource((await searchParams).src);
   const portfolio = await getSharedPortfolio(id);
   if (!portfolio) notFound();
 
@@ -45,6 +53,7 @@ export default async function SharedPortfolioPage({ params }: PageProps) {
       lead={portfolio.description}
       facts={facts}
       appPath={`portfolio/${portfolio.id}`}
+      shareSource={shareSource}
     >
       {portfolio.items.length ? (
         <section className={styles.section} aria-labelledby="picks-title">
@@ -63,6 +72,20 @@ export default async function SharedPortfolioPage({ params }: PageProps) {
                       : null;
                 return (
                   <article className={styles.card} key={`${item.dishId ?? item.stallId}-${index}`}>
+                    {item.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={item.imageUrl}
+                        alt={item.name ?? "Dish photo"}
+                        loading="lazy"
+                        style={{
+                          width: "100%",
+                          borderRadius: 12,
+                          objectFit: "cover",
+                          aspectRatio: "4 / 3",
+                        }}
+                      />
+                    ) : null}
                     <h3>{href ? <a href={href}>{item.name ?? "Untitled"}</a> : item.name}</h3>
                     {item.itemType === "dish" ? (
                       <p>
@@ -72,6 +95,16 @@ export default async function SharedPortfolioPage({ params }: PageProps) {
                       </p>
                     ) : null}
                     {item.publicNotes ? <p>{item.publicNotes}</p> : null}
+                    {item.mapsUrl ? (
+                      <a
+                        className={styles.inlineLink}
+                        href={item.mapsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Get directions
+                      </a>
+                    ) : null}
                   </article>
                 );
               })}

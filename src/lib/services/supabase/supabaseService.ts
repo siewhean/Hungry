@@ -6416,6 +6416,35 @@ export const supabaseService: HungryService = {
       return mapPortfolio(data as Row);
     },
 
+    async getPublicPortfolio(id: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      // Security definer RPC: works for signed-out visitors and only returns public lists.
+      const { data, error } = await client.rpc("get_public_portfolio", { p_portfolio_id: id });
+      if (error) throw error;
+      if (!data || typeof data !== "object") return null;
+      const row = data as Row;
+      const items = Array.isArray(row.items) ? (row.items as Row[]) : [];
+      return {
+        id: String(row.id),
+        name: String(row.name ?? ""),
+        description: typeof row.description === "string" ? row.description : undefined,
+        ownerDisplayName:
+          typeof row.owner_display_name === "string" ? row.owner_display_name : undefined,
+        updatedAt: typeof row.updated_at === "string" ? row.updated_at : undefined,
+        items: items.map((item) => ({
+          itemType: item.item_type === "stall" ? ("stall" as const) : ("dish" as const),
+          dishId: typeof item.dish_id === "string" ? item.dish_id : undefined,
+          stallId: typeof item.stall_id === "string" ? item.stall_id : undefined,
+          name: String(item.name ?? "Untitled"),
+          stallName: typeof item.stall_name === "string" ? item.stall_name : undefined,
+          price: item.price === null || item.price === undefined ? undefined : Number(item.price),
+          publicNotes: typeof item.public_notes === "string" ? item.public_notes : undefined,
+          imageUrl: typeof item.image_url === "string" ? item.image_url : undefined,
+        })),
+      };
+    },
+
     async updatePortfolio(id: string, updates: any, options?: PortfolioMutationOptions) {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");

@@ -2,8 +2,10 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { Heart } from "lucide-react-native";
 
 import type { DishDetail } from "@/types/domain";
+import { formatDishUpdated } from "@/features/detail/dishFreshness";
 import { useHungryTheme, type HungryTheme } from "@/theme";
 import { AccessibleImage, AppText, Badge, Card } from "../ui";
+import { NoDishPhoto } from "./NoDishPhoto";
 
 interface DishCardProps {
   dish: DishDetail;
@@ -24,6 +26,16 @@ export function DishCard({
   const styles = createStyles(spacing);
 
   const isHorizontal = variant === "horizontal";
+  const updatedLabel = formatDishUpdated(dish.updatedAt);
+  const imageStyle = [
+    styles.image,
+    {
+      backgroundColor: palette.bgSoft,
+      borderRadius: radii.sm,
+      height: isHorizontal ? 88 : 140,
+      width: isHorizontal ? (88 as const) : ("100%" as const),
+    },
+  ];
 
   return (
     <Card
@@ -47,22 +59,18 @@ export function DishCard({
           },
         ]}
       >
-        <AccessibleImage
-          source={{ uri: dish.imageUrl }}
-          accessibilityLabel={`${dish.name} from ${dish.venueName}`}
-          style={[
-            styles.image,
-            {
-              backgroundColor: palette.bgSoft,
-              borderRadius: radii.sm,
-              height: isHorizontal ? 88 : 140,
-              width: isHorizontal ? 88 : "100%",
-            },
-          ]}
-          contentFit="cover"
-          placeholder={dish.blurhash}
-          transition={180}
-        />
+        {dish.imageUrl ? (
+          <AccessibleImage
+            source={{ uri: dish.imageUrl }}
+            accessibilityLabel={`${dish.name} from ${dish.venueName}`}
+            style={imageStyle}
+            contentFit="cover"
+            placeholder={dish.blurhash}
+            transition={180}
+          />
+        ) : (
+          <NoDishPhoto dishName={dish.name} style={imageStyle} />
+        )}
         <View style={{ flex: 1, gap: spacing[2] }}>
           <View style={styles.row}>
             <View style={{ flex: 1, gap: spacing[1] }}>
@@ -93,6 +101,11 @@ export function DishCard({
             <AppText variant="bodySmall" tone="secondary">
               {Math.round(dish.distanceMeters)} m away
             </AppText>
+            {updatedLabel ? (
+              <AppText variant="bodySmall" tone="muted">
+                {updatedLabel}
+              </AppText>
+            ) : null}
           </View>
           <View style={styles.chipRow}>
             {dish.tasteTags.slice(0, 3).map((tag) => (

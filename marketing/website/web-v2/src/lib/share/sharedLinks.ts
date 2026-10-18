@@ -18,7 +18,13 @@ export type SharedDish = {
   price: number;
   imageUrl: string | null;
   updatedAt: string | null;
-  stall: { id: string; name: string; unitNumber: string; floor: string } | null;
+  stall: {
+    id: string;
+    name: string;
+    unitNumber: string;
+    floor: string;
+    mapsUrl: string | null;
+  } | null;
 };
 
 export type SharedStall = {
@@ -27,6 +33,7 @@ export type SharedStall = {
   unitNumber: string;
   floor: string;
   operatingHours: string;
+  mapsUrl: string | null;
   dishes: { id: string; name: string; price: number }[];
 };
 
@@ -44,6 +51,8 @@ export type SharedPortfolio = {
     stallName: string | null;
     price: number | null;
     publicNotes: string | null;
+    imageUrl: string | null;
+    mapsUrl: string | null;
   }[];
 };
 
@@ -64,7 +73,19 @@ type VenueRow = {
   unit_number: string | null;
   floor: string | null;
   operating_hours: string | null;
+  address?: string | null;
+  postal_code?: string | null;
+  building_id?: string | null;
 };
+
+type BuildingRow = {
+  id: string;
+  name: string | null;
+  address: string | null;
+  postal_code: string | null;
+};
+
+const VENUE_SELECT = "id,name,unit_number,floor,operating_hours,address,postal_code,building_id";
 
 async function fetchRows<T>(table: string, params: Record<string, string>): Promise<T[]> {
   if (!isSupabasePublicConfigured()) return [];
@@ -76,13 +97,42 @@ async function fetchRows<T>(table: string, params: Record<string, string>): Prom
   }
 }
 
-function toVenue(row: VenueRow) {
+export function mapsSearchUrl(query: string | null | undefined) {
+  const trimmed = query?.trim();
+  return trimmed
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(trimmed)}`
+    : null;
+}
+
+async function fetchBuilding(id: string | null | undefined): Promise<BuildingRow | null> {
+  if (!id || !SAFE_ID_PATTERN.test(id)) return null;
+  const [building] = await fetchRows<BuildingRow>("buildings", {
+    id: `eq.${id}`,
+    select: "id,name,address,postal_code",
+    limit: "1",
+  });
+  return building ?? null;
+}
+
+function toVenue(row: VenueRow, building: BuildingRow | null) {
+  const postalCode = row.postal_code ?? building?.postal_code;
   return {
     id: row.id,
     name: row.name,
     unitNumber: row.unit_number ?? "",
     floor: row.floor ?? "",
     operatingHours: row.operating_hours ?? "",
+    mapsUrl: mapsSearchUrl(
+      [
+        row.name,
+        row.unit_number,
+        building?.name,
+        row.address ?? building?.address,
+        postalCode ? `Singapore ${postalCode}` : null,
+      ]
+        .filter(Boolean)
+        .join(", "),
+    ),
   };
 }
 
@@ -97,9 +147,10 @@ export async function getSharedDish(id: string): Promise<SharedDish | null> {
 
   const [venue] = await fetchRows<VenueRow>("venues", {
     id: `eq.${dish.venue_id}`,
-    select: "id,name,unit_number,floor,operating_hours",
+    select: VENUE_SELECT,
     limit: "1",
   });
+  const building = venue ? await fetchBuilding(venue.building_id) : null;
 
   return {
     id: dish.id,
@@ -108,7 +159,7 @@ export async function getSharedDish(id: string): Promise<SharedDish | null> {
     price: Number(dish.price) || 0,
     imageUrl: dish.media_approved_for_display ? dish.image_url : null,
     updatedAt: dish.updated_at ?? null,
-    stall: venue ? toVenue(venue) : null,
+    stall: venue ? toVenue(venue, building) : null,
   };
 }
 
@@ -116,10 +167,11 @@ export async function getSharedStall(id: string): Promise<SharedStall | null> {
   if (!SAFE_ID_PATTERN.test(id)) return null;
   const [venue] = await fetchRows<VenueRow>("venues", {
     id: `eq.${id}`,
-    select: "id,name,unit_number,floor,operating_hours",
+    select: VENUE_SELECT,
     limit: "1",
   });
   if (!venue) return null;
+  const building = await fetchBuilding(venue.building_id);
 
   const dishes = await fetchRows<DishRow>("dishes", {
     venue_id: `eq.${id}`,
@@ -129,7 +181,7 @@ export async function getSharedStall(id: string): Promise<SharedStall | null> {
   });
 
   return {
-    ...toVenue(venue),
+    ...toVenue(venue, building),
     dishes: dishes.map((dish) => ({
       id: dish.id,
       name: dish.name,
@@ -152,6 +204,8 @@ type PortfolioRpcRow = {
     stall_name: string | null;
     price: number | string | null;
     public_notes: string | null;
+    image_url?: string | null;
+    map_query?: string | null;
   }[];
 };
 
@@ -178,6 +232,8 @@ export async function getSharedPortfolio(id: string): Promise<SharedPortfolio | 
         stallName: item.stall_name,
         price: item.price === null ? null : Number(item.price),
         publicNotes: item.public_notes,
+        imageUrl: item.image_url ?? null,
+        mapsUrl: mapsSearchUrl(item.map_query),
       })),
     };
   } catch {
@@ -201,6 +257,15 @@ export function formatUpdated(value: string | null) {
   });
 }
 
-export function appDeepLink(path: string) {
-  return `hungry://${path.replace(/^\//, "")}`;
+const SHARE_SOURCES = new Set(["whatsapp", "telegram", "system_share", "copy_link"]);
+
+/** The app's ?src= share tag, kept only when it is one the app sets. */
+export function readShareSource(value: string | string[] | undefined): string | null {
+  const source = Array.isArray(value) ? value[0] : value;
+  return source && SHARE_SOURCES.has(source) ? source : null;
+}
+
+export function appDeepLink(path: string, source?: string | null) {
+  const base = `hungry://${path.replace(/^\//, "")}`;
+  return source ? `${base}?src=${source}` : base;
 }

@@ -249,6 +249,7 @@ function mapDish(row: Row, venue?: VenueSummary, presentation?: DishPresentation
     mustOrder: toBool(row.must_order),
     availabilityFlags: toStringArray(row.availability_flags),
     reviews: [],
+    updatedAt: toString(row.updated_at) || undefined,
   };
 }
 
