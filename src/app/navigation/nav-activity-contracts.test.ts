@@ -32,8 +32,18 @@ test("bottom navigation puts create post in the center and review fourth", () =>
   assert.match(tabItem, /backgroundColor: palette\.orange[\s\S]*borderRadius: radii\.pill/);
   assert.match(
     tabItem,
-    /<Icon[\s\S]*color=\{createAction \? palette\.white : resolvedColor\}[\s\S]*size=\{componentSizes\.bottomTabIcon\}[\s\S]*\/>/,
+    /<Icon[\s\S]*color=\{createAction \? createIconColor : resolvedColor\}[\s\S]*size=\{componentSizes\.bottomTabIcon\}[\s\S]*\/>/,
   );
+  assert.match(
+    tabItem,
+    /const createIconColor = colorScheme === "dark" \? palette\.textOnOrange : palette\.white/,
+  );
+  // Active tab stays highlighted (no fade-out timer) and is exposed as a selected tab.
+  assert.doesNotMatch(tabs, /highlightVisible|setTimeout/);
+  assert.match(tabs, /accessibilityRole="tablist"/);
+  assert.match(tabItem, /accessibilityRole=\{createAction \? "button" : "tab"\}/);
+  assert.match(tabItem, /accessibilityState=\{createAction \? \{\} : \{ selected: focused \}\}/);
+  assert.match(tabItem, /focused \? palette\.orangeText : palette\.textMuted/);
   assert.match(
     tabItem,
     /\{showLabel && !createAction \? \(\s*<AppText[\s\S]*\{label\}[\s\S]*<\/AppText>\s*\) : null\}/,

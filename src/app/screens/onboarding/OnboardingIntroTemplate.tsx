@@ -6,16 +6,18 @@
  *  - Large illustrative icon/visual area per slide
  *  - Eyebrow label + headline + body copy
  *  - Feature bullets with animated entrance
- *  - Bottom CTA with back/skip options
+ *  - Bottom CTA with back/skip options (skip jumps past the taste setup to location)
  *  - Tap anywhere on top 60% to advance (like Instagram Stories)
  */
 
 import { useEffect, useRef } from "react";
-import { Animated, Easing, Pressable, View, StyleSheet, Platform } from "react-native";
+import { Animated, Easing, Pressable, View, StyleSheet } from "react-native";
 import type { PropsWithChildren } from "react";
 import { ChevronRight } from "lucide-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppText, Button } from "@/components/ui";
+import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
 import { componentRadii } from "@/theme/tokens";
 import type { OnboardingStackParamList } from "./OnboardingStack";
@@ -306,6 +308,12 @@ export function OnboardingIntroTemplate({
   backScreen,
 }: OnboardingIntroTemplateProps) {
   const { motion, palette, radii, spacing, shadows, zIndex } = useHungryTheme();
+  const insets = useSafeAreaInsets();
+  const setSkippedTasteQuiz = useSessionStore((state) => state.setSkippedTasteQuiz);
+  const skipTasteSetup = () => {
+    setSkippedTasteQuiz(true);
+    navigation.navigate("LocationPermission");
+  };
 
   const headlineAnim = useRef(new Animated.Value(0)).current;
 
@@ -327,7 +335,7 @@ export function OnboardingIntroTemplate({
         style={[
           styles.topArea,
           {
-            paddingTop: Platform.OS === "ios" ? 66 : 36,
+            paddingTop: insets.top + spacing[3],
             zIndex: zIndex.overlay,
           },
         ]}
@@ -338,16 +346,18 @@ export function OnboardingIntroTemplate({
           <View style={styles.backBtn} />
 
           <Pressable
-            onPress={() => navigation.navigate("TasteQuiz")}
+            onPress={skipTasteSetup}
             style={{
               alignItems: "center",
               flexDirection: "row",
               gap: 4,
               justifyContent: "center",
-              minHeight: 28,
+              minHeight: 44,
               minWidth: 52,
             }}
-            accessibilityLabel="Skip onboarding"
+            accessibilityRole="button"
+            accessibilityLabel="Skip taste setup"
+            accessibilityHint="Goes straight to choosing your location"
           >
             <AppText variant="bodySmallBold" tone="muted">
               Skip
@@ -361,7 +371,8 @@ export function OnboardingIntroTemplate({
       <Pressable
         style={styles.illustrationArea}
         onPress={() => navigation.navigate(nextScreen)}
-        accessibilityLabel={`Tap to go to next step: ${nextScreen}`}
+        accessibilityRole="button"
+        accessibilityLabel="Continue to the next step"
       >
         <SlideIllustration step={stepIndex - 1} accentColor={palette.orange} />
       </Pressable>

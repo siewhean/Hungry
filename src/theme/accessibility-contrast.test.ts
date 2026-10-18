@@ -128,3 +128,17 @@ test("documented Hungry theme text pairs meet WCAG AA contrast", () => {
 test("theme exposes computed contrast ratios for audit traceability", () => {
   assert.deepEqual(contrastRatios, computedContrastRatios);
 });
+
+test("bottom tab active label and create icon meet contrast targets", () => {
+  for (const mode of ["light", "dark"] as const) {
+    const palette = colors[mode];
+    // Active tab labels are 10px text, so they need 4.5:1 against the tab bar background.
+    assert.ok(
+      contrast(palette.orangeText as HexColor, palette.bg as HexColor) >= 4.5,
+      `${mode} orangeText on bg should pass 4.5:1`,
+    );
+  }
+  // Dark-mode create button uses the dark on-orange ink instead of white.
+  assert.ok(contrast(colors.dark.textOnOrange as HexColor, colors.dark.orange as HexColor) >= 4.5);
+  assert.ok(contrast(colors.dark.white as HexColor, colors.dark.orange as HexColor) < 3);
+});

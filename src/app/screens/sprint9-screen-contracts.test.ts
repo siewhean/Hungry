@@ -133,12 +133,19 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
   assert.match(manualLocation, /accessibilityLabel="Search Singapore location"/);
   assert.match(manualLocation, /accessibilityLabel=\{`Choose \$\{area\.name\}`\}/);
   assert.match(manualLocation, /accessibilityHint="Sets this as your Hungry discovery location"/);
-  assert.match(tasteProfileResult, /accessibilityLabel=\{`Save \$\{dish\.name\}`\}/);
   assert.match(
     tasteProfileResult,
-    /accessibilityHint="Create or sign in to an account before saving this dish"/,
+    /accessibilityLabel=\{`\$\{isSaved \? "Unsave" : "Save"\} \$\{dish\.name\}`\}/,
   );
-  assert.match(tasteProfileResult, /navigation\.navigate\("OnboardingAuth"\)/);
+  assert.match(tasteProfileResult, /"Create or sign in to an account before saving this dish"/);
+  // Signed-in users save for real; only guests are sent to the auth prompt.
+  assert.match(
+    tasteProfileResult,
+    /if \(isAuthenticated\) \{\s*toggleFavourite\(dish\);\s*return;\s*\}[\s\S]*navigation\.navigate\("OnboardingAuth"\)/,
+  );
+  // Result is ranked by the quiz taste vector, not a fixed popular list.
+  assert.match(tasteProfileResult, /searchDishes\([\s\S]*tasteValues: tasteVector/);
+  assert.doesNotMatch(tasteProfileResult, /generated food photo/);
   assert.match(
     tasteQuiz,
     /accessibilityRole="button"[\s\S]*accessibilityLabel=\{`\$\{labels\[index\]\} \$\{QUESTIONS\[currentKey\]\}`\}/,
@@ -618,4 +625,16 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
     launcherSource,
     /label="Dish V2"[\s\S]*onPress=\{\(\) => openSampleDishDetail\("v2"\)\}/,
   );
+});
+
+test("search home shows debounced inline results and keeps a see-all action", () => {
+  const search = read("src/app/screens/search/DishSearchScreen.tsx");
+
+  assert.match(search, /const INLINE_RESULT_DEBOUNCE_MS = 250/);
+  assert.match(search, /setTimeout\([\s\S]*getSearchResultsAsync\(/);
+  assert.match(search, /clearTimeout\(timer\)/);
+  assert.match(search, /inlineResults\.map\(\(dish, index\) =>/);
+  assert.match(search, /navigation\.navigate\("DishDetail", \{ dishId: dish\.id \}\)/);
+  assert.match(search, /"See all results"/);
+  assert.match(search, /navigation\.navigate\("SearchResults"\)/);
 });

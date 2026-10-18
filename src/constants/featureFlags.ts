@@ -27,12 +27,15 @@ export function resolveFeatureFlags(
     // Production never falls back to a partial client-side catalog cache.
     catalogReadV2: process.env.EXPO_PUBLIC_CATALOG_READ_V2 === "1",
     mockMapboxEnabled: process.env.EXPO_PUBLIC_MOCK_MAPBOX_ENABLED === "1",
-    hungryWheelEnabled: true,
+    // Wheel solo spin ships everywhere. Group parties are an in-memory mock (a /join
+    // link can't reach another phone), so hosting/joining stays out of production.
+    wheelPartyEnabled: nonProductionSurfaceEnabled,
     directMessagesEnabled: nonProductionSurfaceEnabled,
     commentsEnabled: nonProductionSurfaceEnabled,
     oauthProvidersEnabled: nonProductionSurfaceEnabled,
     floorplansEnabled: false,
-    craveEnabled: true,
+    // Crave is only reachable from merchant mode today, so keep it out of production.
+    craveEnabled: nonProductionSurfaceEnabled,
     gamificationEnabled: nonProductionSurfaceEnabled,
     collectionsEnabled: nonProductionSurfaceEnabled,
     // Hungry Portfolios (user lists) and their public share links ship in production.

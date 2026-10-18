@@ -55,23 +55,19 @@ export function LocationPermissionScreen({ navigation }: Props) {
   const manualLocation = useLocationStore((state) => state.manualLocation);
   const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
   const hasSkippedTasteQuiz = useSessionStore((state) => state.hasSkippedTasteQuiz);
-  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const [isContinuing, setIsContinuing] = useState(false);
 
+  // Last onboarding step: guests and signed-in users both land on Home.
+  // Sign-in is asked for later, when someone saves, reviews or posts.
   const finish = () => {
     completeOnboarding(hasSkippedTasteQuiz);
-    if (isAuthenticated) {
-      const rootNav = navigation.getParent();
-      if (rootNav && typeof (rootNav as { reset?: (state: object) => void }).reset === "function") {
-        (rootNav as { reset: (state: object) => void }).reset({
-          index: 0,
-          routes: [{ name: "MainTabs", params: { screen: "Home" } }],
-        });
-      }
-      return;
+    const rootNav = navigation.getParent();
+    if (rootNav && typeof (rootNav as { reset?: (state: object) => void }).reset === "function") {
+      (rootNav as { reset: (state: object) => void }).reset({
+        index: 0,
+        routes: [{ name: "MainTabs", params: { screen: "Home" } }],
+      });
     }
-
-    navigation.navigate("OnboardingAuth");
   };
 
   const allowDeviceLocation = async () => {

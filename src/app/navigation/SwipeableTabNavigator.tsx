@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { View, StyleSheet } from "react-native";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import type { MaterialTopTabBarProps } from "@react-navigation/material-top-tabs";
@@ -196,24 +196,7 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
   const { componentSizes, palette, spacing } = useHungryTheme();
   const styles = createStyles();
   const insets = useSafeAreaInsets();
-  const [highlightVisible, setHighlightVisible] = useState(true);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
   const rootNavigation = navigation.getParent<NavigationProp<RootStackParamList>>();
-
-  const resetTimer = useCallback(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    setHighlightVisible(true);
-    timerRef.current = setTimeout(() => {
-      setHighlightVisible(false);
-    }, 5000);
-  }, []);
-
-  useEffect(() => {
-    resetTimer();
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [state.index, resetTimer]);
 
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
@@ -229,6 +212,7 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
 
   return (
     <View
+      accessibilityRole="tablist"
       style={[
         styles.tabBarContainer,
         {
@@ -263,7 +247,6 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
             } else {
               rootNavigation?.navigate("Post");
             }
-            resetTimer();
             return;
           }
 
@@ -286,7 +269,6 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
             }
             navigation.navigate(routeName);
           }
-          resetTimer();
         };
 
         const onPressIn = () => {
@@ -301,15 +283,10 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
 
         const Icon = item.icon;
 
-        const activeColor = palette.orange;
-        const inactiveColor = palette.textMuted;
-        const currentColor = isFocused && highlightVisible ? activeColor : inactiveColor;
-
         return (
           <AppBottomTabItem
             key={routeKey}
             accessibilityLabel={item.label}
-            color={currentColor}
             createAction={isCreateAction}
             focused={isFocused}
             icon={Icon}

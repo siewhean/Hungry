@@ -92,7 +92,7 @@ test("floorplan entry points are hidden behind the floorplans flag", () => {
   assert.match(developerLauncher, /Floorplan routes are disabled for this build\./);
 });
 
-test("signed-out app entry starts at login while public routes stay unprotected", () => {
+test("signed-out app entry opens the app as a guest while public routes stay unprotected", () => {
   const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
   const splash = read("src/app/screens/SplashScreen.tsx");
   const developerLauncher = read("src/app/screens/dev/DeveloperLauncherScreen.tsx");
@@ -123,8 +123,12 @@ test("signed-out app entry starts at login while public routes stay unprotected"
     rootNavigator,
     /const PROTECTED_MAIN_TAB_ROUTES = new Set<MainTabRouteName>\(\["Profile"\]\)/,
   );
-  assert.match(splash, /const isAuthenticated = useSessionStore/);
-  assert.match(splash, /if \(!isAuthenticated\) \{[\s\S]*name: "AuthStack"[\s\S]*screen: "Login"/);
+  // No login wall: new users go to onboarding, returning signed-out users browse as guests.
+  assert.doesNotMatch(splash, /name: "AuthStack"/);
+  assert.match(
+    splash,
+    /if \(!hasCompletedOnboarding\) \{[\s\S]*name: "OnboardingStack"[\s\S]*screen: "OnboardingWelcome"/,
+  );
   assert.match(splash, /name: "MainTabs"[\s\S]*params: \{ screen: "Home" \}/);
   assert.match(profileHome, /setReturnRoute\("Profile"\)/);
   assert.match(
