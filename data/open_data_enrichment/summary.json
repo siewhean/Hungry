@@ -1,0 +1,142 @@
+{
+  "generated_at": "2026-10-18T13:43:09Z",
+  "venues_in_catalog": 29611,
+  "overwrite": false,
+  "priority": [
+    "datagov",
+    "osm",
+    "overture",
+    "foursquare"
+  ],
+  "thresholds": {
+    "postal_name": 0.85,
+    "distance_name": 0.75,
+    "max_distance_m": 40.0
+  },
+  "sources": {
+    "datagov": {
+      "records": 36687,
+      "matched_records": 12771,
+      "matched_venues": 12499,
+      "match_methods": {
+        "postal_name": 320,
+        "licence": 12451
+      },
+      "unmatched_records": 23916,
+      "fields_offered": {
+        "operating_hours": 0,
+        "website_url": 0,
+        "contact_phone": 0,
+        "cuisine_tags": 0,
+        "dietary_tags": 0
+      },
+      "datasets": [
+        "d_227473e811b09731e64725f140b77697"
+      ],
+      "dataset_last_updated": "2024-06-06T14:27:15+08:00",
+      "note": "Licence list fills no venue columns today (it has no hours/web/phone/cuisine fields).",
+      "hygiene_grade_info": {
+        "note": "Informational only; hygiene_grade is never updated. The NEA list predates the 2019 SFA transfer, so its grades are historical.",
+        "venues_with_published_grade": 10423,
+        "venues_on_default_or_workbook_grade": 19188,
+        "published_grade_equals_catalog_grade": 5662
+      }
+    },
+    "osm": {
+      "records": 9439,
+      "matched_records": 2555,
+      "matched_venues": 2515,
+      "match_methods": {
+        "postal_name": 1012,
+        "distance_name": 1543
+      },
+      "unmatched_records": 6884,
+      "fields_offered": {
+        "operating_hours": 324,
+        "website_url": 161,
+        "contact_phone": 135,
+        "cuisine_tags": 823,
+        "dietary_tags": 201
+      },
+      "osm_base_timestamp": "2026-10-18T13:25:51Z",
+      "opening_hours_not_convertible": 108
+    },
+    "overture": {
+      "records": 22448,
+      "matched_records": 6028,
+      "matched_venues": 5921,
+      "match_methods": {
+        "postal_name": 5278,
+        "distance_name": 750
+      },
+      "unmatched_records": 16420,
+      "fields_offered": {
+        "operating_hours": 0,
+        "website_url": 1907,
+        "contact_phone": 2882,
+        "cuisine_tags": 2947,
+        "dietary_tags": 0
+      },
+      "release": "2026-09-23.1",
+      "min_confidence": 0.5
+    },
+    "foursquare": {
+      "records": 0,
+      "matched_records": 0,
+      "matched_venues": 0,
+      "match_methods": {},
+      "unmatched_records": 0,
+      "fields_offered": {
+        "operating_hours": 0,
+        "website_url": 0,
+        "contact_phone": 0,
+        "cuisine_tags": 0,
+        "dietary_tags": 0
+      },
+      "release": ""
+    },
+    "onemap": {
+      "postal_codes_checked": 300,
+      "flagged_over_250m": 0,
+      "planning_area": "skipped: OneMap planning-area API needs a token"
+    }
+  },
+  "licences": {
+    "datagov": "Singapore Open Data Licence v1.0",
+    "osm": "ODbL-1.0 (\u00a9 OpenStreetMap contributors)",
+    "overture": "CDLA-Permissive-2.0 (Overture Maps Foundation)",
+    "foursquare": "Apache-2.0 (Foursquare OS Places)",
+    "onemap": "Singapore Open Data Licence v1.0 (OneMap, SLA)"
+  },
+  "fields_filled": {
+    "operating_hours": 324,
+    "website_url": 1990,
+    "contact_phone": 2943,
+    "cuisine_tags": 3483,
+    "dietary_tags": 201
+  },
+  "fields_filled_by_source": {
+    "osm": {
+      "operating_hours": 324,
+      "website_url": 161,
+      "contact_phone": 135,
+      "cuisine_tags": 823,
+      "dietary_tags": 201
+    },
+    "overture": {
+      "operating_hours": 0,
+      "website_url": 1829,
+      "contact_phone": 2808,
+      "cuisine_tags": 2660,
+      "dietary_tags": 0
+    }
+  },
+  "venues_with_fill": 4863,
+  "http": {
+    "requests": 4,
+    "cache_hits": 442
+  },
+  "log": [
+    "foursquare: skipped, dataset is gated on Hugging Face. To enable: accept the terms at https://huggingface.co/datasets/foursquare/fsq-os-places with a Hugging Face account, create a read token, and export HF_TOKEN before running."
+  ]
+}
