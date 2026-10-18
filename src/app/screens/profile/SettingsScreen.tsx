@@ -145,7 +145,7 @@ export function SettingsScreen() {
   const handleDeleteAccount = () => {
     Alert.alert(
       "Delete account",
-      `Your account and personal data will be deleted in ${ACCOUNT_DELETION_GRACE_DAYS} days. Sign back in before then to keep your account. After that, deletion is permanent; some security, moderation, or legal records may remain in anonymized form.`,
+      `Your account and personal data will be deleted in ${ACCOUNT_DELETION_GRACE_DAYS} days. Sign back in before then to keep your account. After that, deletion is permanent. Menu photos you shared stay on the stall without your name, and some security, moderation, or legal records may remain in anonymized form.`,
       [
         { text: "Cancel", style: "cancel" },
         {

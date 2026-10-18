@@ -97,6 +97,14 @@ Deno.serve(async (request) => {
       });
       if (anonymizeError) throw anonymizeError;
 
+      // Menu photos stay on the stall page for other diners; only the link to
+      // the deleted account is removed.
+      const { error: menuPhotoError } = await client
+        .from("menu_photo_submissions")
+        .update({ submitted_by: null })
+        .eq("submitted_by", userId);
+      if (menuPhotoError) throw menuPhotoError;
+
       const { error: deleteError } = await client.auth.admin.deleteUser(userId);
       if (deleteError && !isAlreadyDeletedAuthError(deleteError)) {
         throw deleteError;
