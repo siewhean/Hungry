@@ -244,7 +244,8 @@ def build(workbook: Path, out: Path) -> dict[str, int]:
             "cuisine_tags": pg_array(cuisine_tags(clean(row.get("Cuisine")))),
             "latitude": f"{float(lat):.7f}",
             "longitude": f"{float(lng):.7f}",
-            "address": re.sub(r"^Address:\s*", "", clean(row.get("Full Address"))),
+            # Some addresses carry " | Unit: … | Postal code: …" suffixes.
+            "address": re.sub(r",\s*", ", ", re.sub(r"^Address:\s*", "", clean(row.get("Full Address"))).split(" | ")[0]),
             "postal_code": postal,
             "planning_area": area,
             "last_verified_at": excel_date(row.get("SFA Verified Date")),
