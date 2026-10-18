@@ -706,7 +706,9 @@ export function processExplicitFeedback(
 ): TasteVector {
   // An untagged dish carries the neutral default vector; learning from it would only drag
   // the user back toward neutral, so it gets no weight.
-  if (!hasDishTasteSignal({ tasteVector: event.dishVector, tasteConfidence: event.dishConfidence })) {
+  if (
+    !hasDishTasteSignal({ tasteVector: event.dishVector, tasteConfidence: event.dishConfidence })
+  ) {
     return currentVector;
   }
   const alpha = applyFeedbackRecencyDecay(FEEDBACK_WEIGHTS[event.type], event.timestamp);
