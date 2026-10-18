@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import styles from "@/components/seo/SeoPage.module.css";
 import { siteConfig } from "@/app/seo";
+import { appDeepLink } from "@/lib/share/sharedLinks";
 
 type SharePreviewProps = {
   eyebrow: string;
@@ -12,6 +13,9 @@ type SharePreviewProps = {
   facts?: { label: string; value: string }[];
   imageUrl?: string | null;
   appPath: string;
+  /** The ?src= tag the link was shared with, passed on so the app can credit the share. */
+  shareSource?: string | null;
+  mapsUrl?: string | null;
   children?: ReactNode;
 };
 
@@ -23,6 +27,8 @@ export function SharePreview({
   facts = [],
   imageUrl,
   appPath,
+  shareSource,
+  mapsUrl,
   children,
 }: SharePreviewProps) {
   return (
@@ -34,9 +40,20 @@ export function SharePreview({
               <span className={styles.eyebrow}>{eyebrow}</span>
               <h1>{title}</h1>
               {lead ? <p className={styles.lead}>{lead}</p> : null}
-              <a className={styles.ctaLink} href={`hungry://${appPath}`}>
+              <a className={styles.ctaLink} href={appDeepLink(appPath, shareSource)}>
                 Open in Hungry
               </a>
+              {mapsUrl ? (
+                <a
+                  className={styles.inlineLink}
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ display: "inline-block", marginLeft: 16 }}
+                >
+                  Get directions
+                </a>
+              ) : null}
             </div>
             <aside className={styles.answerCard}>
               {imageUrl ? (
@@ -80,7 +97,12 @@ export function SharePreview({
   );
 }
 
-export function sharePreviewMetadata(title: string, description: string, path: string): Metadata {
+export function sharePreviewMetadata(
+  title: string,
+  description: string,
+  path: string,
+  imageUrl?: string | null,
+): Metadata {
   const url = `${siteConfig.url}${path}`;
   return {
     title: `${title} | Hungry`,
@@ -95,8 +117,14 @@ export function sharePreviewMetadata(title: string, description: string, path: s
       siteName: siteConfig.name,
       locale: siteConfig.locale,
       type: "website",
-      images: [siteConfig.openGraphImage],
+      // The dish's own photo makes the WhatsApp and Telegram preview card.
+      images: [imageUrl ?? siteConfig.openGraphImage],
     },
-    twitter: { card: "summary_large_image", title, description },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [imageUrl ?? siteConfig.openGraphImage],
+    },
   };
 }

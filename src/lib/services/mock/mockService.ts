@@ -3212,6 +3212,35 @@ export const hungryService: HungryService = {
       return resolve(clone(portfolio));
     },
 
+    async getPublicPortfolio(id: string) {
+      const portfolio = _portfolios.find((entry) => entry.id === id);
+      if (!portfolio || portfolio.visibility !== "public") return resolve(null);
+      const items = _portfolioItems
+        .filter((item) => item.portfolioId === id)
+        .sort((left, right) => left.position - right.position)
+        .map((item) => {
+          const dish = item.dishId ? mockRepository.getDishById(item.dishId) : undefined;
+          const venue = mockRepository.getVenueById(item.stallId ?? dish?.venueId ?? "");
+          return {
+            itemType: item.itemType,
+            dishId: item.dishId,
+            stallId: item.stallId ?? dish?.venueId,
+            name: dish?.name ?? venue?.name ?? "Untitled",
+            stallName: venue?.name,
+            price: dish?.price,
+            publicNotes: item.publicNotes,
+            imageUrl: dish?.imageUrl || undefined,
+          };
+        });
+      return resolve({
+        id: portfolio.id,
+        name: portfolio.name,
+        description: portfolio.description,
+        updatedAt: portfolio.updatedAt,
+        items,
+      });
+    },
+
     async updatePortfolio(
       id: string,
       updates: Partial<PortfolioCreateInput>,

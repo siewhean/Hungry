@@ -40,6 +40,7 @@ import type {
   PortfolioFlag,
   PortfolioFollow,
   PortfolioItem,
+  PublicPortfolio,
   PromotionStatus,
   RecommendationSurface,
   SearchFilters,
@@ -1062,6 +1063,8 @@ export interface HungryService {
       type?: string;
     }): Promise<Portfolio[]>;
     getPortfolio(id: string): Promise<Portfolio>;
+    /** A public list by id for anyone, signed in or not; null when private or missing. */
+    getPublicPortfolio(id: string): Promise<PublicPortfolio | null>;
     updatePortfolio(
       id: string,
       updates: Partial<PortfolioCreateInput>,
