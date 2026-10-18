@@ -28,6 +28,7 @@ import type {
 } from "@/types/domain";
 import { NEUTRAL_TASTE_PROFILE, NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { hungryPersistStorage } from "./persistStorage";
+import { useUIStore } from "./useUIStore";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
 
 const SUPABASE_USER_GUEST_PROFILE: UserProfile = {
@@ -126,6 +127,8 @@ interface ProfileState {
     { rating: number; text: string; tags: string[]; createdAt: string }
   >;
   provisionalOnboardingMigration?: ProvisionalOnboardingMigration;
+  /** True when the last attempt to load favourites from the backend failed. Not persisted. */
+  favouritesRehydrationFailed: boolean;
   applyProfile: (profile: UserProfile) => void;
   /**
    * Merge a profile returned by `profile.updateProfile` after an Edit Profile save.
@@ -142,6 +145,8 @@ interface ProfileState {
   setTasteVector: (tasteVector: TasteVector) => void;
   setTasteProfile: (tasteProfile: TasteProfile) => void;
   setDietaryPreferences: (dietaryPreferences: DietaryFlag[]) => void;
+  /** Local-only for now: profiles have no budget column on the backend yet. */
+  setMaxDishBudget: (maxDishBudget: number | undefined) => void;
   addReview: (dish: DishDetail) => void;
   addReviewedDish: (dishId: string) => void;
   removeReviewedDish: (dishId: string) => void;
@@ -184,6 +189,16 @@ const FEEDBACK_CONFIDENCE_DELTAS: Record<ExplicitFeedbackEvent["type"], number> 
 };
 
 const pendingFavouriteDishToggles = new Set<string>();
+const activatedProfileIds = new Set<string>();
+
+// "activated": a person's first Tried or first save. `previous` is the profile
+// before the action, so it fires only when nothing was saved or tried yet.
+function trackActivationOnce(previous: UserProfile, trigger: "tried" | "saved", dishId: string) {
+  if (previous.favouriteDishIds.length > 0 || previous.reviewedDishIds.length > 0) return;
+  if (activatedProfileIds.has(previous.id)) return;
+  activatedProfileIds.add(previous.id);
+  trackAnalyticsEvent("activated", { trigger, dish_id: dishId }, { userId: previous.id });
+}
 
 /**
  * Bumped whenever the in-memory profile is cleared or replaced by another account.
@@ -437,6 +452,7 @@ export const useProfileStore = create<ProfileState>()(
       tasteInteractionEvents: [],
       reviewEntries: {},
       provisionalOnboardingMigration: undefined,
+      favouritesRehydrationFailed: false,
       applyProfile: (profile) =>
         set({
           profile: withNeutralTasteProfile(ensureSupabaseCompatibleProfile(profile)),
@@ -485,6 +501,7 @@ export const useProfileStore = create<ProfileState>()(
               set((state) => {
                 if (state.profile.id !== targetUserId) return {};
                 return {
+                  favouritesRehydrationFailed: false,
                   profile: withNeutralTasteProfile({
                     ...state.profile,
                     favouriteDishIds: ids,
@@ -498,6 +515,7 @@ export const useProfileStore = create<ProfileState>()(
             })
             .catch((error) => {
               console.warn("Failed to rehydrate favourite dish IDs", error);
+              set({ favouritesRehydrationFailed: true });
             });
         };
 
@@ -564,6 +582,9 @@ export const useProfileStore = create<ProfileState>()(
             dish_id: dish.id,
             venue_id: dish.venueId,
           });
+          if (!isFavourite) {
+            trackActivationOnce(state.profile, "saved", dish.id);
+          }
 
           if (!tasteDish) {
             return {
@@ -578,6 +599,7 @@ export const useProfileStore = create<ProfileState>()(
           const updatedTasteVector = processExplicitFeedback(state.profile.tasteVector, {
             type: feedbackType,
             dishVector: tasteDish.tasteVector,
+            dishConfidence: tasteDish.tasteConfidence,
             timestamp: Date.now(),
           });
           interactionInput = {
@@ -808,6 +830,10 @@ export const useProfileStore = create<ProfileState>()(
             set({ profile: previousProfile });
           });
       },
+      setMaxDishBudget: (maxDishBudget) => {
+        trackAnalyticsEvent("budget_preference_set", { max_dish_budget: maxDishBudget ?? null });
+        set((state) => ({ profile: { ...state.profile, maxDishBudget } }));
+      },
       addReview: (dish) =>
         set((state) => {
           const reviewedDishIds = state.profile.reviewedDishIds.includes(dish.id)
@@ -827,9 +853,13 @@ export const useProfileStore = create<ProfileState>()(
         }),
       addReviewedDish: (dishId) =>
         set((state) => {
-          const reviewedDishIds = state.profile.reviewedDishIds.includes(dishId)
+          const alreadyTried = state.profile.reviewedDishIds.includes(dishId);
+          const reviewedDishIds = alreadyTried
             ? state.profile.reviewedDishIds
             : [...state.profile.reviewedDishIds, dishId];
+          if (!alreadyTried) {
+            trackActivationOnce(state.profile, "tried", dishId);
+          }
 
           return {
             profile: {
@@ -939,6 +969,7 @@ export const useProfileStore = create<ProfileState>()(
           const updatedTasteVector = processExplicitFeedback(state.profile.tasteVector, {
             type: feedbackType,
             dishVector: interactionVector,
+            dishConfidence: input.dish?.tasteConfidence,
             timestamp: Date.now(),
           });
           const event = createTasteEvent(
@@ -997,6 +1028,7 @@ export const useProfileStore = create<ProfileState>()(
           tasteInteractionEvents: [],
           reviewEntries: {},
           provisionalOnboardingMigration: undefined,
+          favouritesRehydrationFailed: false,
         });
       },
     }),

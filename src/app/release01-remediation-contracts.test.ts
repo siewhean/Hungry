@@ -10,12 +10,12 @@ function read(path: string) {
 test("authenticated catalog users are not globally redirected away during network outages", () => {
   const bootstrap = read("src/hooks/useAppBootstrap.ts");
 
-  assert.match(bootstrap, /lastNetworkOffline\.current = isNetworkOffline\(state\)/);
-  assert.match(
-    bootstrap,
-    /setOffline\(!useSessionStore\.getState\(\)\.isAuthenticated && lastNetworkOffline\.current\)/,
-  );
-  assert.match(bootstrap, /setOffline\(!isAuthenticated && lastNetworkOffline\.current\)/);
+  const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
+
+  // Going offline shows a banner over the current screen instead of a takeover.
+  assert.match(bootstrap, /setOffline\(isNetworkOffline\(state\)\)/);
+  assert.match(rootNavigator, /<OfflineBanner \/>/);
+  assert.doesNotMatch(rootNavigator, /navigationRef\.navigate\("Offline"\)/);
 });
 
 test("Release 0.1 profile does not expose favourites while the route is disabled", () => {

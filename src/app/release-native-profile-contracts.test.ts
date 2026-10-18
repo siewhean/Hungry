@@ -145,7 +145,16 @@ test("released config blocks library-merged Android permissions", () => {
   );
   assert.ok(hookRemoved.length > 0);
 
-  assert.equal(development.android?.blockedPermissions, undefined);
+  // Development keeps app.json's base block list; released profiles extend it.
+  const baseBlocked = development.android?.blockedPermissions ?? [];
+  for (const config of [staging, production]) {
+    for (const permission of baseBlocked) {
+      assert.ok(
+        config.android?.blockedPermissions?.includes(permission),
+        `released config must keep base-blocked ${permission}`,
+      );
+    }
+  }
   for (const config of [staging, production]) {
     const kept = config.android?.permissions ?? [];
     const blocked = config.android?.blockedPermissions ?? [];

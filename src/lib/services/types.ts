@@ -15,6 +15,7 @@ import type {
   CustomerInteraction,
   DishDetail,
   DietaryFlag,
+  PushPreferences,
   FoodCredAction,
   FoodCollection,
   HawkerTasteTag,
@@ -26,6 +27,7 @@ import type {
   MerchantOutlet,
   MerchantPromotion,
   MerchantWeeklySummary,
+  MoodSearchIntent,
   MissionType,
   MerchantTeamMember,
   MerchantRole,
@@ -39,6 +41,7 @@ import type {
   PortfolioFlag,
   PortfolioFollow,
   PortfolioItem,
+  PublicPortfolio,
   PromotionStatus,
   RecommendationSurface,
   SearchFilters,
@@ -514,7 +517,29 @@ export interface SubmitReviewInput {
   text: string;
   tags: string[];
   photos: string[];
+  /** The reviewer's "Recommend" choice. Defaults to true when omitted. */
+  wouldRecommend?: boolean;
+  /**
+   * Client-generated UUID used as the review row id. Retrying with the same id resumes the
+   * submission (photo upload) instead of inserting a duplicate review.
+   */
+  clientReviewId?: string;
   // TODO(api): include upload references (asset ids / signed urls) once media service is wired.
+}
+
+export interface RecentReviewFeedEntry {
+  review: DishDetail["reviews"][number];
+  dishId: string;
+  dishName: string;
+  venueId: string;
+  venueName: string;
+}
+
+export interface ListRecentReviewsOptions {
+  /** Page size (defaults to 50). */
+  limit?: number;
+  /** Cursor: only return reviews created strictly before this ISO timestamp. */
+  before?: string;
 }
 
 export interface SubmitMenuPhotoInput {
@@ -529,6 +554,14 @@ export interface SubmitMenuPhotoInput {
 export interface AccountDeletionRequest {
   userId?: string;
   reason?: string;
+}
+
+/** Account deletion runs after a grace period; until then the owner can cancel. */
+export const ACCOUNT_DELETION_GRACE_DAYS = 30;
+
+export interface PendingAccountDeletion {
+  /** ISO timestamp when the deletion worker may process the request. */
+  scheduledFor: string;
 }
 
 export type ContentReportTargetType =
@@ -677,6 +710,8 @@ export interface HungryService {
     signOut(): Promise<void>;
     /** Queues deletion only; callers purge local data and sign out afterwards. */
     requestAccountDeletion(request?: AccountDeletionRequest): Promise<void>;
+    getPendingAccountDeletion(): Promise<PendingAccountDeletion | null>;
+    cancelAccountDeletion(): Promise<boolean>;
     forgotPassword(email: string): Promise<void>;
     resetPassword(token: string, password: string): Promise<void>;
     getCurrentSession(): Promise<Session | null>;
@@ -750,6 +785,8 @@ export interface HungryService {
     getReviewsForDish(dishId: string): Promise<DishDetail["reviews"]>;
     getUserReviews(userId: string): Promise<DishDetail["reviews"]>;
     submitReview(draft: SubmitReviewInput): Promise<void>;
+    /** Newest-first review feed across all dishes, fetched as one paginated query. */
+    listRecentReviews(options?: ListRecentReviewsOptions): Promise<RecentReviewFeedEntry[]>;
   };
 
   // Profile
@@ -764,8 +801,23 @@ export interface HungryService {
      */
     toggleFavourite(dishId: string, expectedUserId?: string): Promise<boolean>;
     getFavouriteDishIds(): Promise<string[]>;
+    /** Follow or unfollow a stall; followers get opt-in alerts when its menu changes. */
+    setStallFollow(stallId: string, following: boolean): Promise<void>;
+    getFollowedStallIds(): Promise<string[]>;
     updateTasteVector(vector: TasteVector): Promise<void>;
     updateTasteProfile(profile: TasteProfile): Promise<void>;
+    /** Best-effort log of taste quiz answers; skipped for guests. */
+    recordQuizResponse(responses: Record<string, unknown>, tasteVector: TasteVector): Promise<void>;
+  };
+
+  // Push notifications (opt-in)
+  push: {
+    getPreferences(): Promise<PushPreferences>;
+    updatePreferences(updates: Partial<PushPreferences>): Promise<PushPreferences>;
+    registerPushToken(token: string, platform: "ios" | "android"): Promise<void>;
+    /** Unbinds this device's registered push token from the signed-in user. Call before sign-out. */
+    unregisterPushToken(): Promise<void>;
+    markOpened(notificationId: string): Promise<void>;
   };
 
   // Social (Bites)
@@ -869,6 +921,8 @@ export interface HungryService {
 
   recommendations: {
     getSlate(request: RecommendationSlateRequest): Promise<RecommendationSlate>;
+    /** Best-effort log of the dishes a surface showed, for tap-rate measurement; skipped for guests. */
+    recordImpression(surface: RecommendationSurface, dishIds: string[]): Promise<void>;
     recordExplicitFeedback(
       feedback: ExplicitFeedbackInput,
     ): Promise<RecordRecommendationFeedbackResult>;
@@ -897,6 +951,9 @@ export interface HungryService {
     // Extended — Community Calibration
     getTagSuggestions(dishId: string): Promise<HawkerTasteTag[]>;
     submitCommunityTags(dishId: string, tags: HawkerTasteTag[]): Promise<void>;
+
+    /** Plain-language search: Claude turns the text into a taste tweak and filters. Null when unavailable. */
+    parseMoodQuery(query: string): Promise<MoodSearchIntent | null>;
   };
 
   // Merchant Centre
@@ -1043,6 +1100,8 @@ export interface HungryService {
       type?: string;
     }): Promise<Portfolio[]>;
     getPortfolio(id: string): Promise<Portfolio>;
+    /** A public list by id for anyone, signed in or not; null when private or missing. */
+    getPublicPortfolio(id: string): Promise<PublicPortfolio | null>;
     updatePortfolio(
       id: string,
       updates: Partial<PortfolioCreateInput>,

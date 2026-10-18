@@ -293,10 +293,11 @@ test("Supabase tooling targets the self-hosted database explicitly", () => {
   }
   assert.doesNotMatch(JSON.stringify(packageJson.scripts), /--linked/);
 
-  assert.match(leakedPasswordScript, /retired: this targets Supabase Cloud only/);
-  assert.match(leakedPasswordScript, /GOTRUE_PASSWORD_HIBP_ENABLED/);
+  // The app now targets a Supabase Cloud project (main): the Management API
+  // script needs an explicit project ref and never falls back to a hardcoded one.
+  assert.match(leakedPasswordScript, /SUPABASE_PROJECT_REF is required/);
   assert.match(leakedPasswordScript, /process\.exit\(1\)/);
-  assert.doesNotMatch(leakedPasswordScript, /fetch\(|SUPABASE_ACCESS_TOKEN|vlqfgmrsprbrgzteixsj/);
+  assert.doesNotMatch(leakedPasswordScript, /vlqfgmrsprbrgzteixsj/);
 
   assert.match(supabaseConfig, /^project_id = "hungry"$/m);
 });

@@ -19,7 +19,9 @@ test("Release 0.1 bottom navigation gates social, post, and review actions", () 
     tabs,
     /FEATURE_FLAGS\.socialFeedEnabled[\s\S]*key: "Home"[\s\S]*key: "Discover"[\s\S]*FEATURE_FLAGS\.postCreationEnabled[\s\S]*key: "Create"[\s\S]*FEATURE_FLAGS\.reviewCreationEnabled[\s\S]*key: "Review"[\s\S]*key: "Profile"/,
   );
-  assert.match(tabs, /isCreateAction[\s\S]*navigate\("Post"\)/);
+  // Every environment opens the shipping composer (V1) from the create tab.
+  assert.match(tabs, /isCreateAction[\s\S]*rootNavigation\?\.navigate\("Post"\)/);
+  assert.doesNotMatch(tabs, /PostComposerV2/);
   assert.match(
     tabs,
     /height: componentSizes\.bottomTabBar \+ Math\.max\(insets\.bottom, spacing\[2\]\)/,
@@ -28,7 +30,22 @@ test("Release 0.1 bottom navigation gates social, post, and review actions", () 
   assert.match(tabItem, /backgroundColor: palette\.orange[\s\S]*borderRadius: radii\.pill/);
   assert.match(
     tabItem,
-    /<Icon[\s\S]*color=\{createAction \? palette\.white : resolvedColor\}[\s\S]*size=\{componentSizes\.bottomTabIcon\}[\s\S]*\/>/,
+    /<Icon[\s\S]*color=\{createAction \? createIconColor : resolvedColor\}[\s\S]*size=\{componentSizes\.bottomTabIcon\}[\s\S]*\/>/,
+  );
+  assert.match(
+    tabItem,
+    /const createIconColor = colorScheme === "dark" \? palette\.textOnOrange : palette\.white/,
+  );
+  // Active tab stays highlighted (no fade-out timer) and is exposed as a selected tab.
+  assert.doesNotMatch(tabs, /highlightVisible|setTimeout/);
+  assert.match(tabs, /accessibilityRole="tablist"/);
+  assert.match(tabItem, /accessibilityRole=\{createAction \? "button" : "tab"\}/);
+  assert.match(tabItem, /accessibilityState=\{createAction \? \{\} : \{ selected: focused \}\}/);
+  assert.match(tabItem, /focused \? palette\.orangeText : palette\.textMuted/);
+  // Merchant tabs pass their own colour; it must use the same accessible token.
+  assert.match(
+    read("src/app/navigation/MerchantTabs.tsx"),
+    /isFocused \? palette\.orangeText : palette\.textMuted/,
   );
   assert.match(
     tabItem,

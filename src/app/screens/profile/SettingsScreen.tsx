@@ -1,6 +1,6 @@
 import Constants from "expo-constants";
 import { useState } from "react";
-import { Alert, Linking, View } from "react-native";
+import { Alert, Linking, Share, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
@@ -8,6 +8,7 @@ import {
   Bell,
   CircleHelp,
   Database,
+  Download,
   HandMetal,
   Globe,
   Lock,
@@ -26,10 +27,12 @@ import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { Button, Dialog } from "@/components/ui";
 import { SettingsSection, SettingsRow } from "@/components/settings";
+import { StallAlertsSettings } from "@/components/settings/StallAlertsSettings";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
-import { PUBLIC_LINKS } from "@/constants/supportLinks";
 import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { ACCOUNT_DELETION_GRACE_DAYS } from "@/lib/services/types";
+import { buildMyDataExport } from "@/features/profile/exportMyData";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
@@ -39,6 +42,7 @@ import { ThemePreference, useUIStore } from "@/store/useUIStore";
 import { hungryPersistStorage } from "@/store/persistStorage";
 import { useHungryTheme } from "@/theme";
 import { ProfileScreenShell } from "./ProfileScreenShell";
+import { SUPPORT_EMAIL, WEB_LINKS } from "@/constants/links";
 
 export function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -50,6 +54,7 @@ export function SettingsScreen() {
   const clearSearchState = useSearchStore((state) => state.clearSearchState);
   const resetLocationState = useLocationStore((state) => state.resetLocationState);
   const signOut = useSessionStore((state) => state.signOut);
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const grantLocation = useLocationStore((state) => state.grantLocation);
   const denyLocation = useLocationStore((state) => state.denyLocation);
   const setProfileVisibility = useProfileStore((state) => state.setProfileVisibility);
@@ -106,6 +111,7 @@ export function SettingsScreen() {
       : "system";
 
   const [deletionRequested, setDeletionRequested] = useState(false);
+  const [isExportingData, setIsExportingData] = useState(false);
 
   const appVersion = Constants.expoConfig?.version ?? "0.1.0";
 
@@ -118,6 +124,26 @@ export function SettingsScreen() {
       hungryPersistStorage.removeItem("hungry-review-draft-v1"),
       hungryPersistStorage.removeItem("hungry-location-v1"),
     ]);
+  };
+
+  const handleExportData = () => {
+    void (async () => {
+      setIsExportingData(true);
+      try {
+        const exportData = await buildMyDataExport(getHungryService());
+        await Share.share({
+          title: "My Hungry data",
+          message: JSON.stringify(exportData, null, 2),
+        });
+      } catch {
+        Alert.alert(
+          "Export failed",
+          `We could not prepare your data right now. Please try again or email ${SUPPORT_EMAIL}.`,
+        );
+      } finally {
+        setIsExportingData(false);
+      }
+    })();
   };
 
   const [accountDialog, setAccountDialog] = useState<
@@ -160,7 +186,7 @@ export function SettingsScreen() {
     setAuthNotice({
       message: purgeFailed
         ? "Account deletion requested and you've been signed out. Some data saved on this device could not be cleared; reinstall Hungry to remove it."
-        : "Account deletion requested. Hungry will delete your account and personal data, and you've been signed out.",
+        : `Account deletion requested and you've been signed out. Hungry will delete your account and personal data in ${ACCOUNT_DELETION_GRACE_DAYS} days; sign back in before then to keep it.`,
       tone: "success",
     });
     signOut();
@@ -451,6 +477,18 @@ export function SettingsScreen() {
         </SettingsSection>
       ) : null}
 
+      {FEATURE_FLAGS.stallAlertsEnabled && isAuthenticated ? (
+        <StallAlertsSettings
+          onOpenFollowedStalls={() =>
+            // Settings is also a root route, where FollowedStalls is not a sibling.
+            rootNavigation.navigate("MainTabs", {
+              screen: "Profile",
+              params: { screen: "FollowedStalls" },
+            })
+          }
+        />
+      ) : null}
+
       <SettingsSection title="App settings">
         <SettingsRow
           label="Theme"
@@ -524,9 +562,15 @@ export function SettingsScreen() {
           isLast={false}
         />
         <SettingsRow
+          label={isExportingData ? "Preparing your data…" : "Download my data"}
+          icon={<Download size={20} color={palette.orange} />}
+          onPress={isExportingData ? undefined : handleExportData}
+          isLast={false}
+        />
+        <SettingsRow
           label="Data controls"
           icon={<Shield size={20} color={palette.orange} />}
-          onPress={() => void openTrustedExternalUrl(PUBLIC_LINKS.accountDeletion)}
+          onPress={() => void openTrustedExternalUrl(WEB_LINKS.accountDeletion)}
           isLast={false}
         />
         <SettingsRow
@@ -540,17 +584,17 @@ export function SettingsScreen() {
       <SettingsSection title="Support">
         <SettingsRow
           label="Help Center"
-          onPress={() => void openTrustedExternalUrl(PUBLIC_LINKS.helpCenter)}
+          onPress={() => void openTrustedExternalUrl(WEB_LINKS.help)}
           isLast={false}
         />
         <SettingsRow
           label="Privacy Policy"
-          onPress={() => void openTrustedExternalUrl(PUBLIC_LINKS.privacy)}
+          onPress={() => void openTrustedExternalUrl(WEB_LINKS.privacy)}
           isLast={false}
         />
         <SettingsRow
           label="Terms of Service"
-          onPress={() => void openTrustedExternalUrl(PUBLIC_LINKS.terms)}
+          onPress={() => void openTrustedExternalUrl(WEB_LINKS.terms)}
           isLast
         />
       </SettingsSection>
@@ -560,7 +604,7 @@ export function SettingsScreen() {
         <SettingsRow
           label="Hungry support"
           icon={<CircleHelp size={20} color={palette.orange} />}
-          onPress={() => void openTrustedExternalUrl(PUBLIC_LINKS.support)}
+          onPress={() => void openTrustedExternalUrl(`mailto:${SUPPORT_EMAIL}`)}
           isLast
         />
       </SettingsSection>
@@ -589,7 +633,7 @@ export function SettingsScreen() {
       <Dialog
         visible={accountDialog === "deleteAccount"}
         title="Delete account"
-        message="Hungry will queue deletion of your account and associated personal data. Some security, moderation, or legal retention records may still remain in anonymized form. This action is permanent."
+        message={`Your account and personal data will be deleted in ${ACCOUNT_DELETION_GRACE_DAYS} days. Sign back in before then to keep your account. After that, deletion is permanent. Menu photos you shared stay on the stall without your name, and some security, moderation, or legal records may remain in anonymized form.`}
         buttons={[
           {
             text: "Request deletion",

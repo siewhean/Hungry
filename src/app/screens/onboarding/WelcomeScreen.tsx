@@ -18,13 +18,14 @@ const { height: SCREEN_H } = Dimensions.get("window");
 const VALUE_PROPS = [
   { emoji: "🍜", text: "Discover dishes, not just restaurants" },
   { emoji: "📍", text: "Find the best hawker stalls near you" },
-  { emoji: "✨", text: "Personalised to your taste" },
+  { emoji: "🎯", text: "Personalised to your taste" },
 ];
 
 export function WelcomeScreen({ navigation }: Props) {
   const { palette } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
 
   const logoAnim = useRef(new Animated.Value(0)).current;
   const headlineAnim = useRef(new Animated.Value(0)).current;
@@ -47,7 +48,7 @@ export function WelcomeScreen({ navigation }: Props) {
 
   const handleStart = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    navigation.navigate("OnboardingIntro1");
+    navigation.navigate("CuisineSelection");
   };
 
   const handleExistingAccountSignIn = () => {
@@ -210,25 +211,27 @@ export function WelcomeScreen({ navigation }: Props) {
         }}
       >
         <Button label="Get started" onPress={handleStart} variant="primary" />
-        <Pressable
-          onPress={handleExistingAccountSignIn}
-          accessibilityRole="button"
-          accessibilityLabel="Sign in to existing account"
-          style={{ alignItems: "center", marginTop: 16, paddingVertical: 8 }}
-        >
-          <AppText style={{ color: palette.textSecondary, fontSize: 14 }}>
-            Already have an account?{" "}
-            <AppText
-              style={{
-                color: palette.orange,
-                fontFamily: "Nunito_700Bold",
-                fontSize: 14,
-              }}
-            >
-              Sign in
+        {isAuthenticated ? null : (
+          <Pressable
+            onPress={handleExistingAccountSignIn}
+            accessibilityRole="button"
+            accessibilityLabel="Sign in to existing account"
+            style={{ alignItems: "center", marginTop: 16, paddingVertical: 8 }}
+          >
+            <AppText style={{ color: palette.textSecondary, fontSize: 14 }}>
+              Already have an account?{" "}
+              <AppText
+                style={{
+                  color: palette.orange,
+                  fontFamily: "Nunito_700Bold",
+                  fontSize: 14,
+                }}
+              >
+                Sign in
+              </AppText>
             </AppText>
-          </AppText>
-        </Pressable>
+          </Pressable>
+        )}
       </Animated.View>
     </View>
   );

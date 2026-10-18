@@ -8,24 +8,30 @@ import {
   Pressable,
   useWindowDimensions,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Sparkles, ChevronLeft, Shuffle, MapPin, Star } from "lucide-react-native";
+import { ChevronLeft, Shuffle, MapPin, Star, Heart, Navigation, Share2 } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { firstDishTimingProps } from "@/lib/analytics/firstDishTiming";
+import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import { AccessibleImage, AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
+import { formatDishUpdated } from "@/features/detail/dishFreshness";
 import { findBuildingById } from "@/features/discovery/discovery";
+import { buildMapsSearchUrl, formatFullStallAddress } from "@/features/detail/stallLocation";
+import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
+import { shareLink } from "@/features/share/messagingShare";
+import { webShareUrl } from "@/constants/links";
 import { blendedMatchScore, TASTE_LABELS } from "@/lib/ai/tasteEngine";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import type { DataRepository } from "@/lib/services/types";
-import { useCartStore } from "@/store/useCartStore";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
-import { useOrderStore } from "@/store/useOrderStore";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { DietaryFlag, DishDetail, TasteVector } from "@/types/domain";
@@ -111,7 +117,6 @@ function AnimatedMatchBadge({ percent }: { percent: number }) {
         paddingVertical: spacing[4],
       }}
     >
-      <Sparkles size={16} color={palette.orange} />
       <AppText variant="h3" style={{ color: palette.orange }}>
         {displayValue}% taste match
       </AppText>
@@ -131,8 +136,9 @@ function getCandidates(
   tasteVector: TasteVector,
   dietaryFlags: DietaryFlag[],
   radius: number,
+  maxDishBudget?: number,
 ) {
-  return repository.searchDishes(
+  const results = repository.searchDishes(
     {
       query: "",
       categories: [],
@@ -142,6 +148,60 @@ function getCandidates(
     },
     tasteVector,
   );
+  if (maxDishBudget === undefined) {
+    return results;
+  }
+  // Budget is a preference, not a hard rule: fall back to every match when nothing fits it.
+  const withinBudget = results.filter((dish) => dish.price <= maxDishBudget);
+  return withinBudget.length ? withinBudget : results;
+}
+
+function formatDistance(distanceMeters: number) {
+  if (!Number.isFinite(distanceMeters) || distanceMeters <= 0) {
+    return undefined;
+  }
+  return distanceMeters < 1000
+    ? `${Math.round(distanceMeters)} m away`
+    : `${(distanceMeters / 1000).toFixed(1)} km away`;
+}
+
+const PICK_REASON_DIMS: { key: keyof TasteVector; label: string }[] = [
+  { key: "sweet", label: "Sweet" },
+  { key: "spicy", label: "Spicy" },
+  { key: "sour", label: "Sour" },
+  { key: "salty", label: "Salty" },
+  { key: "rich", label: "Rich" },
+  { key: "aromatic", label: "Aroma" },
+];
+
+function buildPickReason(userVector: TasteVector, dish: DishDetail, match: number) {
+  const sortedDims = PICK_REASON_DIMS.map((dimension) => ({
+    ...dimension,
+    diff: Math.abs(userVector[dimension.key] - dish.tasteVector[dimension.key]),
+  })).sort((left, right) => left.diff - right.diff);
+  const topMatch = sortedDims[0];
+  return match >= 80
+    ? `This dish is dialled in to your taste profile — especially the ${topMatch.label.toLowerCase()}.`
+    : match >= 60
+      ? `A strong pick based on your ${topMatch.label.toLowerCase()} and ${sortedDims[1].label.toLowerCase()} preferences.`
+      : `A nearby pick that still aligns with your strongest taste dimensions.`;
+}
+
+/** The next two distinct candidates after the current pick, shown as backups. */
+function getOtherPicks(candidates: DishDetail[], currentIndex: number) {
+  const current = candidates[currentIndex];
+  const picks: DishDetail[] = [];
+  for (let offset = 1; offset < candidates.length && picks.length < 2; offset += 1) {
+    const candidate = candidates[(currentIndex + offset) % candidates.length];
+    if (
+      candidate &&
+      candidate.id !== current?.id &&
+      !picks.some((pick) => pick.id === candidate.id)
+    ) {
+      picks.push(candidate);
+    }
+  }
+  return picks;
 }
 
 function getNextDistinctDish(candidates: DishDetail[], currentDishId?: string, currentIndex = 0) {
@@ -170,19 +230,45 @@ export function DecideForMeResultScreen() {
   const insets = useSafeAreaInsets();
   const profile = useProfileStore((state) => state.profile);
   const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
+  const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const selectedDish = useDiscoveryStore((state) => state.decideForMe);
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
   const showToast = useUIStore((state) => state.showToast);
-  const addItemToCart = useCartStore((state) => state.addItem);
-  const setActiveOrder = useOrderStore((state) => state.setActiveOrder);
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const [searchRadius, setSearchRadius] = useState(500);
   const [resultIndex, setResultIndex] = useState(0);
+  const route = useRoute<RouteProp<RootStackParamList, "DecideForMeResult">>();
+  // Where Decide-for-me was opened from. Discover tracks `decide_for_me_triggered`
+  // before navigating; every other entry point is tracked here, once per open.
+  const entrySurface = route.params?.surface ?? "direct";
+
+  useEffect(() => {
+    if (entrySurface === "discover") return; // Discover tracks the trigger itself.
+    trackAnalyticsEvent("decide_for_me_triggered", {
+      surface: entrySurface,
+      radius_m: 500,
+    });
+  }, [entrySurface]);
 
   const scrollY = useRef(new Animated.Value(0)).current;
 
   const candidates = useMemo(
-    () => getCandidates(repository, profile.tasteVector, profile.dietaryPreferences, searchRadius),
-    [profile.dietaryPreferences, profile.tasteVector, repository, searchRadius],
+    () =>
+      getCandidates(
+        repository,
+        profile.tasteVector,
+        profile.dietaryPreferences,
+        searchRadius,
+        profile.maxDishBudget,
+      ),
+    [
+      profile.dietaryPreferences,
+      profile.maxDishBudget,
+      profile.tasteVector,
+      repository,
+      searchRadius,
+    ],
   );
 
   useEffect(() => {
@@ -210,6 +296,22 @@ export function DecideForMeResultScreen() {
   }, [candidates, resultIndex, selectedDish, setDecideForMe]);
 
   const dish = candidates[resultIndex] ?? selectedDish;
+
+  useEffect(() => {
+    if (!dish) return;
+    void getHungryService()
+      .recommendations.recordImpression("decide", [dish.id])
+      .catch(() => undefined);
+  }, [dish?.id]);
+  const shownDishId = dish?.id;
+
+  useEffect(() => {
+    if (!shownDishId) return;
+    trackAnalyticsEvent("decide_for_me_result_shown", {
+      dish_id: shownDishId,
+      ...firstDishTimingProps(),
+    });
+  }, [shownDishId]);
   const match = dish
     ? Math.round(blendedMatchScore(profile.tasteVector, dish.tasteVector) * 100)
     : 0;
@@ -235,13 +337,31 @@ export function DecideForMeResultScreen() {
     ],
   };
 
+  const hasNoMatch = candidates.length === 0 && !selectedDish;
+  useEffect(() => {
+    if (!hasNoMatch) return;
+    trackAnalyticsEvent("decide_for_me_no_match", {
+      surface: entrySurface,
+      radius_m: searchRadius,
+    });
+  }, [entrySurface, hasNoMatch, searchRadius]);
+
+  const widenRadius = (target: number) => {
+    trackAnalyticsEvent("decide_for_me_radius_expanded", {
+      surface: entrySurface,
+      from_radius_m: searchRadius,
+      to_radius_m: target,
+    });
+    setSearchRadius(target);
+  };
+
   const expandRadius = () => {
     const target = nextRadius(searchRadius);
     if (!target) {
       showToast({ message: "Already searching the widest radius.", tone: "info" });
       return;
     }
-    setSearchRadius(target);
+    widenRadius(target);
   };
 
   const handleTryAnother = () => {
@@ -257,7 +377,7 @@ export function DecideForMeResultScreen() {
     if (!nextDish || nextDish.id === dish?.id) {
       const upcomingRadius = nextRadius(searchRadius);
       if (upcomingRadius) {
-        setSearchRadius(upcomingRadius);
+        widenRadius(upcomingRadius);
         showToast({
           message: `Expanded radius to ${(upcomingRadius / 1000).toFixed(1)} km.`,
           tone: "info",
@@ -276,31 +396,6 @@ export function DecideForMeResultScreen() {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
   };
 
-  const handleAddToCart = () => {
-    if (!dish) {
-      return;
-    }
-
-    addItemToCart({ dishId: dish.id });
-    recordTasteInteraction({
-      type: "food_button_click",
-      surface: "decide",
-      dish,
-      buttonId: "add_to_cart",
-    });
-    setActiveOrder({
-      id: `order-${Date.now()}`,
-      venueId: dish.venueId,
-      totalAmount: dish.price,
-      status: "draft",
-      createdAt: new Date().toISOString(),
-    });
-    showToast({
-      message: `${dish.name} added to cart.`,
-      tone: "success",
-    });
-  };
-
   if (!dish) {
     const upcomingRadius = nextRadius(searchRadius);
     return (
@@ -315,34 +410,78 @@ export function DecideForMeResultScreen() {
             onPress={expandRadius}
           />
         ) : null}
-        <Button label="Back to Discover" onPress={() => navigation.navigate("SearchHome")} />
+        <Button
+          label="Back to Discover"
+          onPress={() => navigation.navigate("MainTabs", { screen: "Discover" })}
+        />
       </Screen>
     );
   }
 
   const venue = repository.getVenueById(dish.venueId);
   const building = findBuildingById(dish.buildingId);
-  const tasteDims: { key: keyof TasteVector; label: string }[] = [
-    { key: "sweet", label: "Sweet" },
-    { key: "spicy", label: "Spicy" },
-    { key: "sour", label: "Sour" },
-    { key: "salty", label: "Salty" },
-    { key: "rich", label: "Rich" },
-    { key: "aromatic", label: "Aroma" },
-  ];
-  const sortedDims = tasteDims
-    .map((dimension) => ({
-      ...dimension,
-      diff: Math.abs(profile.tasteVector[dimension.key] - dish.tasteVector[dimension.key]),
-    }))
-    .sort((left, right) => left.diff - right.diff);
-  const topMatch = sortedDims[0];
-  const explanation =
-    match >= 80
-      ? `This dish is dialled in to your taste profile — especially the ${topMatch.label.toLowerCase()}.`
-      : match >= 60
-        ? `A strong pick based on your ${topMatch.label.toLowerCase()} and ${sortedDims[1].label.toLowerCase()} preferences.`
-        : `A nearby pick that still aligns with your strongest taste dimensions.`;
+  const stallAddress = venue
+    ? formatFullStallAddress(venue, {
+        name: venue.buildingName ?? building?.name,
+        address: venue.address,
+        postalCode: venue.postalCode,
+      })
+    : "";
+  const distanceLabel = formatDistance(dish.distanceMeters);
+  const isSaved = profile.favouriteDishIds.includes(dish.id);
+
+  const handleDirections = () => {
+    if (!stallAddress) return;
+    trackAnalyticsEvent("directions_opened", {
+      dish_id: dish.id,
+      stall_id: dish.venueId,
+      source: "decide_for_me",
+    });
+    recordTasteInteraction({
+      type: "food_button_click",
+      surface: "decide",
+      dish,
+      buttonId: "directions",
+    });
+    void openTrustedMapsUrl(buildMapsSearchUrl(stallAddress));
+  };
+
+  const handleSave = () => {
+    if (!isAuthenticated) {
+      showToast({ message: "Sign in to save dishes.", tone: "info" });
+      setReturnRoute({ name: "DecideForMeResult" });
+      navigation.navigate("AuthStack", { screen: "Login" });
+      return;
+    }
+    toggleFavourite(dish);
+  };
+
+  const handleShare = () => {
+    void shareLink(
+      {
+        kind: "dish",
+        id: dish.id,
+        message: `${dish.name}${venue?.name ? ` at ${venue.name}` : ""}, S$${dish.price.toFixed(2)}`,
+        url: webShareUrl("dish", dish.id),
+      },
+      "system_share",
+    );
+  };
+  const explanation = buildPickReason(profile.tasteVector, dish, match);
+  const updatedLabel = formatDishUpdated(dish.updatedAt);
+  const otherPicks = getOtherPicks(candidates, resultIndex);
+
+  const handleOtherPick = (pick: DishDetail) => {
+    recordTasteInteraction({
+      type: "food_button_click",
+      surface: "decide",
+      dish: pick,
+      buttonId: "other_pick",
+    });
+    const pickIndex = candidates.findIndex((candidate) => candidate.id === pick.id);
+    if (pickIndex >= 0) setResultIndex(pickIndex);
+    setDecideForMe(pick);
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: palette.bg }}>
@@ -369,12 +508,16 @@ export function DecideForMeResultScreen() {
       >
         {/* Parallax Hero */}
         <Animated.View style={[styles.heroContainer, { height: HERO_HEIGHT }, heroStyle]}>
-          <AccessibleImage
-            source={{ uri: dish.imageUrl }}
-            style={StyleSheet.absoluteFill}
-            contentFit="cover"
-            accessibilityLabel={`${dish.name} photo`}
-          />
+          {dish.imageUrl ? (
+            <AccessibleImage
+              source={{ uri: dish.imageUrl }}
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+              accessibilityLabel={`${dish.name} photo`}
+            />
+          ) : (
+            <NoDishPhoto dishName={dish.name} style={StyleSheet.absoluteFill} iconSize={56} />
+          )}
           <LinearGradient
             colors={["transparent", palette.mediaScrimSubtle, palette.bg]}
             style={StyleSheet.absoluteFill}
@@ -388,7 +531,7 @@ export function DecideForMeResultScreen() {
           <View style={{ gap: spacing[2] }}>
             <View style={{ flexDirection: "row", gap: spacing[2] }}>
               <Badge label={`Radius ${(searchRadius / 1000).toFixed(1)} km`} tone="neutral" />
-              {dish.mustOrder && <Badge label="MUST ORDER" tone="amber" />}
+              {dish.mustOrder && <Badge label="Must order" tone="amber" />}
             </View>
             <AppText variant="displayBold">{dish.name}</AppText>
             <AppText variant="h2" tone="secondary" style={{ color: palette.orange }}>
@@ -397,6 +540,11 @@ export function DecideForMeResultScreen() {
             <AppText variant="bodyLarge" tone="secondary">
               {venue?.name} · {venue?.unitNumber}
             </AppText>
+            {distanceLabel || updatedLabel ? (
+              <AppText variant="body" tone="muted">
+                {[distanceLabel, updatedLabel].filter(Boolean).join(" · ")}
+              </AppText>
+            ) : null}
           </View>
 
           {/* Why this dish? */}
@@ -412,7 +560,7 @@ export function DecideForMeResultScreen() {
               variant="micro"
               style={{ color: palette.orange, fontWeight: "800", marginBottom: 4 }}
             >
-              WHY THIS DISH?
+              Why this dish?
             </AppText>
             <AppText variant="body" style={{ lineHeight: 22 }}>
               {explanation}
@@ -421,9 +569,9 @@ export function DecideForMeResultScreen() {
 
           {/* Taste Breakdown */}
           <View style={{ gap: spacing[3] }}>
-            <AppText variant="h3">Palate Match</AppText>
+            <AppText variant="h3">Palate match</AppText>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[3] }}>
-              {tasteDims.map((dimension) => (
+              {PICK_REASON_DIMS.map((dimension) => (
                 <TasteMiniBar
                   key={dimension.key}
                   label={TASTE_LABELS[dimension.key]}
@@ -445,7 +593,13 @@ export function DecideForMeResultScreen() {
 
           <View style={{ gap: spacing[3] }}>
             <Button
-              label="View Stall Details"
+              label="Share with friends"
+              variant="secondary"
+              leftIcon={<Share2 size={18} color={palette.text} />}
+              onPress={handleShare}
+            />
+            <Button
+              label="View stall details"
               variant="secondary"
               onPress={() => {
                 recordTasteInteraction({
@@ -458,12 +612,70 @@ export function DecideForMeResultScreen() {
               }}
             />
             <Button
-              label="Try Another Pick"
+              label="Not for me"
               variant="ghost"
+              accessibilityLabel={`Not for me, show another pick instead of ${dish.name}`}
               leftIcon={<Shuffle size={18} color={palette.text} />}
               onPress={handleTryAnother}
             />
           </View>
+
+          {otherPicks.length ? (
+            <View style={{ gap: spacing[3] }}>
+              <AppText variant="h3">Other picks</AppText>
+              {otherPicks.map((pick) => {
+                const pickMatch = Math.round(
+                  blendedMatchScore(profile.tasteVector, pick.tasteVector) * 100,
+                );
+                const pickDistance = formatDistance(pick.distanceMeters);
+                return (
+                  <Pressable
+                    key={pick.id}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Pick ${pick.name}, S$${pick.price.toFixed(2)}`}
+                    onPress={() => handleOtherPick(pick)}
+                    style={({ pressed }) => [
+                      {
+                        alignItems: "center",
+                        backgroundColor: palette.bgSoft,
+                        borderRadius: radii.md,
+                        flexDirection: "row",
+                        gap: spacing[3],
+                        opacity: pressed ? 0.85 : 1,
+                        padding: spacing[3],
+                      },
+                    ]}
+                  >
+                    {pick.imageUrl ? (
+                      <AccessibleImage
+                        source={{ uri: pick.imageUrl }}
+                        style={{ borderRadius: radii.sm, height: 56, width: 56 }}
+                        contentFit="cover"
+                        decorative
+                      />
+                    ) : (
+                      <NoDishPhoto
+                        dishName={pick.name}
+                        style={{ borderRadius: radii.sm, height: 56, width: 56 }}
+                        iconSize={20}
+                      />
+                    )}
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <AppText variant="body" style={{ fontWeight: "800" }} numberOfLines={1}>
+                        {pick.name}
+                      </AppText>
+                      <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
+                        {[`S$${pick.price.toFixed(2)}`, pickDistance].filter(Boolean).join(" · ")}
+                      </AppText>
+                      <AppText variant="bodySmall" tone="muted" numberOfLines={2}>
+                        {buildPickReason(profile.tasteVector, pick, pickMatch)}
+                      </AppText>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+          ) : null}
         </View>
       </Animated.ScrollView>
 
@@ -478,7 +690,34 @@ export function DecideForMeResultScreen() {
           },
         ]}
       >
-        <Button label="Add to cart" style={{ flex: 1 }} onPress={handleAddToCart} />
+        {/* No ordering exists yet: the main action is getting there, plus saving for later. */}
+        <View style={{ flexDirection: "row", gap: spacing[3] }}>
+          {stallAddress ? (
+            <Button
+              label="Directions"
+              fullWidth={false}
+              style={{ flex: 2 }}
+              leftIcon={<Navigation size={18} color={palette.white} />}
+              labelColor={palette.white}
+              onPress={handleDirections}
+            />
+          ) : null}
+          <Button
+            label={isSaved ? "Saved" : "Save"}
+            variant="secondary"
+            fullWidth={false}
+            style={{ flex: 1 }}
+            accessibilityLabel={isSaved ? `Remove ${dish.name} from saved` : `Save ${dish.name}`}
+            leftIcon={
+              <Heart
+                size={18}
+                color={isSaved ? palette.orange : palette.text}
+                fill={isSaved ? palette.orange : "transparent"}
+              />
+            }
+            onPress={handleSave}
+          />
+        </View>
       </View>
     </View>
   );

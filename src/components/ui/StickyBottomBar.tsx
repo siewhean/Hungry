@@ -18,7 +18,7 @@ interface StickyBottomBarProps {
 
 /**
  * Reusable sticky bottom action bar — safe area aware.
- * Used on StallDetail, BuildingDrillDown, and other detail screens.
+ * Used on StallDetail and other detail screens.
  */
 export function StickyBottomBar({ actions }: StickyBottomBarProps) {
   const { palette, spacing, shadows } = useHungryTheme();

@@ -12,12 +12,15 @@ const offlineScreen = readFileSync(
 test("app bootstrap keeps authenticated catalog routes mounted during NetInfo outages", () => {
   assert.match(source, /import NetInfo from "@react-native-community\/netinfo"/);
   assert.match(source, /const unsubscribe = NetInfo\.addEventListener/);
-  assert.match(source, /lastNetworkOffline\.current = isNetworkOffline\(state\)/);
-  assert.match(
-    source,
-    /setOffline\(!useSessionStore\.getState\(\)\.isAuthenticated && lastNetworkOffline\.current\)/,
+  // Offline is a non-blocking banner; the RootNavigator no longer swaps the
+  // current (authenticated catalog) route for the Offline screen.
+  assert.match(source, /setOffline\(isNetworkOffline\(state\)\)/);
+  const rootNavigator = readFileSync(
+    path.join(process.cwd(), "src/app/navigation/RootNavigator.tsx"),
+    "utf8",
   );
-  assert.match(source, /setOffline\(!isAuthenticated && lastNetworkOffline\.current\)/);
+  assert.match(rootNavigator, /function OfflineBanner\(\)/);
+  assert.doesNotMatch(rootNavigator, /navigationRef\.navigate\("Offline"\)/);
   assert.match(source, /return unsubscribe;/);
   assert.doesNotMatch(source, /setOffline\(false\);/);
 });

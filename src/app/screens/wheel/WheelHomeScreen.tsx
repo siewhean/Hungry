@@ -5,11 +5,15 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Users, ArrowRight, Compass } from "lucide-react-native";
 
 import { AppText, Button, Card, Input, Screen } from "@/components/ui";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
 import type { WheelStackParamList } from "./WheelStack";
 
 type Props = NativeStackScreenProps<WheelStackParamList, "WheelHome">;
+
+// Parties are an in-memory mock, so production only offers a solo spin.
+const PARTY_ENABLED = FEATURE_FLAGS.wheelPartyEnabled;
 
 export function WheelHomeScreen({ navigation, route }: Props) {
   const { componentRadii, palette, spacing, radii, shadows } = useHungryTheme();
@@ -84,8 +88,25 @@ export function WheelHomeScreen({ navigation, route }: Props) {
           </AppText>
         </View>
 
-        {/* Create Party - High Impact */}
-        <Pressable onPress={handleCreate} disabled={creating}>
+        {!PARTY_ENABLED && route.params?.code ? (
+          <Card style={{ backgroundColor: palette.bgSoft, borderColor: "transparent" }}>
+            <View style={{ gap: spacing[1] }}>
+              <AppText variant="h3">Group spins are coming soon</AppText>
+              <AppText variant="bodySmall" tone="secondary">
+                Invites from friends can&apos;t be opened yet. You can still spin the wheel on your
+                own below.
+              </AppText>
+            </View>
+          </Card>
+        ) : null}
+
+        {/* Create Party (solo spin when parties are off) - High Impact */}
+        <Pressable
+          onPress={handleCreate}
+          disabled={creating}
+          accessibilityRole="button"
+          accessibilityLabel={PARTY_ENABLED ? "Host a party" : "Spin the wheel"}
+        >
           <LinearGradient
             colors={[palette.orange, palette.orangeDark]}
             start={{ x: 0, y: 0 }}
@@ -99,10 +120,12 @@ export function WheelHomeScreen({ navigation, route }: Props) {
             <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[4] }}>
               <View style={{ flex: 1, gap: spacing[1] }}>
                 <AppText variant="h2" style={{ color: palette.white }}>
-                  Host a Party
+                  {PARTY_ENABLED ? "Host a Party" : "Spin the wheel"}
                 </AppText>
                 <AppText variant="bodySmall" style={{ color: palette.inverseTextSecondary }}>
-                  Start a new room and invite your friends to join the spin.
+                  {PARTY_ENABLED
+                    ? "Start a new room and invite your friends to join the spin."
+                    : "Add a few places and let the wheel decide."}
                 </AppText>
               </View>
               <View
@@ -121,73 +144,77 @@ export function WheelHomeScreen({ navigation, route }: Props) {
           </LinearGradient>
         </Pressable>
 
-        {/* Divider */}
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: spacing[3],
-            paddingHorizontal: spacing[4],
-          }}
-        >
-          <View style={{ flex: 1, height: 1, backgroundColor: palette.border, opacity: 0.5 }} />
-          <AppText variant="micro" tone="secondary" style={{ fontWeight: "800" }}>
-            HAVE A CODE?
-          </AppText>
-          <View style={{ flex: 1, height: 1, backgroundColor: palette.border, opacity: 0.5 }} />
-        </View>
-
-        {/* Join Party */}
-        <Card style={{ borderStyle: "dashed", borderWidth: 1.5, borderColor: palette.border }}>
-          <View style={{ gap: spacing[4] }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-              <Users size={18} color={palette.orange} />
-              <AppText variant="h3">Join your friends</AppText>
+        {PARTY_ENABLED ? (
+          <>
+            {/* Divider */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: spacing[3],
+                paddingHorizontal: spacing[4],
+              }}
+            >
+              <View style={{ flex: 1, height: 1, backgroundColor: palette.border, opacity: 0.5 }} />
+              <AppText variant="micro" tone="secondary" style={{ fontWeight: "800" }}>
+                HAVE A CODE?
+              </AppText>
+              <View style={{ flex: 1, height: 1, backgroundColor: palette.border, opacity: 0.5 }} />
             </View>
 
-            <View style={{ gap: spacing[3] }}>
-              <Input
-                label="Party Code"
-                placeholder="e.g. MAKAN7"
-                value={joinCode}
-                onChangeText={(t) => setJoinCode(t.toUpperCase())}
-                autoCapitalize="characters"
-                maxLength={8}
-              />
-              <Input
-                label="Your Name"
-                placeholder="How should the group see you?"
-                value={joinName}
-                onChangeText={setJoinName}
-                maxLength={30}
-              />
-            </View>
+            {/* Join Party */}
+            <Card style={{ borderStyle: "dashed", borderWidth: 1.5, borderColor: palette.border }}>
+              <View style={{ gap: spacing[4] }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+                  <Users size={18} color={palette.orange} />
+                  <AppText variant="h3">Join your friends</AppText>
+                </View>
 
-            {joinError ? (
-              <View
-                style={{
-                  backgroundColor: `${palette.error}10`,
-                  padding: spacing[2],
-                  borderRadius: radii.sm,
-                }}
-              >
-                <AppText
-                  variant="micro"
-                  style={{ color: palette.error, fontWeight: "600", textAlign: "center" }}
-                >
-                  {joinError}
-                </AppText>
+                <View style={{ gap: spacing[3] }}>
+                  <Input
+                    label="Party Code"
+                    placeholder="e.g. MAKAN7"
+                    value={joinCode}
+                    onChangeText={(t) => setJoinCode(t.toUpperCase())}
+                    autoCapitalize="characters"
+                    maxLength={8}
+                  />
+                  <Input
+                    label="Your Name"
+                    placeholder="How should the group see you?"
+                    value={joinName}
+                    onChangeText={setJoinName}
+                    maxLength={30}
+                  />
+                </View>
+
+                {joinError ? (
+                  <View
+                    style={{
+                      backgroundColor: `${palette.error}10`,
+                      padding: spacing[2],
+                      borderRadius: radii.sm,
+                    }}
+                  >
+                    <AppText
+                      variant="micro"
+                      style={{ color: palette.error, fontWeight: "600", textAlign: "center" }}
+                    >
+                      {joinError}
+                    </AppText>
+                  </View>
+                ) : null}
+
+                <Button
+                  label={joining ? "Joining..." : "Join the Room"}
+                  onPress={handleJoin}
+                  disabled={joining}
+                  variant="secondary"
+                />
               </View>
-            ) : null}
-
-            <Button
-              label={joining ? "Joining..." : "Join the Room"}
-              onPress={handleJoin}
-              disabled={joining}
-              variant="secondary"
-            />
-          </View>
-        </Card>
+            </Card>
+          </>
+        ) : null}
       </View>
     </Screen>
   );

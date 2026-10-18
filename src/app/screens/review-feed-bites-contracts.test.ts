@@ -27,7 +27,11 @@ test("Review feed cards do not render bottom bites sections", () => {
   assert.match(reviewFeed, /const reviewReactionsEnabled = serviceProviderMode === "mock"/);
   assert.match(reviewFeed, /toggleLike/);
   assert.match(reviewFeed, /toggleSave\(item\.interactionId\)/);
-  assert.match(reviewFeed, /toggleFavourite\(item\.dish\)/);
+  assert.match(
+    reviewFeed,
+    /const localDish = item\.dish \?\? repository\.getDishById\(item\.dishId\)/,
+  );
+  assert.match(reviewFeed, /toggleFavourite\(localDish\)/);
   assert.match(reviewFeed, /saved: favouriteDishIds\.includes\(item\.dishId\)/);
   assert.match(reviewFeed, /saveCount: baseInteraction\.saveCount/);
   assert.match(reviewFeed, /incrementShare/);
@@ -90,7 +94,10 @@ test("Review feed cards do not render bottom bites sections", () => {
   assert.doesNotMatch(reviewShareSheet, /ACTIVITY_MESSAGES/);
   assert.match(reviewShareSheet, /selectedChatIds/);
   assert.match(reviewShareSheet, /sharePostToChat\(chatId,/);
-  assert.match(reviewShareSheet, /Clipboard\.setString\(activeReview\.link\)/);
+  assert.match(
+    reviewShareSheet,
+    /Clipboard\.setString\(withShareSource\(activeReview\.link, "copy_link"\)\)/,
+  );
   assert.match(reviewShareSheet, /Share\.share\(\{/);
   assert.match(reviewShareSheet, /recipientAccessibilityLabelPrefix="Select"/);
   assert.match(reviewShareSheet, /FloatingShareSendButton/);

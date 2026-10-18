@@ -8,8 +8,7 @@ const migration = readRepoFile(
 );
 const repository = readRepoFile("src/lib/services/supabase/supabaseRepository.ts");
 const stallDetail = readRepoFile("src/app/screens/detail/StallDetailScreen.tsx");
-const stallDetailV2 = readRepoFile("src/app/screens/detail/StallDetailScreenV2.tsx");
-const dishDetail = readRepoFile("src/app/screens/detail/DishDetailScreen.tsx");
+const dishDetail = readRepoFile("src/app/screens/detail/DishDetailScreenV2.tsx");
 const importer = readRepoFile("scripts/import_excel_to_supabase.py");
 
 test("merchant catalog guards preserve provenance trust fields", () => {
@@ -91,14 +90,5 @@ test("frontend Supabase menu reads prefer display-safe service data", () => {
     stallDetail,
     /cachedDishes\.length\s+>\s+0\s+&&\s+serviceProviderMode\s+!==\s+"supabase"/,
   );
-  assert.match(
-    stallDetailV2,
-    /serviceProviderMode\s+===\s+"supabase"\s+\?\s+\[\]\s+:\s+cachedDishes/,
-  );
-  assert.match(stallDetailV2, /discovery\.listDishesByVenue\(venueId\)/);
-  assert.match(
-    dishDetail,
-    /serviceProviderMode\s+===\s+"supabase"\s+\?\s+undefined\s+:\s+cachedDish/,
-  );
-  assert.match(dishDetail, /discovery\.getDish\(deepLinkedDishId\)/);
+  assert.match(dishDetail, /\.discovery\.getDish\(dishId\)/);
 });

@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 
-import { PUBLIC_LINKS, PUBLIC_SITE_ORIGIN } from "@/constants/supportLinks";
+import { SUPPORT_EMAIL, WEB_BASE_URL, WEB_LINKS } from "@/constants/links";
 
 function read(relativePath: string): string {
   return readFileSync(path.join(process.cwd(), relativePath), "utf8");
@@ -58,14 +58,17 @@ test("D2: applyProfile updates the store value Edit Profile renders on reopen", 
 
 test("D5: Settings support/legal links use the live site constants", () => {
   const settings = read("src/app/screens/profile/SettingsScreen.tsx");
-  assert.doesNotMatch(settings, /https:\/\/hungry\.sg|mailto:/);
-  for (const key of ["support", "helpCenter", "privacy", "terms", "accountDeletion"]) {
-    assert.match(settings, new RegExp(`PUBLIC_LINKS\\.${key}`));
+  assert.doesNotMatch(settings, /https:\/\/hungry\.sg/);
+  for (const key of ["help", "privacy", "terms", "accountDeletion"]) {
+    assert.match(settings, new RegExp(`WEB_LINKS\\.${key}`));
   }
-  for (const url of Object.values(PUBLIC_LINKS)) {
-    assert.ok(url.startsWith(`${PUBLIC_SITE_ORIGIN}/`), url);
+  for (const url of Object.values(WEB_LINKS)) {
+    assert.ok(url.startsWith(`${WEB_BASE_URL}/`), url);
   }
-  assert.match(read("src/lib/security/safeLinking.ts"), /"usehungry\.com"/);
+  // Support opens the shared support inbox (allow-listed mailto).
+  assert.match(settings, /mailto:\$\{SUPPORT_EMAIL\}/);
+  assert.ok(SUPPORT_EMAIL.includes("@"));
+  assert.match(read("src/lib/security/safeLinking.ts"), /WEB_HOST/);
 });
 
 test("D6: release search inputs expose an accessible clear button and results header renders back + field", () => {

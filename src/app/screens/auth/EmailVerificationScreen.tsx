@@ -6,6 +6,7 @@ import { ArrowLeft, CircleAlert, MailCheck } from "lucide-react-native";
 import { AppText, Button, FeedErrorBoundary } from "@/components/ui";
 import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
 import { clearPendingSignUp, getPendingSignUp } from "@/features/auth/pendingSignUp";
+import { clearShareAttribution, getShareAttribution } from "@/features/share/shareAttribution";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
@@ -51,7 +52,14 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
       if (migration.status === "failed") return false;
     }
     clearPendingSignUp();
-    trackAnalyticsEvent("sign_up_completed", { method: "email" });
+    const shareAttribution = getShareAttribution();
+    trackAnalyticsEvent("sign_up_completed", {
+      method: "email",
+      ...(shareAttribution
+        ? { share_source: shareAttribution.source, share_route: shareAttribution.route }
+        : {}),
+    });
+    if (shareAttribution) clearShareAttribution();
     completeAuth({
       authProvider: "email",
       completedOnboarding: shouldCompleteOnboarding,

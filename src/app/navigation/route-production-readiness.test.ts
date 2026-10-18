@@ -23,30 +23,39 @@ test("production route gates keep advanced surfaces behind MVP-safe flags", () =
   const linking = read("src/app/navigation/linking.ts");
 
   assert.match(flags, /prototypeRoutesEnabled/);
-  assert.match(flags, /const advancedDevelopmentSurfaceEnabled = isDevelopment/);
-  assert.match(flags, /directMessagesEnabled: advancedDevelopmentSurfaceEnabled/);
-  assert.match(flags, /gamificationEnabled: advancedDevelopmentSurfaceEnabled/);
-  assert.match(flags, /collectionsEnabled: advancedDevelopmentSurfaceEnabled/);
-  assert.match(flags, /storiesEnabled: advancedDevelopmentSurfaceEnabled/);
-  assert.match(flags, /commentsEnabled: advancedDevelopmentSurfaceEnabled/);
-  assert.match(flags, /merchantCentreEnabled: advancedDevelopmentSurfaceEnabled/);
-  assert.match(flags, /merchantClaimCtaEnabled: advancedDevelopmentSurfaceEnabled/);
-  assert.match(flags, /oauthProvidersEnabled: advancedDevelopmentSurfaceEnabled/);
+  // Advanced surfaces follow main: available outside production only.
+  assert.match(flags, /const nonProductionSurfaceEnabled = prototypeRoutesEnabled/);
+  for (const flag of [
+    "directMessagesEnabled",
+    "gamificationEnabled",
+    "collectionsEnabled",
+    "storiesEnabled",
+    "commentsEnabled",
+    "merchantCentreEnabled",
+    "merchantClaimCtaEnabled",
+    "oauthProvidersEnabled",
+  ]) {
+    assert.match(flags, new RegExp(`${flag}: nonProductionSurfaceEnabled`));
+  }
   assert.match(flags, /floorplansEnabled: false/);
   assert.match(flags, /favouritesEnabled: true,/);
   assert.match(flags, /appEnv !== "production"/);
   assert.match(rootNavigator, /FEATURE_FLAGS\.prototypeRoutesEnabled \? \(/);
-  for (const routeName of [
-    "DishDetailV2",
-    "StallDetailV2",
-    "BuildingDrillDownV2",
-    "SplashV2",
-    "DesignGallery",
-    "VenueDirectory",
-  ]) {
+  for (const routeName of ["DesignGallery", "PostComposerV2"]) {
     assert.match(rootNavigator, new RegExp(`name="${routeName}"`));
   }
-  for (const removedRouteName of ["DiscoverV2", "SearchHomeV2", "QuickReviewV2", "ReviewFeedV2"]) {
+  for (const removedRouteName of [
+    "DiscoverV2",
+    "SearchHomeV2",
+    "QuickReviewV2",
+    "ReviewFeedV2",
+    "DishDetailV2",
+    "StallDetailV2",
+    "SplashV2",
+    "BuildingDrillDown",
+    "BuildingDrillDownV2",
+    "VenueDirectory",
+  ]) {
     assert.doesNotMatch(rootNavigator, new RegExp(`name="${removedRouteName}"`));
   }
   assert.match(rootNavigator, /FEATURE_FLAGS\.merchantCentreEnabled \? \(/);
@@ -67,20 +76,16 @@ test("production route gates keep advanced surfaces behind MVP-safe flags", () =
   assert.match(rootNavigator, /name="CollectionDetail"/);
   assert.match(
     rootNavigator,
-    /FEATURE_FLAGS\.prototypeRoutesEnabled \? \([\s\S]*name="PortfolioPublicView"/,
+    /FEATURE_FLAGS\.portfoliosEnabled \? \([\s\S]*name="PortfolioPublicView"/,
   );
   assert.match(
     rootNavigator,
     /FEATURE_FLAGS\.prototypeRoutesEnabled \? \([\s\S]*name="AdminPortfolioFlags"/,
   );
-  assert.match(linking, /FEATURE_FLAGS\.prototypeRoutesEnabled/);
   assert.match(linking, /FEATURE_FLAGS\.merchantCentreEnabled/);
+  assert.match(linking, /FEATURE_FLAGS\.portfoliosEnabled/);
   assert.match(linking, /PortfolioPublicView/);
   assert.match(linking, /MerchantTabs/);
-  assert.match(rootNavigator, /FEATURE_FLAGS\.floorplansEnabled \? \(/);
-  assert.match(rootNavigator, /name="BuildingDrillDown"/);
-  assert.match(rootNavigator, /name="BuildingDrillDownV2"/);
-  assert.match(rootNavigator, /name="VenueDirectory"/);
   for (const [flag, routeName] of [
     ["mapEnabled", "DiscoverMap"],
     ["mapEnabled", "MapZoomedIn"],
@@ -88,8 +93,6 @@ test("production route gates keep advanced surfaces behind MVP-safe flags", () =
     ["readsEnabled", "BlogPost"],
     ["reviewCreationEnabled", "ReviewStack"],
     ["hungryWheelEnabled", "WheelStack"],
-    ["hungryWheelEnabled", "MusicSelection"],
-    ["hungryWheelEnabled", "DecideForMeResult"],
     ["activityEnabled", "ActivityInbox"],
     ["activityEnabled", "ActivityPostDetail"],
   ]) {
@@ -109,18 +112,15 @@ test("production route gates keep advanced surfaces behind MVP-safe flags", () =
   assert.match(rootNavigator, /function isReleaseRouteAvailable/);
 });
 
-test("floorplan entry points are hidden behind the floorplans flag", () => {
+test("floorplan screens are removed while floorplans stay hard-off", () => {
   const mapZoom = read("src/app/screens/discover/MapZoomedInScreen.tsx");
   const developerLauncher = read("src/app/screens/dev/DeveloperLauncherScreen.tsx");
 
-  assert.match(mapZoom, /FEATURE_FLAGS\.floorplansEnabled \? \(/);
-  assert.match(mapZoom, /navigation\.navigate\("VenueDirectory"/);
-  assert.match(developerLauncher, /FEATURE_FLAGS\.floorplansEnabled \? \(/);
-  assert.match(developerLauncher, /navigation\.navigate\("BuildingDrillDownV2"/);
-  assert.match(developerLauncher, /Floorplan routes are disabled for this build\./);
+  assert.doesNotMatch(mapZoom, /navigation\.navigate\("VenueDirectory"/);
+  assert.doesNotMatch(developerLauncher, /BuildingDrillDown/);
 });
 
-test("signed-out app entry starts at login while public routes stay unprotected", () => {
+test("signed-out app entry requires an account (no guest mode)", () => {
   const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
   const splash = read("src/app/screens/SplashScreen.tsx");
   const developerLauncher = read("src/app/screens/dev/DeveloperLauncherScreen.tsx");
@@ -148,8 +148,13 @@ test("signed-out app entry starts at login while public routes stay unprotected"
     rootNavigator,
     /const PROTECTED_MAIN_TAB_ROUTES = new Set<MainTabRouteName>\(\["Profile"\]\)/,
   );
-  assert.match(splash, /const isAuthenticated = useSessionStore/);
+  // Mandatory sign-in: new users go to onboarding (which ends at the account step),
+  // returning signed-out users go to Login; MainTabs opens only with a session.
   assert.match(splash, /if \(!isAuthenticated\) \{[\s\S]*name: "AuthStack"[\s\S]*screen: "Login"/);
+  assert.match(
+    splash,
+    /if \(!hasCompletedOnboarding\) \{[\s\S]*name: "OnboardingStack"[\s\S]*screen: "OnboardingWelcome"/,
+  );
   assert.match(splash, /name: "MainTabs"[\s\S]*params: \{ screen: "Home" \}/);
   assert.match(profileHome, /setReturnRoute\("Profile"\)/);
   assert.match(
@@ -234,4 +239,5 @@ test("protected actions preserve return routes before auth", () => {
   );
   assert.match(tabs, /FEATURE_FLAGS\.postCreationEnabled/);
   assert.match(tabs, /rootNavigation\?\.navigate\("Post"\)/);
+  assert.match(tabs, /setReturnRoute\(\{ name: "Post" \}\)/);
 });

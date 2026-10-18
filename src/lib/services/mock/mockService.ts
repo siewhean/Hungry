@@ -58,9 +58,12 @@ import type {
   SearchResult,
   Session,
   SubmitReviewInput,
+  RecentReviewFeedEntry,
 } from "@/lib/services/types";
+import { ACCOUNT_DELETION_GRACE_DAYS } from "@/lib/services/types";
 import type {
   AIBusinessInsight,
+  MoodSearchIntent,
   CustomerInteraction,
   DishDetail,
   DietaryFlag,
@@ -96,7 +99,9 @@ import type {
   PassportStamp,
   SubmitUserStallSubmissionInput,
   UserStallSubmission,
+  PushPreferences,
 } from "@/types/domain";
+import { DEFAULT_PUSH_PREFERENCES } from "@/types/domain";
 import { computeTasteProfileFromQuiz } from "@/lib/ai/tasteQuiz";
 import {
   runRecommendationPipeline,
@@ -284,7 +289,11 @@ function createMockUserStallSubmission(input: SubmitUserStallSubmissionInput): U
 // ─── Mutable in-memory state (mirrors what Supabase would persist) ─────────────
 
 let _profile: UserProfile = { ...guestProfile };
+const _submittedClientReviewIds = new Set<string>();
+let _followedStallIds = new Set<string>();
+let _pushPreferences: PushPreferences = { ...DEFAULT_PUSH_PREFERENCES };
 let _isAuthenticated = false;
+let _pendingDeletionScheduledFor: string | undefined;
 let _merchantAccount: MerchantAccount = clone(merchantAccount);
 let _merchantDishCounter = 0;
 let _merchantPromotionCounter = 0;
@@ -1370,10 +1379,24 @@ export const hungryService: HungryService = {
     },
 
     async requestAccountDeletion() {
-      // Mock-safe stub: production uses external deletion endpoint + legal workflow.
+      // Mock-safe stub: production queues the request for the deletion worker.
+      _pendingDeletionScheduledFor = new Date(
+        Date.now() + ACCOUNT_DELETION_GRACE_DAYS * 24 * 60 * 60 * 1000,
+      ).toISOString();
       _isAuthenticated = false;
       _profile = { ...guestProfile };
       return resolve(undefined);
+    },
+
+    async getPendingAccountDeletion() {
+      if (!_isAuthenticated || !_pendingDeletionScheduledFor) return resolve(null);
+      return resolve({ scheduledFor: _pendingDeletionScheduledFor });
+    },
+
+    async cancelAccountDeletion() {
+      const hadPending = _isAuthenticated && Boolean(_pendingDeletionScheduledFor);
+      if (hadPending) _pendingDeletionScheduledFor = undefined;
+      return resolve(hadPending);
     },
 
     async forgotPassword(_email) {
@@ -1579,6 +1602,11 @@ export const hungryService: HungryService = {
     },
 
     async submitReview(draft: SubmitReviewInput) {
+      // Mock: a retried submission with the same client id is a no-op, like the Supabase resume.
+      if (draft.clientReviewId) {
+        if (_submittedClientReviewIds.has(draft.clientReviewId)) return resolve(undefined);
+        _submittedClientReviewIds.add(draft.clientReviewId);
+      }
       // Mock: persist the reviewed dish into the in-memory profile
       if (!_profile.reviewedDishIds.includes(draft.dishId)) {
         _profile = {
@@ -1591,6 +1619,28 @@ export const hungryService: HungryService = {
         };
       }
       return resolve(undefined);
+    },
+
+    async listRecentReviews(options) {
+      const limit = Math.min(Math.max(Math.floor(options?.limit ?? 50), 1), 100);
+      const before = options?.before ? new Date(options.before).getTime() : undefined;
+      const entries = dishes
+        .flatMap((dish): RecentReviewFeedEntry[] =>
+          dish.reviews.map((review) => ({
+            review,
+            dishId: dish.id,
+            dishName: dish.name,
+            venueId: dish.venueId,
+            venueName: dish.venueName,
+          })),
+        )
+        .filter((entry) =>
+          before === undefined ? true : new Date(entry.review.createdAt).getTime() < before,
+        )
+        .sort(
+          (a, b) => new Date(b.review.createdAt).getTime() - new Date(a.review.createdAt).getTime(),
+        );
+      return resolve(entries.slice(0, limit));
     },
   },
 
@@ -1636,6 +1686,16 @@ export const hungryService: HungryService = {
       return resolve([..._profile.favouriteDishIds]);
     },
 
+    async setStallFollow(stallId, following) {
+      if (following) _followedStallIds.add(stallId);
+      else _followedStallIds.delete(stallId);
+      return resolve(undefined);
+    },
+
+    async getFollowedStallIds() {
+      return resolve([..._followedStallIds]);
+    },
+
     async updateTasteVector(vector) {
       _profile = { ..._profile, tasteVector: vector };
       return resolve(undefined);
@@ -1647,6 +1707,35 @@ export const hungryService: HungryService = {
         tasteVector: profile.vector,
         tasteProfile: profile,
       };
+      return resolve(undefined);
+    },
+
+    async recordQuizResponse() {
+      return resolve(undefined);
+    },
+  },
+
+  // ── Push notifications ──────────────────────────────────────────────────────
+
+  push: {
+    async getPreferences() {
+      return resolve({ ..._pushPreferences });
+    },
+
+    async updatePreferences(updates) {
+      _pushPreferences = { ..._pushPreferences, ...updates };
+      return resolve({ ..._pushPreferences });
+    },
+
+    async registerPushToken() {
+      return resolve(undefined);
+    },
+
+    async unregisterPushToken() {
+      return resolve(undefined);
+    },
+
+    async markOpened() {
       return resolve(undefined);
     },
   },
@@ -2105,6 +2194,10 @@ export const hungryService: HungryService = {
       });
     },
 
+    async recordImpression() {
+      return resolve(undefined);
+    },
+
     async recordExplicitFeedback(feedback) {
       const dish = feedback.dishId ? dishes.find((item) => item.id === feedback.dishId) : undefined;
       if (!dish && feedback.feedbackType !== "search_query") {
@@ -2295,6 +2388,11 @@ export const hungryService: HungryService = {
     async submitCommunityTags(_dishId: string, _tags: HawkerTasteTag[]): Promise<void> {
       // Mock: no-op — in production updates the dish's community taste vector
       return resolve(undefined);
+    },
+
+    // Mock and guest mode have no Claude access; search falls back to name matching.
+    async parseMoodQuery(_query: string): Promise<MoodSearchIntent | null> {
+      return resolve(null);
     },
   },
 
@@ -3156,6 +3254,35 @@ export const hungryService: HungryService = {
         throw new Error(`Portfolio ${id} not found`);
       }
       return resolve(clone(portfolio));
+    },
+
+    async getPublicPortfolio(id: string) {
+      const portfolio = _portfolios.find((entry) => entry.id === id);
+      if (!portfolio || portfolio.visibility !== "public") return resolve(null);
+      const items = _portfolioItems
+        .filter((item) => item.portfolioId === id)
+        .sort((left, right) => left.position - right.position)
+        .map((item) => {
+          const dish = item.dishId ? mockRepository.getDishById(item.dishId) : undefined;
+          const venue = mockRepository.getVenueById(item.stallId ?? dish?.venueId ?? "");
+          return {
+            itemType: item.itemType,
+            dishId: item.dishId,
+            stallId: item.stallId ?? dish?.venueId,
+            name: dish?.name ?? venue?.name ?? "Untitled",
+            stallName: venue?.name,
+            price: dish?.price,
+            publicNotes: item.publicNotes,
+            imageUrl: dish?.imageUrl || undefined,
+          };
+        });
+      return resolve({
+        id: portfolio.id,
+        name: portfolio.name,
+        description: portfolio.description,
+        updatedAt: portfolio.updatedAt,
+        items,
+      });
     },
 
     async updatePortfolio(

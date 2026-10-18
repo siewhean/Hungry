@@ -11,19 +11,28 @@ import {
   parseOrderDeepLinkQuery,
 } from "@/app/navigation/linking";
 
-test("Release 0.1 linking exposes authenticated dish and venue entry points only", () => {
+test("linking exposes authenticated dish, venue, post and order entry points", () => {
   const linking = createRootLinking("exp://127.0.0.1:8081/--/");
   const screens = linking.config.screens as Record<string, unknown>;
   const authStack = screens.AuthStack as { screens: Record<string, string> };
 
-  assert.equal(authStack.screens.ResetPassword, "auth/callback");
+  assert.equal(authStack.screens.ResetPassword, "auth/reset");
   assert.equal(authStack.screens.EmailVerification, undefined);
   // Path params must match the params callers navigate with (dishId/venueId).
   assert.equal(screens.DishDetail, "dish/:dishId");
   assert.equal(screens.StallDetail, "venue/:venueId");
-  assert.equal(screens.Post, undefined);
+  assert.equal(screens.ActivityPostDetail, "post/:postId");
+  assert.equal(screens.Post, "order");
   assert.equal(screens.MerchantTabs, undefined);
-  assert.equal(linking.getStateFromPath("order"), undefined);
+  assert.deepEqual(screens.MainTabs, { screens: { Home: "home" } });
+});
+
+test("weekly picks /home link opens the Home tab", () => {
+  const linking = createRootLinking("exp://127.0.0.1:8081/--/");
+  assert.deepEqual(linking.getStateFromPath("home")?.routes?.[0], {
+    name: "MainTabs",
+    params: { screen: "Home" },
+  });
 });
 
 test("order deep link parses venueId query parameter", () => {
@@ -76,8 +85,10 @@ test("onboarded signed-out users are sent to login and retain a safe return rout
   });
   assert.deepEqual(capturedRoute, { name: "DishDetail", params: { dishId: "dish-123" } });
 
+  // Cold start before auth settles: nothing opens, but the link is remembered.
   authState = { ...authState, isAuthReady: false };
   assert.equal(linking.getStateFromPath("order"), undefined);
+  assert.deepEqual(capturedRoute, { name: "Post", params: undefined });
 
   authState = { ...authState, isAuthReady: true, isAuthenticated: true };
   assert.deepEqual(linking.getStateFromPath("dish/dish-123")?.routes?.[0], {
@@ -122,17 +133,25 @@ test("password reset callback carries the PKCE code into ResetPassword params", 
   }));
   assert.deepEqual(linking.getStateFromPath("auth/callback?code=abc-123")?.routes?.[0], {
     name: "AuthStack",
-    params: { screen: "ResetPassword", params: { code: "abc-123" } },
+    params: { screen: "ResetPassword", params: { code: "abc-123" }, pop: true },
   });
   assert.deepEqual(
     linking.getStateFromPath(
       "auth/callback?error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid",
     )?.routes?.[0],
-    { name: "AuthStack", params: { screen: "ResetPassword", params: { error: "expired" } } },
+    {
+      name: "AuthStack",
+      params: { screen: "ResetPassword", params: { error: "expired" }, pop: true },
+    },
   );
   assert.deepEqual(linking.getStateFromPath("auth/callback")?.routes?.[0], {
     name: "AuthStack",
-    params: { screen: "ResetPassword" },
+    params: { screen: "ResetPassword", pop: true },
+  });
+  // auth/reset is the current password-reset redirect (AUTH_REDIRECTS.passwordReset).
+  assert.deepEqual(linking.getStateFromPath("auth/reset?code=abc-123")?.routes?.[0], {
+    name: "AuthStack",
+    params: { screen: "ResetPassword", params: { code: "abc-123" }, pop: true },
   });
 });
 
@@ -144,7 +163,7 @@ test("sign-up confirmation uses a distinct path that opens email verification", 
   }));
   assert.deepEqual(linking.getStateFromPath("auth/confirm?code=xyz-789")?.routes?.[0], {
     name: "AuthStack",
-    params: { screen: "EmailVerification", params: { code: "xyz-789" } },
+    params: { screen: "EmailVerification", params: { code: "xyz-789" }, pop: true },
   });
   assert.deepEqual(parseAuthCallbackParams("auth/confirm#error=server_error"), {
     error: "invalid",

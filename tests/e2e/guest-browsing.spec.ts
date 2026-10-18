@@ -44,6 +44,7 @@ test.describe("guest mode is prohibited", () => {
     });
     await expect(page.getByText(/Continue as Guest/i)).toHaveCount(0);
     await expect(page.getByText(/Skip login/i)).toHaveCount(0);
+    await expect(page.getByText(/Continue without an account/i)).toHaveCount(0);
     await expect(page.getByText("Home", { exact: true })).toHaveCount(0);
     await expect(page.getByText("Discover", { exact: true })).toHaveCount(0);
   });
@@ -52,6 +53,7 @@ test.describe("guest mode is prohibited", () => {
     await clearSignedOutState(page);
     await page.getByRole("button", { name: "Sign in to existing account" }).click();
     await expect(page.getByText("Welcome back", { exact: true })).toBeVisible();
+    await expect(page.getByText(/Continue without an account/i)).toHaveCount(0);
 
     for (const path of ["/dish/dish-chicken-rice", "/venue/venue-test", "/order"]) {
       await page.goto(path);

@@ -73,16 +73,9 @@ test("production feature flags remain MVP-safe and documented in the release mat
   const flags = read("src/constants/featureFlags.ts");
   const matrix = read("tasks/Roadmap/Scaling/feature-flag-release-matrix.md");
 
-  assert.match(
-    flags,
-    /const isReleasedEnvironment = appEnv === "staging" \|\| appEnv === "production"/,
-  );
-  assert.match(
-    flags,
-    /const releaseOptIn = \(key: string\) => isDevelopment \|\| enabled\(env, key\)/,
-  );
-  assert.match(flags, /const advancedDevelopmentSurfaceEnabled = isDevelopment/);
-  assert.match(flags, /release01CoreOnly: isReleasedEnvironment/);
+  // Advanced surfaces stay out of production (main's nonProductionSurfaceEnabled).
+  assert.match(flags, /const prototypeRoutesEnabled = appEnv !== "production"/);
+  assert.match(flags, /release01CoreOnly: enabled\(env, "EXPO_PUBLIC_RELEASE_01_CORE_ONLY"\)/);
   for (const flag of [
     "directMessagesEnabled",
     "commentsEnabled",
@@ -91,9 +84,10 @@ test("production feature flags remain MVP-safe and documented in the release mat
     "collectionsEnabled",
     "storiesEnabled",
   ]) {
-    assert.match(flags, new RegExp(`${flag}: advancedDevelopmentSurfaceEnabled`));
+    assert.match(flags, new RegExp(`${flag}: nonProductionSurfaceEnabled`));
     assert.match(matrix, new RegExp(`\\\`${flag}\\\`[\\s\\S]*false`));
   }
+  // Core surfaces keep a per-surface env gate (EXPO_PUBLIC_ENABLE_*=0 narrows a build).
   for (const flag of [
     "socialFeedEnabled",
     "postCreationEnabled",
@@ -104,7 +98,7 @@ test("production feature flags remain MVP-safe and documented in the release mat
     "hungryWheelEnabled",
     "craveEnabled",
   ]) {
-    assert.match(flags, new RegExp(`const ${flag} = releaseOptIn`));
+    assert.match(flags, new RegExp(`const ${flag} = surface\\(`));
   }
   assert.match(flags, /floorplansEnabled: false/);
   assert.match(matrix, /Production defaults must stay MVP-safe/);
@@ -120,7 +114,6 @@ test("root navigation and linking do not expose advanced production routes witho
     "FEATURE_FLAGS.storiesEnabled",
     "FEATURE_FLAGS.gamificationEnabled",
     "FEATURE_FLAGS.collectionsEnabled",
-    "FEATURE_FLAGS.floorplansEnabled",
     "FEATURE_FLAGS.prototypeRoutesEnabled",
   ]) {
     assert.match(rootNavigator, new RegExp(gate.replace(".", "\\.")));
@@ -136,16 +129,13 @@ test("root navigation and linking do not expose advanced production routes witho
     "MissionsScreen",
     "CollectionList",
     "CollectionDetail",
-    "BuildingDrillDown",
-    "BuildingDrillDownV2",
-    "VenueDirectory",
     "AdminPortfolioFlags",
   ]) {
     assert.match(rootNavigator, new RegExp(`name="${route}"`));
   }
 
   assert.match(linking, /FEATURE_FLAGS\.merchantCentreEnabled/);
-  assert.match(linking, /FEATURE_FLAGS\.prototypeRoutesEnabled/);
+  assert.match(linking, /FEATURE_FLAGS\.portfoliosEnabled/);
   assert.doesNotMatch(linking, /DirectMessages:/);
 });
 

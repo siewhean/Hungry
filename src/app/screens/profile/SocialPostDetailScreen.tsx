@@ -33,6 +33,7 @@ import { useSocialStore, type SocialComment } from "@/store/useSocialStore";
 import { useHungryTheme } from "@/theme";
 import type { StallPost } from "@/types/domain";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { webShareUrl } from "@/constants/links";
 
 const CommentIcon = MessageCircle ?? MessageCircleMore;
 
@@ -296,7 +297,7 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
                     message: `Check out ${primaryDish.name} at ${
                       venue?.name ?? feedPost.authorLocation
                     } on Hungry.`,
-                    link: `https://hungry.sg/post/${feedPost.id}`,
+                    link: webShareUrl("post", feedPost.id),
                   });
                   requestAnimationFrame(() => {
                     shareSheetRef.current?.present();

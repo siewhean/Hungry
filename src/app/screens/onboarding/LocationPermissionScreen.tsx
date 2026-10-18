@@ -9,6 +9,7 @@ import { WordmarkLogoV2 } from "@/components/icons/brand/WordmarkLogoV2";
 import { AccessibleImage } from "@/components/ui/AccessibleImage";
 import { HUNGRY_LOGO_STANDARD_WORDMARK_SIZE } from "@/constants/brandAssets";
 import { useLocationStore } from "@/store/useLocationStore";
+import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { OnboardingStackParamList } from "./OnboardingStack";
 import { useFinishLocationStep } from "./finishLocationStep";
@@ -53,19 +54,30 @@ export function LocationPermissionScreen({ navigation }: Props) {
   const { palette, radii, shadows, spacing } = useHungryTheme();
   const grantLocation = useLocationStore((state) => state.grantLocation);
   const manualLocation = useLocationStore((state) => state.manualLocation);
+  const showToast = useUIStore((state) => state.showToast);
   const [isContinuing, setIsContinuing] = useState(false);
+  // Last onboarding step: signed-in users land on Home; signed-out users
+  // continue to the mandatory account step (no guest access).
   const finish = useFinishLocationStep(navigation);
+
+  const pickAreaInstead = () => {
+    showToast({
+      message: "We couldn't find your location. Pick your area instead.",
+      tone: "warning",
+    });
+    navigation.navigate("ManualLocationPicker");
+  };
 
   const allowDeviceLocation = async () => {
     try {
       const granted = await grantLocation();
       if (!granted) {
-        navigation.navigate("ManualLocationPicker");
+        pickAreaInstead();
         return;
       }
       finish();
     } catch {
-      navigation.navigate("ManualLocationPicker");
+      pickAreaInstead();
     }
   };
 

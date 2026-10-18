@@ -1,4 +1,7 @@
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { WEB_BASE_URL } from "@/constants/links";
+import { parseShareSource, rememberShareAttribution } from "@/features/share/shareAttribution";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 
 const SAFE_DEEP_LINK_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const SAFE_JOIN_CODE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
@@ -7,6 +10,8 @@ export interface LinkingAuthState {
   isAuthReady: boolean;
   isAuthenticated: boolean;
   hasCompletedOnboarding?: boolean;
+  /** Called with the route a signed-out user was sent to onboarding/Login from. */
+  onAuthRedirect?: (route: LinkingRoute) => void;
 }
 
 export interface LinkingRoute {
@@ -35,6 +40,10 @@ function sanitizeRouteParams(name: string, params: unknown): Record<string, unkn
   }
 
   if (name === "StallDetail" && !isSafeDeepLinkId(next.venueId ?? next.id)) {
+    return undefined;
+  }
+
+  if (name === "ActivityPostDetail" && !isSafeDeepLinkId(next.postId)) {
     return undefined;
   }
 
@@ -98,6 +107,12 @@ function createState(name: string, params?: Record<string, unknown>): LinkingSta
   return { routes: [params && Object.keys(params).length > 0 ? { name, params } : { name }] };
 }
 
+// `pop` makes the nested AuthStack navigate back to an existing Login/SignUp
+// screen instead of pushing a duplicate on every auth deep link.
+function createAuthState(screen: string, params?: Record<string, unknown>): LinkingState {
+  return createState("AuthStack", params ? { screen, params, pop: true } : { screen, pop: true });
+}
+
 /**
  * Released catalog reads (catalogReadV2 on the Supabase provider) render dish and
  * venue detail from catalog rows, whose ids copy public.dishes/venues ids.
@@ -120,26 +135,29 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
   const path = pathname.replace(/^\/+|\/+$/g, "");
   const parts = path.split("/").filter(Boolean);
 
-  if (path === "login") return createState("AuthStack", { screen: "Login" });
-  if (path === "signup") return createState("AuthStack", { screen: "SignUp" });
-  if (path === "forgot-password") return createState("AuthStack", { screen: "ForgotPassword" });
-  if (path === "auth/callback") {
+  if (path === "login") return createAuthState("Login");
+  if (path === "signup") return createAuthState("SignUp");
+  if (path === "forgot-password") return createAuthState("ForgotPassword");
+  // auth/callback is the pre-split password-reset path, kept for old emails.
+  if (path === "auth/reset" || path === "auth/callback") {
     const callback = parseAuthCallbackParams(rawPath);
-    return createState("AuthStack", {
-      screen: "ResetPassword",
-      ...(Object.keys(callback).length > 0 ? { params: callback } : {}),
-    });
+    return createAuthState(
+      "ResetPassword",
+      Object.keys(callback).length > 0 ? callback : undefined,
+    );
   }
   if (path === "auth/confirm") {
     const callback = parseAuthCallbackParams(rawPath);
-    return createState("AuthStack", {
-      screen: "EmailVerification",
-      ...(Object.keys(callback).length > 0 ? { params: callback } : {}),
-    });
+    return createAuthState(
+      "EmailVerification",
+      Object.keys(callback).length > 0 ? callback : undefined,
+    );
   }
-  if (path === "auth/reset/success") {
-    return createState("AuthStack", { screen: "ResetPasswordSuccess" });
-  }
+  // OAuth returns are consumed by WebBrowser.openAuthSessionAsync.
+  if (path === "auth/oauth") return undefined;
+  if (path === "auth/reset/success") return createAuthState("ResetPasswordSuccess");
+  // Weekly picks push opens https://usehungry.com/home (signed-in users only).
+  if (path === "home") return createState("MainTabs", { screen: "Home" });
   if (parts[0] === "catalog") {
     const kind = parts[1];
     const id = decodePathSegment(parts[2]);
@@ -152,17 +170,21 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
       ? createState("CatalogRawDetail", { kind: "dish", id: dishId })
       : createState("DishDetail", { dishId });
   }
-  if (parts[0] === "venue") {
+  if (parts[0] === "venue" || parts[0] === "stall") {
     const venueId = decodePathSegment(parts[1]);
     if (!venueId) return undefined;
     return isCatalogDeepLinkMode()
       ? createState("CatalogRawDetail", { kind: "venue", id: venueId })
       : createState("StallDetail", { venueId });
   }
+  if (FEATURE_FLAGS.activityEnabled && parts[0] === "post") {
+    const postId = decodePathSegment(parts[1]);
+    return postId ? createState("ActivityPostDetail", { postId }) : undefined;
+  }
   if (FEATURE_FLAGS.postCreationEnabled && path === "order") {
     return createState("Post", parseOrderDeepLinkQuery(rawPath));
   }
-  if (FEATURE_FLAGS.prototypeRoutesEnabled && parts[0] === "portfolio") {
+  if (FEATURE_FLAGS.portfoliosEnabled && parts[0] === "portfolio") {
     const portfolioId = decodePathSegment(parts[1]);
     return portfolioId ? createState("PortfolioPublicView", { portfolioId }) : undefined;
   }
@@ -189,6 +211,26 @@ function sanitizeLinkingState(state: LinkingState | undefined) {
   return { ...state, routes: sanitizedRoutes };
 }
 
+const SHARED_LINK_ROUTES = new Set([
+  "DishDetail",
+  "StallDetail",
+  "CatalogRawDetail",
+  "ActivityPostDetail",
+  "PortfolioPublicView",
+  "WheelStack",
+]);
+
+function trackSharedLinkOpened(state: LinkingState, rawPath: string) {
+  const route = state.routes[state.routes.length - 1];
+  if (!route || !SHARED_LINK_ROUTES.has(String(route.name))) return;
+  const source = parseShareSource(rawPath);
+  if (source) rememberShareAttribution({ source, route: String(route.name) });
+  trackAnalyticsEvent("shared_link_opened", {
+    route: String(route.name),
+    ...(source ? { share_source: source } : {}),
+  });
+}
+
 function isAuthRouteState(state: LinkingState | undefined): boolean {
   const activeRoute = state?.routes?.[state.routes.length - 1];
   return activeRoute?.name === "AuthStack";
@@ -210,7 +252,7 @@ export function createRootLinking(
   onProtectedRoute?: (route: LinkingRoute) => void,
 ) {
   return {
-    prefixes: [prefix, "hungry://", "https://hungry.sg"],
+    prefixes: [prefix, "hungry://", WEB_BASE_URL],
     config: {
       screens: {
         AuthStack: {
@@ -222,8 +264,13 @@ export function createRootLinking(
             // parsed in buildStateFromPath only, so in-app navigation to the
             // verification screen never writes /auth/confirm into the web URL
             // (which would re-open AuthStack when the signed-in navigator mounts).
-            ResetPassword: "auth/callback",
+            ResetPassword: "auth/reset",
             ResetPasswordSuccess: "auth/reset/success",
+          },
+        },
+        MainTabs: {
+          screens: {
+            Home: "home",
           },
         },
         // Param names match what callers pass (dishId/venueId) so generated URLs
@@ -231,8 +278,9 @@ export function createRootLinking(
         DishDetail: "dish/:dishId",
         StallDetail: "venue/:venueId",
         CatalogRawDetail: "catalog/:kind/:id",
+        ...(FEATURE_FLAGS.activityEnabled ? { ActivityPostDetail: "post/:postId" } : {}),
         ...(FEATURE_FLAGS.postCreationEnabled ? { Post: "order" } : {}),
-        ...(FEATURE_FLAGS.prototypeRoutesEnabled
+        ...(FEATURE_FLAGS.portfoliosEnabled
           ? { PortfolioPublicView: "portfolio/:portfolioId" }
           : {}),
         ...(FEATURE_FLAGS.merchantCentreEnabled
@@ -264,12 +312,26 @@ export function createRootLinking(
       const state = sanitizeLinkingState(buildStateFromPath(path));
       if (!state) return undefined;
       if (isAuthRouteState(state)) return state;
+      trackSharedLinkOpened(state, path);
 
-      const { isAuthReady, isAuthenticated, hasCompletedOnboarding } = getAuthState();
-      if (!isAuthReady) return undefined;
+      // Mandatory sign-in: no app route opens without an authenticated session.
+      // The link is remembered as the return route (Splash and the post-login
+      // navigation consume it) instead of being dropped, including on a cold
+      // start while auth is still settling.
+      const { isAuthReady, isAuthenticated, hasCompletedOnboarding, onAuthRedirect } =
+        getAuthState();
+      const activeRoute = state.routes[state.routes.length - 1];
+      const rememberRoute = (route: LinkingRoute | undefined) => {
+        if (!route) return;
+        onAuthRedirect?.(route);
+        onProtectedRoute?.(route);
+      };
+      if (!isAuthReady) {
+        rememberRoute(activeRoute);
+        return undefined;
+      }
       if (!isAuthenticated) {
-        const activeRoute = state.routes[state.routes.length - 1];
-        if (activeRoute) onProtectedRoute?.(activeRoute);
+        rememberRoute(activeRoute);
         return signedOutState(hasCompletedOnboarding);
       }
 

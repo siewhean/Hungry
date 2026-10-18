@@ -14,7 +14,9 @@ import {
   processExplicitFeedback as processExplicitFeedbackCore,
   runRecommendationPipeline,
 } from "@/lib/ai/tasteEngine";
+import { parseMoodIntent } from "@/lib/ai/moodSearch";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
+import { AUTH_REDIRECTS } from "@/constants/links";
 import {
   countVenuesInAreaViaRpc,
   getDishByIdViaRpc,
@@ -31,6 +33,7 @@ import {
   supabaseRepository,
 } from "@/lib/services/supabase/supabaseRepository";
 import { getSupabaseClient } from "@/lib/services/supabase/client";
+import { hungryPersistStorage } from "@/store/persistStorage";
 import {
   assertValidMenuPhotoUpload,
   uploadImageFromUri,
@@ -59,6 +62,7 @@ import type {
   SearchResult,
   Session,
   SubmitReviewInput,
+  RecentReviewFeedEntry,
 } from "@/lib/services/types";
 import type {
   AIBusinessInsight,
@@ -104,7 +108,9 @@ import type {
   UserStallSubmissionMenuItem,
   UserProfile,
   VerificationEvidence,
+  PushPreferences,
 } from "@/types/domain";
+import { DEFAULT_PUSH_PREFERENCES } from "@/types/domain";
 
 type Row = Record<string, unknown>;
 type DishPresentation = {
@@ -479,6 +485,34 @@ function requireSupabaseClient(): SupabaseClient {
   return client;
 }
 
+// The Expo push token this device last registered, so sign-out can unbind it
+// from the account (otherwise the next person on the phone gets the alerts).
+const REGISTERED_PUSH_TOKEN_KEY = "hungry-push-token-v1";
+
+async function rememberRegisteredPushToken(token: string | null): Promise<void> {
+  try {
+    if (token) {
+      await hungryPersistStorage?.setItem(REGISTERED_PUSH_TOKEN_KEY, {
+        state: { token },
+        version: 0,
+      });
+    } else {
+      await hungryPersistStorage?.removeItem(REGISTERED_PUSH_TOKEN_KEY);
+    }
+  } catch {
+    // Storage is best effort; the server re-binds the token on next registration.
+  }
+}
+
+async function unregisterStoredPushToken(client: SupabaseClient): Promise<void> {
+  const stored = await hungryPersistStorage?.getItem(REGISTERED_PUSH_TOKEN_KEY);
+  const token = (stored?.state as { token?: unknown } | undefined)?.token;
+  if (typeof token !== "string" || !token) return;
+  const { error } = await client.rpc("unregister_push_token", { p_token: token });
+  if (error) throw error;
+  await rememberRegisteredPushToken(null);
+}
+
 function portfolioEditConflictError(): Error {
   return new Error(
     "This portfolio changed elsewhere. Review the latest version before saving again.",
@@ -548,6 +582,22 @@ async function ensureCurrentUserProfileRow(
   }
 }
 
+function mapPushPreferencesRow(row: {
+  stall_updates: boolean;
+  weekly_picks: boolean;
+  quiet_start_hour: number;
+  quiet_end_hour: number;
+  weekly_cap: number;
+}): PushPreferences {
+  return {
+    stallUpdates: row.stall_updates,
+    weeklyPicks: row.weekly_picks,
+    quietStartHour: row.quiet_start_hour,
+    quietEndHour: row.quiet_end_hour,
+    weeklyCap: row.weekly_cap,
+  };
+}
+
 async function fetchFavouriteDishIdsForUser(
   client: SupabaseClient,
   userId: string,
@@ -562,6 +612,19 @@ async function fetchFavouriteDishIdsForUser(
     .filter((dishId): dishId is string => Boolean(dishId));
 }
 
+async function getSessionEmailForUser(
+  client: SupabaseClient,
+  userId: string,
+): Promise<string | undefined> {
+  try {
+    const { data } = await client.auth.getSession();
+    const user = data.session?.user;
+    return user?.id === userId ? (user.email ?? undefined) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 async function fetchUserProfile(client: SupabaseClient, userId: string, email?: string) {
   const { data } = await client.from("user_profiles").select("*").eq("id", userId).maybeSingle();
   const { data: privacyData } = await client
@@ -571,6 +634,10 @@ async function fetchUserProfile(client: SupabaseClient, userId: string, email?: 
     .maybeSingle();
   const row = (data ?? {}) as Row;
   const privacyRow = (privacyData ?? {}) as Row;
+  // user_profiles.email is often null (OAuth/new sign-ups), so fall back to the
+  // auth session's address; otherwise Edit Profile reopens with an empty email.
+  const resolvedEmail =
+    asString(row.email) ?? email ?? (await getSessionEmailForUser(client, userId));
   const favouriteDishIds = await fetchFavouriteDishIdsForUser(client, userId);
   const reviewedDishIds = asStringArray(row.reviewed_dish_ids);
   const accountVisibility = asString(privacyRow.account_visibility);
@@ -581,7 +648,7 @@ async function fetchUserProfile(client: SupabaseClient, userId: string, email?: 
       asString(row.display_name) ??
       asString(row.displayName) ??
       DEFAULT_AUTH_PROFILE_BASE.displayName,
-    email: asString(row.email) ?? email ?? "",
+    email: resolvedEmail ?? "",
     avatarUrl: asString(row.avatar_url),
     profileVisibility: accountVisibility === "private" ? "private" : "public",
     tasteVector: toTasteVector(row),
@@ -806,6 +873,8 @@ async function uploadReviewPhotos(
   photos: string[],
 ): Promise<Row[]> {
   const uploaded: Row[] = [];
+  // Uploads never overwrite, so a retried submission needs fresh object paths.
+  const attempt = Date.now().toString(36);
   for (let index = 0; index < photos.length; index += 1) {
     const uri = photos[index];
     if (!uri) continue;
@@ -813,7 +882,7 @@ async function uploadReviewPhotos(
       throw new Error("Review photos must be uploaded from local device files.");
     }
     const extension = uri.split(".").pop()?.toLowerCase() || "jpg";
-    const path = `${userId}/${reviewId}/photo-${index}.${extension}`;
+    const path = `${userId}/${reviewId}/photo-${index}-${attempt}.${extension}`;
     const asset = await uploadImageFromUri({
       client,
       bucket: "review-media",
@@ -1672,16 +1741,6 @@ function normalizeMenuEntry(value: string): string {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
-function getAuthEmailRedirectTo(): string {
-  return process.env.EXPO_PUBLIC_AUTH_REDIRECT_URL?.trim() || "hungry://auth/callback";
-}
-
-// Sign-up confirmation must not share the password-recovery callback, or the
-// confirmation link opens the "new password" form.
-function getAuthEmailConfirmRedirectTo(): string {
-  return process.env.EXPO_PUBLIC_AUTH_CONFIRM_REDIRECT_URL?.trim() || "hungry://auth/confirm";
-}
-
 function getMerchantAnalyticsSince(dateRange: MerchantAnalytics["dateRange"]): string | null {
   const now = new Date();
   if (dateRange === "today") {
@@ -1776,7 +1835,7 @@ async function exchangeRecoveryCodeIfPresent(client: SupabaseClient, token: stri
   let code = trimmed;
   try {
     const parsed = new URL(trimmed);
-    if (!callbackBaseMatches(parsed.toString(), getAuthEmailRedirectTo())) {
+    if (!callbackBaseMatches(parsed.toString(), AUTH_REDIRECTS.passwordReset)) {
       throw new Error("Password recovery callback URL was not trusted.");
     }
     const {
@@ -2493,7 +2552,7 @@ function buildWeeklySummaryFromAnalytics(
 
 async function signInWithOAuthProvider(provider: "google" | "apple"): Promise<Session> {
   const client = requireSupabaseClient();
-  const redirectTo = getAuthEmailRedirectTo();
+  const redirectTo = AUTH_REDIRECTS.oauth;
   const { data, error } = await client.auth.signInWithOAuth({
     provider,
     options: {
@@ -2798,7 +2857,7 @@ export const supabaseService: HungryService = {
         password,
         options: {
           data: { display_name: name },
-          emailRedirectTo: getAuthEmailConfirmRedirectTo(),
+          emailRedirectTo: AUTH_REDIRECTS.emailConfirm,
         },
       });
       if (error) throw error;
@@ -2813,7 +2872,7 @@ export const supabaseService: HungryService = {
         type: "signup",
         email,
         options: {
-          emailRedirectTo: getAuthEmailConfirmRedirectTo(),
+          emailRedirectTo: AUTH_REDIRECTS.emailConfirm,
         },
       });
       if (error) throw error;
@@ -2863,14 +2922,42 @@ export const supabaseService: HungryService = {
       // 23505 = uniq_account_deletion_requests_active_user: a request is already
       // queued for this user, so a repeat tap is treated as success (idempotent).
       if (error && error.code !== "23505") throw error;
-      // No sign-out here: the caller purges local data first, records a
-      // confirmation notice, then signs out through the session store.
+
+      // The request is queued; a failed token unbind must not report the deletion
+      // itself as failed. No sign-out here: the caller purges local data first,
+      // records a confirmation notice, then signs out through the session store.
+      await unregisterStoredPushToken(client).catch(() => undefined);
+    },
+
+    async getPendingAccountDeletion() {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) return null;
+
+      const { data, error } = await client
+        .from("account_deletion_requests")
+        .select("scheduled_for")
+        .eq("user_id", userId)
+        .eq("status", "requested")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      const scheduledFor = asString((data as Row | null)?.scheduled_for);
+      return scheduledFor ? { scheduledFor } : null;
+    },
+
+    async cancelAccountDeletion() {
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("cancel_my_account_deletion");
+      if (error) throw error;
+      return data === true;
     },
 
     async forgotPassword(email) {
       const client = requireSupabaseClient();
       const { error } = await client.auth.resetPasswordForEmail(email, {
-        redirectTo: getAuthEmailRedirectTo(),
+        redirectTo: AUTH_REDIRECTS.passwordReset,
       });
       if (error) throw error;
     },
@@ -3097,28 +3184,71 @@ export const supabaseService: HungryService = {
       const userId = await getCurrentSupabaseUserId();
       if (!userId) throw new Error("You must be signed in to submit reviews.");
 
-      const { data, error } = await client
-        .from("reviews")
-        .insert({
-          user_id: userId,
-          dish_id: draft.dishId,
-          venue_id: draft.venueId,
-          rating: draft.rating,
-          text: draft.text,
-          tags: draft.tags,
-          would_recommend: true,
-        })
-        .select("id")
-        .maybeSingle();
-      if (error || !data?.id) {
-        throw error ?? new Error("Review insert failed.");
+      const reviewRow: Row = {
+        user_id: userId,
+        dish_id: draft.dishId,
+        venue_id: draft.venueId,
+        rating: draft.rating,
+        text: draft.text,
+        tags: draft.tags,
+        would_recommend: draft.wouldRecommend ?? true,
+      };
+      if (draft.clientReviewId) {
+        reviewRow.id = draft.clientReviewId;
       }
 
-      const uploadedPhotos = await uploadReviewPhotos(client, userId, data.id, draft.photos);
+      const { data, error } = await client
+        .from("reviews")
+        .insert(reviewRow)
+        .select("id")
+        .maybeSingle();
+      let reviewId = asString(data?.id);
+      let isResumedSubmission = false;
+      if (error || !reviewId) {
+        // A retry reuses the client id, so a unique violation means an earlier attempt
+        // already created this review: resume with the remaining steps instead of duplicating it.
+        if (!draft.clientReviewId || error?.code !== "23505") {
+          throw error ?? new Error("Review insert failed.");
+        }
+        const { data: existing, error: existingError } = await client
+          .from("reviews")
+          .select("id")
+          .eq("id", draft.clientReviewId)
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (existingError || !existing?.id) {
+          throw existingError ?? error;
+        }
+        reviewId = draft.clientReviewId;
+        isResumedSubmission = true;
+        // Keep any edits made between attempts.
+        const { error: updateError } = await client
+          .from("reviews")
+          .update({
+            rating: reviewRow.rating,
+            text: reviewRow.text,
+            tags: reviewRow.tags,
+            would_recommend: reviewRow.would_recommend,
+          })
+          .eq("id", reviewId)
+          .eq("user_id", userId);
+        if (updateError) throw updateError;
+      }
+
+      if (isResumedSubmission) {
+        const { count, error: photoCountError } = await client
+          .from("review_photos")
+          .select("id", { count: "exact", head: true })
+          .eq("review_id", reviewId);
+        if (photoCountError) throw photoCountError;
+        if ((count ?? 0) > 0) return;
+      }
+
+      const uploadedPhotos = await uploadReviewPhotos(client, userId, reviewId, draft.photos);
       if (uploadedPhotos.length > 0) {
         const { error: photoInsertError } = await client.from("review_photos").insert(
           uploadedPhotos.map((photo, index) => ({
-            review_id: data.id,
+            review_id: reviewId,
             url: photo.url,
             storage_bucket: photo.storage_bucket,
             storage_path: photo.storage_path,
@@ -3127,6 +3257,81 @@ export const supabaseService: HungryService = {
         );
         if (photoInsertError) throw photoInsertError;
       }
+    },
+
+    async listRecentReviews(options) {
+      const client = requireSupabaseClient();
+      const limit = Math.min(Math.max(Math.floor(options?.limit ?? 50), 1), 100);
+      let query = client
+        .from("reviews")
+        .select(
+          "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend",
+        )
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      if (options?.before) {
+        query = query.lt("created_at", options.before);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      const rows = Array.isArray(data) ? (data as Row[]) : [];
+      if (rows.length === 0) return [];
+
+      const dishIds = Array.from(
+        new Set(rows.map((row) => asString(row.dish_id)).filter((id): id is string => !!id)),
+      );
+      const { data: dishRows, error: dishError } = await client
+        .from("dishes")
+        .select("id,name,venue_id")
+        .in("id", dishIds);
+      if (dishError) throw dishError;
+      const dishById = new Map<string, { name: string; venueId?: string }>();
+      for (const dishRow of (Array.isArray(dishRows) ? dishRows : []) as Row[]) {
+        const id = asString(dishRow.id);
+        if (!id) continue;
+        dishById.set(id, {
+          name: asString(dishRow.name) ?? "Dish",
+          venueId: asString(dishRow.venue_id),
+        });
+      }
+
+      const venueIds = Array.from(
+        new Set(
+          [
+            ...rows.map((row) => asString(row.venue_id)),
+            ...Array.from(dishById.values()).map((dish) => dish.venueId),
+          ].filter((id): id is string => !!id),
+        ),
+      );
+      const venueNameById = new Map<string, string>();
+      if (venueIds.length > 0) {
+        const { data: venueRows } = await client
+          .from("venues")
+          .select("id,name")
+          .in("id", venueIds);
+        for (const venueRow of (Array.isArray(venueRows) ? venueRows : []) as Row[]) {
+          const id = asString(venueRow.id);
+          const name = asString(venueRow.name);
+          if (id && name) venueNameById.set(id, name);
+        }
+      }
+
+      const reviews = await mapSupabaseReviewRows(client, rows);
+      return reviews.flatMap((review): RecentReviewFeedEntry[] => {
+        const dish = review.dishId ? dishById.get(review.dishId) : undefined;
+        // Reviews of dishes the catalog cannot display are skipped.
+        if (!review.dishId || !dish) return [];
+        const venueId = review.venueId ?? dish.venueId ?? "";
+        return [
+          {
+            review,
+            dishId: review.dishId,
+            dishName: dish.name,
+            venueId,
+            venueName: venueNameById.get(venueId) ?? "",
+          },
+        ];
+      });
     },
   },
 
@@ -3231,6 +3436,33 @@ export const supabaseService: HungryService = {
       return fetchFavouriteDishIdsForUser(client, userId);
     },
 
+    async setStallFollow(stallId: string, following: boolean) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to follow stalls.");
+      const { error } = following
+        ? await client
+            .from("stall_follows")
+            .upsert(
+              { user_id: userId, stall_id: stallId },
+              { onConflict: "user_id,stall_id", ignoreDuplicates: true },
+            )
+        : await client.from("stall_follows").delete().eq("user_id", userId).eq("stall_id", stallId);
+      if (error) throw error;
+    },
+
+    async getFollowedStallIds() {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) return [];
+      const { data, error } = await client
+        .from("stall_follows")
+        .select("stall_id")
+        .eq("user_id", userId);
+      if (error) throw error;
+      return (data ?? []).map((row: { stall_id: string }) => row.stall_id);
+    },
+
     async updateTasteVector(vector: TasteVector) {
       const client = requireSupabaseClient();
       const userId = await getCurrentSupabaseUserId();
@@ -3281,6 +3513,78 @@ export const supabaseService: HungryService = {
       const { error } = await client
         .from("user_profiles")
         .upsert({ id: userId, taste_profile: profile }, { onConflict: "id" });
+      if (error) throw error;
+    },
+
+    async recordQuizResponse(responses: Record<string, unknown>, tasteVector: TasteVector) {
+      const client = getSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!client || !userId) return;
+      const { error } = await client.from("quiz_responses").insert({
+        user_id: userId,
+        responses,
+        generated_taste_vector: tasteVectorToArray(tasteVector),
+      });
+      if (error) console.warn("Failed to save quiz responses", error.message);
+    },
+  },
+
+  push: {
+    async getPreferences() {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) return { ...DEFAULT_PUSH_PREFERENCES };
+      const { data, error } = await client
+        .from("notification_preferences")
+        .select("stall_updates,weekly_picks,quiet_start_hour,quiet_end_hour,weekly_cap")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (error) throw error;
+      return data ? mapPushPreferencesRow(data) : { ...DEFAULT_PUSH_PREFERENCES };
+    },
+
+    async updatePreferences(updates: Partial<PushPreferences>) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to change notification settings.");
+      const current = await supabaseService.push.getPreferences();
+      const next = { ...current, ...updates };
+      const { data, error } = await client
+        .from("notification_preferences")
+        .upsert(
+          {
+            user_id: userId,
+            stall_updates: next.stallUpdates,
+            weekly_picks: next.weeklyPicks,
+            quiet_start_hour: next.quietStartHour,
+            quiet_end_hour: next.quietEndHour,
+            weekly_cap: next.weeklyCap,
+          },
+          { onConflict: "user_id" },
+        )
+        .select("stall_updates,weekly_picks,quiet_start_hour,quiet_end_hour,weekly_cap")
+        .single();
+      if (error) throw error;
+      return mapPushPreferencesRow(data);
+    },
+
+    async registerPushToken(token: string, platform: "ios" | "android") {
+      const client = requireSupabaseClient();
+      const { error } = await client.rpc("register_push_token", {
+        p_token: token,
+        p_platform: platform,
+      });
+      if (error) throw error;
+      await rememberRegisteredPushToken(token);
+    },
+
+    async unregisterPushToken() {
+      await unregisterStoredPushToken(requireSupabaseClient());
+    },
+
+    async markOpened(notificationId: string) {
+      const client = requireSupabaseClient();
+      const { error } = await client.rpc("mark_notification_opened", { p_id: notificationId });
       if (error) throw error;
     },
   },
@@ -5848,6 +6152,17 @@ export const supabaseService: HungryService = {
       };
     },
 
+    async recordImpression(surface, dishIds) {
+      const client = getSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      const ids = [...new Set(dishIds)].slice(0, 50);
+      if (!client || !userId || ids.length === 0) return;
+      const { error } = await client
+        .from("recommendation_impressions")
+        .insert({ user_id: userId, surface, dish_ids: ids });
+      if (error) console.warn("Failed to record recommendation impression", error.message);
+    },
+
     async recordExplicitFeedback(feedback) {
       const profile = await supabaseService.profile.getProfile();
       const vectorBefore = clampTasteVector(feedback.userVectorBefore ?? profile.tasteVector);
@@ -6083,6 +6398,18 @@ export const supabaseService: HungryService = {
     async submitCommunityTags() {
       return;
     },
+
+    async parseMoodQuery(query) {
+      const client = getSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!client || !userId || query.trim().length < 2) return null;
+      const { data, error } = await client.functions.invoke("mood-search", { body: { query } });
+      if (error) {
+        console.warn("Mood search unavailable", error.message);
+        return null;
+      }
+      return parseMoodIntent((data as Row | undefined)?.intent);
+    },
   },
 
   // ── Checklist ───────────────────────────────────────────────────────────────
@@ -6262,6 +6589,35 @@ export const supabaseService: HungryService = {
       const { data, error } = await client.from("portfolios").select("*").eq("id", id).single();
       if (error) throw error;
       return mapPortfolio(data as Row);
+    },
+
+    async getPublicPortfolio(id: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      // Security definer RPC: works for signed-out visitors and only returns public lists.
+      const { data, error } = await client.rpc("get_public_portfolio", { p_portfolio_id: id });
+      if (error) throw error;
+      if (!data || typeof data !== "object") return null;
+      const row = data as Row;
+      const items = Array.isArray(row.items) ? (row.items as Row[]) : [];
+      return {
+        id: String(row.id),
+        name: String(row.name ?? ""),
+        description: typeof row.description === "string" ? row.description : undefined,
+        ownerDisplayName:
+          typeof row.owner_display_name === "string" ? row.owner_display_name : undefined,
+        updatedAt: typeof row.updated_at === "string" ? row.updated_at : undefined,
+        items: items.map((item) => ({
+          itemType: item.item_type === "stall" ? ("stall" as const) : ("dish" as const),
+          dishId: typeof item.dish_id === "string" ? item.dish_id : undefined,
+          stallId: typeof item.stall_id === "string" ? item.stall_id : undefined,
+          name: String(item.name ?? "Untitled"),
+          stallName: typeof item.stall_name === "string" ? item.stall_name : undefined,
+          price: item.price === null || item.price === undefined ? undefined : Number(item.price),
+          publicNotes: typeof item.public_notes === "string" ? item.public_notes : undefined,
+          imageUrl: typeof item.image_url === "string" ? item.image_url : undefined,
+        })),
+      };
     },
 
     async updatePortfolio(id: string, updates: any, options?: PortfolioMutationOptions) {

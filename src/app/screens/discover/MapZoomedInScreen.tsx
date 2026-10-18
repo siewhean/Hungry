@@ -7,8 +7,7 @@ import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { MapSurface, type MapSurfaceMarker } from "@/components/map/MapSurface";
-import { AppText, Button, Card, Badge } from "@/components/ui";
-import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { AppText, Card, Badge } from "@/components/ui";
 import { getBuildingVenues } from "@/features/discovery/discovery";
 import { getBuildingById, singaporeBuildings, toSummary } from "@/lib/geo/singaporeBuildings";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
@@ -209,13 +208,6 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
                 </Pressable>
               ))}
             </View>
-
-            {FEATURE_FLAGS.floorplansEnabled ? (
-              <Button
-                label="Explore Layout"
-                onPress={() => navigation.navigate("VenueDirectory", { venueId: building.id })}
-              />
-            ) : null}
           </View>
         </BottomSheetScrollView>
       </BottomSheet>

@@ -445,6 +445,9 @@ test("store policy controls cover account deletion, UGC moderation, and location
   const supabaseService = readRepoFile("src/lib/services/supabase/supabaseService.ts");
   const safetyHelper = readRepoFile("src/lib/security/communitySafety.ts");
   const settingsScreen = readRepoFile("src/app/screens/profile/SettingsScreen.tsx");
+  const gracePeriod = readRepoFile(
+    "supabase/migrations/20261017120000_account_deletion_grace_period.sql",
+  );
   const webV2Footer = readRepoFile("marketing/website/web-v2/src/content/site.ts");
   const webFooter = readRepoFile("marketing/web/app/_components/footerData.ts");
   const webV2DeletePage = readRepoFile("marketing/website/web-v2/src/app/account/delete/page.tsx");
@@ -487,13 +490,14 @@ test("store policy controls cover account deletion, UGC moderation, and location
   assert.match(worker, /claim_account_deletion_requests/);
   assert.match(worker, /anonymize_account_deletion_request/);
   assert.match(worker, /auth\.admin\.deleteUser/);
+  assert.match(worker, /from\("menu_photo_submissions"\)\s*\.update\(\{ submitted_by: null \}\)/);
   assert.match(worker, /complete_account_deletion_request/);
   assert.match(worker, /purge_account_deletion_residual_data/);
   assert.match(worker, /\.storage[\s\S]*\.remove\(/);
   assert.doesNotMatch(worker, /getBearerToken\(request\) !== workerToken/);
-  assert.match(worker, /timingSafeEqualString\(getBearerToken\(request\), workerToken\)/);
+  assert.match(worker, /timingSafeEqual\(getBearerToken\(request\), workerToken\)/);
   const residualPurge = readRepoFile(
-    "supabase/migrations/20261015120000_account_deletion_residual_purge.sql",
+    "supabase/migrations/20261018120000_account_deletion_residual_purge.sql",
   );
   assert.match(residualPurge, /set avatar_url = null/);
   assert.match(
@@ -506,11 +510,15 @@ test("store policy controls cover account deletion, UGC moderation, and location
   assert.match(deletionRunner, /ACCOUNT_DELETION_WORKER_TOKEN/);
   assert.match(deletionRunner, /\/functions\/v1\/process-account-deletions/);
   assert.match(settingsScreen, /getHungryService\(\)\.auth\.requestAccountDeletion/);
-  assert.match(settingsScreen, /openTrustedExternalUrl\(PUBLIC_LINKS\.accountDeletion\)/);
-  assert.match(
-    readRepoFile("src/constants/supportLinks.ts"),
-    /accountDeletion: `\$\{PUBLIC_SITE_ORIGIN\}\/account\/delete`/,
-  );
+  assert.match(settingsScreen, /WEB_LINKS\.accountDeletion/);
+  assert.match(settingsScreen, /ACCOUNT_DELETION_GRACE_DAYS/);
+  assert.match(gracePeriod, /scheduled_for <= now\(\)/);
+  assert.match(gracePeriod, /cancel_my_account_deletion/);
+  assert.match(supabaseService, /cancel_my_account_deletion/);
+  // The re-timestamped residual purge migration redefines the claim RPC after the
+  // grace-period migration, so it must keep the scheduled_for gate.
+  assert.match(residualPurge, /scheduled_for <= now\(\)/);
+  assert.doesNotMatch(worker, /"menu-photos",/);
   assert.match(webV2Footer, /Account Deletion/);
   assert.match(webFooter, /Account Deletion/);
   assert.match(webV2DeletePage, /Delete your Hungry account/);
@@ -526,14 +534,16 @@ test("password reset uses redirect URL and supports recovery code exchange", () 
   const linking = readRepoFile("src/app/navigation/linking.ts");
 
   assert.match(supabaseService, /resetPasswordForEmail\(email,\s*\{/);
-  assert.match(supabaseService, /redirectTo: getAuthEmailRedirectTo\(\)/);
+  assert.match(supabaseService, /redirectTo: AUTH_REDIRECTS\.passwordReset/);
+  assert.match(supabaseService, /emailRedirectTo: AUTH_REDIRECTS\.emailConfirm/);
+  assert.match(supabaseService, /const redirectTo = AUTH_REDIRECTS\.oauth/);
   assert.match(supabaseService, /exchangeRecoveryCodeIfPresent/);
   assert.match(supabaseService, /Password recovery callback URL was not trusted/);
   assert.match(supabaseService, /Password recovery token fragments are not accepted/);
   assert.match(supabaseService, /exchangeCodeForSession\(code\)/);
   assert.match(resetScreen, /route\.params\?\.code \?\? ""/);
   assert.match(forgotScreen, /navigation\.navigate\("Login"\)/);
-  assert.match(linking, /ResetPassword: "auth\/callback"/);
+  assert.match(linking, /ResetPassword: "auth\/reset"/);
 });
 
 test("UGC surfaces expose report, hide, and block safety actions", () => {
@@ -592,4 +602,15 @@ test("merchant portal RLS hardening protects merchant-only surfaces", () => {
     catalogGuard,
     /merchant dish updates cannot change identity, aggregate, or live fields/,
   );
+});
+
+test("trusted external links stay on usehungry.com and allow only the support inbox", () => {
+  const source = readRepoFile("src/lib/security/safeLinking.ts");
+  const links = readRepoFile("src/constants/links.ts");
+
+  assert.match(links, /WEB_HOST = "usehungry\.com"/);
+  assert.match(source, /ALLOWED_HOSTS = new Set\(\[WEB_HOST, `www\.\$\{WEB_HOST\}`\]\)/);
+  assert.match(source, /ALLOWED_MAILTO_ADDRESSES = new Set\(\[SUPPORT_EMAIL\]\)/);
+  assert.match(links, /SUPPORT_EMAIL = "usehungrysingapore@gmail\.com"/);
+  assert.doesNotMatch(source, /hungry\.sg/);
 });

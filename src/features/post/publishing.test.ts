@@ -355,3 +355,113 @@ test("publish-both keeps local review state unchanged when post write fails", as
     resetPublishedStallPostsForTest();
   }
 });
+
+test("composer publish requires an explicit dish and never guesses one from a location", async () => {
+  useComposerStore.getState().reset();
+  const service = getHungryService();
+  const originalSubmitReview = service.reviews.submitReview;
+  const originalPostBite = service.social.postBite;
+  let writes = 0;
+  service.reviews.submitReview = async () => {
+    writes += 1;
+  };
+  service.social.postBite = async (...args) => {
+    writes += 1;
+    return originalPostBite(...args);
+  };
+  useComposerStore.setState({
+    media: [{ id: "no-dish-media", uri: "https://example.com/no-dish.jpg", type: "image" }],
+    location: { id: "loc-1", name: "Tian Tian" },
+    rating: 4,
+  });
+
+  try {
+    await assert.rejects(
+      () => publishComposerPost({ publishMode: "both" }),
+      /Choose a dish before publishing\./,
+    );
+    await assert.rejects(
+      () => publishComposerPost({ publishMode: "both", routeDishId: "  " }),
+      /Choose a dish before publishing\./,
+    );
+    await assert.rejects(
+      () =>
+        publishComposerPost({
+          publishMode: "both",
+          routeDishId: "dish-chicken-rice",
+          routeVenueId: "venue-does-not-match",
+        }),
+      /isn't on this stall's menu/,
+    );
+    assert.equal(writes, 0);
+  } finally {
+    service.reviews.submitReview = originalSubmitReview;
+    service.social.postBite = originalPostBite;
+    useComposerStore.getState().reset();
+  }
+});
+
+test("publish-both retry reuses the client review id so the review is not duplicated", async () => {
+  resetPublishedStallPostsForTest();
+  usePublishedPostStore.getState().clearPostsForTest();
+  useComposerStore.getState().reset();
+
+  const service = getHungryService();
+  const originalPostBite = service.social.postBite;
+  const originalSubmitReview = service.reviews.submitReview;
+  const clientReviewIds: (string | undefined)[] = [];
+  const session = await service.auth.signUp(
+    "publish-both-retry@example.sg",
+    "password123",
+    "Retry Author",
+  );
+  assert.ok(session);
+  useSessionStore.setState({
+    isAuthenticated: true,
+    isAuthReady: true,
+    hasCompletedOnboarding: true,
+  });
+  useProfileStore.setState({ profile: session.profile });
+  useComposerStore.setState({
+    media: [{ id: "retry-media", uri: "https://example.com/retry.jpg", type: "image" }],
+    postCaption: "Retry me.",
+    reviewCaption: "Retry review.",
+    rating: 5,
+  });
+
+  service.reviews.submitReview = async (draft) => {
+    clientReviewIds.push(draft.clientReviewId);
+    return originalSubmitReview(draft);
+  };
+  let failPost = true;
+  service.social.postBite = async (...args) => {
+    if (failPost) throw new Error("Simulated post write failure.");
+    return originalPostBite(...args);
+  };
+
+  const request = {
+    publishMode: "both" as const,
+    routeDishId: "dish-chicken-rice",
+    routeVenueId: "venue-tian-tian",
+  };
+
+  try {
+    await assert.rejects(() => publishComposerPost(request), /Simulated post write failure\./);
+    failPost = false;
+    const published = await publishComposerPost(request);
+    assert.ok(published);
+    assert.equal(clientReviewIds.length, 2);
+    assert.ok(clientReviewIds[0]);
+    assert.equal(clientReviewIds[1], clientReviewIds[0]);
+    assert.equal(useComposerStore.getState().pendingReviewId, null);
+  } finally {
+    service.social.postBite = originalPostBite;
+    service.reviews.submitReview = originalSubmitReview;
+    await service.auth.signOut();
+    useSessionStore.getState().clearSession();
+    useProfileStore.setState({ profile: userProfile });
+    useComposerStore.getState().reset();
+    usePublishedPostStore.getState().clearPostsForTest();
+    resetPublishedStallPostsForTest();
+  }
+});

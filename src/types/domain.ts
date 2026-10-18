@@ -224,8 +224,12 @@ export interface DishSummary {
   liveCrowd?: "low" | "medium" | "high";
   tasteTags: string[];
   tasteVector: TasteVector;
+  /** 0-1 trust in tasteVector (AI tagging confidence); undefined = fully trusted. */
+  tasteConfidence?: number;
   dietaryFlags: DietaryFlag[];
   venueVerificationStatus?: VerificationStatus;
+  /** ISO time the dish row last changed; shown as "Updated 3d ago". Undefined when unknown. */
+  updatedAt?: string;
 }
 
 export interface Review {
@@ -367,6 +371,8 @@ export interface UserProfile {
   recommendationSignals?: RecommendationSignalState;
   leftHandedMode?: boolean;
   onboardingSelectedDishIds?: string[];
+  /** Usual max price per dish in SGD, set during onboarding. Undefined = no budget limit. */
+  maxDishBudget?: number;
 }
 
 export interface ReviewDraft {
@@ -395,6 +401,17 @@ export interface SearchFilters {
   foodTypeTag?: string;
   maxPrice?: number;
   openOnly?: boolean;
+}
+
+/** What Claude understood from a plain-language search such as "something soupy, under $8". */
+export interface MoodSearchIntent {
+  /** Added to the person's usual taste for this search only, each axis -5 to +5. */
+  tasteShift: TasteVector;
+  maxPrice?: number;
+  dietaryFlags: DietaryFlag[];
+  /** Dish-type words such as "soup" or "noodle", matched against dish names and tags. */
+  keywords: string[];
+  summary: string;
 }
 
 export interface StallPost {
@@ -701,6 +718,27 @@ export interface PortfolioItem {
   position: number;
   createdAt: string;
   updatedAt: string;
+}
+
+/** A public list as anyone with the link sees it (get_public_portfolio). */
+export interface PublicPortfolio {
+  id: string;
+  name: string;
+  description?: string;
+  ownerDisplayName?: string;
+  updatedAt?: string;
+  items: PublicPortfolioItem[];
+}
+
+export interface PublicPortfolioItem {
+  itemType: PortfolioItemType;
+  dishId?: string;
+  stallId?: string;
+  name: string;
+  stallName?: string;
+  price?: number;
+  publicNotes?: string;
+  imageUrl?: string;
 }
 
 export interface PortfolioCollaborator {
@@ -1082,6 +1120,26 @@ export interface StallInteraction {
   triedAt?: string;
   reviewedAt?: string;
 }
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+/** Per-user push settings. Hours are Singapore time (0-23); quiet hours wrap past midnight. */
+export interface PushPreferences {
+  stallUpdates: boolean;
+  /** Weekly "Your new picks are ready" push. On unless the user opts out. */
+  weeklyPicks: boolean;
+  quietStartHour: number;
+  quietEndHour: number;
+  weeklyCap: number;
+}
+
+export const DEFAULT_PUSH_PREFERENCES: PushPreferences = {
+  stallUpdates: false,
+  weeklyPicks: true,
+  quietStartHour: 22,
+  quietEndHour: 8,
+  weeklyCap: 3,
+};
 
 // ─── Helpful Voting ───────────────────────────────────────────────────────────
 

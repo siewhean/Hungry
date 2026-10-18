@@ -3,7 +3,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { Heart, Star } from "lucide-react-native";
 
-import { AccessibleImage, AppText, Button, Card, EmptyState } from "@/components/ui";
+import { AccessibleImage, AppText, Button, Card, Chip, EmptyState } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { prefetchDishDetail, preloadRoute } from "@/features/navigation/prefetch";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
@@ -198,13 +198,28 @@ function LegacyFavouritesScreen({ navigation }: Props) {
   const showToast = useUIStore((state) => state.showToast);
   const { componentRadii, palette, spacing, shadows } = useHungryTheme();
   const repository = getDataRepository();
-  const dishes = profile.favouriteDishIds
-    .map((dishId) => repository.getDishById(dishId))
-    .filter(isDishDetail);
+  const [tab, setTab] = useState<"want" | "tried">("want");
+  const dishIds = tab === "want" ? profile.favouriteDishIds : profile.reviewedDishIds;
+  const dishes = dishIds.map((dishId) => repository.getDishById(dishId)).filter(isDishDetail);
   const rootNavigation = getRootNavigation(navigation as any);
 
   return (
-    <ProfileScreenShell title="Favourites" subtitle="Saved dishes that shape your taste profile.">
+    <ProfileScreenShell
+      title="Saved dishes"
+      subtitle="Dishes you want to try and dishes you've tried."
+    >
+      <View style={{ flexDirection: "row", gap: spacing[2], marginBottom: spacing[4] }}>
+        <Chip
+          label={`Want to try (${profile.favouriteDishIds.length})`}
+          selected={tab === "want"}
+          onPress={() => setTab("want")}
+        />
+        <Chip
+          label={`Tried (${profile.reviewedDishIds.length})`}
+          selected={tab === "tried"}
+          onPress={() => setTab("tried")}
+        />
+      </View>
       {dishes.length ? (
         <View
           style={{
@@ -288,39 +303,45 @@ function LegacyFavouritesScreen({ navigation }: Props) {
                     </View>
                   </View>
                 </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Remove ${dish.name} from favourites`}
-                  hitSlop={6}
-                  onPress={() =>
-                    void toggleFavourite(dish).then((result) => {
-                      if (result.status === "failed") {
-                        showToast({ message: result.message, tone: "error" });
-                      }
-                    })
-                  }
-                  style={{
-                    position: "absolute",
-                    top: spacing[2],
-                    right: spacing[2],
-                    width: 32,
-                    height: 32,
-                    borderRadius: componentRadii.iconButton,
-                    backgroundColor: palette.surfaceTranslucent,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Heart size={16} color={palette.error} fill={palette.error} />
-                </Pressable>
+                {tab === "want" ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove ${dish.name} from favourites`}
+                    hitSlop={6}
+                    onPress={() =>
+                      void toggleFavourite(dish).then((result) => {
+                        if (result.status === "failed") {
+                          showToast({ message: result.message, tone: "error" });
+                        }
+                      })
+                    }
+                    style={{
+                      position: "absolute",
+                      top: spacing[2],
+                      right: spacing[2],
+                      width: 32,
+                      height: 32,
+                      borderRadius: componentRadii.iconButton,
+                      backgroundColor: palette.surfaceTranslucent,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Heart size={16} color={palette.error} fill={palette.error} />
+                  </Pressable>
+                ) : null}
               </View>
             );
           })}
         </View>
       ) : (
         <EmptyState
-          title="No favorites yet"
-          body="Start exploring dishes to build your personalized list!"
+          title={tab === "want" ? "Nothing saved yet" : "No dishes tried yet"}
+          body={
+            tab === "want"
+              ? "Save dishes you want to try and they'll show up here."
+              : "Mark a dish as tried from its page to keep a record here."
+          }
           ctaLabel="Discover Dishes"
           onPress={() => rootNavigation.navigate("MainTabs", { screen: "Discover" })}
         />

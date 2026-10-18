@@ -1,6 +1,7 @@
 import NetInfo from "@react-native-community/netinfo";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-
+import { AppState } from "react-native";
+import { hydrateShareAttribution } from "@/features/share/shareAttribution";
 import { setAnalyticsSink, trackAnalyticsEvent } from "@/lib/analytics";
 import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
 import { isNetworkOffline } from "@/lib/network/connectivity";
@@ -14,6 +15,7 @@ import {
   setMockServiceProvider,
   setSupabaseServiceProvider,
 } from "@/lib/services/serviceProvider";
+import { useLocationStore } from "@/store/useLocationStore";
 import { useMerchantStore } from "@/store/useMerchantStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -73,7 +75,6 @@ export function useAppBootstrap() {
   const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
   const isUserMode = !isDeveloperMode && !isMerchantMode;
   const previousAuth = useRef<boolean | undefined>(undefined);
-  const lastNetworkOffline = useRef(false);
   const [isDataSourceReady, setIsDataSourceReady] = useState(false);
   const hasTrackedLaunch = useRef(false);
   const hasConfiguredAnalyticsSink = useRef(false);
@@ -86,14 +87,44 @@ export function useAppBootstrap() {
       if (!shouldEnablePostHogSink()) return;
       const { posthogSink } =
         require("@/lib/analytics/posthogSink") as typeof import("@/lib/analytics/posthogSink");
-      setAnalyticsSink(posthogSink);
+      // Send what was tracked before the sink attached (app_launched,
+      // cold-start shared_link_opened) instead of dropping it.
+      setAnalyticsSink(posthogSink, { replayBufferedEvents: true });
     });
 
     return cancelTask;
   }, []);
 
   useEffect(() => {
-    if (hasTrackedLaunch.current) return;
+    void hydrateShareAttribution();
+  }, []);
+
+  useEffect(() => {
+    // Re-read GPS on launch and on each return to the foreground; the store
+    // skips it unless permission is granted and the last fix is stale.
+    const refreshLocation = () => {
+      void useLocationStore.getState().refreshLocation();
+    };
+    // The persisted permission must be restored before the launch check.
+    let unsubscribeHydration: (() => void) | undefined;
+    if (useLocationStore.persist.hasHydrated()) {
+      refreshLocation();
+    } else {
+      unsubscribeHydration = useLocationStore.persist.onFinishHydration(refreshLocation);
+    }
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") refreshLocation();
+    });
+    return () => {
+      unsubscribeHydration?.();
+      subscription.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (hasTrackedLaunch.current) {
+      return;
+    }
     hasTrackedLaunch.current = true;
 
     const cancelTask = runAfterIdle(() => {
@@ -107,19 +138,14 @@ export function useAppBootstrap() {
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
-      // Authenticated users stay on their current catalog route so classified
-      // network failures can use the read-only Excel fallback. The global
-      // offline state is reserved for the signed-out/authentication shell.
-      lastNetworkOffline.current = isNetworkOffline(state);
-      setOffline(!useSessionStore.getState().isAuthenticated && lastNetworkOffline.current);
+      // Offline is a non-blocking banner (RootNavigator OfflineBanner); the
+      // current screen stays put, and authenticated catalog reads keep their
+      // classified read-only Excel fallback. `null` reachability is not offline.
+      setOffline(isNetworkOffline(state));
     });
 
     return unsubscribe;
   }, [setOffline]);
-
-  useEffect(() => {
-    setOffline(!isAuthenticated && lastNetworkOffline.current);
-  }, [isAuthenticated, setOffline]);
 
   useLayoutEffect(() => {
     if (!isUserMode) {
@@ -225,10 +251,12 @@ export function useAppBootstrap() {
     const { data: subscription } = client.auth.onAuthStateChange((event, session) => {
       const user = session?.user;
       if (!user) {
-        applyAuthStateFromSession({
-          isAuthenticated: false,
-          userId: null,
-        });
+        // getSession() above settles the startup session; any later null
+        // session means signed out.
+        if (event === "INITIAL_SESSION") {
+          return;
+        }
+        applyAuthStateFromSession({ isAuthenticated: false, userId: null });
         return;
       }
 

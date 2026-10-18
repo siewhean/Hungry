@@ -1,8 +1,13 @@
 /**
  * SplashScreen — animated brand intro and mandatory-auth entry router.
+ *
+ * The splash only stays up until auth/bootstrap is ready, with a short
+ * minimum (motion.splashTotal) so the logo animation does not flash.
+ * New users go to onboarding (which ends at sign-up/sign-in); signed-out
+ * returning users go to Login. Main app screens never mount without a session.
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { View, Animated, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import Constants from "expo-constants";
@@ -38,7 +43,7 @@ const SAFE_ROOT_RETURNS = new Set<keyof RootStackParamList>([
   "ActivityInbox",
   "ActivityPostDetail",
   "Crave",
-  "BuildingDrillDown",
+  "PortfolioPublicView",
   "QuickBites",
   "Favourites",
   "ReviewHistory",
@@ -59,14 +64,18 @@ export function SplashScreen({ navigation }: Props) {
   const appVersion = Constants.expoConfig?.version ?? "0.1.0";
   const styles = createStyles({ palette, typography, spacing, radii });
 
+  // ── Animated values ───────────────────────────────────────────────────────
   const logoScale = useRef(new Animated.Value(0.4)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const taglineOpacity = useRef(new Animated.Value(0)).current;
   const dotScale = useRef(new Animated.Value(0.6)).current;
   const dotOpacity = useRef(new Animated.Value(0)).current;
+  const [mountedAt] = useState(() => Date.now());
 
   useEffect(() => {
+    // Staggered entrance animation
     Animated.sequence([
+      // Logo scales in.
       Animated.parallel([
         Animated.spring(logoScale, {
           toValue: 1,
@@ -81,6 +90,8 @@ export function SplashScreen({ navigation }: Props) {
           useNativeDriver: true,
         }),
       ]),
+
+      // Tagline + dot fade in together
       Animated.parallel([
         Animated.timing(taglineOpacity, {
           toValue: 1,
@@ -99,10 +110,25 @@ export function SplashScreen({ navigation }: Props) {
         }),
       ]),
     ]).start();
+  }, [
+    dotOpacity,
+    dotScale,
+    logoOpacity,
+    logoScale,
+    motion.splashDot,
+    motion.splashFast,
+    motion.splashReveal,
+    taglineOpacity,
+  ]);
 
+  // Leave as soon as auth/bootstrap is ready, keeping only a short minimum.
+  useEffect(() => {
+    if (!isAuthReady) {
+      return;
+    }
+
+    const remaining = Math.max(0, motion.splashTotal - (Date.now() - mountedAt));
     const timer = setTimeout(() => {
-      if (!isAuthReady) return;
-
       // Fresh users complete local onboarding before they are offered account
       // creation/sign-in. Main app screens never mount during either step.
       if (!hasCompletedOnboarding) {
@@ -161,29 +187,23 @@ export function SplashScreen({ navigation }: Props) {
         index: 0,
         routes: [{ name: "MainTabs", params: { screen: "Home" } }],
       });
-    }, motion.splashTotal);
+    }, remaining);
 
     return () => clearTimeout(timer);
   }, [
-    dotOpacity,
-    dotScale,
     hasCompletedOnboarding,
     isAuthenticated,
     isAuthReady,
-    logoOpacity,
-    logoScale,
-    motion.splashDot,
-    motion.splashFast,
-    motion.splashReveal,
     motion.splashTotal,
+    mountedAt,
     navigation,
     returnRoute,
     setReturnRoute,
-    taglineOpacity,
   ]);
 
   return (
     <View style={styles.root}>
+      {/* Brand lockup */}
       <View style={styles.lockup}>
         <Animated.Image
           source={HUNGRY_LOGO_ICON}
@@ -197,6 +217,8 @@ export function SplashScreen({ navigation }: Props) {
             width: HUNGRY_LOGO_STANDARD_SIZE,
           }}
         />
+
+        {/* Pulsing orange dot */}
         <Animated.View
           style={{
             opacity: dotOpacity,
@@ -211,12 +233,14 @@ export function SplashScreen({ navigation }: Props) {
         </Animated.View>
       </View>
 
+      {/* Tagline */}
       <Animated.View style={{ opacity: taglineOpacity }}>
         <AppText variant="body" tone="secondary" style={styles.tagline}>
           Find the dish. Not just the restaurant.
         </AppText>
       </Animated.View>
 
+      {/* Version stamp */}
       <Animated.View
         style={{
           opacity: taglineOpacity,
@@ -246,8 +270,13 @@ const createStyles = ({
       backgroundColor: palette.bg,
       gap: spacing[4],
     },
-    lockup: { alignItems: "center" },
-    dot: { width: 10, height: 10 },
+    lockup: {
+      alignItems: "center",
+    },
+    dot: {
+      width: 10,
+      height: 10,
+    },
     tagline: {
       ...typography.body,
       letterSpacing: 0.2,

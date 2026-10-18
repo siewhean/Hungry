@@ -288,11 +288,8 @@ test("Merchant screen contract: profile, menu, and analytics use production-read
 });
 
 test("Merchant screen contract: dish details record merchant dish views once per screen", () => {
-  const detail = read("src/app/screens/detail/DishDetailScreen.tsx");
   const detailV2 = read("src/app/screens/detail/DishDetailScreenV2.tsx");
 
-  assert.match(detail, /recordDishView/);
-  assert.match(detail, /lastTrackedDishId/);
   assert.match(detailV2, /recordDishView/);
   assert.match(detailV2, /lastRecordedDishViewId/);
 });

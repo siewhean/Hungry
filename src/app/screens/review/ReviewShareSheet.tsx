@@ -7,11 +7,15 @@ import {
   BottomSheetScrollView,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
-import { Copy, Share2 } from "lucide-react-native";
+import { Copy, MessageCircle, Send, Share2 } from "lucide-react-native";
 
 import { FloatingShareSendButton, InAppShareCard } from "@/components/social";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { toChatShareRecipient, type ChatShareRecipient } from "@/features/home/chatShare";
+import { buildTelegramShareUrl, buildWhatsAppShareUrl } from "@/features/share/messagingShare";
+import { withShareSource } from "@/features/share/shareAttribution";
+import { trackAnalyticsEvent } from "@/lib/analytics";
+import { openTrustedMessagingShareUrl } from "@/lib/security/safeLinking";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useActivityStore } from "@/store/useActivityStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -118,7 +122,7 @@ export function ReviewShareSheet({
 
   const copyLink = useCallback(() => {
     if (!activeReview) return;
-    Clipboard.setString(activeReview.link);
+    Clipboard.setString(withShareSource(activeReview.link, "copy_link"));
     if (activeReview.postId) {
       onShared(activeReview.postId, "copy_link");
     }
@@ -127,14 +131,32 @@ export function ReviewShareSheet({
 
   const shareOutsideHungry = useCallback(async () => {
     if (!activeReview) return;
+    const link = withShareSource(activeReview.link, "system_share");
     await Share.share({
-      message: `${activeReview.message}\n${activeReview.link}`,
-      url: activeReview.link,
+      message: `${activeReview.message}\n${link}`,
+      url: link,
     });
     if (activeReview.postId) {
       onShared(activeReview.postId, "system_share");
     }
   }, [activeReview, onShared]);
+
+  const shareToMessagingApp = useCallback(
+    async (channel: "whatsapp" | "telegram") => {
+      if (!activeReview) return;
+      const link = withShareSource(activeReview.link, channel);
+      await openTrustedMessagingShareUrl(
+        channel === "whatsapp"
+          ? buildWhatsAppShareUrl(activeReview.message, link)
+          : buildTelegramShareUrl(activeReview.message, link),
+      );
+      trackAnalyticsEvent("dish_shared", { review_id: activeReview.reviewId, channel });
+      if (activeReview.postId) {
+        onShared(activeReview.postId, "system_share");
+      }
+    },
+    [activeReview, onShared],
+  );
 
   return (
     <>
@@ -194,6 +216,20 @@ export function ReviewShareSheet({
                   accessibilityLabel: "Copy review link",
                   icon: ({ color, size }) => <Copy color={color} size={size} />,
                   onPress: copyLink,
+                },
+                {
+                  key: "whatsapp",
+                  label: "WhatsApp",
+                  accessibilityLabel: "Share on WhatsApp",
+                  icon: ({ color, size }) => <MessageCircle color={color} size={size} />,
+                  onPress: () => void shareToMessagingApp("whatsapp"),
+                },
+                {
+                  key: "telegram",
+                  label: "Telegram",
+                  accessibilityLabel: "Share on Telegram",
+                  icon: ({ color, size }) => <Send color={color} size={size} />,
+                  onPress: () => void shareToMessagingApp("telegram"),
                 },
                 {
                   key: "share",

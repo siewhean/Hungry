@@ -70,13 +70,13 @@ for (const [file, source] of [
   ["account/delete/page.tsx", accountDelete],
 ]) {
   requireMarker(source, "routeMetadata(", file, "Legal page metadata contract failed");
-  requireMarker(source, "hello@hungry.sg", file, "Legal support email contract failed");
+  requireMarker(source, "usehungrysingapore@gmail.com", file, "Legal support email contract failed");
 }
 
 requireMarker(contact, "routeMetadata(", "contact/page.tsx", "Legal page metadata contract failed");
 requireMarker(contact, "siteConfig.contactEmail", "contact/page.tsx", "Legal support email contract failed");
 
-requireMarker(seo, 'contactEmail: "hello@hungry.sg"', "seo.ts", "Canonical support email contract failed");
+requireMarker(seo, 'contactEmail: "usehungrysingapore@gmail.com"', "seo.ts", "Canonical support email contract failed");
 requireMarker(contact, "mailto:${siteConfig.contactEmail}", "contact/page.tsx", "Contact email source-of-truth contract failed");
 requireMarker(contact, "/account/delete", "contact/page.tsx", "Contact deletion fallback contract failed");
 
@@ -85,7 +85,7 @@ requireMarker(privacy, "PostHog for analytics where configured", "privacy/page.t
 requireMarker(privacy, "Sentry for crash diagnostics where configured", "privacy/page.tsx", "Sentry conditional disclosure contract failed");
 requireMarker(privacy, "Google services for maps, places, OCR, or AI-assisted extraction where enabled", "privacy/page.tsx", "Google conditional disclosure contract failed");
 requireMarker(privacy, "Precise latitude and longitude are not sent as PostHog identity properties by default", "privacy/page.tsx", "Precise coordinate analytics disclosure contract failed");
-requireMarker(privacy, "Account deletion queues removal or anonymization", "privacy/page.tsx", "Account deletion queue disclosure contract failed");
+requireMarker(privacy, "Deletion is scheduled 30 days after the request", "privacy/page.tsx", "Account deletion queue disclosure contract failed");
 requireMarker(privacy, "Personal Data Protection Act", "privacy/page.tsx", "Singapore privacy disclosure contract failed");
 
 requireMarker(terms, "User-Generated Content", "terms/page.tsx", "UGC terms contract failed");
@@ -94,7 +94,7 @@ requireMarker(terms, "Account Deletion", "terms/page.tsx", "Account deletion ter
 requireMarker(terms, "Merchant And Menu Information", "terms/page.tsx", "Merchant terms contract failed");
 
 requireMarker(accountDelete, "Signed-in users can request deletion", "account/delete/page.tsx", "Deletion support page contract failed");
-requireMarker(accountDelete, "within 30 days", "account/delete/page.tsx", "Deletion timeline contract failed");
+requireMarker(accountDelete, "30-day grace period", "account/delete/page.tsx", "Deletion timeline contract failed");
 rejectMatch(accountDelete, /instant|immediate|guaranteed/i, "account/delete/page.tsx", "Deletion page must not overpromise timing");
 
 requireMarker(rootPackage, '"@sentry/react-native"', "package.json", "Sentry dependency evidence missing");

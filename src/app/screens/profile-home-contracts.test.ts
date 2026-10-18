@@ -65,3 +65,20 @@ test("profile home contract: profile stats use dynamic profile and social store 
   assert.doesNotMatch(source, /height: 80/);
   assert.doesNotMatch(source, /last 5 reviews/);
 });
+
+test("profile home contract: Taste Fingerprint shows all six dimensions and Saved naming", () => {
+  const source = read("src/app/screens/profile/ProfileHomeScreen.tsx");
+
+  assert.match(source, /TASTE_DIMENSIONS\.map\(\(dimension\) => \(\s*<TasteBar/);
+  assert.match(source, /value=\{profile\.tasteVector\[dimension\.key\]\}/);
+  assert.match(source, /label="Saved"/);
+  assert.doesNotMatch(source, /label="Favourites"|>Favourites</);
+});
+
+test("profile home contract: a preloaded Profile tab never bounces guests to Login", () => {
+  const source = read("src/app/screens/profile/ProfileHomeScreen.tsx");
+
+  // The tab navigator mounts Profile in the background, so the guest redirect must wait for focus.
+  assert.match(source, /const isFocused = useIsFocused\(\);/);
+  assert.match(source, /if \(mode !== "self" \|\| isAuthenticated \|\| !isFocused\) \{/);
+});

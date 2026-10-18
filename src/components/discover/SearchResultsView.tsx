@@ -17,6 +17,8 @@ interface SearchResultsViewProps {
   onSubmitQuery?: (query: string) => void;
   onTasteFilterPress: () => void;
   results: DishDetail[];
+  /** Short line above the results, e.g. what a plain-language search was understood as. */
+  resultsNote?: string;
   isLoading?: boolean;
   onResultPressIn?: (dish: DishDetail) => void;
   onResultPress: (dish: DishDetail) => void;
@@ -110,6 +112,7 @@ export function SearchResultsView({
   onSubmitQuery,
   onTasteFilterPress,
   results,
+  resultsNote,
   isLoading = false,
   onResultPressIn,
   onResultPress,
@@ -272,6 +275,13 @@ export function SearchResultsView({
           keyExtractor={(dish) => dish.id}
           renderItem={renderResult}
           ItemSeparatorComponent={() => <View style={{ height: spacing[4] }} />}
+          ListHeaderComponent={
+            resultsNote ? (
+              <AppText variant="micro" tone="secondary" style={{ marginBottom: spacing[3] }}>
+                {resultsNote}
+              </AppText>
+            ) : null
+          }
           ListEmptyComponent={
             <EmptyState
               icon={<Search size={34} color={palette.orange} />}

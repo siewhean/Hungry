@@ -11,17 +11,21 @@ import {
   ChevronUp,
   Clock3,
   CheckCircle,
+  ListPlus,
   MapPin,
   MessageCircleMore,
   MessageCircle,
   Send,
-  Sparkles,
   Star,
   Utensils,
 } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
+import { useDetailSaveActions } from "@/features/checklistPortfolio/DetailSaveActions";
 import { buildDishGallery } from "@/features/detail/detailTransforms";
+import { formatDishUpdated } from "@/features/detail/dishFreshness";
+import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
 import { sanitizeCatalogImageUrl } from "@/lib/services/catalog/media";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
@@ -32,7 +36,6 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import { TASTE_DIMENSIONS } from "@/constants/taste";
-import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { AccessibleImage, AppText, Button, EmptyState, FeedErrorBoundary } from "@/components/ui";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useHungryTheme } from "@/theme";
@@ -40,6 +43,9 @@ import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/R
 import type { DishDetail } from "@/types/domain";
 import { isVenueOpenFromHours } from "@/utils/stallStatus";
 import { openStallFromDish } from "./stallNavigation";
+import { webShareUrl } from "@/constants/links";
+import { trackAnalyticsEvent } from "@/lib/analytics";
+import { firstDishTimingProps } from "@/lib/analytics/firstDishTiming";
 
 const CommentIcon = MessageCircle ?? MessageCircleMore;
 
@@ -157,7 +163,7 @@ function getTodayRows(rows: ListedHoursRow[]): ListedHoursRow[] {
   return rows.length ? [rows[0]] : [];
 }
 
-type Props = NativeStackScreenProps<RootStackParamList, "DishDetail" | "DishDetailV2">;
+type Props = NativeStackScreenProps<RootStackParamList, "DishDetail">;
 
 type Attribute = {
   label: string;
@@ -222,6 +228,15 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const shareSheetRef = useRef<BottomSheetModal>(null);
   const lastRecordedDishViewId = useRef<string | null>(null);
   const [isTryingFood, setIsTryingFood] = useState(false);
+  const { addToPortfolio, isAddingToPortfolio } = useDetailSaveActions({
+    navigation,
+    target: {
+      itemType: "dish",
+      id: dishId,
+      label: dish?.name ?? "This dish",
+      venueId: dish?.venueId,
+    },
+  });
 
   const cachedVenue = useMemo(
     () => (dish ? repository.getVenueById(dish.venueId) : undefined),
@@ -311,6 +326,11 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   useEffect(() => {
     if (!dish || lastRecordedDishViewId.current === dish.id) return;
     lastRecordedDishViewId.current = dish.id;
+    trackAnalyticsEvent(
+      "dish_viewed",
+      { dish_id: dish.id, venue_id: dish.venueId, ...firstDishTimingProps() },
+      isAuthenticated ? { userId: profile.id } : undefined,
+    );
     void getHungryService().discovery.recordDishView(dish.id, {
       userId: isAuthenticated ? profile.id : undefined,
     });
@@ -353,7 +373,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     return (
       <FeedErrorBoundary
         title="Dish details unavailable"
-        body="Couldn't load this dish - try again."
+        body="Couldn't load this dish — try again."
       >
         <SafeAreaView style={{ backgroundColor: palette.bg, flex: 1 }} edges={["top"]}>
           <View style={{ paddingHorizontal: spacing[4], paddingTop: spacing[3] }}>
@@ -368,10 +388,10 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             </Pressable>
           </View>
           <EmptyState
-            title="Dish not found"
-            body="This dish is no longer available in the current dataset."
-            errorMessage={`Missing dish data for ID: ${dishId || "unknown"}`}
-            sendErrorContext="Dish detail"
+            title="We can't find this dish"
+            body="It may have been removed or renamed by the stall. Try searching for it instead."
+            ctaLabel="Go back"
+            onPress={() => navigation.goBack()}
           />
         </SafeAreaView>
       </FeedErrorBoundary>
@@ -415,7 +435,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const signatureGridItemWidth = width / 2;
   const signatureGridItemHeight = signatureGridItemWidth * 1.5;
   const reviewIconSize = 22;
-  const canonicalDishUrl = `https://hungry.sg/dish/${dish.id}`;
+  /** Minimum touch target for the action dock and header buttons. */
+  const dockTargetSize = 44;
+  const canonicalDishUrl = webShareUrl("dish", dish.id);
   const heroGradientColors: readonly [ColorValue, ColorValue, ColorValue] = [
     palette.detailHeroGradientStart,
     palette.detailHeroGradientMid,
@@ -471,7 +493,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       });
     }
     showToast({
-      message: result.status === "saved" ? "Saved to favourites." : "Removed from favourites.",
+      message: result.status === "saved" ? "Saved to Want to try." : "Removed from Want to try.",
       tone: "success",
     });
   };
@@ -516,6 +538,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
 
       if (didMark.isTried) {
         addReviewedDish(dish.id);
+        trackAnalyticsEvent("dish_marked_tried", { dish_id: dish.id, stall_id: dish.venueId });
         showToast({
           message:
             didMark.pointsAwarded > 0
@@ -559,7 +582,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const showDeferredDetailControls = !FEATURE_FLAGS.release01CoreOnly;
 
   return (
-    <FeedErrorBoundary title="Dish details unavailable" body="Couldn't load this dish - try again.">
+    <FeedErrorBoundary title="Dish details unavailable" body="Couldn't load this dish — try again.">
       <SafeAreaView style={{ backgroundColor: palette.bg, flex: 1 }} edges={["left", "right"]}>
         <View style={{ flex: 1 }}>
           <ScrollView
@@ -686,6 +709,11 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         ({dish.reviewCount} listed reviews)
                       </AppText>
                     </View>
+                    {formatDishUpdated(dish.updatedAt) ? (
+                      <AppText variant="bodySmall" tone="muted">
+                        {formatDishUpdated(dish.updatedAt)}
+                      </AppText>
+                    ) : null}
                   </View>
                 </View>
 
@@ -883,18 +911,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                           decorative
                         />
                       ) : (
-                        <View
-                          accessibilityRole="image"
-                          accessibilityLabel={`${item.name} photo unavailable`}
-                          style={{
-                            alignItems: "center",
-                            backgroundColor: palette.surfaceRaised,
-                            flex: 1,
-                            justifyContent: "center",
-                          }}
-                        >
-                          <Utensils color={palette.orange} size={32} />
-                        </View>
+                        <NoDishPhoto dishName={item.name} style={{ flex: 1 }} />
                       )}
                       <LinearGradient
                         colors={["transparent", palette.detailImageOverlay]}
@@ -951,10 +968,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
               </View>
 
               <View style={{ gap: spacing[3] }}>
-                <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-                  <Sparkles color={palette.orange} size={20} />
-                  <AppText variant="h2">From the Community</AppText>
-                </View>
+                <AppText variant="h2">From the Community</AppText>
                 {dish.reviews.length ? (
                   dish.reviews.slice(0, 3).map((review) => (
                     <View
@@ -1021,21 +1035,37 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                 right: 0,
               }}
             >
+              {FEATURE_FLAGS.portfoliosEnabled ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Add this dish to a list"
+                  accessibilityState={{ disabled: isAddingToPortfolio }}
+                  onPress={() => void addToPortfolio()}
+                  disabled={isAddingToPortfolio}
+                  style={{
+                    alignItems: "center",
+                    height: dockTargetSize,
+                    justifyContent: "center",
+                    minWidth: dockTargetSize,
+                  }}
+                >
+                  <ListPlus color={palette.text} size={reviewIconSize} />
+                </Pressable>
+              ) : null}
               {FEATURE_FLAGS.favouritesEnabled ? (
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={isSaved ? "Unsave this dish" : "Save this dish"}
+                  accessibilityLabel={isSaved ? "Saved" : "Save"}
+                  accessibilityHint={isSaved ? "Removes this dish from Want to try" : undefined}
+                  accessibilityState={{ selected: isSaved }}
                   onPress={() => void handleSave()}
                   style={{
                     alignItems: "center",
-                    height: 42,
+                    height: dockTargetSize,
                     justifyContent: "center",
-                    paddingHorizontal: spacing[1],
-                    width: undefined,
+                    minWidth: dockTargetSize,
                   }}
                 >
-                  {/* Saved = filled brand-orange bookmark; the bar sits on palette.bg in
-                      both themes, so white-on-light made the saved state vanish. */}
                   <Bookmark
                     color={isSaved ? palette.orange : palette.text}
                     size={reviewIconSize}
@@ -1044,10 +1074,11 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                 </Pressable>
               ) : null}
               <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Mark this food as tried"
-                disabled={isTryingFood}
+                accessibilityRole="checkbox"
+                accessibilityLabel="Tried"
+                accessibilityState={{ checked: isDishTried, disabled: isTryingFood }}
                 onPress={handleTryFood}
+                disabled={isTryingFood}
                 style={({ pressed }) => {
                   const backgroundColor = isDishTried
                     ? palette.surface
@@ -1063,16 +1094,19 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                     alignItems: "center",
                     backgroundColor,
                     borderColor: isWhiteOrBlackBackground ? palette.orange : "transparent",
-                    borderRadius: componentRadii.iconButton,
                     borderWidth: isWhiteOrBlackBackground ? 1 : 0,
-                    height: 42,
+                    borderRadius: componentRadii.iconButton,
+                    height: dockTargetSize,
                     justifyContent: "center",
-                    paddingHorizontal: spacing[1],
-                    width: undefined,
+                    minWidth: dockTargetSize,
                   };
                 }}
               >
-                <CheckCircle color={palette.text} fill="none" size={reviewIconSize} />
+                <CheckCircle
+                  color={isDishTried ? palette.orange : palette.text}
+                  fill="none"
+                  size={reviewIconSize}
+                />
               </Pressable>
               {FEATURE_FLAGS.reviewCreationEnabled ? (
                 <Pressable
@@ -1081,13 +1115,19 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   onPress={handleReview}
                   style={{
                     alignItems: "center",
-                    height: 42,
+                    backgroundColor: palette.orange,
+                    borderRadius: componentRadii.button,
+                    flexDirection: "row",
+                    gap: spacing[1.5],
+                    height: dockTargetSize,
                     justifyContent: "center",
-                    paddingHorizontal: spacing[1],
-                    width: undefined,
+                    paddingHorizontal: spacing[4],
                   }}
                 >
-                  <CommentIcon color={palette.text} size={reviewIconSize} />
+                  <CommentIcon color={palette.white} size={reviewIconSize} />
+                  <AppText variant="bodyBold" style={{ color: palette.white }}>
+                    Review
+                  </AppText>
                 </Pressable>
               ) : null}
             </View>
@@ -1115,9 +1155,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                 borderColor: headerButtonBorder,
                 borderRadius: componentRadii.iconButton,
                 borderWidth: 1,
-                height: 40,
+                height: dockTargetSize,
                 justifyContent: "center",
-                width: 40,
+                width: dockTargetSize,
               }}
             >
               <ArrowLeft color={palette.text} size={22} />
@@ -1133,9 +1173,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   borderColor: headerButtonBorder,
                   borderRadius: componentRadii.iconButton,
                   borderWidth: 1,
-                  height: 40,
+                  height: dockTargetSize,
                   justifyContent: "center",
-                  width: 40,
+                  width: dockTargetSize,
                 }}
               >
                 <Send color={palette.text} size={21} />

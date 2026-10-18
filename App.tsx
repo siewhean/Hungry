@@ -1,9 +1,8 @@
 import * as Sentry from "@sentry/react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { View, Text } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import { AppText } from "@/components/ui";
+import { AppErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { HungryThemeProvider, useHungryTheme } from "@/theme";
 import { AppBody } from "@/app/AppBody";
 import { sanitizeSentryBreadcrumb, sanitizeSentryEvent } from "@/lib/analytics/privacy";
@@ -32,51 +31,19 @@ if (shouldEnableSentry && !sentryInitialized && !globalForSentry.__hungrySentryI
   globalForSentry.__hungrySentryInitialized = true;
 }
 
-function SentryFallback() {
-  // Use hardcoded safe values and native Text in fallback to avoid crashing if provider fails
-  return (
-    <View
-      style={{
-        alignItems: "center",
-        backgroundColor: "#FFFFFF",
-        flex: 1,
-        justifyContent: "center",
-        paddingHorizontal: 24,
-      }}
-    >
-      <Text
-        style={{
-          fontSize: 22,
-          fontWeight: "600",
-          marginBottom: 8,
-          textAlign: "center",
-          color: "#1A2E44",
-        }}
-      >
-        Something went wrong
-      </Text>
-      <Text style={{ fontSize: 16, textAlign: "center", color: "#41566F" }}>
-        The app hit an unexpected error. Please restart and try again.
-      </Text>
-    </View>
-  );
-}
-
 function AppContent() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <HungryThemeProvider>
-          {shouldEnableSentry ? (
-            <Sentry.ErrorBoundary fallback={<SentryFallback />}>
-              <AppBody />
-            </Sentry.ErrorBoundary>
-          ) : (
+    // Always mounted, outside the providers so it also catches provider crashes.
+    // It reports to Sentry through reportError when a DSN is set.
+    <AppErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <HungryThemeProvider>
             <AppBody />
-          )}
-        </HungryThemeProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+          </HungryThemeProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </AppErrorBoundary>
   );
 }
 

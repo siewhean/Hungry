@@ -22,19 +22,37 @@ test("R01-SCOPE-01: favourites ship default-on in every eas release profile", ()
     const env = eas.build[name]?.env ?? {};
     const flags = resolveFeatureFlags(env.EXPO_PUBLIC_APP_ENV, "production", env);
 
-    assert.equal(flags.release01CoreOnly, true, `${name} must be a released environment`);
     assert.equal(flags.favouritesEnabled, true, `${name} must expose favourites`);
-    // Release flags and eas.json must agree: catalog reads on, cut surfaces off.
-    assert.equal(flags.catalogReadV2, true, `${name} must read the versioned catalog`);
-    assert.equal(env.EXPO_PUBLIC_CATALOG_READ_V2, "1", `${name} env must not contradict flags`);
-    for (const [key, value] of Object.entries(env)) {
-      if (key.startsWith("EXPO_PUBLIC_ENABLE_")) {
-        assert.equal(value, "0", `${name} must keep ${key} closed for Release 0.1`);
-      }
+    // eas.json and flags must agree on the versioned catalog read path.
+    assert.equal(
+      flags.catalogReadV2,
+      env.EXPO_PUBLIC_CATALOG_READ_V2 === "1",
+      `${name} env must not contradict flags`,
+    );
+  }
+
+  // The internal-alpha profile keeps the narrow Release 0.1 core-only surface.
+  const alphaEnv = eas.build["internal-alpha"]?.env ?? {};
+  const alpha = resolveFeatureFlags(alphaEnv.EXPO_PUBLIC_APP_ENV, "production", alphaEnv);
+  assert.equal(alpha.release01CoreOnly, true);
+  for (const [key, value] of Object.entries(alphaEnv)) {
+    if (key.startsWith("EXPO_PUBLIC_ENABLE_")) {
+      assert.equal(value, "0", `internal-alpha must keep ${key} closed`);
     }
-    assert.equal(flags.socialFeedEnabled, false);
-    assert.equal(flags.reviewCreationEnabled, false);
-    assert.equal(flags.activityEnabled, false);
+  }
+  assert.equal(alpha.socialFeedEnabled, false);
+  assert.equal(alpha.reviewCreationEnabled, false);
+  assert.equal(alpha.activityEnabled, false);
+
+  // Preview and production follow main's product surface (no core-only narrowing).
+  for (const name of ["preview", "production"] as const) {
+    const env = eas.build[name]?.env ?? {};
+    const flags = resolveFeatureFlags(env.EXPO_PUBLIC_APP_ENV, "production", env);
+    assert.equal(flags.release01CoreOnly, false, `${name} follows main's surface`);
+    assert.equal(flags.socialFeedEnabled, true);
+    assert.equal(flags.reviewCreationEnabled, true);
+    assert.equal(flags.portfoliosEnabled, true);
+    assert.equal(flags.stallAlertsEnabled, true);
   }
 });
 

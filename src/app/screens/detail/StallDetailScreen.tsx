@@ -53,6 +53,7 @@ import {
   getServiceProvider,
 } from "@/lib/services/serviceProvider";
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
 import {
   buildMapsSearchUrl,
@@ -64,6 +65,7 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import { PopularVisitorsSection } from "@/components/stall/PopularVisitorsSection";
 import { StallInteractionBar } from "@/components/stall/StallInteractionBar";
+import { FollowStallButton } from "@/components/stall/FollowStallButton";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -79,6 +81,7 @@ import {
   DetailSaveActionsCard,
   useDetailSaveActions,
 } from "@/features/checklistPortfolio/DetailSaveActions";
+import { webShareUrl } from "@/constants/links";
 
 const CommentIcon = MessageCircle ?? MessageCircleMore;
 const INITIAL_MENU_ITEM_COUNT = 10;
@@ -329,6 +332,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const shareSheetRef = useRef<BottomSheetModal>(null);
   const incrementShare = useSocialStore((state) => state.incrementShare);
+  // Review replies are local-only (no backend), so keep them out of production builds.
+  const reviewRepliesEnabled = FEATURE_FLAGS.prototypeRoutesEnabled;
   const [activeReplyReviewId, setActiveReplyReviewId] = useState<string | null>(null);
   const [replyDraftByReviewId, setReplyDraftByReviewId] = useState<Record<string, string>>({});
   const [localRepliesByReviewId, setLocalRepliesByReviewId] = useState<
@@ -374,7 +379,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
       imageUrl: leadDishImageUrl ?? "",
       authorName: profile.displayName,
       message: `Check out ${venue?.name ?? "this stall"} at ${buildingLocation.name ?? "Hungry"}!`,
-      link: `https://hungry.sg/stall/${venue?.id ?? ""}`,
+      link: webShareUrl("stall", venue?.id ?? ""),
     };
   }, [
     buildingLocation.name,
@@ -586,6 +591,14 @@ export function StallDetailScreen({ navigation, route }: Props) {
           <EmptyState
             title="Stall not found"
             body="The stall you are looking for does not exist in our current directory."
+            ctaLabel={navigation.canGoBack() ? "Go back" : "Go to Home"}
+            onPress={() => {
+              if (navigation.canGoBack()) {
+                navigation.goBack();
+                return;
+              }
+              navigation.navigate("MainTabs", { screen: "Home" });
+            }}
             errorMessage={`Missing stall data for ID: ${venueId || "unknown"}`}
             sendErrorContext="Stall detail"
           />
@@ -629,8 +642,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
       return;
     }
 
-    const targetDishId = nextUnreviewedDish?.id ?? dishes[0]?.id;
-    if (!targetDishId) {
+    // Without a clear next dish, let the reviewer pick one instead of guessing.
+    const targetDishId = nextUnreviewedDish?.id;
+    if (!dishes.length) {
       showToast({
         message: "No dish available for review yet. Add a dish first.",
         tone: "warning",
@@ -646,12 +660,13 @@ export function StallDetailScreen({ navigation, route }: Props) {
     });
     navigation.navigate("ReviewStack", {
       screen: "ReviewMain",
-      params: { venueId: venue.id, dishId: targetDishId },
+      params: targetDishId ? { venueId: venue.id, dishId: targetDishId } : { venueId: venue.id },
     });
   };
 
   const openStallMaps = () => {
     if (!stallAddress) return;
+    trackAnalyticsEvent("directions_opened", { stall_id: venue?.id, source: "stall_detail" });
     void openTrustedMapsUrl(buildMapsSearchUrl(stallAddress));
   };
 
@@ -958,6 +973,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   onReviewRequired={handleReviewRequiredForTried}
                 />
               ) : null}
+              {showDeferredDetailControls && isAuthenticated && venue ? (
+                <FollowStallButton stallId={venue.id} stallName={venue.name} />
+              ) : null}
 
               {showDeferredDetailControls && FEATURE_FLAGS.collectionsEnabled ? (
                 <DetailSaveActionsCard
@@ -1192,34 +1210,38 @@ export function StallDetailScreen({ navigation, route }: Props) {
                           {review.text}
                         </AppText>
 
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            marginTop: spacing[2],
-                          }}
-                        >
-                          <Pressable
-                            accessibilityRole="button"
-                            accessibilityLabel={`Reply to review by ${review.authorName}`}
-                            onPress={() =>
-                              setActiveReplyReviewId((current) =>
-                                current === review.id ? null : review.id,
-                              )
-                            }
+                        {reviewRepliesEnabled ? (
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              marginTop: spacing[2],
+                            }}
                           >
-                            <AppText variant="micro" tone="accent">
-                              Reply
-                            </AppText>
-                          </Pressable>
-                          {(localRepliesByReviewId[review.id]?.length ?? 0) > 0 ? (
-                            <AppText variant="micro" tone="muted">
-                              {localRepliesByReviewId[review.id]?.length} repl
-                              {(localRepliesByReviewId[review.id]?.length ?? 0) === 1 ? "y" : "ies"}
-                            </AppText>
-                          ) : null}
-                        </View>
+                            <Pressable
+                              accessibilityRole="button"
+                              accessibilityLabel={`Reply to review by ${review.authorName}`}
+                              onPress={() =>
+                                setActiveReplyReviewId((current) =>
+                                  current === review.id ? null : review.id,
+                                )
+                              }
+                            >
+                              <AppText variant="micro" tone="accent">
+                                Reply
+                              </AppText>
+                            </Pressable>
+                            {(localRepliesByReviewId[review.id]?.length ?? 0) > 0 ? (
+                              <AppText variant="micro" tone="muted">
+                                {localRepliesByReviewId[review.id]?.length} repl
+                                {(localRepliesByReviewId[review.id]?.length ?? 0) === 1
+                                  ? "y"
+                                  : "ies"}
+                              </AppText>
+                            ) : null}
+                          </View>
+                        ) : null}
 
                         {(localRepliesByReviewId[review.id] ?? []).length > 0 ? (
                           <View
@@ -1253,7 +1275,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                           </View>
                         ) : null}
 
-                        {activeReplyReviewId === review.id ? (
+                        {reviewRepliesEnabled && activeReplyReviewId === review.id ? (
                           <View
                             style={{
                               gap: spacing[2],

@@ -11,9 +11,10 @@ function read(relativePath: string): string {
   return readFileSync(path.join(root, relativePath), "utf8");
 }
 
-test("released environments keep detail controls read-only despite targeted feature opt-ins", () => {
+test("core-only builds keep detail controls read-only despite targeted feature opt-ins", () => {
   for (const appEnv of ["staging", "production"] as const) {
     const flags = resolveFeatureFlags(appEnv, "production", {
+      EXPO_PUBLIC_RELEASE_01_CORE_ONLY: "1",
       EXPO_PUBLIC_ENABLE_REVIEWS: "1",
       EXPO_PUBLIC_ENABLE_SOCIAL_FEED: "1",
     });
@@ -27,10 +28,7 @@ test("released environments keep detail controls read-only despite targeted feat
   const stall = read("src/app/screens/detail/StallDetailScreen.tsx");
 
   assert.match(dish, /const showDeferredDetailControls = !FEATURE_FLAGS\.release01CoreOnly/);
-  assert.match(
-    dish,
-    /\{showDeferredDetailControls \? \([\s\S]*?accessibilityLabel="Mark this food as tried"/,
-  );
+  assert.match(dish, /\{showDeferredDetailControls \? \([\s\S]*?accessibilityLabel="Tried"/);
   assert.match(
     dish,
     /\{showDeferredDetailControls \? \([\s\S]*?accessibilityLabel=\{`Share \$\{dish\.name\}`\}/,

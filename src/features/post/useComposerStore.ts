@@ -70,6 +70,8 @@ interface ComposerState {
     routeDishId?: string;
     routeVenueId?: string;
   } | null;
+  /** Client review id kept across publish retries so a retry never duplicates the review. */
+  pendingReviewId: string | null;
 
   // Actions
   addMedia: (items: MediaItem[]) => void;
@@ -96,6 +98,7 @@ interface ComposerState {
   setEditingMediaId: (id: string | null) => void;
   setPublishingError: (message: string | null) => void;
   setLastPublishRequest: (request: ComposerState["lastPublishRequest"]) => void;
+  setPendingReviewId: (id: string | null) => void;
   setScheduledTime: (date: Date | null) => void;
   setIsBusinessMode: (isBusiness: boolean) => void;
   setCTA: (cta: string | null) => void;
@@ -142,6 +145,7 @@ export const useComposerStore = create<ComposerState>((set, get) => ({
   editingMediaId: null,
   isAiProcessing: false,
   lastPublishRequest: null,
+  pendingReviewId: null,
 
   addMedia: (items) =>
     set((state) => ({ media: [...state.media, ...items], publishingState: "editing" })),
@@ -215,6 +219,7 @@ export const useComposerStore = create<ComposerState>((set, get) => ({
   setEditingMediaId: (editingMediaId) => set({ editingMediaId }),
   setPublishingError: (publishingError) => set({ publishingError }),
   setLastPublishRequest: (lastPublishRequest) => set({ lastPublishRequest }),
+  setPendingReviewId: (pendingReviewId) => set({ pendingReviewId }),
   setScheduledTime: (scheduledTime) => set({ scheduledTime }),
   setIsBusinessMode: (isBusinessMode) => set({ isBusinessMode }),
   setCTA: (ctaButton) => set({ ctaButton }),
@@ -289,5 +294,6 @@ export const useComposerStore = create<ComposerState>((set, get) => ({
       isAiProcessing: false,
       publishingError: null,
       lastPublishRequest: null,
+      pendingReviewId: null,
     }),
 }));

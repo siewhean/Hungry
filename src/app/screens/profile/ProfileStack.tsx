@@ -10,6 +10,7 @@ import { FollowersScreen, FollowingScreen } from "./ProfileConnectionsScreen";
 import { ReviewHistoryScreen } from "./ReviewHistoryScreen";
 import { SettingsScreen } from "./SettingsScreen";
 import { VisitedStallsScreen } from "./VisitedStallsScreen";
+import { FollowedStallsScreen } from "./FollowedStallsScreen";
 import { ReviewStack } from "@/app/screens/review/ReviewStack";
 import { FeedErrorBoundary } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
@@ -79,6 +80,7 @@ export function ProfileStack() {
         <Stack.Screen name="Followers" component={FollowersScreen} />
         <Stack.Screen name="Following" component={FollowingScreen} />
         <Stack.Screen name="VisitedStalls" component={VisitedStallsScreen} />
+        <Stack.Screen name="FollowedStalls" component={FollowedStallsScreen} />
         <Stack.Screen name="Favourites" component={FavouritesScreen} />
         <Stack.Screen name="ReviewHistory" component={ReviewHistoryScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
@@ -90,6 +92,10 @@ export function ProfileStack() {
             <Stack.Screen name="ChecklistsHome" getComponent={loadChecklistsHomeScreen} />
             <Stack.Screen name="ChecklistDetail" getComponent={loadChecklistDetailScreen} />
             <Stack.Screen name="ChecklistItemPicker" getComponent={loadChecklistItemPickerScreen} />
+          </>
+        ) : null}
+        {FEATURE_FLAGS.portfoliosEnabled ? (
+          <>
             <Stack.Screen name="PortfoliosHome" getComponent={loadPortfoliosHomeScreen} />
             <Stack.Screen name="PortfolioDetail" getComponent={loadPortfolioDetailScreen} />
             <Stack.Screen name="PortfolioCreate" getComponent={loadPortfolioCreateScreen} />

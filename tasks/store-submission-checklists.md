@@ -91,3 +91,17 @@ Evidence target:
 Repo evidence:
 - Account deletion is discoverable in app Settings and public URL documentation once `ACCDEL-01` implementation is verified.
 - Data Safety answers must match the disclosure matrix above and the final shipped feature flags.
+
+## Build Credentials — R01-IOS-01 / R01-AND-01 / R01-TEST-01
+
+Owner: User (Apple/Google/Expo account steps). Repo side: `eas.json` `submit.production` targets Apple team `94R58J6LA2` and the Play `internal` track as a draft; `.easignore` trims the upload context.
+
+- [ ] Apple Developer Program membership is active for team `94R58J6LA2` (paid, not a free Apple ID).
+- [ ] iOS internal build: `eas device:create` for each tester iPhone, then `eas build -p ios --profile preview` and let EAS create the ad hoc certificate/profile. (Alternative with no device registration: `--profile production` + TestFlight internal testing.)
+- [ ] App Store Connect: create the app record for `app.hungry.mobile`; add an ASC API key with `eas credentials -p ios`. Add its numeric `ascAppId` to `submit.production.ios` once known so non-interactive submits work.
+- [ ] Google Play Console: create the app for `app.hungry.mobile`, upload the first AAB by hand (Play rejects API uploads before that), then upload a service-account JSON with `eas credentials -p android` for `eas submit`.
+- [ ] Android device proof: install the final-head `preview` APK on a real phone; record build ID, screenshots and scenario results in `tasks/verification.md`.
+- [ ] Local `eas build` clones the repo into the OS temp folder before applying `.easignore`; run it with `TMPDIR` pointing at a volume with ≥4 GiB free.
+- [ ] R01-TEST-01: five internal testers named (emails only, no passwords in repo), added to TestFlight / Play internal testing.
+
+Dependency: scenario passes need a live backend (Supabase is currently down), so device proof can install and launch now but full journeys wait on the backend rebuild.

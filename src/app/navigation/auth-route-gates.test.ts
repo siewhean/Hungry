@@ -5,10 +5,13 @@ import { createRootLinking } from "@/app/navigation/linking";
 
 const protectedPaths = ["dish/dish-123", "venue/venue-123"] as const;
 
-test("deferred deep links do not resolve when their release flags are disabled", () => {
+test("order and wheel join links resolve for signed-in users when their surfaces ship", () => {
   const linking = createRootLinking("hungry://");
-  assert.equal(linking.getStateFromPath("order"), undefined);
-  assert.equal(linking.getStateFromPath("join/SAFE_CODE"), undefined);
+  assert.equal(linking.getStateFromPath("order")?.routes?.[0]?.name, "Post");
+  assert.deepEqual(linking.getStateFromPath("join/SAFE_CODE")?.routes?.[0], {
+    name: "WheelStack",
+    params: { code: "SAFE_CODE" },
+  });
 });
 
 test("all main deep links resolve to onboarding for a fresh signed-out user", () => {
@@ -48,15 +51,15 @@ test("auth routes remain reachable without an account", () => {
 
   assert.deepEqual(linking.getStateFromPath("login")?.routes?.[0], {
     name: "AuthStack",
-    params: { screen: "Login" },
+    params: { screen: "Login", pop: true },
   });
   assert.deepEqual(linking.getStateFromPath("signup")?.routes?.[0], {
     name: "AuthStack",
-    params: { screen: "SignUp" },
+    params: { screen: "SignUp", pop: true },
   });
   assert.deepEqual(linking.getStateFromPath("auth/callback")?.routes?.[0], {
     name: "AuthStack",
-    params: { screen: "ResetPassword" },
+    params: { screen: "ResetPassword", pop: true },
   });
 });
 

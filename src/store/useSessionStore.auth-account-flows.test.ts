@@ -121,12 +121,9 @@ test("password reset exchanges the deep-link code without the auth swap unmounti
 
 test("sign-up confirmation uses its own redirect and real sign-in instead of refreshSession", () => {
   const service = read("src/lib/services/supabase/supabaseService.ts");
-  assert.match(service, /"hungry:\/\/auth\/confirm"/);
-  assert.match(service, /emailRedirectTo: getAuthEmailConfirmRedirectTo\(\)/);
-  assert.doesNotMatch(
-    service,
-    /data: \{ display_name: name \},\s*emailRedirectTo: getAuthEmailRedirectTo/,
-  );
+  assert.match(read("src/constants/links.ts"), /emailConfirm: "hungry:\/\/auth\/confirm"/);
+  assert.match(service, /emailRedirectTo: AUTH_REDIRECTS\.emailConfirm/);
+  assert.doesNotMatch(service, /emailRedirectTo: AUTH_REDIRECTS\.passwordReset/);
 
   const verification = read("src/app/screens/auth/EmailVerificationScreen.tsx");
   assert.doesNotMatch(verification, /refreshSession/);

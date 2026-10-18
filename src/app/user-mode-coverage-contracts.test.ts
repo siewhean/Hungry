@@ -199,7 +199,7 @@ test("discover and search keep user mode map-free while browse grids open matchi
       /navigation\.navigate\("MapZoomedIn", \{[\s\S]*buildingId: venue\.buildingId/,
       /navigation\.navigate\("BrowseStalls"\)/,
       /navigation\.navigate\("BrowseDishes"\)/,
-      /navigation\.navigate\("DecideForMeResult"\)/,
+      /navigation\.navigate\("DecideForMeResult", \{ surface: "discover" \}/,
       /navigation\.navigate\("WheelStack", \{ screen: "WheelHome" \}\)/,
       /recordTasteInteraction\(\{[\s\S]*type: "search_query"/,
       /recordTasteInteraction\(\{[\s\S]*type: "dish_result_click"/,
@@ -251,7 +251,7 @@ test("discover and search keep user mode map-free while browse grids open matchi
 });
 
 test("dish and stall details expose correct detail surfaces without user-mode map/cart regressions", () => {
-  const dishDetail = readRepoFile("src/app/screens/detail/DishDetailScreen.tsx");
+  const dishDetail = readRepoFile("src/app/screens/detail/DishDetailScreenV2.tsx");
   const stallDetail = readRepoFile("src/app/screens/detail/StallDetailScreen.tsx");
   const discover = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
   const userModeStallPress = segmentBetween(
@@ -263,11 +263,8 @@ test("dish and stall details expose correct detail surfaces without user-mode ma
   assertSourceIncludes(
     dishDetail,
     [
-      /const gallery = useMemo\(\(\) => \(dish \? buildDishGallery\(dish\) : \[\]\), \[dish\]\)/,
-      /<ImageCarousel images=\{gallery\} width=\{screenWidth\} height=\{screenWidth \* 0\.75\}>/,
+      /const gallery = useMemo\([\s\S]*?dish\s*\? buildDishGallery\(dish\)[\s\S]*?sanitizeCatalogImageUrl/,
       /dish\.tasteVector\[dimension\.key\]/,
-      /visibleReviews\.map/,
-      /getHungryService\(\)\s*\.reviews\.getReviewsForDish\(dish\.id\)/,
       /ReviewShareSheet/,
       /toggleFavourite\(dish\)/,
     ],
@@ -329,7 +326,7 @@ test("review tab covers loading state, review cards, and bite card icon/sheet bo
   assertSourceIncludes(
     reviewFeed,
     [
-      /useDelayedLoadingSkeleton\(isInitialLoading/,
+      /useDelayedLoadingSkeleton\(\s*isInitialLoading/,
       /ReviewFeedSkeleton/,
       /ReviewCommentsSheet/,
       /ReviewShareSheet/,

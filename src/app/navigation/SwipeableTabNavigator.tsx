@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import type {
@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppBottomTabItem, Skeleton } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { preloadRoute } from "@/features/navigation/prefetch";
+import { useSessionStore } from "@/store/useSessionStore";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import { useHungryTheme } from "@/theme";
 import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
@@ -212,23 +213,10 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
   const { componentSizes, palette, spacing } = useHungryTheme();
   const styles = createStyles();
   const insets = useSafeAreaInsets();
-  const [highlightVisible, setHighlightVisible] = useState(true);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rootNavigation = navigation.getParent<NavigationProp<RootStackParamList>>();
 
-  const resetTimer = useCallback(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    setHighlightVisible(true);
-    timerRef.current = setTimeout(() => setHighlightVisible(false), 5000);
-  }, []);
-
-  useEffect(() => {
-    resetTimer();
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [state.index, resetTimer]);
-
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const routeByName = new Map(state.routes.map((route) => [route.name, route]));
   const tabItems = [
     ...(FEATURE_FLAGS.socialFeedEnabled
@@ -246,6 +234,7 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
 
   return (
     <View
+      accessibilityRole="tablist"
       style={[
         styles.tabBarContainer,
         {
@@ -266,8 +255,13 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
 
         const onPress = () => {
           if (isCreateAction) {
+            if (!isAuthenticated) {
+              setReturnRoute({ name: "Post" });
+              rootNavigation?.navigate("AuthStack", { screen: "Login" });
+              return;
+            }
+
             rootNavigation?.navigate("Post");
-            resetTimer();
             return;
           }
 
@@ -277,8 +271,15 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
             target: routeKey,
             canPreventDefault: true,
           });
-          if (!isFocused && !event.defaultPrevented) navigation.navigate(routeName);
-          resetTimer();
+          if (!isFocused && !event.defaultPrevented) {
+            // Defensive: tabs only mount with a session (mandatory sign-in).
+            if (routeName === "Profile" && !isAuthenticated) {
+              setReturnRoute(routeName);
+              rootNavigation?.navigate("AuthStack", { screen: "Login" });
+              return;
+            }
+            navigation.navigate(routeName);
+          }
         };
 
         const onPressIn = () => {
@@ -290,13 +291,11 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
         };
 
         const Icon = item.icon;
-        const currentColor = isFocused && highlightVisible ? palette.orange : palette.textMuted;
 
         return (
           <AppBottomTabItem
             key={routeKey}
             accessibilityLabel={item.label}
-            color={currentColor}
             createAction={isCreateAction}
             focused={isFocused}
             icon={Icon}

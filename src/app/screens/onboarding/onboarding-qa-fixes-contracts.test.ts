@@ -40,7 +40,8 @@ test("manual location list is alphabetical", () => {
 
 test("taste profile result respects safe area and hides the grid when no dishes", () => {
   const source = read("TasteProfileResultScreen.tsx");
-  assert.match(source, /<SafeAreaView[\s\S]*edges=\{\["top", "left", "right", "bottom"\]\}/);
+  assert.match(source, /paddingTop: insets\.top \+ spacing\[4\]/);
+  assert.match(source, /paddingBottom: insets\.bottom \+ spacing\[3\]/);
   assert.match(source, /const hasDishes = dishes\.length > 0;/);
   assert.match(source, /\{hasDishes \? \(\s*<View/);
   assert.match(source, /backgroundColor: palette\.surfaceRaised/);
@@ -49,8 +50,6 @@ test("taste profile result respects safe area and hides the grid when no dishes"
 test("onboarding copy stays within Release 0.1 MVP scope", () => {
   const copy = [
     "OnboardingIntro1Screen.tsx",
-    "OnboardingIntro2Screen.tsx",
-    "OnboardingIntro3Screen.tsx",
     "LocationPermissionScreen.tsx",
     "CuisineSelectionScreen.tsx",
   ]
@@ -68,13 +67,8 @@ test("onboarding copy stays within Release 0.1 MVP scope", () => {
   }
 });
 
-test("food selection requires a pick on every cuisine step and tiles show a placeholder", () => {
-  const food = read("FoodSelectionScreen.tsx");
+test("cuisine selection (with optional dish picks) requires a cuisine and tiles show a placeholder", () => {
   const cuisine = read("CuisineSelectionScreen.tsx");
-  assert.match(food, /const isNextDisabled = currentStepSelectionCount === 0;/);
-  assert.doesNotMatch(food, /currentIndex === 0 &&/);
   assert.match(cuisine, /disabled=\{selected\.length === 0\}/);
-  for (const source of [food, cuisine]) {
-    assert.match(source, /backgroundColor: palette\.surfaceRaised/);
-  }
+  assert.match(cuisine, /backgroundColor: palette\.surfaceRaised/);
 });

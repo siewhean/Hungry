@@ -1,16 +1,13 @@
 import { Alert, Linking } from "react-native";
 import * as WebBrowser from "expo-web-browser";
+import { SUPPORT_EMAIL, WEB_HOST } from "@/constants/links";
 
-const ALLOWED_HOSTS = new Set([
-  "hungry.sg",
-  "www.hungry.sg",
-  // Live marketing/support site (see src/constants/supportLinks.ts).
-  "usehungry.com",
-  "www.usehungry.com",
-]);
+const ALLOWED_HOSTS = new Set([WEB_HOST, `www.${WEB_HOST}`]);
 const ALLOWED_SCHEMES = new Set(["https"]);
-const ALLOWED_BLOG_HOSTS = new Set(["hungry.sg", "www.hungry.sg"]);
+const ALLOWED_MAILTO_ADDRESSES = new Set([SUPPORT_EMAIL]);
+const ALLOWED_BLOG_HOSTS = new Set([WEB_HOST, `www.${WEB_HOST}`]);
 const ALLOWED_MAPS_HOSTS = new Set(["www.google.com", "maps.google.com"]);
+const ALLOWED_MESSAGING_SHARE_HOSTS = new Set(["wa.me", "t.me"]);
 const ALLOWED_DELIVERY_SCHEMES: Record<string, Set<string>> = {
   grabfood: new Set(["grab"]),
   foodpanda: new Set(["foodpanda"]),
@@ -28,6 +25,14 @@ function parseUrl(url: string): URL {
 
 export async function openTrustedExternalUrl(url: string): Promise<void> {
   try {
+    if (url.toLowerCase().startsWith("mailto:")) {
+      const address = (url.slice("mailto:".length).split("?")[0] ?? "").toLowerCase();
+      if (!ALLOWED_MAILTO_ADDRESSES.has(address)) {
+        throw new Error("Blocked non-allowlisted email address.");
+      }
+      await Linking.openURL(url);
+      return;
+    }
     const parsed = parseUrl(url);
     if (!ALLOWED_SCHEMES.has(parsed.protocol.replace(":", ""))) {
       throw new Error("Blocked non-HTTPS URL.");
@@ -65,6 +70,22 @@ export async function openTrustedMapsUrl(url: string): Promise<void> {
     await Linking.openURL(url);
   } catch {
     Alert.alert("Unable to open maps", "Please try again later.");
+  }
+}
+
+/** Opens a WhatsApp (wa.me) or Telegram (t.me/share) share link; any other host is refused. */
+export async function openTrustedMessagingShareUrl(url: string): Promise<void> {
+  try {
+    const parsed = parseUrl(url);
+    if (
+      parsed.protocol !== "https:" ||
+      !ALLOWED_MESSAGING_SHARE_HOSTS.has(parsed.hostname.toLowerCase())
+    ) {
+      throw new Error("Blocked non-allowlisted messaging host.");
+    }
+    await Linking.openURL(url);
+  } catch {
+    Alert.alert("Unable to open app", "Please try again later.");
   }
 }
 

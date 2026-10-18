@@ -7,7 +7,7 @@ test("Sprint 6: required screens are wrapped by FeedErrorBoundary", () => {
   const screensWithBoundary = [
     "src/app/screens/auth/LoginScreen.tsx",
     "src/app/screens/auth/SignUpScreen.tsx",
-    "src/app/screens/detail/DishDetailScreen.tsx",
+    "src/app/screens/detail/DishDetailScreenV2.tsx",
     "src/app/screens/detail/StallDetailScreen.tsx",
     "src/app/screens/profile/ProfileStack.tsx",
     "src/app/screens/discover/HomeMapScreen.tsx",

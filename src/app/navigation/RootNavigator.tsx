@@ -10,13 +10,15 @@ import {
   createNativeStackNavigator,
   type NativeStackScreenProps,
 } from "@react-navigation/native-stack";
-import { ArrowLeft } from "lucide-react-native";
+import NetInfo from "@react-native-community/netinfo";
+import { ArrowLeft, WifiOff } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SplashScreen } from "@/app/screens/SplashScreen";
 import { AuthStack } from "@/app/screens/auth/AuthStack";
 import { OnboardingStack } from "@/app/screens/onboarding/OnboardingStack";
-import { FloatingToast } from "@/components/ui";
+import { AppText, FloatingToast } from "@/components/ui";
+import { isNetworkOffline } from "@/lib/network/connectivity";
 import { UserProfileScreen } from "@/app/screens/profile/UserProfileScreen";
 
 import { useSessionStore } from "@/store/useSessionStore";
@@ -27,7 +29,9 @@ import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { isE2eDeveloperLauncherBuild } from "@/lib/runtime/e2eDeveloperLauncher";
 import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
 import { SwipeableTabNavigator } from "./SwipeableTabNavigator";
+import { useAccountDeletionGracePrompt } from "@/features/auth/useAccountDeletionGracePrompt";
 import { createRootLinking } from "./linking";
+import { getInitialNotificationUrl, subscribeToNotificationOpens } from "@/lib/notifications/push";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
@@ -47,7 +51,6 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "MerchantClaimExplainer",
   "DishDetail",
   "CatalogRawDetail",
-  "DishDetailV2",
   "SearchHome",
   "SearchResults",
   "BrowseDishes",
@@ -66,19 +69,14 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "DirectMessages",
   "Crave",
   "MusicSelection",
-  "BuildingDrillDown",
   "QuickBites",
   "DeveloperLauncher",
   "Favourites",
   "ReviewHistory",
   "Settings",
   "EditProfile",
-  "SplashV2",
   "DesignGallery",
   "PostComposerV2",
-  "StallDetailV2",
-  "BuildingDrillDownV2",
-  "VenueDirectory",
   "StoryViewer",
   "AddStory",
   "PassportScreen",
@@ -142,8 +140,6 @@ function isReleaseRouteAvailable(routeName: RootRouteName | MainTabRouteName): b
     case "BlogPost":
       return FEATURE_FLAGS.readsEnabled;
     case "WheelStack":
-    case "MusicSelection":
-    case "DecideForMeResult":
       return FEATURE_FLAGS.hungryWheelEnabled;
     case "ActivityInbox":
     case "ActivityPostDetail":
@@ -273,10 +269,6 @@ const loadDecideForMeResultScreen = () =>
   (
     require("@/app/screens/discover/DecideForMeResultScreen") as typeof import("@/app/screens/discover/DecideForMeResultScreen")
   ).DecideForMeResultScreen;
-const loadBuildingDrillDownScreen = () =>
-  (
-    require("@/app/screens/discover/BuildingDrillDownScreen") as typeof import("@/app/screens/discover/BuildingDrillDownScreen")
-  ).BuildingDrillDownScreen;
 const loadOfflineStateScreen = () =>
   (
     require("@/app/screens/detail/OfflineStateScreen") as typeof import("@/app/screens/detail/OfflineStateScreen")
@@ -285,21 +277,10 @@ const loadNotFoundScreen = () =>
   (
     require("@/app/screens/detail/NotFoundScreen") as typeof import("@/app/screens/detail/NotFoundScreen")
   ).NotFoundScreen;
-const loadStallDetailScreenV2 = () =>
-  (
-    require("@/app/screens/detail/StallDetailScreenV2") as typeof import("@/app/screens/detail/StallDetailScreenV2")
-  ).StallDetailScreenV2;
-const loadBuildingDrillDownScreenV2 = () =>
-  (
-    require("@/app/screens/discover/BuildingDrillDownScreenV2") as typeof import("@/app/screens/discover/BuildingDrillDownScreenV2")
-  ).BuildingDrillDownScreenV2;
 const loadQuickBitesScreen = () =>
   (
     require("@/app/screens/discover/QuickBitesScreen") as typeof import("@/app/screens/discover/QuickBitesScreen")
   ).QuickBitesScreen;
-const loadSplashScreenV2 = () =>
-  (require("@/app/screens/SplashScreenV2") as typeof import("@/app/screens/SplashScreenV2"))
-    .SplashScreenV2;
 const loadDesignGalleryScreen = () =>
   (
     require("@/app/screens/dev/DesignGalleryScreen") as typeof import("@/app/screens/dev/DesignGalleryScreen")
@@ -311,10 +292,6 @@ const loadPostComposerScreenV2 = () =>
   (
     require("@/app/screens/post/PostComposerScreenV2") as typeof import("@/app/screens/post/PostComposerScreenV2")
   ).PostComposerScreenV2;
-const loadVenueDirectoryScreen = () =>
-  (
-    require("@/app/screens/discover/VenueDirectoryScreen") as typeof import("@/app/screens/discover/VenueDirectoryScreen")
-  ).VenueDirectoryScreen;
 const loadStoryViewerScreen = () =>
   (
     require("@/app/screens/home/StoryViewerScreen") as typeof import("@/app/screens/home/StoryViewerScreen")
@@ -417,6 +394,65 @@ function GlobalScrollBackButton() {
   );
 }
 
+/**
+ * Non-blocking offline notice. Going offline used to replace the whole app with
+ * the Offline screen and reset to Home on reconnect, losing drafts and progress;
+ * now the current screen stays put and this banner sits on top until the
+ * connection returns.
+ */
+function OfflineBanner() {
+  const insets = useSafeAreaInsets();
+  const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
+  const isOffline = useUIStore((state) => state.isOffline);
+  const setOffline = useUIStore((state) => state.setOffline);
+
+  if (!isOffline) {
+    return null;
+  }
+
+  const retryConnection = async () => {
+    const state = await NetInfo.refresh();
+    setOffline(isNetworkOffline(state));
+  };
+
+  return (
+    <View pointerEvents="box-none" style={[styles.offlineBannerWrap, { zIndex: zIndex.toast }]}>
+      <View
+        accessibilityLiveRegion="polite"
+        accessibilityRole="alert"
+        style={[
+          styles.offlineBanner,
+          {
+            ...shadows.floating,
+            backgroundColor: palette.navy,
+            borderRadius: radii.pill,
+            gap: spacing[2],
+            marginHorizontal: spacing[4],
+            marginTop: insets.top + spacing[1],
+            paddingLeft: spacing[3],
+          },
+        ]}
+      >
+        <WifiOff color={palette.textOnDark} size={16} />
+        <AppText variant="bodySmall" style={{ color: palette.textOnDark, flex: 1 }}>
+          {"You're offline. Saved content stays visible."}
+        </AppText>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Retry connection"
+          hitSlop={4}
+          onPress={() => void retryConnection()}
+          style={{ justifyContent: "center", minHeight: 44, paddingHorizontal: spacing[3] }}
+        >
+          <AppText variant="bodySmallBold" style={{ color: palette.textOnDark }}>
+            Retry
+          </AppText>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 function QuickReviewModalHost() {
   const payload = useUIStore((state) => state.quickReview);
   if (!payload) {
@@ -462,18 +498,32 @@ export function RootNavigator({ theme }: { theme: Theme }) {
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
   const isMerchantMode = useMerchantStore((state) => state.account !== null);
   const resetScrollBack = useUIStore((state) => state.resetScrollBack);
-  const isOffline = useUIStore((state) => state.isOffline);
 
   const prefix = Linking.createURL("/");
   const linking = useMemo(
-    () =>
-      createRootLinking(prefix, () => {
+    () => ({
+      ...createRootLinking(prefix, () => {
         const state = useSessionStore.getState();
         return {
           isAuthReady: state.isAuthReady,
           isAuthenticated: state.isAuthenticated,
+          hasCompletedOnboarding: state.hasCompletedOnboarding,
+          onAuthRedirect: (route) => {
+            state.setReturnRoute({ name: route.name, params: route.params });
+          },
         };
       }),
+      // Tapped push notifications open their deep link through the same linking rules.
+      getInitialURL: async () => (await Linking.getInitialURL()) ?? getInitialNotificationUrl(),
+      subscribe: (listener: (url: string) => void) => {
+        const urlSubscription = Linking.addEventListener("url", ({ url }) => listener(url));
+        const unsubscribeNotifications = subscribeToNotificationOpens(listener);
+        return () => {
+          urlSubscription.remove();
+          unsubscribeNotifications();
+        };
+      },
+    }),
     [prefix],
   );
 
@@ -522,6 +572,14 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     }
   }, [setReturnRoute]);
 
+  useAccountDeletionGracePrompt(() => {
+    if (!navigationRef.isReady()) return;
+    navigationRef.resetRoot({
+      index: 0,
+      routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+    });
+  });
+
   useEffect(() => {
     if (sessionExpired && navigationRef.isReady()) {
       setReturnRoute("Home");
@@ -543,7 +601,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     }
 
     const rootState = navigationRef.getRootState();
-    const currentTopRoute = rootState.routes[rootState.index]?.name;
+    const currentTopRoute = rootState?.routes[rootState.index]?.name;
     if (
       isDeveloperLauncherAvailable &&
       currentTopRoute === "DeveloperLauncher" &&
@@ -601,7 +659,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     }
 
     const rootState = navigationRef.getRootState();
-    const activeRoute = rootState.routes[rootState.index];
+    const activeRoute = rootState?.routes[rootState.index];
 
     if (!isAuthenticated && activeRoute && isAuthRequiredRoute(activeRoute)) {
       const mainTabScreen =
@@ -625,27 +683,6 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       });
     }
   }, [isAuthenticated, isAuthReady, setReturnRoute]);
-
-  useEffect(() => {
-    if (!navigationRef.isReady()) {
-      return;
-    }
-
-    const rootState = navigationRef.getRootState();
-    const currentTopRoute = rootState.routes[rootState.index]?.name;
-
-    if (isOffline && currentTopRoute !== "Offline") {
-      navigationRef.navigate("Offline");
-      return;
-    }
-
-    if (!isOffline && currentTopRoute === "Offline") {
-      navigationRef.resetRoot({
-        index: 0,
-        routes: [{ name: "MainTabs", params: { screen: "Home" } }],
-      });
-    }
-  }, [isOffline]);
 
   return (
     <>
@@ -735,14 +772,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
             <RootStack.Screen getComponent={loadReviewStack} name="ReviewStack" />
           ) : null}
           {FEATURE_FLAGS.hungryWheelEnabled ? (
-            <>
-              <RootStack.Screen getComponent={loadWheelStack} name="WheelStack" />
-              <RootStack.Screen getComponent={loadMusicSelectionScreen} name="MusicSelection" />
-              <RootStack.Screen
-                getComponent={loadDecideForMeResultScreen}
-                name="DecideForMeResult"
-              />
-            </>
+            <RootStack.Screen getComponent={loadWheelStack} name="WheelStack" />
           ) : null}
           {FEATURE_FLAGS.activityEnabled ? (
             <>
@@ -762,9 +792,8 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           {FEATURE_FLAGS.craveEnabled ? (
             <RootStack.Screen getComponent={loadCraveScreen} name="Crave" />
           ) : null}
-          {FEATURE_FLAGS.floorplansEnabled ? (
-            <RootStack.Screen getComponent={loadBuildingDrillDownScreen} name="BuildingDrillDown" />
-          ) : null}
+          <RootStack.Screen getComponent={loadMusicSelectionScreen} name="MusicSelection" />
+          <RootStack.Screen getComponent={loadDecideForMeResultScreen} name="DecideForMeResult" />
           <RootStack.Screen getComponent={loadOfflineStateScreen} name="Offline" />
           <RootStack.Screen getComponent={loadNotFoundScreen} name="NotFound" />
           {!FEATURE_FLAGS.release01CoreOnly ? (
@@ -772,18 +801,6 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           ) : null}
           {FEATURE_FLAGS.prototypeRoutesEnabled ? (
             <>
-              <RootStack.Screen getComponent={loadDishDetailScreenV2} name="DishDetailV2" />
-              <RootStack.Screen getComponent={loadStallDetailScreenV2} name="StallDetailV2" />
-              {FEATURE_FLAGS.floorplansEnabled ? (
-                <>
-                  <RootStack.Screen
-                    getComponent={loadBuildingDrillDownScreenV2}
-                    name="BuildingDrillDownV2"
-                  />
-                  <RootStack.Screen getComponent={loadVenueDirectoryScreen} name="VenueDirectory" />
-                </>
-              ) : null}
-              <RootStack.Screen getComponent={loadSplashScreenV2} name="SplashV2" />
               <RootStack.Screen getComponent={loadDesignGalleryScreen} name="DesignGallery" />
               <RootStack.Screen
                 getComponent={loadPostComposerScreenV2}
@@ -821,12 +838,14 @@ export function RootNavigator({ theme }: { theme: Theme }) {
               <RootStack.Screen getComponent={loadCollectionDetailScreen} name="CollectionDetail" />
             </>
           ) : null}
+          {FEATURE_FLAGS.portfoliosEnabled ? (
+            <RootStack.Screen
+              getComponent={loadPortfolioPublicViewScreen}
+              name="PortfolioPublicView"
+            />
+          ) : null}
           {FEATURE_FLAGS.prototypeRoutesEnabled ? (
             <>
-              <RootStack.Screen
-                getComponent={loadPortfolioPublicViewScreen}
-                name="PortfolioPublicView"
-              />
               <RootStack.Screen
                 getComponent={loadAdminPortfolioFlagsScreen}
                 name="AdminPortfolioFlags"
@@ -836,6 +855,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
         </RootStack.Navigator>
       </NavigationContainer>
       <GlobalScrollBackButton />
+      <OfflineBanner />
       {FEATURE_FLAGS.reviewCreationEnabled ? <QuickReviewModalHost /> : null}
       {FEATURE_FLAGS.reviewCreationEnabled ? (
         <ReviewSuccessModalHost onOpenHistory={() => navigationRef.navigate("ReviewHistory")} />
@@ -853,6 +873,16 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     top: 0,
+  },
+  offlineBannerWrap: {
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
+  },
+  offlineBanner: {
+    alignItems: "center",
+    flexDirection: "row",
   },
   globalBackButton: {
     alignItems: "center",

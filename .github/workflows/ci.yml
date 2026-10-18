@@ -87,8 +87,9 @@ jobs:
         run: npx expo-doctor
 
   merge-compatibility:
-    # The ordinary PR checkout validates the implementation SHA. This separate
-    # job verifies GitHub's synthetic merge commit without any credentials.
+    # Branch protection requires this check. The ordinary PR checkout validates the
+    # implementation SHA; this job typechecks GitHub's synthetic PR merge commit
+    # without any credentials.
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
 

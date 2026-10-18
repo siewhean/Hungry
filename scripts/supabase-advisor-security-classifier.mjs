@@ -166,6 +166,42 @@ function externalReason(finding) {
   return null;
 }
 
+// SECURITY DEFINER RPCs that signed-in users are meant to call; each checks auth.uid() itself.
+const INTENDED_AUTHENTICATED_RPCS = [
+  "cancel_my_account_deletion",
+  "catalog_raw_dish_detail",
+  "catalog_raw_dishes_page",
+  "catalog_raw_map_view",
+  "catalog_raw_venue_detail",
+  "catalog_raw_venue_menu_page",
+  "catalog_raw_venues_page",
+  "mark_notification_opened",
+  "register_push_token",
+];
+
+// SECURITY DEFINER RPCs signed-out visitors are meant to call; each returns only public rows.
+const INTENDED_ANON_RPCS = ["get_public_portfolio"];
+
+function intendedReason(finding) {
+  const metadata = finding.metadata || {};
+  if (
+    finding.name === "authenticated_security_definer_function_executable" &&
+    metadata.schema === "public" &&
+    INTENDED_AUTHENTICATED_RPCS.includes(metadata.name)
+  ) {
+    return "intended authenticated RPC";
+  }
+  if (
+    (finding.name === "anon_security_definer_function_executable" ||
+      finding.name === "authenticated_security_definer_function_executable") &&
+    metadata.schema === "public" &&
+    INTENDED_ANON_RPCS.includes(metadata.name)
+  ) {
+    return "intended public read RPC";
+  }
+  return null;
+}
+
 function summarizeFinding(finding) {
   return `${finding.level || "UNKNOWN"} ${finding.name || "unknown"} ${finding.cache_key || ""}`.trim();
 }
@@ -211,9 +247,14 @@ const classified = findings.map((finding) => ({
   finding,
   expectedAppReason: expectedAppReason(finding),
   externalReason: externalReason(finding),
+  intendedReason: intendedReason(finding),
 }));
-const unexpected = classified.filter((item) => !item.externalReason && !item.expectedAppReason);
-const expectedAppFindings = classified.filter((item) => item.expectedAppReason);
+const unexpected = classified.filter(
+  (item) => !item.externalReason && !item.expectedAppReason && !item.intendedReason,
+);
+const expectedAppFindings = classified.filter(
+  (item) => item.expectedAppReason || item.intendedReason,
+);
 const ignoredExternal = shouldIgnoreLeakedPassword()
   ? classified.filter((item) => item.finding.name === "auth_leaked_password_protection")
   : [];

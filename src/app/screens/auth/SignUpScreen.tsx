@@ -26,6 +26,7 @@ import {
   getSignUpProviderSuccessMessage,
   type AuthProvider,
 } from "./authCopy";
+import { WEB_LINKS } from "@/constants/links";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "SignUp">;
 type FormValues = { displayName: string; email: string; password: string };
@@ -188,7 +189,7 @@ export function SignUpScreen({ navigation }: Props) {
                 <AppText
                   variant="micro"
                   tone="accent"
-                  onPress={() => void openTrustedExternalUrl("https://hungry.sg/terms")}
+                  onPress={() => void openTrustedExternalUrl(WEB_LINKS.terms)}
                 >
                   {AUTH_COPY.signUp.termsLabel}
                 </AppText>
@@ -196,7 +197,7 @@ export function SignUpScreen({ navigation }: Props) {
                 <AppText
                   variant="micro"
                   tone="accent"
-                  onPress={() => void openTrustedExternalUrl("https://hungry.sg/privacy")}
+                  onPress={() => void openTrustedExternalUrl(WEB_LINKS.privacy)}
                 >
                   {AUTH_COPY.signUp.privacyLabel}
                 </AppText>
@@ -299,6 +300,7 @@ export function SignUpScreen({ navigation }: Props) {
                     value={value}
                     onChangeText={onChange}
                     secureTextEntry={!showPassword}
+                    accessibilityHint={AUTH_COPY.signUp.passwordRules}
                     leftIcon={<Lock color={palette.textMuted} size={18} />}
                     rightIcon={
                       <Pressable

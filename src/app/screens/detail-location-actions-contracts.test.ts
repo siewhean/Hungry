@@ -8,15 +8,9 @@ function read(path: string) {
 }
 
 test("detail screens show full food-centre location, weekly hours, and maps action", () => {
-  const dishDetail = read("src/app/screens/detail/DishDetailScreen.tsx");
   const stallDetail = read("src/app/screens/detail/StallDetailScreen.tsx");
   const locationHelpers = read("src/features/detail/stallLocation.ts");
   const safeLinking = read("src/lib/security/safeLinking.ts");
-
-  assert.match(dishDetail, /venue\?\.buildingName \?\? building\?\.name/);
-  assert.match(dishDetail, /formatFoodCentreLocation\(buildingLocation\)/);
-  assert.match(dishDetail, /formatFullStallAddress\(venue, buildingLocation\)/);
-  assert.match(dishDetail, /openTrustedMapsUrl\(buildMapsSearchUrl\(fullStallAddress\)\)/);
 
   assert.match(stallDetail, /formatWeeklyOperatingHours\(venue\.operatingHours\)/);
   assert.match(stallDetail, /weeklyOperatingHours\.map/);

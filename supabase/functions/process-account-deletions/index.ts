@@ -1,6 +1,7 @@
 // @ts-nocheck
 /* eslint-disable import/no-unresolved */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
+import { timingSafeEqual } from "../_shared/timingSafeEqual.ts";
 
 type JsonObject = Record<string, unknown>;
 
@@ -16,7 +17,8 @@ const USER_PREFIXED_BUCKETS = [
   "review-media",
   "bites-media",
   "post-media",
-  "menu-photos",
+  // "menu-photos" is deliberately excluded: menu photos stay on the stall page for
+  // other diners after deletion; only menu_photo_submissions.submitted_by is cleared.
   "user-stall-submission-images",
 ];
 
@@ -30,23 +32,6 @@ function toJson(status: number, body: JsonObject): Response {
 function getBearerToken(request: Request): string {
   const header = request.headers.get("authorization") ?? "";
   return header.toLowerCase().startsWith("bearer ") ? header.slice(7).trim() : "";
-}
-
-// Constant-time secret comparison: hash both sides to equal-length digests, then
-// XOR every byte so timing does not reveal how many leading characters matched.
-async function timingSafeEqualString(provided: string, expected: string): Promise<boolean> {
-  const encoder = new TextEncoder();
-  const [left, right] = await Promise.all([
-    crypto.subtle.digest("SHA-256", encoder.encode(provided)),
-    crypto.subtle.digest("SHA-256", encoder.encode(expected)),
-  ]);
-  const leftBytes = new Uint8Array(left);
-  const rightBytes = new Uint8Array(right);
-  let diff = leftBytes.length ^ rightBytes.length;
-  for (let index = 0; index < leftBytes.length; index += 1) {
-    diff |= leftBytes[index] ^ rightBytes[index];
-  }
-  return diff === 0;
 }
 
 function parseLimit(value: unknown): number {
@@ -158,7 +143,7 @@ Deno.serve(async (request) => {
   }
 
   const workerToken = Deno.env.get("ACCOUNT_DELETION_WORKER_TOKEN") ?? "";
-  if (!workerToken || !(await timingSafeEqualString(getBearerToken(request), workerToken))) {
+  if (!workerToken || !timingSafeEqual(getBearerToken(request), workerToken)) {
     return toJson(401, { error: "unauthorized" });
   }
 
@@ -195,6 +180,14 @@ Deno.serve(async (request) => {
         p_worker_id: workerId,
       });
       if (anonymizeError) throw anonymizeError;
+
+      // Menu photos stay on the stall page for other diners; only the link to
+      // the deleted account is removed.
+      const { error: menuPhotoError } = await client
+        .from("menu_photo_submissions")
+        .update({ submitted_by: null })
+        .eq("submitted_by", userId);
+      if (menuPhotoError) throw menuPhotoError;
 
       const { data: purgeResult, error: purgeError } = await client.rpc(
         "purge_account_deletion_residual_data",

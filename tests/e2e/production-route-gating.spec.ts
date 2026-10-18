@@ -24,10 +24,10 @@ test.describe("production route gating", () => {
     expect(flags).toContain("gamificationEnabled");
     expect(flags).toContain("collectionsEnabled");
     expect(flags).toContain("storiesEnabled");
-    expect(flags).toContain("commentsEnabled: advancedDevelopmentSurfaceEnabled");
-    expect(flags).toContain("directMessagesEnabled: advancedDevelopmentSurfaceEnabled");
-    expect(flags).toContain("merchantCentreEnabled: advancedDevelopmentSurfaceEnabled");
-    expect(flags).toContain("merchantClaimCtaEnabled: advancedDevelopmentSurfaceEnabled");
+    expect(flags).toContain("commentsEnabled: nonProductionSurfaceEnabled");
+    expect(flags).toContain("directMessagesEnabled: nonProductionSurfaceEnabled");
+    expect(flags).toContain("merchantCentreEnabled: nonProductionSurfaceEnabled");
+    expect(flags).toContain("merchantClaimCtaEnabled: nonProductionSurfaceEnabled");
     expect(flags).toContain('appEnv !== "production"');
     expect(rootNavigator).toContain("FEATURE_FLAGS.prototypeRoutesEnabled ? (");
     expect(rootNavigator).toContain("FEATURE_FLAGS.merchantCentreEnabled ? (");
@@ -38,12 +38,8 @@ test.describe("production route gating", () => {
     expect(rootNavigator).toContain("FEATURE_FLAGS.collectionsEnabled ? (");
 
     for (const routeName of [
-      "DishDetailV2",
-      "StallDetailV2",
-      "BuildingDrillDownV2",
-      "SplashV2",
       "DesignGallery",
-      "VenueDirectory",
+      "PostComposerV2",
       "MerchantTabs",
       "ChatDetail",
       "DirectMessages",
@@ -58,7 +54,12 @@ test.describe("production route gating", () => {
     ]) {
       expect(rootNavigator).toContain(`name="${routeName}"`);
     }
-    for (const removedRouteName of ["DiscoverV2", "SearchHomeV2", "QuickReviewV2", "ReviewFeedV2"]) {
+    for (const removedRouteName of [
+      "DiscoverV2",
+      "SearchHomeV2",
+      "QuickReviewV2",
+      "ReviewFeedV2",
+    ]) {
       expect(rootNavigator).not.toContain(`name="${removedRouteName}"`);
     }
   });

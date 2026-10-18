@@ -133,12 +133,23 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
   assert.match(manualLocation, /accessibilityLabel="Search Singapore location"/);
   assert.match(manualLocation, /accessibilityLabel=\{`Choose \$\{area\.name\}`\}/);
   assert.match(manualLocation, /accessibilityHint="Sets this as your Hungry discovery location"/);
-  assert.match(tasteProfileResult, /accessibilityLabel=\{`Save \$\{dish\.name\}`\}/);
   assert.match(
     tasteProfileResult,
-    /accessibilityHint="Create or sign in to an account before saving this dish"/,
+    /accessibilityLabel=\{`\$\{isSaved \? "Unsave" : "Save"\} \$\{dish\.name\}`\}/,
   );
-  assert.match(tasteProfileResult, /navigation\.navigate\("OnboardingAuth"\)/);
+  assert.match(tasteProfileResult, /"Create your account at the end of setup to save this dish"/);
+  // Signed-in users save for real; signed-out users are told the account step comes last.
+  assert.match(
+    tasteProfileResult,
+    /if \(isAuthenticated\) \{\s*void toggleFavourite\(dish\)[\s\S]*return;\s*\}/,
+  );
+  assert.doesNotMatch(tasteProfileResult, /navigation\.navigate\("OnboardingAuth"\)/);
+  // Result is ranked by the quiz taste vector, not a fixed popular list.
+  assert.match(tasteProfileResult, /tasteValues: tasteVector/);
+  assert.match(tasteProfileResult, /searchDishes\(getResultFilters\(\), tasteVector\)/);
+  // Supabase has no cached catalog during onboarding, so the screen asks the server.
+  assert.match(tasteProfileResult, /getSearchResultsAsync\(getResultFilters\(\), tasteVector\)/);
+  assert.doesNotMatch(tasteProfileResult, /generated food photo/);
   assert.match(
     tasteQuiz,
     /accessibilityRole="button"[\s\S]*accessibilityLabel=\{`\$\{labels\[index\]\} \$\{QUESTIONS\[currentKey\]\}`\}/,
@@ -184,7 +195,6 @@ test("Sprint 9 screen contract: stall menu cards expose dish actions", () => {
 test("Sprint 9 screen contract: Search cards expose actionable semantics", () => {
   const search = read("src/app/screens/search/DishSearchScreen.tsx");
   const collectionDetail = read("src/app/screens/discover/CollectionDetailScreen.tsx");
-  const buildingDrillDown = read("src/app/screens/discover/BuildingDrillDownScreen.tsx");
   const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
 
   assert.match(search, /accessibilityLabel="Search dishes, stalls, or hawker centres"/);
@@ -205,8 +215,6 @@ test("Sprint 9 screen contract: Search cards expose actionable semantics", () =>
     collectionDetail,
     /accessibilityHint="Opens this stall page with menu and dish information"/,
   );
-  assert.match(buildingDrillDown, /accessibilityLabel=\{`Show floor \$\{floor\}`\}/);
-  assert.match(buildingDrillDown, /accessibilityState=\{\{ selected \}\}/);
   assert.match(rootNavigator, /accessibilityLabel="Go back"/);
   assert.match(rootNavigator, /accessibilityHint="Returns to the previous screen"/);
 });
@@ -542,7 +550,7 @@ test("Sprint 9 screen contract: routed dish detail uses gallery-backed share flo
 
   assert.match(source, /const repository = getDataRepository\(\)/);
   assert.match(source, /buildDishGallery\(dish\)/);
-  assert.match(source, /const canonicalDishUrl = `https:\/\/hungry\.sg\/dish\/\$\{dish\.id\}`/);
+  assert.match(source, /const canonicalDishUrl = webShareUrl\("dish", dish\.id\)/);
   assert.match(source, /ReviewShareSheet/);
   assert.match(source, /shareSheetRef\.current\?\.present\(\)/);
   assert.match(source, /link: canonicalDishUrl/);
@@ -558,10 +566,7 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   const mockDataSource = read("src/lib/services/mock/data.ts");
 
   assert.match(source, /getDataRepository\(\)/);
-  assert.match(
-    source,
-    /type Props = NativeStackScreenProps<RootStackParamList, "DishDetail" \| "DishDetailV2">/,
-  );
+  assert.match(source, /type Props = NativeStackScreenProps<RootStackParamList, "DishDetail">/);
   assert.match(source, /buildDishGallery\(dish\)/);
   assert.match(source, /function formatBasePrice\(price: number\)/);
   assert.match(source, /formatBasePrice\(dish\.price\)/);
@@ -596,8 +601,9 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   // push: DishDetail -> DishDetail must add a history entry (React Navigation 7).
   assert.match(source, /navigation\.push\("DishDetail", \{ dishId: item\.id \}\)/);
   assert.match(navigatorSource, /const loadDishDetailScreenV2 =/);
-  assert.match(navigatorSource, /getComponent=\{loadDishDetailScreenV2\} name="DishDetailV2"/);
-  assert.match(navigationTypes, /DishDetailV2: \{ dishId\?: string; id\?: string \};/);
+  // The redundant DishDetailV2 alias route was removed; DishDetail is the V2 screen.
+  assert.doesNotMatch(navigatorSource, /name="DishDetailV2"/);
+  assert.doesNotMatch(navigationTypes, /DishDetailV2:/);
   assert.match(
     mockDataSource,
     /const FOOD_1 =\s*"https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/7\/71\/Hainanese_Chicken_Rice\.jpg"/,
@@ -605,18 +611,20 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.match(launcherSource, /function getSampleDish\(repository = getLauncherRepository\(\)\)/);
   assert.match(launcherSource, /const \{ dishes \} = getMockData\(\);/);
   assert.match(launcherSource, /repository\.listPopularNearby\(\)\[0\] \?\? dishes\[0\]/);
-  assert.match(launcherSource, /const openSampleDishDetail = \(version: "v1" \| "v2" = "v1"\)/);
+  assert.match(launcherSource, /const openSampleDishDetail = \(\) =>/);
   assert.match(launcherSource, /completeAuth\(\);[\s\S]*completeOnboarding\(false\);/);
-  assert.match(
-    launcherSource,
-    /navigation\.navigate\(version === "v2" \? "DishDetailV2" : "DishDetail", \{ dishId: dish\.id \}\)/,
-  );
-  assert.match(
-    launcherSource,
-    /label="Dish Detail"[\s\S]*onV2=\{\(\) => openSampleDishDetail\("v2"\)\}/,
-  );
-  assert.match(
-    launcherSource,
-    /label="Dish V2"[\s\S]*onPress=\{\(\) => openSampleDishDetail\("v2"\)\}/,
-  );
+  assert.match(launcherSource, /navigation\.navigate\("DishDetail", \{ dishId: dish\.id \}\)/);
+  assert.match(launcherSource, /label="Dish"[\s\S]*onPress=\{\(\) => openSampleDishDetail\(\)\}/);
+});
+
+test("search home shows debounced inline results and keeps a see-all action", () => {
+  const search = read("src/app/screens/search/DishSearchScreen.tsx");
+
+  assert.match(search, /const INLINE_RESULT_DEBOUNCE_MS = 250/);
+  assert.match(search, /setTimeout\([\s\S]*getSearchResultsAsync\(/);
+  assert.match(search, /clearTimeout\(timer\)/);
+  assert.match(search, /inlineResults\.map\(\(dish, index\) =>/);
+  assert.match(search, /navigation\.navigate\("DishDetail", \{ dishId: dish\.id \}\)/);
+  assert.match(search, /"See all results"/);
+  assert.match(search, /navigation\.navigate\("SearchResults"\)/);
 });
