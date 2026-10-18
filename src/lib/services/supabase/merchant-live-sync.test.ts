@@ -80,7 +80,7 @@ test("raw catalog refresh runs per venue, only for app-user writes, and is not c
 });
 
 const hardening = readFileSync(
-  resolve(process.cwd(), "supabase/migrations/20261018170000_merchant_live_sync_hardening.sql"),
+  resolve(process.cwd(), "supabase/migrations/20261018171000_merchant_live_sync_hardening.sql"),
   "utf8",
 );
 
