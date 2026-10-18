@@ -1394,11 +1394,15 @@ function LegacySearchResultsScreen() {
   }
 
   return (
-    <Screen scroll={false}>
-      <AppHeader
-        title={filters.query.trim() ? `Results for "${filters.query.trim()}"` : "Search results"}
-      />
+    <Screen scroll={false} fullWidth>
       <SearchResultsView
+        header={
+          <AppHeader
+            title={
+              filters.query.trim() ? `Results for "${filters.query.trim()}"` : "Search results"
+            }
+          />
+        }
         query={filters.query}
         onQueryChange={updateQuery}
         onClear={() => updateQuery("")}

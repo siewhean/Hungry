@@ -99,3 +99,18 @@ test("Search remains menu-backed instead of surfacing unapproved menu rows", () 
     /from\s+dishes\s+d[\s\S]{0,200}where\s+params\.query\s+is\s+not\s+null(?![\s\S]{0,500}catalog_menu_is_displayable)/i,
   );
 });
+
+test("Discovery feed lists venues without menus after venues with menus", () => {
+  const migration = readRepoFile(
+    "supabase/migrations/20261018133000_discovery_feed_all_venues.sql",
+  );
+  assert.match(migration, /left\s+join\s+priced_menu_venues\s+pmv/i);
+  assert.doesNotMatch(migration, /\n\s+join\s+priced_menu_venues/i);
+  assert.match(migration, /order\s+by\s+filtered\.has_menu\s+desc\s+limit\s+500/i);
+  assert.match(migration, /left\s+join\s+lateral\s*\(\s*select\s+d\.\*/i);
+  assert.match(migration, /catalog_menu_is_displayable\(d\.menu_approved_for_display/);
+  assert.match(migration, /\(candidates\.top_dish_id\s+is\s+not\s+null\)\s+desc/i);
+
+  const screen = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  assert.match(screen, /\{topDish \? null : \([\s\S]{0,400}Menu coming soon/);
+});

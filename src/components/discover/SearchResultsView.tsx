@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   Animated,
   Easing,
@@ -18,6 +18,8 @@ import type { DishDetail } from "@/types/domain";
 type FilterTab = "All" | "Dishes";
 
 interface SearchResultsViewProps {
+  /** Rendered beside the search launcher so the title and launcher share one row. */
+  header?: ReactNode;
   query: string;
   onQueryChange: (query: string) => void;
   onClear: () => void;
@@ -77,7 +79,9 @@ const SearchResultRow = memo(function SearchResultRow({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Open ${dish.name}`}
+      accessibilityLabel={
+        dish.venueName ? `Open ${dish.name} from ${dish.venueName}` : `Open ${dish.name}`
+      }
       onPressIn={handlePressIn}
       onPress={handlePress}
       style={{ flexDirection: "row", gap: spacing[3] }}
@@ -94,6 +98,11 @@ const SearchResultRow = memo(function SearchResultRow({
         <AppText variant="bodyBold" numberOfLines={1}>
           {dish.name}
         </AppText>
+        {dish.venueName ? (
+          <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
+            {dish.venueName}
+          </AppText>
+        ) : null}
         <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
           <Star color={palette.amber} fill={palette.amber} size={14} />
           <AppText variant="micro" style={{ fontWeight: "700" }}>
@@ -112,6 +121,7 @@ const SearchResultRow = memo(function SearchResultRow({
 });
 
 export function SearchResultsView({
+  header,
   query,
   onQueryChange,
   onClear,
@@ -211,7 +221,15 @@ export function SearchResultsView({
           style={searchResultsStyles.searchDismissOverlay}
         />
       ) : null}
-      <View style={{ paddingHorizontal: spacing[4], paddingVertical: spacing[2] }}>
+      <View
+        style={{
+          alignItems: "center",
+          flexDirection: "row",
+          paddingHorizontal: spacing[4],
+          paddingVertical: spacing[2],
+        }}
+      >
+        {header && !isSearchExpanded ? <View style={{ flex: 1 }}>{header}</View> : null}
         <View
           style={{
             alignItems: "center",

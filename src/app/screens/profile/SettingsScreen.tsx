@@ -587,6 +587,12 @@ export function SettingsScreen() {
           label="Hungry support"
           icon={<CircleHelp size={20} color={palette.orange} />}
           onPress={() => void openTrustedExternalUrl(`mailto:${SUPPORT_EMAIL}`)}
+          isLast={false}
+        />
+        <SettingsRow
+          label="Data sources"
+          type="value"
+          description="Venue details include data © OpenStreetMap contributors (ODbL), Overture Maps Foundation and Foursquare Open Source Places."
           isLast
         />
       </SettingsSection>
