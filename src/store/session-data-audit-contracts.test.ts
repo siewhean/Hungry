@@ -80,6 +80,20 @@ test("share attribution survives a relaunch for seven days", () => {
   assert.match(read("src/hooks/useAppBootstrap.ts"), /void hydrateShareAttribution\(\);/);
 });
 
+test("share attribution is cleared once a signup is credited to it", async () => {
+  const { clearShareAttribution, getShareAttribution, rememberShareAttribution } =
+    await import("@/features/share/shareAttribution");
+  rememberShareAttribution({ source: "whatsapp", route: "DishDetail" });
+  assert.deepEqual(getShareAttribution(), { source: "whatsapp", route: "DishDetail" });
+  clearShareAttribution();
+  assert.equal(getShareAttribution(), null);
+
+  assert.match(
+    read("src/app/screens/auth/EmailVerificationScreen.tsx"),
+    /trackAnalyticsEvent\("sign_up_completed"[\s\S]*if \(shareAttribution\) clearShareAttribution\(\);/,
+  );
+});
+
 test("GPS refreshes on foreground and first follow asks for push inline", () => {
   const bootstrap = read("src/hooks/useAppBootstrap.ts");
   assert.match(bootstrap, /AppState\.addEventListener\("change"/);

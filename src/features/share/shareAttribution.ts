@@ -51,6 +51,15 @@ export function getShareAttribution(): ShareAttribution | null {
   return pendingAttribution;
 }
 
+/** Forgets the share tag once a signup has been credited to it. */
+export function clearShareAttribution() {
+  pendingAttribution = null;
+  pendingAttributionSavedAt = 0;
+  void Promise.resolve(hungryPersistStorage?.removeItem(ATTRIBUTION_STORAGE_KEY)).catch(
+    () => undefined,
+  );
+}
+
 /** Restores a share tag saved in an earlier app session. Call once at startup. */
 export async function hydrateShareAttribution(): Promise<void> {
   try {
