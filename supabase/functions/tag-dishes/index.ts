@@ -2,63 +2,20 @@
 /* eslint-disable import/no-unresolved */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
 import Anthropic from "npm:@anthropic-ai/sdk@0.135.0";
+import {
+  DIETARY_FLAGS,
+  FLAVOR_TAGS,
+  MODEL,
+  OUTPUT_SCHEMA,
+  SYSTEM_PROMPT,
+  TASTE_AXES,
+} from "../_shared/tasteTagging.ts";
 
 type JsonObject = Record<string, unknown>;
 
-const MODEL = "claude-haiku-5-5";
 const SOURCE = "claude_tagging_v1";
 const AUTO_APPLY_CONFIDENCE = 0.7;
 const MAX_BATCH_SIZE = 50;
-const TASTE_AXES = ["sweet", "spicy", "sour", "salty", "rich", "aromatic"] as const;
-const FLAVOR_TAGS = [
-  "wok_hei",
-  "lemak",
-  "qq",
-  "jelak",
-  "hiam",
-  "gao",
-  "chao_ta",
-  "shiok",
-  "sedap",
-  "power",
-];
-// Halal needs certification, so the model never suggests it.
-const DIETARY_FLAGS = ["vegetarian", "vegan", "pork_free", "nut_free", "gluten_free"];
-
-const SYSTEM_PROMPT = `You score Singapore hawker and restaurant dishes for a food recommendation app.
-
-For the dish given, estimate how it usually tastes as served in Singapore, on six axes from 0 (none) to 10 (extreme):
-sweet, spicy, sour, salty, rich (fat, coconut milk, oil, creaminess), aromatic (herbs, spices, wok hei, fragrance).
-
-Reference points:
-- Hainanese chicken rice: sweet 2, spicy 1, sour 1, salty 5, rich 5, aromatic 6
-- Laksa: sweet 2, spicy 6, sour 1, salty 6, rich 9, aromatic 8
-- Chendol: sweet 9, spicy 0, sour 0, salty 1, rich 6, aromatic 3
-- Assam fish: sweet 3, spicy 7, sour 8, salty 5, rich 3, aromatic 7
-
-Also return:
-- flavor_tags: up to 6 that clearly apply, from the allowed list only. wok_hei = smoky wok char, lemak = coconut-milk richness, qq = springy texture, jelak = cloyingly rich, hiam = aggressive lingering heat, gao = thick and concentrated, chao_ta = charred, shiok = very satisfying, sedap = umami-rich, power = standout strong flavour.
-- dietary_flags: only flags the dish almost always meets by its usual recipe. Leave a flag out when unsure; a wrong flag can hurt someone.
-- confidence: 0 to 1 for the taste scores. Above 0.8 only for a well-known dish with a clear name. Below 0.5 when the name is vague, unfamiliar, or could be several different dishes.
-- rationale: one short sentence on what drove the scores.`;
-
-const OUTPUT_SCHEMA = {
-  type: "object",
-  properties: {
-    sweet: { type: "number" },
-    spicy: { type: "number" },
-    sour: { type: "number" },
-    salty: { type: "number" },
-    rich: { type: "number" },
-    aromatic: { type: "number" },
-    flavor_tags: { type: "array", items: { type: "string", enum: FLAVOR_TAGS } },
-    dietary_flags: { type: "array", items: { type: "string", enum: DIETARY_FLAGS } },
-    confidence: { type: "number" },
-    rationale: { type: "string" },
-  },
-  required: [...TASTE_AXES, "flavor_tags", "dietary_flags", "confidence", "rationale"],
-  additionalProperties: false,
-};
 
 function toJson(status: number, body: JsonObject): Response {
   return new Response(JSON.stringify(body), {

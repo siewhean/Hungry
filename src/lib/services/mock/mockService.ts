@@ -62,6 +62,7 @@ import type {
 import { ACCOUNT_DELETION_GRACE_DAYS } from "@/lib/services/types";
 import type {
   AIBusinessInsight,
+  MoodSearchIntent,
   CustomerInteraction,
   DishDetail,
   DietaryFlag,
@@ -2349,6 +2350,11 @@ export const hungryService: HungryService = {
     async submitCommunityTags(_dishId: string, _tags: HawkerTasteTag[]): Promise<void> {
       // Mock: no-op — in production updates the dish's community taste vector
       return resolve(undefined);
+    },
+
+    // Mock and guest mode have no Claude access; search falls back to name matching.
+    async parseMoodQuery(_query: string): Promise<MoodSearchIntent | null> {
+      return resolve(null);
     },
   },
 

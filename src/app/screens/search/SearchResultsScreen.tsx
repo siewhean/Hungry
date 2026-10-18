@@ -54,9 +54,11 @@ import {
   type BrowseIndex,
 } from "@/features/search/browseIndex";
 import { dedupeNearestVenueCandidates } from "@/features/search/venueDedupe";
+import { applyMoodIntent, rankMoodResults, shouldTryMoodSearch } from "@/lib/ai/moodSearch";
 import {
   getCatalogRawService,
   getDataRepository,
+  getHungryService,
   getServiceProvider,
 } from "@/lib/services/serviceProvider";
 import type {
@@ -1312,9 +1314,43 @@ function LegacySearchResultsScreen() {
     () => serviceResults ?? getSearchResults(filters, profile.tasteVector),
     [filters, profile.tasteVector, serviceResults],
   );
-  const results = useMemo(
+  const nameMatchedResults = useMemo(
     () => sortSearchResults(rawResults, sortMode, profile.tasteVector),
     [profile.tasteVector, rawResults, sortMode],
+  );
+  const [moodSearch, setMoodSearch] = useState<{
+    query: string;
+    summary: string;
+    results: DishDetail[];
+  } | null>(null);
+  const moodRequestRef = useRef("");
+  const isMoodActive = moodSearch !== null && moodSearch.query === filters.query.trim();
+  const results = isMoodActive ? moodSearch.results : nameMatchedResults;
+
+  const runMoodSearch = useCallback(
+    (query: string) => {
+      const trimmed = query.trim();
+      if (!shouldTryMoodSearch(trimmed, nameMatchedResults.length)) return;
+      moodRequestRef.current = trimmed;
+      void getHungryService()
+        .ai.parseMoodQuery(trimmed)
+        .then(async (intent) => {
+          if (!intent || moodRequestRef.current !== trimmed) return;
+          const mood = applyMoodIntent(filters, profile.tasteVector, intent);
+          const ranked = rankMoodResults(
+            await getSearchResultsAsync(mood.filters, mood.tasteVector),
+            intent,
+          );
+          if (moodRequestRef.current !== trimmed) return;
+          setMoodSearch({
+            query: trimmed,
+            summary: intent.summary,
+            results: ranked,
+          });
+        })
+        .catch(() => undefined);
+    },
+    [filters, nameMatchedResults.length, profile.tasteVector],
   );
 
   useEffect(() => {
@@ -1341,8 +1377,9 @@ function LegacySearchResultsScreen() {
         surface: "search",
         query: normalizedQuery,
       });
+      runMoodSearch(query);
     },
-    [recordTasteInteraction],
+    [recordTasteInteraction, runMoodSearch],
   );
 
   if (browseMode) {
@@ -1364,6 +1401,9 @@ function LegacySearchResultsScreen() {
         onSubmitQuery={recordCommittedSearchQuery}
         onTasteFilterPress={() => navigation.navigate("TasteFilter")}
         results={results}
+        resultsNote={
+          isMoodActive && moodSearch.summary ? `Picks for: ${moodSearch.summary}` : undefined
+        }
         onResultPressIn={(dish) => {
           prefetchDishDetail(dish.id);
           preloadRoute(navigation, "DishDetail", { dishId: dish.id });

@@ -14,6 +14,7 @@ import {
   processExplicitFeedback as processExplicitFeedbackCore,
   runRecommendationPipeline,
 } from "@/lib/ai/tasteEngine";
+import { parseMoodIntent } from "@/lib/ai/moodSearch";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { AUTH_REDIRECTS } from "@/constants/links";
 import {
@@ -6221,6 +6222,18 @@ export const supabaseService: HungryService = {
 
     async submitCommunityTags() {
       return;
+    },
+
+    async parseMoodQuery(query) {
+      const client = getSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!client || !userId || query.trim().length < 2) return null;
+      const { data, error } = await client.functions.invoke("mood-search", { body: { query } });
+      if (error) {
+        console.warn("Mood search unavailable", error.message);
+        return null;
+      }
+      return parseMoodIntent((data as Row | undefined)?.intent);
     },
   },
 

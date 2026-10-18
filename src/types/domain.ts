@@ -403,6 +403,17 @@ export interface SearchFilters {
   openOnly?: boolean;
 }
 
+/** What Claude understood from a plain-language search such as "something soupy, under $8". */
+export interface MoodSearchIntent {
+  /** Added to the person's usual taste for this search only, each axis -5 to +5. */
+  tasteShift: TasteVector;
+  maxPrice?: number;
+  dietaryFlags: DietaryFlag[];
+  /** Dish-type words such as "soup" or "noodle", matched against dish names and tags. */
+  keywords: string[];
+  summary: string;
+}
+
 export interface StallPost {
   id: string;
   /** Stable author id when the post came from an authenticated publish flow. */
