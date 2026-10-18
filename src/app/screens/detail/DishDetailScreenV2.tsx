@@ -24,6 +24,7 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { useDetailSaveActions } from "@/features/checklistPortfolio/DetailSaveActions";
 import { buildDishGallery } from "@/features/detail/detailTransforms";
 import { formatDishUpdated } from "@/features/detail/dishFreshness";
+import { ExpandableReveal } from "@/features/detail/ExpandableReveal";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
@@ -660,8 +661,12 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                     ]}
                   >
                     <MapPin color={palette.orange} size={16} />
-                    <AppText variant="bodySmall" style={{ fontWeight: "800" }}>
-                      {venue.name} - {venue.unitNumber}
+                    <AppText
+                      variant="bodySmall"
+                      numberOfLines={1}
+                      style={{ flexShrink: 1, fontWeight: "800" }}
+                    >
+                      {venue.name}
                     </AppText>
                   </View>
                 </Pressable>
@@ -759,9 +764,10 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
               <View style={{ gap: spacing[3] }}>
                 <Button
                   label={tasteProfileOpen ? "Hide Taste Profile" : "View Taste Profile"}
+                  accessibilityState={{ expanded: tasteProfileOpen }}
                   onPress={() => setTasteProfileOpen((current) => !current)}
                 />
-                {tasteProfileOpen ? (
+                <ExpandableReveal open={tasteProfileOpen}>
                   <View
                     style={{
                       backgroundColor: palette.surface,
@@ -808,7 +814,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                       );
                     })}
                   </View>
-                ) : null}
+                </ExpandableReveal>
               </View>
 
               <Pressable

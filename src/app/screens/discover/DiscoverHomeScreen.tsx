@@ -1065,33 +1065,13 @@ function VerticalStallShowcaseSection({
                           </View>
                           <ChevronRight color={palette.textMuted} size={16} />
                         </View>
-                        <View
-                          style={{
-                            alignItems: "center",
-                            flexDirection: "row",
-                            justifyContent: "space-between",
-                          }}
+                        <AppText
+                          variant="bodySmall"
+                          numberOfLines={1}
+                          style={{ color: palette.text, fontWeight: "800" }}
                         >
-                          <AppText
-                            variant="bodySmall"
-                            numberOfLines={1}
-                            style={{ color: palette.text, flex: 1, fontWeight: "800" }}
-                          >
-                            {card.heroDish.name}
-                          </AppText>
-                          <AppText
-                            variant="price"
-                            style={{
-                              color: palette.orange,
-                              fontSize: typography.bodySmallBold.fontSize,
-                              fontWeight: "800",
-                              lineHeight: typography.bodySmallBold.lineHeight,
-                              marginLeft: spacing[1],
-                            }}
-                          >
-                            S${card.heroDish.price.toFixed(2)}
-                          </AppText>
-                        </View>
+                          {card.heroDish.name}
+                        </AppText>
                       </View>
                     </Animated.View>
                   </Pressable>

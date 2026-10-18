@@ -61,8 +61,9 @@ import { openMerchantProfileLink, openTrustedMapsUrl } from "@/lib/security/safe
 import { getDishSection, isSectionFlag, isSoldOut } from "@/features/merchant/menuSections";
 import {
   buildMapsSearchUrl,
-  formatFoodCentreLocation,
   formatFullStallAddress,
+  formatStallAddressLines,
+  formatStallBuildingLabel,
   formatWeeklyOperatingHours,
 } from "@/features/detail/stallLocation";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -388,8 +389,11 @@ export function StallDetailScreen({ navigation, route }: Props) {
     address: venue?.address ?? (building as { address?: string } | undefined)?.address,
     postalCode: venue?.postalCode ?? (building as { postalCode?: string } | undefined)?.postalCode,
   };
-  const foodCentreLocation = formatFoodCentreLocation(buildingLocation);
+  const stallBuildingLabel = venue
+    ? formatStallBuildingLabel(venue, { ...buildingLocation, planningArea: building?.planningArea })
+    : undefined;
   const stallAddress = venue ? formatFullStallAddress(venue, buildingLocation) : "";
+  const stallAddressLines = venue ? formatStallAddressLines(venue, buildingLocation) : [];
 
   const shareReviewTarget = useMemo<ReviewShareTarget>(() => {
     return {
@@ -982,18 +986,14 @@ export function StallDetailScreen({ navigation, route }: Props) {
               >
                 <StallLogoMark logoUrl={sanitizeCatalogImageUrl(venue.logoUrl)} name={venue.name} />
                 <View style={{ flex: 1, gap: spacing[1] }}>
-                  <AppText variant="h2" numberOfLines={1}>
+                  <AppText variant="h3" numberOfLines={2}>
                     {venue.name}
                   </AppText>
-                  <AppText variant="bodyLarge" tone="secondary" numberOfLines={1}>
-                    {[
-                      foodCentreLocation || buildingLocation.name || "Food Centre",
-                      venue.unitNumber,
-                      distanceLabel,
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </AppText>
+                  {stallBuildingLabel || distanceLabel ? (
+                    <AppText variant="body" tone="secondary" numberOfLines={1}>
+                      {[stallBuildingLabel, distanceLabel].filter(Boolean).join(" · ")}
+                    </AppText>
+                  ) : null}
                 </View>
                 <ChevronRight color={palette.textMuted} size={24} />
               </Card>
@@ -1132,9 +1132,17 @@ export function StallDetailScreen({ navigation, route }: Props) {
                       style={{ alignItems: "flex-start", flexDirection: "row", gap: spacing[2] }}
                     >
                       <MapPin color={palette.orange} size={18} />
-                      <AppText variant="body" tone="secondary" style={{ flex: 1 }}>
-                        {stallAddress}
-                      </AppText>
+                      <View style={{ flex: 1, gap: spacing[0.5] }}>
+                        {stallAddressLines.map((line, index) => (
+                          <AppText
+                            key={`${index}-${line}`}
+                            variant="body"
+                            tone={index === 0 ? "default" : "secondary"}
+                          >
+                            {line}
+                          </AppText>
+                        ))}
+                      </View>
                     </View>
                   </Pressable>
                 </Card>

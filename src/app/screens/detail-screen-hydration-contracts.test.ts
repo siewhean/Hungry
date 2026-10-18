@@ -21,7 +21,8 @@ test("detail screens hydrate specific Supabase records before showing not-found 
   assert.match(stallDetail, /discovery\.getVenue\(venueId\)/);
   assert.match(stallDetail, /discovery\.listDishesByVenue\(venue\.id\)/);
   assert.match(stallDetail, /venue\?\.buildingName \?\? building\?\.name/);
-  assert.match(stallDetail, /formatFoodCentreLocation\(buildingLocation\)/);
+  assert.match(stallDetail, /formatStallBuildingLabel\(venue, \{ \.\.\.buildingLocation/);
+  assert.match(stallDetail, /formatStallAddressLines\(venue, buildingLocation\)/);
   assert.match(stallDetail, /formatFullStallAddress\(venue, buildingLocation\)/);
   assert.match(stallDetail, /const EMPTY_DISHES: DishDetail\[\] = \[\]/);
   assert.match(stallDetail, /serviceProviderMode === "supabase" \? EMPTY_DISHES : cachedDishes/);

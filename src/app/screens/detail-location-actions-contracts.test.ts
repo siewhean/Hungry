@@ -17,7 +17,8 @@ test("detail screens show full food-centre location, weekly hours, and maps acti
   assert.match(stallDetail, /openTrustedMapsUrl\(buildMapsSearchUrl\(stallAddress\)\)/);
 
   assert.match(locationHelpers, /WEEKDAYS\.map/);
-  assert.match(locationHelpers, /Singapore \$\{building\.postalCode\}/);
+  assert.match(locationHelpers, /formatVenueAddressLine\(/);
+  assert.match(locationHelpers, /formatVenueLocationLabel\(/);
   assert.match(safeLinking, /ALLOWED_MAPS_HOSTS/);
   assert.match(safeLinking, /openTrustedMapsUrl/);
 });
