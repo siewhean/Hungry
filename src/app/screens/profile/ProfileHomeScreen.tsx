@@ -37,6 +37,7 @@ import { useSocialStore } from "@/store/useSocialStore";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import { useMerchantStore } from "@/store/useMerchantStore";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { TASTE_DIMENSIONS } from "@/constants/taste";
 import { useActivityStore } from "@/store/useActivityStore";
 import { useFoodCredStore } from "@/store/useFoodCredStore";
 import { usePassportStore } from "@/store/usePassportStore";
@@ -133,6 +134,14 @@ export function ProfileHomeScreen({
 
   const { colorScheme, componentRadii, palette, spacing, radii, shadows } = useHungryTheme();
   const headerActionSize = spacing[8] + spacing[2.5];
+  const tasteBarColors = {
+    sweet: palette.statusFast,
+    spicy: palette.orange,
+    sour: palette.warning,
+    salty: palette.info,
+    rich: palette.amber,
+    aromatic: palette.teal,
+  };
   const profile = useProfileStore((state) => state.profile);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
@@ -870,24 +879,15 @@ export function ProfileHomeScreen({
               </View>
 
               <View style={{ gap: spacing[2] }}>
-                <TasteBar
-                  label="Spicy"
-                  value={profile.tasteVector.spicy}
-                  max={10}
-                  color={palette.orange}
-                />
-                <TasteBar
-                  label="Salty"
-                  value={profile.tasteVector.salty}
-                  max={10}
-                  color={palette.info}
-                />
-                <TasteBar
-                  label="Sweet"
-                  value={profile.tasteVector.sweet}
-                  max={10}
-                  color={palette.statusFast}
-                />
+                {TASTE_DIMENSIONS.map((dimension) => (
+                  <TasteBar
+                    key={dimension.key}
+                    label={dimension.label}
+                    value={profile.tasteVector[dimension.key]}
+                    max={10}
+                    color={tasteBarColors[dimension.key]}
+                  />
+                ))}
               </View>
             </View>
           </View>

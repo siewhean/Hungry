@@ -626,3 +626,15 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
     /label="Dish V2"[\s\S]*onPress=\{\(\) => openSampleDishDetail\("v2"\)\}/,
   );
 });
+
+test("search home shows debounced inline results and keeps a see-all action", () => {
+  const search = read("src/app/screens/search/DishSearchScreen.tsx");
+
+  assert.match(search, /const INLINE_RESULT_DEBOUNCE_MS = 250/);
+  assert.match(search, /setTimeout\([\s\S]*getSearchResultsAsync\(/);
+  assert.match(search, /clearTimeout\(timer\)/);
+  assert.match(search, /inlineResults\.map\(\(dish, index\) =>/);
+  assert.match(search, /navigation\.navigate\("DishDetail", \{ dishId: dish\.id \}\)/);
+  assert.match(search, /"See all results"/);
+  assert.match(search, /navigation\.navigate\("SearchResults"\)/);
+});
