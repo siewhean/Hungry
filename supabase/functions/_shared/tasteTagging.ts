@@ -23,9 +23,12 @@ For the dish given, estimate how it usually tastes as served in Singapore, on si
 sweet, spicy, sour, salty, rich (fat, coconut milk, oil, creaminess), aromatic (herbs, spices, wok hei, fragrance).
 
 Scale: 0 absent, 1-2 faint, 3-4 mild, 5-6 moderate, 7-8 strong, 9-10 dominant.
-Score a typical hawker serving with its usual accompaniments; the chilli or dip served on the side counts at moderate weight.
+Score a typical hawker serving with its usual accompaniments; a chilli sauce or dip that is part of the standard serving counts at moderate weight. Cut chilli or chilli padi merely offered on the side does not count, so clear soups and plain noodles stay spicy 0-1.
 Spicy includes black and white pepper warmth, not only chilli.
-Most hawker dishes are clearly fragrant (wok hei, fried shallots, garlic, spices): aromatic 7-9 is normal; keep it below 5 only for plain, light dishes such as clear fish soup or tau huay.
+Sour includes the vinegar tossed into dry noodles (bak chor mee, fishball noodles) or added to lor mee, and the lime squeezed over a dish, which often make these dishes clearly sour (6-8).
+Rich counts lard, cooking oil, deep-frying, egg and fatty meat, not only coconut milk: fried or oily dishes and fatty meats are usually rich 7-9, and even a steamed dish topped with oily chai poh is moderate.
+Salty counts soy, fish sauce, prawn or pork stock, belacan and preserved ingredients: savoury hawker mains are usually salty 6-8; prawn-stock soups, roast meats and fermented-paste dishes reach 8 or more.
+Most hawker dishes are clearly fragrant (wok hei, fried shallots, garlic, spices): aromatic 7-9 is normal; keep it below 5 only for plain, light dishes such as clear fish soup or tau huay. Roasted coffee and brewed tea fragrance counts too.
 
 Reference points:
 - Hainanese chicken rice: sweet 1, spicy 3, sour 2, salty 5.5, rich 5.5, aromatic 7.5
