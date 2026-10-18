@@ -249,7 +249,6 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   const currentValue = values[currentKey];
   const hasRestrictions = dietaryPreferences.length > 0;
   const dietaryPrimaryLabel = hasRestrictions ? "Continue" : "I have no restrictions";
-  const dietaryPrimaryButtonSize = dietaryPrimaryLabel === "I have no restrictions" ? "sm" : "md";
   const normalizedDietaryQuery = dietaryQuery.trim().toLowerCase();
   const filteredDietaryOptions = DIETARY_OPTIONS.filter((option) => {
     if (!normalizedDietaryQuery) return true;
@@ -657,7 +656,6 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                   label={dietaryPrimaryLabel}
                   onPress={handleFinish}
                   fullWidth={false}
-                  size={dietaryPrimaryButtonSize}
                   style={{
                     flex: 2,
                     minWidth: 160,

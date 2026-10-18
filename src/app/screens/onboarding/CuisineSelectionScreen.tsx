@@ -4,6 +4,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Check } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 
 import { AccessibleImage, AppText, Button } from "@/components/ui";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -141,15 +142,16 @@ function CuisineCard({
           contentFit="cover"
           decorative
         />
-        {/* Dark scrim at bottom */}
-        <View
+        {/* Dark scrim at bottom, fading out upward */}
+        <LinearGradient
+          colors={["rgba(0,0,0,0)", "rgba(0,0,0,0.6)"]}
+          pointerEvents="none"
           style={{
             position: "absolute",
             bottom: 0,
             left: 0,
             right: 0,
-            height: "55%",
-            backgroundColor: "rgba(0,0,0,0.52)",
+            height: "60%",
           }}
         />
         {/* Orange tint when selected */}

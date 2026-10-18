@@ -144,7 +144,10 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
     /if \(isAuthenticated\) \{\s*toggleFavourite\(dish\);\s*return;\s*\}[\s\S]*navigation\.navigate\("OnboardingAuth"\)/,
   );
   // Result is ranked by the quiz taste vector, not a fixed popular list.
-  assert.match(tasteProfileResult, /searchDishes\([\s\S]*tasteValues: tasteVector/);
+  assert.match(tasteProfileResult, /tasteValues: tasteVector/);
+  assert.match(tasteProfileResult, /searchDishes\(getResultFilters\(\), tasteVector\)/);
+  // Supabase has no cached catalog during onboarding, so the screen asks the server.
+  assert.match(tasteProfileResult, /getSearchResultsAsync\(getResultFilters\(\), tasteVector\)/);
   assert.doesNotMatch(tasteProfileResult, /generated food photo/);
   assert.match(
     tasteQuiz,

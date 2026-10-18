@@ -18,7 +18,7 @@ import {
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "ManualLocationPicker">;
 
-const SINGAPORE_AREAS = [
+const SINGAPORE_AREA_LIST = [
   { id: "ang-mo-kio", name: "Ang Mo Kio", coordinate: { latitude: 1.3691, longitude: 103.8454 } },
   { id: "bedok", name: "Bedok", coordinate: { latitude: 1.3236, longitude: 103.9273 } },
   { id: "bishan", name: "Bishan", coordinate: { latitude: 1.3509, longitude: 103.835 } },
@@ -86,6 +86,10 @@ const SINGAPORE_AREAS = [
   { id: "woodlands", name: "Woodlands", coordinate: { latitude: 1.4389, longitude: 103.7861 } },
   { id: "yishun", name: "Yishun", coordinate: { latitude: 1.4294, longitude: 103.8393 } },
 ] satisfies readonly { id: string; name: string; coordinate: Coordinate }[];
+
+const SINGAPORE_AREAS = [...SINGAPORE_AREA_LIST].sort((left, right) =>
+  left.name.localeCompare(right.name),
+);
 
 export function ManualLocationPickerScreen({ navigation }: Props) {
   const { palette, radii, shadows, spacing } = useHungryTheme();

@@ -552,6 +552,14 @@ export function StallDetailScreen({ navigation, route }: Props) {
           <EmptyState
             title="Stall not found"
             body="The stall you are looking for does not exist in our current directory."
+            ctaLabel={navigation.canGoBack() ? "Go back" : "Go to Home"}
+            onPress={() => {
+              if (navigation.canGoBack()) {
+                navigation.goBack();
+                return;
+              }
+              navigation.navigate("MainTabs", { screen: "Home" });
+            }}
             errorMessage={`Missing stall data for ID: ${venueId || "unknown"}`}
             sendErrorContext="Stall detail"
           />

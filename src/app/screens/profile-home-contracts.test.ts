@@ -74,3 +74,11 @@ test("profile home contract: Taste Fingerprint shows all six dimensions and Save
   assert.match(source, /label="Saved"/);
   assert.doesNotMatch(source, /label="Favourites"|>Favourites</);
 });
+
+test("profile home contract: a preloaded Profile tab never bounces guests to Login", () => {
+  const source = read("src/app/screens/profile/ProfileHomeScreen.tsx");
+
+  // The tab navigator mounts Profile in the background, so the guest redirect must wait for focus.
+  assert.match(source, /const isFocused = useIsFocused\(\);/);
+  assert.match(source, /if \(mode !== "self" \|\| isAuthenticated \|\| !isFocused\) \{/);
+});

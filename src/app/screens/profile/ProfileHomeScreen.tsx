@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Alert, Clipboard, Pressable, Share, View } from "react-native";
+import { useIsFocused } from "@react-navigation/native";
 import {
   ChevronRight,
   Settings,
@@ -245,8 +246,10 @@ export function ProfileHomeScreen({
     preloadRoute(rootNavigation, "MerchantTabs");
   }, [merchantAccount, rootNavigation]);
 
+  // The tab navigator preloads Profile in the background; only redirect a guest who actually opened it.
+  const isFocused = useIsFocused();
   useEffect(() => {
-    if (mode !== "self" || isAuthenticated) {
+    if (mode !== "self" || isAuthenticated || !isFocused) {
       return;
     }
 
@@ -255,7 +258,7 @@ export function ProfileHomeScreen({
       index: 0,
       routes: [{ name: "AuthStack", params: { screen: "Login" } }],
     });
-  }, [isAuthenticated, mode, rootNavigation, setReturnRoute]);
+  }, [isAuthenticated, isFocused, mode, rootNavigation, setReturnRoute]);
 
   useEffect(() => {
     if (isAuthenticated) {
