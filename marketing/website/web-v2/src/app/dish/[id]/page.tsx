@@ -2,10 +2,16 @@ import { notFound } from "next/navigation";
 
 import styles from "@/components/seo/SeoPage.module.css";
 import { SharePreview, sharePreviewMetadata } from "@/components/share/SharePreview";
-import { formatPrice, formatUpdated, getSharedDish } from "@/lib/share/sharedLinks";
+import {
+  formatPrice,
+  formatUpdated,
+  getSharedDish,
+  readShareSource,
+} from "@/lib/share/sharedLinks";
 
 type PageProps = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ src?: string | string[] }>;
 };
 
 export async function generateMetadata({ params }: PageProps) {
@@ -22,11 +28,13 @@ export async function generateMetadata({ params }: PageProps) {
     `${dish.name}${where}`,
     `${dish.name}${where}, ${formatPrice(dish.price)}. See it on Hungry.`,
     `/dish/${dish.id}`,
+    dish.imageUrl,
   );
 }
 
-export default async function SharedDishPage({ params }: PageProps) {
+export default async function SharedDishPage({ params, searchParams }: PageProps) {
   const { id } = await params;
+  const shareSource = readShareSource((await searchParams).src);
   const dish = await getSharedDish(id);
   if (!dish) notFound();
 
@@ -53,6 +61,8 @@ export default async function SharedDishPage({ params }: PageProps) {
       facts={facts}
       imageUrl={dish.imageUrl}
       appPath={`dish/${encodeURIComponent(dish.id)}`}
+      shareSource={shareSource}
+      mapsUrl={dish.stall?.mapsUrl}
     >
       {dish.stall ? (
         <section className={styles.section}>

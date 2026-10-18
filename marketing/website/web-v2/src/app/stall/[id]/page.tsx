@@ -2,10 +2,11 @@ import { notFound } from "next/navigation";
 
 import styles from "@/components/seo/SeoPage.module.css";
 import { SharePreview, sharePreviewMetadata } from "@/components/share/SharePreview";
-import { formatPrice, getSharedStall } from "@/lib/share/sharedLinks";
+import { formatPrice, getSharedStall, readShareSource } from "@/lib/share/sharedLinks";
 
 type PageProps = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ src?: string | string[] }>;
 };
 
 export async function generateMetadata({ params }: PageProps) {
@@ -24,8 +25,9 @@ export async function generateMetadata({ params }: PageProps) {
   );
 }
 
-export default async function SharedStallPage({ params }: PageProps) {
+export default async function SharedStallPage({ params, searchParams }: PageProps) {
   const { id } = await params;
+  const shareSource = readShareSource((await searchParams).src);
   const stall = await getSharedStall(id);
   if (!stall) notFound();
 
@@ -42,6 +44,8 @@ export default async function SharedStallPage({ params }: PageProps) {
       title={stall.name}
       facts={facts}
       appPath={`venue/${encodeURIComponent(stall.id)}`}
+      shareSource={shareSource}
+      mapsUrl={stall.mapsUrl}
     >
       {stall.dishes.length ? (
         <section className={styles.section} aria-labelledby="menu-title">
