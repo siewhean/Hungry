@@ -12,6 +12,7 @@ import type {
   WheelChannelEvent,
   DietaryFlag,
 } from "@/types/domain";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 
 // ─── Mock Global DB ─────────────────────────────────────────────────────────
 // In a real app, this is Supabase or Firebase.
@@ -153,6 +154,10 @@ export const useWheelStore = create<WheelState>((set, get) => ({
   // ── joinParty ───────────────────────────────────────────────────────────────
 
   async joinParty(code, displayName, avatarUrl, dietaryPreferences) {
+    if (!FEATURE_FLAGS.wheelPartyEnabled) {
+      set({ connectionError: "Group spins are coming soon." });
+      return;
+    }
     const found = mockPartyStore.get(code.toUpperCase());
     if (!found) {
       set({ connectionError: `No party found with code ${code}` });

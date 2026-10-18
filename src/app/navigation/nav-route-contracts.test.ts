@@ -103,3 +103,18 @@ test("going offline shows a banner instead of taking over navigation", () => {
   // The route stays registered for the developer launcher.
   assert.match(rootNavigator, /name="Offline"/);
 });
+
+test("wheel party mode is gated and /join links explain group spins are coming", () => {
+  const wheelHome = read("src/app/screens/wheel/WheelHomeScreen.tsx");
+  const wheelLobby = read("src/app/screens/wheel/WheelLobbyScreen.tsx");
+  const wheelStore = read("src/store/useWheelStore.ts");
+
+  assert.match(wheelHome, /const PARTY_ENABLED = FEATURE_FLAGS\.wheelPartyEnabled/);
+  assert.match(
+    wheelHome,
+    /!PARTY_ENABLED && route\.params\?\.code[\s\S]*Group spins are coming soon/,
+  );
+  assert.match(wheelHome, /\{PARTY_ENABLED \? \([\s\S]*Join your friends/);
+  assert.match(wheelLobby, /\{PARTY_ENABLED \? \([\s\S]*party\.code/);
+  assert.match(wheelStore, /if \(!FEATURE_FLAGS\.wheelPartyEnabled\) \{/);
+});

@@ -87,3 +87,16 @@ test("indoor floorplans stay disabled in every environment until launch gates pa
     assert.equal(resolveFeatureFlags(env, "test").floorplansEnabled, false);
   }
 });
+
+test("wheel parties and Crave stay out of production", () => {
+  const production = resolveFeatureFlags("production");
+  assert.equal(production.wheelPartyEnabled, false);
+  assert.equal(production.craveEnabled, false);
+  assert.equal("hungryWheelEnabled" in production, false);
+
+  for (const env of ["development", "staging"]) {
+    const flags = resolveFeatureFlags(env);
+    assert.equal(flags.wheelPartyEnabled, true);
+    assert.equal(flags.craveEnabled, true);
+  }
+});
