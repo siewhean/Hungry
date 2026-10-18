@@ -587,8 +587,12 @@ function buildDishPresentationMap(
     if (!dishId) return;
     const presentation = ensurePresentation(dishId);
     presentation.tasteVector = mapTasteVector(row);
-    // Older databases have no confidence column; treat their vectors as fully trusted.
-    presentation.tasteConfidence = row.confidence == null ? undefined : toNumber(row.confidence);
+    // Confidence only describes AI-tagged vectors. Seed/curated ('default') vectors and older
+    // databases without the column are fully trusted.
+    presentation.tasteConfidence =
+      row.confidence == null || toString(row.source) === "default"
+        ? undefined
+        : toNumber(row.confidence);
   });
 
   dishDietaryFlagRows.forEach((row) => {

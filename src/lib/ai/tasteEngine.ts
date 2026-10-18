@@ -258,6 +258,8 @@ export interface PipelineContext {
   excludeDishIds?: string[];
   /** Environmental context (time-of-day, weather) */
   context?: ContextState;
+  /** Dishes the user liked (favourites, onboarding picks); their tags form a light secondary match */
+  likedDishIds?: string[];
 }
 
 export interface PipelineResult {
@@ -279,6 +281,30 @@ export const RECOMMENDATION_SCORE_WEIGHTS = {
   rating: 0.1,
   novelty: 0.1,
 } as const;
+
+/** Share of the taste score that comes from flavour/cuisine tag overlap when the user has liked dishes. */
+export const TAG_MATCH_WEIGHT = 0.2;
+
+function dishTags(dish: DishSummary): string[] {
+  const tags = [...dish.tasteTags, ...(dish.foodTypeTag ? [dish.foodTypeTag] : [])];
+  return [...new Set(tags.map((tag) => tag.trim().toLowerCase()).filter(Boolean))];
+}
+
+/** Tag -> 0-1 affinity, from how often each tag appears across the user's liked dishes. */
+export function buildTagAffinity(likedDishes: DishSummary[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const dish of likedDishes) {
+    for (const tag of dishTags(dish)) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+  }
+  const max = Math.max(0, ...counts.values());
+  return new Map([...counts].map(([tag, count]) => [tag, count / max]));
+}
+
+/** 0-1: summed affinity of the dish's tags, capped at 1. */
+export function tagMatchScore(dish: DishSummary, affinity: Map<string, number>): number {
+  const total = dishTags(dish).reduce((sum, tag) => sum + (affinity.get(tag) ?? 0), 0);
+  return Math.min(1, total);
+}
 
 // ─── Stage 1: Hard Filter (Dietary Gate) ──────────────────────────────────────
 
@@ -317,7 +343,7 @@ function stage2CandidateGeneration<T extends DishSummary>(
  * community rating, and implicit behavior signals.
  *
  * Weights:
- *   50% — Taste match (blended cosine + euclidean)
+ *   50% — Taste match (blended cosine + euclidean, 20% tag overlap when likedDishIds given)
  *   15% — Contextual relevance (time-of-day modifier)
  *   15% — Distance proximity (inverse normalized)
  *   10% — Community rating (normalized)
@@ -330,12 +356,19 @@ function stage3PrecisionScoring<T extends DishSummary & { _rawScore: number }>(
   candidates: T[],
   contextVector: TasteVector,
   userVector: TasteVector,
+  tagAffinity: Map<string, number> = new Map(),
 ): (T & { _precisionScore: number })[] {
   // Find max distance for normalization
   const maxDist = Math.max(...candidates.map((d) => d.distanceMeters), 1);
 
   return candidates.map((dish) => {
-    const tasteScore = dish._rawScore; // already computed in Stage 2
+    // Vector match from Stage 2, lightly blended with tag overlap so dishes with
+    // similar vectors but different character (laksa vs bak kut teh) separate.
+    const tasteScore =
+      tagAffinity.size > 0
+        ? (1 - TAG_MATCH_WEIGHT) * dish._rawScore +
+          TAG_MATCH_WEIGHT * tagMatchScore(dish, tagAffinity)
+        : dish._rawScore;
     const contextScore = blendedMatchScore(contextVector, dish.tasteVector);
     const distanceScore = 1 - dish.distanceMeters / maxDist;
     const ratingScore = (dish.rating ?? 0) / 5;
@@ -566,7 +599,14 @@ export function runRecommendationPipeline(
   const topCandidates = stage2CandidateGeneration(candidates, contextVector, 50);
 
   // Stage 3: Multi-signal precision scoring
-  const precisionRanked = stage3PrecisionScoring(topCandidates, contextVector, ctx.userVector);
+  const likedIds = new Set(ctx.likedDishIds ?? []);
+  const tagAffinity = buildTagAffinity(allDishes.filter((dish) => likedIds.has(dish.id)));
+  const precisionRanked = stage3PrecisionScoring(
+    topCandidates,
+    contextVector,
+    ctx.userVector,
+    tagAffinity,
+  );
 
   // Sort by precision score
   precisionRanked.sort((a, b) => b._precisionScore - a._precisionScore);
