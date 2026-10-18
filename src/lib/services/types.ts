@@ -773,6 +773,8 @@ export interface HungryService {
     getFollowedStallIds(): Promise<string[]>;
     updateTasteVector(vector: TasteVector): Promise<void>;
     updateTasteProfile(profile: TasteProfile): Promise<void>;
+    /** Best-effort log of taste quiz answers; skipped for guests. */
+    recordQuizResponse(responses: Record<string, unknown>, tasteVector: TasteVector): Promise<void>;
   };
 
   // Push notifications (opt-in)
