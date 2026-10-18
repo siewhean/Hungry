@@ -44,6 +44,7 @@ import type { DishDetail } from "@/types/domain";
 import { isVenueOpenFromHours } from "@/utils/stallStatus";
 import { webShareUrl } from "@/constants/links";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { firstDishTimingProps } from "@/lib/analytics/firstDishTiming";
 
 const CommentIcon = MessageCircle ?? MessageCircleMore;
 
@@ -316,6 +317,11 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   useEffect(() => {
     if (!dish || lastRecordedDishViewId.current === dish.id) return;
     lastRecordedDishViewId.current = dish.id;
+    trackAnalyticsEvent(
+      "dish_viewed",
+      { dish_id: dish.id, venue_id: dish.venueId, ...firstDishTimingProps() },
+      isAuthenticated ? { userId: profile.id } : undefined,
+    );
     void getHungryService().discovery.recordDishView(dish.id, {
       userId: isAuthenticated ? profile.id : undefined,
     });

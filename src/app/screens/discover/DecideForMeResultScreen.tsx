@@ -26,6 +26,7 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { firstDishTimingProps } from "@/lib/analytics/firstDishTiming";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import { AccessibleImage, AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
 import { formatDishUpdated } from "@/features/detail/dishFreshness";
@@ -301,6 +302,15 @@ export function DecideForMeResultScreen() {
       .recommendations.recordImpression("decide", [dish.id])
       .catch(() => undefined);
   }, [dish?.id]);
+  const shownDishId = dish?.id;
+
+  useEffect(() => {
+    if (!shownDishId) return;
+    trackAnalyticsEvent("decide_for_me_result_shown", {
+      dish_id: shownDishId,
+      ...firstDishTimingProps(),
+    });
+  }, [shownDishId]);
   const match = dish
     ? Math.round(blendedMatchScore(profile.tasteVector, dish.tasteVector) * 100)
     : 0;

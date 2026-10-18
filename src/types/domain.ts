@@ -709,6 +709,27 @@ export interface PortfolioItem {
   updatedAt: string;
 }
 
+/** A public list as anyone with the link sees it (get_public_portfolio). */
+export interface PublicPortfolio {
+  id: string;
+  name: string;
+  description?: string;
+  ownerDisplayName?: string;
+  updatedAt?: string;
+  items: PublicPortfolioItem[];
+}
+
+export interface PublicPortfolioItem {
+  itemType: PortfolioItemType;
+  dishId?: string;
+  stallId?: string;
+  name: string;
+  stallName?: string;
+  price?: number;
+  publicNotes?: string;
+  imageUrl?: string;
+}
+
 export interface PortfolioCollaborator {
   id: string;
   portfolioId: string;
