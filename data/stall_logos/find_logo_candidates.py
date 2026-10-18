@@ -14,7 +14,7 @@ Sources, in priority order:
      1 request/second per host, 10 s timeout.  URLs are recorded only.
   c) Everything else: no candidate -> merchant upload via the merchant portal.
 """
-import argparse, csv, html, ipaddress, json, re, socket, sys, threading, time, urllib.parse, urllib.request, urllib.robotparser
+import argparse, csv, html, http.client, ipaddress, json, re, socket, sys, threading, time, urllib.parse, urllib.request, urllib.robotparser
 from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from html.parser import HTMLParser
@@ -85,12 +85,21 @@ def safe_cell(v):
     return v
 
 
+CGNAT = ipaddress.ip_network("100.64.0.0/10")
+NAT64 = ipaddress.ip_network("64:ff9b::/96")
+
+
 def _ip_blocked(ip) -> bool:
+    """Allow only globally routable addresses; IPv6 wrappers are unwrapped and the embedded IPv4 checked too."""
     ip = ipaddress.ip_address(ip)
-    if getattr(ip, "ipv4_mapped", None):
-        ip = ip.ipv4_mapped
-    return (ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast or ip.is_reserved
-            or ip.is_unspecified)
+    addrs = [ip]
+    if ip.version == 6:
+        addrs += [a for a in (ip.ipv4_mapped, ip.sixtofour) if a]
+        if ip.teredo:
+            addrs += list(ip.teredo)
+        if ip in NAT64:
+            addrs.append(ipaddress.IPv4Address(int(ip) & 0xFFFFFFFF))
+    return any(not a.is_global or a.is_multicast or (a.version == 4 and a in CGNAT) for a in addrs)
 
 
 def candidate_url_ok(url: str) -> bool:
@@ -131,7 +140,41 @@ class _SafeRedirect(urllib.request.HTTPRedirectHandler):
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
-SITE_OPENER = urllib.request.build_opener(_SafeRedirect)
+def _check_peer(sock):
+    """DNS-rebinding guard: the address we actually connected to must also be global."""
+    peer = sock.getpeername()[0]
+    try:
+        bad = _ip_blocked(peer.split("%")[0])
+    except ValueError:
+        bad = True
+    if bad:
+        sock.close()
+        raise OSError(f"connected to disallowed address {peer}")
+
+
+class _PeerHTTPConnection(http.client.HTTPConnection):
+    def connect(self):
+        super().connect()
+        _check_peer(self.sock)
+
+
+class _PeerHTTPSConnection(http.client.HTTPSConnection):
+    def connect(self):
+        super().connect()  # normal TLS: SNI + cert/hostname verification
+        _check_peer(self.sock)
+
+
+class _PeerHTTPHandler(urllib.request.HTTPHandler):
+    def http_open(self, req):
+        return self.do_open(_PeerHTTPConnection, req)
+
+
+class _PeerHTTPSHandler(urllib.request.HTTPSHandler):
+    def https_open(self, req):
+        return self.do_open(_PeerHTTPSConnection, req, context=self._context)
+
+
+SITE_OPENER = urllib.request.build_opener(_SafeRedirect, _PeerHTTPHandler, _PeerHTTPSHandler)
 
 
 def http_json(url, params, ua=WIKI_UA, retries=5):
