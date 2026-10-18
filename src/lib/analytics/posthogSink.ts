@@ -21,6 +21,8 @@ function getPostHogClient(): PostHog | null {
   if (!posthogClient) {
     posthogClient = new PostHog(POSTHOG_API_KEY, {
       host: POSTHOG_HOST,
+      // Application Installed / Updated / Opened / Backgrounded, for retention.
+      captureAppLifecycleEvents: true,
     });
   }
 

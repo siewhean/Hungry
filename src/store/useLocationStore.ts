@@ -11,7 +11,14 @@ interface LocationState {
   manualLocation?: string;
   manualCoordinate?: Coordinate;
   gpsBadgeState: "live" | "manual" | "denied";
+  /** When the GPS fix in currentLocation was taken (ms since epoch). */
+  lastLocationFixAt?: number;
   grantLocation: (options?: { manualLocation?: string }) => Promise<boolean>;
+  /**
+   * Re-reads GPS when permission is already granted and the last fix is older
+   * than LOCATION_REFRESH_MAX_AGE_MS. Never prompts. Resolves true on a new fix.
+   */
+  refreshLocation: () => Promise<boolean>;
   denyLocation: () => void;
   setManualLocation: (label: string) => void;
   setManualSelection: (label: string, coordinate: Coordinate) => void;
@@ -20,9 +27,17 @@ interface LocationState {
 
 const defaultLocation = { latitude: 1.2813, longitude: 103.8458 };
 
+export const LOCATION_REFRESH_MAX_AGE_MS = 10 * 60 * 1000;
+
+// Manual picks go to analytics at ~1 km precision, not the exact point.
+function toCoarseCoordinate(value: number) {
+  return Math.round(value * 100) / 100;
+}
+
 type ExpoLocationLike = {
   Accuracy: { Balanced: number };
   requestForegroundPermissionsAsync: () => Promise<{ status: string }>;
+  getForegroundPermissionsAsync?: () => Promise<{ status: string }>;
   getCurrentPositionAsync: (options: { accuracy: number }) => Promise<{
     coords: { latitude: number; longitude: number };
   }>;
@@ -66,9 +81,11 @@ export function getDeniedLocationState(manualLocation?: string) {
   };
 }
 
+let refreshInFlight: Promise<boolean> | null = null;
+
 export const useLocationStore = create<LocationState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       permission: "unknown",
       currentLocation: defaultLocation,
       manualLocation: undefined,
@@ -103,6 +120,7 @@ export const useLocationStore = create<LocationState>()(
             }),
             manualLocation: normalizeManualLocationLabel(options?.manualLocation),
             manualCoordinate: undefined,
+            lastLocationFixAt: Date.now(),
           });
           trackAnalyticsEvent("location_permission_result", { result: "granted" });
           return true;
@@ -114,6 +132,45 @@ export const useLocationStore = create<LocationState>()(
           });
           return false;
         }
+      },
+      refreshLocation: () => {
+        if (refreshInFlight) return refreshInFlight;
+        const state = get();
+        if (state.permission !== "granted") return Promise.resolve(false);
+        if (Date.now() - (state.lastLocationFixAt ?? 0) < LOCATION_REFRESH_MAX_AGE_MS) {
+          return Promise.resolve(false);
+        }
+        const Location = loadExpoLocationModule();
+        const getPermission = Location?.getForegroundPermissionsAsync;
+        if (!Location || typeof getPermission !== "function") return Promise.resolve(false);
+
+        refreshInFlight = (async () => {
+          try {
+            const permission = await getPermission();
+            if (permission.status !== "granted") {
+              // Revoked in system settings since the last launch.
+              set(getDeniedLocationState(get().manualLocation));
+              return false;
+            }
+            const result = await Location.getCurrentPositionAsync({
+              accuracy: Location.Accuracy.Balanced,
+            });
+            if (get().permission !== "granted") return false;
+            set({
+              currentLocation: {
+                latitude: result.coords.latitude,
+                longitude: result.coords.longitude,
+              },
+              lastLocationFixAt: Date.now(),
+            });
+            return true;
+          } catch {
+            return false;
+          } finally {
+            refreshInFlight = null;
+          }
+        })();
+        return refreshInFlight;
       },
       denyLocation: () => {
         set({ permission: "denied", gpsBadgeState: "denied", manualCoordinate: undefined });
@@ -139,8 +196,8 @@ export const useLocationStore = create<LocationState>()(
         trackAnalyticsEvent("location_permission_result", {
           result: "manual_selection",
           label,
-          latitude: coordinate.latitude,
-          longitude: coordinate.longitude,
+          latitude: toCoarseCoordinate(coordinate.latitude),
+          longitude: toCoarseCoordinate(coordinate.longitude),
         });
       },
       resetLocationState: () =>
@@ -150,6 +207,7 @@ export const useLocationStore = create<LocationState>()(
           manualLocation: undefined,
           manualCoordinate: undefined,
           gpsBadgeState: "live",
+          lastLocationFixAt: undefined,
         }),
     }),
     {
@@ -161,6 +219,7 @@ export const useLocationStore = create<LocationState>()(
         manualLocation: state.manualLocation,
         manualCoordinate: state.manualCoordinate,
         gpsBadgeState: state.gpsBadgeState,
+        lastLocationFixAt: state.lastLocationFixAt,
       }),
     },
   ),

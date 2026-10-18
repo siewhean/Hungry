@@ -4,6 +4,7 @@ export type AnalyticsEventName =
   | "sign_in_completed"
   | "sign_out"
   | "onboarding_completed"
+  | "activated"
   | "taste_quiz_completed"
   | "dietary_preferences_set"
   | "budget_preference_set"
