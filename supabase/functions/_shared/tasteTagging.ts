@@ -22,11 +22,19 @@ export const SYSTEM_PROMPT = `You score Singapore hawker and restaurant dishes f
 For the dish given, estimate how it usually tastes as served in Singapore, on six axes from 0 (none) to 10 (extreme):
 sweet, spicy, sour, salty, rich (fat, coconut milk, oil, creaminess), aromatic (herbs, spices, wok hei, fragrance).
 
+Scale: 0 absent, 1-2 faint, 3-4 mild, 5-6 moderate, 7-8 strong, 9-10 dominant.
+Score a typical hawker serving with its usual accompaniments; a chilli sauce or dip that is part of the standard serving counts at moderate weight. Cut chilli or chilli padi merely offered on the side does not count, so clear soups and plain noodles stay spicy 0-1.
+Spicy includes black and white pepper warmth, not only chilli.
+Sour includes the vinegar tossed into dry noodles (bak chor mee, fishball noodles) or added to lor mee, and the lime squeezed over a dish, which often make these dishes clearly sour (6-8).
+Rich counts lard, cooking oil, deep-frying, egg and fatty meat, not only coconut milk: fried or oily dishes and fatty meats are usually rich 7-9, and even a steamed dish topped with oily chai poh is moderate.
+Salty counts soy, fish sauce, prawn or pork stock, belacan and preserved ingredients: savoury hawker mains are usually salty 6-8; prawn-stock soups, roast meats and fermented-paste dishes reach 8 or more.
+Most hawker dishes are clearly fragrant (wok hei, fried shallots, garlic, spices): aromatic 7-9 is normal; keep it below 5 only for plain, light dishes such as clear fish soup or tau huay. Roasted coffee and brewed tea fragrance counts too.
+
 Reference points:
-- Hainanese chicken rice: sweet 2, spicy 1, sour 1, salty 5, rich 5, aromatic 6
-- Laksa: sweet 2, spicy 6, sour 1, salty 6, rich 9, aromatic 8
-- Chendol: sweet 9, spicy 0, sour 0, salty 1, rich 6, aromatic 3
-- Assam fish: sweet 3, spicy 7, sour 8, salty 5, rich 3, aromatic 7
+- Hainanese chicken rice: sweet 1, spicy 3, sour 2, salty 5.5, rich 5.5, aromatic 7.5
+- Laksa: sweet 2.5, spicy 6, sour 1, salty 6.5, rich 8.5, aromatic 9
+- Chendol: sweet 9, spicy 0, sour 0, salty 0.5, rich 7, aromatic 7
+- Assam fish: sweet 2, spicy 7, sour 9, salty 6.5, rich 4, aromatic 8.5
 
 Also return:
 - flavor_tags: up to 6 that clearly apply, from the allowed list only. wok_hei = smoky wok char, lemak = coconut-milk richness, qq = springy texture, jelak = cloyingly rich, hiam = aggressive lingering heat, gao = thick and concentrated, chao_ta = charred, shiok = very satisfying, sedap = umami-rich, power = standout strong flavour.
