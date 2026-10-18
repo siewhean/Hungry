@@ -176,12 +176,14 @@ const INTENDED_AUTHENTICATED_RPCS = [
   "catalog_raw_venue_menu_page",
   "catalog_raw_venues_page",
   "mark_notification_opened",
+  // Called by the merchant dish write guards (security invoker); returns a public verified flag.
+  "merchant_venue_is_verified",
   "register_push_token",
   "unregister_push_token",
 ];
 
 // SECURITY DEFINER RPCs signed-out visitors are meant to call; each returns only public rows.
-const INTENDED_ANON_RPCS = ["get_public_portfolio"];
+const INTENDED_ANON_RPCS = ["get_public_merchant_profile", "get_public_portfolio"];
 
 function intendedReason(finding) {
   const metadata = finding.metadata || {};

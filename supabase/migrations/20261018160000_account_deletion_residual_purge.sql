@@ -5,7 +5,7 @@
 -- worker after anonymization and before auth deletion. Idempotent; every table is
 -- guarded with to_regclass so environments missing optional tables still succeed.
 -- Re-timestamped (originally 20261015120000) so it applies after main's newest
--- migration (20261018133000), including 20261017120000_account_deletion_grace_period;
+-- migration (20261018150000), including 20261017120000_account_deletion_grace_period;
 -- the claim RPC below keeps that migration's scheduled_for grace-period gate. Menu photo submissions are kept
 -- (the worker clears submitted_by) so stall pages keep their photos.
 

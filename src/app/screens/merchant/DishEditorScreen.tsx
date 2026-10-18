@@ -1,10 +1,10 @@
 import React, { useCallback, useState, useEffect } from "react";
 import { View, StyleSheet, Alert, Pressable } from "react-native";
-import { Sparkles, X } from "lucide-react-native";
+import { Camera, Sparkles, X } from "lucide-react-native";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 
+import { MerchantImageField } from "@/components/merchant/MerchantImageField";
 import {
-  AccessibleImage,
   AppText,
   Button,
   ChipGroup,
@@ -15,7 +15,13 @@ import {
 } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
-import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import { getHungryService } from "@/lib/services/serviceProvider";
+import {
+  getDishSection,
+  hasAvailabilityFlag,
+  listMenuSections,
+  withDishSection,
+} from "@/features/merchant/menuSections";
 import { NEUTRAL_TASTE_VECTOR, TASTE_DIMENSIONS } from "@/constants/taste";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import type { DietaryFlag, DishDetail, TasteVector } from "@/types/domain";
@@ -44,11 +50,18 @@ function parseCommaSeparated(value: string): string[] {
   );
 }
 
-function hasAvailabilityFlag(flags: readonly string[] | undefined, target: string): boolean {
-  const normalizedTarget = target.toLowerCase().replace(/[\s-]+/g, "_");
-  return (
-    flags?.some((flag) => flag.toLowerCase().replace(/[\s-]+/g, "_") === normalizedTarget) ?? false
-  );
+const SUGGESTED_SECTIONS = ["Mains", "Sides", "Drinks", "Desserts", "Sets"];
+const MAX_PRICE = 9999;
+
+function parsePrice(value: string): number | null {
+  const trimmed = value.replace(/^S?\$/i, "").trim();
+  if (!/^\d+(\.\d{1,2})?$/.test(trimmed)) return null;
+  const price = Number(trimmed);
+  return price > 0 && price <= MAX_PRICE ? price : null;
+}
+
+function errorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback;
 }
 
 function clampTasteValue(value: string): number {
@@ -58,15 +71,11 @@ function clampTasteValue(value: string): number {
 }
 
 export function DishEditorScreen() {
-  const { componentRadii, palette, spacing } = useHungryTheme();
+  const { palette, spacing } = useHungryTheme();
   const navigation = useNavigation();
   const route = useRoute<RouteProps>();
   const dishId = route.params?.dishId;
   const activeOutlet = useMerchantStore(getActiveOutlet);
-  const repository = getDataRepository();
-  const sampleImageUrl = activeOutlet?.signatureDishIds
-    .map((signatureDishId) => repository.getDishById(signatureDishId)?.imageUrl)
-    .find((candidate): candidate is string => Boolean(candidate));
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -76,6 +85,10 @@ export function DishEditorScreen() {
   const [description, setDescription] = useState("");
   const [ingredients, setIngredients] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [originalImageUrl, setOriginalImageUrl] = useState("");
+  const [section, setSection] = useState("");
+  const [existingSections, setExistingSections] = useState<string[]>([]);
+  const [otherFlags, setOtherFlags] = useState<string[]>([]);
   const [dietaryFlags, setDietaryFlags] = useState<DietaryFlag[]>([]);
   const [tasteVector, setTasteVector] = useState<TasteVector>({ ...NEUTRAL_TASTE_VECTOR });
   const [isAvailable, setIsAvailable] = useState(true);
@@ -83,20 +96,36 @@ export function DishEditorScreen() {
 
   const loadDish = useCallback(async () => {
     setError(null);
-    if (!dishId) {
+    if (!activeOutlet) {
       setIsLoading(false);
       return;
     }
 
     setIsLoading(true);
     try {
-      const dish = await getHungryService().discovery.getDish(dishId);
+      // Read through the merchant menu: dishes that are not yet visible to diners
+      // (pending verification) are still editable by their owner.
+      const menu = await getHungryService().merchant.getMenu(activeOutlet.id);
+      setExistingSections(listMenuSections(menu.map((item) => item.availabilityFlags)));
+      if (!dishId) return;
+      const dish =
+        menu.find((item) => item.id === dishId) ??
+        (await getHungryService().discovery.getDish(dishId));
       if (dish) {
+        const dishImageUrl = dish.imageUrl || dish.gallery?.[0] || "";
         setName(dish.name);
-        setPrice(dish.price.toString());
+        setPrice(dish.price ? dish.price.toFixed(2) : "");
         setDescription(dish.description ?? "");
         setIngredients(dish.tasteTags.join(", "));
-        setImageUrl(dish.imageUrl || dish.gallery?.[0] || "");
+        setImageUrl(dishImageUrl);
+        setOriginalImageUrl(dishImageUrl);
+        setSection(getDishSection(dish.availabilityFlags) ?? "");
+        setOtherFlags(
+          (dish.availabilityFlags ?? []).filter(
+            (flag) =>
+              !hasAvailabilityFlag([flag], "sold_out") && !hasAvailabilityFlag([flag], "featured"),
+          ),
+        );
         setDietaryFlags(dish.dietaryFlags ?? []);
         setTasteVector(dish.tasteVector ?? { ...NEUTRAL_TASTE_VECTOR });
         setIsAvailable(!hasAvailabilityFlag(dish.availabilityFlags, "sold_out"));
@@ -107,7 +136,7 @@ export function DishEditorScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [dishId]);
+  }, [activeOutlet, dishId]);
 
   useEffect(() => {
     void loadDish();
@@ -119,25 +148,36 @@ export function DishEditorScreen() {
       Alert.alert("Validation", "Dish name is required.");
       return;
     }
+    const parsedPrice = parsePrice(price);
+    if (parsedPrice === null) {
+      Alert.alert("Validation", "Enter a price between S$0.01 and S$9,999, e.g. 5.50.");
+      return;
+    }
 
     setIsSaving(true);
     try {
-      const parsedPrice = parseFloat(price) || 0;
       const trimmedImageUrl = imageUrl.trim();
+      const imageChanged = trimmedImageUrl !== originalImageUrl;
       const updates: Partial<DishDetail> = {
         name: name.trim(),
         price: parsedPrice,
         priceRange: `S$${parsedPrice.toFixed(2)}`,
         description: description.trim(),
-        imageUrl: trimmedImageUrl,
-        gallery: trimmedImageUrl ? [trimmedImageUrl] : [],
+        // Only send the photo when it changed; an unchanged photo is already stored.
+        ...(imageChanged || !dishId
+          ? { imageUrl: trimmedImageUrl, gallery: trimmedImageUrl ? [trimmedImageUrl] : [] }
+          : {}),
         tasteTags: parseCommaSeparated(ingredients),
         tasteVector,
         dietaryFlags,
-        availabilityFlags: [
-          ...(!isAvailable ? ["sold_out"] : []),
-          ...(isFeatured ? ["featured"] : []),
-        ],
+        availabilityFlags: withDishSection(
+          [
+            ...otherFlags,
+            ...(!isAvailable ? ["sold_out"] : []),
+            ...(isFeatured ? ["featured"] : []),
+          ],
+          section,
+        ),
       };
 
       if (dishId) {
@@ -146,11 +186,15 @@ export function DishEditorScreen() {
         await getHungryService().merchant.addDish(activeOutlet.id, updates);
       }
 
-      Alert.alert("Success", `Dish ${dishId ? "updated" : "added"} successfully!`);
+      Alert.alert(
+        dishId ? "Dish updated" : "Dish added",
+        activeOutlet.verification?.status === "verified"
+          ? "Diners can see this change now."
+          : "Saved. Diners will see your menu once Hungry verifies your stall.",
+      );
       navigation.goBack();
     } catch (e) {
-      Alert.alert("Error", "Failed to save dish.");
-      console.error(e);
+      Alert.alert("Could not save dish", errorMessage(e, "Please try again."));
     } finally {
       setIsSaving(false);
     }
@@ -161,14 +205,15 @@ export function DishEditorScreen() {
       Alert.alert("Notice", "Please enter a dish name first.");
       return;
     }
-    const generated = await getHungryService().merchant.generateDishDescription(
-      name,
-      ingredients
-        .split(",")
-        .map((i) => i.trim())
-        .filter(Boolean),
-    );
-    setDescription(generated);
+    try {
+      const generated = await getHungryService().merchant.generateDishDescription(
+        name,
+        parseCommaSeparated(ingredients),
+      );
+      setDescription(generated);
+    } catch (e) {
+      Alert.alert("Suggestion unavailable", errorMessage(e, "Please try again."));
+    }
   };
 
   const handleSuggestIngredients = async () => {
@@ -176,8 +221,14 @@ export function DishEditorScreen() {
       Alert.alert("Notice", "Please enter a dish name first.");
       return;
     }
-    const suggestions = await getHungryService().merchant.suggestIngredients(name);
-    setIngredients(suggestions.join(", "));
+    try {
+      const suggestions = await getHungryService().merchant.suggestIngredients(name);
+      setIngredients((current) =>
+        Array.from(new Set([...parseCommaSeparated(current), ...suggestions])).join(", "),
+      );
+    } catch (e) {
+      Alert.alert("Suggestion unavailable", errorMessage(e, "Please try again."));
+    }
   };
 
   const handleSuggestTags = async () => {
@@ -185,8 +236,15 @@ export function DishEditorScreen() {
       Alert.alert("Notice", "Please enter a dish name first.");
       return;
     }
-    const suggestions = await getHungryService().merchant.suggestTags(name, description);
-    setIngredients(suggestions.join(", "));
+    try {
+      const suggestions = await getHungryService().merchant.suggestTags(name, description);
+      // Merge rather than overwrite so typed ingredients are kept.
+      setIngredients((current) =>
+        Array.from(new Set([...parseCommaSeparated(current), ...suggestions])).join(", "),
+      );
+    } catch (e) {
+      Alert.alert("Suggestion unavailable", errorMessage(e, "Please try again."));
+    }
   };
 
   const handleSuggestAllergens = async () => {
@@ -195,7 +253,13 @@ export function DishEditorScreen() {
       Alert.alert("Notice", "Add ingredients before running the allergen check.");
       return;
     }
-    const allergens = await getHungryService().merchant.suggestAllergens(ingredientList);
+    let allergens: string[];
+    try {
+      allergens = await getHungryService().merchant.suggestAllergens(ingredientList);
+    } catch (e) {
+      Alert.alert("Check unavailable", errorMessage(e, "Please try again."));
+      return;
+    }
     Alert.alert(
       "Ingredient check",
       allergens.length > 0
@@ -252,7 +316,7 @@ export function DishEditorScreen() {
 
         <View>
           <Input
-            label="Price ($)"
+            label="Price (S$) *"
             value={price}
             onChangeText={setPrice}
             keyboardType="decimal-pad"
@@ -260,36 +324,31 @@ export function DishEditorScreen() {
           />
         </View>
 
+        <MerchantImageField
+          label="Dish Photo"
+          value={imageUrl}
+          onChange={setImageUrl}
+          isSaving={isSaving}
+          icon={<Camera size={24} color={palette.textMuted} />}
+        />
+
         <View>
-          <AppText variant="bodyBold" style={{ marginBottom: spacing[2] }}>
-            Dish Picture
-          </AppText>
-          {imageUrl.trim() ? (
-            <AccessibleImage
-              source={{ uri: imageUrl.trim() }}
-              style={[
-                styles.imagePreview,
-                { borderRadius: componentRadii.card, marginBottom: spacing[3] },
-              ]}
-              accessibilityLabel="Dish picture preview"
-            />
-          ) : null}
           <Input
-            value={imageUrl}
-            onChangeText={setImageUrl}
-            placeholder="Paste image URL or use the sample photo"
-            autoCapitalize="none"
+            label="Menu Section"
+            value={section}
+            onChangeText={setSection}
+            maxLength={32}
+            placeholder="e.g. Noodles, Drinks"
           />
-          <Button
-            label="Use signature photo"
-            variant="secondary"
-            fullWidth={false}
-            disabled={!sampleImageUrl}
-            onPress={() => {
-              if (sampleImageUrl) setImageUrl(sampleImageUrl);
-            }}
-            style={{ marginTop: spacing[2] }}
-          />
+          <View style={{ marginTop: spacing[2] }}>
+            <ChipGroup
+              options={Array.from(new Set([...existingSections, ...SUGGESTED_SECTIONS])).map(
+                (option) => ({ id: option, label: option }),
+              )}
+              selectedIds={section ? [section] : []}
+              onSelect={(option) => setSection((current) => (current === option ? "" : option))}
+            />
+          </View>
         </View>
 
         <View>
@@ -321,7 +380,7 @@ export function DishEditorScreen() {
               marginBottom: spacing[2],
             }}
           >
-            <AppText variant="bodyBold">Ingredients</AppText>
+            <AppText variant="bodyBold">Ingredients & Tags</AppText>
             <Pressable
               onPress={handleSuggestIngredients}
               style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
@@ -431,9 +490,5 @@ const styles = StyleSheet.create({
   tasteGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-  },
-  imagePreview: {
-    width: "100%",
-    height: 180,
   },
 });

@@ -6,6 +6,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
+import { MerchantImageField } from "@/components/merchant/MerchantImageField";
 import {
   AccessibleImage,
   AppText,
@@ -19,7 +20,6 @@ import {
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
-import { confirmGalleryAccess, isGalleryPermissionGranted } from "@/lib/permissions/gallery";
 import type { MerchantOutlet, LocationPrivacy } from "@/types/domain";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { formatBusinessType } from "@/features/merchant/merchantReadiness";
@@ -42,7 +42,31 @@ type FormData = {
   contactEmail: string;
   dietaryLabels: string;
   tasteTags: string;
+  websiteUrl: string;
+  instagramUrl: string;
+  facebookUrl: string;
+  isLive: boolean;
 };
+
+const LINK_FIELDS = [
+  { field: "websiteUrl", platform: "website", label: "Website", placeholder: "e.g. laksa.sg" },
+  {
+    field: "instagramUrl",
+    platform: "instagram",
+    label: "Instagram",
+    placeholder: "e.g. instagram.com/yourstall",
+  },
+  {
+    field: "facebookUrl",
+    platform: "facebook",
+    label: "Facebook",
+    placeholder: "e.g. facebook.com/yourstall",
+  },
+] as const;
+
+function findLink(links: MerchantOutlet["socialLinks"] | undefined, platform: string): string {
+  return links?.find((link) => link.platform.toLowerCase() === platform)?.url ?? "";
+}
 
 const BUSINESS_TYPE_OPTIONS: MerchantOutlet["businessType"][] = [
   "hawker_stall",
@@ -56,14 +80,6 @@ const BUSINESS_TYPE_SELECT_OPTIONS = BUSINESS_TYPE_OPTIONS.map((value) => ({
   label: formatBusinessType(value),
   value,
 }));
-
-function loadImagePickerModule() {
-  try {
-    return require("expo-image-picker");
-  } catch {
-    return null;
-  }
-}
 
 function BusinessTypeDropdown({
   value,
@@ -79,109 +95,6 @@ function BusinessTypeDropdown({
       options={BUSINESS_TYPE_SELECT_OPTIONS}
       onChange={onChange}
     />
-  );
-}
-
-function BusinessImageField({
-  label,
-  value,
-  onChange,
-  isSaving,
-  icon,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  isSaving: boolean;
-  icon: React.ReactNode;
-}) {
-  const { componentRadii, palette, spacing } = useHungryTheme();
-  const [error, setError] = useState<string | null>(null);
-
-  const handlePick = async () => {
-    try {
-      setError(null);
-      const imagePicker = loadImagePickerModule();
-      if (!imagePicker) {
-        setError("Photo picker is unavailable in this build.");
-        return;
-      }
-
-      const shouldRequestPermission = await confirmGalleryAccess({
-        title: "Allow gallery access",
-        message:
-          "Hungry needs access to your photo library to upload your profile image for the outlet.",
-        confirmLabel: "Allow",
-        cancelLabel: "Not now",
-      });
-
-      if (!shouldRequestPermission) {
-        return;
-      }
-
-      const permission = await imagePicker.requestMediaLibraryPermissionsAsync();
-      if (!isGalleryPermissionGranted(permission)) {
-        setError("Photos permission is required to upload this image.");
-        return;
-      }
-      const result = await imagePicker.launchImageLibraryAsync({
-        allowsEditing: true,
-        mediaTypes: imagePicker.MediaTypeOptions.Images,
-        quality: 0.82,
-        selectionLimit: 1,
-      });
-      if (result.canceled || !result.assets?.length) return;
-      onChange(result.assets[0].uri);
-    } catch {
-      setError("Unable to open the photo library right now.");
-    }
-  };
-
-  return (
-    <View style={{ gap: spacing[2] }}>
-      <AppText variant="bodyBold">{label}</AppText>
-      {value.trim() ? (
-        <AccessibleImage
-          source={{ uri: value.trim() }}
-          style={[
-            styles.photoPreview,
-            { borderRadius: componentRadii.input, borderColor: palette.border },
-          ]}
-          accessibilityLabel={`${label} preview`}
-        />
-      ) : (
-        <View
-          accessibilityLabel={`${label} preview`}
-          style={[
-            styles.photoPlaceholder,
-            {
-              backgroundColor: palette.bgSoft,
-              borderColor: palette.border,
-              borderRadius: componentRadii.input,
-            },
-          ]}
-        >
-          {icon}
-          <AppText variant="micro" tone="muted" style={{ marginTop: 4 }}>
-            Upload from your phone or gallery.
-          </AppText>
-        </View>
-      )}
-      {isSaving && value ? (
-        <AppText variant="micro" tone="muted">
-          Uploading and saving image...
-        </AppText>
-      ) : null}
-      {error ? (
-        <AppText variant="micro" style={{ color: palette.error }}>
-          {error}
-        </AppText>
-      ) : null}
-      <View style={{ flexDirection: "row", gap: spacing[2] }}>
-        <Button label={value ? "Replace" : "Upload"} variant="secondary" onPress={handlePick} />
-        {value ? <Button label="Remove" variant="ghost" onPress={() => onChange("")} /> : null}
-      </View>
-    </View>
   );
 }
 
@@ -216,6 +129,10 @@ export function BusinessProfileEditorScreen() {
       contactEmail: "",
       dietaryLabels: "",
       tasteTags: "",
+      websiteUrl: "",
+      instagramUrl: "",
+      facebookUrl: "",
+      isLive: false,
     },
   });
 
@@ -236,6 +153,10 @@ export function BusinessProfileEditorScreen() {
       setValue("contactEmail", activeOutlet.contactEmail || "");
       setValue("dietaryLabels", activeOutlet.dietaryLabels?.join(", ") || "");
       setValue("tasteTags", activeOutlet.tasteTags?.join(", ") || "");
+      LINK_FIELDS.forEach(({ field, platform }) =>
+        setValue(field, findLink(activeOutlet.socialLinks, platform)),
+      );
+      setValue("isLive", activeOutlet.isLive);
     }
   }, [activeOutlet, setValue]);
 
@@ -266,8 +187,8 @@ export function BusinessProfileEditorScreen() {
         locationPrivacy: data.locationPrivacy,
         operatingHours: data.operatingHours,
         temporaryClosure: data.temporaryClosure,
-        ...(profilePhotoUrl ? { profilePhotoUrl } : {}),
-        ...(coverPhotoUrl ? { coverPhotoUrl } : {}),
+        profilePhotoUrl,
+        coverPhotoUrl,
         galleryUrls,
         contactPhone: data.contactPhone,
         contactEmail: data.contactEmail,
@@ -279,6 +200,16 @@ export function BusinessProfileEditorScreen() {
           .split(",")
           .map((s) => s.trim())
           .filter(Boolean),
+        socialLinks: [
+          ...activeOutlet.socialLinks.filter(
+            (link) => !LINK_FIELDS.some(({ platform }) => platform === link.platform.toLowerCase()),
+          ),
+          ...LINK_FIELDS.map(({ field, platform }) => ({
+            platform,
+            url: data[field].trim(),
+          })).filter((link) => link.url),
+        ],
+        isLive: data.isLive,
       };
 
       const updated = await getHungryService().merchant.updateBusinessProfile(
@@ -286,7 +217,14 @@ export function BusinessProfileEditorScreen() {
         updates,
       );
       updateOutletProfile(activeOutlet.id, updated);
-      Alert.alert("Success", "Profile updated successfully!");
+      Alert.alert(
+        "Saved",
+        !data.isLive
+          ? 'Your profile is saved. Turn on "Show on Hungry" when you want diners to see it.'
+          : activeOutlet.verification?.status === "verified"
+            ? "Your changes are live for diners now."
+            : "Your profile is saved and visible. Photos appear once Hungry verifies your stall.",
+      );
       navigation.goBack();
     } catch (error) {
       console.error(error);
@@ -308,7 +246,7 @@ export function BusinessProfileEditorScreen() {
     const fallbackVenueId = activeOutlet.buildingId
       ? repository.listVenuesByBuilding(activeOutlet.buildingId)[0]?.id
       : undefined;
-    const venueId = signatureVenueId ?? fallbackVenueId;
+    const venueId = activeOutlet.venueId ?? signatureVenueId ?? fallbackVenueId;
 
     if (venueId) {
       rootNavigation.navigate("StallDetail", { venueId });
@@ -436,7 +374,7 @@ export function BusinessProfileEditorScreen() {
               control={control}
               name="profilePhotoUrl"
               render={({ field: { onChange, value } }) => (
-                <BusinessImageField
+                <MerchantImageField
                   label="Profile Image"
                   value={value}
                   onChange={onChange}
@@ -450,7 +388,7 @@ export function BusinessProfileEditorScreen() {
               control={control}
               name="coverPhotoUrl"
               render={({ field: { onChange, value } }) => (
-                <BusinessImageField
+                <MerchantImageField
                   label="Cover Image"
                   value={value}
                   onChange={onChange}
@@ -611,8 +549,8 @@ export function BusinessProfileEditorScreen() {
               name="contactPhone"
               rules={{
                 pattern: {
-                  value: /^[89]\d{7}$/,
-                  message: "Must be a valid 8-digit Singapore phone number starting with 8 or 9",
+                  value: /^(\+65\s?)?[3689]\d{3}\s?\d{4}$/,
+                  message: "Enter an 8-digit Singapore number, e.g. 6123 4567 or 9123 4567",
                 },
               }}
               render={({ field: { onChange, onBlur, value } }) => (
@@ -657,6 +595,49 @@ export function BusinessProfileEditorScreen() {
           </View>
         </View>
 
+        <View style={{ gap: spacing[4] }}>
+          <AppText variant="h3" style={{ fontWeight: "600" }}>
+            Links
+          </AppText>
+          {LINK_FIELDS.map(({ field, label, placeholder }) => (
+            <Controller
+              key={field}
+              control={control}
+              name={field}
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  label={label}
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  value={value}
+                  keyboardType="url"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  placeholder={placeholder}
+                />
+              )}
+            />
+          ))}
+        </View>
+
+        <View style={{ gap: spacing[4] }}>
+          <AppText variant="h3" style={{ fontWeight: "600" }}>
+            Visibility
+          </AppText>
+          <Controller
+            control={control}
+            name="isLive"
+            render={({ field: { onChange, value } }) => (
+              <FormSwitchRow
+                label="Show on Hungry"
+                description="Diners see your description, contact details, links and promotions on your stall page."
+                value={value}
+                onValueChange={onChange}
+              />
+            )}
+          />
+        </View>
+
         <Button
           label={isSubmitting ? "Saving..." : "Save Profile"}
           variant="primary"
@@ -677,17 +658,5 @@ const styles = StyleSheet.create({
   verifiedBadge: {
     borderWidth: 1,
     alignSelf: "flex-start",
-  },
-  photoPreview: {
-    width: "100%",
-    height: 140,
-    borderWidth: 1,
-  },
-  photoPlaceholder: {
-    height: 140,
-    borderWidth: 1,
-    borderStyle: "dashed",
-    alignItems: "center",
-    justifyContent: "center",
   },
 });
