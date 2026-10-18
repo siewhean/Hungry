@@ -20,6 +20,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
   AccessibleImage,
+  AppHeader,
   AppText,
   Avatar,
   EmptyState,
@@ -1394,6 +1395,9 @@ function LegacySearchResultsScreen() {
 
   return (
     <Screen scroll={false}>
+      <AppHeader
+        title={filters.query.trim() ? `Results for "${filters.query.trim()}"` : "Search results"}
+      />
       <SearchResultsView
         query={filters.query}
         onQueryChange={updateQuery}

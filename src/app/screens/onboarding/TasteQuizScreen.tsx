@@ -248,7 +248,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   const inDietaryStep = phase === "dietary";
   const currentValue = values[currentKey];
   const hasRestrictions = dietaryPreferences.length > 0;
-  const dietaryPrimaryLabel = hasRestrictions ? "Continue" : "I have no restrictions";
+  const dietaryPrimaryLabel = hasRestrictions ? "Continue" : "No restrictions";
   const normalizedDietaryQuery = dietaryQuery.trim().toLowerCase();
   const filteredDietaryOptions = DIETARY_OPTIONS.filter((option) => {
     if (!normalizedDietaryQuery) return true;
