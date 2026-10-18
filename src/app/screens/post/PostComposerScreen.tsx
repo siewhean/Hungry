@@ -294,10 +294,7 @@ function PostComposerScreenInner({ navigation, route }: Props) {
   }
 
   return (
-    <Screen
-      title="Create post"
-      subtitle="Share a photo or video of what you ate."
-    >
+    <Screen title="Create post" subtitle="Share a photo or video of what you ate.">
       <Card>
         <View style={{ gap: spacing[3] }}>
           <Badge label="Photo or video" tone="neutral" />

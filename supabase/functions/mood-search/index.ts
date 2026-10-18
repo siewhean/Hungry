@@ -174,10 +174,7 @@ Deno.serve(async (request) => {
       await client.from("mood_search_queries").delete().eq("id", slotId);
       return toJson(502, { error: "parse_failed" });
     }
-    await client
-      .from("mood_search_queries")
-      .update({ intent, pending: false })
-      .eq("id", slotId);
+    await client.from("mood_search_queries").update({ intent, pending: false }).eq("id", slotId);
     return toJson(200, { ok: true, cached: false, intent });
   } catch (error) {
     console.error("mood-search failed", String(error?.message ?? error));

@@ -14,7 +14,10 @@ test("App always mounts the root error boundary, with or without a Sentry DSN", 
   assert.doesNotMatch(app, /shouldEnableSentry \? \(/);
   assert.doesNotMatch(app, /Sentry\.ErrorBoundary/);
   // Sentry wrapping is kept when a DSN exists.
-  assert.match(app, /export default shouldEnableSentry \? Sentry\.wrap\(AppContent\) : AppContent;/);
+  assert.match(
+    app,
+    /export default shouldEnableSentry \? Sentry\.wrap\(AppContent\) : AppContent;/,
+  );
 });
 
 test("root error boundary reports through reportError and offers a restart", () => {

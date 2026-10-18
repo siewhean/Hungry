@@ -31,9 +31,7 @@ function resolveWith(config: ReturnType<typeof loadMetroConfig>, filePath: strin
     resolveRequest: () => ({ type: "sourceFile", filePath }),
   };
   const resolveRequest = config.resolver.resolveRequest;
-  return resolveRequest
-    ? resolveRequest(context, "irrelevant", "ios")
-    : context.resolveRequest();
+  return resolveRequest ? resolveRequest(context, "irrelevant", "ios") : context.resolveRequest();
 }
 
 test("production Metro bundles stub out mock and Excel data sources", () => {
