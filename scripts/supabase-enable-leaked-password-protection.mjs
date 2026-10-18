@@ -2,8 +2,7 @@
 
 const PROJECT_REF =
   process.env.SUPABASE_PROJECT_REF ||
-  process.env.HUNGRY_SUPABASE_PROJECT_REF ||
-  "vlqfgmrsprbrgzteixsj";
+  process.env.HUNGRY_SUPABASE_PROJECT_REF;
 const TOKEN = process.env.SUPABASE_ACCESS_TOKEN;
 const BASE_URL = "https://api.supabase.com/v1";
 
@@ -40,6 +39,10 @@ function summarizeError(body) {
   if (!body) return "";
   if (typeof body === "string") return body;
   return body.message || body.error || JSON.stringify(body);
+}
+
+if (!PROJECT_REF) {
+  fail("SUPABASE_PROJECT_REF is required (the ref of the project to update).");
 }
 
 if (!TOKEN) {
