@@ -128,6 +128,7 @@
     "expo-font": "~55.0.8",
     "expo-haptics": "~55.0.18",
     "expo-image": "~55.0.11",
+    "expo-image-manipulator": "~55.0.21",
     "expo-image-picker": "~55.0.24",
     "expo-linear-gradient": "~55.0.18",
     "expo-linking": "~55.0.17",
