@@ -20,7 +20,8 @@ function addFinding(file, message) {
 }
 
 for (const entry of fs.readdirSync(functionsDir, { withFileTypes: true })) {
-  if (!entry.isDirectory()) continue;
+  // Folders starting with "_" hold shared modules, not deployable functions.
+  if (!entry.isDirectory() || entry.name.startsWith("_")) continue;
   const indexPath = path.join(functionsDir, entry.name, "index.ts");
   if (!fs.existsSync(indexPath)) {
     addFinding(indexPath, "missing index.ts");
@@ -40,7 +41,10 @@ for (const entry of fs.readdirSync(functionsDir, { withFileTypes: true })) {
     addFinding(indexPath, "uses unsafe unchunked image base64 conversion");
   }
 
-  if (/Access-Control-Allow-Origin/.test(source) && !/ALLOWED_ORIGINS|AllowedOrigins|allowedOrigins/.test(source)) {
+  if (
+    /Access-Control-Allow-Origin/.test(source) &&
+    !/ALLOWED_ORIGINS|AllowedOrigins|allowedOrigins/.test(source)
+  ) {
     addFinding(indexPath, "CORS origin is not allowlist-driven");
   }
 }

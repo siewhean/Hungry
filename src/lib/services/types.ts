@@ -27,6 +27,7 @@ import type {
   MerchantOutlet,
   MerchantPromotion,
   MerchantWeeklySummary,
+  MoodSearchIntent,
   MissionType,
   MerchantTeamMember,
   MerchantRole,
@@ -916,6 +917,9 @@ export interface HungryService {
     // Extended — Community Calibration
     getTagSuggestions(dishId: string): Promise<HawkerTasteTag[]>;
     submitCommunityTags(dishId: string, tags: HawkerTasteTag[]): Promise<void>;
+
+    /** Plain-language search: Claude turns the text into a taste tweak and filters. Null when unavailable. */
+    parseMoodQuery(query: string): Promise<MoodSearchIntent | null>;
   };
 
   // Merchant Centre
