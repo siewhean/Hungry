@@ -13,7 +13,7 @@ test("authenticated catalog users are not globally redirected away during networ
   const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
 
   // Going offline shows a banner over the current screen instead of a takeover.
-  assert.match(bootstrap, /setOffline\(isNetworkOffline\(state\)\)/);
+  assert.match(bootstrap, /createConnectivityMonitor\(\{ setOffline \}\)/);
   assert.match(rootNavigator, /<OfflineBanner \/>/);
   assert.doesNotMatch(rootNavigator, /navigationRef\.navigate\("Offline"\)/);
 });

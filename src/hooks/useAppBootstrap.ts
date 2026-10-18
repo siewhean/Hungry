@@ -4,7 +4,7 @@ import { AppState } from "react-native";
 import { hydrateShareAttribution } from "@/features/share/shareAttribution";
 import { setAnalyticsSink, trackAnalyticsEvent } from "@/lib/analytics";
 import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
-import { isNetworkOffline } from "@/lib/network/connectivity";
+import { createConnectivityMonitor, subscribeToNetworkSuccess } from "@/lib/network/connectivity";
 import {
   getConfiguredDataSource,
   getSupabaseClient,
@@ -137,14 +137,20 @@ export function useAppBootstrap() {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener((state) => {
-      // Offline is a non-blocking banner (RootNavigator OfflineBanner); the
-      // current screen stays put, and authenticated catalog reads keep their
-      // classified read-only Excel fallback. `null` reachability is not offline.
-      setOffline(isNetworkOffline(state));
-    });
+    // Offline is a non-blocking banner (RootNavigator OfflineBanner); the
+    // current screen stays put, and authenticated catalog reads keep their
+    // classified read-only Excel fallback. `null` reachability is not offline,
+    // a failed NetInfo probe is overridden by successful app requests, and the
+    // banner only appears after the loss persists (debounced).
+    const monitor = createConnectivityMonitor({ setOffline });
+    const unsubscribeSuccess = subscribeToNetworkSuccess(monitor.handleNetworkSuccess);
+    const unsubscribe = NetInfo.addEventListener((state) => monitor.handleState(state));
 
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+      unsubscribeSuccess();
+      monitor.dispose();
+    };
   }, [setOffline]);
 
   useLayoutEffect(() => {

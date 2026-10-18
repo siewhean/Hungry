@@ -1,5 +1,5 @@
 import * as Linking from "expo-linking";
-import { useCallback, useEffect, useMemo } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import {
   NavigationContainer,
@@ -12,7 +12,7 @@ import {
 } from "@react-navigation/native-stack";
 import NetInfo from "@react-native-community/netinfo";
 import { ArrowLeft, WifiOff } from "lucide-react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaInsetsContext, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SplashScreen } from "@/app/screens/SplashScreen";
 import { AuthStack } from "@/app/screens/auth/AuthStack";
@@ -397,12 +397,16 @@ function GlobalScrollBackButton() {
 /**
  * Non-blocking offline notice. Going offline used to replace the whole app with
  * the Offline screen and reset to Home on reconnect, losing drafts and progress;
- * now the current screen stays put and this banner sits on top until the
- * connection returns.
+ * now the current screen stays put and this strip appears above it.
+ *
+ * The strip sits in normal layout flow (not absolutely positioned) above the
+ * navigator, so it pushes screens down instead of covering their headers. It
+ * owns the status-bar inset while visible; OfflineAwareFrame hands screens a
+ * zero top inset so detail headers (back / heart / share) stay fully tappable.
  */
 function OfflineBanner() {
   const insets = useSafeAreaInsets();
-  const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
+  const { palette, spacing } = useHungryTheme();
   const isOffline = useUIStore((state) => state.isOffline);
   const setOffline = useUIStore((state) => state.setOffline);
 
@@ -416,38 +420,60 @@ function OfflineBanner() {
   };
 
   return (
-    <View pointerEvents="box-none" style={[styles.offlineBannerWrap, { zIndex: zIndex.toast }]}>
-      <View
-        accessibilityLiveRegion="polite"
-        accessibilityRole="alert"
-        style={[
-          styles.offlineBanner,
-          {
-            ...shadows.floating,
-            backgroundColor: palette.navy,
-            borderRadius: radii.pill,
-            gap: spacing[2],
-            marginHorizontal: spacing[4],
-            marginTop: insets.top + spacing[1],
-            paddingLeft: spacing[3],
-          },
-        ]}
+    <View
+      accessibilityLiveRegion="polite"
+      accessibilityRole="alert"
+      testID="offline-banner"
+      style={[
+        styles.offlineBanner,
+        {
+          backgroundColor: palette.navy,
+          gap: spacing[2],
+          paddingLeft: spacing[4],
+          paddingRight: spacing[1],
+          paddingTop: insets.top,
+        },
+      ]}
+    >
+      <WifiOff color={palette.textOnDark} size={16} />
+      <AppText variant="bodySmall" style={{ color: palette.textOnDark, flex: 1 }}>
+        {"You're offline. Saved content stays visible."}
+      </AppText>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Retry connection"
+        hitSlop={4}
+        onPress={() => void retryConnection()}
+        style={{ justifyContent: "center", minHeight: 44, paddingHorizontal: spacing[3] }}
       >
-        <WifiOff color={palette.textOnDark} size={16} />
-        <AppText variant="bodySmall" style={{ color: palette.textOnDark, flex: 1 }}>
-          {"You're offline. Saved content stays visible."}
+        <AppText variant="bodySmallBold" style={{ color: palette.textOnDark }}>
+          Retry
         </AppText>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Retry connection"
-          hitSlop={4}
-          onPress={() => void retryConnection()}
-          style={{ justifyContent: "center", minHeight: 44, paddingHorizontal: spacing[3] }}
-        >
-          <AppText variant="bodySmallBold" style={{ color: palette.textOnDark }}>
-            Retry
-          </AppText>
-        </Pressable>
+      </Pressable>
+    </View>
+  );
+}
+
+/**
+ * Stable wrapper (never remounts the navigator): stacks the offline strip above
+ * the app and, while it is visible, zeroes the top inset for screens below it
+ * because the strip already covers the status bar area.
+ */
+function OfflineAwareFrame({ children }: { children: ReactNode }) {
+  const insets = useSafeAreaInsets();
+  const isOffline = useUIStore((state) => state.isOffline);
+  const screenInsets = useMemo(
+    () => (isOffline ? { ...insets, top: 0 } : insets),
+    [insets, isOffline],
+  );
+
+  return (
+    <View style={styles.offlineFrame}>
+      <OfflineBanner />
+      <View style={styles.offlineFrame}>
+        <SafeAreaInsetsContext.Provider value={screenInsets}>
+          {children}
+        </SafeAreaInsetsContext.Provider>
       </View>
     </View>
   );
@@ -686,176 +712,183 @@ export function RootNavigator({ theme }: { theme: Theme }) {
 
   return (
     <>
-      <NavigationContainer
-        ref={navigationRef}
-        theme={theme}
-        linking={linking}
-        onStateChange={() => {
-          resetScrollBack();
-        }}
-      >
-        <RootStack.Navigator
-          id="Root"
-          initialRouteName={isDeveloperLauncherAvailable ? "DeveloperLauncher" : "Splash"}
-          screenOptions={{ headerShown: false }}
+      <OfflineAwareFrame>
+        <NavigationContainer
+          ref={navigationRef}
+          theme={theme}
+          linking={linking}
+          onStateChange={() => {
+            resetScrollBack();
+          }}
         >
-          {isDeveloperLauncherAvailable ? (
-            <RootStack.Screen getComponent={loadDeveloperLauncherScreen} name="DeveloperLauncher" />
-          ) : null}
-          <RootStack.Screen component={SplashScreen} name="Splash" />
-          <RootStack.Screen component={AuthStack} name="AuthStack" />
-          <RootStack.Screen component={OnboardingStack} name="OnboardingStack" />
-          <RootStack.Screen component={SwipeableTabNavigator} name="MainTabs" />
-          <RootStack.Screen
-            getComponent={loadDishSearchScreen}
-            name="SearchHome"
-            options={{ animation: "none" }}
-          />
-          <RootStack.Screen
-            getComponent={loadSearchResultsScreen}
-            name="SearchResults"
-            options={{ animation: "none" }}
-          />
-          <RootStack.Screen
-            getComponent={loadBrowseDishesScreen}
-            name="BrowseDishes"
-            options={{ animation: "none" }}
-          />
-          <RootStack.Screen
-            getComponent={loadBrowseStallsScreen}
-            name="BrowseStalls"
-            options={{ animation: "none" }}
-          />
-          <RootStack.Screen getComponent={loadTasteFilterScreen} name="TasteFilter" />
-          {FEATURE_FLAGS.mapEnabled ? (
-            <>
+          <RootStack.Navigator
+            id="Root"
+            initialRouteName={isDeveloperLauncherAvailable ? "DeveloperLauncher" : "Splash"}
+            screenOptions={{ headerShown: false }}
+          >
+            {isDeveloperLauncherAvailable ? (
               <RootStack.Screen
-                getComponent={loadHomeMapScreen}
-                name="DiscoverMap"
-                options={{ gestureEnabled: true }}
+                getComponent={loadDeveloperLauncherScreen}
+                name="DeveloperLauncher"
               />
-              <RootStack.Screen getComponent={loadMapZoomedInScreen} name="MapZoomedIn" />
-            </>
-          ) : null}
-          {FEATURE_FLAGS.postCreationEnabled ? (
-            <RootStack.Screen getComponent={loadPostComposerScreen} name="Post" />
-          ) : null}
-          <RootStack.Screen getComponent={loadEditProfileScreen} name="EditProfile" />
-          {FEATURE_FLAGS.favouritesEnabled ? (
-            <RootStack.Screen getComponent={loadFavouritesScreen} name="Favourites" />
-          ) : null}
-          {FEATURE_FLAGS.reviewCreationEnabled ? (
-            <RootStack.Screen getComponent={loadReviewHistoryScreen} name="ReviewHistory" />
-          ) : null}
-          <RootStack.Screen getComponent={loadSettingsScreen} name="Settings" />
-          {FEATURE_FLAGS.socialFeedEnabled ? (
-            <RootStack.Screen component={UserProfileScreen} name="UserProfile" />
-          ) : null}
-          <RootStack.Screen getComponent={loadDishDetailScreenV2} name="DishDetail" />
-          <RootStack.Screen getComponent={loadCatalogRawDetailScreen} name="CatalogRawDetail" />
-          <RootStack.Screen getComponent={loadStallDetailScreen} name="StallDetail" />
-          {FEATURE_FLAGS.merchantClaimCtaEnabled ? (
+            ) : null}
+            <RootStack.Screen component={SplashScreen} name="Splash" />
+            <RootStack.Screen component={AuthStack} name="AuthStack" />
+            <RootStack.Screen component={OnboardingStack} name="OnboardingStack" />
+            <RootStack.Screen component={SwipeableTabNavigator} name="MainTabs" />
             <RootStack.Screen
-              getComponent={loadMerchantClaimExplainerScreen}
-              name="MerchantClaimExplainer"
-              options={{
-                presentation: "transparentModal",
-                animation: "fade",
-                contentStyle: { backgroundColor: "transparent" },
-              }}
+              getComponent={loadDishSearchScreen}
+              name="SearchHome"
+              options={{ animation: "none" }}
             />
-          ) : null}
-          {FEATURE_FLAGS.readsEnabled ? (
-            <RootStack.Screen component={BlogPostRouteScreen} name="BlogPost" />
-          ) : null}
-          {FEATURE_FLAGS.reviewCreationEnabled ? (
-            <RootStack.Screen getComponent={loadReviewStack} name="ReviewStack" />
-          ) : null}
-          {FEATURE_FLAGS.hungryWheelEnabled ? (
-            <RootStack.Screen getComponent={loadWheelStack} name="WheelStack" />
-          ) : null}
-          {FEATURE_FLAGS.activityEnabled ? (
-            <>
-              <RootStack.Screen getComponent={loadActivityInboxScreen} name="ActivityInbox" />
-              <RootStack.Screen
-                getComponent={loadActivityPostDetailScreen}
-                name="ActivityPostDetail"
-              />
-            </>
-          ) : null}
-          {FEATURE_FLAGS.directMessagesEnabled ? (
-            <>
-              <RootStack.Screen getComponent={loadChatDetailScreen} name="ChatDetail" />
-              <RootStack.Screen getComponent={loadDirectMessagesScreen} name="DirectMessages" />
-            </>
-          ) : null}
-          {FEATURE_FLAGS.craveEnabled ? (
-            <RootStack.Screen getComponent={loadCraveScreen} name="Crave" />
-          ) : null}
-          <RootStack.Screen getComponent={loadMusicSelectionScreen} name="MusicSelection" />
-          <RootStack.Screen getComponent={loadDecideForMeResultScreen} name="DecideForMeResult" />
-          <RootStack.Screen getComponent={loadOfflineStateScreen} name="Offline" />
-          <RootStack.Screen getComponent={loadNotFoundScreen} name="NotFound" />
-          {!FEATURE_FLAGS.release01CoreOnly ? (
-            <RootStack.Screen getComponent={loadQuickBitesScreen} name="QuickBites" />
-          ) : null}
-          {FEATURE_FLAGS.prototypeRoutesEnabled ? (
-            <>
-              <RootStack.Screen getComponent={loadDesignGalleryScreen} name="DesignGallery" />
-              <RootStack.Screen
-                getComponent={loadPostComposerScreenV2}
-                name="PostComposerV2"
-                options={{ gestureEnabled: false }}
-              />
-            </>
-          ) : null}
-          {FEATURE_FLAGS.merchantCentreEnabled ? (
-            <RootStack.Screen getComponent={loadMerchantTabs} name="MerchantTabs" />
-          ) : null}
-          {FEATURE_FLAGS.storiesEnabled ? (
-            <>
-              <RootStack.Screen
-                getComponent={loadStoryViewerScreen}
-                name="StoryViewer"
-                options={{ presentation: "fullScreenModal", animation: "fade" }}
-              />
-              <RootStack.Screen
-                getComponent={loadAddStoryScreen}
-                name="AddStory"
-                options={{ presentation: "modal" }}
-              />
-            </>
-          ) : null}
-          {FEATURE_FLAGS.gamificationEnabled ? (
-            <>
-              <RootStack.Screen getComponent={loadPassportScreen} name="PassportScreen" />
-              <RootStack.Screen getComponent={loadMissionsScreen} name="MissionsScreen" />
-            </>
-          ) : null}
-          {FEATURE_FLAGS.collectionsEnabled ? (
-            <>
-              <RootStack.Screen getComponent={loadCollectionListScreen} name="CollectionList" />
-              <RootStack.Screen getComponent={loadCollectionDetailScreen} name="CollectionDetail" />
-            </>
-          ) : null}
-          {FEATURE_FLAGS.portfoliosEnabled ? (
             <RootStack.Screen
-              getComponent={loadPortfolioPublicViewScreen}
-              name="PortfolioPublicView"
+              getComponent={loadSearchResultsScreen}
+              name="SearchResults"
+              options={{ animation: "none" }}
             />
-          ) : null}
-          {FEATURE_FLAGS.prototypeRoutesEnabled ? (
-            <>
+            <RootStack.Screen
+              getComponent={loadBrowseDishesScreen}
+              name="BrowseDishes"
+              options={{ animation: "none" }}
+            />
+            <RootStack.Screen
+              getComponent={loadBrowseStallsScreen}
+              name="BrowseStalls"
+              options={{ animation: "none" }}
+            />
+            <RootStack.Screen getComponent={loadTasteFilterScreen} name="TasteFilter" />
+            {FEATURE_FLAGS.mapEnabled ? (
+              <>
+                <RootStack.Screen
+                  getComponent={loadHomeMapScreen}
+                  name="DiscoverMap"
+                  options={{ gestureEnabled: true }}
+                />
+                <RootStack.Screen getComponent={loadMapZoomedInScreen} name="MapZoomedIn" />
+              </>
+            ) : null}
+            {FEATURE_FLAGS.postCreationEnabled ? (
+              <RootStack.Screen getComponent={loadPostComposerScreen} name="Post" />
+            ) : null}
+            <RootStack.Screen getComponent={loadEditProfileScreen} name="EditProfile" />
+            {FEATURE_FLAGS.favouritesEnabled ? (
+              <RootStack.Screen getComponent={loadFavouritesScreen} name="Favourites" />
+            ) : null}
+            {FEATURE_FLAGS.reviewCreationEnabled ? (
+              <RootStack.Screen getComponent={loadReviewHistoryScreen} name="ReviewHistory" />
+            ) : null}
+            <RootStack.Screen getComponent={loadSettingsScreen} name="Settings" />
+            {FEATURE_FLAGS.socialFeedEnabled ? (
+              <RootStack.Screen component={UserProfileScreen} name="UserProfile" />
+            ) : null}
+            <RootStack.Screen getComponent={loadDishDetailScreenV2} name="DishDetail" />
+            <RootStack.Screen getComponent={loadCatalogRawDetailScreen} name="CatalogRawDetail" />
+            <RootStack.Screen getComponent={loadStallDetailScreen} name="StallDetail" />
+            {FEATURE_FLAGS.merchantClaimCtaEnabled ? (
               <RootStack.Screen
-                getComponent={loadAdminPortfolioFlagsScreen}
-                name="AdminPortfolioFlags"
+                getComponent={loadMerchantClaimExplainerScreen}
+                name="MerchantClaimExplainer"
+                options={{
+                  presentation: "transparentModal",
+                  animation: "fade",
+                  contentStyle: { backgroundColor: "transparent" },
+                }}
               />
-            </>
-          ) : null}
-        </RootStack.Navigator>
-      </NavigationContainer>
+            ) : null}
+            {FEATURE_FLAGS.readsEnabled ? (
+              <RootStack.Screen component={BlogPostRouteScreen} name="BlogPost" />
+            ) : null}
+            {FEATURE_FLAGS.reviewCreationEnabled ? (
+              <RootStack.Screen getComponent={loadReviewStack} name="ReviewStack" />
+            ) : null}
+            {FEATURE_FLAGS.hungryWheelEnabled ? (
+              <RootStack.Screen getComponent={loadWheelStack} name="WheelStack" />
+            ) : null}
+            {FEATURE_FLAGS.activityEnabled ? (
+              <>
+                <RootStack.Screen getComponent={loadActivityInboxScreen} name="ActivityInbox" />
+                <RootStack.Screen
+                  getComponent={loadActivityPostDetailScreen}
+                  name="ActivityPostDetail"
+                />
+              </>
+            ) : null}
+            {FEATURE_FLAGS.directMessagesEnabled ? (
+              <>
+                <RootStack.Screen getComponent={loadChatDetailScreen} name="ChatDetail" />
+                <RootStack.Screen getComponent={loadDirectMessagesScreen} name="DirectMessages" />
+              </>
+            ) : null}
+            {FEATURE_FLAGS.craveEnabled ? (
+              <RootStack.Screen getComponent={loadCraveScreen} name="Crave" />
+            ) : null}
+            <RootStack.Screen getComponent={loadMusicSelectionScreen} name="MusicSelection" />
+            <RootStack.Screen getComponent={loadDecideForMeResultScreen} name="DecideForMeResult" />
+            <RootStack.Screen getComponent={loadOfflineStateScreen} name="Offline" />
+            <RootStack.Screen getComponent={loadNotFoundScreen} name="NotFound" />
+            {!FEATURE_FLAGS.release01CoreOnly ? (
+              <RootStack.Screen getComponent={loadQuickBitesScreen} name="QuickBites" />
+            ) : null}
+            {FEATURE_FLAGS.prototypeRoutesEnabled ? (
+              <>
+                <RootStack.Screen getComponent={loadDesignGalleryScreen} name="DesignGallery" />
+                <RootStack.Screen
+                  getComponent={loadPostComposerScreenV2}
+                  name="PostComposerV2"
+                  options={{ gestureEnabled: false }}
+                />
+              </>
+            ) : null}
+            {FEATURE_FLAGS.merchantCentreEnabled ? (
+              <RootStack.Screen getComponent={loadMerchantTabs} name="MerchantTabs" />
+            ) : null}
+            {FEATURE_FLAGS.storiesEnabled ? (
+              <>
+                <RootStack.Screen
+                  getComponent={loadStoryViewerScreen}
+                  name="StoryViewer"
+                  options={{ presentation: "fullScreenModal", animation: "fade" }}
+                />
+                <RootStack.Screen
+                  getComponent={loadAddStoryScreen}
+                  name="AddStory"
+                  options={{ presentation: "modal" }}
+                />
+              </>
+            ) : null}
+            {FEATURE_FLAGS.gamificationEnabled ? (
+              <>
+                <RootStack.Screen getComponent={loadPassportScreen} name="PassportScreen" />
+                <RootStack.Screen getComponent={loadMissionsScreen} name="MissionsScreen" />
+              </>
+            ) : null}
+            {FEATURE_FLAGS.collectionsEnabled ? (
+              <>
+                <RootStack.Screen getComponent={loadCollectionListScreen} name="CollectionList" />
+                <RootStack.Screen
+                  getComponent={loadCollectionDetailScreen}
+                  name="CollectionDetail"
+                />
+              </>
+            ) : null}
+            {FEATURE_FLAGS.portfoliosEnabled ? (
+              <RootStack.Screen
+                getComponent={loadPortfolioPublicViewScreen}
+                name="PortfolioPublicView"
+              />
+            ) : null}
+            {FEATURE_FLAGS.prototypeRoutesEnabled ? (
+              <>
+                <RootStack.Screen
+                  getComponent={loadAdminPortfolioFlagsScreen}
+                  name="AdminPortfolioFlags"
+                />
+              </>
+            ) : null}
+          </RootStack.Navigator>
+        </NavigationContainer>
+      </OfflineAwareFrame>
       <GlobalScrollBackButton />
-      <OfflineBanner />
       {FEATURE_FLAGS.reviewCreationEnabled ? <QuickReviewModalHost /> : null}
       {FEATURE_FLAGS.reviewCreationEnabled ? (
         <ReviewSuccessModalHost onOpenHistory={() => navigationRef.navigate("ReviewHistory")} />
@@ -874,11 +907,8 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
   },
-  offlineBannerWrap: {
-    left: 0,
-    position: "absolute",
-    right: 0,
-    top: 0,
+  offlineFrame: {
+    flex: 1,
   },
   offlineBanner: {
     alignItems: "center",

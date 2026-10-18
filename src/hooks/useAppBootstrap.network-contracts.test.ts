@@ -14,14 +14,19 @@ test("app bootstrap keeps authenticated catalog routes mounted during NetInfo ou
   assert.match(source, /const unsubscribe = NetInfo\.addEventListener/);
   // Offline is a non-blocking banner; the RootNavigator no longer swaps the
   // current (authenticated catalog) route for the Offline screen.
-  assert.match(source, /setOffline\(isNetworkOffline\(state\)\)/);
+  // NetInfo feeds the debounced connectivity monitor, which also listens for
+  // successful app requests so a failed reachability probe cannot stick.
+  assert.match(source, /createConnectivityMonitor\(\{ setOffline \}\)/);
+  assert.match(source, /subscribeToNetworkSuccess\(monitor\.handleNetworkSuccess\)/);
+  assert.match(source, /NetInfo\.addEventListener\(\(state\) => monitor\.handleState\(state\)\)/);
+  assert.match(source, /monitor\.dispose\(\)/);
   const rootNavigator = readFileSync(
     path.join(process.cwd(), "src/app/navigation/RootNavigator.tsx"),
     "utf8",
   );
   assert.match(rootNavigator, /function OfflineBanner\(\)/);
   assert.doesNotMatch(rootNavigator, /navigationRef\.navigate\("Offline"\)/);
-  assert.match(source, /return unsubscribe;/);
+  assert.match(source, /unsubscribe\(\);/);
   assert.doesNotMatch(source, /setOffline\(false\);/);
 });
 

@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { createConnectivityAwareFetch } from "@/lib/network/connectivity";
+
 import { supabaseAuthStorage } from "./authStorage";
 import { installPkceCryptoPolyfill } from "./pkceCryptoPolyfill";
 
@@ -79,6 +81,9 @@ export function getSupabaseClient(): SupabaseClient | null {
       detectSessionInUrl: false,
       flowType: "pkce",
     },
+    // Any Supabase HTTP response proves the network is reachable, so it clears
+    // a stale offline banner left by NetInfo's third-party reachability probe.
+    global: { fetch: createConnectivityAwareFetch((input, init) => fetch(input, init)) },
   });
   return cachedClient;
 }
