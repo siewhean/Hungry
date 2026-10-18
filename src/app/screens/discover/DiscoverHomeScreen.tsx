@@ -3368,9 +3368,23 @@ export function DiscoverHomeScreen() {
                         style={{ color: themeTints.secondaryText }}
                         numberOfLines={1}
                       >
-                        {venue.planningArea ? `${venue.planningArea} · ` : ""}
-                        {venue.unitNumber} · {venue.operatingHours.split(" – ")[0]}
+                        {[
+                          venue.planningArea,
+                          venue.unitNumber,
+                          venue.operatingHours.split(" – ")[0],
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </AppText>
+                      {topDish ? null : (
+                        <AppText
+                          variant="micro"
+                          style={{ color: themeTints.secondaryText }}
+                          numberOfLines={1}
+                        >
+                          Menu coming soon
+                        </AppText>
+                      )}
                     </View>
                     <ChevronRight color={palette.textMuted} size={20} />
                   </Pressable>
