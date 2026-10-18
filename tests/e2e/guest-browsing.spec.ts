@@ -23,7 +23,7 @@ async function clearSignedOutState(page: import("@playwright/test").Page) {
       );
     }
   });
-  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
 }
 
 test.describe("guest mode is prohibited", () => {

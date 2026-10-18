@@ -141,7 +141,9 @@ export async function createEmailAccountFromScratch(page: Page, prefix: string) 
   await disableE2eDeveloperLauncher(page);
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await clearBrowserStorage(page);
-  await page.reload({ waitUntil: "domcontentloaded" });
+  // Navigate to "/" again instead of reloading: the fast splash may already have
+  // replaced the URL with /login, which would reopen Login after a reload.
+  await page.goto("/", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("button", { name: "Get started" })).toBeVisible({ timeout: 60_000 });
   await page.getByRole("button", { name: "Sign in to existing account" }).click();
   await page.getByRole("button", { name: "Create account" }).click();

@@ -497,7 +497,7 @@ test("store policy controls cover account deletion, UGC moderation, and location
   assert.doesNotMatch(worker, /getBearerToken\(request\) !== workerToken/);
   assert.match(worker, /timingSafeEqual\(getBearerToken\(request\), workerToken\)/);
   const residualPurge = readRepoFile(
-    "supabase/migrations/20261018120000_account_deletion_residual_purge.sql",
+    "supabase/migrations/20261018140000_account_deletion_residual_purge.sql",
   );
   assert.match(residualPurge, /set avatar_url = null/);
   assert.match(
