@@ -1,5 +1,7 @@
 import NetInfo from "@react-native-community/netinfo";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { AppState } from "react-native";
+import { hydrateShareAttribution } from "@/features/share/shareAttribution";
 import { setAnalyticsSink, trackAnalyticsEvent } from "@/lib/analytics";
 import {
   getConfiguredDataSource,
@@ -12,6 +14,7 @@ import {
   setSupabaseServiceProvider,
 } from "@/lib/services/serviceProvider";
 import { isNetworkOffline } from "@/lib/network/connectivity";
+import { useLocationStore } from "@/store/useLocationStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useMerchantStore } from "@/store/useMerchantStore";
@@ -69,6 +72,14 @@ function shouldWarmLegacyRepositoryCache() {
   return process.env.EXPO_PUBLIC_HUNGRY_LEGACY_CACHE_WARMUP === "1";
 }
 
+// supabase-js reports a refresh that failed for network reasons as
+// AuthRetryableFetchError (status 0). Only then is "no session" not final.
+function isRetryableAuthError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const { name, status } = error as { name?: unknown; status?: unknown };
+  return name === "AuthRetryableFetchError" || status === 0;
+}
+
 function preserveRestoredAuthState(applyAuthStateFromSession: ApplyAuthStateFromSession): boolean {
   const restoredSession = useSessionStore.getState();
   const userId = restoredSession.authenticatedUserId;
@@ -115,10 +126,38 @@ export function useAppBootstrap() {
 
       const { posthogSink } =
         require("@/lib/analytics/posthogSink") as typeof import("@/lib/analytics/posthogSink");
-      setAnalyticsSink(posthogSink);
+      // Send what was tracked before the sink attached (app_launched,
+      // cold-start shared_link_opened) instead of dropping it.
+      setAnalyticsSink(posthogSink, { replayBufferedEvents: true });
     });
 
     return cancelTask;
+  }, []);
+
+  useEffect(() => {
+    void hydrateShareAttribution();
+  }, []);
+
+  useEffect(() => {
+    // Re-read GPS on launch and on each return to the foreground; the store
+    // skips it unless permission is granted and the last fix is stale.
+    const refreshLocation = () => {
+      void useLocationStore.getState().refreshLocation();
+    };
+    // The persisted permission must be restored before the launch check.
+    let unsubscribeHydration: (() => void) | undefined;
+    if (useLocationStore.persist.hasHydrated()) {
+      refreshLocation();
+    } else {
+      unsubscribeHydration = useLocationStore.persist.onFinishHydration(refreshLocation);
+    }
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") refreshLocation();
+    });
+    return () => {
+      unsubscribeHydration?.();
+      subscription.remove();
+    };
   }, []);
 
   useEffect(() => {
@@ -220,11 +259,14 @@ export function useAppBootstrap() {
 
     void client.auth
       .getSession()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
         if (!active) return;
         const user = data.session?.user;
         if (!user) {
-          if (preserveRestoredAuthState(applyAuthStateFromSession)) {
+          // No session is final (expired or revoked) unless the refresh only
+          // failed for network reasons; otherwise a stale local session would
+          // look signed in while every write fails.
+          if (isRetryableAuthError(error) && preserveRestoredAuthState(applyAuthStateFromSession)) {
             return;
           }
           applyAuthStateFromSession({ isAuthenticated: false, userId: null });
@@ -264,7 +306,9 @@ export function useAppBootstrap() {
     const { data: subscription } = client.auth.onAuthStateChange((event, session) => {
       const user = session?.user;
       if (!user) {
-        if (event !== "SIGNED_OUT" && preserveRestoredAuthState(applyAuthStateFromSession)) {
+        // getSession() above settles the startup session (and keeps it on a
+        // network failure); any later null session means signed out.
+        if (event === "INITIAL_SESSION") {
           return;
         }
         applyAuthStateFromSession({ isAuthenticated: false, userId: null });

@@ -1697,6 +1697,10 @@ export const hungryService: HungryService = {
       return resolve(undefined);
     },
 
+    async unregisterPushToken() {
+      return resolve(undefined);
+    },
+
     async markOpened() {
       return resolve(undefined);
     },

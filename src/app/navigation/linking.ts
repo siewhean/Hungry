@@ -242,10 +242,11 @@ export function createRootLinking(
       }
       trackSharedLinkOpened(state, path);
 
-      const { isAuthReady, isAuthenticated, onAuthRedirect } = getAuthState();
-      if (!isAuthReady && isProtectedDeepLinkState(state)) {
-        return undefined;
-      }
+      // On a cold start auth may not be settled yet. Don't drop the link:
+      // a restored session opens it (the root auth guard sends the person to
+      // Login with it as the return route if the session turns out invalid),
+      // and no session sends them to Login with it saved as the return route.
+      const { isAuthenticated, onAuthRedirect } = getAuthState();
       if (!isAuthenticated && isProtectedDeepLinkState(state)) {
         const protectedRoute = state.routes[state.routes.length - 1];
         if (protectedRoute) onAuthRedirect?.(protectedRoute);

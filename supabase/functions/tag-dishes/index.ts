@@ -1,6 +1,7 @@
 // @ts-nocheck
 /* eslint-disable import/no-unresolved */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
+import { timingSafeEqual } from "../_shared/timingSafeEqual.ts";
 import Anthropic from "npm:@anthropic-ai/sdk@0.135.0";
 import {
   DIETARY_FLAGS,
@@ -70,7 +71,7 @@ Deno.serve(async (request) => {
   }
 
   const workerToken = Deno.env.get("TASTE_TAGGING_WORKER_TOKEN") ?? "";
-  if (!workerToken || getBearerToken(request) !== workerToken) {
+  if (!workerToken || !timingSafeEqual(getBearerToken(request), workerToken)) {
     return toJson(401, { error: "unauthorized" });
   }
 

@@ -1,6 +1,7 @@
 // @ts-nocheck
 /* eslint-disable import/no-unresolved */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
+import { timingSafeEqual } from "../_shared/timingSafeEqual.ts";
 
 type JsonObject = Record<string, unknown>;
 
@@ -59,7 +60,7 @@ Deno.serve(async (request) => {
   }
 
   const workerToken = Deno.env.get("ACCOUNT_DELETION_WORKER_TOKEN") ?? "";
-  if (!workerToken || getBearerToken(request) !== workerToken) {
+  if (!workerToken || !timingSafeEqual(getBearerToken(request), workerToken)) {
     return toJson(401, { error: "unauthorized" });
   }
 

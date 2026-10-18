@@ -1,6 +1,7 @@
 // @ts-nocheck
 /* eslint-disable import/no-unresolved */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
+import { timingSafeEqual } from "../_shared/timingSafeEqual.ts";
 
 // Drains public.notification_jobs (filled by the dishes trigger) and sends
 // Expo pushes. Each job is rechecked before sending: the user still opted in,
@@ -58,7 +59,7 @@ Deno.serve(async (request) => {
   }
 
   const workerToken = Deno.env.get("NOTIFICATION_WORKER_TOKEN") ?? "";
-  if (!workerToken || getBearerToken(request) !== workerToken) {
+  if (!workerToken || !timingSafeEqual(getBearerToken(request), workerToken)) {
     return toJson(401, { error: "unauthorized" });
   }
 

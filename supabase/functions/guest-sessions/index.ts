@@ -1,6 +1,7 @@
 // @ts-nocheck
 /* eslint-disable import/no-unresolved */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
+import { timingSafeEqual } from "../_shared/timingSafeEqual.ts";
 
 type Json = Record<string, unknown>;
 
@@ -158,7 +159,7 @@ Deno.serve(async (request) => {
     );
   }
 
-  if (request.headers.get("x-guest-session-key") !== configuredApiKey) {
+  if (!timingSafeEqual(request.headers.get("x-guest-session-key") ?? "", configuredApiKey)) {
     return toJsonResponse(
       401,
       {

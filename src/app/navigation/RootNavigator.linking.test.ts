@@ -39,8 +39,19 @@ test("deep link state rejects unsafe params and redirects protected links after 
   });
   assert.deepEqual(redirected, [{ name: "Post", params: { venueId: "venue-tian-tian" } }]);
 
+  // Cold start before auth settles: the link is kept, not dropped to Home.
   authState = { isAuthReady: false, isAuthenticated: false, onAuthRedirect };
-  assert.equal(getStateFromPath("order"), undefined);
+  assert.deepEqual(getStateFromPath("order")?.routes?.[0], {
+    name: "AuthStack",
+    params: { screen: "Login", pop: true },
+  });
+  assert.deepEqual(redirected[redirected.length - 1], { name: "Post", params: undefined });
+
+  authState = { isAuthReady: false, isAuthenticated: true, onAuthRedirect };
+  assert.deepEqual(getStateFromPath("order?venueId=venue-tian-tian")?.routes?.[0], {
+    name: "Post",
+    params: { venueId: "venue-tian-tian" },
+  });
 
   authState = { isAuthReady: true, isAuthenticated: true, onAuthRedirect };
   assert.equal(getStateFromPath("dish/<script>alert(1)</script>"), undefined);
