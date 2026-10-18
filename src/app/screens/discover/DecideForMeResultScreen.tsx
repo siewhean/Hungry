@@ -26,7 +26,9 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import { AccessibleImage, AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
+import { formatDishUpdated } from "@/features/detail/dishFreshness";
 import { findBuildingById } from "@/features/discovery/discovery";
 import { buildMapsSearchUrl, formatFullStallAddress } from "@/features/detail/stallLocation";
 import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
@@ -171,6 +173,45 @@ function formatDistance(distanceMeters: number) {
   return distanceMeters < 1000
     ? `${Math.round(distanceMeters)} m away`
     : `${(distanceMeters / 1000).toFixed(1)} km away`;
+}
+
+const PICK_REASON_DIMS: { key: keyof TasteVector; label: string }[] = [
+  { key: "sweet", label: "Sweet" },
+  { key: "spicy", label: "Spicy" },
+  { key: "sour", label: "Sour" },
+  { key: "salty", label: "Salty" },
+  { key: "rich", label: "Rich" },
+  { key: "aromatic", label: "Aroma" },
+];
+
+function buildPickReason(userVector: TasteVector, dish: DishDetail, match: number) {
+  const sortedDims = PICK_REASON_DIMS.map((dimension) => ({
+    ...dimension,
+    diff: Math.abs(userVector[dimension.key] - dish.tasteVector[dimension.key]),
+  })).sort((left, right) => left.diff - right.diff);
+  const topMatch = sortedDims[0];
+  return match >= 80
+    ? `This dish is dialled in to your taste profile — especially the ${topMatch.label.toLowerCase()}.`
+    : match >= 60
+      ? `A strong pick based on your ${topMatch.label.toLowerCase()} and ${sortedDims[1].label.toLowerCase()} preferences.`
+      : `A nearby pick that still aligns with your strongest taste dimensions.`;
+}
+
+/** The next two distinct candidates after the current pick, shown as backups. */
+function getOtherPicks(candidates: DishDetail[], currentIndex: number) {
+  const current = candidates[currentIndex];
+  const picks: DishDetail[] = [];
+  for (let offset = 1; offset < candidates.length && picks.length < 2; offset += 1) {
+    const candidate = candidates[(currentIndex + offset) % candidates.length];
+    if (
+      candidate &&
+      candidate.id !== current?.id &&
+      !picks.some((pick) => pick.id === candidate.id)
+    ) {
+      picks.push(candidate);
+    }
+  }
+  return picks;
 }
 
 function getNextDistinctDish(candidates: DishDetail[], currentDishId?: string, currentIndex = 0) {
@@ -406,27 +447,21 @@ export function DecideForMeResultScreen() {
       "system_share",
     );
   };
-  const tasteDims: { key: keyof TasteVector; label: string }[] = [
-    { key: "sweet", label: "Sweet" },
-    { key: "spicy", label: "Spicy" },
-    { key: "sour", label: "Sour" },
-    { key: "salty", label: "Salty" },
-    { key: "rich", label: "Rich" },
-    { key: "aromatic", label: "Aroma" },
-  ];
-  const sortedDims = tasteDims
-    .map((dimension) => ({
-      ...dimension,
-      diff: Math.abs(profile.tasteVector[dimension.key] - dish.tasteVector[dimension.key]),
-    }))
-    .sort((left, right) => left.diff - right.diff);
-  const topMatch = sortedDims[0];
-  const explanation =
-    match >= 80
-      ? `This dish is dialled in to your taste profile — especially the ${topMatch.label.toLowerCase()}.`
-      : match >= 60
-        ? `A strong pick based on your ${topMatch.label.toLowerCase()} and ${sortedDims[1].label.toLowerCase()} preferences.`
-        : `A nearby pick that still aligns with your strongest taste dimensions.`;
+  const explanation = buildPickReason(profile.tasteVector, dish, match);
+  const updatedLabel = formatDishUpdated(dish.updatedAt);
+  const otherPicks = getOtherPicks(candidates, resultIndex);
+
+  const handleOtherPick = (pick: DishDetail) => {
+    recordTasteInteraction({
+      type: "food_button_click",
+      surface: "decide",
+      dish: pick,
+      buttonId: "other_pick",
+    });
+    const pickIndex = candidates.findIndex((candidate) => candidate.id === pick.id);
+    if (pickIndex >= 0) setResultIndex(pickIndex);
+    setDecideForMe(pick);
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: palette.bg }}>
@@ -453,12 +488,16 @@ export function DecideForMeResultScreen() {
       >
         {/* Parallax Hero */}
         <Animated.View style={[styles.heroContainer, { height: HERO_HEIGHT }, heroStyle]}>
-          <AccessibleImage
-            source={{ uri: dish.imageUrl }}
-            style={StyleSheet.absoluteFill}
-            contentFit="cover"
-            accessibilityLabel={`${dish.name} photo`}
-          />
+          {dish.imageUrl ? (
+            <AccessibleImage
+              source={{ uri: dish.imageUrl }}
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+              accessibilityLabel={`${dish.name} photo`}
+            />
+          ) : (
+            <NoDishPhoto dishName={dish.name} style={StyleSheet.absoluteFill} iconSize={56} />
+          )}
           <LinearGradient
             colors={["transparent", palette.mediaScrimSubtle, palette.bg]}
             style={StyleSheet.absoluteFill}
@@ -481,9 +520,9 @@ export function DecideForMeResultScreen() {
             <AppText variant="bodyLarge" tone="secondary">
               {venue?.name} · {venue?.unitNumber}
             </AppText>
-            {distanceLabel ? (
+            {distanceLabel || updatedLabel ? (
               <AppText variant="body" tone="muted">
-                {distanceLabel}
+                {[distanceLabel, updatedLabel].filter(Boolean).join(" · ")}
               </AppText>
             ) : null}
           </View>
@@ -512,7 +551,7 @@ export function DecideForMeResultScreen() {
           <View style={{ gap: spacing[3] }}>
             <AppText variant="h3">Palate Match</AppText>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[3] }}>
-              {tasteDims.map((dimension) => (
+              {PICK_REASON_DIMS.map((dimension) => (
                 <TasteMiniBar
                   key={dimension.key}
                   label={TASTE_LABELS[dimension.key]}
@@ -582,12 +621,70 @@ export function DecideForMeResultScreen() {
               }}
             />
             <Button
-              label="Try Another Pick"
+              label="Not for me"
               variant="ghost"
+              accessibilityLabel={`Not for me, show another pick instead of ${dish.name}`}
               leftIcon={<Shuffle size={18} color={palette.text} />}
               onPress={handleTryAnother}
             />
           </View>
+
+          {otherPicks.length ? (
+            <View style={{ gap: spacing[3] }}>
+              <AppText variant="h3">Other picks</AppText>
+              {otherPicks.map((pick) => {
+                const pickMatch = Math.round(
+                  blendedMatchScore(profile.tasteVector, pick.tasteVector) * 100,
+                );
+                const pickDistance = formatDistance(pick.distanceMeters);
+                return (
+                  <Pressable
+                    key={pick.id}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Pick ${pick.name}, S$${pick.price.toFixed(2)}`}
+                    onPress={() => handleOtherPick(pick)}
+                    style={({ pressed }) => [
+                      {
+                        alignItems: "center",
+                        backgroundColor: palette.bgSoft,
+                        borderRadius: radii.md,
+                        flexDirection: "row",
+                        gap: spacing[3],
+                        opacity: pressed ? 0.85 : 1,
+                        padding: spacing[3],
+                      },
+                    ]}
+                  >
+                    {pick.imageUrl ? (
+                      <AccessibleImage
+                        source={{ uri: pick.imageUrl }}
+                        style={{ borderRadius: radii.sm, height: 56, width: 56 }}
+                        contentFit="cover"
+                        decorative
+                      />
+                    ) : (
+                      <NoDishPhoto
+                        dishName={pick.name}
+                        style={{ borderRadius: radii.sm, height: 56, width: 56 }}
+                        iconSize={20}
+                      />
+                    )}
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <AppText variant="body" style={{ fontWeight: "800" }} numberOfLines={1}>
+                        {pick.name}
+                      </AppText>
+                      <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
+                        {[`S$${pick.price.toFixed(2)}`, pickDistance].filter(Boolean).join(" · ")}
+                      </AppText>
+                      <AppText variant="bodySmall" tone="muted" numberOfLines={2}>
+                        {buildPickReason(profile.tasteVector, pick, pickMatch)}
+                      </AppText>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+          ) : null}
         </View>
       </Animated.ScrollView>
 

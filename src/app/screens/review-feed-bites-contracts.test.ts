@@ -90,7 +90,10 @@ test("Review feed cards do not render bottom bites sections", () => {
   assert.doesNotMatch(reviewShareSheet, /ACTIVITY_MESSAGES/);
   assert.match(reviewShareSheet, /selectedChatIds/);
   assert.match(reviewShareSheet, /sharePostToChat\(chatId,/);
-  assert.match(reviewShareSheet, /Clipboard\.setString\(activeReview\.link\)/);
+  assert.match(
+    reviewShareSheet,
+    /Clipboard\.setString\(withShareSource\(activeReview\.link, "copy_link"\)\)/,
+  );
   assert.match(reviewShareSheet, /Share\.share\(\{/);
   assert.match(reviewShareSheet, /recipientAccessibilityLabelPrefix="Select"/);
   assert.match(reviewShareSheet, /FloatingShareSendButton/);

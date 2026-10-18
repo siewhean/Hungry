@@ -4,5 +4,6 @@ export * from "./DecideForMeCard";
 export * from "./DishCard";
 export * from "./ImageCarousel";
 export * from "./MustOrderBadge";
+export * from "./NoDishPhoto";
 export * from "./ProfileRadarChart";
 export * from "./TasteRadarChart";

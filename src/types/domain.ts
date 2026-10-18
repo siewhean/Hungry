@@ -228,6 +228,8 @@ export interface DishSummary {
   tasteConfidence?: number;
   dietaryFlags: DietaryFlag[];
   venueVerificationStatus?: VerificationStatus;
+  /** ISO time the dish row last changed; shown as "Updated 3d ago". Undefined when unknown. */
+  updatedAt?: string;
 }
 
 export interface Review {
