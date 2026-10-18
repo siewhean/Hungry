@@ -7,6 +7,16 @@ import { useHungryTheme, type HungryTheme } from "@/theme";
 import { AccessibleImage, AppText, Badge, Card } from "../ui";
 import { NoDishPhoto } from "./NoDishPhoto";
 
+/** "Venue · #01-23 · L1", skipping empty parts so no stray separators show. */
+export function formatDishLocation(
+  dish: Pick<DishDetail, "venueName" | "unitNumber" | "floor">,
+): string {
+  return [dish.venueName, dish.unitNumber, dish.floor]
+    .map((part) => part?.trim())
+    .filter(Boolean)
+    .join(" · ");
+}
+
 interface DishCardProps {
   dish: DishDetail;
   variant?: "horizontal" | "vertical";
@@ -78,22 +88,24 @@ export function DishCard({
                 {dish.name}
               </AppText>
               <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
-                {dish.venueName} · {dish.unitNumber} · {dish.floor}
+                {formatDishLocation(dish)}
               </AppText>
             </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={favourited ? "Remove from favourites" : "Add to favourites"}
-              onPress={onFavouritePress}
-              disabled={!onFavouritePress}
-              hitSlop={8}
-            >
-              <Heart
-                size={18}
-                color={favourited ? palette.error : palette.textMuted}
-                fill={favourited ? palette.error : "transparent"}
-              />
-            </Pressable>
+            {onFavouritePress ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={favourited ? "Saved" : "Save"}
+                accessibilityState={{ selected: favourited }}
+                onPress={onFavouritePress}
+                hitSlop={13}
+              >
+                <Heart
+                  size={18}
+                  color={favourited ? palette.error : palette.textMuted}
+                  fill={favourited ? palette.error : "transparent"}
+                />
+              </Pressable>
+            ) : null}
           </View>
           <View style={styles.rowWrap}>
             <AppText variant="price">S${dish.price.toFixed(2)}</AppText>
