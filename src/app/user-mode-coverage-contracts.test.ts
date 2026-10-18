@@ -193,7 +193,7 @@ test("discover and search keep user mode map-free while browse grids open matchi
       /navigation\.navigate\("MapZoomedIn", \{[\s\S]*buildingId: venue\.buildingId/,
       /navigation\.navigate\("BrowseStalls"\)/,
       /navigation\.navigate\("BrowseDishes"\)/,
-      /navigation\.navigate\("DecideForMeResult"\)/,
+      /navigation\.navigate\("DecideForMeResult", \{ surface: "discover" \}/,
       /navigation\.navigate\("WheelStack", \{ screen: "WheelHome" \}\)/,
       /recordTasteInteraction\(\{[\s\S]*type: "search_query"/,
       /recordTasteInteraction\(\{[\s\S]*type: "dish_result_click"/,
