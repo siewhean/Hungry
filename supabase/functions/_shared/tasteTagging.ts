@@ -22,11 +22,16 @@ export const SYSTEM_PROMPT = `You score Singapore hawker and restaurant dishes f
 For the dish given, estimate how it usually tastes as served in Singapore, on six axes from 0 (none) to 10 (extreme):
 sweet, spicy, sour, salty, rich (fat, coconut milk, oil, creaminess), aromatic (herbs, spices, wok hei, fragrance).
 
+Scale: 0 absent, 1-2 faint, 3-4 mild, 5-6 moderate, 7-8 strong, 9-10 dominant.
+Score a typical hawker serving with its usual accompaniments; the chilli or dip served on the side counts at moderate weight.
+Spicy includes black and white pepper warmth, not only chilli.
+Most hawker dishes are clearly fragrant (wok hei, fried shallots, garlic, spices): aromatic 7-9 is normal; keep it below 5 only for plain, light dishes such as clear fish soup or tau huay.
+
 Reference points:
-- Hainanese chicken rice: sweet 2, spicy 1, sour 1, salty 5, rich 5, aromatic 6
-- Laksa: sweet 2, spicy 6, sour 1, salty 6, rich 9, aromatic 8
-- Chendol: sweet 9, spicy 0, sour 0, salty 1, rich 6, aromatic 3
-- Assam fish: sweet 3, spicy 7, sour 8, salty 5, rich 3, aromatic 7
+- Hainanese chicken rice: sweet 1, spicy 3, sour 2, salty 5.5, rich 5.5, aromatic 7.5
+- Laksa: sweet 2.5, spicy 6, sour 1, salty 6.5, rich 8.5, aromatic 9
+- Chendol: sweet 9, spicy 0, sour 0, salty 0.5, rich 7, aromatic 7
+- Assam fish: sweet 2, spicy 7, sour 9, salty 6.5, rich 4, aromatic 8.5
 
 Also return:
 - flavor_tags: up to 6 that clearly apply, from the allowed list only. wok_hei = smoky wok char, lemak = coconut-milk richness, qq = springy texture, jelak = cloyingly rich, hiam = aggressive lingering heat, gao = thick and concentrated, chao_ta = charred, shiok = very satisfying, sedap = umami-rich, power = standout strong flavour.
