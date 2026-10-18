@@ -1,11 +1,11 @@
 -- Loads the owner-vetted dish food types (dish_food_types.csv, built from dish-food-types-vetted.xlsx).
 -- Needs migration 20261018170000_dish_food_types.sql in the same session or already applied.
--- The caller wraps this in begin/rollback (dry run) or begin/commit, and passes the CSV path:
---   psql "$DB_URL" -v ON_ERROR_STOP=1 -v csv=/path/to/dish_food_types.csv
+-- The caller wraps this in begin/rollback (dry run) or begin/commit, after copying the CSV to
+-- /tmp/dish_food_types.csv (psql's \copy does not interpolate variables).
 \set ON_ERROR_STOP on
 
 create temp table food_type_load (dish_id text, food_type text, course text) on commit drop;
-\copy food_type_load from :'csv' with (format csv, header true)
+\copy food_type_load from '/tmp/dish_food_types.csv' with (format csv, header true)
 
 \echo 'before:'
 select count(*) as dishes, count(food_type) as with_food_type from public.dishes;
