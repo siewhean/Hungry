@@ -17,8 +17,11 @@ import {
   ChevronLeft,
   CircleHelp,
   Heart,
+  Globe,
+  Mail,
   MapPin,
   MessageCircle,
+  Phone,
   MessageCircleMore,
   Send,
   Star,
@@ -52,7 +55,8 @@ import {
 } from "@/lib/services/serviceProvider";
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
 import { trackAnalyticsEvent } from "@/lib/analytics";
-import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
+import { openMerchantProfileLink, openTrustedMapsUrl } from "@/lib/security/safeLinking";
+import { getDishSection, isSectionFlag, isSoldOut } from "@/features/merchant/menuSections";
 import {
   buildMapsSearchUrl,
   formatFoodCentreLocation,
@@ -74,7 +78,7 @@ import {
   CYCLING_GRID_IMAGE_INTERVAL_MS,
 } from "@/components/discover/CyclingGridImage";
 import { CustomerPromotionCard } from "@/components/promotion/CustomerPromotionCard";
-import type { DishDetail, MerchantPromotion } from "@/types/domain";
+import type { DishDetail, MerchantPromotion, PublicMerchantProfile } from "@/types/domain";
 import {
   DetailSaveActionsCard,
   useDetailSaveActions,
@@ -148,7 +152,12 @@ function formatMenuCategoryLabel(value: string) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+const STATUS_AVAILABILITY_FLAGS = new Set(["sold_out", "featured"]);
+
 function inferDishCategory(dish: DishDetail) {
+  // A section the stall owner picked wins over name-based guesses.
+  const merchantSection = getDishSection(dish.availabilityFlags);
+  if (merchantSection) return merchantSection;
   const name = dish.name.toLowerCase();
   if (dish.mustOrder) return "Popular";
   if (/(rice|nasi|biryani|donburi|porridge|congee)/.test(name)) return "Rice";
@@ -169,6 +178,11 @@ function inferDishCategory(dish: DishDetail) {
   if (dietaryLabels.some((label) => /vegetarian|vegan/i.test(label))) return "Vegetarian";
 
   const availabilityCategory = (dish.availabilityFlags ?? [])
+    .filter(
+      (flag) =>
+        !isSectionFlag(flag) &&
+        !STATUS_AVAILABILITY_FLAGS.has(flag.toLowerCase().replace(/[\s-]+/g, "_")),
+    )
     .map(formatMenuCategoryLabel)
     .find((tag) => tag.length > 0);
   if (availabilityCategory) return availabilityCategory;
@@ -231,9 +245,15 @@ function StallMenuDishCard({
           <AppText variant="bodyBold" numberOfLines={1}>
             {activeDish.name}
           </AppText>
-          <AppText variant="price" style={{ color: palette.orange }}>
-            {activeDish.priceRange}
-          </AppText>
+          {isSoldOut(activeDish.availabilityFlags) ? (
+            <AppText variant="bodySmallBold" style={{ color: palette.error }}>
+              Sold out today
+            </AppText>
+          ) : (
+            <AppText variant="price" style={{ color: palette.orange }}>
+              {activeDish.priceRange}
+            </AppText>
+          )}
         </View>
       </View>
     </Pressable>
@@ -314,6 +334,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
   const [reviewsByDishId, setReviewsByDishId] = useState<Record<string, DishDetail["reviews"]>>({});
   const [activePromotions, setActivePromotions] = useState<MerchantPromotion[]>([]);
+  const [merchantProfile, setMerchantProfile] = useState<PublicMerchantProfile>();
   const [activeMenuCategory, setActiveMenuCategory] = useState(ALL_MENU_CATEGORY);
   const [visibleMenuItemCount, setVisibleMenuItemCount] = useState(INITIAL_MENU_ITEM_COUNT);
   const contentBodyLayoutRef = useRef<{ y: number; height: number } | null>(null);
@@ -408,6 +429,15 @@ export function StallDetailScreen({ navigation, route }: Props) {
         active = false;
       };
     }
+
+    void getHungryService()
+      .discovery.getPublicMerchantProfile(venue.id)
+      .then((profile) => {
+        if (active) setMerchantProfile(profile);
+      })
+      .catch(() => {
+        if (active) setMerchantProfile(undefined);
+      });
 
     void getHungryService()
       .discovery.listActivePromotionsForTarget({ venueId: venue.id })
@@ -574,7 +604,12 @@ export function StallDetailScreen({ navigation, route }: Props) {
       : `${leadDish.distanceMeters}m away`
     : null;
   const isVenueOpen = isVenueOpenFromHours(venue.operatingHours, venue.isOpen);
-  const operatingStatusLabel = isVenueOpen ? "Open now" : (venue.closureNotice ?? "Closed now");
+  const closureNotice = merchantProfile?.temporaryClosure ?? venue.closureNotice;
+  const operatingStatusLabel =
+    isVenueOpen && !merchantProfile?.temporaryClosure
+      ? "Open now"
+      : (closureNotice ?? "Closed now");
+  const merchantWebLinks = (merchantProfile?.socialLinks ?? []).slice(0, 5);
   const weeklyOperatingHours = formatWeeklyOperatingHours(venue.operatingHours);
 
   const reviewedDishIds = profile.reviewedDishIds;
@@ -945,6 +980,75 @@ export function StallDetailScreen({ navigation, route }: Props) {
                 </Card>
               </View>
 
+              {merchantProfile &&
+              (merchantProfile.description ||
+                merchantProfile.contactPhone ||
+                merchantProfile.contactEmail ||
+                merchantWebLinks.length > 0) ? (
+                <View style={{ gap: spacing[3] }}>
+                  <AppText variant="h2">From the owner</AppText>
+                  <Card style={{ padding: spacing[4], gap: spacing[3] }}>
+                    {merchantProfile.isVerified ? (
+                      <AppText variant="micro" style={{ color: palette.success }}>
+                        ✓ Verified by Hungry
+                      </AppText>
+                    ) : null}
+                    {merchantProfile.description ? (
+                      <AppText variant="body" tone="secondary">
+                        {merchantProfile.description}
+                      </AppText>
+                    ) : null}
+                    {merchantProfile.cuisineCategories.length > 0 ? (
+                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+                        {merchantProfile.cuisineCategories.map((category) => (
+                          <Chip key={category} label={category} />
+                        ))}
+                      </View>
+                    ) : null}
+                    {merchantProfile.contactPhone ? (
+                      <Pressable
+                        accessibilityRole="link"
+                        accessibilityLabel={`Call ${venue.name}`}
+                        onPress={() =>
+                          void openMerchantProfileLink("phone", merchantProfile.contactPhone ?? "")
+                        }
+                        style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}
+                      >
+                        <Phone color={palette.orange} size={16} />
+                        <AppText variant="body">{merchantProfile.contactPhone}</AppText>
+                      </Pressable>
+                    ) : null}
+                    {merchantProfile.contactEmail ? (
+                      <Pressable
+                        accessibilityRole="link"
+                        accessibilityLabel={`Email ${venue.name}`}
+                        onPress={() =>
+                          void openMerchantProfileLink("email", merchantProfile.contactEmail ?? "")
+                        }
+                        style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}
+                      >
+                        <Mail color={palette.orange} size={16} />
+                        <AppText variant="body">{merchantProfile.contactEmail}</AppText>
+                      </Pressable>
+                    ) : null}
+                    {merchantWebLinks.map((link) => (
+                      <Pressable
+                        key={`${link.platform}:${link.url}`}
+                        accessibilityRole="link"
+                        accessibilityLabel={`Open ${venue.name} ${link.platform}`}
+                        onPress={() => void openMerchantProfileLink("web", link.url)}
+                        style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}
+                      >
+                        <Globe color={palette.orange} size={16} />
+                        <AppText variant="body" numberOfLines={1} style={{ flex: 1 }}>
+                          {formatMenuCategoryLabel(link.platform)}
+                        </AppText>
+                      </Pressable>
+                    ))}
+                  </Card>
+                </View>
+              ) : null}
+
               {/* Address */}
               <View style={{ gap: spacing[3] }}>
                 <AppText variant="h2">Address</AppText>
@@ -1140,6 +1244,25 @@ export function StallDetailScreen({ navigation, route }: Props) {
                       >
                         {review.text}
                       </AppText>
+
+                      {review.merchantReply ? (
+                        <View
+                          style={{
+                            marginTop: spacing[2],
+                            padding: spacing[3],
+                            borderRadius: componentRadii.card,
+                            backgroundColor: palette.bgSoft,
+                            gap: spacing[1],
+                          }}
+                        >
+                          <AppText variant="micro" style={{ fontWeight: "700" }}>
+                            Reply from the owner
+                          </AppText>
+                          <AppText variant="bodySmall" tone="secondary">
+                            {review.merchantReply.text}
+                          </AppText>
+                        </View>
+                      ) : null}
 
                       {reviewRepliesEnabled ? (
                         <View

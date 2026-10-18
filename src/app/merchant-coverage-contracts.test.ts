@@ -94,10 +94,15 @@ test("merchant profile edits validate fields and propagate to user-side venue re
       /updateBusinessProfile/,
       /handlePreviewAsCustomer/,
       /Preview/,
-      /BusinessImageField/,
-      /launchImageLibraryAsync/,
+      /<MerchantImageField/,
+      /name="websiteUrl"|LINK_FIELDS/,
     ],
     "BusinessProfileEditorScreen",
+  );
+  assertSourceIncludes(
+    readRepoFile("src/components/merchant/MerchantImageField.tsx"),
+    [/launchImageLibraryAsync/],
+    "MerchantImageField",
   );
   assertSourceIncludes(
     validation,

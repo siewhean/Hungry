@@ -1,6 +1,7 @@
 import { Alert, Linking } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import { SUPPORT_EMAIL, WEB_HOST } from "@/constants/links";
+import { toMerchantEmailUrl, toMerchantPhoneUrl, toMerchantWebUrl } from "./merchantLinks";
 
 const ALLOWED_HOSTS = new Set([WEB_HOST, `www.${WEB_HOST}`]);
 const ALLOWED_SCHEMES = new Set(["https"]);
@@ -116,5 +117,28 @@ export async function openTrustedDeliveryUrl(
     await Linking.openURL(webUrl);
   } catch {
     Alert.alert("Unable to open delivery link", "Please try again later.");
+  }
+}
+
+// Merchant-supplied profile links are untrusted; see merchantLinks.ts.
+export async function openMerchantProfileLink(
+  kind: "web" | "phone" | "email",
+  value: string,
+): Promise<void> {
+  const url =
+    kind === "web"
+      ? toMerchantWebUrl(value)
+      : kind === "phone"
+        ? toMerchantPhoneUrl(value)
+        : toMerchantEmailUrl(value);
+  try {
+    if (!url) throw new Error("Blocked invalid merchant link.");
+    if (kind === "web") {
+      await WebBrowser.openBrowserAsync(url);
+    } else {
+      await Linking.openURL(url);
+    }
+  } catch {
+    Alert.alert("Unable to open link", "Please try again later.");
   }
 }

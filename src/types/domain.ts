@@ -244,6 +244,11 @@ export interface Review {
   tags: string[];
   wouldRecommend: boolean;
   photos: string[];
+  /** Public reply from the stall owner, if they answered this review. */
+  merchantReply?: {
+    text: string;
+    repliedAt: string;
+  };
 }
 
 export interface PopularVisitorPin {
@@ -580,6 +585,8 @@ export interface MerchantVerification {
 export interface MerchantOutlet {
   id: string;
   merchantAccountId: string;
+  /** Consumer catalog venue this outlet is linked to. */
+  venueId?: string;
   name: string;
   businessType: BusinessType;
   buildingId?: string;
@@ -603,6 +610,20 @@ export interface MerchantOutlet {
   signatureDishIds: string[];
   isLive: boolean;
   verification: MerchantVerification;
+}
+
+/** What diners see of a live merchant outlet on the stall page. */
+export interface PublicMerchantProfile {
+  outletId: string;
+  description?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  socialLinks: { platform: string; url: string }[];
+  cuisineCategories: string[];
+  profilePhotoUrl?: string;
+  coverPhotoUrl?: string;
+  temporaryClosure?: string;
+  isVerified: boolean;
 }
 
 export interface MerchantAccount {

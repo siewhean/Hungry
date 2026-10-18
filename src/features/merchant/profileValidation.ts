@@ -8,6 +8,8 @@ const MAX_CONTACT_PHONE_LENGTH = 30;
 const MAX_CONTACT_EMAIL_LENGTH = 120;
 const MAX_TAG_LENGTH = 32;
 const MAX_TAG_COUNT = 12;
+const MAX_SOCIAL_LINKS = 5;
+const MAX_URL_LENGTH = 300;
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^[0-9+\-()\s]{5,30}$/;
@@ -15,6 +17,19 @@ const PHONE_REGEX = /^[0-9+\-()\s]{5,30}$/;
 function normalizeText(value: string | undefined): string | undefined {
   if (typeof value !== "string") return value;
   return value.trim();
+}
+
+function normalizeSocialLinks(
+  links: MerchantOutlet["socialLinks"] | undefined,
+): MerchantOutlet["socialLinks"] | undefined {
+  if (!links) return links;
+  return links
+    .map((link) => ({ platform: link.platform.trim().toLowerCase(), url: link.url.trim() }))
+    .filter((link) => link.platform && link.url)
+    .map((link) => ({
+      ...link,
+      url: /^https?:\/\//i.test(link.url) ? link.url : `https://${link.url}`,
+    }));
 }
 
 function normalizeStringArray(values: string[] | undefined): string[] | undefined {
@@ -40,6 +55,7 @@ export function validateMerchantProfileUpdates(
   normalized.floor = normalizeText(normalized.floor);
   normalized.cuisineCategories = normalizeStringArray(normalized.cuisineCategories);
   normalized.tasteTags = normalizeStringArray(normalized.tasteTags);
+  normalized.socialLinks = normalizeSocialLinks(normalized.socialLinks);
 
   if (normalized.name !== undefined && normalized.name.length === 0) {
     throw new Error("Business name cannot be empty.");
@@ -89,6 +105,15 @@ export function validateMerchantProfileUpdates(
   if (normalized.tasteTags?.some((tag) => tag.length > MAX_TAG_LENGTH)) {
     throw new Error(`Taste tags must each be at most ${MAX_TAG_LENGTH} characters.`);
   }
+
+  if (normalized.socialLinks && normalized.socialLinks.length > MAX_SOCIAL_LINKS) {
+    throw new Error(`Add at most ${MAX_SOCIAL_LINKS} links.`);
+  }
+  normalized.socialLinks?.forEach((link) => {
+    if (link.url.length > MAX_URL_LENGTH || !/^https?:\/\/[^\s/]+\.[^\s]+$/i.test(link.url)) {
+      throw new Error(`The ${link.platform} link is not a valid web address.`);
+    }
+  });
 
   return normalized;
 }
