@@ -152,6 +152,7 @@ All P0 blockers resolved. All static predeploy gates pass.
 | `/for-foodies` | Public marketing | Public | No | Yes | Static content | Low | Keep public and cached |
 | `/for-merchants` | Public marketing | Public | No | Yes | Static content | Low | Keep public and cached |
 | `/guides/[guideSlug]` | Public SEO | Public | No | Conditional | Static guide content | Medium | Noindex thin guides |
+| `/home` | App link fallback | Public | No | No | None (redirects to `/`) | Low | Weekly picks push opens the app; web visitors go home |
 | `/hawker-centres/[centreSlug]` | Public SEO | Public | No | Conditional | Supabase/public fallback content | Medium | Noindex if thin or unsupported facts |
 | `/join-waitlist` | Public form | Public | No | Yes | Static form + `/api/waitlist` | Medium | Validate client and API payloads |
 | `/malls/[mallSlug]/food` | Public SEO | Public | No | Conditional | Supabase/public fallback content | Medium | Noindex if thin or unsupported facts |

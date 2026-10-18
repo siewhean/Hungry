@@ -5,7 +5,6 @@ import { assertSourceExcludes, assertSourceIncludes, readRepoFile } from "@/test
 test("stall detail surfaces merchant-pinned popular visitors from services", () => {
   const section = readRepoFile("src/components/stall/PopularVisitorsSection.tsx");
   const stallDetail = readRepoFile("src/app/screens/detail/StallDetailScreen.tsx");
-  const stallDetailV2 = readRepoFile("src/app/screens/detail/StallDetailScreenV2.tsx");
 
   assertSourceIncludes(
     section,
@@ -27,12 +26,7 @@ test("stall detail surfaces merchant-pinned popular visitors from services", () 
   assertSourceIncludes(
     stallDetail,
     [/PopularVisitorsSection/, /<PopularVisitorsSection venueId=\{venue\.id\}/],
-    "legacy stall detail popular visitors",
-  );
-  assertSourceIncludes(
-    stallDetailV2,
-    [/PopularVisitorsSection/, /<PopularVisitorsSection venueId=\{venue\.id\}/],
-    "v2 stall detail popular visitors",
+    "stall detail popular visitors",
   );
 });
 

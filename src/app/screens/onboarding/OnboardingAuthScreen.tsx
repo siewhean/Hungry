@@ -42,7 +42,6 @@ export function OnboardingAuthScreen({ navigation }: Props) {
 
   const showToast = useUIStore((s) => s.showToast);
   const completeAuth = useSessionStore((s) => s.completeAuth);
-  const completeOnboarding = useSessionStore((s) => s.completeOnboarding);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
@@ -68,8 +67,10 @@ export function OnboardingAuthScreen({ navigation }: Props) {
     defaultValues: { email: "", password: "" },
   });
 
+  // Signing up here happens before the location step; continue onboarding there.
+  // LocationPermission marks onboarding complete like every other path.
   const finishOnboarding = () => {
-    completeOnboarding();
+    navigation.navigate("LocationPermission");
   };
 
   const applySessionProfile = async (
@@ -112,7 +113,7 @@ export function OnboardingAuthScreen({ navigation }: Props) {
           return;
         }
         await applySessionProfile(session.profile);
-        completeAuth({ authProvider: "email", completedOnboarding: true, trackSignInEvent: false });
+        completeAuth({ authProvider: "email", trackSignInEvent: false });
         finishOnboarding();
         return;
       }
@@ -121,7 +122,7 @@ export function OnboardingAuthScreen({ navigation }: Props) {
         showToast({ message: failure.message, tone: "error" });
         return;
       }
-      completeAuth({ authProvider: "email", completedOnboarding: true, trackSignInEvent: false });
+      completeAuth({ authProvider: "email", trackSignInEvent: false });
       finishOnboarding();
     } catch (err) {
       const code =
@@ -144,11 +145,11 @@ export function OnboardingAuthScreen({ navigation }: Props) {
       if (dataSource === "supabase") {
         const session = await getHungryService().auth.signIn(values.email, values.password);
         await applySessionProfile(session.profile);
-        completeAuth({ authProvider: "email", completedOnboarding: true, trackSignInEvent: false });
+        completeAuth({ authProvider: "email", trackSignInEvent: false });
         finishOnboarding();
         return;
       }
-      completeAuth({ authProvider: "email", completedOnboarding: true, trackSignInEvent: false });
+      completeAuth({ authProvider: "email", trackSignInEvent: false });
       finishOnboarding();
     } catch {
       showToast({ message: AUTH_COPY.signUp.genericErrorToast, tone: "error" });
@@ -167,7 +168,7 @@ export function OnboardingAuthScreen({ navigation }: Props) {
         await applySessionProfile(session.profile);
       }
       showToast({ message: getSignUpProviderSuccessMessage(provider), tone: "success" });
-      completeAuth({ authProvider: provider, completedOnboarding: true, trackSignInEvent: false });
+      completeAuth({ authProvider: provider, trackSignInEvent: false });
       finishOnboarding();
     } catch (err) {
       const message = (err as { message?: string })?.message?.toLowerCase() ?? "";

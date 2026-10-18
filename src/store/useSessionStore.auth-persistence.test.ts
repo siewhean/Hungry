@@ -72,6 +72,23 @@ test("durable app storage migrates legacy SecureStore session metadata", () => {
   );
 });
 
+test("a guest who finished onboarding locally is not sent through onboarding after sign-in", () => {
+  useSessionStore.setState({ hasCompletedOnboarding: true });
+
+  useSessionStore.getState().completeAuth({
+    completedOnboarding: false,
+    trackSignInEvent: false,
+  });
+  assert.equal(useSessionStore.getState().hasCompletedOnboarding, true);
+
+  useSessionStore.getState().applyAuthStateFromSession({
+    isAuthenticated: true,
+    userId: "guest-signin-user",
+    completedOnboarding: false,
+  });
+  assert.equal(useSessionStore.getState().hasCompletedOnboarding, true);
+});
+
 test("completeAuth records the Supabase user and data source for reload restoration", () => {
   setConfiguredDataSource("supabase");
   useProfileStore.setState({
@@ -287,8 +304,8 @@ test("visible sign-out actions reset to login instead of onboarding", () => {
   const profileHomeScreen = read("src/app/screens/profile/ProfileHomeScreen.tsx");
   const merchantProfileScreen = read("src/app/screens/merchant/MerchantProfileScreen.tsx");
 
-  assert.match(splashScreen, /!isAuthenticated[\s\S]*AuthStack/);
-  assert.match(splashScreen, /name: "AuthStack"[\s\S]*screen: "Login"/);
+  // Signed-out cold starts open the app as a guest (sign-in is on demand).
+  assert.doesNotMatch(splashScreen, /name: "AuthStack"/);
   assert.match(splashScreen, /name: "MainTabs"[\s\S]*params: \{ screen: "Home" \}/);
 
   [settingsScreen, profileHomeScreen, merchantProfileScreen].forEach((source) => {

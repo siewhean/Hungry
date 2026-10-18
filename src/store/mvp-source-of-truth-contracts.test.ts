@@ -106,10 +106,9 @@ test("production Post route publishes through the canonical composer service pat
   const publishing = read("src/features/post/publishing.ts");
   const swipeTabs = read("src/app/navigation/SwipeableTabNavigator.tsx");
 
-  assert.match(
-    swipeTabs,
-    /const composerRoute = FEATURE_FLAGS\.prototypeRoutesEnabled \? "PostComposerV2" : "Post"/,
-  );
+  // QA tests what ships: every environment opens the V1 Post composer.
+  assert.match(swipeTabs, /rootNavigation\?\.navigate\("Post"\)/);
+  assert.doesNotMatch(swipeTabs, /PostComposerV2/);
   assert.match(postScreen, /import \{ publishComposerPost \}/);
   assert.match(postScreen, /useComposerStore\.getState\(\)/);
   assert.match(postScreen, /confirmGalleryAccess/);
@@ -133,7 +132,7 @@ test("production Post route publishes through the canonical composer service pat
   assert.doesNotMatch(postScreen, /Save draft for later/);
   assert.match(postScreen, /loading=\{isPublishing\}/);
   assert.match(publishing, /throw new Error\("Add a photo or video before publishing\."\)/);
-  assert.match(publishing, /throw new Error\("Choose a dish or location before publishing\."\)/);
+  assert.match(publishing, /throw new Error\("Choose a dish before publishing\."\)/);
   assert.match(publishing, /const mediaUrls = media\.map\(\(item\) => item\.uri\)/);
   assert.doesNotMatch(postScreen, /fallbackDish/);
   assert.doesNotMatch(postScreen, /listPopularNearby\(\)\[0\]/);
@@ -208,7 +207,6 @@ test("Supabase review reads hydrate review_photos and public profile names and a
   const service = read("src/lib/services/supabase/supabaseService.ts");
   const domain = read("src/types/domain.ts");
   const detailTransforms = read("src/features/detail/detailTransforms.ts");
-  const dishDetail = read("src/app/screens/detail/DishDetailScreen.tsx");
   const stallDetail = read("src/app/screens/detail/StallDetailScreen.tsx");
   const reviewFeed = read("src/app/screens/review/ReviewFeedScreen.tsx");
   const reviewHistory = read("src/app/screens/profile/ReviewHistoryScreen.tsx");
@@ -234,9 +232,13 @@ test("Supabase review reads hydrate review_photos and public profile names and a
     service,
     /getReviewsForDish\(dishId\) \{\s*return supabaseRepository\.getDishById\(dishId\)\?\.reviews/,
   );
-  assert.match(dishDetail, /serviceProviderMode === "mock" \? dish\.reviews : \[\]/);
   assert.match(stallDetail, /serviceProviderMode === "mock" \? dish\.reviews : \[\]/);
-  assert.match(reviewFeed, /getHungryService\(\)\.reviews\.getReviewsForDish\(dish\.id\)/);
+  assert.match(reviewFeed, /getHungryService\(\)\.reviews\.listRecentReviews\(\{/);
+  assert.doesNotMatch(reviewFeed, /reviews\.getReviewsForDish\(dish\.id\)/);
+  assert.match(
+    service,
+    /async listRecentReviews\(options\)[\s\S]*\.order\("created_at", \{ ascending: false \}\)[\s\S]*\.limit\(limit\)/,
+  );
   assert.match(
     reviewFeed,
     /serviceProviderMode === "mock" \? listReviewFeedItems\(repository\) : \(serviceReviewItems \?\? \[\]\)/,
@@ -257,7 +259,11 @@ test("Supabase review feed does not send review ids through post reaction writes
   assert.doesNotMatch(reviewFeed, /"Save review"/);
   assert.match(reviewFeed, /\{reviewReactionsEnabled \? \(/);
   assert.match(reviewFeed, /toggleSave\(item\.interactionId\)/);
-  assert.match(reviewFeed, /toggleFavourite\(item\.dish\)/);
+  assert.match(
+    reviewFeed,
+    /const localDish = item\.dish \?\? repository\.getDishById\(item\.dishId\)/,
+  );
+  assert.match(reviewFeed, /toggleFavourite\(localDish\)/);
   assert.match(reviewFeed, /saved: favouriteDishIds\.includes\(item\.dishId\)/);
   assert.doesNotMatch(reviewFeed, /void toggleSave\(item\.review\.id\);\s*const dish/);
 });

@@ -114,16 +114,24 @@ test("explicit mock data source keeps user-mode bootstrap on mock services for d
   assert.match(bootstrap, /setSupabaseServiceProvider\(\)/);
 });
 
-test("Supabase null-session bootstrap events do not clear a restored app session", () => {
+test("Supabase null-session bootstrap keeps a restored session only on a network failure", () => {
   const bootstrap = read("src/hooks/useAppBootstrap.ts");
 
+  // An expired/revoked session clears local auth (no "zombie" signed-in state);
+  // only a retryable network failure keeps the restored session.
+  assert.match(bootstrap, /\.then\(\(\{ data, error \}\) =>/);
+  assert.match(bootstrap, /name === "AuthRetryableFetchError"/);
   assert.match(
     bootstrap,
-    /const user = data\.session\?\.user;\s*if \(!user\) \{\s*if \(preserveRestoredAuthState\(applyAuthStateFromSession\)\) \{\s*return;\s*\}\s*applyAuthStateFromSession\(\{ isAuthenticated: false, userId: null \}\);/,
+    /const user = data\.session\?\.user;\s*if \(!user\) \{[\s\S]*?if \(isRetryableAuthError\(error\) && preserveRestoredAuthState\(applyAuthStateFromSession\)\) \{\s*return;\s*\}\s*applyAuthStateFromSession\(\{ isAuthenticated: false, userId: null \}\);/,
+  );
+  assert.match(
+    bootstrap,
+    /\.catch\(\(\) => \{[\s\S]*?if \(preserveRestoredAuthState\(applyAuthStateFromSession\)\) \{\s*return;\s*\}/,
   );
   assert.match(bootstrap, /client\.auth\.onAuthStateChange\(\(event, session\) =>/);
   assert.match(
     bootstrap,
-    /if \(event !== "SIGNED_OUT" && preserveRestoredAuthState\(applyAuthStateFromSession\)\) \{\s*return;\s*\}\s*applyAuthStateFromSession\(\{ isAuthenticated: false, userId: null \}\);/,
+    /if \(event === "INITIAL_SESSION"\) \{\s*return;\s*\}\s*applyAuthStateFromSession\(\{ isAuthenticated: false, userId: null \}\);/,
   );
 });

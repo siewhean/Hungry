@@ -34,17 +34,21 @@ test("production route gates keep advanced surfaces behind MVP-safe flags", () =
   assert.match(flags, /floorplansEnabled: false/);
   assert.match(flags, /appEnv !== "production"/);
   assert.match(rootNavigator, /FEATURE_FLAGS\.prototypeRoutesEnabled \? \(/);
-  for (const routeName of [
-    "DishDetailV2",
-    "StallDetailV2",
-    "BuildingDrillDownV2",
-    "SplashV2",
-    "DesignGallery",
-    "VenueDirectory",
-  ]) {
+  for (const routeName of ["DesignGallery", "PostComposerV2"]) {
     assert.match(rootNavigator, new RegExp(`name="${routeName}"`));
   }
-  for (const removedRouteName of ["DiscoverV2", "SearchHomeV2", "QuickReviewV2", "ReviewFeedV2"]) {
+  for (const removedRouteName of [
+    "DiscoverV2",
+    "SearchHomeV2",
+    "QuickReviewV2",
+    "ReviewFeedV2",
+    "DishDetailV2",
+    "StallDetailV2",
+    "SplashV2",
+    "BuildingDrillDown",
+    "BuildingDrillDownV2",
+    "VenueDirectory",
+  ]) {
     assert.doesNotMatch(rootNavigator, new RegExp(`name="${removedRouteName}"`));
   }
   assert.match(rootNavigator, /FEATURE_FLAGS\.merchantCentreEnabled \? \(/);
@@ -75,24 +79,17 @@ test("production route gates keep advanced surfaces behind MVP-safe flags", () =
   assert.match(linking, /FEATURE_FLAGS\.portfoliosEnabled/);
   assert.match(linking, /PortfolioPublicView/);
   assert.match(linking, /MerchantTabs/);
-  assert.match(rootNavigator, /FEATURE_FLAGS\.floorplansEnabled \? \(/);
-  assert.match(rootNavigator, /name="BuildingDrillDown"/);
-  assert.match(rootNavigator, /name="BuildingDrillDownV2"/);
-  assert.match(rootNavigator, /name="VenueDirectory"/);
 });
 
-test("floorplan entry points are hidden behind the floorplans flag", () => {
+test("floorplan screens are removed while floorplans stay hard-off", () => {
   const mapZoom = read("src/app/screens/discover/MapZoomedInScreen.tsx");
   const developerLauncher = read("src/app/screens/dev/DeveloperLauncherScreen.tsx");
 
-  assert.match(mapZoom, /FEATURE_FLAGS\.floorplansEnabled \? \(/);
-  assert.match(mapZoom, /navigation\.navigate\("VenueDirectory"/);
-  assert.match(developerLauncher, /FEATURE_FLAGS\.floorplansEnabled \? \(/);
-  assert.match(developerLauncher, /navigation\.navigate\("BuildingDrillDownV2"/);
-  assert.match(developerLauncher, /Floorplan routes are disabled for this build\./);
+  assert.doesNotMatch(mapZoom, /navigation\.navigate\("VenueDirectory"/);
+  assert.doesNotMatch(developerLauncher, /BuildingDrillDown/);
 });
 
-test("signed-out app entry starts at login while public routes stay unprotected", () => {
+test("signed-out app entry opens the app as a guest while public routes stay unprotected", () => {
   const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
   const splash = read("src/app/screens/SplashScreen.tsx");
   const developerLauncher = read("src/app/screens/dev/DeveloperLauncherScreen.tsx");
@@ -123,8 +120,12 @@ test("signed-out app entry starts at login while public routes stay unprotected"
     rootNavigator,
     /const PROTECTED_MAIN_TAB_ROUTES = new Set<MainTabRouteName>\(\["Profile"\]\)/,
   );
-  assert.match(splash, /const isAuthenticated = useSessionStore/);
-  assert.match(splash, /if \(!isAuthenticated\) \{[\s\S]*name: "AuthStack"[\s\S]*screen: "Login"/);
+  // No login wall: new users go to onboarding, returning signed-out users browse as guests.
+  assert.doesNotMatch(splash, /name: "AuthStack"/);
+  assert.match(
+    splash,
+    /if \(!hasCompletedOnboarding\) \{[\s\S]*name: "OnboardingStack"[\s\S]*screen: "OnboardingWelcome"/,
+  );
   assert.match(splash, /name: "MainTabs"[\s\S]*params: \{ screen: "Home" \}/);
   assert.match(profileHome, /setReturnRoute\("Profile"\)/);
   assert.match(
@@ -198,9 +199,5 @@ test("protected actions preserve return routes before auth", () => {
     parameterizedRootReturnRestore,
     /name: returnRoute\.name, params: returnRoute\.params/,
   );
-  assert.match(
-    tabs,
-    /const composerRoute = FEATURE_FLAGS\.prototypeRoutesEnabled \? "PostComposerV2" : "Post"/,
-  );
-  assert.match(tabs, /setReturnRoute\(\{ name: composerRoute \}\)/);
+  assert.match(tabs, /setReturnRoute\(\{ name: "Post" \}\)/);
 });

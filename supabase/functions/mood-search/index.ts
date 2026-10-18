@@ -135,6 +135,7 @@ Deno.serve(async (request) => {
     .select("intent")
     .eq("query_norm", query)
     .eq("cached", false)
+    .eq("pending", false)
     .gte("created_at", cacheSince)
     .order("created_at", { ascending: false })
     .limit(1);
@@ -149,34 +150,35 @@ Deno.serve(async (request) => {
     return toJson(200, { ok: true, cached: true, intent });
   }
 
-  const daySince = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const { count, error: countError } = await client
-    .from("mood_search_queries")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .eq("cached", false)
-    .gte("created_at", daySince);
-  if (countError) {
-    return toJson(500, { error: "usage_lookup_failed" });
-  }
-  if ((count ?? 0) >= DAILY_LIMIT) {
-    return toJson(429, { error: "daily_limit" });
-  }
-
   if (!Deno.env.get("ANTHROPIC_API_KEY")) {
     return toJson(500, { error: "missing_anthropic_api_key" });
   }
+
+  // Check the daily cap and claim a slot in one locked step, so parallel calls
+  // can't all pass the check before any of them is recorded.
+  const { data: slotId, error: slotError } = await client.rpc("reserve_mood_search_slot", {
+    p_user_id: userId,
+    p_query_norm: query,
+    p_daily_limit: DAILY_LIMIT,
+  });
+  if (slotError) {
+    return toJson(500, { error: "usage_lookup_failed" });
+  }
+  if (slotId === null || slotId === undefined) {
+    return toJson(429, { error: "daily_limit" });
+  }
+
   try {
     const intent = await parseMood(new Anthropic(), query);
     if (!intent) {
+      await client.from("mood_search_queries").delete().eq("id", slotId);
       return toJson(502, { error: "parse_failed" });
     }
-    await client
-      .from("mood_search_queries")
-      .insert({ user_id: userId, query_norm: query, intent, cached: false });
+    await client.from("mood_search_queries").update({ intent, pending: false }).eq("id", slotId);
     return toJson(200, { ok: true, cached: false, intent });
   } catch (error) {
     console.error("mood-search failed", String(error?.message ?? error));
+    await client.from("mood_search_queries").delete().eq("id", slotId);
     return toJson(502, { error: "parse_failed" });
   }
 });

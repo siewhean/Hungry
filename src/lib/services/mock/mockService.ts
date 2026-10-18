@@ -58,6 +58,7 @@ import type {
   SearchResult,
   Session,
   SubmitReviewInput,
+  RecentReviewFeedEntry,
 } from "@/lib/services/types";
 import { ACCOUNT_DELETION_GRACE_DAYS } from "@/lib/services/types";
 import type {
@@ -288,6 +289,7 @@ function createMockUserStallSubmission(input: SubmitUserStallSubmissionInput): U
 // ─── Mutable in-memory state (mirrors what Supabase would persist) ─────────────
 
 let _profile: UserProfile = { ...guestProfile };
+const _submittedClientReviewIds = new Set<string>();
 let _followedStallIds = new Set<string>();
 let _pushPreferences: PushPreferences = { ...DEFAULT_PUSH_PREFERENCES };
 let _isAuthenticated = false;
@@ -1595,6 +1597,11 @@ export const hungryService: HungryService = {
     },
 
     async submitReview(draft: SubmitReviewInput) {
+      // Mock: a retried submission with the same client id is a no-op, like the Supabase resume.
+      if (draft.clientReviewId) {
+        if (_submittedClientReviewIds.has(draft.clientReviewId)) return resolve(undefined);
+        _submittedClientReviewIds.add(draft.clientReviewId);
+      }
       // Mock: persist the reviewed dish into the in-memory profile
       if (!_profile.reviewedDishIds.includes(draft.dishId)) {
         _profile = {
@@ -1607,6 +1614,28 @@ export const hungryService: HungryService = {
         };
       }
       return resolve(undefined);
+    },
+
+    async listRecentReviews(options) {
+      const limit = Math.min(Math.max(Math.floor(options?.limit ?? 50), 1), 100);
+      const before = options?.before ? new Date(options.before).getTime() : undefined;
+      const entries = dishes
+        .flatMap((dish): RecentReviewFeedEntry[] =>
+          dish.reviews.map((review) => ({
+            review,
+            dishId: dish.id,
+            dishName: dish.name,
+            venueId: dish.venueId,
+            venueName: dish.venueName,
+          })),
+        )
+        .filter((entry) =>
+          before === undefined ? true : new Date(entry.review.createdAt).getTime() < before,
+        )
+        .sort(
+          (a, b) => new Date(b.review.createdAt).getTime() - new Date(a.review.createdAt).getTime(),
+        );
+      return resolve(entries.slice(0, limit));
     },
   },
 
@@ -1694,6 +1723,10 @@ export const hungryService: HungryService = {
     },
 
     async registerPushToken() {
+      return resolve(undefined);
+    },
+
+    async unregisterPushToken() {
       return resolve(undefined);
     },
 

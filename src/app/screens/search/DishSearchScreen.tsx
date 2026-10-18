@@ -14,14 +14,18 @@ import {
   Input,
   Screen,
 } from "@/components/ui";
-import { getDiscoverStallCollections, useSearchData } from "@/features/search/search";
+import {
+  getDiscoverStallCollections,
+  getSearchResultsAsync,
+  useSearchData,
+} from "@/features/search/search";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { getServiceProvider } from "@/lib/services/serviceProvider";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useHungryTheme } from "@/theme";
-import type { SearchCategory } from "@/types/domain";
+import type { DishDetail, SearchCategory } from "@/types/domain";
 
 const SEARCH_CATEGORIES: SearchCategory[] = [
   "local favourites",
@@ -35,6 +39,9 @@ const SEARCH_CATEGORY_OPTIONS = SEARCH_CATEGORIES.map((category) => ({
   label: category.replace(/\b\w/g, (char) => char.toUpperCase()),
 }));
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
+
+const INLINE_RESULT_DEBOUNCE_MS = 250;
+const INLINE_RESULT_LIMIT = 5;
 
 export function DishSearchScreen() {
   const navigation = useNavigation<RootNavigation>();
@@ -57,6 +64,31 @@ export function DishSearchScreen() {
   const entryY = useRef(new Animated.Value(-28)).current;
   const entryOpacity = useRef(new Animated.Value(0)).current;
   const suggestedDish = collections[0]?.topDishes[0];
+  const [inlineResults, setInlineResults] = useState<DishDetail[]>([]);
+  const trimmedSearchText = searchText.trim();
+
+  // Show matches as the user types (debounced) so search isn't a two-step flow.
+  // Catalog v2 owns its own paged, signed-in search on the results screen.
+  useEffect(() => {
+    if (!trimmedSearchText || shouldUseCatalogReadV2) {
+      setInlineResults([]);
+      return;
+    }
+    let active = true;
+    const timer = setTimeout(() => {
+      void getSearchResultsAsync({ ...filters, query: trimmedSearchText }, profile.tasteVector)
+        .then((results) => {
+          if (active) setInlineResults(results.slice(0, INLINE_RESULT_LIMIT));
+        })
+        .catch(() => {
+          if (active) setInlineResults([]);
+        });
+    }, INLINE_RESULT_DEBOUNCE_MS);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [filters, profile.tasteVector, shouldUseCatalogReadV2, trimmedSearchText]);
 
   useEffect(() => {
     Animated.parallel([
@@ -125,6 +157,57 @@ export function DishSearchScreen() {
             navigation.navigate("SearchResults");
           }}
         />
+        {inlineResults.length > 0 ? (
+          <View
+            accessibilityLabel="Matching dishes"
+            style={{
+              backgroundColor: palette.surface,
+              borderColor: palette.border,
+              borderRadius: componentRadii.card,
+              borderWidth: 1,
+              overflow: "hidden",
+            }}
+          >
+            {inlineResults.map((dish, index) => (
+              <Pressable
+                key={dish.id}
+                accessibilityRole="button"
+                accessibilityLabel={`${dish.name} at ${dish.venueName}`}
+                accessibilityHint="Opens this dish detail page"
+                onPress={() => {
+                  rememberSearch(trimmedSearchText);
+                  navigation.navigate("DishDetail", { dishId: dish.id });
+                }}
+                style={({ pressed }) => ({
+                  alignItems: "center",
+                  backgroundColor: pressed ? palette.bgSoft : palette.surface,
+                  borderTopColor: palette.border,
+                  borderTopWidth: index === 0 ? 0 : 1,
+                  flexDirection: "row",
+                  gap: spacing[3],
+                  minHeight: 56,
+                  paddingHorizontal: spacing[3],
+                  paddingVertical: spacing[2],
+                })}
+              >
+                <AccessibleImage
+                  source={{ uri: dish.imageUrl }}
+                  style={{ borderRadius: radii.sm, height: 40, width: 40 }}
+                  contentFit="cover"
+                  decorative
+                />
+                <View style={{ flex: 1 }}>
+                  <AppText variant="bodyBold" numberOfLines={1}>
+                    {dish.name}
+                  </AppText>
+                  <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
+                    {dish.venueName}
+                  </AppText>
+                </View>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
         <ChipGroup
           options={SEARCH_CATEGORY_OPTIONS}
           selectedIds={selectedCategories}
@@ -135,7 +218,15 @@ export function DishSearchScreen() {
           variant="secondary"
           onPress={() => navigation.navigate("TasteFilter")}
         />
-        <Button label="View search results" onPress={() => navigation.navigate("SearchResults")} />
+        <Button
+          label={trimmedSearchText ? "See all results" : "View search results"}
+          onPress={() => {
+            if (trimmedSearchText) {
+              rememberSearch(trimmedSearchText);
+            }
+            navigation.navigate("SearchResults");
+          }}
+        />
         <Pressable
           onPress={() => {
             if (suggestedDish) {

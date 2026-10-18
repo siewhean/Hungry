@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import { trackAnalyticsEvent } from "@/lib/analytics";
-import { createInitialReviewDraft } from "@/features/review/reviewDraft";
+import { createClientReviewId, createInitialReviewDraft } from "@/features/review/reviewDraft";
 import { REVIEW_TEXT_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSanitization";
 import type { ReviewDraft } from "@/types/domain";
 import { hungryPersistStorage } from "./persistStorage";
@@ -13,6 +13,9 @@ interface ReviewDraftState {
   draft: ReviewDraft;
   isSubmitting: boolean;
   failedPhotoUris: string[];
+  /** Client review id reused across retries of the same draft so retries never duplicate it. */
+  pendingReviewId?: string;
+  ensurePendingReviewId: () => string;
   selectDish: (venueId: string, dishId: string) => void;
   setRating: (rating: number) => void;
   toggleTag: (tag: string) => void;
@@ -31,12 +34,27 @@ interface ReviewDraftState {
 
 export const useReviewDraftStore = create<ReviewDraftState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       draft: initialDraft,
       isSubmitting: false,
       failedPhotoUris: [],
+      pendingReviewId: undefined,
+      ensurePendingReviewId: () => {
+        const existing = get().pendingReviewId;
+        if (existing) return existing;
+        const pendingReviewId = createClientReviewId();
+        set({ pendingReviewId });
+        return pendingReviewId;
+      },
       selectDish: (selectedVenueId, selectedDishId) =>
-        set(() => {
+        set((state) => {
+          // Re-selecting the dish already in the draft must not wipe the draft.
+          if (
+            state.draft.selectedDishId === selectedDishId &&
+            state.draft.selectedVenueId === selectedVenueId
+          ) {
+            return state;
+          }
           trackAnalyticsEvent("review_started", {
             trigger: "review_flow",
             venue_id: selectedVenueId,
@@ -49,6 +67,7 @@ export const useReviewDraftStore = create<ReviewDraftState>()(
               selectedDishId,
             },
             failedPhotoUris: [],
+            pendingReviewId: undefined,
           };
         }),
       setRating: (rating) =>
@@ -103,7 +122,12 @@ export const useReviewDraftStore = create<ReviewDraftState>()(
           failedPhotoUris: state.failedPhotoUris.filter((value) => value !== uri),
         })),
       resetDraft: () =>
-        set({ draft: createInitialReviewDraft(), isSubmitting: false, failedPhotoUris: [] }),
+        set({
+          draft: createInitialReviewDraft(),
+          isSubmitting: false,
+          failedPhotoUris: [],
+          pendingReviewId: undefined,
+        }),
       setSubmitting: (isSubmitting) => set({ isSubmitting }),
       setVideoUri: (uri) =>
         set((state) => ({
@@ -124,6 +148,7 @@ export const useReviewDraftStore = create<ReviewDraftState>()(
       partialize: (state) => ({
         draft: state.draft,
         failedPhotoUris: state.failedPhotoUris,
+        pendingReviewId: state.pendingReviewId,
       }),
     },
   ),

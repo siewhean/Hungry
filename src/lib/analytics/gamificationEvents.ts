@@ -97,7 +97,7 @@ export function trackMissionCompleted(params: { missionId: string; timeToComplet
 
 export function trackStallSaved(params: {
   stallId: string;
-  sourceScreen: "StallDetail" | "StallDetailV2" | "CollectionDetail" | "SearchResults";
+  sourceScreen: "StallDetail" | "CollectionDetail" | "SearchResults";
 }) {
   trackAnalyticsEvent("stall_saved", {
     stall_id: params.stallId,
@@ -107,7 +107,7 @@ export function trackStallSaved(params: {
 
 export function trackStallMarkedTried(params: {
   stallId: string;
-  sourceScreen: "StallDetail" | "StallDetailV2" | "CollectionDetail" | "SearchResults";
+  sourceScreen: "StallDetail" | "CollectionDetail" | "SearchResults";
 }) {
   trackAnalyticsEvent("stall_marked_tried", {
     stall_id: params.stallId,

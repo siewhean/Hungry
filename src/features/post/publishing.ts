@@ -1,12 +1,13 @@
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
+import { createClientReviewId } from "@/features/review/reviewDraft";
 import { biteToStallPost } from "@/lib/services/postTransforms";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
-import type { DataRepository } from "@/lib/services/types";
+import type { DataRepository, HungryService } from "@/lib/services/types";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useSocialStore } from "@/store/useSocialStore";
-import type { DishDetail, StallPost, VenueSummary } from "@/types/domain";
+import type { DishDetail, StallPost } from "@/types/domain";
 import { useComposerStore, type MediaItem, type PublishMode } from "./useComposerStore";
 
 export interface PublishComposerPostOptions {
@@ -17,54 +18,36 @@ export interface PublishComposerPostOptions {
 
 interface ResolvedPublishTarget {
   dish: DishDetail;
-  venue: VenueSummary;
+  venueId: string;
 }
 
-function getAllVenues(repository: DataRepository) {
-  return repository
-    .listBuildings()
-    .flatMap((building) => repository.listVenuesByBuilding(building.id));
-}
-
-function resolveVenueFromLocation(repository: DataRepository, locationName?: string | null) {
-  if (!locationName) return undefined;
-  const normalizedLocation = locationName.toLowerCase();
-  return getAllVenues(repository).find((venue) => {
-    const buildingName =
-      repository
-        .listBuildings()
-        .find((building) => building.id === venue.buildingId)
-        ?.name.toLowerCase() ?? "";
-    return (
-      venue.name.toLowerCase().includes(normalizedLocation) ||
-      normalizedLocation.includes(venue.name.toLowerCase()) ||
-      buildingName.includes(normalizedLocation) ||
-      normalizedLocation.includes(buildingName)
-    );
-  });
-}
-
-function resolvePublishTarget(
+/**
+ * Posts and reviews must name the exact dish. A location or stall alone is never enough:
+ * guessing (e.g. the stall's first dish) attaches content to the wrong dish.
+ */
+async function resolvePublishTarget(
   repository: DataRepository,
+  service: HungryService,
   options: PublishComposerPostOptions,
-): ResolvedPublishTarget {
-  const state = useComposerStore.getState();
-  const routeVenue = options.routeVenueId
-    ? repository.getVenueById(options.routeVenueId)
-    : undefined;
-  const locationVenue = resolveVenueFromLocation(repository, state.location?.name);
-  const venue = routeVenue ?? locationVenue;
-
-  const routeDish = options.routeDishId ? repository.getDishById(options.routeDishId) : undefined;
-  const venueDish = venue ? repository.listDishesByVenue(venue.id)[0] : undefined;
-  const dish = routeDish ?? venueDish;
-  const resolvedVenue = venue ?? (dish ? repository.getVenueById(dish.venueId) : undefined);
-
-  if (!dish || !resolvedVenue) {
-    throw new Error("Choose a dish or location before publishing.");
+): Promise<ResolvedPublishTarget> {
+  const routeDishId = options.routeDishId?.trim();
+  if (!routeDishId) {
+    throw new Error("Choose a dish before publishing.");
   }
 
-  return { dish, venue: resolvedVenue };
+  const dish =
+    repository.getDishById(routeDishId) ??
+    (await service.discovery.getDish(routeDishId).catch(() => undefined));
+  if (!dish) {
+    throw new Error("We couldn't find that dish. Choose it again before publishing.");
+  }
+
+  const routeVenueId = options.routeVenueId?.trim();
+  if (routeVenueId && routeVenueId !== dish.venueId) {
+    throw new Error("That dish isn't on this stall's menu. Choose the dish again.");
+  }
+
+  return { dish, venueId: dish.venueId };
 }
 
 function resolveMedia(media: MediaItem[]) {
@@ -95,7 +78,7 @@ export async function publishComposerPost(options: PublishComposerPostOptions) {
     useSessionStore.getState().isAuthenticated && storedProfile.id === guestProfile.id
       ? repository.getProfile(true)
       : storedProfile;
-  const { dish, venue } = resolvePublishTarget(repository, options);
+  const { dish, venueId } = await resolvePublishTarget(repository, service, options);
   const shouldPublishPost = options.publishMode === "both" || options.publishMode === "post";
   const shouldSubmitReview =
     options.publishMode === "review" ||
@@ -118,19 +101,25 @@ export async function publishComposerPost(options: PublishComposerPostOptions) {
     if (state.rating <= 0) {
       throw new Error("Add a rating before publishing a review.");
     }
+    // Reuse the id across retries: if the post step fails after the review was saved,
+    // "Try Again" resumes the review instead of inserting a duplicate.
+    const clientReviewId = state.pendingReviewId ?? createClientReviewId();
+    useComposerStore.getState().setPendingReviewId(clientReviewId);
     await service.reviews.submitReview({
       dishId: dish.id,
-      venueId: venue.id,
+      venueId,
       rating: state.rating,
       text: state.reviewCaption.trim() || state.postCaption.trim(),
       tags: [...state.foodTags, ...state.tasteTags],
       photos: state.media.filter((item) => item.type === "image").map((item) => item.uri),
+      clientReviewId,
     });
   }
 
   if (!shouldPublishPost) {
     if (shouldSubmitReview) {
       applyReviewProfileState();
+      useComposerStore.getState().setPendingReviewId(null);
     }
     return undefined;
   }
@@ -140,7 +129,7 @@ export async function publishComposerPost(options: PublishComposerPostOptions) {
 
   const bite = await service.social.postBite({
     dishId: dish.id,
-    venueId: venue.id,
+    venueId,
     photoUrl: media.mediaUrl,
     mediaUrls: media.mediaUrls,
     mediaType: media.mediaType,
@@ -175,6 +164,7 @@ export async function publishComposerPost(options: PublishComposerPostOptions) {
 
   if (shouldSubmitReview) {
     applyReviewProfileState();
+    useComposerStore.getState().setPendingReviewId(null);
   }
   usePublishedPostStore.getState().upsertPost(post);
   useSocialStore.getState().initializeInteractions([post]);

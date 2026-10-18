@@ -64,6 +64,26 @@ test("reviews.submitReview persists reviewed dish id in profile state", async ()
   }
 });
 
+test("reviews.listRecentReviews pages newest-first reviews across dishes", async () => {
+  const firstPage = await hungryService.reviews.listRecentReviews({ limit: 2 });
+  assert.ok(firstPage.length > 0 && firstPage.length <= 2);
+  const times = firstPage.map((entry) => new Date(entry.review.createdAt).getTime());
+  assert.deepEqual(
+    times,
+    [...times].sort((a, b) => b - a),
+  );
+  assert.ok(firstPage.every((entry) => entry.dishId && entry.dishName && entry.venueId));
+
+  const oldest = firstPage[firstPage.length - 1]?.review.createdAt;
+  assert.ok(oldest);
+  const nextPage = await hungryService.reviews.listRecentReviews({ limit: 2, before: oldest });
+  assert.ok(
+    nextPage.every(
+      (entry) => new Date(entry.review.createdAt).getTime() < new Date(oldest).getTime(),
+    ),
+  );
+});
+
 test("discovery.decideForMe respects profile dietary preferences", async () => {
   await hungryService.auth.signIn("dietary@hungry.sg", "password");
   const originalPreferences = (await hungryService.profile.getProfile()).dietaryPreferences;

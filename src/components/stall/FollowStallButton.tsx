@@ -2,9 +2,30 @@ import { useEffect, useState } from "react";
 import { BellPlus, BellRing } from "lucide-react-native";
 
 import { Button } from "@/components/ui";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { trackAnalyticsEvent } from "@/lib/analytics";
+import { registerForStallAlerts } from "@/lib/notifications/push";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import { useStallFollowStore } from "@/store/useStallFollowStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
+
+/**
+ * On a first follow, turn stall alerts on right away: ask for push permission
+ * (only prompts if not yet granted), register this device and save the
+ * preference. Returns whether alerts are on.
+ */
+async function enableStallAlertsOnFirstFollow(): Promise<boolean> {
+  const preferences = await getHungryService().push.getPreferences();
+  if (preferences.stallUpdates) return true;
+  if (!(await registerForStallAlerts())) return false;
+  await getHungryService().push.updatePreferences({ stallUpdates: true });
+  trackAnalyticsEvent("notification_preferences_updated", {
+    stall_updates: true,
+    source: "first_follow",
+  });
+  return true;
+}
 
 interface FollowStallButtonProps {
   stallId: string;
@@ -31,11 +52,24 @@ export function FollowStallButton({ stallId, stallName }: FollowStallButtonProps
     if (isPending) return;
     setIsPending(true);
     try {
+      const isFirstFollow = useStallFollowStore.getState().followedStallIds.length === 0;
       const following = await toggleFollow(stallId);
+      if (!following) {
+        showToast({ message: `Stopped following ${stallName}.`, tone: "success" });
+        return;
+      }
+      if (FEATURE_FLAGS.stallAlertsEnabled && isFirstFollow) {
+        const alertsOn = await enableStallAlertsOnFirstFollow().catch(() => false);
+        showToast({
+          message: alertsOn
+            ? `Following ${stallName}. We'll tell you when its menu changes.`
+            : `Following ${stallName}. Allow notifications for Hungry in your phone settings to get alerts.`,
+          tone: "success",
+        });
+        return;
+      }
       showToast({
-        message: following
-          ? `Following ${stallName}. Turn on stall updates in Settings to get alerts.`
-          : `Stopped following ${stallName}.`,
+        message: `Following ${stallName}. Turn on stall updates in Settings to get alerts.`,
         tone: "success",
       });
     } catch {

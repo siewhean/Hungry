@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { View, StyleSheet } from "react-native";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import type { MaterialTopTabBarProps } from "@react-navigation/material-top-tabs";
@@ -11,7 +11,6 @@ import { AppBottomTabItem, Skeleton } from "@/components/ui";
 import { preloadRoute } from "@/features/navigation/prefetch";
 import { useHungryTheme } from "@/theme";
 import { useSessionStore } from "@/store/useSessionStore";
-import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 
@@ -196,29 +195,11 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
   const { componentSizes, palette, spacing } = useHungryTheme();
   const styles = createStyles();
   const insets = useSafeAreaInsets();
-  const [highlightVisible, setHighlightVisible] = useState(true);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
   const rootNavigation = navigation.getParent<NavigationProp<RootStackParamList>>();
-
-  const resetTimer = useCallback(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    setHighlightVisible(true);
-    timerRef.current = setTimeout(() => {
-      setHighlightVisible(false);
-    }, 5000);
-  }, []);
-
-  useEffect(() => {
-    resetTimer();
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [state.index, resetTimer]);
 
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const routeByName = new Map(state.routes.map((route) => [route.name, route]));
-  const composerRoute = FEATURE_FLAGS.prototypeRoutesEnabled ? "PostComposerV2" : "Post";
   const tabItems = [
     { key: "Home", route: routeByName.get("Home"), icon: House, label: "Home" },
     { key: "Discover", route: routeByName.get("Discover"), icon: Compass, label: "Discover" },
@@ -229,6 +210,7 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
 
   return (
     <View
+      accessibilityRole="tablist"
       style={[
         styles.tabBarContainer,
         {
@@ -253,17 +235,13 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
         const onPress = () => {
           if (isCreateAction) {
             if (!isAuthenticated) {
-              setReturnRoute({ name: composerRoute });
+              setReturnRoute({ name: "Post" });
               rootNavigation?.navigate("AuthStack", { screen: "Login" });
               return;
             }
 
-            if (composerRoute === "PostComposerV2") {
-              rootNavigation?.navigate("PostComposerV2");
-            } else {
-              rootNavigation?.navigate("Post");
-            }
-            resetTimer();
+            // Every environment opens the composer that ships (V1) so QA tests it.
+            rootNavigation?.navigate("Post");
             return;
           }
 
@@ -286,12 +264,11 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
             }
             navigation.navigate(routeName);
           }
-          resetTimer();
         };
 
         const onPressIn = () => {
           if (isCreateAction) {
-            preloadRoute(rootNavigation, composerRoute);
+            preloadRoute(rootNavigation, "Post");
             return;
           }
           // Module loading is synchronous in React Native. Keep it off the
@@ -301,15 +278,10 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
 
         const Icon = item.icon;
 
-        const activeColor = palette.orange;
-        const inactiveColor = palette.textMuted;
-        const currentColor = isFocused && highlightVisible ? activeColor : inactiveColor;
-
         return (
           <AppBottomTabItem
             key={routeKey}
             accessibilityLabel={item.label}
-            color={currentColor}
             createAction={isCreateAction}
             focused={isFocused}
             icon={Icon}

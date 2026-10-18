@@ -302,6 +302,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const shareSheetRef = useRef<BottomSheetModal>(null);
   const incrementShare = useSocialStore((state) => state.incrementShare);
+  // Review replies are local-only (no backend), so keep them out of production builds.
+  const reviewRepliesEnabled = FEATURE_FLAGS.prototypeRoutesEnabled;
   const [activeReplyReviewId, setActiveReplyReviewId] = useState<string | null>(null);
   const [replyDraftByReviewId, setReplyDraftByReviewId] = useState<Record<string, string>>({});
   const [localRepliesByReviewId, setLocalRepliesByReviewId] = useState<
@@ -550,6 +552,14 @@ export function StallDetailScreen({ navigation, route }: Props) {
           <EmptyState
             title="Stall not found"
             body="The stall you are looking for does not exist in our current directory."
+            ctaLabel={navigation.canGoBack() ? "Go back" : "Go to Home"}
+            onPress={() => {
+              if (navigation.canGoBack()) {
+                navigation.goBack();
+                return;
+              }
+              navigation.navigate("MainTabs", { screen: "Home" });
+            }}
             errorMessage={`Missing stall data for ID: ${venueId || "unknown"}`}
             sendErrorContext="Stall detail"
           />
@@ -593,8 +603,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
       return;
     }
 
-    const targetDishId = nextUnreviewedDish?.id ?? dishes[0]?.id;
-    if (!targetDishId) {
+    // Without a clear next dish, let the reviewer pick one instead of guessing.
+    const targetDishId = nextUnreviewedDish?.id;
+    if (!dishes.length) {
       showToast({
         message: "No dish available for review yet. Add a dish first.",
         tone: "warning",
@@ -610,7 +621,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
     });
     navigation.navigate("ReviewStack", {
       screen: "ReviewMain",
-      params: { venueId: venue.id, dishId: targetDishId },
+      params: targetDishId ? { venueId: venue.id, dishId: targetDishId } : { venueId: venue.id },
     });
   };
 
@@ -1130,34 +1141,36 @@ export function StallDetailScreen({ navigation, route }: Props) {
                         {review.text}
                       </AppText>
 
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          marginTop: spacing[2],
-                        }}
-                      >
-                        <Pressable
-                          accessibilityRole="button"
-                          accessibilityLabel={`Reply to review by ${review.authorName}`}
-                          onPress={() =>
-                            setActiveReplyReviewId((current) =>
-                              current === review.id ? null : review.id,
-                            )
-                          }
+                      {reviewRepliesEnabled ? (
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            marginTop: spacing[2],
+                          }}
                         >
-                          <AppText variant="micro" tone="accent">
-                            Reply
-                          </AppText>
-                        </Pressable>
-                        {(localRepliesByReviewId[review.id]?.length ?? 0) > 0 ? (
-                          <AppText variant="micro" tone="muted">
-                            {localRepliesByReviewId[review.id]?.length} repl
-                            {(localRepliesByReviewId[review.id]?.length ?? 0) === 1 ? "y" : "ies"}
-                          </AppText>
-                        ) : null}
-                      </View>
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel={`Reply to review by ${review.authorName}`}
+                            onPress={() =>
+                              setActiveReplyReviewId((current) =>
+                                current === review.id ? null : review.id,
+                              )
+                            }
+                          >
+                            <AppText variant="micro" tone="accent">
+                              Reply
+                            </AppText>
+                          </Pressable>
+                          {(localRepliesByReviewId[review.id]?.length ?? 0) > 0 ? (
+                            <AppText variant="micro" tone="muted">
+                              {localRepliesByReviewId[review.id]?.length} repl
+                              {(localRepliesByReviewId[review.id]?.length ?? 0) === 1 ? "y" : "ies"}
+                            </AppText>
+                          ) : null}
+                        </View>
+                      ) : null}
 
                       {(localRepliesByReviewId[review.id] ?? []).length > 0 ? (
                         <View
@@ -1191,7 +1204,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                         </View>
                       ) : null}
 
-                      {activeReplyReviewId === review.id ? (
+                      {reviewRepliesEnabled && activeReplyReviewId === review.id ? (
                         <View
                           style={{
                             gap: spacing[2],

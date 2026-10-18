@@ -3,7 +3,9 @@
     "name": "Hungry",
     "slug": "hungry-mobile",
     "version": "0.1.0",
-    "runtimeVersion": "0.1.0",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
     "icon": "./assets/images/Logo/hungry_logo_icon_transparent.png",
     "updates": {
       "enabled": true,
@@ -21,7 +23,6 @@
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Hungry uses your location to rank nearby dishes and map results.",
         "NSCameraUsageDescription": "Hungry uses your camera to take photos of your meals for reviews.",
-        "NSMicrophoneUsageDescription": "Hungry uses your microphone to record audio for videos.",
         "NSPhotoLibraryUsageDescription": "Hungry accesses your photo library so you can attach photos to reviews and profile.",
         "NSPhotoLibraryAddUsageDescription": "Hungry saves shared dish images to your photo library when you choose to download them.",
         "ITSAppUsesNonExemptEncryption": false,
@@ -40,7 +41,8 @@
             { "scheme": "https", "host": "usehungry.com", "pathPrefix": "/venue/" },
             { "scheme": "https", "host": "usehungry.com", "pathPrefix": "/post/" },
             { "scheme": "https", "host": "usehungry.com", "pathPrefix": "/portfolio/" },
-            { "scheme": "https", "host": "usehungry.com", "pathPrefix": "/join/" }
+            { "scheme": "https", "host": "usehungry.com", "pathPrefix": "/join/" },
+            { "scheme": "https", "host": "usehungry.com", "path": "/home" }
           ],
           "category": ["BROWSABLE", "DEFAULT"]
         }
@@ -72,7 +74,14 @@
       ],
       "expo-font",
       "expo-web-browser",
-      "expo-location",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": false,
+          "locationAlwaysPermission": false,
+          "locationWhenInUsePermission": "Hungry uses your location to rank nearby dishes and map results."
+        }
+      ],
       "expo-secure-store",
       [
         "expo-notifications",
@@ -97,6 +106,7 @@
       [
         "expo-audio",
         {
+          "microphonePermission": false,
           "recordAudioAndroid": false,
           "enableBackgroundPlayback": false
         }
@@ -106,7 +116,8 @@
         "expo-image-picker",
         {
           "photosPermission": "Hungry accesses your photo library so you can attach photos to reviews and profile.",
-          "cameraPermission": "Hungry uses your camera to take photos of your meals for reviews."
+          "cameraPermission": "Hungry uses your camera to take photos of your meals for reviews.",
+          "microphonePermission": false
         }
       ]
     ],

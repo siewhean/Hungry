@@ -10,6 +10,7 @@ import { AccessibleImage } from "@/components/ui/AccessibleImage";
 import { HUNGRY_LOGO_STANDARD_WORDMARK_SIZE } from "@/constants/brandAssets";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useSessionStore } from "@/store/useSessionStore";
+import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { OnboardingStackParamList } from "./OnboardingStack";
 import {
@@ -55,35 +56,40 @@ export function LocationPermissionScreen({ navigation }: Props) {
   const manualLocation = useLocationStore((state) => state.manualLocation);
   const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
   const hasSkippedTasteQuiz = useSessionStore((state) => state.hasSkippedTasteQuiz);
-  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const showToast = useUIStore((state) => state.showToast);
   const [isContinuing, setIsContinuing] = useState(false);
 
+  // Last onboarding step: guests and signed-in users both land on Home.
+  // Sign-in is asked for later, when someone saves, reviews or posts.
   const finish = () => {
     completeOnboarding(hasSkippedTasteQuiz);
-    if (isAuthenticated) {
-      const rootNav = navigation.getParent();
-      if (rootNav && typeof (rootNav as { reset?: (state: object) => void }).reset === "function") {
-        (rootNav as { reset: (state: object) => void }).reset({
-          index: 0,
-          routes: [{ name: "MainTabs", params: { screen: "Home" } }],
-        });
-      }
-      return;
+    const rootNav = navigation.getParent();
+    if (rootNav && typeof (rootNav as { reset?: (state: object) => void }).reset === "function") {
+      (rootNav as { reset: (state: object) => void }).reset({
+        index: 0,
+        routes: [{ name: "MainTabs", params: { screen: "Home" } }],
+      });
     }
+  };
 
-    navigation.navigate("OnboardingAuth");
+  const pickAreaInstead = () => {
+    showToast({
+      message: "We couldn't find your location. Pick your area instead.",
+      tone: "warning",
+    });
+    navigation.navigate("ManualLocationPicker");
   };
 
   const allowDeviceLocation = async () => {
     try {
       const granted = await grantLocation();
       if (!granted) {
-        navigation.navigate("ManualLocationPicker");
+        pickAreaInstead();
         return;
       }
       finish();
     } catch {
-      navigation.navigate("ManualLocationPicker");
+      pickAreaInstead();
     }
   };
 

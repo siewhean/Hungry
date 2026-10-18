@@ -14,6 +14,15 @@ test("root linking config exposes public dish, venue, and order entry points", (
   assert.equal(screens.ActivityPostDetail, "post/:postId");
   assert.equal(screens.Post, "order");
   assert.equal(screens.MerchantTabs, undefined);
+  assert.deepEqual(screens.MainTabs, { screens: { Home: "home" } });
+});
+
+test("weekly picks /home link opens the Home tab", () => {
+  const linking = createRootLinking("exp://127.0.0.1:8081/--/");
+  assert.deepEqual(linking.getStateFromPath("home")?.routes?.[0], {
+    name: "MainTabs",
+    params: { screen: "Home" },
+  });
 });
 
 test("order deep link parses venueId query parameter", () => {
@@ -39,8 +48,19 @@ test("deep link state rejects unsafe params and redirects protected links after 
   });
   assert.deepEqual(redirected, [{ name: "Post", params: { venueId: "venue-tian-tian" } }]);
 
+  // Cold start before auth settles: the link is kept, not dropped to Home.
   authState = { isAuthReady: false, isAuthenticated: false, onAuthRedirect };
-  assert.equal(getStateFromPath("order"), undefined);
+  assert.deepEqual(getStateFromPath("order")?.routes?.[0], {
+    name: "AuthStack",
+    params: { screen: "Login", pop: true },
+  });
+  assert.deepEqual(redirected[redirected.length - 1], { name: "Post", params: undefined });
+
+  authState = { isAuthReady: false, isAuthenticated: true, onAuthRedirect };
+  assert.deepEqual(getStateFromPath("order?venueId=venue-tian-tian")?.routes?.[0], {
+    name: "Post",
+    params: { venueId: "venue-tian-tian" },
+  });
 
   authState = { isAuthReady: true, isAuthenticated: true, onAuthRedirect };
   assert.equal(getStateFromPath("dish/<script>alert(1)</script>"), undefined);

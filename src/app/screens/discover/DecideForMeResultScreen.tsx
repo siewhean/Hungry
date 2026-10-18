@@ -8,18 +8,9 @@ import {
   Pressable,
   useWindowDimensions,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import {
-  Sparkles,
-  ChevronLeft,
-  Shuffle,
-  MapPin,
-  Star,
-  Heart,
-  Navigation,
-  Share2,
-} from "lucide-react-native";
+import { ChevronLeft, Shuffle, MapPin, Star, Heart, Navigation, Share2 } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -38,10 +29,9 @@ import { webShareUrl } from "@/constants/links";
 import { blendedMatchScore, TASTE_LABELS } from "@/lib/ai/tasteEngine";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import type { DataRepository } from "@/lib/services/types";
-import { useCartStore } from "@/store/useCartStore";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
-import { useOrderStore } from "@/store/useOrderStore";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { DietaryFlag, DishDetail, TasteVector } from "@/types/domain";
@@ -127,7 +117,6 @@ function AnimatedMatchBadge({ percent }: { percent: number }) {
         paddingVertical: spacing[4],
       }}
     >
-      <Sparkles size={16} color={palette.orange} />
       <AppText variant="h3" style={{ color: palette.orange }}>
         {displayValue}% taste match
       </AppText>
@@ -245,10 +234,22 @@ export function DecideForMeResultScreen() {
   const selectedDish = useDiscoveryStore((state) => state.decideForMe);
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
   const showToast = useUIStore((state) => state.showToast);
-  const addItemToCart = useCartStore((state) => state.addItem);
-  const setActiveOrder = useOrderStore((state) => state.setActiveOrder);
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const [searchRadius, setSearchRadius] = useState(500);
   const [resultIndex, setResultIndex] = useState(0);
+  const route = useRoute<RouteProp<RootStackParamList, "DecideForMeResult">>();
+  // Where Decide-for-me was opened from. Discover tracks `decide_for_me_triggered`
+  // before navigating; every other entry point is tracked here, once per open.
+  const entrySurface = route.params?.surface ?? "direct";
+
+  useEffect(() => {
+    if (entrySurface === "discover") return; // Discover tracks the trigger itself.
+    trackAnalyticsEvent("decide_for_me_triggered", {
+      surface: entrySurface,
+      radius_m: 500,
+    });
+  }, [entrySurface]);
 
   const scrollY = useRef(new Animated.Value(0)).current;
 
@@ -336,13 +337,31 @@ export function DecideForMeResultScreen() {
     ],
   };
 
+  const hasNoMatch = candidates.length === 0 && !selectedDish;
+  useEffect(() => {
+    if (!hasNoMatch) return;
+    trackAnalyticsEvent("decide_for_me_no_match", {
+      surface: entrySurface,
+      radius_m: searchRadius,
+    });
+  }, [entrySurface, hasNoMatch, searchRadius]);
+
+  const widenRadius = (target: number) => {
+    trackAnalyticsEvent("decide_for_me_radius_expanded", {
+      surface: entrySurface,
+      from_radius_m: searchRadius,
+      to_radius_m: target,
+    });
+    setSearchRadius(target);
+  };
+
   const expandRadius = () => {
     const target = nextRadius(searchRadius);
     if (!target) {
       showToast({ message: "Already searching the widest radius.", tone: "info" });
       return;
     }
-    setSearchRadius(target);
+    widenRadius(target);
   };
 
   const handleTryAnother = () => {
@@ -358,7 +377,7 @@ export function DecideForMeResultScreen() {
     if (!nextDish || nextDish.id === dish?.id) {
       const upcomingRadius = nextRadius(searchRadius);
       if (upcomingRadius) {
-        setSearchRadius(upcomingRadius);
+        widenRadius(upcomingRadius);
         showToast({
           message: `Expanded radius to ${(upcomingRadius / 1000).toFixed(1)} km.`,
           tone: "info",
@@ -377,31 +396,6 @@ export function DecideForMeResultScreen() {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
   };
 
-  const handleAddToCart = () => {
-    if (!dish) {
-      return;
-    }
-
-    addItemToCart({ dishId: dish.id });
-    recordTasteInteraction({
-      type: "food_button_click",
-      surface: "decide",
-      dish,
-      buttonId: "add_to_cart",
-    });
-    setActiveOrder({
-      id: `order-${Date.now()}`,
-      venueId: dish.venueId,
-      totalAmount: dish.price,
-      status: "draft",
-      createdAt: new Date().toISOString(),
-    });
-    showToast({
-      message: `${dish.name} added to cart.`,
-      tone: "success",
-    });
-  };
-
   if (!dish) {
     const upcomingRadius = nextRadius(searchRadius);
     return (
@@ -416,7 +410,10 @@ export function DecideForMeResultScreen() {
             onPress={expandRadius}
           />
         ) : null}
-        <Button label="Back to Discover" onPress={() => navigation.navigate("SearchHome")} />
+        <Button
+          label="Back to Discover"
+          onPress={() => navigation.navigate("MainTabs", { screen: "Discover" })}
+        />
       </Screen>
     );
   }
@@ -450,6 +447,12 @@ export function DecideForMeResultScreen() {
   };
 
   const handleSave = () => {
+    if (!isAuthenticated) {
+      showToast({ message: "Sign in to save dishes.", tone: "info" });
+      setReturnRoute({ name: "DecideForMeResult" });
+      navigation.navigate("AuthStack", { screen: "Login" });
+      return;
+    }
     toggleFavourite(dish);
   };
 
@@ -528,7 +531,7 @@ export function DecideForMeResultScreen() {
           <View style={{ gap: spacing[2] }}>
             <View style={{ flexDirection: "row", gap: spacing[2] }}>
               <Badge label={`Radius ${(searchRadius / 1000).toFixed(1)} km`} tone="neutral" />
-              {dish.mustOrder && <Badge label="MUST ORDER" tone="amber" />}
+              {dish.mustOrder && <Badge label="Must order" tone="amber" />}
             </View>
             <AppText variant="displayBold">{dish.name}</AppText>
             <AppText variant="h2" tone="secondary" style={{ color: palette.orange }}>
@@ -557,7 +560,7 @@ export function DecideForMeResultScreen() {
               variant="micro"
               style={{ color: palette.orange, fontWeight: "800", marginBottom: 4 }}
             >
-              WHY THIS DISH?
+              Why this dish?
             </AppText>
             <AppText variant="body" style={{ lineHeight: 22 }}>
               {explanation}
@@ -566,7 +569,7 @@ export function DecideForMeResultScreen() {
 
           {/* Taste Breakdown */}
           <View style={{ gap: spacing[3] }}>
-            <AppText variant="h3">Palate Match</AppText>
+            <AppText variant="h3">Palate match</AppText>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[3] }}>
               {PICK_REASON_DIMS.map((dimension) => (
                 <TasteMiniBar
@@ -589,35 +592,6 @@ export function DecideForMeResultScreen() {
           </View>
 
           <View style={{ gap: spacing[3] }}>
-            <View style={{ flexDirection: "row", gap: spacing[3] }}>
-              {stallAddress ? (
-                <Button
-                  label="Directions"
-                  variant="secondary"
-                  fullWidth={false}
-                  style={{ flex: 1 }}
-                  leftIcon={<Navigation size={18} color={palette.text} />}
-                  onPress={handleDirections}
-                />
-              ) : null}
-              <Button
-                label={isSaved ? "Saved" : "Save"}
-                variant="secondary"
-                fullWidth={false}
-                style={{ flex: 1 }}
-                accessibilityLabel={
-                  isSaved ? `Remove ${dish.name} from saved` : `Save ${dish.name}`
-                }
-                leftIcon={
-                  <Heart
-                    size={18}
-                    color={isSaved ? palette.orange : palette.text}
-                    fill={isSaved ? palette.orange : "transparent"}
-                  />
-                }
-                onPress={handleSave}
-              />
-            </View>
             <Button
               label="Share with friends"
               variant="secondary"
@@ -625,7 +599,7 @@ export function DecideForMeResultScreen() {
               onPress={handleShare}
             />
             <Button
-              label="View Stall Details"
+              label="View stall details"
               variant="secondary"
               onPress={() => {
                 recordTasteInteraction({
@@ -716,7 +690,34 @@ export function DecideForMeResultScreen() {
           },
         ]}
       >
-        <Button label="Add to cart" style={{ flex: 1 }} onPress={handleAddToCart} />
+        {/* No ordering exists yet: the main action is getting there, plus saving for later. */}
+        <View style={{ flexDirection: "row", gap: spacing[3] }}>
+          {stallAddress ? (
+            <Button
+              label="Directions"
+              fullWidth={false}
+              style={{ flex: 2 }}
+              leftIcon={<Navigation size={18} color={palette.white} />}
+              labelColor={palette.white}
+              onPress={handleDirections}
+            />
+          ) : null}
+          <Button
+            label={isSaved ? "Saved" : "Save"}
+            variant="secondary"
+            fullWidth={false}
+            style={{ flex: 1 }}
+            accessibilityLabel={isSaved ? `Remove ${dish.name} from saved` : `Save ${dish.name}`}
+            leftIcon={
+              <Heart
+                size={18}
+                color={isSaved ? palette.orange : palette.text}
+                fill={isSaved ? palette.orange : "transparent"}
+              />
+            }
+            onPress={handleSave}
+          />
+        </View>
       </View>
     </View>
   );

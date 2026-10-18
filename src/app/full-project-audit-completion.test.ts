@@ -27,11 +27,10 @@ test("full project audit P0: production feature flags and floorplan gating match
   assert.equal(flags.oauthProvidersEnabled, false);
   assert.equal(flags.floorplansEnabled, false);
 
-  assert.match(rootNavigator, /FEATURE_FLAGS\.floorplansEnabled \? \(/);
-  assert.match(rootNavigator, /name="BuildingDrillDown"/);
-  assert.match(rootNavigator, /name="BuildingDrillDownV2"/);
-  assert.match(mapZoom, /FEATURE_FLAGS\.floorplansEnabled \? \(/);
-  assert.match(developerLauncher, /FEATURE_FLAGS\.floorplansEnabled \? \(/);
+  // Floorplan screens were removed while the flag is hard-off; nothing routes to them.
+  for (const source of [rootNavigator, mapZoom, developerLauncher]) {
+    assert.doesNotMatch(source, /BuildingDrillDown|VenueDirectory/);
+  }
 });
 
 test("full project audit P0: social safety, public profiles, and chat sends are backend-gated", () => {
@@ -133,8 +132,6 @@ test("full project audit P1: numeric trust surfaces disclose live or preview dat
   const missionBanner = read("src/components/gamification/MissionBanner.tsx");
   const missionsScreen = read("src/app/screens/profile/MissionsScreen.tsx");
   const homeMap = read("src/app/screens/discover/HomeMapScreen.tsx");
-  const venueDirectory = read("src/app/screens/discover/VenueDirectoryScreen.tsx");
-  const buildingDrillDown = read("src/app/screens/discover/BuildingDrillDownScreen.tsx");
   const dishDetail = read("src/app/screens/detail/DishDetailScreenV2.tsx");
 
   assert.match(disclosure, /getServiceProvider\(\)\.mode === "supabase"/);
@@ -154,8 +151,6 @@ test("full project audit P1: numeric trust surfaces disclose live or preview dat
   assert.match(missionBanner, /getDataTrustDisclosure\("missions"\)/);
   assert.match(missionsScreen, /getDataTrustDisclosure\("missions"\)/);
   assert.match(homeMap, /getDataTrustDisclosure\("mapStatus"\)/);
-  assert.match(venueDirectory, /getDataTrustDisclosure\("mapStatus"\)/);
-  assert.match(buildingDrillDown, /getDataTrustDisclosure\("mapStatus"\)/);
   assert.match(dishDetail, /getDataTrustDisclosure\("waitEstimate"\)/);
 });
 

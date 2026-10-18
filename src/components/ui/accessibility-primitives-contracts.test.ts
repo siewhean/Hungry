@@ -98,7 +98,6 @@ test("Dialog and BottomSheet expose native modal semantics and labelled dismiss 
 
 test("production bottom sheet surfaces expose contextual modal labels", () => {
   const directBottomSheetFiles = [
-    "src/app/screens/discover/BuildingDrillDownScreen.tsx",
     "src/app/screens/home/HomeFeedScreen.tsx",
     "src/app/screens/profile/ProfileHomeScreen.tsx",
     "src/app/screens/review/QuickReviewModal.tsx",

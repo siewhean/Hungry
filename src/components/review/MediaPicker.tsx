@@ -17,7 +17,8 @@ interface MediaPickerProps {
   maxPhotos?: number;
   onAddPhoto: (uri: string) => void;
   onRemovePhoto: (uri: string) => void;
-  onSetVideo: (uri?: string) => void;
+  /** Omit to hide the reel slot. */
+  onSetVideo?: (uri?: string) => void;
   onSetFilter: (filterId: string) => void;
 }
 
@@ -68,7 +69,7 @@ export function MediaPicker({
 
     const asset = result.assets[0];
     if (type === "video") {
-      onSetVideo(asset.uri);
+      onSetVideo?.(asset.uri);
     } else {
       onAddPhoto(asset.uri);
     }
@@ -91,7 +92,7 @@ export function MediaPicker({
         contentContainerStyle={{ gap: spacing[3] }}
       >
         {/* Video/Reel Slot */}
-        {videoUri ? (
+        {!onSetVideo ? null : videoUri ? (
           <View style={styles.mediaContainer}>
             <AccessibleImage
               source={{ uri: videoUri }}
@@ -113,7 +114,7 @@ export function MediaPicker({
                 <Edit2 size={14} color={palette.white} />
               </Pressable>
               <Pressable
-                onPress={() => onSetVideo(undefined)}
+                onPress={() => onSetVideo?.(undefined)}
                 style={[styles.actionBtn, { backgroundColor: palette.error }]}
               >
                 <X size={14} color={palette.white} />

@@ -413,7 +413,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     /Stalls in \{discoverLocationLabel\}[\s\S]*areaStallCards\.map[\s\S]*stallShowcaseCards\.length \? \([\s\S]*<VerticalStallShowcaseSection/,
   );
   assert.match(discover, /No matching results/);
-  assert.match(discover, /Try again later\./);
+  assert.match(discover, /Try removing a filter\./);
   assert.doesNotMatch(discover, /NoFoodForFilter|No food for this filter|BowlIllustrationV2/);
   assert.doesNotMatch(discoverSources, /Find something for\.\.\./);
   assert.doesNotMatch(discoverSources, /function SituationTile/);
@@ -569,7 +569,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /const isLateNightMakanVisible = currentHour >= 21 \|\| currentHour < 4/);
   assert.match(
     discover,
-    /\{isLateNightMakanVisible \? \([\s\S]*Late Night Makan[\s\S]*lateNightCards\.map/,
+    /\{isLateNightMakanVisible && shouldRenderDiscoverRail\(lateNightCards\.length\) \? \([\s\S]*Late Night Makan[\s\S]*lateNightCards\.map/,
   );
   assert.match(discover, /navigation\.navigate\("QuickBites", \{ collection: "trending" \}\)/);
   assert.match(discover, /navigation\.navigate\("QuickBites", \{ collection: "editorChoice" \}\)/);
@@ -719,7 +719,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /const handleDecideForMe = \(\) => \{[\s\S]*navigation\.navigate\("DecideForMeResult"\)/,
+    /const handleDecideForMe = \(\) => \{[\s\S]*navigation\.navigate\("DecideForMeResult", \{ surface: "discover" \}/,
   );
   assert.match(
     discover,
@@ -973,7 +973,7 @@ test("Quick Bites contract: empty-state icon is not clipped", () => {
   assert.match(mockData, /id: "dish-wagyu-burger"[\s\S]*name: "Wagyu Burger"/);
   assert.match(mockData, /id: "dish-salmon-don"[\s\S]*name: "Salmon Don"/);
   assert.match(mockData, /id: "dish-mala-xiang-guo"[\s\S]*name: "Mala Xiang Guo"/);
-  const detail = read("src/app/screens/detail/DishDetailScreen.tsx");
+  const detail = read("src/app/screens/detail/DishDetailScreenV2.tsx");
   assert.doesNotMatch(detail, /fallbackDishes/);
   assert.doesNotMatch(detail, /fallbackVenues/);
   assert.match(
@@ -1011,5 +1011,35 @@ test("Quick Bites contract: empty-state icon is not clipped", () => {
   assert.match(
     quickBites,
     /emptyStateIcon: \{[\s\S]*height: 72,[\s\S]*lineHeight: 64,[\s\S]*width: 72,/,
+  );
+});
+
+test("Discover collapses empty rails and offers pull-to-refresh plus one error state", () => {
+  const discover = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
+
+  assert.doesNotMatch(discover, /NoFoodSectionEmptyState/);
+  assert.doesNotMatch(discover, /Try again later\./);
+  assert.doesNotMatch(discover, /Sparkles/);
+  assert.match(
+    discover,
+    /const shouldRenderDiscoverRail = \(count: number\) =>\s*showDiscoverFilterRailSkeleton \|\| count > 0 \|\| isDiscoverFiltering/,
+  );
+  for (const cards of [
+    "quickBiteCards",
+    "trendingCards",
+    "editorChoiceCards",
+    "budgetCards",
+    "areaStallCards",
+  ]) {
+    assert.match(discover, new RegExp(`shouldRenderDiscoverRail\\(${cards}\\.length\\)`));
+  }
+  assert.match(
+    discover,
+    /refreshControl=\{\s*<RefreshControl[\s\S]*refreshing=\{isDiscoverRefreshing\}/,
+  );
+  assert.match(discover, /setDiscoverLoadError\(true\)/);
+  assert.match(
+    discover,
+    /\{discoverLoadError \? \(\s*<EmptyState[\s\S]*ctaLabel="Try again"[\s\S]*reloadDiscover\(\)/,
   );
 });

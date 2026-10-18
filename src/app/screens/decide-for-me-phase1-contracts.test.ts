@@ -21,6 +21,31 @@ test("Decide For Me shows distance, Directions and Save, and respects the budget
   assert.match(screen, /withinBudget\.length \? withinBudget : results/);
 });
 
+test("Decide For Me has no fake cart, routes back to Discover, and tracks its funnel", () => {
+  const screen = read("src/app/screens/discover/DecideForMeResultScreen.tsx");
+
+  assert.doesNotMatch(screen, /Add to cart|useCartStore|useOrderStore|handleAddToCart/);
+  assert.doesNotMatch(screen, /Sparkles/);
+  assert.doesNotMatch(screen, /MUST ORDER|Palate Match|WHY THIS DISH/);
+  assert.match(screen, /navigation\.navigate\("MainTabs", \{ screen: "Discover" \}\)/);
+  assert.doesNotMatch(screen, /navigate\("SearchHome"\)/);
+  // Home does not track the trigger itself, so the screen does unless Discover opened it.
+  // The entry surface comes from the route params, not the screen below.
+  assert.match(screen, /const entrySurface = route\.params\?\.surface \?\? "direct";/);
+  assert.doesNotMatch(screen, /getEntrySurface/);
+  assert.match(
+    screen,
+    /if \(entrySurface === "discover"\) return;[\s\S]*"decide_for_me_triggered"/,
+  );
+  assert.match(screen, /trackAnalyticsEvent\("decide_for_me_no_match"/);
+  assert.match(screen, /trackAnalyticsEvent\("decide_for_me_radius_expanded"/);
+  // Guests are asked to sign in instead of the save silently doing nothing.
+  assert.match(
+    screen,
+    /if \(!isAuthenticated\) \{[\s\S]*navigate\("AuthStack", \{ screen: "Login" \}\)/,
+  );
+});
+
 test("taste quiz asks for a usual budget and saves it with dietary preferences", () => {
   const quiz = read("src/app/screens/onboarding/TasteQuizScreen.tsx");
 

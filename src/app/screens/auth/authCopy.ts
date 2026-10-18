@@ -13,6 +13,7 @@ export const AUTH_COPY = {
     divider: "OR CONTINUE WITH",
     footerPrompt: "New to Hungry? ",
     footerAction: "Create account",
+    continueAsGuest: "Continue without an account",
     successToast: "Welcome back.",
     providerSuccessToast: "Signed in successfully.",
     emailNotConfirmedToast: "Please verify your email before signing in.",

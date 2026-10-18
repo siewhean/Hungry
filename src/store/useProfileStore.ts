@@ -158,6 +158,16 @@ const FEEDBACK_CONFIDENCE_DELTAS: Record<ExplicitFeedbackEvent["type"], number> 
 };
 
 const pendingFavouriteDishToggles = new Set<string>();
+const activatedProfileIds = new Set<string>();
+
+// "activated": a person's first Tried or first save. `previous` is the profile
+// before the action, so it fires only when nothing was saved or tried yet.
+function trackActivationOnce(previous: UserProfile, trigger: "tried" | "saved", dishId: string) {
+  if (previous.favouriteDishIds.length > 0 || previous.reviewedDishIds.length > 0) return;
+  if (activatedProfileIds.has(previous.id)) return;
+  activatedProfileIds.add(previous.id);
+  trackAnalyticsEvent("activated", { trigger, dish_id: dishId }, { userId: previous.id });
+}
 
 function clampConfidence(value: number) {
   return Math.max(0, Math.min(1, Number(value.toFixed(3))));
@@ -439,6 +449,7 @@ export const useProfileStore = create<ProfileState>()(
           const updatedTasteVector = processExplicitFeedback(state.profile.tasteVector, {
             type: feedbackType,
             dishVector: dish.tasteVector,
+            dishConfidence: dish.tasteConfidence,
             timestamp: Date.now(),
           });
           interactionInput = { type: isFavourite ? "unsaved" : "saved", surface: "profile", dish };
@@ -454,6 +465,9 @@ export const useProfileStore = create<ProfileState>()(
             dish_id: dish.id,
             venue_id: dish.venueId,
           });
+          if (!isFavourite) {
+            trackActivationOnce(state.profile, "saved", dish.id);
+          }
 
           const nextProfile = {
             ...state.profile,
@@ -684,9 +698,13 @@ export const useProfileStore = create<ProfileState>()(
         }),
       addReviewedDish: (dishId) =>
         set((state) => {
-          const reviewedDishIds = state.profile.reviewedDishIds.includes(dishId)
+          const alreadyTried = state.profile.reviewedDishIds.includes(dishId);
+          const reviewedDishIds = alreadyTried
             ? state.profile.reviewedDishIds
             : [...state.profile.reviewedDishIds, dishId];
+          if (!alreadyTried) {
+            trackActivationOnce(state.profile, "tried", dishId);
+          }
 
           return {
             profile: {
@@ -796,6 +814,7 @@ export const useProfileStore = create<ProfileState>()(
           const updatedTasteVector = processExplicitFeedback(state.profile.tasteVector, {
             type: feedbackType,
             dishVector: interactionVector,
+            dishConfidence: input.dish?.tasteConfidence,
             timestamp: Date.now(),
           });
           const event = createTasteEvent(

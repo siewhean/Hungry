@@ -18,7 +18,8 @@ export function makeReviewInteractionId(
 
 export type ReviewFeedItem = {
   review: Review;
-  dish: DishDetail;
+  /** Missing when the catalog cache has not loaded this dish yet (live review feed). */
+  dish?: DishDetail;
   dishName: string;
   venueName: string;
   venueId: string;

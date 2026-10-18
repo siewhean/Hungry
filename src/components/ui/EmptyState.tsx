@@ -6,6 +6,13 @@ import { useHungryTheme } from "@/theme";
 import { AppText } from "./AppText";
 import { Button } from "./Button";
 
+// Raw error text and the "Send error" share action are debugging aids for internal
+// builds. Production users only see the friendly title/body.
+const showDebugErrorDetails =
+  (typeof __DEV__ !== "undefined" && __DEV__) ||
+  (process.env.EXPO_PUBLIC_APP_ENV !== undefined &&
+    process.env.EXPO_PUBLIC_APP_ENV !== "production");
+
 interface EmptyStateProps {
   title: string;
   body: string;
@@ -32,24 +39,26 @@ export function EmptyState({
   const { spacing, palette } = useHungryTheme();
   const renderIcon = icon ?? <Info size={34} color={palette.textSecondary} />;
   const reportContext = sendErrorContext ?? "Hungry screen";
-  const resolvedOnSendError = onSendError
-    ? onSendError
-    : errorMessage
-      ? async () => {
-          const payload = `${reportContext}\n${title}\n${errorMessage}`;
-          try {
-            await Clipboard.setString(payload);
-          } catch {}
-          try {
-            await Share.share({ message: payload, title: "Hungry App Error Report" });
-          } catch {
-            Alert.alert(
-              "Error report",
-              "Unable to open sharing options. Error text copied to clipboard.",
-            );
+  const resolvedOnSendError = !showDebugErrorDetails
+    ? undefined
+    : onSendError
+      ? onSendError
+      : errorMessage
+        ? async () => {
+            const payload = `${reportContext}\n${title}\n${errorMessage}`;
+            try {
+              await Clipboard.setString(payload);
+            } catch {}
+            try {
+              await Share.share({ message: payload, title: "Hungry App Error Report" });
+            } catch {
+              Alert.alert(
+                "Error report",
+                "Unable to open sharing options. Error text copied to clipboard.",
+              );
+            }
           }
-        }
-      : undefined;
+        : undefined;
 
   return (
     <View
@@ -68,7 +77,7 @@ export function EmptyState({
       <AppText tone="secondary" style={{ textAlign: "center" }}>
         {body}
       </AppText>
-      {errorMessage ? (
+      {showDebugErrorDetails && errorMessage ? (
         <AppText tone="muted" variant="bodySmall" style={{ textAlign: "center" }}>
           {errorMessage}
         </AppText>

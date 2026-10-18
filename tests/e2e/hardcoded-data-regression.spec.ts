@@ -32,7 +32,7 @@ test.describe("hardcoded data regression guard", () => {
 
   test("V2 production-facing screens avoid fabricated trust claims", () => {
     const files = [
-      "src/app/screens/detail/StallDetailScreenV2.tsx",
+      "src/app/screens/detail/StallDetailScreen.tsx",
       "src/app/screens/detail/DishDetailScreenV2.tsx",
     ];
     const source = files.map((file) => readFileSync(join(ROOT, file), "utf8")).join("\n");

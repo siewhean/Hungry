@@ -11,13 +11,11 @@ test("selected stale-branch fixes preserve FDO visuals while restoring behavior"
   const wheelEntry = read("src/app/screens/wheel/WheelEntryAddSheet.tsx");
   const review = read("src/app/screens/review/ReviewScreen.tsx");
   const composer = read("src/app/screens/post/PostComposerScreen.tsx");
-  const building = read("src/app/screens/discover/BuildingDrillDownScreen.tsx");
 
   assert.match(wheelEntry, /new Set<DietaryFlag>\(\)/);
   assert.doesNotMatch(wheelEntry, /dietaryFlags\.includes\(pref as any\)/);
-  assert.match(review, /<StarRating[^>]*onChange=\{actions\.setRating\}[^>]*editable/);
+  assert.match(review, /<StarRating[^>]*onChange=\{setRating\}[^>]*editable/);
   assert.match(composer, /<FeedErrorBoundary[\s\S]*screenName="PostComposerScreen"/);
-  assert.match(building, /\[repository, tenantPolygons, venueById\]/);
 });
 
 test("animated FDO surfaces share the system and app reduced-motion preference", () => {

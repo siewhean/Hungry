@@ -188,8 +188,6 @@ test("Supabase merchant analytics foundation uses RPC-backed dynamic events and 
   const service = read("src/lib/services/supabase/supabaseService.ts");
   const serviceTypes = read("src/lib/services/types.ts");
   const stallDetail = read("src/app/screens/detail/StallDetailScreen.tsx");
-  const stallDetailV2 = read("src/app/screens/detail/StallDetailScreenV2.tsx");
-  const dishDetail = read("src/app/screens/detail/DishDetailScreen.tsx");
   const dishDetailV2 = read("src/app/screens/detail/DishDetailScreenV2.tsx");
 
   assert.match(migration, /create table if not exists public\.merchant_analytics_events/);
@@ -245,12 +243,6 @@ test("Supabase merchant analytics foundation uses RPC-backed dynamic events and 
   assert.match(stallDetail, /eventType: "menu_view"/);
   assert.match(stallDetail, /eventType: "save"/);
   assert.match(stallDetail, /eventType: "share"/);
-  assert.match(stallDetailV2, /eventType: "stall_profile_view"/);
-  assert.match(stallDetailV2, /eventType: "direction_tap"/);
-  assert.match(stallDetailV2, /eventType: "save"/);
-  assert.match(stallDetailV2, /eventType: "share"/);
-  assert.match(dishDetail, /eventType: "save"/);
-  assert.match(dishDetail, /eventType: "share"/);
   assert.match(dishDetailV2, /eventType: "save"/);
   assert.match(dishDetailV2, /eventType: "share"/);
 });

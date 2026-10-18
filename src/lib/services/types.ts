@@ -517,7 +517,29 @@ export interface SubmitReviewInput {
   text: string;
   tags: string[];
   photos: string[];
+  /** The reviewer's "Recommend" choice. Defaults to true when omitted. */
+  wouldRecommend?: boolean;
+  /**
+   * Client-generated UUID used as the review row id. Retrying with the same id resumes the
+   * submission (photo upload) instead of inserting a duplicate review.
+   */
+  clientReviewId?: string;
   // TODO(api): include upload references (asset ids / signed urls) once media service is wired.
+}
+
+export interface RecentReviewFeedEntry {
+  review: DishDetail["reviews"][number];
+  dishId: string;
+  dishName: string;
+  venueId: string;
+  venueName: string;
+}
+
+export interface ListRecentReviewsOptions {
+  /** Page size (defaults to 50). */
+  limit?: number;
+  /** Cursor: only return reviews created strictly before this ISO timestamp. */
+  before?: string;
 }
 
 export interface SubmitMenuPhotoInput {
@@ -760,6 +782,8 @@ export interface HungryService {
     getReviewsForDish(dishId: string): Promise<DishDetail["reviews"]>;
     getUserReviews(userId: string): Promise<DishDetail["reviews"]>;
     submitReview(draft: SubmitReviewInput): Promise<void>;
+    /** Newest-first review feed across all dishes, fetched as one paginated query. */
+    listRecentReviews(options?: ListRecentReviewsOptions): Promise<RecentReviewFeedEntry[]>;
   };
 
   // Profile
@@ -784,6 +808,8 @@ export interface HungryService {
     getPreferences(): Promise<PushPreferences>;
     updatePreferences(updates: Partial<PushPreferences>): Promise<PushPreferences>;
     registerPushToken(token: string, platform: "ios" | "android"): Promise<void>;
+    /** Unbinds this device's registered push token from the signed-in user. Call before sign-out. */
+    unregisterPushToken(): Promise<void>;
     markOpened(notificationId: string): Promise<void>;
   };
 

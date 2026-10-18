@@ -118,6 +118,8 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
   // OAuth returns are consumed by WebBrowser.openAuthSessionAsync.
   if (path === "auth/oauth") return undefined;
   if (path === "auth/reset/success") return createAuthState("ResetPasswordSuccess");
+  // Weekly picks push opens https://usehungry.com/home.
+  if (path === "home") return createState("MainTabs", { screen: "Home" });
   if (parts[0] === "dish") {
     const id = decodePathSegment(parts[1]);
     return id ? createState("DishDetail", { id }) : undefined;
@@ -205,6 +207,11 @@ export function createRootLinking(
             ResetPasswordSuccess: "auth/reset/success",
           },
         },
+        MainTabs: {
+          screens: {
+            Home: "home",
+          },
+        },
         DishDetail: "dish/:id",
         StallDetail: "venue/:id",
         ActivityPostDetail: "post/:postId",
@@ -242,10 +249,11 @@ export function createRootLinking(
       }
       trackSharedLinkOpened(state, path);
 
-      const { isAuthReady, isAuthenticated, onAuthRedirect } = getAuthState();
-      if (!isAuthReady && isProtectedDeepLinkState(state)) {
-        return undefined;
-      }
+      // On a cold start auth may not be settled yet. Don't drop the link:
+      // a restored session opens it (the root auth guard sends the person to
+      // Login with it as the return route if the session turns out invalid),
+      // and no session sends them to Login with it saved as the return route.
+      const { isAuthenticated, onAuthRedirect } = getAuthState();
       if (!isAuthenticated && isProtectedDeepLinkState(state)) {
         const protectedRoute = state.routes[state.routes.length - 1];
         if (protectedRoute) onAuthRedirect?.(protectedRoute);

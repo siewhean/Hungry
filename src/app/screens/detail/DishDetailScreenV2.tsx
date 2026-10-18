@@ -16,7 +16,6 @@ import {
   MessageCircleMore,
   MessageCircle,
   Send,
-  Sparkles,
   Star,
   Utensils,
 } from "lucide-react-native";
@@ -162,7 +161,7 @@ function getTodayRows(rows: ListedHoursRow[]): ListedHoursRow[] {
   return rows.length ? [rows[0]] : [];
 }
 
-type Props = NativeStackScreenProps<RootStackParamList, "DishDetail" | "DishDetailV2">;
+type Props = NativeStackScreenProps<RootStackParamList, "DishDetail">;
 
 type Attribute = {
   label: string;
@@ -355,14 +354,14 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     return (
       <FeedErrorBoundary
         title="Dish details unavailable"
-        body="Couldn't load this dish - try again."
+        body="Couldn't load this dish — try again."
       >
         <SafeAreaView style={{ backgroundColor: palette.bg, flex: 1 }} edges={["top"]}>
           <EmptyState
-            title="Dish not found"
-            body="This dish is no longer available in the current dataset."
-            errorMessage={`Missing dish data for ID: ${dishId || "unknown"}`}
-            sendErrorContext="Dish detail"
+            title="We can't find this dish"
+            body="It may have been removed or renamed by the stall. Try searching for it instead."
+            ctaLabel="Go back"
+            onPress={() => navigation.goBack()}
           />
         </SafeAreaView>
       </FeedErrorBoundary>
@@ -406,6 +405,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const signatureGridItemWidth = width / 2;
   const signatureGridItemHeight = signatureGridItemWidth * 1.5;
   const reviewIconSize = 22;
+  /** Minimum touch target for the action dock and header buttons. */
+  const dockTargetSize = 44;
   const canonicalDishUrl = webShareUrl("dish", dish.id);
   const heroGradientColors: readonly [ColorValue, ColorValue, ColorValue] = [
     palette.detailHeroGradientStart,
@@ -441,7 +442,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const handleSave = () => {
     if (!isAuthenticated) {
       setReturnRoute({
-        name: "DishDetailV2",
+        name: "DishDetail",
         params: { dishId: dish.id },
       });
       navigation.navigate("AuthStack", { screen: "Login" });
@@ -490,7 +491,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
 
     if (!isAuthenticated) {
       setReturnRoute({
-        name: "DishDetailV2",
+        name: "DishDetail",
         params: { dishId: dish.id },
       });
       navigation.navigate("AuthStack", { screen: "Login" });
@@ -541,7 +542,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   };
 
   return (
-    <FeedErrorBoundary title="Dish details unavailable" body="Couldn't load this dish - try again.">
+    <FeedErrorBoundary title="Dish details unavailable" body="Couldn't load this dish — try again.">
       <SafeAreaView style={{ backgroundColor: palette.bg, flex: 1 }} edges={["left", "right"]}>
         <View style={{ flex: 1 }}>
           <ScrollView
@@ -853,7 +854,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                       key={item.id}
                       accessibilityRole="button"
                       accessibilityLabel={`Open ${item.name}`}
-                      onPress={() => navigation.navigate("DishDetailV2", { dishId: item.id })}
+                      onPress={() => navigation.navigate("DishDetail", { dishId: item.id })}
                       style={{
                         height: signatureGridItemHeight,
                         overflow: "hidden",
@@ -925,10 +926,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
               </View>
 
               <View style={{ gap: spacing[3] }}>
-                <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-                  <Sparkles color={palette.orange} size={20} />
-                  <AppText variant="h2">From the Community</AppText>
-                </View>
+                <AppText variant="h2">From the Community</AppText>
                 {dish.reviews.length ? (
                   dish.reviews.slice(0, 3).map((review) => (
                     <View
@@ -994,14 +992,14 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Add this dish to a list"
+                accessibilityState={{ disabled: isAddingToPortfolio }}
                 onPress={() => void addToPortfolio()}
                 disabled={isAddingToPortfolio}
                 style={{
                   alignItems: "center",
-                  paddingHorizontal: spacing[1],
-                  height: 42,
+                  height: dockTargetSize,
                   justifyContent: "center",
-                  width: undefined,
+                  minWidth: dockTargetSize,
                 }}
               >
                 <ListPlus color={palette.text} size={reviewIconSize} />
@@ -1009,25 +1007,27 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             ) : null}
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={isSaved ? "Unsave this dish" : "Save this dish"}
+              accessibilityLabel={isSaved ? "Saved" : "Save"}
+              accessibilityHint={isSaved ? "Removes this dish from Want to try" : undefined}
+              accessibilityState={{ selected: isSaved }}
               onPress={handleSave}
               style={{
                 alignItems: "center",
-                paddingHorizontal: spacing[1],
-                height: 42,
+                height: dockTargetSize,
                 justifyContent: "center",
-                width: undefined,
+                minWidth: dockTargetSize,
               }}
             >
               <Bookmark
-                color={isSaved ? palette.white : palette.text}
+                color={isSaved ? palette.orange : palette.text}
                 size={reviewIconSize}
-                fill={isSaved ? palette.white : "none"}
+                fill={isSaved ? palette.orange : "none"}
               />
             </Pressable>
             <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Mark this food as tried"
+              accessibilityRole="checkbox"
+              accessibilityLabel="Tried"
+              accessibilityState={{ checked: isDishTried, disabled: isTryingFood }}
               onPress={handleTryFood}
               disabled={isTryingFood}
               style={({ pressed }) => {
@@ -1046,15 +1046,18 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   backgroundColor,
                   borderColor: isWhiteOrBlackBackground ? palette.orange : "transparent",
                   borderWidth: isWhiteOrBlackBackground ? 1 : 0,
-                  paddingHorizontal: spacing[1],
                   borderRadius: componentRadii.iconButton,
-                  height: 42,
+                  height: dockTargetSize,
                   justifyContent: "center",
-                  width: undefined,
+                  minWidth: dockTargetSize,
                 };
               }}
             >
-              <CheckCircle color={palette.text} fill="none" size={reviewIconSize} />
+              <CheckCircle
+                color={isDishTried ? palette.orange : palette.text}
+                fill="none"
+                size={reviewIconSize}
+              />
             </Pressable>
             <Pressable
               accessibilityRole="button"
@@ -1062,13 +1065,19 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
               onPress={handleReview}
               style={{
                 alignItems: "center",
-                paddingHorizontal: spacing[1],
-                height: 42,
+                backgroundColor: palette.orange,
+                borderRadius: componentRadii.button,
+                flexDirection: "row",
+                gap: spacing[1.5],
+                height: dockTargetSize,
                 justifyContent: "center",
-                width: undefined,
+                paddingHorizontal: spacing[4],
               }}
             >
-              <CommentIcon color={palette.text} size={reviewIconSize} />
+              <CommentIcon color={palette.white} size={reviewIconSize} />
+              <AppText variant="bodyBold" style={{ color: palette.white }}>
+                Review
+              </AppText>
             </Pressable>
           </View>
 
@@ -1094,9 +1103,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                 borderColor: headerButtonBorder,
                 borderRadius: componentRadii.iconButton,
                 borderWidth: 1,
-                height: 40,
+                height: dockTargetSize,
                 justifyContent: "center",
-                width: 40,
+                width: dockTargetSize,
               }}
             >
               <ArrowLeft color={palette.text} size={22} />
@@ -1111,9 +1120,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                 borderColor: headerButtonBorder,
                 borderRadius: componentRadii.iconButton,
                 borderWidth: 1,
-                height: 40,
+                height: dockTargetSize,
                 justifyContent: "center",
-                width: 40,
+                width: dockTargetSize,
               }}
             >
               <Send color={palette.text} size={21} />

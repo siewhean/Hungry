@@ -64,7 +64,6 @@ test("root navigation keeps production-disabled routes behind feature flags", ()
     [
       /FEATURE_FLAGS\.merchantClaimCtaEnabled \? \(/,
       /FEATURE_FLAGS\.directMessagesEnabled \? \(/,
-      /FEATURE_FLAGS\.floorplansEnabled \? \(/,
       /FEATURE_FLAGS\.prototypeRoutesEnabled \? \(/,
       /FEATURE_FLAGS\.merchantCentreEnabled \? \(/,
       /FEATURE_FLAGS\.storiesEnabled \? \(/,

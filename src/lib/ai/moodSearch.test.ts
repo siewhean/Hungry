@@ -97,4 +97,18 @@ test("mood-search Edge Function caches answers and caps fresh calls per user per
   );
   assert.match(migration, /on delete cascade/);
   assert.match(migration, /revoke all on public\.mood_search_queries from anon, authenticated;/);
+
+  // The cap check and the slot claim happen in one locked RPC, not count-then-insert.
+  assert.match(source, /client\.rpc\("reserve_mood_search_slot"/);
+  assert.match(source, /\.eq\("pending", false\)/);
+  const slotMigration = fs.readFileSync(
+    "supabase/migrations/20261018091000_push_token_unbind_mood_search_slot.sql",
+    "utf8",
+  );
+  assert.match(slotMigration, /pg_advisory_xact_lock/);
+  assert.match(slotMigration, /set search_path = ''/);
+  assert.match(
+    slotMigration,
+    /grant execute on function public\.reserve_mood_search_slot\(uuid, text, integer\) to service_role;/,
+  );
 });

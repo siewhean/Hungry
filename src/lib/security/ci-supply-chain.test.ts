@@ -41,9 +41,30 @@ test("main CI uses the pinned Node runtime and fails closed for required release
 
   assert.equal(ci.match(/node-version: 22\.22\.1/g)?.length, 3);
   assert.match(ci, /Supabase credentials missing on main; failing closed\./);
-  assert.match(ci, /EXPO_TOKEN missing on main; failing closed\./);
-  assert.doesNotMatch(ci, /skipping EAS account validation/);
-  assert.doesNotMatch(ci, /skipping EAS build gate/);
+});
+
+test("EAS build gate skips with a visible notice when EXPO_TOKEN is absent, and runs otherwise", () => {
+  const ci = read(".github/workflows/ci.yml");
+  const easJob = ci.slice(ci.indexOf("eas-build-gate:"));
+
+  // A missing secret must not turn main red; quality-gates decides main's colour.
+  assert.match(easJob, /::notice title=EAS build gate skipped::/);
+  assert.match(easJob, /echo "available=false" >> "\$GITHUB_OUTPUT"/);
+  // The gate itself is kept: every real step runs when the secret is present.
+  for (const step of [
+    "Checkout",
+    "Install dependencies",
+    "Validate Expo account access",
+    "Trigger EAS build gates",
+  ]) {
+    const stepBody = easJob.slice(easJob.indexOf(`- name: ${step}`));
+    assert.match(
+      stepBody.split("- name:")[1],
+      /if: steps\.eas-credentials\.outputs\.available == 'true'/,
+      `${step} must run when EXPO_TOKEN is available`,
+    );
+  }
+  assert.doesNotMatch(easJob, /continue-on-error/);
 });
 
 test("security workflow keeps dependency, gitleaks, and trufflehog gates", () => {

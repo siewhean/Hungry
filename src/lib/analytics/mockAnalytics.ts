@@ -40,8 +40,28 @@ export function trackAnalyticsEvent(
   return record;
 }
 
-export function setAnalyticsSink(nextSink: AnalyticsSink | null): void {
+/**
+ * Swaps the sink. With `replayBufferedEvents`, events tracked before this sink
+ * attached (cold-start launches, shared-link opens) are sent to it in order.
+ */
+export function setAnalyticsSink(
+  nextSink: AnalyticsSink | null,
+  options?: { replayBufferedEvents?: boolean },
+): void {
   sink = nextSink;
+  if (!nextSink || !options?.replayBufferedEvents) {
+    return;
+  }
+
+  for (const record of [...analyticsBuffer]) {
+    try {
+      nextSink(record);
+    } catch (error) {
+      if (typeof __DEV__ !== "undefined" && __DEV__) {
+        console.warn("[analytics] sink replay failed (mock-safe fallback)", error);
+      }
+    }
+  }
 }
 
 export function getTrackedAnalyticsEvents(): AnalyticsEventRecord[] {
