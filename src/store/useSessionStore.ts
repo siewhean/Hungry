@@ -146,8 +146,42 @@ function buildPostHogIdentityProperties() {
     has_taste_profile: Boolean(profile?.tasteVector),
     dietary_preference_count: profile?.dietaryPreferences?.length ?? 0,
     location_source: location.manualLocation ? "manual" : location.permission,
-    has_precise_location: Boolean(location.currentLocation),
+    // currentLocation always holds a value (a default or a manual pick), so
+    // only a granted GPS permission means the location is precise.
+    has_precise_location: location.permission === "granted",
   };
+}
+
+// Interactive sign-in calls completeAuth while Supabase also emits SIGNED_IN to
+// applyAuthStateFromSession; whichever runs first logs sign_in_completed.
+let signInTrackedForUserId: string | null = null;
+
+function trackSignInCompletedOnce(
+  profileId: string,
+  properties: { method: string; has_completed_onboarding: boolean; skipped_taste_quiz: boolean },
+): void {
+  if (signInTrackedForUserId === profileId) {
+    return;
+  }
+  signInTrackedForUserId = profileId;
+  trackAnalyticsEvent("sign_in_completed", properties, { userId: profileId });
+}
+
+function resetSignInTracking(): void {
+  signInTrackedForUserId = null;
+}
+
+const PUSH_TOKEN_UNBIND_TIMEOUT_MS = 3000;
+
+// Unbind this device's push token while the session can still authorize it,
+// then end the Supabase session. A slow or failed unbind never blocks sign-out.
+function signOutOfSupabase(): void {
+  const service = getHungryService();
+  const unbind = service.push.unregisterPushToken().catch(() => undefined);
+  const timeout = new Promise<void>((resolve) => setTimeout(resolve, PUSH_TOKEN_UNBIND_TIMEOUT_MS));
+  void Promise.race([unbind, timeout])
+    .then(() => service.auth.signOut())
+    .catch(() => undefined);
 }
 
 export const useSessionStore = create<SessionState>()(
@@ -182,15 +216,11 @@ export const useSessionStore = create<SessionState>()(
           () => {
             identifyPostHogUser(profileId, buildPostHogIdentityProperties());
             if (options?.trackSignInEvent ?? true) {
-              trackAnalyticsEvent(
-                "sign_in_completed",
-                {
-                  method: options?.authProvider ?? "email",
-                  has_completed_onboarding: options?.completedOnboarding ?? false,
-                  skipped_taste_quiz: options?.skippedTasteQuiz ?? false,
-                },
-                { userId: profileId },
-              );
+              trackSignInCompletedOnce(profileId, {
+                method: options?.authProvider ?? "email",
+                has_completed_onboarding: options?.completedOnboarding ?? false,
+                skipped_taste_quiz: options?.skippedTasteQuiz ?? false,
+              });
             }
           },
           { fallbackDelayMs: 0 },
@@ -210,6 +240,7 @@ export const useSessionStore = create<SessionState>()(
         set({ sessionExpired: true, isAuthenticated: false });
         clearAccountScopedStores();
         resetPostHogUser();
+        resetSignInTracking();
         trackAnalyticsEvent("sign_out", { reason: "session_expired" }, { userId: profileId });
       },
       dismissSessionExpiry: () => set({ sessionExpired: false }),
@@ -219,9 +250,7 @@ export const useSessionStore = create<SessionState>()(
         const profileId = getSafeProfileId();
         const hasSkippedTasteQuiz = useSessionStore.getState().hasSkippedTasteQuiz;
         if (getConfiguredDataSource() === "supabase") {
-          void getHungryService()
-            .auth.signOut()
-            .catch(() => undefined);
+          signOutOfSupabase();
         }
         set({
           ...initialState,
@@ -233,6 +262,7 @@ export const useSessionStore = create<SessionState>()(
         getProfileStoreState().clearProfile();
         getProfileStoreState().syncProfile(false);
         resetPostHogUser();
+        resetSignInTracking();
         trackAnalyticsEvent("sign_out", { reason: "manual" }, { userId: profileId });
       },
       clearSession: () => {
@@ -242,6 +272,7 @@ export const useSessionStore = create<SessionState>()(
         getProfileStoreState().clearProfile();
         getProfileStoreState().syncProfile(false);
         resetPostHogUser();
+        resetSignInTracking();
         trackAnalyticsEvent("sign_out", { reason: "clear_session" }, { userId: profileId });
       },
       markHydrated: () => set({ hasHydrated: true }),
@@ -291,15 +322,11 @@ export const useSessionStore = create<SessionState>()(
             () => {
               identifyPostHogUser(profileId, buildPostHogIdentityProperties());
               if (!currentlyAuthenticated) {
-                trackAnalyticsEvent(
-                  "sign_in_completed",
-                  {
-                    method: "email",
-                    has_completed_onboarding: session.completedOnboarding ?? false,
-                    skipped_taste_quiz: session.skippedTasteQuiz ?? false,
-                  },
-                  { userId: profileId },
-                );
+                trackSignInCompletedOnce(profileId, {
+                  method: "email",
+                  has_completed_onboarding: session.completedOnboarding ?? false,
+                  skipped_taste_quiz: session.skippedTasteQuiz ?? false,
+                });
               }
             },
             { fallbackDelayMs: 0 },
@@ -323,6 +350,7 @@ export const useSessionStore = create<SessionState>()(
         clearAccountScopedStores();
         getProfileStoreState().syncProfile(false);
         resetPostHogUser();
+        resetSignInTracking();
         trackAnalyticsEvent(
           "sign_out",
           { reason: "supabase_auth_state_change" },

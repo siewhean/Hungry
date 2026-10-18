@@ -461,7 +461,13 @@ export function SettingsScreen() {
 
       {FEATURE_FLAGS.stallAlertsEnabled && isAuthenticated ? (
         <StallAlertsSettings
-          onOpenFollowedStalls={() => navigation.navigate("FollowedStalls" as any)}
+          onOpenFollowedStalls={() =>
+            // Settings is also a root route, where FollowedStalls is not a sibling.
+            rootNavigation.navigate("MainTabs", {
+              screen: "Profile",
+              params: { screen: "FollowedStalls" },
+            })
+          }
         />
       ) : null}
 

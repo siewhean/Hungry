@@ -33,6 +33,7 @@ import {
   supabaseRepository,
 } from "@/lib/services/supabase/supabaseRepository";
 import { getSupabaseClient } from "@/lib/services/supabase/client";
+import { hungryPersistStorage } from "@/store/persistStorage";
 import {
   assertValidMenuPhotoUpload,
   uploadImageFromUri,
@@ -481,6 +482,34 @@ function requireSupabaseClient(): SupabaseClient {
     throw new Error("Supabase client is not configured.");
   }
   return client;
+}
+
+// The Expo push token this device last registered, so sign-out can unbind it
+// from the account (otherwise the next person on the phone gets the alerts).
+const REGISTERED_PUSH_TOKEN_KEY = "hungry-push-token-v1";
+
+async function rememberRegisteredPushToken(token: string | null): Promise<void> {
+  try {
+    if (token) {
+      await hungryPersistStorage?.setItem(REGISTERED_PUSH_TOKEN_KEY, {
+        state: { token },
+        version: 0,
+      });
+    } else {
+      await hungryPersistStorage?.removeItem(REGISTERED_PUSH_TOKEN_KEY);
+    }
+  } catch {
+    // Storage is best effort; the server re-binds the token on next registration.
+  }
+}
+
+async function unregisterStoredPushToken(client: SupabaseClient): Promise<void> {
+  const stored = await hungryPersistStorage?.getItem(REGISTERED_PUSH_TOKEN_KEY);
+  const token = (stored?.state as { token?: unknown } | undefined)?.token;
+  if (typeof token !== "string" || !token) return;
+  const { error } = await client.rpc("unregister_push_token", { p_token: token });
+  if (error) throw error;
+  await rememberRegisteredPushToken(null);
 }
 
 function portfolioEditConflictError(): Error {
@@ -2878,7 +2907,10 @@ export const supabaseService: HungryService = {
       });
       if (error) throw error;
 
-      await this.signOut();
+      // The request is queued; a failed token unbind or sign-out must not report
+      // the deletion itself as failed. The caller clears the local session.
+      await unregisterStoredPushToken(client).catch(() => undefined);
+      await this.signOut().catch(() => undefined);
     },
 
     async getPendingAccountDeletion() {
@@ -3405,6 +3437,11 @@ export const supabaseService: HungryService = {
         p_platform: platform,
       });
       if (error) throw error;
+      await rememberRegisteredPushToken(token);
+    },
+
+    async unregisterPushToken() {
+      await unregisterStoredPushToken(requireSupabaseClient());
     },
 
     async markOpened(notificationId: string) {

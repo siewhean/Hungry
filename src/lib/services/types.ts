@@ -784,6 +784,8 @@ export interface HungryService {
     getPreferences(): Promise<PushPreferences>;
     updatePreferences(updates: Partial<PushPreferences>): Promise<PushPreferences>;
     registerPushToken(token: string, platform: "ios" | "android"): Promise<void>;
+    /** Unbinds this device's registered push token from the signed-in user. Call before sign-out. */
+    unregisterPushToken(): Promise<void>;
     markOpened(notificationId: string): Promise<void>;
   };
 

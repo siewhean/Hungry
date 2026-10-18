@@ -68,6 +68,8 @@ export function useAccountDeletionGracePrompt(onContinueDeletion: () => void) {
               },
             },
           ],
+          // Android back/outside taps would otherwise dismiss without a choice.
+          { cancelable: false },
         );
       })
       .catch(() => undefined);
