@@ -37,3 +37,25 @@ test("post media re-encodes photos but leaves videos untouched", () => {
       postUpload.indexOf("reencodeImageWithoutMetadata("),
   );
 });
+
+test("HEIC photos re-encoded to JPEG are stored under a .jpg path", async () => {
+  const { pathForReencodedImage } = await import("@/lib/services/supabase/mediaUpload");
+  assert.equal(
+    pathForReencodedImage("u1/r1/photo-0-1.heic", "image/heic", "image/jpeg"),
+    "u1/r1/photo-0-1.jpg",
+  );
+  assert.equal(
+    pathForReencodedImage("u1/a.b/photo", "image/heic", "image/jpeg"),
+    "u1/a.b/photo.jpg",
+  );
+  // Unchanged formats keep the caller's path.
+  assert.equal(pathForReencodedImage("u1/x.jpeg", "image/jpeg", "image/jpeg"), "u1/x.jpeg");
+  assert.equal(pathForReencodedImage("u1/x.png", "image/png", "image/png"), "u1/x.png");
+
+  for (const name of ["uploadImageFromUri", "uploadPostMediaFromUri"]) {
+    assert.match(
+      functionBody(name),
+      /const path = pathForReencodedImage\(requestedPath, originalContentType, contentType\);/,
+    );
+  }
+});

@@ -100,6 +100,28 @@ async function reencodeImageWithoutMetadata(
   }
 }
 
+const EXTENSION_BY_IMAGE_CONTENT_TYPE: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
+/**
+ * Callers build storage paths from the picked file's extension. When re-encoding changed
+ * the format (HEIC -> JPEG), swap the extension so the path matches the stored bytes.
+ */
+export function pathForReencodedImage(
+  path: string,
+  originalContentType: string,
+  contentType: string,
+): string {
+  const extension = EXTENSION_BY_IMAGE_CONTENT_TYPE[contentType];
+  if (contentType === originalContentType || !extension) return path;
+  const slash = path.lastIndexOf("/");
+  const dot = path.lastIndexOf(".");
+  return dot > slash ? `${path.slice(0, dot)}.${extension}` : `${path}.${extension}`;
+}
+
 async function uploadViaSignedUrl(
   client: SupabaseClient,
   bucket: string,
@@ -229,7 +251,7 @@ export async function uploadImageFromUri(params: {
   path: string;
   uri: string;
 }): Promise<UploadedAsset> {
-  const { client, bucket, path, uri } = params;
+  const { client, bucket, path: requestedPath, uri } = params;
   const originalBlob = await fetchBlobFromUri(uri);
   const originalContentType = originalBlob.type || guessContentType(uri);
   await assertValidImageBlob(originalBlob, originalContentType);
@@ -237,6 +259,7 @@ export async function uploadImageFromUri(params: {
   const stripped = await reencodeImageWithoutMetadata(uri, originalContentType);
   const blob = stripped?.blob ?? originalBlob;
   const contentType = stripped?.contentType ?? originalContentType;
+  const path = pathForReencodedImage(requestedPath, originalContentType, contentType);
 
   const signedSucceeded = await uploadViaSignedUrl(client, bucket, path, blob, contentType);
   if (!signedSucceeded) {
@@ -256,7 +279,7 @@ export async function uploadPostMediaFromUri(params: {
   path: string;
   uri: string;
 }): Promise<UploadedAsset & { contentType: string; sizeBytes?: number }> {
-  const { client, bucket, path, uri } = params;
+  const { client, bucket, path: requestedPath, uri } = params;
   const originalBlob = await fetchBlobFromUri(uri);
   const originalContentType = originalBlob.type || guessContentType(uri);
   await assertValidPostMediaBlob(originalBlob, originalContentType);
@@ -266,6 +289,7 @@ export async function uploadPostMediaFromUri(params: {
     : null;
   const blob = stripped?.blob ?? originalBlob;
   const contentType = stripped?.contentType ?? originalContentType;
+  const path = pathForReencodedImage(requestedPath, originalContentType, contentType);
 
   const signedSucceeded = await uploadViaSignedUrl(client, bucket, path, blob, contentType);
   if (!signedSucceeded) {
