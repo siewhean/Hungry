@@ -31,7 +31,9 @@ const FOOD_4 =
 const FOOD_WAGYU_BURGER =
   "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=800";
 const FOOD_SALMON_DON =
-  "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&q=80&w=800";
+  "https://usehungry.com/_next/image?url=%2Fimages%2Ffood%2Fsushi-set-topdown.png&w=640&q=75";
+const FOOD_FISH_SOUP =
+  "https://usehungry.com/_next/image?url=%2Fimages%2Ffood%2Ffish-soup-topdown.png&w=640&q=75";
 const FOOD_MALA_XIANG_GUO =
   "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?auto=format&fit=crop&q=80&w=800";
 const FOOD_TRUFFLE_TAGLIATELLE =
@@ -347,7 +349,7 @@ export const dishes: DishDetail[] = [
     unitNumber: "#02-77",
     floor: "L2",
     name: "Sliced Fish Soup",
-    imageUrl: FOOD_SALMON_DON,
+    imageUrl: FOOD_FISH_SOUP,
     distanceMeters: 240,
     rating: 4.6,
     reviewCount: 98,
@@ -357,7 +359,7 @@ export const dishes: DishDetail[] = [
     tasteTags: ["Clean", "Fresh", "Gingery"],
     tasteVector: { sweet: 1, spicy: 1, sour: 2, salty: 5, rich: 3, aromatic: 7 },
     dietaryFlags: ["pork_free"],
-    gallery: [FOOD_SALMON_DON, FOOD_3],
+    gallery: [FOOD_FISH_SOUP, FOOD_3],
     mustOrder: true,
     availabilityFlags: ["Lunch only"],
     reviews: [],
@@ -612,7 +614,7 @@ export const stallPosts: StallPost[] = [
     authorAvatarUrl: FOOD_1,
     mediaType: "photo",
     mediaUrl: FOOD_3,
-    mediaUrls: [FOOD_3, FOOD_2, FOOD_SALMON_DON],
+    mediaUrls: [FOOD_3, FOOD_2, FOOD_FISH_SOUP],
     caption: "Found this hidden gem. The fish slices are huge!",
     tags: ["Fresh fish", "Clean broth", "CBD lunch", "Hidden gem"],
     dishIds: ["dish-ban-mian"],
@@ -656,10 +658,10 @@ export const stallPosts: StallPost[] = [
     buildingId: "building-amoy",
     authorName: "Mira Chen",
     authorLocation: "Amoy Street Food Centre",
-    authorAvatarUrl: FOOD_SALMON_DON,
+    authorAvatarUrl: FOOD_FISH_SOUP,
     mediaType: "photo",
-    mediaUrl: FOOD_SALMON_DON,
-    mediaUrls: [FOOD_SALMON_DON, FOOD_3, FOOD_1],
+    mediaUrl: FOOD_FISH_SOUP,
+    mediaUrls: [FOOD_FISH_SOUP, FOOD_3, FOOD_1],
     caption:
       "One of those bowls that looks simple until the first spoonful: clean soup, tender fish, enough ginger to lift everything, and no heavy after-lunch slump before the next meeting.",
     tags: ["Light lunch", "Fresh fish", "Office crowd", "Clean broth"],
