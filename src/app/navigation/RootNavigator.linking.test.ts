@@ -14,6 +14,15 @@ test("root linking config exposes public dish, venue, and order entry points", (
   assert.equal(screens.ActivityPostDetail, "post/:postId");
   assert.equal(screens.Post, "order");
   assert.equal(screens.MerchantTabs, undefined);
+  assert.deepEqual(screens.MainTabs, { screens: { Home: "home" } });
+});
+
+test("weekly picks /home link opens the Home tab", () => {
+  const linking = createRootLinking("exp://127.0.0.1:8081/--/");
+  assert.deepEqual(linking.getStateFromPath("home")?.routes?.[0], {
+    name: "MainTabs",
+    params: { screen: "Home" },
+  });
 });
 
 test("order deep link parses venueId query parameter", () => {

@@ -118,6 +118,8 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
   // OAuth returns are consumed by WebBrowser.openAuthSessionAsync.
   if (path === "auth/oauth") return undefined;
   if (path === "auth/reset/success") return createAuthState("ResetPasswordSuccess");
+  // Weekly picks push opens https://usehungry.com/home.
+  if (path === "home") return createState("MainTabs", { screen: "Home" });
   if (parts[0] === "dish") {
     const id = decodePathSegment(parts[1]);
     return id ? createState("DishDetail", { id }) : undefined;
@@ -203,6 +205,11 @@ export function createRootLinking(
             ForgotPassword: "forgot-password",
             ResetPassword: "auth/reset",
             ResetPasswordSuccess: "auth/reset/success",
+          },
+        },
+        MainTabs: {
+          screens: {
+            Home: "home",
           },
         },
         DishDetail: "dish/:id",
