@@ -4,7 +4,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
 import { Users, ArrowRight, Compass } from "lucide-react-native";
 
-import { AppText, Button, Card, Input, Screen } from "@/components/ui";
+import { AppText, Banner, Button, Card, Input, Screen } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
@@ -16,7 +16,7 @@ type Props = NativeStackScreenProps<WheelStackParamList, "WheelHome">;
 const PARTY_ENABLED = FEATURE_FLAGS.wheelPartyEnabled;
 
 export function WheelHomeScreen({ navigation, route }: Props) {
-  const { componentRadii, palette, spacing, radii, shadows } = useHungryTheme();
+  const { componentRadii, palette, spacing, shadows } = useHungryTheme();
   const createParty = useWheelStore((s) => s.createParty);
   const joinParty = useWheelStore((s) => s.joinParty);
 
@@ -188,22 +188,7 @@ export function WheelHomeScreen({ navigation, route }: Props) {
                   />
                 </View>
 
-                {joinError ? (
-                  <View
-                    style={{
-                      backgroundColor: `${palette.error}10`,
-                      padding: spacing[2],
-                      borderRadius: radii.sm,
-                    }}
-                  >
-                    <AppText
-                      variant="micro"
-                      style={{ color: palette.error, fontWeight: "600", textAlign: "center" }}
-                    >
-                      {joinError}
-                    </AppText>
-                  </View>
-                ) : null}
+                {joinError ? <Banner variant="error" message={joinError} /> : null}
 
                 <Button
                   label={joining ? "Joining..." : "Join the Room"}

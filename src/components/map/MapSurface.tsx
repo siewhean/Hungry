@@ -13,8 +13,7 @@ import { Utensils } from "lucide-react-native";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import type { BuildingType, Coordinate } from "@/types/domain";
 import { useHungryTheme } from "@/theme";
-import { componentRadii } from "@/theme/tokens";
-import { AccessibleImage, AppText } from "@/components/ui";
+import { AccessibleImage, AppText, Banner } from "@/components/ui";
 import { BuildingPin } from "./BuildingPin";
 
 const MAPBOX_ACCESS_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN;
@@ -463,18 +462,11 @@ export function MapSurface({
           cameraPadding={cameraPadding}
         />
         {!MAPBOX_ACCESS_TOKEN ? (
-          <View
-            style={[
-              styles.tokenNotice,
-              {
-                backgroundColor: palette.surfaceTranslucent,
-                borderColor: palette.border,
-              },
-            ]}
-          >
-            <AppText variant="micro" style={{ color: palette.textMuted }}>
-              Set `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` to enable the live map.
-            </AppText>
+          <View style={styles.tokenNotice}>
+            <Banner
+              variant="info"
+              message="Set `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` to enable the live map."
+            />
           </View>
         ) : null}
       </View>
@@ -616,12 +608,9 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   tokenNotice: {
+    left: 12,
     position: "absolute",
     right: 12,
     top: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: componentRadii.card,
-    borderWidth: 1,
   },
 });

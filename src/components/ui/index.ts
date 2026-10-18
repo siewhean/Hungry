@@ -4,6 +4,8 @@ export * from "./AppBottomTabItem";
 export * from "./Avatar";
 export * from "./AccessibleImage";
 export * from "./Badge";
+export * from "./Banner";
+export * from "./bannerTones";
 export * from "./BottomSheet";
 export * from "./Button";
 export * from "./Card";

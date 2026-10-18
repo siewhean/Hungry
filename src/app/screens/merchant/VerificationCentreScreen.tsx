@@ -1,19 +1,10 @@
 import React, { useState } from "react";
 import { View, ScrollView, Pressable, ActivityIndicator } from "react-native";
-import {
-  ShieldAlert,
-  ShieldCheck,
-  Clock,
-  FileText,
-  Video,
-  Home,
-  ChevronRight,
-  AlertCircle,
-} from "lucide-react-native";
+import { FileText, Video, Home, ChevronRight } from "lucide-react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { useHungryTheme } from "@/theme";
-import { AppText, Button, EmptyState, Screen } from "@/components/ui";
+import { AppText, Banner, Button, EmptyState, Screen } from "@/components/ui";
 import { confirmGalleryAccess, isGalleryPermissionGranted } from "@/lib/permissions/gallery";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
@@ -40,7 +31,7 @@ function loadImagePickerModule(): ImagePickerModule | null {
 }
 
 export function VerificationCentreScreen({ navigation }: Props) {
-  const { componentRadii, palette, spacing, radii } = useHungryTheme();
+  const { palette, spacing } = useHungryTheme();
   const setAccount = useMerchantStore((state) => state.setAccount);
   const activeOutlet = useMerchantStore(getActiveOutlet);
 
@@ -133,75 +124,36 @@ export function VerificationCentreScreen({ navigation }: Props) {
     switch (status) {
       case "verified":
         return (
-          <View
-            style={[
-              { padding: spacing[6], alignItems: "center", justifyContent: "center" },
-              { backgroundColor: palette.successSoft, borderRadius: componentRadii.card },
-            ]}
-          >
-            <ShieldCheck size={32} color={palette.success} />
-            <AppText variant="h3" style={{ color: palette.success, marginTop: spacing[2] }}>
-              Verified Outlet
-            </AppText>
-            <AppText style={{ color: palette.text, marginTop: spacing[1], textAlign: "center" }}>
-              Your outlet has been fully verified and is visible to customers.
-            </AppText>
-          </View>
+          <Banner
+            variant="success"
+            title="Verified Outlet"
+            message="Your outlet has been fully verified and is visible to customers."
+          />
         );
       case "submitted":
       case "in_review":
         return (
-          <View
-            style={[
-              { padding: spacing[6], alignItems: "center", justifyContent: "center" },
-              { backgroundColor: palette.orangeLight, borderRadius: componentRadii.card },
-            ]}
-          >
-            <Clock size={32} color={palette.orange} />
-            <AppText variant="h3" style={{ color: palette.orange, marginTop: spacing[2] }}>
-              Verification Pending
-            </AppText>
-            <AppText style={{ color: palette.text, marginTop: spacing[1], textAlign: "center" }}>
-              We are currently reviewing your documents. This usually takes 1-3 business days.
-            </AppText>
-          </View>
+          <Banner
+            variant="warning"
+            title="Verification Pending"
+            message="We are currently reviewing your documents. This usually takes 1-3 business days."
+          />
         );
       case "rejected":
         return (
-          <View
-            style={[
-              { padding: spacing[6], alignItems: "center", justifyContent: "center" },
-              { backgroundColor: palette.errorSoft, borderRadius: componentRadii.card },
-            ]}
-          >
-            <AlertCircle size={32} color={palette.error} />
-            <AppText variant="h3" style={{ color: palette.error, marginTop: spacing[2] }}>
-              Verification Rejected
-            </AppText>
-            <AppText style={{ color: palette.text, marginTop: spacing[1], textAlign: "center" }}>
-              We could not verify your business with the provided information. Please try again.
-            </AppText>
-          </View>
+          <Banner
+            variant="error"
+            title="Verification Rejected"
+            message="We could not verify your business with the provided information. Please try again."
+          />
         );
       default:
         return (
-          <View
-            style={[
-              { padding: spacing[6], alignItems: "center", justifyContent: "center" },
-              { backgroundColor: palette.bgSoft, borderRadius: componentRadii.card },
-            ]}
-          >
-            <ShieldAlert size={32} color={palette.orange} />
-            <AppText variant="h3" style={{ color: palette.text, marginTop: spacing[2] }}>
-              Verify Your Outlet
-            </AppText>
-            <AppText
-              style={{ color: palette.textSecondary, marginTop: spacing[1], textAlign: "center" }}
-            >
-              Verified stalls rank higher and get a trusted badge. Select a verification method
-              below.
-            </AppText>
-          </View>
+          <Banner
+            variant="info"
+            title="Verify Your Outlet"
+            message="Verified stalls rank higher and get a trusted badge. Select a verification method below."
+          />
         );
     }
   };
@@ -248,11 +200,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
     <Screen title="Verification Centre">
       <View style={{ gap: spacing[6], width: "100%" }}>
         {renderStatusHeader()}
-        {uploadError ? (
-          <AppText variant="bodySmall" style={{ color: palette.error }}>
-            {uploadError}
-          </AppText>
-        ) : null}
+        {uploadError ? <Banner variant="error" message={uploadError} /> : null}
         {renderVerificationMethods()}
       </View>
     </Screen>

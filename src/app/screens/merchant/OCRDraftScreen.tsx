@@ -7,6 +7,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   AccessibleImage,
   AppText,
+  Banner,
   Button,
   ChipGroup,
   EmptyState,
@@ -125,21 +126,11 @@ export function OCRDraftScreen() {
   return (
     <Screen title="Menu Photo Scan">
       <View style={{ gap: spacing[4], width: "100%" }}>
-        <View
-          style={{
-            backgroundColor: palette.infoSoft,
-            padding: spacing[4],
-            borderRadius: componentRadii.card,
-          }}
-        >
-          <AppText variant="bodyBold" style={{ color: palette.info }}>
-            Review Extracted Dishes
-          </AppText>
-          <AppText variant="bodySmall" style={{ color: palette.info, marginTop: 4 }}>
-            We scanned your uploaded menu photo and found these dishes. Review them before adding to
-            your menu.
-          </AppText>
-        </View>
+        <Banner
+          variant="info"
+          title="Review Extracted Dishes"
+          message="We scanned your uploaded menu photo and found these dishes. Review them before adding to your menu."
+        />
 
         <View style={{ flexDirection: "row", gap: spacing[2] }}>
           <Button

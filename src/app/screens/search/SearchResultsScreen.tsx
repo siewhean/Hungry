@@ -23,7 +23,7 @@ import {
   AppHeader,
   AppText,
   Avatar,
-  Button,
+  Banner,
   EmptyState,
   FilterChipRail,
   Screen,
@@ -637,17 +637,11 @@ function RawCatalogBrowseGrid({
                 <ActivityIndicator color={palette.orange} />
               </View>
             ) : loadMoreError && nextCursor ? (
-              <View
-                accessibilityLiveRegion="polite"
-                style={{ alignItems: "center", gap: spacing[2], paddingVertical: spacing[4] }}
-              >
-                <AppText tone="secondary" variant="bodySmall">
-                  {"Couldn't load more results."}
-                </AppText>
-                <Button
-                  label="Retry"
-                  variant="secondary"
-                  onPress={() => void loadPage(nextCursor, true)}
+              <View style={{ paddingVertical: spacing[4] }}>
+                <Banner
+                  variant="error"
+                  message={"Couldn't load more results."}
+                  action={{ label: "Retry", onPress: () => void loadPage(nextCursor, true) }}
                 />
               </View>
             ) : null

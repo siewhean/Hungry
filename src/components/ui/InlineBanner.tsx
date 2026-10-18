@@ -1,36 +1,14 @@
-import { View } from "react-native";
-
-import { useHungryTheme } from "@/theme";
-import { AppText } from "./AppText";
+import { Banner } from "./Banner";
 
 interface InlineBannerProps {
   message: string;
   tone?: "info" | "warning" | "error" | "success";
 }
 
+/**
+ * @deprecated Use `<Banner variant=... />`. Kept as a thin alias so auth screens
+ * render the shared Banner until they migrate.
+ */
 export function InlineBanner({ message, tone = "info" }: InlineBannerProps) {
-  const { componentCornerCurve, componentRadii, palette, spacing } = useHungryTheme();
-
-  const tones = {
-    info: { bg: palette.infoSoft, fg: palette.info },
-    warning: { bg: palette.warningSoft, fg: palette.warning },
-    error: { bg: palette.errorSoft, fg: palette.error },
-    success: { bg: palette.successSoft, fg: palette.success },
-  };
-
-  return (
-    <View
-      style={{
-        backgroundColor: tones[tone].bg,
-        borderRadius: componentRadii.card,
-        borderCurve: componentCornerCurve.borderCurve,
-        paddingHorizontal: spacing[3],
-        paddingVertical: spacing[3],
-      }}
-    >
-      <AppText tone="secondary" style={{ color: tones[tone].fg }}>
-        {message}
-      </AppText>
-    </View>
-  );
+  return <Banner message={message} variant={tone} />;
 }

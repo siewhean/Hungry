@@ -187,8 +187,9 @@ Source: `src/theme/tokens.ts → motion`
 | `Chip` | `label`, `selected`, `onPress` | Filter pills, taste tags |
 | `Screen` | `children`, `edges?` | Screen wrapper — handles safe area |
 | `EmptyState` | `icon`, `title`, `subtitle`, `action?` | Empty list states |
-| `InlineBanner` | `type` (`info`/`warning`/`error`), `message` | Inline contextual alerts |
-| `FloatingToast` | Global singleton — triggered via `useUIStore` | Success/error feedback |
+| `Banner` | `variant` (`info`/`success`/`warning`/`error`/`offline`), `message`, `title?`, `action?`, `onDismiss?`, `placement?` (`inline`/`strip`), `topInset?` | The only banner/notice primitive: inline notices and the global offline strip. Tones from `getBannerToneStyles` (AA-tested) |
+| `InlineBanner` | `tone`, `message` | Deprecated alias of `Banner` (auth screens only) |
+| `FloatingToast` | Global singleton — triggered via `useUIStore` | Success/error feedback; shares Banner tone tokens + icons |
 
 ### Dish Components (`src/components/dish/`)
 

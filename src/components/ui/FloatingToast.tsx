@@ -2,11 +2,12 @@ import { useEffect } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
-import { CircleCheck, CircleAlert, TriangleAlert, Info } from "lucide-react-native";
 
 import { useHungryTheme } from "@/theme";
 import { useUIStore } from "@/store/useUIStore";
 import { AppText } from "./AppText";
+import { BANNER_ICON_SIZE, BANNER_ICONS } from "./Banner";
+import { getBannerToneStyles } from "./bannerTones";
 
 export function FloatingToast() {
   const toast = useUIStore((state) => state.toast);
@@ -35,36 +36,11 @@ export function FloatingToast() {
 
   if (!toast) return null;
 
+  // Toasts stay floating feedback but share the Banner tone tokens and icon set.
   const toneConfig = {
-    success: {
-      bg: palette.surface,
-      border: palette.orange,
-      icon: CircleCheck,
-      color: palette.success,
-    },
-    warning: {
-      bg: palette.surface,
-      border: palette.orange,
-      icon: TriangleAlert,
-      color: palette.warning,
-    },
-    error: {
-      bg: palette.surface,
-      border: palette.orange,
-      icon: CircleAlert,
-      color: palette.error,
-    },
-    info: {
-      bg: palette.surface,
-      border: palette.orange,
-      icon: Info,
-      color: palette.info,
-    },
-  }[tone] || {
     bg: palette.surface,
     border: palette.orange,
-    icon: Info,
-    color: palette.text,
+    color: getBannerToneStyles(palette, tone).accent,
   };
   const toastBackgroundColor = toast.backgroundColor ?? toneConfig.bg;
   const toastBorderColor = toast.borderColor ?? toneConfig.border;
@@ -72,7 +48,7 @@ export function FloatingToast() {
   const toastIconColor = toast.iconColor ?? toneConfig.color;
   const toastBorderWidth = toast.borderWidth ?? 1;
 
-  const Icon = toneConfig.icon;
+  const Icon = BANNER_ICONS[tone];
 
   return (
     <View pointerEvents="box-none" style={[styles.wrapper, { zIndex: zIndex.toast }]}>
@@ -101,7 +77,7 @@ export function FloatingToast() {
             },
           ]}
         >
-          <Icon size={20} color={toastIconColor} />
+          <Icon size={BANNER_ICON_SIZE} color={toastIconColor} />
           <AppText style={{ color: toastTextColor, fontWeight: "700", flex: 1 }}>
             {toast.message}
           </AppText>

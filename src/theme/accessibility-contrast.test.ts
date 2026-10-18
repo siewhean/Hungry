@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { colors, contrastRatios } from "@/theme/tokens";
 import { getBadgeToneStyles, type BadgeTone } from "@/components/ui/badgeTones";
+import { BANNER_VARIANTS, getBannerToneStyles } from "@/components/ui/bannerTones";
 
 type HexColor = `#${string}`;
 type RgbaColor = `rgba(${number}, ${number}, ${number}, ${number})`;
@@ -143,4 +144,39 @@ test("bottom tab active label and create icon meet contrast targets", () => {
   // Dark-mode create button uses the dark on-orange ink instead of white.
   assert.ok(contrast(colors.dark.textOnOrange as HexColor, colors.dark.orange as HexColor) >= 4.5);
   assert.ok(contrast(colors.dark.white as HexColor, colors.dark.orange as HexColor) < 3);
+});
+
+test("every Banner variant meets AA in light and dark on bg and surface", () => {
+  for (const mode of ["light", "dark"] as const) {
+    const palette = colors[mode];
+    for (const variant of BANNER_VARIANTS) {
+      const tone = getBannerToneStyles(palette, variant);
+      for (const backdrop of [palette.bg, palette.surface] as HexColor[]) {
+        const fill = tone.bg.startsWith("rgba(")
+          ? compositeRgbaOverBackground(tone.bg as RgbaColor, backdrop)
+          : (tone.bg as HexColor);
+        for (const [role, foreground] of [
+          ["accent", tone.accent],
+          ["message", tone.message],
+        ] as const) {
+          const ratio = contrast(foreground as HexColor, fill);
+          assert.ok(
+            ratio >= 4.5,
+            `${mode} ${variant} banner ${role} on ${backdrop} is ${ratio.toFixed(2)}:1`,
+          );
+        }
+      }
+    }
+  }
+});
+
+test("toast tone accents (shared Banner tokens) meet AA on the toast surface", () => {
+  for (const mode of ["light", "dark"] as const) {
+    const palette = colors[mode];
+    for (const variant of ["info", "success", "warning", "error"] as const) {
+      const { accent } = getBannerToneStyles(palette, variant);
+      const ratio = contrast(accent as HexColor, palette.surface as HexColor);
+      assert.ok(ratio >= 4.5, `${mode} ${variant} toast accent is ${ratio.toFixed(2)}:1`);
+    }
+  }
 });

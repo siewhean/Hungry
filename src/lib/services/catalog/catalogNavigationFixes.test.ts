@@ -296,7 +296,10 @@ test("browse grid keeps rows on a failed continuation and offers retry", () => {
   assert.match(grid, /appendUniqueById\(current, page\.items\)/);
   assert.match(grid, /if \(append\) setLoadMoreError\(message\)/);
   assert.match(grid, /Couldn.t load more results\./);
-  assert.match(grid, /onPress=\{\(\) => void loadPage\(nextCursor, true\)\}/);
+  assert.match(
+    grid,
+    /<Banner[\s\S]*?action=\{\{ label: "Retry", onPress: \(\) => void loadPage\(nextCursor, true\) \}\}/,
+  );
 });
 
 test("favourites rows use sibling Open and Remove controls", () => {

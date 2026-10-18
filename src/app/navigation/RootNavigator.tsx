@@ -11,13 +11,13 @@ import {
   type NativeStackScreenProps,
 } from "@react-navigation/native-stack";
 import NetInfo from "@react-native-community/netinfo";
-import { ArrowLeft, WifiOff } from "lucide-react-native";
+import { ArrowLeft } from "lucide-react-native";
 import { SafeAreaInsetsContext, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SplashScreen } from "@/app/screens/SplashScreen";
 import { AuthStack } from "@/app/screens/auth/AuthStack";
 import { OnboardingStack } from "@/app/screens/onboarding/OnboardingStack";
-import { AppText, FloatingToast } from "@/components/ui";
+import { Banner, FloatingToast } from "@/components/ui";
 import { isNetworkOffline } from "@/lib/network/connectivity";
 import { UserProfileScreen } from "@/app/screens/profile/UserProfileScreen";
 
@@ -406,7 +406,6 @@ function GlobalScrollBackButton() {
  */
 function OfflineBanner() {
   const insets = useSafeAreaInsets();
-  const { palette, spacing } = useHungryTheme();
   const isOffline = useUIStore((state) => state.isOffline);
   const setOffline = useUIStore((state) => state.setOffline);
 
@@ -420,37 +419,18 @@ function OfflineBanner() {
   };
 
   return (
-    <View
-      accessibilityLiveRegion="polite"
-      accessibilityRole="alert"
+    <Banner
+      variant="offline"
+      placement="strip"
+      topInset={insets.top}
       testID="offline-banner"
-      style={[
-        styles.offlineBanner,
-        {
-          backgroundColor: palette.navy,
-          gap: spacing[2],
-          paddingLeft: spacing[4],
-          paddingRight: spacing[1],
-          paddingTop: insets.top,
-        },
-      ]}
-    >
-      <WifiOff color={palette.textOnDark} size={16} />
-      <AppText variant="bodySmall" style={{ color: palette.textOnDark, flex: 1 }}>
-        {"You're offline. Saved content stays visible."}
-      </AppText>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Retry connection"
-        hitSlop={4}
-        onPress={() => void retryConnection()}
-        style={{ justifyContent: "center", minHeight: 44, paddingHorizontal: spacing[3] }}
-      >
-        <AppText variant="bodySmallBold" style={{ color: palette.textOnDark }}>
-          Retry
-        </AppText>
-      </Pressable>
-    </View>
+      message={"You're offline. Saved content stays visible."}
+      action={{
+        label: "Retry",
+        accessibilityLabel: "Retry connection",
+        onPress: () => void retryConnection(),
+      }}
+    />
   );
 }
 
@@ -909,10 +889,6 @@ const styles = StyleSheet.create({
   },
   offlineFrame: {
     flex: 1,
-  },
-  offlineBanner: {
-    alignItems: "center",
-    flexDirection: "row",
   },
   globalBackButton: {
     alignItems: "center",

@@ -4,7 +4,15 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ArrowLeft, ExternalLink, Heart, MapPin } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AccessibleImage, AppText, Button, EmptyState, Screen, Skeleton } from "@/components/ui";
+import {
+  AccessibleImage,
+  AppText,
+  Banner,
+  Button,
+  EmptyState,
+  Screen,
+  Skeleton,
+} from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { getCatalogRawService, getServiceProvider } from "@/lib/services/serviceProvider";
 import {
@@ -406,9 +414,7 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
                 </Pressable>
               ))}
               {menuError ? (
-                <AppText accessibilityLiveRegion="polite" tone="secondary" variant="bodySmall">
-                  {"Couldn't load more menu items."}
-                </AppText>
+                <Banner variant="error" message={"Couldn't load more menu items."} />
               ) : null}
               {menu.nextCursor ? (
                 <Button
