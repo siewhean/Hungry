@@ -91,6 +91,15 @@ export function ReviewScreen({ navigation, route }: Props) {
       `${venue.name} ${venue.unitNumber}`.toLowerCase().includes(query.trim().toLowerCase()),
     );
 
+  // Opened for a stall without a dish: ask which dish instead of guessing.
+  useEffect(() => {
+    if (routeVenueId && !routeDishId && !draft.selectedDishId) {
+      setPickerVenueId(routeVenueId);
+      setIsSearching(true);
+    }
+    // Only when the route changes; picking a dish clears the picker itself.
+  }, [routeVenueId, routeDishId]);
+
   // Cold legacy cache: the sync repository may not have the routed dish yet.
   useEffect(() => {
     if (!selectedDishId || repository.getDishById(selectedDishId)) return;
@@ -131,13 +140,6 @@ export function ReviewScreen({ navigation, route }: Props) {
   const closePicker = () => {
     setPickerVenueId(null);
     setIsSearching(false);
-  };
-
-  const handleVideoUnavailable = () => {
-    useUIStore.getState().showToast({
-      message: "Video reviews aren't available yet. Add photos instead.",
-      tone: "warning",
-    });
   };
 
   const handleSubmit = async () => {
@@ -218,7 +220,7 @@ export function ReviewScreen({ navigation, route }: Props) {
             filterId={draft.filterId}
             onAddPhoto={addPhoto}
             onRemovePhoto={removePhoto}
-            onSetVideo={reviewVideoEnabled ? setVideoUri : handleVideoUnavailable}
+            onSetVideo={reviewVideoEnabled ? setVideoUri : undefined}
             onSetFilter={setFilterId}
           />
 

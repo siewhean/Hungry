@@ -595,8 +595,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
       return;
     }
 
-    const targetDishId = nextUnreviewedDish?.id ?? dishes[0]?.id;
-    if (!targetDishId) {
+    // Without a clear next dish, let the reviewer pick one instead of guessing.
+    const targetDishId = nextUnreviewedDish?.id;
+    if (!dishes.length) {
       showToast({
         message: "No dish available for review yet. Add a dish first.",
         tone: "warning",
@@ -612,7 +613,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
     });
     navigation.navigate("ReviewStack", {
       screen: "ReviewMain",
-      params: { venueId: venue.id, dishId: targetDishId },
+      params: targetDishId ? { venueId: venue.id, dishId: targetDishId } : { venueId: venue.id },
     });
   };
 
