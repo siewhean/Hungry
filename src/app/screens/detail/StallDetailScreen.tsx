@@ -1,4 +1,6 @@
 import {
+  Alert,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -9,6 +11,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
+import * as ImagePicker from "expo-image-picker";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -332,6 +335,70 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const incrementShare = useSocialStore((state) => state.incrementShare);
   // Review replies are local-only (no backend), so keep them out of production builds.
   const reviewRepliesEnabled = FEATURE_FLAGS.prototypeRoutesEnabled;
+  const [isSubmittingMenuPhoto, setIsSubmittingMenuPhoto] = useState(false);
+  // Menu photos upload from a device file (supply.submitMenuPhoto), so not on web.
+  const canSubmitMenuPhoto = isAuthenticated && Platform.OS !== "web";
+
+  const submitMenuPhotoFrom = useCallback(
+    async (source: "camera" | "library") => {
+      if (!venue) return;
+      const permission =
+        source === "camera"
+          ? await ImagePicker.requestCameraPermissionsAsync()
+          : await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        showToast({
+          message:
+            source === "camera"
+              ? "Camera permission is needed to snap a menu photo."
+              : "Photo library permission is needed to pick a menu photo.",
+          tone: "warning",
+        });
+        return;
+      }
+      const pickerOptions: ImagePicker.ImagePickerOptions = {
+        mediaTypes: ["images"],
+        quality: 0.8,
+        allowsEditing: false,
+        exif: false,
+      };
+      const result =
+        source === "camera"
+          ? await ImagePicker.launchCameraAsync(pickerOptions)
+          : await ImagePicker.launchImageLibraryAsync(pickerOptions);
+      if (result.canceled || result.assets.length === 0) return;
+      const asset = result.assets[0];
+      setIsSubmittingMenuPhoto(true);
+      try {
+        await getHungryService().supply.submitMenuPhoto({
+          venueId: venue.id,
+          photoUri: asset.uri,
+          photoMimeType: asset.mimeType ?? undefined,
+          photoFileSizeBytes: asset.fileSize ?? undefined,
+        });
+        showToast({ message: "Thanks, we'll add the menu soon.", tone: "success" });
+      } catch (error) {
+        showToast({
+          message:
+            error instanceof Error && error.message
+              ? error.message
+              : "Couldn't upload the menu photo. Please try again.",
+          tone: "error",
+        });
+      } finally {
+        setIsSubmittingMenuPhoto(false);
+      }
+    },
+    [showToast, venue],
+  );
+
+  const promptMenuPhoto = useCallback(() => {
+    Alert.alert("Add a menu photo", "Snap or pick a photo of this stall's menu.", [
+      { text: "Take photo", onPress: () => void submitMenuPhotoFrom("camera") },
+      { text: "Choose from library", onPress: () => void submitMenuPhotoFrom("library") },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  }, [submitMenuPhotoFrom]);
   const [activeReplyReviewId, setActiveReplyReviewId] = useState<string | null>(null);
   const [replyDraftByReviewId, setReplyDraftByReviewId] = useState<Record<string, string>>({});
   const [localRepliesByReviewId, setLocalRepliesByReviewId] = useState<
@@ -1177,16 +1244,13 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     >
                       No menu available for this stall yet.
                     </AppText>
-                    {isAuthenticated && (
+                    {/* Uploads a menu photo for the team to add the menu from. */}
+                    {canSubmitMenuPhoto && (
                       <Button
-                        label="Add a menu photo"
+                        label={isSubmittingMenuPhoto ? "Uploading..." : "Add a menu photo"}
                         variant="secondary"
-                        onPress={() =>
-                          navigation.navigate("ReviewStack", {
-                            screen: "ReviewMain",
-                            params: { venueId: venue.id },
-                          })
-                        }
+                        disabled={isSubmittingMenuPhoto}
+                        onPress={promptMenuPhoto}
                       />
                     )}
                   </Card>

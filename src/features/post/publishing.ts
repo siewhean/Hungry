@@ -1,5 +1,5 @@
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
-import { createClientReviewId } from "@/features/review/reviewDraft";
+import { createClientReviewId, resolveWouldRecommend } from "@/features/review/reviewDraft";
 import { biteToStallPost } from "@/lib/services/postTransforms";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import type { DataRepository, HungryService } from "@/lib/services/types";
@@ -112,6 +112,8 @@ export async function publishComposerPost(options: PublishComposerPostOptions) {
       text: state.reviewCaption.trim() || state.postCaption.trim(),
       tags: [...state.foodTags, ...state.tasteTags],
       photos: state.media.filter((item) => item.type === "image").map((item) => item.uri),
+      // Same rule as the review editor when no explicit Yes/No was given.
+      wouldRecommend: resolveWouldRecommend(undefined, state.rating),
       clientReviewId,
     });
   }

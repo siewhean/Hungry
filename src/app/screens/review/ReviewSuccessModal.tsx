@@ -4,6 +4,7 @@ import { CheckCircle2, Sparkles, X } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 
 import { AppText, Badge, Button, Card } from "@/components/ui";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useUIStore } from "@/store/useUIStore";
 import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
 import { useHungryTheme } from "@/theme";
@@ -89,7 +90,10 @@ export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
             {shouldShowComposerTags && (
               <Badge label={`${payload?.tagCount ?? 0} taste tags`} tone="amber" />
             )}
-            <Badge label={`+${payload?.pointsEarned ?? 0} points`} tone="success" />
+            {/* Points exist only where gamification is on; never show a made-up score. */}
+            {FEATURE_FLAGS.gamificationEnabled && payload?.pointsEarned ? (
+              <Badge label={`+${payload.pointsEarned} points`} tone="success" />
+            ) : null}
           </View>
 
           <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>

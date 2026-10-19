@@ -194,7 +194,8 @@ test("production Post route publishes through the canonical composer service pat
   assert.match(postScreen, /const \[selectedDishId, setSelectedDishId\]/);
   assert.match(postScreen, /const \[dishSearchQuery, setDishSearchQuery\]/);
   assert.match(postScreen, /repository\.getDishById\(selectedDishId\) \?\? null/);
-  assert.match(postScreen, /repository\.listDishesByVenue\(selectedVenueId\)\[0\] \?\? null/);
+  // A venue-only entry shows that stall's dishes; it never picks the first one.
+  assert.doesNotMatch(postScreen, /listDishesByVenue\(selectedVenueId\)\[0\]/);
   assert.match(postScreen, /label="Find dish"/);
   assert.match(postScreen, /placeholder="Search dishes, stalls, or tags"/);
   assert.match(postScreen, /setSelectedDishId\(item\.id\)/);
@@ -417,8 +418,15 @@ test("social store rolls back failed production reactions instead of persisting 
   const source = read("src/store/useSocialStore.ts");
 
   assert.match(source, /interactionStatesMatch/);
-  assert.match(source, /social\.reactToBite\(postId, "craving"\)/);
-  assert.match(source, /social\.reactToBite\(postId, "save"\)/);
+  // Idempotent: the store sends the state it wants, never a blind toggle.
+  assert.match(source, /social\.reactToBite\(postId, "craving", isLiked\)/);
+  assert.match(source, /social\.reactToBite\(postId, "save", isSaved\)/);
+  // Writes for one post run in tap order.
+  assert.match(source, /enqueueReactionWrite\(postId, "craving"/);
+  // The liker never gets a "liked your post" update in their own inbox.
+  assert.doesNotMatch(source, /addActivityUpdate/);
+  // Feed reads carry the viewer's like/save, which overrides stale local state.
+  assert.match(source, /item\.viewerHasLiked/);
   assert.doesNotMatch(source, /Post save ignored because this post is not backed by Supabase\./);
   assert.match(source, /rolled back optimistic state/);
   assert.match(source, /clearAccountScopedState/);

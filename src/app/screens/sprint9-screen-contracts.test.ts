@@ -117,7 +117,8 @@ test("Sprint 9 screen contract: Review screen submits via service and triggers s
 
   assert.match(source, /getHungryService\(\)\.reviews\.submitReview\(/);
   assert.match(source, /showReviewSuccess\(/);
-  assert.match(source, /showToast\(\{ message: "Review posted!"/);
+  // One confirmation: the success modal, not a toast on top of it.
+  assert.doesNotMatch(source, /message: "Review posted!"/);
   assert.match(source, /<FeedErrorBoundary/);
 });
 

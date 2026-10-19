@@ -9,7 +9,6 @@ const PROTECTED_DEEP_LINK_ROUTES = new Set([
   "MerchantTabs",
   "Post",
   "ActivityInbox",
-  "ActivityPostDetail",
   "ChatDetail",
   "DirectMessages",
   "EditProfile",

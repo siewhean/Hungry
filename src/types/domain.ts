@@ -387,7 +387,8 @@ export interface ReviewDraft {
   selectedDishId?: string;
   rating: number;
   selectedTags: string[];
-  recommend: boolean;
+  /** null until the reviewer answers Yes or No. */
+  recommend: boolean | null;
   text: string;
   photos: string[];
   videoUri?: string;
@@ -446,6 +447,9 @@ export interface StallPost {
   likeCount?: number;
   commentCount?: number;
   savedCount?: number;
+  /** The viewer's own like/save from the server read; undefined when the read did not say. */
+  viewerHasLiked?: boolean;
+  viewerHasSaved?: boolean;
   /** true = stall/merchant account (orange ring + fork badge), false = user (grey ring) */
   isStallAccount?: boolean;
   /** Inline dish link references in caption — tap navigates to dish detail */

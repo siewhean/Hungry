@@ -139,7 +139,16 @@ test("social store contract: real post shares sync to Supabase and unsupported i
   );
   assert.match(reviewShareSheet, /onShared\(activeReview\.postId, "copy_link"\)/);
   assert.match(reviewShareSheet, /onShared\(activeReview\.postId, "system_share"\)/);
-  assert.match(reviewFeed, /postId: linkedPost\?\.id \?\? ""/);
+  // Cancelled system shares are not counted; messaging apps keep their channel.
+  assert.match(reviewShareSheet, /result\.action !== Share\.sharedAction/);
+  assert.match(reviewShareSheet, /onShared\(activeReview\.postId, channel\)/);
+  const homeFeed = read("src/app/screens/home/HomeFeedScreen.tsx");
+  assert.match(homeFeed, /webShareUrl\("post", activeShareItem\.id\)/);
+  assert.match(homeFeed, /if \(result\.action === Share\.sharedAction\) \{/);
+  assert.match(homeFeed, /message: "Link copied"/);
+  // Reviews never borrow a linked post id for share counting.
+  assert.match(reviewFeed, /postId: "",/);
+  assert.doesNotMatch(reviewFeed, /linkedPost/);
   assert.match(reviewFeed, /shareCount: 0/);
   assert.doesNotMatch(reviewFeed, /postId: linkedPost\?\.id \?\? item\.review\.id/);
   assert.doesNotMatch(reviewFeed, /stallPosts\[0\]/);

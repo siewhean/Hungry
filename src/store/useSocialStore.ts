@@ -2,7 +2,6 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { hungryPersistStorage } from "./persistStorage";
 import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
-import { useActivityStore } from "./useActivityStore";
 import { useProfileStore } from "@/store/useProfileStore";
 
 export interface InteractionState {
@@ -48,7 +47,37 @@ async function triggerLightImpact() {
 }
 
 const UUID_V4_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-type ShareChannel = "in_app" | "system_share" | "copy_link";
+export type ShareChannel = "in_app" | "system_share" | "copy_link" | "whatsapp" | "telegram";
+
+// Like/save writes run one at a time per post and reaction, so two fast taps
+// reach the server in tap order. Posts with a write in flight keep their local
+// state when a feed read lands.
+const reactionQueues = new Map<string, Promise<void>>();
+const pendingReactionCounts = new Map<string, number>();
+// When each post's last like/save write settled. A feed read that started
+// before then may carry pre-write viewer state, so it is ignored for that post.
+const lastReactionSettledAt = new Map<string, number>();
+
+function enqueueReactionWrite(
+  postId: string,
+  reaction: "craving" | "save",
+  write: () => Promise<void>,
+) {
+  const key = `${postId}:${reaction}`;
+  pendingReactionCounts.set(postId, (pendingReactionCounts.get(postId) ?? 0) + 1);
+  const run = (reactionQueues.get(key) ?? Promise.resolve()).then(write, write);
+  const settled = run
+    .catch(() => undefined)
+    .finally(() => {
+      const remaining = (pendingReactionCounts.get(postId) ?? 1) - 1;
+      if (remaining > 0) pendingReactionCounts.set(postId, remaining);
+      else pendingReactionCounts.delete(postId);
+      lastReactionSettledAt.set(postId, Date.now());
+      if (reactionQueues.get(key) === settled) reactionQueues.delete(key);
+    });
+  reactionQueues.set(key, settled);
+  return run;
+}
 
 function isUuidPostId(postId: string) {
   return UUID_V4_PATTERN.test(postId);
@@ -99,7 +128,12 @@ interface SocialState {
   addReply: (postId: string, reply: SocialReply) => void;
   loadCommentsForPost: (postId: string) => Promise<void>;
   setInteraction: (postId: string, state: InteractionState) => void;
-  initializeInteractions: (items: any[]) => void;
+  /**
+   * Seed or refresh interaction state from fetched posts. readStartedAt is when
+   * the fetch began: server viewer state is skipped for posts whose like/save
+   * write settled after that (the read may predate the write).
+   */
+  initializeInteractions: (items: any[], readStartedAt?: number) => void;
   clearAccountScopedState: () => void;
 }
 
@@ -141,7 +175,7 @@ export const useSocialStore = create<SocialState>()(
           repliesByCommentId: {},
         }),
 
-      initializeInteractions: (items) => {
+      initializeInteractions: (items, readStartedAt) => {
         const { commentsByPostId, repliesByCommentId, interactions } = get();
         const next = { ...interactions };
         items.forEach((item) => {
@@ -160,6 +194,35 @@ export const useSocialStore = create<SocialState>()(
             ).length;
           const seededCommentCount = item.commentCount ?? 0;
           const seededComments = seededCommentCount + storedCommentCount + storedReplyCount;
+          const hasServerViewerState =
+            typeof item.viewerHasLiked === "boolean" || typeof item.viewerHasSaved === "boolean";
+          const settledAt = lastReactionSettledAt.get(item.id);
+          const readPredatesWrite =
+            typeof readStartedAt === "number" &&
+            typeof settledAt === "number" &&
+            settledAt >= readStartedAt;
+          if (hasServerViewerState && !pendingReactionCounts.has(item.id) && !readPredatesWrite) {
+            // The server knows the viewer's like/save and the latest counts:
+            // trust it on every fetch instead of a stale local default.
+            const previous = next[item.id];
+            const saved =
+              typeof item.viewerHasSaved === "boolean"
+                ? item.viewerHasSaved
+                : (previous?.saved ?? false);
+            next[item.id] = {
+              liked:
+                typeof item.viewerHasLiked === "boolean"
+                  ? item.viewerHasLiked
+                  : (previous?.liked ?? false),
+              saved,
+              savedAt: saved ? (previous?.savedAt ?? item.interaction?.savedAt) : undefined,
+              likeCount: item.likeCount ?? previous?.likeCount ?? 0,
+              saveCount: item.savedCount ?? previous?.saveCount ?? 0,
+              shareCount: previous?.shareCount ?? 0,
+              commentCount: Math.max(previous?.commentCount ?? 0, seededComments),
+            };
+            return;
+          }
           if (!next[item.id]) {
             const seededLikes = item.likeCount ?? 0;
             next[item.id] = {
@@ -209,20 +272,8 @@ export const useSocialStore = create<SocialState>()(
           likeCount: isLiked ? current.likeCount + 1 : Math.max(0, current.likeCount - 1),
         };
 
-        if (isLiked) {
-          requestAnimationFrame(() => {
-            const { addActivityUpdate } = useActivityStore.getState();
-            const actorName = useProfileStore.getState().profile.displayName || "You";
-            addActivityUpdate({
-              kind: "like",
-              postId,
-              actorName,
-              text: "liked your post",
-              target: postId,
-              time: "now",
-            });
-          });
-        }
+        // The post author's "liked your post" notification is created on the
+        // server (post_likes trigger); never add one to the liker's own inbox.
 
         set((prev) => ({
           interactions: {
@@ -234,7 +285,9 @@ export const useSocialStore = create<SocialState>()(
         if (isUuidPostId(postId)) {
           void (async () => {
             try {
-              await getHungryService().social.reactToBite(postId, "craving");
+              await enqueueReactionWrite(postId, "craving", () =>
+                getHungryService().social.reactToBite(postId, "craving", isLiked),
+              );
             } catch (e) {
               console.error("Failed to sync liked post reaction; rolled back optimistic state.", e);
               set((prev) => {
@@ -283,7 +336,9 @@ export const useSocialStore = create<SocialState>()(
         if (isUuidPostId(postId)) {
           void (async () => {
             try {
-              await getHungryService().social.reactToBite(postId, "save");
+              await enqueueReactionWrite(postId, "save", () =>
+                getHungryService().social.reactToBite(postId, "save", isSaved),
+              );
             } catch (e) {
               console.error("Failed to sync saved post reaction; rolled back optimistic state.", e);
               set((prev) => {
@@ -576,7 +631,6 @@ export const useSocialStore = create<SocialState>()(
 
       addComment: (postId, comment) => {
         const { interactions } = get();
-        const { addActivityUpdate } = useActivityStore.getState();
         const current = interactions[postId] ?? {
           liked: false,
           saved: false,
@@ -599,14 +653,6 @@ export const useSocialStore = create<SocialState>()(
             },
           },
         }));
-        addActivityUpdate({
-          kind: "comment",
-          postId,
-          actorName: comment.authorName,
-          text: "commented on your post",
-          target: postId,
-          time: "now",
-        });
         if (getServiceProvider().mode !== "mock") {
           void getHungryService()
             .social.createComment(postId, comment.text)
@@ -640,7 +686,6 @@ export const useSocialStore = create<SocialState>()(
 
       addReply: (postId, reply) => {
         const { interactions } = get();
-        const { addActivityUpdate } = useActivityStore.getState();
         const current = interactions[postId] ?? {
           liked: false,
           saved: false,
@@ -666,14 +711,6 @@ export const useSocialStore = create<SocialState>()(
             },
           },
         }));
-        addActivityUpdate({
-          kind: "comment",
-          postId,
-          actorName: reply.authorName,
-          text: "replied to your comment",
-          target: postId,
-          time: "now",
-        });
         if (getServiceProvider().mode !== "mock") {
           void getHungryService()
             .social.createComment(postId, reply.text, reply.parentCommentId)

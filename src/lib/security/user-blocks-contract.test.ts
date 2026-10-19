@@ -110,7 +110,10 @@ test("comment sheet and activity post react to blocks; sign-out clears local fil
   );
   assert.match(sheet, /isContentHiddenForSession\(\{ id: reply\.id, authorId: reply\.userId \}\)/);
   assert.equal(sheet.match(/onBlocked: onAuthorBlocked/g)?.length, 2);
-  assert.match(activityPost, /onHidden: onSafetyHidden,\s*onBlocked: onSafetyHidden/);
+  assert.match(
+    activityPost,
+    /onHidden: \(\) => \{\s*onSafetyHidden\(\);[\s\S]*?onBlocked: onSafetyHidden/,
+  );
   assert.match(activityPost, /\[publishedPosts, repository, safetyFilterVersion\]/);
 
   assert.match(helper, /export function clearCommunitySafetySessionState\(\)/);
