@@ -1,44 +1,33 @@
-import { useState } from "react";
 import { Pressable, StyleSheet, View, ScrollView } from "react-native";
-import { Camera, Video, Edit2, X } from "lucide-react-native";
+import { Camera, Video, X } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 
 import { useHungryTheme } from "@/theme";
 import { componentRadii } from "@/theme/tokens";
 import { useUIStore } from "@/store/useUIStore";
 import { AccessibleImage, AppText, Card } from "../ui";
-import { MediaEditor } from "./MediaEditor";
 import { confirmGalleryAccess, isGalleryPermissionGranted } from "@/lib/permissions/gallery";
 
 interface MediaPickerProps {
   photos: string[];
   videoUri?: string;
-  filterId?: string;
   maxPhotos?: number;
   onAddPhoto: (uri: string) => void;
   onRemovePhoto: (uri: string) => void;
   /** Omit to hide the reel slot. */
   onSetVideo?: (uri?: string) => void;
-  /**
-   * Omit to hide the filter editor. Filters are a preview only (the original
-   * file uploads), so production builds leave this out.
-   */
-  onSetFilter?: (filterId: string) => void;
 }
 
 export function MediaPicker({
   photos,
   videoUri,
-  filterId,
   maxPhotos = 5,
   onAddPhoto,
   onRemovePhoto,
   onSetVideo,
-  onSetFilter,
 }: MediaPickerProps) {
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const showToast = useUIStore((state) => state.showToast);
-  const [editingUri, setEditingUri] = useState<string | null>(null);
 
   const handlePickMedia = async (type: "image" | "video") => {
     const shouldOpenPicker = await confirmGalleryAccess({
@@ -77,7 +66,6 @@ export function MediaPicker({
     } else {
       onAddPhoto(asset.uri);
     }
-    // The filter editor is opt-in (Edit button), never forced after a pick.
   };
 
   return (
@@ -109,20 +97,6 @@ export function MediaPicker({
             <View style={[styles.badge, { backgroundColor: palette.mediaScrim }]}>
               <Video size={12} color={palette.white} />
             </View>
-            {onSetFilter ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Edit reel filter"
-                onPress={() => setEditingUri(videoUri)}
-                style={[
-                  styles.actionBtn,
-                  styles.editAction,
-                  { backgroundColor: palette.mediaScrimStrong },
-                ]}
-              >
-                <Edit2 size={16} color={palette.white} />
-              </Pressable>
-            ) : null}
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Remove reel"
@@ -165,21 +139,6 @@ export function MediaPicker({
               ]}
               contentFit="cover"
             />
-            {onSetFilter ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Edit filter for photo ${index + 1}`}
-                onPress={() => setEditingUri(uri)}
-                style={[
-                  styles.actionBtn,
-                  styles.editAction,
-                  { backgroundColor: palette.mediaScrimStrong },
-                ]}
-              >
-                <Edit2 size={16} color={palette.white} />
-              </Pressable>
-            ) : null}
-            {/* Remove sits in the opposite corner from Edit so a mis-tap can't delete. */}
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={`Remove photo ${index + 1}`}
@@ -212,20 +171,6 @@ export function MediaPicker({
           </Pressable>
         )}
       </ScrollView>
-
-      {editingUri && onSetFilter && (
-        <MediaEditor
-          uri={editingUri}
-          isVisible={!!editingUri}
-          initialFilterId={filterId}
-          onClose={() => setEditingUri(null)}
-          onSave={(fid) => {
-            onSetFilter(fid);
-            setEditingUri(null);
-            showToast({ message: "Filter applied!", tone: "success" });
-          }}
-        />
-      )}
     </View>
   );
 }
@@ -267,10 +212,6 @@ const styles = StyleSheet.create({
   },
   removeAction: {
     top: 4,
-    right: 4,
-  },
-  editAction: {
-    bottom: 4,
     right: 4,
   },
 });

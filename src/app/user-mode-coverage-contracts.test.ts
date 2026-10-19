@@ -387,11 +387,13 @@ test("post composer supports long captions, tags, carousel media, publish, draft
       /allowsMultipleSelection: true/,
       /mediaTypes: ImagePicker\.MediaTypeOptions\.All/,
       /testID="post-composer-add-media"/,
-      /accessibilityLabel="Edit with AI"[\s\S]*onPress=\{\(\) => setEditingMediaId\(item\.id\)\}/,
-      /accessibilityLabel="Open video edit tools"[\s\S]*onPress=\{\(\) => setEditingMediaId\(item\.id\)\}/,
     ],
     "MediaManager validation and carousel media entry",
   );
+  // Photo filters/adjustments were preview-only (the original file uploads), so they are gone.
+  assert.doesNotMatch(mediaManager, /setEditingMediaId|Edit with AI|video edit tools/);
+  assert.doesNotMatch(composer, /MediaEditor/);
+  assert.doesNotMatch(store, /adjustments|filterId|editingMediaId|updateMediaAdjustment/);
   assertSourceIncludes(
     postTab,
     [

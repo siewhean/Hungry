@@ -73,20 +73,6 @@ test("animated brand imagery keeps explicit image semantics", () => {
   assert.match(splash, /accessibilityRole="image"/);
 });
 
-test("Skia media editor image previews are labelled or hidden through wrappers", () => {
-  const mediaEditor = read("src/components/review/MediaEditor.tsx");
-
-  assert.match(
-    mediaEditor,
-    /accessibilityLabel=\{`Media preview with \$\{activeFilter\.name\} filter`\}/,
-  );
-  assert.match(mediaEditor, /accessibilityRole="image"/);
-  assert.match(mediaEditor, /accessibilityLabel=\{`\$\{filter\.name\} filter preview`\}/);
-  assert.match(mediaEditor, /accessibilityState=\{\{ selected: isSelected \}\}/);
-  assert.match(mediaEditor, /accessibilityElementsHidden/);
-  assert.match(mediaEditor, /importantForAccessibility="no"/);
-});
-
 test("zoomable social media exposes actionable media and video controls to assistive tech", () => {
   const zoomableMedia = read("src/components/social/ZoomableMedia.tsx");
   const zoomableVideo = read("src/components/social/ZoomableVideo.tsx");

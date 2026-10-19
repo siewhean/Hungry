@@ -394,7 +394,6 @@ export interface ReviewDraft {
   text: string;
   photos: string[];
   videoUri?: string;
-  filterId?: string;
   musicId?: string;
 }
 

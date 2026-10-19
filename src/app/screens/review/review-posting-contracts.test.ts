@@ -84,8 +84,8 @@ test("review editor: dish first, helper text, modal picker, route wins over a st
   // A draft with content but no dish still counts; a manual dish switch asks first.
   assert.match(review, /if \(!reviewDraftHasContent\(draft\)\) \{\s*startFromRoute\(\);/);
   assert.match(review, /"Change dish\?"/);
-  // Filters are preview-only, so they stay out of production.
-  assert.match(review, /onSetFilter=\{reviewFiltersEnabled \? setFilterId : undefined\}/);
+  // Photo filters were preview-only (the original file uploads), so they are removed.
+  assert.doesNotMatch(review, /filterId|onSetFilter|filter_id|reviewFiltersEnabled/);
 });
 
 test("success modal shows points only when gamification is on", () => {
@@ -96,7 +96,7 @@ test("success modal shows points only when gamification is on", () => {
 test("media picker and star rating are usable with a screen reader", () => {
   const picker = read("src/components/review/MediaPicker.tsx");
   assert.match(picker, /accessibilityLabel=\{`Remove photo \$\{index \+ 1\}`\}/);
-  assert.match(picker, /accessibilityLabel=\{`Edit filter for photo \$\{index \+ 1\}`\}/);
+  assert.doesNotMatch(picker, /MediaEditor|onSetFilter|filterId|Filter applied/);
   assert.match(picker, /\{photos\.length\}\/\{maxPhotos\} photos/);
   assert.match(picker, /width: 44,\s*height: 44/);
   assert.doesNotMatch(picker, /Automatically open editor/);
