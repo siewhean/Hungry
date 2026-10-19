@@ -8,6 +8,7 @@
  */
 
 import { getFloorPlan } from "@/lib/geo/floorPlans";
+import { MERCHANT_DEEP_LINKS } from "@/features/merchant/merchantDeepLinks";
 import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { similarityScore } from "@/lib/ai/similarityScore";
@@ -1237,7 +1238,7 @@ function getLowRatingNotificationsForOutlet(outletId: string): MerchantNotificat
       body: `${review.rating?.toFixed(1)} stars: ${review.text.slice(0, 120)}`,
       status: "unread",
       dedupeKey: `low-rating:${review.id}`,
-      deepLink: "MerchantTabs/CustomerInbox",
+      deepLink: MERCHANT_DEEP_LINKS.inbox,
       metadata: {
         reviewId: review.id,
         rating: review.rating ?? null,
@@ -2898,11 +2899,11 @@ export const hungryService: HungryService = {
       return resolve(undefined);
     },
 
-    async toggleSoldOut(outletId, dishId) {
+    async toggleSoldOut(outletId, dishId, soldOut) {
       const menu = getMerchantMenu(outletId);
       const dish = menu.find((menuDish) => menuDish.id === dishId);
       if (!dish) throw new Error(`Dish ${dishId} not found for outlet ${outletId}`);
-      const isSoldOut = !dish.availabilityFlags.includes("Sold out");
+      const isSoldOut = soldOut ?? !dish.availabilityFlags.includes("Sold out");
       dish.availabilityFlags = mergeAvailabilityFlag(dish.availabilityFlags, "Sold out", isSoldOut);
       syncMerchantDishToUserCatalog(outletId, dish);
       return resolve(isSoldOut);
@@ -2984,6 +2985,9 @@ export const hungryService: HungryService = {
       interactions = [...interactions].sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       );
+      if (filters?.limit !== undefined) {
+        interactions = interactions.slice(0, Math.max(1, filters.limit));
+      }
       return resolve(clone(interactions));
     },
 
@@ -3131,6 +3135,13 @@ export const hungryService: HungryService = {
       return resolve(clone(updatedPromotion));
     },
 
+    async deletePromotion(promoId) {
+      const promoIndex = _merchantPromotions.findIndex((p) => p.id === promoId);
+      if (promoIndex === -1) throw new Error(`Promotion ${promoId} not found`);
+      _merchantPromotions.splice(promoIndex, 1);
+      return resolve(undefined);
+    },
+
     async getPromotionAnalytics(promoId) {
       const promo = _merchantPromotions.find((p) => p.id === promoId);
       if (!promo) throw new Error(`Promotion ${promoId} not found`);
@@ -3141,6 +3152,36 @@ export const hungryService: HungryService = {
     async getAnalytics(outletId, dateRange) {
       getMerchantOutlet(outletId);
       return resolve(clone(buildMockMerchantAnalytics(outletId, dateRange)));
+    },
+
+    async getDashboardSummary(outletId) {
+      getMerchantOutlet(outletId);
+      const menu = getMerchantMenu(outletId);
+      const reviews = _merchantInbox
+        .filter(
+          (interaction) =>
+            interaction.outletId === outletId &&
+            interaction.type === "review" &&
+            !isMockInboxReviewModerationHidden(interaction),
+        )
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      const latest = reviews[0];
+      return resolve({
+        menuCount: menu.length,
+        dishesWithoutImages: menu.filter(
+          (dish) => !dish.imageUrl?.trim() && !(dish.gallery ?? []).some((url) => url.trim()),
+        ).length,
+        unrepliedReviews: reviews.filter((review) => !review.reply).length,
+        latestReview: latest
+          ? {
+              id: latest.id,
+              authorName: latest.authorName,
+              rating: latest.rating,
+              text: latest.text,
+              createdAt: latest.createdAt,
+            }
+          : undefined,
+      });
     },
 
     async getWeeklySummaryStats(outletId) {
@@ -3181,7 +3222,7 @@ export const hungryService: HungryService = {
           body: `${summary.totalViews.toLocaleString()} views, ${summary.newReviews} new reviews, ${summary.unrepliedReviews} unreplied reviews.`,
           status: "unread",
           dedupeKey: `weekly-summary:${summary.id}:${member.id}`,
-          deepLink: "MerchantTabs/MerchantAnalytics",
+          deepLink: MERCHANT_DEEP_LINKS.analytics,
           metadata: { summaryId: summary.id },
         }),
       );
@@ -3306,7 +3347,7 @@ export const hungryService: HungryService = {
         body: `${trimmedName}, open Hungry to accept your merchant team invite.`,
         status: "sent",
         dedupeKey: `team-invite:${merchantAccountId}:${normalizedEmail}`,
-        deepLink: "MerchantTabs/MerchantSettings",
+        deepLink: MERCHANT_DEEP_LINKS.settings,
         metadata: {
           memberId: newMember.id,
           role,

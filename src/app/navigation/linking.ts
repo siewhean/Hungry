@@ -1,5 +1,6 @@
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { WEB_BASE_URL } from "@/constants/links";
+import { MERCHANT_LINK_SCREENS } from "@/features/merchant/merchantDeepLinks";
 import { parseShareSource, rememberShareAttribution } from "@/features/share/shareAttribution";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 
@@ -142,7 +143,12 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
     return createState("PortfolioPublicView", { portfolioId: decodePathSegment(parts[1]) });
   }
   if (FEATURE_FLAGS.merchantCentreEnabled && parts[0] === "merchant") {
-    return createState("MerchantTabs");
+    // Merchant notifications link to hungry://merchant/inbox, /analytics and so on.
+    const screen =
+      parts[1] && Object.prototype.hasOwnProperty.call(MERCHANT_LINK_SCREENS, parts[1])
+        ? MERCHANT_LINK_SCREENS[parts[1]]
+        : undefined;
+    return screen ? createState("MerchantTabs", { screen }) : createState("MerchantTabs");
   }
   if (parts[0] === "join") return createState("WheelStack", { code: decodePathSegment(parts[1]) });
   return undefined;
@@ -235,6 +241,7 @@ export function createRootLinking(
                   Profile: "profile",
                   VerificationCentre: "verification",
                   MerchantSettings: "settings",
+                  CustomerInbox: "inbox",
                 },
               },
             }

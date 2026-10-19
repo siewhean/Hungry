@@ -43,6 +43,7 @@ import { suggestAllergensFromIngredients } from "@/features/merchant/allergenKey
 import { validateMerchantProfileUpdates } from "@/features/merchant/profileValidation";
 import { REVIEW_PHOTOS_NOT_ATTACHED, createClientReviewId } from "@/features/review/reviewDraft";
 import { validateMerchantPromotionInput } from "@/features/merchant/promotionValidation";
+import { MERCHANT_DEEP_LINKS } from "@/features/merchant/merchantDeepLinks";
 import type {
   Bite,
   BiteDraft,
@@ -2036,18 +2037,6 @@ function asMerchantInviteStatus(value: unknown): MerchantTeamMember["inviteStatu
   return "pending";
 }
 
-function normalizeAvailabilityFlag(flag: string): string {
-  return flag.toLowerCase().replace(/[\s-]+/g, "_");
-}
-
-function mergeAvailabilityFlag(currentFlags: string[], flag: string, enabled: boolean): string[] {
-  const normalized = normalizeAvailabilityFlag(flag);
-  const withoutFlag = currentFlags.filter(
-    (currentFlag) => normalizeAvailabilityFlag(currentFlag) !== normalized,
-  );
-  return enabled ? [...withoutFlag, flag] : withoutFlag;
-}
-
 function toMerchantVerification(
   row?: Row,
   evidence?: VerificationEvidence[],
@@ -2068,28 +2057,61 @@ async function fetchVerificationForOutlet(
   client: SupabaseClient,
   outletId: string,
 ): Promise<MerchantOutlet["verification"]> {
+  return (
+    (await fetchVerificationsForOutlets(client, [outletId])).get(outletId) ??
+    toMerchantVerification()
+  );
+}
+
+/** Verification and evidence for several outlets in two queries, not two per outlet. */
+async function fetchVerificationsForOutlets(
+  client: SupabaseClient,
+  outletIds: string[],
+): Promise<Map<string, MerchantOutlet["verification"]>> {
+  const byOutletId = new Map<string, MerchantOutlet["verification"]>();
+  const ids = Array.from(new Set(outletIds.filter(Boolean)));
+  if (ids.length === 0) return byOutletId;
+
   const { data, error } = await client
     .from("merchant_verifications")
     .select("*")
-    .eq("outlet_id", outletId)
-    .maybeSingle();
+    .in("outlet_id", ids);
   if (error) throw error;
-  if (!data) return toMerchantVerification();
+  const verificationRows = Array.isArray(data) ? (data as Row[]) : [];
+  const verificationIds = verificationRows
+    .map((row) => asString(row.id))
+    .filter((id): id is string => Boolean(id));
 
-  const { data: evidenceRows, error: evidenceError } = await client
-    .from("merchant_verification_evidence")
-    .select("*")
-    .eq("verification_id", (data as Row).id);
-  if (evidenceError) throw evidenceError;
+  const evidenceByVerificationId = new Map<string, VerificationEvidence[]>();
+  if (verificationIds.length > 0) {
+    const { data: evidenceRows, error: evidenceError } = await client
+      .from("merchant_verification_evidence")
+      .select("*")
+      .in("verification_id", verificationIds);
+    if (evidenceError) throw evidenceError;
+    for (const row of Array.isArray(evidenceRows) ? (evidenceRows as Row[]) : []) {
+      const verificationId = asString(row.verification_id) ?? "";
+      const list = evidenceByVerificationId.get(verificationId) ?? [];
+      list.push({
+        id: asString(row.id) ?? "",
+        method: (asString(row.method) as VerificationEvidence["method"]) ?? "video_walkaround",
+        fileUrl: asString(row.file_url) ?? "",
+        uploadedAt: asString(row.uploaded_at) ?? new Date().toISOString(),
+        reviewNote: asString(row.review_note),
+      });
+      evidenceByVerificationId.set(verificationId, list);
+    }
+  }
 
-  const evidence = (Array.isArray(evidenceRows) ? (evidenceRows as Row[]) : []).map((row) => ({
-    id: asString(row.id) ?? "",
-    method: (asString(row.method) as VerificationEvidence["method"]) ?? "video_walkaround",
-    fileUrl: asString(row.file_url) ?? "",
-    uploadedAt: asString(row.uploaded_at) ?? new Date().toISOString(),
-    reviewNote: asString(row.review_note),
-  }));
-  return toMerchantVerification(data as Row, evidence);
+  for (const row of verificationRows) {
+    const outletId = asString(row.outlet_id);
+    if (!outletId) continue;
+    byOutletId.set(
+      outletId,
+      toMerchantVerification(row, evidenceByVerificationId.get(asString(row.id) ?? "") ?? []),
+    );
+  }
+  return byOutletId;
 }
 
 function toSocialLinks(value: unknown): MerchantOutlet["socialLinks"] {
@@ -2101,7 +2123,11 @@ function toSocialLinks(value: unknown): MerchantOutlet["socialLinks"] {
   });
 }
 
-async function toMerchantOutlet(client: SupabaseClient, row: Row): Promise<MerchantOutlet> {
+async function toMerchantOutlet(
+  client: SupabaseClient,
+  row: Row,
+  prefetchedVerification?: MerchantOutlet["verification"],
+): Promise<MerchantOutlet> {
   const venueId = asString(row.venue_id);
   const venue = venueId ? supabaseRepository.getVenueById(venueId) : undefined;
   const venueDishes = venueId ? supabaseRepository.listDishesByVenue(venueId) : [];
@@ -2134,7 +2160,8 @@ async function toMerchantOutlet(client: SupabaseClient, row: Row): Promise<Merch
     tasteTags: [],
     signatureDishIds: venueDishes.slice(0, 3).map((dish) => dish.id),
     isLive: asBoolean(row.is_live) ?? false,
-    verification: await fetchVerificationForOutlet(client, asString(row.id) ?? ""),
+    verification:
+      prefetchedVerification ?? (await fetchVerificationForOutlet(client, asString(row.id) ?? "")),
   };
 }
 
@@ -2179,9 +2206,18 @@ async function getSupabaseMerchantAccount(
     .select("*")
     .eq("merchant_account_id", account.id);
   if (error) throw error;
+  const rows = Array.isArray(outletRows) ? (outletRows as Row[]) : [];
+  const verifications = await fetchVerificationsForOutlets(
+    client,
+    rows.map((row) => asString(row.id) ?? ""),
+  );
   const outlets = await Promise.all(
-    (Array.isArray(outletRows) ? (outletRows as Row[]) : []).map((row) =>
-      toMerchantOutlet(client, row),
+    rows.map((row) =>
+      toMerchantOutlet(
+        client,
+        row,
+        verifications.get(asString(row.id) ?? "") ?? toMerchantVerification(),
+      ),
     ),
   );
   return {
@@ -2428,13 +2464,30 @@ async function fetchSafeProfileRowsById(
   return profileById;
 }
 
+/** Random id so two dishes saved in the same millisecond, or on two phones, never collide. */
+function createMerchantDishId(): string {
+  return `merchant-dish-${createClientReviewId()}`;
+}
+
+function toTasteVectorJson(tasteVector: TasteVector | undefined): Row | null {
+  if (tasteVector === undefined) return null;
+  return {
+    sweet: tasteVector.sweet,
+    spicy: tasteVector.spicy,
+    sour: tasteVector.sour,
+    salty: tasteVector.salty,
+    rich: tasteVector.rich,
+    aromatic: tasteVector.aromatic,
+  };
+}
+
 function buildDishPayload(outlet: Row, dish: Partial<DishDetail>): Row {
   const venueId = asString(outlet.venue_id) ?? "";
   const buildingId = asString(outlet.building_id) ?? "";
   const price = asNumber(dish.price) ?? 0;
   const imageUrl = dish.imageUrl ?? dish.gallery?.[0] ?? null;
   return {
-    id: dish.id ?? `merchant-dish-${Date.now()}`,
+    id: dish.id ?? createMerchantDishId(),
     venue_id: venueId,
     building_id: buildingId,
     name: dish.name ?? "New dish",
@@ -2516,88 +2569,58 @@ async function resolveMerchantDishGalleryUrls(
   return uploadedUrls;
 }
 
-async function replaceDishImages(
+async function saveMerchantDish(
   client: SupabaseClient,
+  outlet: Row,
   dishId: string,
-  galleryUrls: string[] | undefined,
-): Promise<void> {
-  if (galleryUrls === undefined) return;
-  const { error: deleteError } = await client.from("dish_images").delete().eq("dish_id", dishId);
-  if (deleteError) throw deleteError;
-  const rows = galleryUrls
-    .filter(Boolean)
-    .map((url, sortOrder) => ({ dish_id: dishId, url, sort_order: sortOrder }));
-  if (rows.length === 0) return;
-  const { error } = await client.from("dish_images").insert(rows);
+  fields: Row,
+  children: {
+    galleryUrls: string[] | undefined;
+    dietaryFlags: DietaryFlag[] | undefined;
+    tasteVector: TasteVector | undefined;
+  },
+): Promise<Row> {
+  const venueId = asString(outlet.venue_id) ?? "";
+  const dishFields: Row = { ...fields };
+  delete dishFields.id;
+  delete dishFields.venue_id;
+  // One transaction: the dish, its photos, dietary labels and taste vector save together or not at all.
+  const { error } = await client.rpc("merchant_save_dish", {
+    p_dish_id: dishId,
+    p_venue_id: venueId,
+    p_building_id: asString(outlet.building_id) ?? asString(fields.building_id) ?? "",
+    p_fields: dishFields,
+    p_gallery_urls: children.galleryUrls ?? null,
+    p_dietary_slugs:
+      children.dietaryFlags === undefined ? null : Array.from(new Set(children.dietaryFlags)),
+    p_taste_vector: toTasteVectorJson(children.tasteVector),
+  });
   if (error) throw error;
+  const { data, error: readError } = await client
+    .from("dishes")
+    .select("*")
+    .eq("id", dishId)
+    .eq("venue_id", venueId)
+    .single();
+  if (readError) throw readError;
+  return data as Row;
 }
 
-async function replaceDishDietaryFlags(
+async function setMerchantDishFlag(
   client: SupabaseClient,
+  outlet: Row,
   dishId: string,
-  dietaryFlags: DietaryFlag[] | undefined,
-): Promise<void> {
-  if (dietaryFlags === undefined) return;
-  const uniqueFlags = Array.from(new Set(dietaryFlags));
-  const { error: deleteError } = await client
-    .from("dish_dietary_flags")
-    .delete()
-    .eq("dish_id", dishId);
-  if (deleteError) throw deleteError;
-  if (uniqueFlags.length === 0) return;
-
-  const { data, error } = await client
-    .from("dietary_flags")
-    .select("id,slug")
-    .in("slug", uniqueFlags);
+  flag: "sold_out" | "featured",
+  enabled?: boolean,
+): Promise<boolean> {
+  const { data, error } = await client.rpc("merchant_set_dish_availability_flag", {
+    p_dish_id: dishId,
+    p_venue_id: asString(outlet.venue_id) ?? "",
+    p_flag: flag,
+    p_enabled: enabled ?? null,
+  });
   if (error) throw error;
-  const idBySlug = new Map(
-    (Array.isArray(data) ? (data as Row[]) : [])
-      .map((row) => [asString(row.slug) ?? "", asString(row.id) ?? ""] as const)
-      .filter(([slug, id]) => slug.length > 0 && id.length > 0),
-  );
-  const missingFlags = uniqueFlags.filter((flag) => !idBySlug.has(flag));
-  if (missingFlags.length > 0) {
-    throw new Error(`Unknown dietary flags: ${missingFlags.join(", ")}`);
-  }
-
-  const { error: insertError } = await client.from("dish_dietary_flags").insert(
-    uniqueFlags.map((flag) => ({
-      dish_id: dishId,
-      dietary_flag_id: idBySlug.get(flag),
-    })),
-  );
-  if (insertError) throw insertError;
-}
-
-async function replaceDishTasteVector(
-  client: SupabaseClient,
-  dishId: string,
-  tasteVector: TasteVector | undefined,
-): Promise<void> {
-  if (tasteVector === undefined) return;
-  const { error } = await client.from("dish_taste_vectors").upsert(
-    {
-      dish_id: dishId,
-      sweet: tasteVector.sweet,
-      spicy: tasteVector.spicy,
-      sour: tasteVector.sour,
-      salty: tasteVector.salty,
-      rich: tasteVector.rich,
-      aromatic: tasteVector.aromatic,
-      vector: [
-        tasteVector.sweet,
-        tasteVector.spicy,
-        tasteVector.sour,
-        tasteVector.salty,
-        tasteVector.rich,
-        tasteVector.aromatic,
-      ],
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "dish_id" },
-  );
-  if (error) throw error;
+  return data === true;
 }
 
 function buildPromotionAnalytics(
@@ -5394,7 +5417,11 @@ export const supabaseService: HungryService = {
 
       const userId = await getCurrentSupabaseUserId();
       if (!userId) throw new Error("You must be signed in to upload verification evidence.");
-      assertLocalUserMediaUri(evidence.fileUrl, "Merchant verification evidence");
+      const fileUrls = [evidence.fileUrl, ...(evidence.additionalFileUrls ?? [])].filter(Boolean);
+      if (fileUrls.length === 0) throw new Error("Attach at least one file for verification.");
+      fileUrls.forEach((fileUrl) =>
+        assertLocalUserMediaUri(fileUrl, "Merchant verification evidence"),
+      );
 
       const { data: existingVerification, error: existingError } = await client
         .from("merchant_verifications")
@@ -5421,23 +5448,31 @@ export const supabaseService: HungryService = {
         throw new Error("Unable to prepare verification evidence upload.");
       }
 
-      const evidenceExtension = extensionFromUri(evidence.fileUrl);
-      const evidencePath = `${userId}/${resolvedOutletId}/${verificationId}-${Date.now()}.${evidenceExtension}`;
-      const uploadedEvidence = await uploadPostMediaFromUri({
-        client,
-        bucket: "merchant-verification-evidence",
-        path: evidencePath,
-        uri: evidence.fileUrl,
-      });
-      const { error: evidenceError } = await client.from("merchant_verification_evidence").insert({
-        verification_id: verificationId,
-        method: evidence.method,
-        file_url: `supabase://merchant-verification-evidence/${uploadedEvidence.path}`,
-        storage_bucket: "merchant-verification-evidence",
-        storage_path: uploadedEvidence.path,
-        uploaded_by: userId,
-        review_note: evidence.reviewNote ?? null,
-      });
+      // Upload every file first, then record them in one insert and flip the status once, so a
+      // failed upload never leaves a submitted outlet with part of its evidence.
+      const uploadedAt = Date.now();
+      const uploadedPaths: string[] = [];
+      for (let index = 0; index < fileUrls.length; index += 1) {
+        const fileUrl = fileUrls[index];
+        const uploadedEvidence = await uploadPostMediaFromUri({
+          client,
+          bucket: "merchant-verification-evidence",
+          path: `${userId}/${resolvedOutletId}/${verificationId}-${uploadedAt}-${index}.${extensionFromUri(fileUrl)}`,
+          uri: fileUrl,
+        });
+        uploadedPaths.push(uploadedEvidence.path);
+      }
+      const { error: evidenceError } = await client.from("merchant_verification_evidence").insert(
+        uploadedPaths.map((path) => ({
+          verification_id: verificationId,
+          method: evidence.method,
+          file_url: `supabase://merchant-verification-evidence/${path}`,
+          storage_bucket: "merchant-verification-evidence",
+          storage_path: path,
+          uploaded_by: userId,
+          review_note: evidence.reviewNote ?? null,
+        })),
+      );
       if (evidenceError) throw evidenceError;
 
       const { error } = await client
@@ -5560,7 +5595,8 @@ export const supabaseService: HungryService = {
     async addDish(outletId, dish) {
       const client = requireSupabaseClient();
       const outlet = await requireLinkedMerchantOutlet(client, outletId);
-      const dishId = dish.id ?? `merchant-dish-${Date.now()}`;
+      // The editor passes a stable id, so a retried create edits the first try's row.
+      const dishId = dish.id ?? createMerchantDishId();
       const galleryUrls = await resolveMerchantDishGalleryUrls(client, outlet, dishId, dish);
       const payload = buildDishPayload(outlet, {
         ...dish,
@@ -5568,15 +5604,15 @@ export const supabaseService: HungryService = {
         imageUrl: galleryUrls?.[0] ?? dish.imageUrl,
         gallery: galleryUrls ?? dish.gallery,
       });
-      const { data, error } = await client.from("dishes").insert(payload).select("*").single();
-      if (error) throw error;
-      await replaceDishImages(client, dishId, galleryUrls);
-      await replaceDishDietaryFlags(client, dishId, dish.dietaryFlags);
-      await replaceDishTasteVector(client, dishId, dish.tasteVector);
+      const row = await saveMerchantDish(client, outlet, dishId, payload, {
+        galleryUrls,
+        dietaryFlags: dish.dietaryFlags,
+        tasteVector: dish.tasteVector,
+      });
       await refreshSupabaseRepositoryCache();
       const presentationByDishId = await fetchDishPresentationMap(client, [dishId]);
       return mapSupabaseDish(
-        data as Row,
+        row,
         await fetchVenueRow(client, asString(outlet.venue_id) ?? ""),
         presentationByDishId.get(dishId),
       );
@@ -5592,30 +5628,11 @@ export const supabaseService: HungryService = {
         imageUrl: galleryUrls?.[0] ?? updates.imageUrl,
         gallery: galleryUrls ?? updates.gallery,
       });
-      let row: Row;
-      if (Object.keys(payload).length > 0) {
-        const { data, error } = await client
-          .from("dishes")
-          .update(payload)
-          .eq("id", dishId)
-          .eq("venue_id", venueId)
-          .select("*")
-          .single();
-        if (error) throw error;
-        row = data as Row;
-      } else {
-        const { data, error } = await client
-          .from("dishes")
-          .select("*")
-          .eq("id", dishId)
-          .eq("venue_id", venueId)
-          .single();
-        if (error) throw error;
-        row = data as Row;
-      }
-      await replaceDishImages(client, dishId, galleryUrls);
-      await replaceDishDietaryFlags(client, dishId, updates.dietaryFlags);
-      await replaceDishTasteVector(client, dishId, updates.tasteVector);
+      const row = await saveMerchantDish(client, outlet, dishId, payload, {
+        galleryUrls,
+        dietaryFlags: updates.dietaryFlags,
+        tasteVector: updates.tasteVector,
+      });
       await refreshSupabaseRepositoryCache();
       const presentationByDishId = await fetchDishPresentationMap(client, [dishId]);
       return mapSupabaseDish(
@@ -5637,50 +5654,17 @@ export const supabaseService: HungryService = {
       await refreshSupabaseRepositoryCache();
     },
 
-    async toggleSoldOut(outletId, dishId) {
+    async toggleSoldOut(outletId, dishId, soldOut) {
       const client = requireSupabaseClient();
       const outlet = await requireLinkedMerchantOutlet(client, outletId);
-      const venueId = asString(outlet.venue_id) ?? "";
-      const { data, error } = await client
-        .from("dishes")
-        .select("availability_flags")
-        .eq("id", dishId)
-        .eq("venue_id", venueId)
-        .single();
-      if (error) throw error;
-      const current = asStringArray((data as Row).availability_flags);
-      const enabled = !current.some((flag) => normalizeAvailabilityFlag(flag) === "sold_out");
-      const { error: updateError } = await client
-        .from("dishes")
-        .update({ availability_flags: mergeAvailabilityFlag(current, "sold_out", enabled) })
-        .eq("id", dishId)
-        .eq("venue_id", venueId);
-      if (updateError) throw updateError;
-      await refreshSupabaseRepositoryCache();
-      return enabled;
+      // One atomic UPDATE; the catalog trigger refreshes the diner card, so no full cache reload.
+      return setMerchantDishFlag(client, outlet, dishId, "sold_out", soldOut);
     },
 
     async toggleFeatured(outletId, dishId) {
       const client = requireSupabaseClient();
       const outlet = await requireLinkedMerchantOutlet(client, outletId);
-      const venueId = asString(outlet.venue_id) ?? "";
-      const { data, error } = await client
-        .from("dishes")
-        .select("availability_flags")
-        .eq("id", dishId)
-        .eq("venue_id", venueId)
-        .single();
-      if (error) throw error;
-      const current = asStringArray((data as Row).availability_flags);
-      const enabled = !current.some((flag) => normalizeAvailabilityFlag(flag) === "featured");
-      const { error: updateError } = await client
-        .from("dishes")
-        .update({ availability_flags: mergeAvailabilityFlag(current, "featured", enabled) })
-        .eq("id", dishId)
-        .eq("venue_id", venueId);
-      if (updateError) throw updateError;
-      await refreshSupabaseRepositoryCache();
-      return enabled;
+      return setMerchantDishFlag(client, outlet, dishId, "featured");
     },
 
     async getOCRDrafts(outletId) {
@@ -5779,13 +5763,20 @@ export const supabaseService: HungryService = {
       const client = requireSupabaseClient();
       const outlet = await requireLinkedMerchantOutlet(client, outletId);
       const venueId = asString(outlet.venue_id) ?? "";
-      const { data, error } = await client
+      // Only reviews exist today, so a non-review type filter has nothing to return.
+      if (filters?.type && filters.type !== "review") return [];
+      let query = client
         .from("reviews")
-        .select("*")
+        .select(
+          "id,author_name,rating,text,tags,created_at,merchant_reply_text,merchant_replied_at",
+        )
         .eq("venue_id", venueId)
         .order("created_at", { ascending: false });
+      if (filters?.unrepliedOnly) query = query.is("merchant_reply_text", null);
+      if (filters?.limit !== undefined) query = query.limit(Math.max(1, filters.limit));
+      const { data, error } = await query;
       if (error) throw error;
-      let interactions = (Array.isArray(data) ? (data as Row[]) : []).map((row) => {
+      const interactions = (Array.isArray(data) ? (data as Row[]) : []).map((row) => {
         const rating = asNumber(row.rating);
         return {
           id: asString(row.id) ?? "",
@@ -5813,8 +5804,6 @@ export const supabaseService: HungryService = {
                   : "neutral",
         } satisfies CustomerInteraction;
       });
-      if (filters?.type) interactions = interactions.filter((item) => item.type === filters.type);
-      if (filters?.unrepliedOnly) interactions = interactions.filter((item) => !item.reply);
       return interactions;
     },
 
@@ -6133,6 +6122,18 @@ export const supabaseService: HungryService = {
       return mapPromotion(data as Row);
     },
 
+    async deletePromotion(promoId) {
+      const client = requireSupabaseClient();
+      // RLS (merchant_promotions_write_owner_or_manager_delete) limits this to the outlet's team.
+      const { data, error } = await client
+        .from("merchant_promotions")
+        .delete()
+        .eq("id", promoId)
+        .select("id");
+      if (error) throw error;
+      if (!data?.length) throw new Error("Promotion not found or you cannot delete it.");
+    },
+
     async getPromotionAnalytics(promoId) {
       const { data, error } = await requireSupabaseClient()
         .from("merchant_promotions")
@@ -6155,6 +6156,31 @@ export const supabaseService: HungryService = {
       });
       if (error) throw error;
       return mapMerchantAnalyticsPayload(data, resolvedOutletId, dateRange);
+    },
+
+    async getDashboardSummary(outletId) {
+      const client = requireSupabaseClient();
+      const outlet = await getMerchantOutletRow(client, outletId);
+      const { data, error } = await client.rpc("get_merchant_dashboard_summary", {
+        p_outlet_id: asString(outlet.id) ?? outletId,
+      });
+      if (error) throw error;
+      const row = (data ?? {}) as Row;
+      const latest = row.latestReview as Row | null | undefined;
+      return {
+        menuCount: asNumber(row.menuCount) ?? 0,
+        dishesWithoutImages: asNumber(row.dishesWithoutImages) ?? 0,
+        unrepliedReviews: asNumber(row.unrepliedReviews) ?? 0,
+        latestReview: latest
+          ? {
+              id: asString(latest.id) ?? "",
+              authorName: asString(latest.authorName) ?? "Hungry diner",
+              rating: asNumber(latest.rating),
+              text: asString(latest.text) ?? "",
+              createdAt: asString(latest.createdAt) ?? new Date().toISOString(),
+            }
+          : undefined,
+      };
     },
 
     async getWeeklySummaryStats(outletId) {
@@ -6212,7 +6238,7 @@ export const supabaseService: HungryService = {
         body: `${review.rating?.toFixed(1)} stars: ${review.text.slice(0, 120)}`,
         status: "unread",
         dedupe_key: `low-rating:${review.sourceId ?? review.id}`,
-        deep_link: "MerchantTabs/CustomerInbox",
+        deep_link: MERCHANT_DEEP_LINKS.inbox,
         metadata: {
           reviewId: review.sourceId ?? review.id,
           rating: review.rating,
@@ -6254,7 +6280,7 @@ export const supabaseService: HungryService = {
           body: `${summary.totalViews.toLocaleString()} views, ${summary.newReviews} new reviews, ${summary.unrepliedReviews} unreplied reviews.`,
           status: "unread",
           dedupe_key: `weekly-summary:${summary.id}:${member.id}`,
-          deep_link: "MerchantTabs/MerchantAnalytics",
+          deep_link: MERCHANT_DEEP_LINKS.analytics,
           metadata: { summaryId: summary.id },
         }));
       if (rows.length === 0) return [];
@@ -6436,7 +6462,7 @@ export const supabaseService: HungryService = {
             body: `${trimmedName}, open Hungry to accept your merchant team invite.`,
             status: "sent",
             dedupe_key: `team-invite:${merchantAccountId}:${normalizedEmail}`,
-            deep_link: "MerchantTabs/MerchantSettings",
+            deep_link: MERCHANT_DEEP_LINKS.settings,
             metadata: {
               memberId: asString(row.id),
               role,

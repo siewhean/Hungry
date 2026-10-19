@@ -87,7 +87,7 @@ export type MerchantTabParamList = {
   OCRDrafts: undefined;
   CustomerInbox: undefined;
   FeaturedVisitors: undefined;
-  PromotionBuilder: { promotionId?: string } | undefined;
+  PromotionBuilder: { promotionId?: string; duplicateFromId?: string } | undefined;
   PromotionList: undefined;
   AIAssistant: undefined;
   OrdersComingSoon: undefined;
