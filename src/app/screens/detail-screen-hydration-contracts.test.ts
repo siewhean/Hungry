@@ -13,7 +13,7 @@ test("detail screens hydrate specific Supabase records before showing not-found 
 
   assert.match(dishDetailV2, /discovery\.getDish\(dishId\)/);
   assert.match(dishDetailV2, /discovery\.getVenue\(dish\.venueId\)/);
-  assert.match(dishDetailV2, /accessibilityLabel=\{`Open \$\{venue\.name\} stall details`\}/);
+  assert.match(dishDetailV2, /accessibilityLabel=\{`Open \$\{venueName\} stall details`\}/);
   assert.match(dishDetailV2, /navigation\.navigate\("StallDetail", \{ venueId: dish\.venueId \}\)/);
   assert.match(dishDetailV2, /!dish && !hasLoadedDishDetail/);
   assert.match(dishDetailV2, /!venue && !hasLoadedVenueDetail/);
@@ -21,7 +21,11 @@ test("detail screens hydrate specific Supabase records before showing not-found 
   assert.match(stallDetail, /discovery\.getVenue\(venueId\)/);
   assert.match(stallDetail, /discovery\.listDishesByVenue\(venue\.id\)/);
   assert.match(stallDetail, /venue\?\.buildingName \?\? building\?\.name/);
-  assert.match(stallDetail, /formatFoodCentreLocation\(buildingLocation\)/);
+  // Header: "Centre · unit · distance"; the full address is only in the Address card.
+  assert.match(
+    stallDetail,
+    /\[buildingLocation\.name, venue\.unitNumber\?\.trim\(\), distanceLabel\]/,
+  );
   assert.match(stallDetail, /formatFullStallAddress\(venue, buildingLocation\)/);
   assert.match(stallDetail, /const EMPTY_DISHES: DishDetail\[\] = \[\]/);
   assert.match(stallDetail, /serviceProviderMode === "supabase" \? EMPTY_DISHES : cachedDishes/);

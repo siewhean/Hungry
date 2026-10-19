@@ -25,6 +25,11 @@ export function hasPendingClaimForProfile(profileId: string): boolean {
   return claimedVenueByProfileId.has(profileId);
 }
 
+/** "Claim Pending" belongs to the one stall that was claimed, not every stall. */
+export function hasPendingClaimForVenue(profileId: string, venueId: string): boolean {
+  return claimedVenueByProfileId.get(profileId) === venueId;
+}
+
 function shouldUseDevClaimFallback(error: unknown): boolean {
   if (typeof __DEV__ === "undefined" || __DEV__ !== true) {
     return false;

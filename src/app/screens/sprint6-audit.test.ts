@@ -119,15 +119,16 @@ test("Sprint 6: environment template exists", () => {
 });
 
 test("Sprint 6: detail fallback copy matches expected content", () => {
+  // Each detail screen names what it failed to load.
   const detailScreens = [
-    "src/app/screens/detail/DishDetailScreenV2.tsx",
-    "src/app/screens/detail/StallDetailScreen.tsx",
-  ];
+    ["src/app/screens/detail/DishDetailScreenV2.tsx", "Couldn't load this dish — try again."],
+    ["src/app/screens/detail/StallDetailScreen.tsx", "Couldn't load this stall — try again."],
+  ] as const;
 
-  for (const screenPath of detailScreens) {
+  for (const [screenPath, body] of detailScreens) {
     const boundaries = extractBoundaries(screenPath);
     assert.ok(
-      boundaries.some((boundary) => boundary.body === "Couldn't load this dish — try again."),
+      boundaries.some((boundary) => boundary.body === body),
       `${screenPath} must include the required detail fallback body`,
     );
   }
