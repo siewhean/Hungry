@@ -21,7 +21,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import {
   ChevronRight,
   Compass,
-  MapPinned,
   Search,
   SearchX,
   Shuffle,
@@ -40,10 +39,10 @@ import {
   AppText,
   EmptyState,
   FilterChipRail,
-  IconButton,
   Screen,
   Skeleton,
 } from "@/components/ui";
+import { DiscoverViewToggle } from "@/components/discover/DiscoverViewToggle";
 import { StallLogoMark } from "@/components/stall/StallLogoMark";
 import {
   getDiscoverBiteCollections,
@@ -1126,8 +1125,6 @@ export function DiscoverHomeScreen() {
   const isTabSwipeLockedRef = useRef(false);
   const popularFoodFilterSkeletonTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const repository = getDataRepository();
-  const shouldUseCatalogReadV2 =
-    FEATURE_FLAGS.catalogReadV2 && getServiceProvider().mode === "supabase";
   const repositoryLookup = useMemo<DiscoverRepositoryLookup>(() => {
     const dishById = new Map<string, DishDetail | undefined>();
     const dishesByVenue = new Map<string, DishDetail[]>();
@@ -1273,14 +1270,6 @@ export function DiscoverHomeScreen() {
   );
 
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
-  const refreshPopularNearby = useDiscoveryStore((state) => state.refreshPopularNearby);
-
-  useEffect(() => {
-    if (shouldUseCatalogReadV2) {
-      return;
-    }
-    void refreshPopularNearby();
-  }, [refreshPopularNearby, shouldUseCatalogReadV2]);
   const updateSearchQuery = useSearchStore((state) => state.updateQuery);
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
   const searchBarWidth = useMemo(
@@ -1408,13 +1397,10 @@ export function DiscoverHomeScreen() {
   const reloadDiscover = useCallback(async () => {
     setIsDiscoverRefreshing(true);
     setDiscoverReloadKey((key) => key + 1);
-    if (!shouldUseCatalogReadV2) {
-      await refreshPopularNearby();
-    }
     if (!isSupabaseDataSource) {
       setIsDiscoverRefreshing(false);
     }
-  }, [isSupabaseDataSource, refreshPopularNearby, shouldUseCatalogReadV2]);
+  }, [isSupabaseDataSource]);
 
   const themeTints = useMemo(() => {
     const isDark = colorScheme === "dark";
@@ -2227,23 +2213,12 @@ export function DiscoverHomeScreen() {
                 </>
               )}
             </View>
-            {isUserMode ? null : (
-              <View style={{ marginTop: -spacing[0.5] }}>
-                <IconButton
-                  variant="ghost"
-                  accessibilityLabel="Open map view"
-                  size={spacing[8] + spacing[2.5]}
-                  onPressIn={() => preloadRoute(navigation, "DiscoverMap")}
-                  onPress={() => navigation.navigate("DiscoverMap")}
-                  icon={
-                    <MapPinned
-                      color={themeTints.isDark ? palette.white : palette.orange}
-                      size={20}
-                    />
-                  }
-                />
-              </View>
-            )}
+            {/* Every diner, guests included, can switch Discover to the map. */}
+            <DiscoverViewToggle
+              value="list"
+              onPressInMap={() => preloadRoute(navigation, "DiscoverMap")}
+              onChange={() => navigation.navigate("DiscoverMap")}
+            />
           </View>
         </View>
 

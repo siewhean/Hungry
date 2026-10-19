@@ -2,7 +2,7 @@ import type { TasteVector } from "@/types/domain";
 import { getConfiguredDataSource, setConfiguredDataSource } from "@/lib/services/supabase/client";
 import { similarityScore } from "@/lib/ai/similarityScore";
 import type { DataRepository, HungryService } from "@/lib/services/types";
-import type { catalogRawService } from "@/lib/services/catalog";
+import type { CatalogRawService } from "@/lib/services/catalog";
 
 export interface ServiceProvider {
   mode: "mock" | "supabase" | "excel";
@@ -141,15 +141,26 @@ export function getHungryService(): HungryService {
   return getActiveProvider().service;
 }
 
+let localCatalog: { provider: ServiceProvider; service: CatalogRawService } | null = null;
+
 /**
- * Authenticated, release-versioned catalog reads. This deliberately has no
- * mock/Excel fallback: callers must render the online error state instead.
+ * The paged catalog behind Search, Browse, the map and catalog detail. Supabase
+ * serves authenticated, release-versioned RPCs; mock and Excel serve the same
+ * contract from their local repository, so every data source runs one path.
  */
-export function getCatalogRawService(): typeof catalogRawService | null {
-  if (getActiveProvider().mode !== "supabase") return null;
-  const { catalogRawService: service } =
-    require("@/lib/services/catalog") as typeof import("@/lib/services/catalog");
-  return service;
+export function getCatalogRawService(): CatalogRawService {
+  const provider = getActiveProvider();
+  if (provider.mode === "supabase") {
+    const { catalogRawService: service } =
+      require("@/lib/services/catalog") as typeof import("@/lib/services/catalog");
+    return service;
+  }
+  if (localCatalog?.provider !== provider) {
+    const { createLocalCatalogService } =
+      require("@/lib/services/mock/catalogMockService") as typeof import("@/lib/services/mock/catalogMockService");
+    localCatalog = { provider, service: createLocalCatalogService(provider.repository) };
+  }
+  return localCatalog.service;
 }
 
 export function getDataRepository(): DataRepository {

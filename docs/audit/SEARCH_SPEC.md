@@ -32,6 +32,8 @@
 
 ## 3. Taste Filters & Sliders (P1-47)
 
+> Retired 2026-10-19: `TasteFilterScreen` was removed with the legacy (non catalog-v2) search path. The paged catalog has no taste-slider input.
+
 ### TasteFilterScreen Polish
 - **Slider Step**: Force integer values (`step={1}`).
 - **Axis Legend**: Labels at each end (e.g., "Mild" to "Extra Spicy", "Light" to "Extra Rich").

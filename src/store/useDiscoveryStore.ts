@@ -2,7 +2,6 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import { trackAnalyticsEvent } from "@/lib/analytics";
-import { getDataRepository } from "@/lib/services/serviceProvider";
 import type { BuildingSummary, DishDetail } from "@/types/domain";
 import { hungryPersistStorage } from "./persistStorage";
 
@@ -22,13 +21,11 @@ interface RecommendationCacheEntry {
 }
 
 const RECOMMENDATION_CACHE_TTL_MS = 5 * 60 * 1000;
-let popularNearbyRefreshToken = 0;
 
 interface DiscoveryState {
   selectedBuilding?: BuildingSummary;
   selectedFloor: string;
   highlightedStallVenueId?: string;
-  popularNearby: DishDetail[];
   decideForMe?: DishDetail;
   mapFilters: MapFilters;
   recommendationCache: Record<string, RecommendationCacheEntry>;
@@ -36,7 +33,6 @@ interface DiscoveryState {
   setSelectedFloor: (floor: string) => void;
   setHighlightedStallVenueId: (venueId?: string) => void;
   setDecideForMe: (dish?: DishDetail) => void;
-  refreshPopularNearby: () => Promise<void>;
   cacheRecommendationSlate: (geoCell: string, dishIds: string[]) => void;
   getCachedRecommendationSlate: (geoCell: string) => string[] | undefined;
   pruneExpiredRecommendations: () => void;
@@ -58,7 +54,6 @@ export const useDiscoveryStore = create<DiscoveryState>()(
       selectedBuilding: undefined,
       selectedFloor: "L1",
       highlightedStallVenueId: undefined,
-      popularNearby: [],
       decideForMe: undefined,
       mapFilters: initialFilters,
       recommendationCache: {},
@@ -85,21 +80,6 @@ export const useDiscoveryStore = create<DiscoveryState>()(
       },
       setHighlightedStallVenueId: (highlightedStallVenueId) => set({ highlightedStallVenueId }),
       setDecideForMe: (decideForMe) => set({ decideForMe }),
-      refreshPopularNearby: async () => {
-        const refreshToken = ++popularNearbyRefreshToken;
-        try {
-          const nearby = await Promise.resolve(getDataRepository().listPopularNearby());
-          if (refreshToken !== popularNearbyRefreshToken) {
-            return;
-          }
-          set({ popularNearby: Array.isArray(nearby) ? nearby : [] });
-        } catch {
-          if (refreshToken !== popularNearbyRefreshToken) {
-            return;
-          }
-          set({ popularNearby: [] });
-        }
-      },
       cacheRecommendationSlate: (geoCell, dishIds) => {
         if (!dishIds.length) {
           return;

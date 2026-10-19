@@ -55,7 +55,6 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "SearchResults",
   "BrowseDishes",
   "BrowseStalls",
-  "TasteFilter",
   "DiscoverMap",
   "DecideForMeResult",
   "MapZoomedIn",
@@ -160,10 +159,6 @@ const loadBrowseStallsScreen = () =>
   (
     require("@/app/screens/search/SearchResultsScreen") as typeof import("@/app/screens/search/SearchResultsScreen")
   ).BrowseStallsScreen;
-const loadTasteFilterScreen = () =>
-  (
-    require("@/app/screens/search/TasteFilterScreen") as typeof import("@/app/screens/search/TasteFilterScreen")
-  ).TasteFilterScreen;
 const loadHomeMapScreen = () =>
   (
     require("@/app/screens/discover/HomeMapScreen") as typeof import("@/app/screens/discover/HomeMapScreen")
@@ -724,7 +719,6 @@ export function RootNavigator({ theme }: { theme: Theme }) {
             name="BrowseStalls"
             options={{ animation: "none" }}
           />
-          <RootStack.Screen getComponent={loadTasteFilterScreen} name="TasteFilter" />
           <RootStack.Screen
             getComponent={loadHomeMapScreen}
             name="DiscoverMap"

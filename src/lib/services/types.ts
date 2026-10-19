@@ -1003,7 +1003,10 @@ export interface HungryService {
     getTagSuggestions(dishId: string): Promise<HawkerTasteTag[]>;
     submitCommunityTags(dishId: string, tags: HawkerTasteTag[]): Promise<void>;
 
-    /** Plain-language search: Claude turns the text into a taste tweak and filters. Null when unavailable. */
+    /**
+     * Plain-language search: Claude turns the text into a taste tweak and filters. Null when unavailable.
+     * No client caller since the legacy search was removed; kept until mood search is wired into v2 search.
+     */
     parseMoodQuery(query: string): Promise<MoodSearchIntent | null>;
   };
 

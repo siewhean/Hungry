@@ -177,18 +177,17 @@ test("home feed post cards cover carousel media, captions, comments, reactions, 
   );
 });
 
-test("discover and search keep user mode map-free while browse grids open matching dish details", () => {
+test("discover routes diners to details, opens the map from a toggle, and search grids open catalog records", () => {
   const discover = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
   const quickBites = readRepoFile("src/app/screens/discover/QuickBitesScreen.tsx");
   const searchResults = readRepoFile("src/app/screens/search/SearchResultsScreen.tsx");
-  const browseIndex = readRepoFile("src/features/search/browseIndex.ts");
   const rootNavigator = readRepoFile("src/app/navigation/RootNavigator.tsx");
 
   assertSourceIncludes(
     discover,
     [
       /const isUserMode = !isDeveloperMode && !isMerchantMode/,
-      /\{isUserMode \? null : \(/,
+      /<DiscoverViewToggle\s+value="list"/,
       /navigation\.navigate\("StallDetail", \{ venueId: venue\.id \}\)/,
       /navigation\.navigate\("MapZoomedIn", \{[\s\S]*buildingId: venue\.buildingId/,
       /navigation\.navigate\("BrowseStalls"\)/,
@@ -215,28 +214,22 @@ test("discover and search keep user mode map-free while browse grids open matchi
     "QuickBitesScreen search icon and card mapping",
   );
   assertSourceIncludes(
-    browseIndex,
-    [
-      /dishById\.set\(dish\.id, dish\)/,
-      /searchTextByDishId\.set\(dish\.id, toDishSearchText\(dish, venue\)\)/,
-      /sortedDishesByVenueId\.set\(venue\.id, cloneSortedDishes\(dishes\)\)/,
-    ],
-    "browse index source of truth",
-  );
-  assertSourceIncludes(
     searchResults,
     [
-      /title: dish\.name,[\s\S]*imageUrl: dish\.imageUrl,[\s\S]*dish,/,
-      /title: topDish\.name,[\s\S]*imageUrl: topDish\.imageUrl,[\s\S]*dish: topDish/,
-      /images=\{slides\.map\(\(slide\) => slide\.imageUrl\)\}/,
-      /\{activeSlide\.title\}/,
-      /navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dish\.id \}\)/,
-      /navigation\.navigate\("DishDetail", \{ dishId: dish\.id \}\)/,
-      /onSubmitQuery=\{recordCommittedSearchQuery\}/,
-      /rememberSearch\(filters\.query\)/,
+      /navigation\.navigate\("CatalogRawDetail", \{\s*kind: mode === "dishes" \? "dish" : "venue",/,
+      /accessibilityLabel=\{`\$\{title\} image`\}/,
+      /type: "search_query"/,
+      /type: "dish_result_click"/,
     ],
-    "SearchResultsScreen image-title-detail consistency",
+    "SearchResultsScreen catalog card to detail consistency",
   );
+  // Taste signal fires on a submitted query, not on every debounced page load.
+  const loadPageBody =
+    searchResults.match(/const loadPage = useCallback\([\s\S]*?\n  \);/)?.[0] ?? "";
+  assert.ok(loadPageBody, "loadPage should exist");
+  assert.doesNotMatch(loadPageBody, /search_query/);
+  assert.match(searchResults, /onSubmitEditing=\{\(\) => recordCommittedQuery\(searchQuery\)\}/);
+  assert.match(searchResults, /recordCommittedQuery\(initialSearchQuery\)/);
   assertSourceIncludes(
     rootNavigator,
     [/name="BrowseDishes"/, /name="BrowseStalls"/, /name="DecideForMeResult"/, /name="WheelStack"/],
