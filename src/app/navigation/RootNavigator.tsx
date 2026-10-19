@@ -99,7 +99,6 @@ const PROTECTED_ROOT_ROUTES = new Set<RootRouteName>([
   "Post",
   "PostComposerV2",
   "ActivityInbox",
-  "ActivityPostDetail",
   "FollowRequests",
   "ChatDetail",
   "DirectMessages",

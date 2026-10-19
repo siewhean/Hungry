@@ -1307,9 +1307,18 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                         </AppText>
                       </Pressable>
                     ) : (
-                      <AppText variant="micro" tone="secondary">
-                        {item.authorLocation}
-                      </AppText>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Open ${item.authorLocation}`}
+                        hitSlop={8}
+                        onPress={() =>
+                          navigation.navigate("StallDetail", { venueId: item.venueId })
+                        }
+                      >
+                        <AppText variant="micro" tone="secondary">
+                          {item.authorLocation}
+                        </AppText>
+                      </Pressable>
                     )}
                   </View>
                 </View>
@@ -1374,7 +1383,6 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                   pagingEnabled
                   bounces={false}
                   showsHorizontalScrollIndicator={false}
-                  scrollEventThrottle={16}
                   ref={(ref) => {
                     if (ref) {
                       carouselScrollRefs.current[carouselPostKey] = ref;
@@ -1382,28 +1390,8 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                       delete carouselScrollRefs.current[carouselPostKey];
                     }
                   }}
-                  onScroll={(event) => {
-                    const viewportWidth = Math.max(event.nativeEvent.layoutMeasurement.width, 1);
-                    const nextIndex = event.nativeEvent.contentOffset.x / viewportWidth;
-                    const clampedIndex = Math.max(
-                      0,
-                      Math.min(nextIndex, carouselSlideOptions.length - 1),
-                    );
-                    setCarouselIndexByPostId((current) => {
-                      const currentIndex = current[carouselPostKey];
-                      if (
-                        currentIndex !== undefined &&
-                        Math.abs(currentIndex - clampedIndex) < 0.0005
-                      ) {
-                        return current;
-                      }
-
-                      return {
-                        ...current,
-                        [carouselPostKey]: clampedIndex,
-                      };
-                    });
-                  }}
+                  // Index state changes once per page settle, not every scroll
+                  // frame: each write re-renders every mounted feed card.
                   onMomentumScrollEnd={(event) => {
                     const viewportWidth = Math.max(event.nativeEvent.layoutMeasurement.width, 1);
                     const nextIndex = Math.round(event.nativeEvent.contentOffset.x / viewportWidth);
@@ -1508,9 +1496,21 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                     }}
                     pointerEvents="box-none"
                   >
-                    <AppText variant="h3" style={{ color: palette.white }}>
-                      {item.dishes[0]?.name ?? item.venue.name}
-                    </AppText>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={
+                        item.dishes[0]?.id
+                          ? `Open ${item.dishes[0]?.name ?? "dish"}`
+                          : `Open ${item.venue.name}`
+                      }
+                      hitSlop={8}
+                      onPressIn={() => prefetchFeedCardRoute(item)}
+                      onPress={() => navigateToDish(item)}
+                    >
+                      <AppText variant="h3" style={{ color: palette.white }}>
+                        {item.dishes[0]?.name ?? item.venue.name}
+                      </AppText>
+                    </Pressable>
                     {canAccessMap ? (
                       <Pressable
                         accessibilityRole="button"
@@ -1524,9 +1524,18 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                         </AppText>
                       </Pressable>
                     ) : (
-                      <AppText variant="micro" style={{ color: palette.inverseTextSecondary }}>
-                        {item.venue.name} · {item.venue.floor} {item.venue.unitNumber}
-                      </AppText>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Open ${item.venue.name}`}
+                        hitSlop={8}
+                        onPress={() =>
+                          navigation.navigate("StallDetail", { venueId: item.venueId })
+                        }
+                      >
+                        <AppText variant="micro" style={{ color: palette.inverseTextSecondary }}>
+                          {item.venue.name} · {item.venue.floor} {item.venue.unitNumber}
+                        </AppText>
+                      </Pressable>
                     )}
                   </View>
                 </>
@@ -1712,26 +1721,33 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                     </AppText>
                   </Pressable>
                 ) : (
-                  <AppText
-                    variant="bodySmall"
-                    numberOfLines={2}
-                    onTextLayout={(event) => handleCaptionTextLayout(item.id, event)}
-                    style={{
-                      color: themeTints.text,
-                      textAlign: profile.leftHandedMode ? "right" : "left",
-                      marginTop: spacing[1],
-                    }}
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open ${item.authorName}'s post`}
+                    onPress={() => navigation.navigate("ActivityPostDetail", { postId: item.id })}
+                    hitSlop={6}
                   >
-                    {captionOverflows ? formatCollapsedCaption(item.caption) : item.caption}
-                    {captionOverflows ? (
-                      <AppText
-                        variant="bodySmall"
-                        style={{ color: palette.orange, fontWeight: "900" }}
-                      >
-                        {" more"}
-                      </AppText>
-                    ) : null}
-                  </AppText>
+                    <AppText
+                      variant="bodySmall"
+                      numberOfLines={2}
+                      onTextLayout={(event) => handleCaptionTextLayout(item.id, event)}
+                      style={{
+                        color: themeTints.text,
+                        textAlign: profile.leftHandedMode ? "right" : "left",
+                        marginTop: spacing[1],
+                      }}
+                    >
+                      {captionOverflows ? formatCollapsedCaption(item.caption) : item.caption}
+                      {captionOverflows ? (
+                        <AppText
+                          variant="bodySmall"
+                          style={{ color: palette.orange, fontWeight: "900" }}
+                        >
+                          {" more"}
+                        </AppText>
+                      ) : null}
+                    </AppText>
+                  </Pressable>
                 )}
                 <AppText
                   variant="micro"

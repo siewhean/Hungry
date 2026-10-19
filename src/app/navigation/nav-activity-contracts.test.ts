@@ -199,7 +199,11 @@ test("activity messages and update posts are functional routes, not static mocku
     /type Props = NativeStackScreenProps<RootStackParamList, "ActivityPostDetail">/,
   );
   assert.match(detail, /listSharedStallPostsSync\(repository\)/);
-  assert.match(detail, /ACTIVITY_UPDATES\.find/);
+  // Sample updates only in mock mode; the post itself is fetched by id.
+  assert.match(detail, /getServiceProvider\(\)\.mode === "mock" \? ACTIVITY_UPDATES : \[\]/);
+  assert.match(detail, /social\.getPostById\(postId\)/);
+  assert.match(detail, /title="This post is no longer available"/);
+  assert.match(detail, /if \(requireSignIn\(\)\) void toggleLike\(post\.id\)/);
   assert.match(detail, /dbActivityEvents\.find/);
   assert.match(detail, /void fetchActivityEvents\(\)/);
   assert.match(detail, /markActivityRead\("update", updateId\)/);

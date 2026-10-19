@@ -16,16 +16,24 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { ZoomableMedia } from "@/components/social";
-import { AppText, Avatar, Screen } from "@/components/ui";
+import { AppText, Avatar, EmptyState, Screen, Skeleton } from "@/components/ui";
 import { ACTIVITY_UPDATES } from "@/features/home/activity";
 import { listSharedStallPostsSync } from "@/features/social/sharedStallPosts";
-import { promptPostSafetyActions } from "@/lib/security/communitySafety";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { isContentHiddenForSession, promptPostSafetyActions } from "@/lib/security/communitySafety";
+import { biteToStallPost } from "@/lib/services/postTransforms";
+import {
+  getDataRepository,
+  getHungryService,
+  getServiceProvider,
+} from "@/lib/services/serviceProvider";
+import type { Bite } from "@/lib/services/types";
 import { ReviewCommentsSheet, type ActiveReviewCommentTarget } from "@/components/social";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
 import { useActivityStore } from "@/store/useActivityStore";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
+import { useSessionStore } from "@/store/useSessionStore";
 import { useSocialStore, type SocialComment } from "@/store/useSocialStore";
+import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { webShareUrl } from "@/constants/links";
@@ -48,7 +56,45 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
     () => listSharedStallPostsSync(repository),
     [publishedPosts, repository, safetyFilterVersion],
   );
-  const post = posts.find((candidate) => candidate.id === postId);
+  // Shared links can open a post this device never loaded: fetch it by id
+  // (works signed out for public posts) instead of trusting local caches.
+  const [fetchedBite, setFetchedBite] = useState<Bite | null>(null);
+  const [fetchState, setFetchState] = useState<"loading" | "done" | "error">("loading");
+  const [fetchAttempt, setFetchAttempt] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    setFetchState("loading");
+    getHungryService()
+      .social.getPostById(postId)
+      .then((bite) => {
+        if (cancelled) return;
+        setFetchedBite(bite);
+        setFetchState("done");
+      })
+      .catch(() => {
+        if (!cancelled) setFetchState("error");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [postId, fetchAttempt]);
+  const fetchedPost = useMemo(
+    () =>
+      fetchedBite
+        ? biteToStallPost(fetchedBite, { authorAvatarUrl: fetchedBite.authorAvatar })
+        : undefined,
+    [fetchedBite],
+  );
+  const cachedPost = posts.find((candidate) => candidate.id === postId);
+  const resolvedPost = fetchedPost ?? cachedPost;
+  const post =
+    resolvedPost &&
+    !isContentHiddenForSession({ id: resolvedPost.id, authorId: resolvedPost.authorId })
+      ? resolvedPost
+      : undefined;
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
+  const showToast = useUIStore((state) => state.showToast);
   const activityUpdates = useActivityStore((state) => state.activityUpdates);
   const dbActivityEvents = useActivityStore((state) => state.dbActivityEvents);
   const fetchActivityEvents = useActivityStore((state) => state.fetchActivityEvents);
@@ -74,8 +120,16 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
   }, []);
 
   useEffect(() => {
-    initializeInteractions(posts);
-  }, [initializeInteractions, posts]);
+    if (post) initializeInteractions([post]);
+  }, [initializeInteractions, post]);
+
+  const requireSignIn = useCallback(() => {
+    if (isAuthenticated) return true;
+    setReturnRoute({ name: "ActivityPostDetail", params: { postId } });
+    showToast({ message: "Sign in to like or save posts.", tone: "warning" });
+    navigation.navigate("AuthStack", { screen: "Login" });
+    return false;
+  }, [isAuthenticated, navigation, postId, setReturnRoute, showToast]);
 
   useEffect(() => {
     if (updateId) {
@@ -84,12 +138,15 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
   }, [markActivityRead, updateId]);
 
   useEffect(() => {
-    void fetchActivityEvents();
-  }, [fetchActivityEvents]);
+    if (isAuthenticated) void fetchActivityEvents();
+  }, [fetchActivityEvents, isAuthenticated]);
 
   const update = useMemo(() => {
+    if (!updateId) return undefined;
+    // Sample updates exist only in mock mode.
+    const mockUpdates = getServiceProvider().mode === "mock" ? ACTIVITY_UPDATES : [];
     return (
-      ACTIVITY_UPDATES.find((candidate) => candidate.id === updateId) ??
+      mockUpdates.find((candidate) => candidate.id === updateId) ??
       dbActivityEvents.find((candidate) => candidate.id === updateId) ??
       activityUpdates.find((candidate) => candidate.id === updateId)
     );
@@ -120,11 +177,38 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
   }, [activeCommentReview, posts, repository]);
 
   if (!post) {
+    if (fetchState === "loading" && !resolvedPost) {
+      return (
+        <Screen title="Post">
+          <View
+            accessibilityLabel="Loading post"
+            style={{ gap: spacing[3], paddingHorizontal: semanticSpacing.screenEdge }}
+          >
+            <Skeleton height={360} borderRadius={16} />
+            <Skeleton height={20} width="60%" />
+            <Skeleton height={16} width="40%" />
+          </View>
+        </Screen>
+      );
+    }
+    if (fetchState === "error" && !resolvedPost) {
+      return (
+        <Screen title="Post">
+          <EmptyState
+            title="Couldn't load this post"
+            body="Check your connection and try again."
+            ctaLabel="Try again"
+            onPress={() => setFetchAttempt((attempt) => attempt + 1)}
+          />
+        </Screen>
+      );
+    }
     return (
-      <Screen title="Activity post">
-        <View style={styles.empty}>
-          <AppText tone="secondary">This post is no longer available.</AppText>
-        </View>
+      <Screen title="Post">
+        <EmptyState
+          title="This post is no longer available"
+          body="It may have been removed, or it's only visible to the author's followers."
+        />
       </Screen>
     );
   }
@@ -133,6 +217,8 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
   const primaryDish = post.dishIds
     .map((dishId) => repository.getDishById(dishId))
     .filter(Boolean)[0];
+  const dishName =
+    primaryDish?.name ?? (fetchedBite?.id === post.id ? fetchedBite.dishName : undefined);
   const interaction = interactions[post.id] ?? {
     liked: false,
     saved: false,
@@ -161,7 +247,7 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
 
   return (
     <Screen
-      title="Activity post"
+      title={dishName ?? venue?.name ?? "Post"}
       subtitle={update ? `${update.actorName} · ${kindLabel}` : undefined}
       fullWidth
       contentContainerStyle={{ paddingHorizontal: 0 }}
@@ -191,7 +277,7 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
           <ZoomableMedia
             uri={post.mediaUrl}
             type={post.mediaType === "video" ? "video" : "image"}
-            accessibilityLabel={`${primaryDish?.name ?? venue?.name ?? "Activity post"} ${
+            accessibilityLabel={`${dishName ?? venue?.name ?? "Post"} ${
               post.mediaType === "video" ? "video" : "image"
             }`}
             style={styles.heroImage}
@@ -224,7 +310,7 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
             pointerEvents="none"
           >
             <AppText variant="h3" style={{ color: palette.white }}>
-              {primaryDish?.name ?? venue?.name ?? post.authorName}
+              {dishName ?? venue?.name ?? post.authorName}
             </AppText>
             <AppText variant="micro" style={{ color: palette.inverseTextSecondary }}>
               {venue ? `${venue.name} · ${venue.floor} ${venue.unitNumber}` : post.authorLocation}
@@ -241,7 +327,10 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
                 authorName: post.authorName,
                 authorId: post.authorId,
                 label: "post",
-                onHidden: onSafetyHidden,
+                onHidden: () => {
+                  onSafetyHidden();
+                  if (navigation.canGoBack()) navigation.goBack();
+                },
                 onBlocked: onSafetyHidden,
               })
             }
@@ -277,7 +366,7 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
                 accessibilityLabel="Share post"
                 hitSlop={10}
                 onPress={() => {
-                  const title = primaryDish?.name ?? post.authorName;
+                  const title = dishName ?? post.authorName;
                   setActiveShareReview({
                     reviewId: post.id,
                     postId: post.id,
@@ -298,9 +387,12 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
               </Pressable>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Save post"
+                accessibilityLabel={interaction.saved ? "Remove post from saved" : "Save post"}
+                accessibilityState={{ selected: interaction.saved }}
                 hitSlop={10}
-                onPress={() => void toggleSave(post.id)}
+                onPress={() => {
+                  if (requireSignIn()) void toggleSave(post.id);
+                }}
                 style={styles.inlineAction}
               >
                 <Bookmark
@@ -318,7 +410,7 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
                     setActiveCommentReview({
                       id: post.id,
                       authorName: post.authorName,
-                      dishName: primaryDish?.name ?? post.authorName,
+                      dishName: dishName ?? post.authorName,
                       caption: post.caption,
                     });
                     openCommentsSheet();
@@ -335,9 +427,12 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
               ) : null}
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Like post"
+                accessibilityLabel={interaction.liked ? "Unlike post" : "Like post"}
+                accessibilityState={{ selected: interaction.liked }}
                 hitSlop={10}
-                onPress={() => void toggleLike(post.id)}
+                onPress={() => {
+                  if (requireSignIn()) void toggleLike(post.id);
+                }}
                 style={styles.inlineAction}
               >
                 <Heart

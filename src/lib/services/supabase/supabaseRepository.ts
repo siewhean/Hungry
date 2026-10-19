@@ -174,6 +174,7 @@ let cachedBlogPosts: BlogPost[] = [];
 let cachedStallPosts: StallPost[] = [];
 
 const REFRESH_TTL_MS = 45_000;
+const CACHED_POST_LIMIT = 100;
 
 function mapBuilding(row: Row): BuildingSummary {
   return {
@@ -630,7 +631,7 @@ async function refreshCache(force = false): Promise<void> {
         blogResult,
         stallResult,
         postsResult,
-        postMediaResult,
+        hiddenPostsResult,
       ] = await Promise.all([
         client.from("buildings").select("*"),
         client.from("venues").select("*"),
@@ -646,15 +647,37 @@ async function refreshCache(force = false): Promise<void> {
         client.from("dietary_flags").select("id,slug"),
         client.from("blog_posts").select("*"),
         client.from("stall_posts").select("*"),
+        // Bounded: only the newest posts are cached for detail lookups. The Home
+        // feed itself reads the paged RPC.
         client
           .from("posts")
           .select("*")
           .eq("status", "published")
           .is("deleted_at", null)
           .order("published_at", { ascending: false })
-          .order("created_at", { ascending: false }),
-        client.from("post_media").select("*").order("sort_order", { ascending: true }),
+          .order("created_at", { ascending: false })
+          .limit(CACHED_POST_LIMIT),
+        // RLS returns only the viewer's own hides (none when signed out).
+        client.from("hidden_posts").select("post_id"),
       ]);
+      const hiddenPostIds = new Set(
+        Array.isArray(hiddenPostsResult.data) && !hiddenPostsResult.error
+          ? (hiddenPostsResult.data as unknown as Row[]).map((row) => toString(row.post_id))
+          : [],
+      );
+      const cachedPostIds =
+        Array.isArray(postsResult.data) && !postsResult.error
+          ? (postsResult.data as unknown as Row[]).map((row) => toString(row.id)).filter(Boolean)
+          : [];
+      // Media only for the cached posts, not the whole table.
+      const postMediaResult =
+        cachedPostIds.length > 0
+          ? await client
+              .from("post_media")
+              .select("*")
+              .in("post_id", cachedPostIds)
+              .order("sort_order", { ascending: true })
+          : { data: [] as Row[], error: null };
 
       if (Array.isArray(buildingsResult.data) && !buildingsResult.error) {
         cachedBuildings = (buildingsResult.data as unknown as Row[]).map(mapBuilding);
@@ -706,7 +729,9 @@ async function refreshCache(force = false): Promise<void> {
           ? (stallResult.data as unknown as Row[]).map(mapStallPost)
           : cachedStallPosts;
       if (Array.isArray(postsResult.data) && !postsResult.error) {
-        const postRows = postsResult.data as unknown as Row[];
+        const postRows = (postsResult.data as unknown as Row[]).filter(
+          (row) => !hiddenPostIds.has(toString(row.id)),
+        );
         const postMediaRows =
           Array.isArray(postMediaResult.data) && !postMediaResult.error
             ? (postMediaResult.data as unknown as Row[])

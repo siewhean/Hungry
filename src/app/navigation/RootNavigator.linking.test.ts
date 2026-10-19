@@ -91,13 +91,14 @@ test("usehungry.com share links open the matching app screen", () => {
   });
   assert.equal(linking.getStateFromPath("post/<script>"), undefined);
 
-  // Posts need an account: signed-out people sign in, then land on the post.
+  // A shared post opens without an account (public posts only, enforced by
+  // get_post_by_id); liking or saving asks the visitor to sign in.
   authState = { ...authState, isAuthenticated: false };
   assert.deepEqual(linking.getStateFromPath("post/post-1")?.routes?.[0], {
-    name: "AuthStack",
-    params: { screen: "Login", pop: true },
+    name: "ActivityPostDetail",
+    params: { postId: "post-1" },
   });
-  assert.deepEqual(redirected, [{ name: "ActivityPostDetail", params: { postId: "post-1" } }]);
+  assert.deepEqual(redirected, []);
 });
 
 test("auth deep links pop to an existing auth screen instead of stacking a new one", () => {
