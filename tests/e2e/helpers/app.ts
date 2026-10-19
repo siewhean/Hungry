@@ -125,7 +125,7 @@ export async function createEmailAccountFromScratch(page: Page, prefix: string) 
   await page.getByRole("button", { name: "Create Account" }).click();
   await expect(page.getByText("Verify your email", { exact: true }).first()).toBeVisible();
   await expect(page.getByText(user.email)).toBeVisible();
-  await page.getByRole("button", { name: "I Verified My Email" }).click();
+  await page.getByRole("button", { name: "I've confirmed my email" }).click();
   await expect(page.getByText("Find the dish. Not just the restaurant.")).toBeVisible();
 
   return user;

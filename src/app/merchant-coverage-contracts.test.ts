@@ -202,7 +202,7 @@ test("merchant menu and OCR flows cover catalog writes that become consumer-visi
       /syncMerchantDishToUserCatalog/,
       /syncMerchantOutletToUserCatalog/,
       /deleteDish\(outletId, dishId\)/,
-      /acceptOCRDraft\(draftId\)/,
+      /acceptOCRDraft\(draftId, edits\)/,
     ],
     "mock merchant catalog propagation",
   );
@@ -244,7 +244,9 @@ test("merchant inbox, promotions, AI assistant, and settings use service-backed 
       /merchant\.replyToInteraction\(/,
       /merchant\.reportInteraction\(/,
       /merchant\.generateAIReply\(/,
-      /onViewOriginal/,
+      /<Modal visible transparent/,
+      /<KeyboardAvoidingView/,
+      /Your reply is public/,
       /accessibilityLabel="Close reply composer"/,
     ],
     "CustomerInboxScreen",
@@ -279,7 +281,8 @@ test("merchant inbox, promotions, AI assistant, and settings use service-backed 
       /if \(!title \|\| !description \|\| !startDate \|\| !endDate\)/,
       /dateRegex\.test\(startDate\)/,
       /dateRegex\.test\(endDate\)/,
-      /setAudienceSelected/,
+      /toSingaporePromotionBoundary\(startDate, "start"\)/,
+      /toSingaporePromotionBoundary\(endDate, "end"\)/,
       /targetDishId/,
       /resolvePromotionRuntimeStatus/,
       /status: newStatus/,
@@ -301,18 +304,24 @@ test("merchant inbox, promotions, AI assistant, and settings use service-backed 
   assertSourceIncludes(
     settings,
     [
-      /merchant\.getTeamMembers\(/,
-      /merchant\.addTeamMember\(/,
-      /merchant\.removeTeamMember\(/,
-      /merchant\.getNotificationPreferences\(/,
-      /merchant\.updateNotificationPreferences\(/,
       /merchant\.getMerchantNotifications\(/,
-      /merchant\.sendWeeklySummaryNotifications\(/,
-      /accessibilityLabel="Team member email"/,
-      /accessibilityLabel="Team member name"/,
-      /accessibilityLabel="Remove team member"/,
+      /merchant\.getWeeklySummaryStats\(/,
+      /merchant\.syncLowRatingNotifications\(/,
+      /Hungry does not send push or email alerts to merchants yet/,
     ],
     "MerchantSettingsScreen",
+  );
+  // Team invites, alert preferences and weekly emails are not delivered yet, so they are hidden.
+  assertSourceExcludes(
+    settings,
+    [
+      /merchant\.addTeamMember\(/,
+      /merchant\.sendWeeklySummaryNotifications\(/,
+      /merchant\.updateNotificationPreferences\(/,
+      /Immediate alert/,
+      /Weekly email summary/,
+    ],
+    "MerchantSettingsScreen hidden fake features",
   );
   assertSourceIncludes(
     serviceTests,

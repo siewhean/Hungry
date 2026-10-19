@@ -283,6 +283,10 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
                 <MoreHorizontal color={palette.text} size={24} />
               </Pressable>
               <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Share, ${interaction.shareCount} ${
+                  interaction.shareCount === 1 ? "share" : "shares"
+                }`}
                 hitSlop={10}
                 onPress={() => {
                   if (!primaryDish) return;
@@ -315,6 +319,11 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
                 )}
               </Pressable>
               <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Save, ${interaction.saveCount} ${
+                  interaction.saveCount === 1 ? "save" : "saves"
+                }${isSaved ? ", saved" : ""}`}
+                accessibilityState={{ selected: isSaved }}
                 hitSlop={10}
                 onPress={() => void toggleSave(feedPost.id)}
                 style={styles.inlineAction}
@@ -335,6 +344,10 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
               </Pressable>
               {commentsEnabled ? (
                 <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Comments, ${interaction.commentCount} ${
+                    interaction.commentCount === 1 ? "comment" : "comments"
+                  }`}
                   hitSlop={10}
                   style={styles.inlineAction}
                   onPress={() => {
@@ -359,6 +372,11 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
                 </Pressable>
               ) : null}
               <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Like, ${interaction.likeCount} ${
+                  interaction.likeCount === 1 ? "like" : "likes"
+                }${isLiked ? ", liked" : ""}`}
+                accessibilityState={{ selected: isLiked }}
                 hitSlop={10}
                 onPress={() => void toggleLike(feedPost.id)}
                 style={styles.inlineAction}

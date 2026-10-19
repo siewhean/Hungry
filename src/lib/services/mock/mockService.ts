@@ -109,6 +109,7 @@ import {
   processExplicitFeedback as processExplicitFeedbackCore,
 } from "@/lib/ai/tasteEngine";
 import type { ExplicitFeedbackEvent } from "@/lib/ai/tasteEngine";
+import { suggestAllergensFromIngredients } from "@/features/merchant/allergenKeywords";
 import { applyVerificationSubmission } from "@/features/merchant/verificationStateMachine";
 import { validateMerchantProfileUpdates } from "@/features/merchant/profileValidation";
 import { filterCustomerVisiblePromotions } from "@/features/merchant/customerPromotions";
@@ -324,6 +325,9 @@ let _portfolioItems: PortfolioItem[] = [];
 let _portfolioCollaborators: PortfolioCollaborator[] = [];
 let _portfolioFollows: PortfolioFollow[] = [];
 let _portfolioFlags: PortfolioFlag[] = [];
+/** Lists a moderator removed; like portfolios.moderation_removed_at they stay private. */
+const _moderationRemovedPortfolioIds = new Set<string>();
+const MODERATION_REMOVED_LIST_MESSAGE = "This list was removed by moderators and can't be shared";
 let _passportStamps: PassportStamp[] = [];
 let _passportEvents: PassportProgressEvent[] = [];
 let _userStallSubmissions: UserStallSubmission[] = [];
@@ -551,6 +555,20 @@ const _merchantActionEvents: MockMerchantActionEvent[] = [];
 const _merchantNotifications: MerchantNotification[] = [];
 const _merchantMenuByOutlet = new Map<string, DishDetail[]>();
 const _biteReactions: Record<string, { cravings: Set<string>; saves: Set<string> }> = {};
+
+function withMockViewerReactions(bite: Bite): Bite {
+  const reactions = _biteReactions[bite.id];
+  const viewerHasLiked = reactions?.cravings.has(_profile.id) ?? false;
+  const viewerHasSaved = reactions?.saves.has(_profile.id) ?? false;
+  // Seeded counts exclude the viewer, like a server count that includes them.
+  return {
+    ...bite,
+    cravingCount: bite.cravingCount + (viewerHasLiked ? 1 : 0),
+    savedCount: bite.savedCount + (viewerHasSaved ? 1 : 0),
+    viewerHasLiked,
+    viewerHasSaved,
+  };
+}
 const _merchantClaimInterests = new Set<string>();
 const _merchantInteractionReports: {
   interactionId: string;
@@ -1445,6 +1463,12 @@ export const hungryService: HungryService = {
       return resolve(undefined);
     },
 
+    async confirmEmail(_code) {
+      _isAuthenticated = true;
+      _authProvider = "email";
+      return resolve(mockSession(_profile));
+    },
+
     async signIn(email, _password) {
       _isAuthenticated = true;
       _authProvider = "email";
@@ -1498,8 +1522,13 @@ export const hungryService: HungryService = {
       return resolve(undefined);
     },
 
-    async resetPassword(_token, _password) {
-      // Mock: no-op — in production verifies token and updates password
+    async exchangeRecoveryCode(_token) {
+      // Mock: no-op — in production exchanges the reset link code for a session
+      return resolve(undefined);
+    },
+
+    async updatePassword(_password) {
+      // Mock: no-op — in production updates the recovery session's password
       return resolve(undefined);
     },
 
@@ -1513,6 +1542,13 @@ export const hungryService: HungryService = {
         throw new Error("This account signs in with Google or Apple and has no password.");
       }
       if (!currentPassword) throw new Error("Current password is incorrect.");
+      return resolve(undefined);
+    },
+
+    async requestEmailChange(newEmail) {
+      if (!_isAuthenticated) throw new Error("You must be signed in to change your email.");
+      if (!newEmail.trim()) throw new Error("Enter a new email address.");
+      // Like Supabase, nothing changes until the user confirms from the new inbox.
       return resolve(undefined);
     },
 
@@ -1739,6 +1775,16 @@ export const hungryService: HungryService = {
     },
 
     async getUserReviews(_userId) {
+      // Another user's profile: only reviews written by that account, like the Supabase read.
+      if (_userId !== _profile.id) {
+        return resolve(
+          dishes
+            .flatMap((dish) => dish.reviews ?? [])
+            .filter(
+              (review) => review.authorId === _userId && !isMockReviewHiddenForViewer(review),
+            ),
+        );
+      }
       // Mock: return the demo user's reviews (keyed by reviewedDishIds)
       const reviewedDishes = _profile.reviewedDishIds
         .map((id) => dishes.find((d) => d.id === id))
@@ -1772,7 +1818,9 @@ export const hungryService: HungryService = {
     async listRecentReviews(options) {
       const limit = Math.min(Math.max(Math.floor(options?.limit ?? 50), 1), 100);
       const before = options?.before ? new Date(options.before).getTime() : undefined;
+      const dishIdFilter = options?.dishIds ? new Set(options.dishIds) : undefined;
       const entries = dishes
+        .filter((dish) => !dishIdFilter || dishIdFilter.has(dish.id))
         .flatMap((dish): RecentReviewFeedEntry[] =>
           dish.reviews
             .filter((review) => !isMockReviewHiddenForViewer(review))
@@ -1802,13 +1850,52 @@ export const hungryService: HungryService = {
     },
 
     async updateProfile(updates) {
-      _profile = { ..._profile, ...updates } as UserProfile;
+      // The sign-in email changes only through auth.requestEmailChange.
+      const { email: _ignoredEmail, ...profileUpdates } = updates;
+      _profile = { ..._profile, ...profileUpdates } as UserProfile;
       return resolve({ ..._profile });
     },
 
     async updateDietaryPreferences(flags: DietaryFlag[]) {
       _profile = { ..._profile, dietaryPreferences: flags };
       return resolve(undefined);
+    },
+
+    async exportMyData() {
+      const userId = _profile.id;
+      const loadAllFollowRows = async <T>(
+        loadPage: (page: { limit: number; offset: number }) => Promise<T[]>,
+      ) => {
+        const rows: T[] = [];
+        for (;;) {
+          const page = await loadPage({ limit: 500, offset: rows.length });
+          rows.push(...page);
+          if (page.length < 500) return rows;
+        }
+      };
+      const [reviews, posts, savedPosts, followers, following] = await Promise.all([
+        hungryService.reviews.getUserReviews(userId),
+        hungryService.social.listUserPosts(userId),
+        hungryService.social.getSavedBites(),
+        loadAllFollowRows((page) => hungryService.social.listFollowers(userId, page)),
+        loadAllFollowRows((page) => hungryService.social.listFollowing(userId, page)),
+      ]);
+      const data: Record<string, unknown> = {
+        profile: clone(_profile),
+        reviews,
+        posts,
+        favouriteDishIds: [..._profile.favouriteDishIds],
+        savedPosts,
+        followers,
+        following,
+      };
+      return resolve({
+        exportVersion: 2,
+        generatedAt: new Date().toISOString(),
+        categories: Object.keys(data),
+        notIncluded: ["Mock data source: only in-memory demo data is included."],
+        data,
+      });
     },
 
     async getGuestProfile() {
@@ -1895,13 +1982,32 @@ export const hungryService: HungryService = {
   social: {
     async getBitesFeed(_lat?, _lng?) {
       await hydrateSocial();
-      // Mirrors the Supabase feed read: blocked authors never reach the client.
-      return resolve(MOCK_BITES_FEED.filter((bite) => !_blockedUsers.has(bite.authorId)));
+      // Mirrors the Supabase feed read: blocked authors never reach the client,
+      // and each row carries the viewer's own like/save state.
+      return resolve(
+        MOCK_BITES_FEED.filter((bite) => !_blockedUsers.has(bite.authorId)).map(
+          withMockViewerReactions,
+        ),
+      );
     },
 
-    async listUserPosts(userId: string) {
+    async getPostById(postId: string) {
       await hydrateSocial();
-      return resolve(MOCK_BITES_FEED.filter((bite) => bite.authorId === userId));
+      const bite = MOCK_BITES_FEED.find(
+        (candidate) => candidate.id === postId && !_blockedUsers.has(candidate.authorId),
+      );
+      return resolve(bite ? withMockViewerReactions(bite) : null);
+    },
+
+    async listUserPosts(userId: string, page?: { limit?: number; offset?: number }) {
+      await hydrateSocial();
+      const offset = page?.offset ?? 0;
+      return resolve(
+        MOCK_BITES_FEED.filter((bite) => bite.authorId === userId).slice(
+          offset,
+          offset + (page?.limit ?? 60),
+        ),
+      );
     },
 
     async postBite(draft: BiteDraft) {
@@ -1948,7 +2054,7 @@ export const hungryService: HungryService = {
       return resolve(newBite);
     },
 
-    async reactToBite(biteId, reaction) {
+    async reactToBite(biteId, reaction, active) {
       await hydrateSocial();
       if (!_biteReactions[biteId]) {
         _biteReactions[biteId] = { cravings: new Set(), saves: new Set() };
@@ -1956,10 +2062,11 @@ export const hungryService: HungryService = {
       const userId = _profile.id;
       const bucket = reaction === "craving" ? "cravings" : "saves";
       const set = _biteReactions[biteId][bucket];
-      if (set.has(userId)) {
-        set.delete(userId);
-      } else {
+      // Idempotent, like the Supabase upsert/delete.
+      if (active) {
         set.add(userId);
+      } else {
+        set.delete(userId);
       }
 
       // Persist (convert Sets to Arrays for JSON)
@@ -2769,22 +2876,34 @@ export const hungryService: HungryService = {
       return resolve(clone(_merchantOCRDrafts.filter((draft) => draft.outletId === outletId)));
     },
 
-    async acceptOCRDraft(draftId) {
+    async acceptOCRDraft(draftId, edits) {
       const draft = _merchantOCRDrafts.find((d) => d.id === draftId);
       if (!draft) throw new Error(`OCR draft ${draftId} not found`);
+      const dishId = `dish-from-${draftId}`;
+      if (draft.status === "accepted") {
+        const existing = getMerchantMenu(draft.outletId).find((dish) => dish.id === dishId);
+        if (existing) {
+          // Already added (another device or a list tap): apply the editor's changes, not drop them.
+          return edits && Object.keys(edits).length > 0
+            ? this.editDish(draft.outletId, existing.id, edits)
+            : resolve(clone(existing));
+        }
+      }
       if (draft.status !== "pending")
         throw new Error(`OCR draft ${draftId} is already ${draft.status}`);
 
+      const price = edits?.price ?? draft.price ?? 5;
       const acceptedDish = buildMerchantDish(draft.outletId, {
-        id: `dish-from-${draftId}`,
         name: draft.name,
-        price: draft.price ?? 5,
-        priceRange: `S$${(draft.price ?? 5).toFixed(2)}`,
+        price,
+        priceRange: `S$${price.toFixed(2)}`,
         imageUrl: draft.sourcePhotoUrl,
         gallery: [draft.sourcePhotoUrl],
         description: draft.suggestedDescription,
         tasteTags: draft.suggestedTasteTags ?? [],
         dietaryFlags: draft.suggestedDietaryTags ?? [],
+        ...edits,
+        id: dishId,
       });
       getMerchantMenu(draft.outletId).push(acceptedDish);
       syncMerchantDishToUserCatalog(draft.outletId, acceptedDish);
@@ -3042,16 +3161,7 @@ export const hungryService: HungryService = {
     },
 
     async suggestAllergens(ingredients) {
-      const allergens: string[] = [];
-      const lower = ingredients.map((i) => i.toLowerCase());
-      if (lower.some((i) => i.includes("egg"))) allergens.push("Eggs");
-      if (lower.some((i) => i.includes("soy"))) allergens.push("Soy");
-      if (lower.some((i) => i.includes("wheat") || i.includes("noodle"))) allergens.push("Gluten");
-      if (lower.some((i) => i.includes("peanut"))) allergens.push("Peanuts");
-      if (lower.some((i) => i.includes("sesame"))) allergens.push("Sesame");
-      if (lower.some((i) => i.includes("shrimp") || i.includes("prawn")))
-        allergens.push("Shellfish");
-      return resolve(allergens);
+      return resolve(suggestAllergensFromIngredients(ingredients));
     },
 
     async suggestTags(dishName, _description) {
@@ -3529,6 +3639,13 @@ export const hungryService: HungryService = {
       options?: PortfolioMutationOptions,
     ) {
       assertMockPortfolioVersion(id, options);
+      if (
+        _moderationRemovedPortfolioIds.has(id) &&
+        updates.visibility &&
+        updates.visibility !== "private"
+      ) {
+        throw new Error(MODERATION_REMOVED_LIST_MESSAGE);
+      }
       const updatedAt = new Date().toISOString();
       let found = false;
       _portfolios = _portfolios.map((portfolio) => {
@@ -3569,6 +3686,9 @@ export const hungryService: HungryService = {
 
     async publishPortfolio(id: string, options?: PortfolioMutationOptions) {
       assertMockPortfolioVersion(id, options);
+      if (_moderationRemovedPortfolioIds.has(id)) {
+        throw new Error(MODERATION_REMOVED_LIST_MESSAGE);
+      }
       const publishedAt = new Date().toISOString();
       let found = false;
       let shouldRecordPublish = false;
@@ -3662,11 +3782,19 @@ export const hungryService: HungryService = {
       if (!portfolio || !canViewMockPortfolio(portfolio)) {
         throw new Error(`Portfolio ${portfolioId} not found`);
       }
+      // Private notes are only for the owner and collaborators, like the Supabase column guard.
+      const canReadPrivateNotes =
+        portfolio.ownerId === _profile.id ||
+        _portfolioCollaborators.some(
+          (collaborator) =>
+            collaborator.portfolioId === portfolioId && collaborator.userId === _profile.id,
+        );
       return resolve(
         clone(
           _portfolioItems
             .filter((item) => item.portfolioId === portfolioId)
-            .sort((left, right) => left.position - right.position),
+            .sort((left, right) => left.position - right.position)
+            .map((item) => (canReadPrivateNotes ? item : { ...item, privateNotes: undefined })),
         ),
       );
     },
@@ -3943,6 +4071,21 @@ export const hungryService: HungryService = {
       });
       if (!found) {
         throw new Error(`Portfolio flag ${flagId} not found`);
+      }
+      if (resolution === "removed") {
+        // Like resolve_portfolio_flag: the list is taken down, not just the flag closed.
+        const flaggedPortfolioId = _portfolioFlags.find((flag) => flag.id === flagId)?.portfolioId;
+        if (flaggedPortfolioId) _moderationRemovedPortfolioIds.add(flaggedPortfolioId);
+        _portfolios = _portfolios.map((portfolio) =>
+          portfolio.id === flaggedPortfolioId
+            ? { ...portfolio, visibility: "private", publishedAt: undefined, updatedAt: reviewedAt }
+            : portfolio,
+        );
+        _portfolioFlags = _portfolioFlags.map((flag) =>
+          flag.portfolioId === flaggedPortfolioId && flag.status === "pending"
+            ? { ...flag, status: "removed", reviewedAt, reviewedBy: _profile.id }
+            : flag,
+        );
       }
       return resolve(undefined);
     },

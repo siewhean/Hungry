@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View, type AccessibilityActionEvent } from "react-native";
 import { Star } from "lucide-react-native";
 
 import { useHungryTheme } from "@/theme";
@@ -20,12 +20,29 @@ export function StarRating({
 }: StarRatingProps) {
   const { palette } = useHungryTheme();
 
+  // One accessible element: screen readers swipe up/down to adjust instead of
+  // visiting five separate stars.
+  const handleAccessibilityAction = (event: AccessibilityActionEvent) => {
+    if (event.nativeEvent.actionName === "increment") {
+      onChange?.(Math.min(max, value + 1));
+    } else if (event.nativeEvent.actionName === "decrement") {
+      onChange?.(Math.max(1, value - 1));
+    }
+  };
+
   return (
     <View
       style={[styles.row, fullWidth && { justifyContent: "space-between" }]}
-      accessibilityLabel={editable ? "Rating out of 5 stars" : `${value} out of ${max} stars`}
-      accessibilityRole={editable ? "adjustable" : "none"}
-      accessibilityValue={{ min: 1, max, now: value }}
+      accessible
+      accessibilityLabel={
+        editable
+          ? `Rating, ${value > 0 ? `${value} of ${max}` : "not rated"}`
+          : `${value} out of ${max} stars`
+      }
+      accessibilityRole={editable ? "adjustable" : "image"}
+      accessibilityValue={editable ? { min: 0, max, now: value } : undefined}
+      accessibilityActions={editable ? [{ name: "increment" }, { name: "decrement" }] : undefined}
+      onAccessibilityAction={editable ? handleAccessibilityAction : undefined}
     >
       {Array.from({ length: max }, (_, index) => {
         const starValue = index + 1;
@@ -33,7 +50,12 @@ export function StarRating({
 
         if (!editable) {
           return (
-            <View key={starValue} style={styles.hitArea} accessibilityLabel={`${starValue} star`}>
+            <View
+              key={starValue}
+              style={styles.hitArea}
+              importantForAccessibility="no-hide-descendants"
+              accessibilityElementsHidden
+            >
               <Star
                 size={24}
                 color={active ? palette.amber : palette.border}
@@ -46,8 +68,9 @@ export function StarRating({
         return (
           <Pressable
             key={starValue}
-            accessibilityRole="button"
-            accessibilityLabel={`${starValue} star`}
+            testID={`star-${starValue}`}
+            importantForAccessibility="no-hide-descendants"
+            accessibilityElementsHidden
             onPress={() => onChange?.(starValue)}
             hitSlop={8}
             style={styles.hitArea}

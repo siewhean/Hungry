@@ -60,6 +60,14 @@ export const useReviewDraftStore = create<ReviewDraftState>()(
             venue_id: selectedVenueId,
             dish_id: selectedDishId,
           });
+          // Picking the first dish keeps whatever was already filled in
+          // (rating, text, photos); only switching from one dish to another
+          // starts a fresh draft.
+          if (!state.draft.selectedDishId) {
+            return {
+              draft: { ...state.draft, selectedVenueId, selectedDishId },
+            };
+          }
           return {
             draft: {
               ...initialDraft,
@@ -145,6 +153,16 @@ export const useReviewDraftStore = create<ReviewDraftState>()(
     {
       name: "hungry-review-draft-v1",
       storage: hungryPersistStorage,
+      // v2: recommend became boolean | null. A v1 draft's false was the old
+      // default, not an answer, so it is cleared rather than sent as "No".
+      version: 2,
+      migrate: (persistedState, version) => {
+        const state = persistedState as Partial<ReviewDraftState> | undefined;
+        if (version < 2 && state?.draft) {
+          return { ...state, draft: { ...state.draft, recommend: null } };
+        }
+        return state as ReviewDraftState;
+      },
       partialize: (state) => ({
         draft: state.draft,
         failedPhotoUris: state.failedPhotoUris,

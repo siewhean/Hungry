@@ -170,10 +170,27 @@ let hydratedAt = 0;
 let cachedBuildings: BuildingSummary[] = [];
 let cachedVenues: VenueSummary[] = [];
 let cachedDishes: DishDetail[] = [];
+// Built once per catalog load, so per-venue lookups don't scan every dish.
+let dishesByVenueIndex: { source: DishDetail[]; byVenueId: Map<string, DishDetail[]> } | null =
+  null;
+
+function getDishesByVenueIndex(): Map<string, DishDetail[]> {
+  if (!dishesByVenueIndex || dishesByVenueIndex.source !== cachedDishes) {
+    const byVenueId = new Map<string, DishDetail[]>();
+    cachedDishes.forEach((dish) => {
+      const list = byVenueId.get(dish.venueId);
+      if (list) list.push(dish);
+      else byVenueId.set(dish.venueId, [dish]);
+    });
+    dishesByVenueIndex = { source: cachedDishes, byVenueId };
+  }
+  return dishesByVenueIndex.byVenueId;
+}
 let cachedBlogPosts: BlogPost[] = [];
 let cachedStallPosts: StallPost[] = [];
 
 const REFRESH_TTL_MS = 45_000;
+const CACHED_POST_LIMIT = 100;
 
 function mapBuilding(row: Row): BuildingSummary {
   return {
@@ -610,6 +627,38 @@ function buildDishPresentationMap(
   return presentationByDishId;
 }
 
+// The viewer's saved and liked posts can be older than the newest
+// CACHED_POST_LIMIT; load them too so Saved/Liked grids and their detail views
+// keep working.
+async function loadViewerReactedPostRows(
+  client: NonNullable<ReturnType<typeof getSupabaseClient>>,
+  alreadyLoadedIds: Set<string>,
+): Promise<Row[]> {
+  const { data: sessionData } = await client.auth.getSession();
+  const viewerId = sessionData.session?.user?.id;
+  if (!viewerId) return [];
+  const [savesResult, likesResult] = await Promise.all([
+    client.from("post_saves").select("post_id").eq("user_id", viewerId),
+    client.from("post_likes").select("post_id").eq("user_id", viewerId),
+  ]);
+  const reactedIds = new Set<string>();
+  for (const result of [savesResult, likesResult]) {
+    if (!Array.isArray(result.data) || result.error) continue;
+    for (const row of result.data as unknown as Row[]) {
+      const postId = toString(row.post_id);
+      if (postId && !alreadyLoadedIds.has(postId)) reactedIds.add(postId);
+    }
+  }
+  if (reactedIds.size === 0) return [];
+  const { data, error } = await client
+    .from("posts")
+    .select("*")
+    .in("id", [...reactedIds])
+    .eq("status", "published")
+    .is("deleted_at", null);
+  return Array.isArray(data) && !error ? (data as unknown as Row[]) : [];
+}
+
 async function refreshCache(force = false): Promise<void> {
   if (!isSupabaseConfigured()) return;
   if (!force && hydrated && Date.now() - hydratedAt < REFRESH_TTL_MS) return;
@@ -630,7 +679,7 @@ async function refreshCache(force = false): Promise<void> {
         blogResult,
         stallResult,
         postsResult,
-        postMediaResult,
+        hiddenPostsResult,
       ] = await Promise.all([
         client.from("buildings").select("*"),
         client.from("venues").select("*"),
@@ -646,15 +695,43 @@ async function refreshCache(force = false): Promise<void> {
         client.from("dietary_flags").select("id,slug"),
         client.from("blog_posts").select("*"),
         client.from("stall_posts").select("*"),
+        // Bounded: only the newest posts are cached for detail lookups. The Home
+        // feed itself reads the paged RPC.
         client
           .from("posts")
           .select("*")
           .eq("status", "published")
           .is("deleted_at", null)
           .order("published_at", { ascending: false })
-          .order("created_at", { ascending: false }),
-        client.from("post_media").select("*").order("sort_order", { ascending: true }),
+          .order("created_at", { ascending: false })
+          .limit(CACHED_POST_LIMIT),
+        // RLS returns only the viewer's own hides (none when signed out).
+        client.from("hidden_posts").select("post_id"),
       ]);
+      const hiddenPostIds = new Set(
+        Array.isArray(hiddenPostsResult.data) && !hiddenPostsResult.error
+          ? (hiddenPostsResult.data as unknown as Row[]).map((row) => toString(row.post_id))
+          : [],
+      );
+      const recentPostRows =
+        Array.isArray(postsResult.data) && !postsResult.error
+          ? (postsResult.data as unknown as Row[])
+          : [];
+      const viewerPostRows = await loadViewerReactedPostRows(
+        client,
+        new Set(recentPostRows.map((row) => toString(row.id))),
+      );
+      const cachedPostRows = [...recentPostRows, ...viewerPostRows];
+      const cachedPostIds = cachedPostRows.map((row) => toString(row.id)).filter(Boolean);
+      // Media only for the cached posts, not the whole table.
+      const postMediaResult =
+        cachedPostIds.length > 0
+          ? await client
+              .from("post_media")
+              .select("*")
+              .in("post_id", cachedPostIds)
+              .order("sort_order", { ascending: true })
+          : { data: [] as Row[], error: null };
 
       if (Array.isArray(buildingsResult.data) && !buildingsResult.error) {
         cachedBuildings = (buildingsResult.data as unknown as Row[]).map(mapBuilding);
@@ -706,7 +783,7 @@ async function refreshCache(force = false): Promise<void> {
           ? (stallResult.data as unknown as Row[]).map(mapStallPost)
           : cachedStallPosts;
       if (Array.isArray(postsResult.data) && !postsResult.error) {
-        const postRows = postsResult.data as unknown as Row[];
+        const postRows = cachedPostRows.filter((row) => !hiddenPostIds.has(toString(row.id)));
         const postMediaRows =
           Array.isArray(postMediaResult.data) && !postMediaResult.error
             ? (postMediaResult.data as unknown as Row[])
@@ -834,11 +911,16 @@ export async function searchDishesViaRpc(
   filters: SearchFilters,
   tasteProfile: TasteVector,
 ): Promise<SearchResult[] | undefined> {
+  const hasLocation = typeof filters.latitude === "number" && typeof filters.longitude === "number";
+  const query = filters.query.trim();
   const rows = await rpcRows("search_dishes", {
-    p_query: filters.query.trim() || null,
+    p_query: query || null,
     p_lat: filters.latitude ?? null,
     p_lng: filters.longitude ?? null,
-    p_radius_meters: filters.radius || null,
+    // Without a location the RPC would compare the radius against the stored
+    // dishes.distance_meters column, which is not the distance from the user.
+    // Text queries search everywhere; only location browsing is radius-bound.
+    p_radius_meters: hasLocation && !query ? filters.radius || null : null,
     p_dietary_flags: filters.dietaryFlags,
     p_limit: 20,
     p_cursor_score: null,
@@ -1068,7 +1150,7 @@ const supabaseRepositoryImpl: DataRepository = {
 
   listDishesByVenue(venueId: string): DishDetail[] {
     ensureHydrated();
-    return cachedDishes.filter((dish) => dish.venueId === venueId);
+    return [...(getDishesByVenueIndex().get(venueId) ?? [])];
   },
 
   listPopularNearby(): DishDetail[] {

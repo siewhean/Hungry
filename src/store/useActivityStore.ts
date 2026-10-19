@@ -4,6 +4,7 @@ import { persist } from "zustand/middleware";
 import {
   getActivityReadKey,
   getActivityUnreadCount,
+  mapActivityEventToUpdate,
   type ActivityUpdate,
   type ActivityItemType,
   type ActivityChatMessage,
@@ -84,33 +85,7 @@ export const useActivityStore = create<ActivityState>()(
         if (getServiceProvider().mode === "mock") return;
         try {
           const events = await getHungryService().notifications.listActivityEvents();
-          const mapped: ActivityUpdate[] = events.map((e) => ({
-            id: e.id,
-            kind:
-              e.eventType === "new_like"
-                ? "like"
-                : e.eventType === "new_follower"
-                  ? "share"
-                  : e.eventType === "follow_request"
-                    ? "follow_request"
-                    : "comment",
-            postId: e.targetType === "post" ? e.targetId : "",
-            actorId: e.actorId,
-            actorName: e.actorName,
-            text:
-              e.eventType === "new_like"
-                ? "liked your post"
-                : e.eventType === "new_comment"
-                  ? "commented on your post"
-                  : e.eventType === "new_reply"
-                    ? "replied to your comment"
-                    : e.eventType === "follow_request"
-                      ? "requested to follow you"
-                      : "started following you",
-            target: e.eventType === "follow_request" ? "Review follow requests" : e.targetId,
-            time: e.createdAt,
-            unread: !e.readAt,
-          }));
+          const mapped: ActivityUpdate[] = events.map(mapActivityEventToUpdate);
           set({ dbActivityEvents: mapped });
         } catch (error) {
           console.warn("Failed to fetch activity events", error);

@@ -9,7 +9,6 @@ const PROTECTED_DEEP_LINK_ROUTES = new Set([
   "MerchantTabs",
   "Post",
   "ActivityInbox",
-  "ActivityPostDetail",
   "ChatDetail",
   "DirectMessages",
   "EditProfile",
@@ -113,8 +112,12 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
   if (path === "auth/reset" || path === "auth/callback") {
     return createAuthState("ResetPassword", parseAuthCallbackCode(rawPath));
   }
-  // Supabase confirms the address before redirecting; the user then signs in.
-  if (path === "auth/confirm") return createAuthState("Login");
+  // The confirmation link carries a PKCE code; EmailVerification exchanges it for a
+  // session. Without a code there is nothing to exchange, so the user signs in.
+  if (path === "auth/confirm") {
+    const params = parseAuthCallbackCode(rawPath);
+    return params ? createAuthState("EmailVerification", params) : createAuthState("Login");
+  }
   // OAuth returns are consumed by WebBrowser.openAuthSessionAsync.
   if (path === "auth/oauth") return undefined;
   if (path === "auth/reset/success") return createAuthState("ResetPasswordSuccess");

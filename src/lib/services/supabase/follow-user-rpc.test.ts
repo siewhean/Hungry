@@ -116,36 +116,28 @@ test("mock follow lists page like the RPCs and refuse self-follow", async () => 
   }
 });
 
-test("data export reads every follow page instead of the first 100", async () => {
+test("data export fails loudly instead of returning a partial export", async () => {
   const { buildMyDataExport } = await import("@/features/profile/exportMyData");
-  const rows = Array.from({ length: 1203 }, (_, index) => ({
-    userId: `u-${index}`,
-    displayName: `User ${index}`,
-  }));
-  const pages: { limit?: number; offset?: number }[] = [];
-  const listPage = async (_userId: string, page?: { limit?: number; offset?: number }) => {
-    pages.push(page ?? {});
-    const offset = page?.offset ?? 0;
-    return rows.slice(offset, offset + (page?.limit ?? 100));
-  };
   const service = {
-    profile: { getProfile: async () => ({ id: "me" }), getFavouriteDishIds: async () => [] },
-    reviews: { getUserReviews: async () => [] },
-    social: {
-      listUserPosts: async () => [],
-      getSavedBites: async () => [],
-      listFollowers: listPage,
-      listFollowing: async () => [],
+    profile: {
+      exportMyData: async () => {
+        throw new Error("permission denied for function export_my_data");
+      },
     },
   } as unknown as Parameters<typeof buildMyDataExport>[0];
 
-  const exported = await buildMyDataExport(service);
-  assert.equal(exported.followers.ok, true);
-  assert.equal(exported.followers.ok && exported.followers.data.length, 1203);
-  assert.deepEqual(
-    pages.map((page) => page.offset),
-    [0, 500, 1000],
+  await assert.rejects(buildMyDataExport(service), /export_my_data/);
+
+  const supabaseService = read("src/lib/services/supabase/supabaseService.ts");
+  assert.match(supabaseService, /\.rpc\("export_my_data"\)/);
+  const migration = read("supabase/migrations/20261019100000_export_my_data.sql");
+  assert.match(migration, /create or replace function app_private\.export_my_data\(\)/);
+  assert.match(migration, /security definer/);
+  assert.match(
+    migration,
+    /create or replace function public\.export_my_data\(\)[\s\S]*?security invoker/,
   );
+  assert.match(migration, /auth\.uid\(\)/);
 });
 
 test("connections screen pages, explains hidden lists, and profile reconciles both ways", () => {

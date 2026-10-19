@@ -1,13 +1,20 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Controller, useForm } from "react-hook-form";
-import { Pressable, View } from "react-native";
+import { Pressable, View, type TextInput } from "react-native";
 import { ArrowLeft, CheckCircle2, Eye, EyeOff } from "lucide-react-native";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
-import { validateConfirmPassword, validatePassword } from "@/features/auth/validation";
+import { trackAuthFailed, trackAuthScreenViewed } from "@/features/auth/authAnalytics";
+import {
+  getPasswordUpdateErrorMessage,
+  PASSWORD_RULES,
+  validateConfirmPassword,
+  validatePassword,
+} from "@/features/auth/validation";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
+import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { AuthStackParamList } from "./AuthStack";
@@ -21,26 +28,63 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const showToast = useUIStore((state) => state.showToast);
+  const setPasswordRecoveryInProgress = useSessionStore(
+    (state) => state.setPasswordRecoveryInProgress,
+  );
+  const confirmPasswordRef = useRef<TextInput>(null);
+  // The reset link's code can be exchanged only once; a retry after a rejected
+  // password must call updatePassword alone.
+  const recoveryCodeExchangedRef = useRef(false);
   const {
     control,
     handleSubmit,
     watch,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     defaultValues: { password: "", confirmPassword: "" },
   });
   const passwordValue = watch("password");
 
+  useEffect(() => {
+    trackAuthScreenViewed("reset_password");
+  }, []);
+
+  // Leaving the reset flow releases the hold so RootNavigator can route onward.
+  useEffect(() => () => setPasswordRecoveryInProgress(false), [setPasswordRecoveryInProgress]);
+
   const handleReset = handleSubmit(async ({ password }) => {
-    try {
-      if (getConfiguredDataSource() === "supabase") {
-        await getHungryService().auth.resetPassword(route.params?.code ?? "", password);
+    // Exchanging the recovery code signs the user in. Hold RootNavigator's
+    // signed-in redirect until the new password is saved and confirmed on
+    // ResetPasswordSuccess, which releases the hold.
+    setPasswordRecoveryInProgress(true);
+    if (getConfiguredDataSource() === "supabase") {
+      const auth = getHungryService().auth;
+      if (!recoveryCodeExchangedRef.current) {
+        try {
+          await auth.exchangeRecoveryCode(route.params?.code ?? "");
+          recoveryCodeExchangedRef.current = true;
+        } catch (error) {
+          // No session was created, so nothing to hold.
+          setPasswordRecoveryInProgress(false);
+          trackAuthFailed("password_reset", "email", error);
+          showToast({
+            message: "This reset link has expired or was already used. Request a new one.",
+            tone: "error",
+          });
+          return;
+        }
       }
-      showToast({ message: "Password updated. Sign in with your new password.", tone: "success" });
-      navigation.navigate("ResetPasswordSuccess");
-    } catch {
-      showToast({ message: "Password reset failed. Please try again.", tone: "error" });
+      try {
+        await auth.updatePassword(password);
+      } catch (error) {
+        // The recovery session is signed in: keep the hold so the user stays
+        // here and can retry with a different password.
+        trackAuthFailed("password_reset", "email", error);
+        showToast({ message: getPasswordUpdateErrorMessage(error), tone: "error" });
+        return;
+      }
     }
+    navigation.navigate("ResetPasswordSuccess");
   });
 
   return (
@@ -51,7 +95,6 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
       <AuthScreenShell
         title=""
         wordmarkColor={colorScheme === "dark" ? palette.white : palette.navy}
-        scroll={false}
         footer={
           <Pressable
             accessible
@@ -82,6 +125,12 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
               <Input
                 label="NEW PASSWORD"
                 secureTextEntry={!showPassword}
+                textContentType="newPassword"
+                autoComplete="new-password"
+                passwordRules={PASSWORD_RULES}
+                returnKeyType="next"
+                submitBehavior="submit"
+                onSubmitEditing={() => confirmPasswordRef.current?.focus()}
                 placeholder="••••••••"
                 value={value}
                 onChangeText={onChange}
@@ -116,8 +165,14 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
             rules={{ validate: (value) => validateConfirmPassword(passwordValue ?? "", value) }}
             render={({ field: { onChange, value } }) => (
               <Input
+                ref={confirmPasswordRef}
                 label="CONFIRM NEW PASSWORD"
                 secureTextEntry={!showConfirmPassword}
+                textContentType="newPassword"
+                autoComplete="new-password"
+                passwordRules={PASSWORD_RULES}
+                returnKeyType="go"
+                onSubmitEditing={() => void handleReset()}
                 placeholder="••••••••"
                 value={value}
                 onChangeText={onChange}
@@ -179,7 +234,12 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
             </View>
           </View>
 
-          <Button label="Update Password" onPress={handleReset} style={{ minHeight: 56 }} />
+          <Button
+            label="Update Password"
+            onPress={handleReset}
+            loading={isSubmitting}
+            style={{ minHeight: 56 }}
+          />
         </View>
       </AuthScreenShell>
     </FeedErrorBoundary>

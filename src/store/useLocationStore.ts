@@ -23,6 +23,10 @@ interface LocationState {
   denyLocation: () => void;
   setManualLocation: (label: string) => void;
   setManualSelection: (label: string, coordinate: Coordinate) => void;
+  /** Drops the manual pick and returns to device location (fresh fix when allowed). */
+  clearManualLocation: () => Promise<void>;
+  /** Re-reads the OS permission without prompting, e.g. when the app returns to the foreground. */
+  syncLocationPermission: () => Promise<void>;
   resetLocationState: () => void;
 }
 
@@ -82,6 +86,20 @@ export function getDeniedLocationState(manualLocation?: string) {
   };
 }
 
+/**
+ * The location every "nearby" surface should use: a manual pick wins over GPS.
+ * `isApproximate` is true when there is neither a GPS fix nor a manual pick, so
+ * the coordinate is only the built-in default and must not be shown as "you".
+ */
+export function getEffectiveLocation(
+  state: Pick<LocationState, "permission" | "currentLocation" | "manualCoordinate">,
+) {
+  if (state.manualCoordinate) {
+    return { coordinate: state.manualCoordinate, isApproximate: false };
+  }
+  return { coordinate: state.currentLocation, isApproximate: state.permission !== "granted" };
+}
+
 let refreshInFlight: Promise<boolean> | null = null;
 
 export const useLocationStore = create<LocationState>()(
@@ -138,6 +156,8 @@ export const useLocationStore = create<LocationState>()(
         if (refreshInFlight) return refreshInFlight;
         const state = get();
         if (state.permission !== "granted") return Promise.resolve(false);
+        // A manual pick stays in effect until it is cleared; GPS must not overwrite it.
+        if (state.manualCoordinate) return Promise.resolve(false);
         if (
           !options?.force &&
           Date.now() - (state.lastLocationFixAt ?? 0) < LOCATION_REFRESH_MAX_AGE_MS
@@ -159,7 +179,7 @@ export const useLocationStore = create<LocationState>()(
             const result = await Location.getCurrentPositionAsync({
               accuracy: Location.Accuracy.Balanced,
             });
-            if (get().permission !== "granted") return false;
+            if (get().permission !== "granted" || get().manualCoordinate) return false;
             set({
               currentLocation: {
                 latitude: result.coords.latitude,
@@ -190,8 +210,8 @@ export const useLocationStore = create<LocationState>()(
           gpsBadgeState: "manual",
         }),
       setManualSelection: (label, coordinate) => {
+        // The OS permission is unchanged; a manual pick only overrides the coordinate.
         set({
-          permission: "denied",
           manualLocation: normalizeManualLocationLabel(label),
           manualCoordinate: coordinate,
           currentLocation: coordinate,
@@ -203,6 +223,43 @@ export const useLocationStore = create<LocationState>()(
           latitude: toCoarseCoordinate(coordinate.latitude),
           longitude: toCoarseCoordinate(coordinate.longitude),
         });
+      },
+      clearManualLocation: async () => {
+        const granted = get().permission === "granted";
+        set({
+          manualLocation: undefined,
+          manualCoordinate: undefined,
+          gpsBadgeState: granted ? "live" : "denied",
+          ...(granted ? {} : { currentLocation: defaultLocation, lastLocationFixAt: undefined }),
+        });
+        if (!granted) return;
+        const refreshed = await get().refreshLocation({ force: true });
+        // No fresh fix: do not keep showing the old pick as a live GPS location.
+        if (!refreshed && !get().manualCoordinate) {
+          set({ currentLocation: defaultLocation, lastLocationFixAt: undefined });
+        }
+      },
+      syncLocationPermission: async () => {
+        const getPermission = loadExpoLocationModule()?.getForegroundPermissionsAsync;
+        if (typeof getPermission !== "function") return;
+        try {
+          const { status } = await getPermission();
+          const state = get();
+          if (status === "granted" && state.permission !== "granted") {
+            set({
+              permission: "granted",
+              gpsBadgeState: state.manualCoordinate ? "manual" : "live",
+            });
+            await get().refreshLocation({ force: true });
+          } else if (status === "denied" && state.permission !== "denied") {
+            set(getDeniedLocationState(state.manualLocation));
+          } else if (status === "undetermined" && state.permission !== "unknown") {
+            // Never asked by the OS (e.g. an area picked at onboarding): offer the prompt.
+            set({ permission: "unknown" });
+          }
+        } catch {
+          // Keep the last known state when the OS cannot be queried.
+        }
       },
       resetLocationState: () =>
         set({

@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ArrowLeft, Plus, Search } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -27,10 +27,29 @@ export function PortfoliosHomeScreen({ navigation }: Props) {
   const [activeTab, setActiveTab] = useState<PortfolioTab>("mine");
   const [query, setQuery] = useState("");
   const insets = useSafeAreaInsets();
+  // A failed load with no cache shows an error with Retry instead of "Loading..." forever.
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoadFailed(false);
+    try {
+      await loadPortfolios();
+    } catch (error) {
+      console.error("Failed to load portfolios:", error);
+      setLoadFailed(true);
+    }
+  }, [loadPortfolios]);
+
+  const refresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await load();
+    setIsRefreshing(false);
+  }, [load]);
 
   useEffect(() => {
-    void loadPortfolios();
-  }, [loadPortfolios]);
+    void load();
+  }, [load]);
 
   const visiblePortfolios = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -49,6 +68,7 @@ export function PortfoliosHomeScreen({ navigation }: Props) {
     <ScrollView
       style={{ flex: 1, backgroundColor: palette.bg, paddingTop: insets.top }}
       contentContainerStyle={[styles.content, { gap: spacing[4], padding: spacing[4] }]}
+      refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => void refresh()} />}
     >
       <View style={styles.header}>
         <Pressable
@@ -115,7 +135,15 @@ export function PortfoliosHomeScreen({ navigation }: Props) {
         </View>
       ) : null}
 
-      {!isLoaded ? (
+      {!isLoaded && loadFailed ? (
+        <Card>
+          <AppText variant="h3">{"Couldn't load portfolios"}</AppText>
+          <AppText variant="body" tone="secondary">
+            Check your connection and try again.
+          </AppText>
+          <Button label="Retry" variant="secondary" onPress={() => void load()} />
+        </Card>
+      ) : !isLoaded ? (
         <Card>
           <AppText variant="body" tone="secondary">
             Loading portfolios...

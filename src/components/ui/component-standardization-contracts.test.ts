@@ -56,11 +56,7 @@ test("primary user filter surfaces use shared chip primitives", () => {
     [/<FilterChipRail[\s\S]*options=\{cuisineFilterOptions\}/],
     "Quick Bites",
   );
-  assertSourceIncludes(
-    dishSearch,
-    [/<ChipGroup[\s\S]*options=\{SEARCH_CATEGORY_OPTIONS\}/],
-    "Dish Search",
-  );
+  assertSourceIncludes(dishSearch, [/<ChipGroup[\s\S]*options=\{categoryOptions\}/], "Dish Search");
   assertSourceIncludes(
     searchResults,
     [/<FilterChipRail[\s\S]*options=\{BROWSE_FILTER_OPTIONS\}/],
@@ -160,7 +156,6 @@ test("merchant forms use shared user-mode input, select, chip, and toggle primit
       /<Input[\s\S]*label="Promotion Title \*"/,
       /<ChipGroup[\s\S]*options=\{PROMOTION_ITEM_TYPE_OPTIONS\}/,
       /<FormSwitchRow[\s\S]*label="Available"/,
-      /<FormSwitchRow[\s\S]*label=\{label\}/,
     ],
     "Promotion Builder form",
   );
@@ -187,10 +182,8 @@ test("merchant settings and bottom tabs use shared user-mode primitives", () => 
     merchantSettings,
     [
       /<SettingsSection title="Business Account">/,
-      /<SettingsSection title="Team Management">/,
-      /<SettingsRow[\s\S]*label="New Reviews"/,
-      /<StatusChip label="Owner" tone="accent"/,
-      /<ChipGroup[\s\S]*options=\{TEAM_ROLE_OPTIONS\}/,
+      /<SettingsSection title="Alerts">/,
+      /<SettingsRow[\s\S]*label="Help & Support"/,
     ],
     "Merchant Settings",
   );

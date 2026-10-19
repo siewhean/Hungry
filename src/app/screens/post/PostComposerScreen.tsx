@@ -80,9 +80,13 @@ function PostComposerScreenInner({ navigation, route }: Props) {
         .flatMap((item) => repository.listDishesByVenue(item.id)),
     [repository],
   );
+  // Opened for a stall only (e.g. /order?venueId=): pick from that stall's dishes.
+  const pickerVenueId = !selectedDishId ? selectedVenueId : null;
+  const pickerVenue = pickerVenueId ? repository.getVenueById(pickerVenueId) : undefined;
   const filteredDishes = useMemo(() => {
     const query = dishSearchQuery.trim().toLowerCase();
-    const dishes = allDishes.filter((item) => {
+    const candidates = pickerVenueId ? repository.listDishesByVenue(pickerVenueId) : allDishes;
+    const dishes = candidates.filter((item) => {
       if (!query) return true;
       return (
         item.name.toLowerCase().includes(query) ||
@@ -92,7 +96,7 @@ function PostComposerScreenInner({ navigation, route }: Props) {
       );
     });
     return dishes.slice(0, 12);
-  }, [allDishes, dishSearchQuery]);
+  }, [allDishes, dishSearchQuery, pickerVenueId, repository]);
 
   useEffect(() => {
     if (route.params?.dishId) {
@@ -103,15 +107,11 @@ function PostComposerScreenInner({ navigation, route }: Props) {
     }
   }, [route.params?.dishId, route.params?.venueId]);
 
-  const dish = useMemo(() => {
-    if (selectedDishId) {
-      return repository.getDishById(selectedDishId) ?? null;
-    }
-    if (selectedVenueId) {
-      return repository.listDishesByVenue(selectedVenueId)[0] ?? null;
-    }
-    return null;
-  }, [repository, selectedDishId, selectedVenueId]);
+  // Never guess the dish from the venue: a venue-only entry shows the picker.
+  const dish = useMemo(
+    () => (selectedDishId ? (repository.getDishById(selectedDishId) ?? null) : null),
+    [repository, selectedDishId],
+  );
   const venue = useMemo(() => {
     if (!dish) {
       return selectedVenueId ? repository.getVenueById(selectedVenueId) : undefined;
@@ -234,9 +234,21 @@ function PostComposerScreenInner({ navigation, route }: Props) {
     return (
       <Screen
         title="Create post"
-        subtitle="Choose the dish this post is about, then add your photo or video."
+        subtitle={
+          pickerVenue
+            ? `Which dish from ${pickerVenue.name} is this post about?`
+            : "Choose the dish this post is about, then add your photo or video."
+        }
       >
         <View style={{ gap: spacing[3] }}>
+          {pickerVenue ? (
+            <Button
+              label="Search all stalls"
+              variant="ghost"
+              fullWidth={false}
+              onPress={() => setSelectedVenueId(null)}
+            />
+          ) : null}
           <Input
             label="Find dish"
             placeholder="Search dishes, stalls, or tags"
@@ -298,8 +310,20 @@ function PostComposerScreenInner({ navigation, route }: Props) {
       <Card>
         <View style={{ gap: spacing[3] }}>
           <Badge label="Photo or video" tone="neutral" />
-          <AppText variant="h3">{dish.name}</AppText>
-          <AppText tone="secondary">{venue?.name ?? "Nearby stall"}</AppText>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+            <View style={{ flex: 1 }}>
+              <AppText variant="h3">{dish.name}</AppText>
+              <AppText tone="secondary">{venue?.name ?? "Nearby stall"}</AppText>
+            </View>
+            <Button
+              label="Change"
+              variant="ghost"
+              size="sm"
+              fullWidth={false}
+              accessibilityLabel={`Change dish, currently ${dish.name}`}
+              onPress={() => setSelectedDishId(null)}
+            />
+          </View>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}

@@ -24,7 +24,8 @@ interface SearchResultsViewProps {
   onQueryChange: (query: string) => void;
   onClear: () => void;
   onSubmitQuery?: (query: string) => void;
-  onTasteFilterPress: () => void;
+  /** Omit when the active search backend ignores the taste filter. */
+  onTasteFilterPress?: () => void;
   results: DishDetail[];
   /** Short line above the results, e.g. what a plain-language search was understood as. */
   resultsNote?: string;
@@ -360,26 +361,28 @@ export function SearchResultsView({
         })}
       </View>
 
-      <View style={{ paddingHorizontal: spacing[4], paddingTop: spacing[4] }}>
-        <Pressable
-          onPress={onTasteFilterPress}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: spacing[2],
-            alignSelf: "flex-start",
-            paddingVertical: spacing[1],
-            paddingHorizontal: spacing[3],
-            borderRadius: radii.pill,
-            backgroundColor: palette.bgSoft,
-          }}
-        >
-          <SlidersHorizontal color={palette.navy} size={16} />
-          <AppText variant="micro" style={{ fontWeight: "700" }}>
-            TASTE FILTERS
-          </AppText>
-        </Pressable>
-      </View>
+      {onTasteFilterPress ? (
+        <View style={{ paddingHorizontal: spacing[4], paddingTop: spacing[4] }}>
+          <Pressable
+            onPress={onTasteFilterPress}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: spacing[2],
+              alignSelf: "flex-start",
+              paddingVertical: spacing[1],
+              paddingHorizontal: spacing[3],
+              borderRadius: radii.pill,
+              backgroundColor: palette.bgSoft,
+            }}
+          >
+            <SlidersHorizontal color={palette.navy} size={16} />
+            <AppText variant="micro" style={{ fontWeight: "700" }}>
+              TASTE FILTERS
+            </AppText>
+          </Pressable>
+        </View>
+      ) : null}
 
       {isLoading ? (
         <SearchResultsSkeletonList />

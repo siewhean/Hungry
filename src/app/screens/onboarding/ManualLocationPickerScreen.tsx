@@ -6,6 +6,7 @@ import { ArrowLeft, MapPin } from "lucide-react-native";
 import { AppHeader, AppText, Button, Card, Input } from "@/components/ui";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useSessionStore } from "@/store/useSessionStore";
+import { useUIStore } from "@/store/useUIStore";
 import type { Coordinate } from "@/types/domain";
 import { useHungryTheme } from "@/theme";
 import type { OnboardingStackParamList } from "./OnboardingStack";
@@ -91,12 +92,15 @@ const SINGAPORE_AREAS = [...SINGAPORE_AREA_LIST].sort((left, right) =>
   left.name.localeCompare(right.name),
 );
 
-export function ManualLocationPickerScreen({ navigation }: Props) {
+export function ManualLocationPickerScreen({ navigation, route }: Props) {
+  const isSettingsMode = route.params?.mode === "settings";
   const { palette, radii, shadows, spacing } = useHungryTheme();
   const setManualSelection = useLocationStore((state) => state.setManualSelection);
   const storedManualLocation = useLocationStore((state) => state.manualLocation);
   const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
   const hasSkippedTasteQuiz = useSessionStore((state) => state.hasSkippedTasteQuiz);
+  const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
+  const showToast = useUIStore((state) => state.showToast);
   const [query, setQuery] = useState("");
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(
     SINGAPORE_AREAS.find((area) => area.name.toLowerCase() === storedManualLocation?.toLowerCase())
@@ -117,6 +121,15 @@ export function ManualLocationPickerScreen({ navigation }: Props) {
   const handleSubmit = () => {
     if (!selectedArea) return;
     setManualSelection(selectedArea.name, selectedArea.coordinate);
+    // Already-onboarded users reach this picker from Discover, the map or
+    // Settings; completing onboarding again would not change any state (so
+    // nothing navigates home) and would re-fire onboarding_completed.
+    if (isSettingsMode || hasCompletedOnboarding) {
+      showToast({ message: `Location set to ${selectedArea.name}.`, tone: "success" });
+      navigation.goBack();
+      return;
+    }
+    // First run: RootNavigator moves on to Home once onboarding is complete.
     completeOnboarding(hasSkippedTasteQuiz);
   };
 
@@ -132,8 +145,8 @@ export function ManualLocationPickerScreen({ navigation }: Props) {
           left={
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Back to location permission"
-              accessibilityHint="Returns to the previous location setup screen"
+              accessibilityLabel="Go back"
+              accessibilityHint="Returns to the previous screen without changing your location"
               onPress={() => navigation.goBack()}
               style={{
                 alignItems: "center",

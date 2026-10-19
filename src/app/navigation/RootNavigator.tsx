@@ -66,6 +66,8 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "ActivityInbox",
   "ActivityPostDetail",
   "FollowRequests",
+  "UserFollowers",
+  "UserFollowing",
   "ChatDetail",
   "DirectMessages",
   "Crave",
@@ -99,8 +101,9 @@ const PROTECTED_ROOT_ROUTES = new Set<RootRouteName>([
   "Post",
   "PostComposerV2",
   "ActivityInbox",
-  "ActivityPostDetail",
   "FollowRequests",
+  "UserFollowers",
+  "UserFollowing",
   "ChatDetail",
   "DirectMessages",
   "EditProfile",
@@ -229,6 +232,14 @@ const loadFollowRequestsScreen = () =>
   (
     require("@/app/screens/profile/FollowRequestsScreen") as typeof import("@/app/screens/profile/FollowRequestsScreen")
   ).FollowRequestsScreen;
+const loadUserFollowersScreen = () =>
+  (
+    require("@/app/screens/profile/ProfileConnectionsScreen") as typeof import("@/app/screens/profile/ProfileConnectionsScreen")
+  ).FollowersScreen;
+const loadUserFollowingScreen = () =>
+  (
+    require("@/app/screens/profile/ProfileConnectionsScreen") as typeof import("@/app/screens/profile/ProfileConnectionsScreen")
+  ).FollowingScreen;
 const loadChatDetailScreen = () =>
   (
     require("@/app/screens/home/ChatDetailScreen") as typeof import("@/app/screens/home/ChatDetailScreen")
@@ -471,6 +482,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
   const isAuthReady = useSessionStore((state) => state.isAuthReady);
   const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
   const sessionExpired = useSessionStore((state) => state.sessionExpired);
+  const passwordRecoveryInProgress = useSessionStore((state) => state.passwordRecoveryInProgress);
   const dismissSessionExpiry = useSessionStore((state) => state.dismissSessionExpiry);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
@@ -609,6 +621,10 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     }
 
     if (currentTopRoute === "AuthStack") {
+      // The recovery code exchange signs the user in mid-reset; stay on the reset flow.
+      if (passwordRecoveryInProgress) {
+        return;
+      }
       if (isAuthenticated && !hasCompletedOnboarding) {
         navigationRef.resetRoot({
           index: 0,
@@ -633,6 +649,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     isMerchantMode,
     merchantModeRestore,
     navigateHome,
+    passwordRecoveryInProgress,
   ]);
 
   useEffect(() => {
@@ -751,6 +768,8 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen getComponent={loadActivityInboxScreen} name="ActivityInbox" />
           <RootStack.Screen getComponent={loadActivityPostDetailScreen} name="ActivityPostDetail" />
           <RootStack.Screen getComponent={loadFollowRequestsScreen} name="FollowRequests" />
+          <RootStack.Screen getComponent={loadUserFollowersScreen} name="UserFollowers" />
+          <RootStack.Screen getComponent={loadUserFollowingScreen} name="UserFollowing" />
           {FEATURE_FLAGS.directMessagesEnabled ? (
             <>
               <RootStack.Screen getComponent={loadChatDetailScreen} name="ChatDetail" />

@@ -19,7 +19,11 @@ interface MediaPickerProps {
   onRemovePhoto: (uri: string) => void;
   /** Omit to hide the reel slot. */
   onSetVideo?: (uri?: string) => void;
-  onSetFilter: (filterId: string) => void;
+  /**
+   * Omit to hide the filter editor. Filters are a preview only (the original
+   * file uploads), so production builds leave this out.
+   */
+  onSetFilter?: (filterId: string) => void;
 }
 
 export function MediaPicker({
@@ -73,16 +77,15 @@ export function MediaPicker({
     } else {
       onAddPhoto(asset.uri);
     }
-    // Automatically open editor for the new media
-    setEditingUri(asset.uri);
+    // The filter editor is opt-in (Edit button), never forced after a pick.
   };
 
   return (
     <View style={{ gap: spacing[4] }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-        <AppText variant="h3">Photos & Reels</AppText>
+        <AppText variant="h3">{onSetVideo ? "Photos & Reels" : "Photos"}</AppText>
         <AppText variant="micro" tone="muted">
-          {photos.length}/5 photos
+          {photos.length}/{maxPhotos} photos
         </AppText>
       </View>
 
@@ -106,23 +109,33 @@ export function MediaPicker({
             <View style={[styles.badge, { backgroundColor: palette.mediaScrim }]}>
               <Video size={12} color={palette.white} />
             </View>
-            <View style={styles.mediaActions}>
+            {onSetFilter ? (
               <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Edit reel filter"
                 onPress={() => setEditingUri(videoUri)}
-                style={[styles.actionBtn, { backgroundColor: palette.mediaScrimStrong }]}
+                style={[
+                  styles.actionBtn,
+                  styles.editAction,
+                  { backgroundColor: palette.mediaScrimStrong },
+                ]}
               >
-                <Edit2 size={14} color={palette.white} />
+                <Edit2 size={16} color={palette.white} />
               </Pressable>
-              <Pressable
-                onPress={() => onSetVideo?.(undefined)}
-                style={[styles.actionBtn, { backgroundColor: palette.error }]}
-              >
-                <X size={14} color={palette.white} />
-              </Pressable>
-            </View>
+            ) : null}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Remove reel"
+              onPress={() => onSetVideo?.(undefined)}
+              style={[styles.actionBtn, styles.removeAction, { backgroundColor: palette.error }]}
+            >
+              <X size={16} color={palette.white} />
+            </Pressable>
           </View>
         ) : (
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Add a reel"
             onPress={() => handlePickMedia("video")}
             style={({ pressed }) => [
               styles.pickerBtn,
@@ -141,36 +154,47 @@ export function MediaPicker({
         )}
 
         {/* Photos */}
-        {photos.map((uri) => (
+        {photos.map((uri, index) => (
           <View key={uri} style={styles.mediaContainer}>
             <AccessibleImage
               source={{ uri }}
-              accessibilityLabel="Selected review photo"
+              accessibilityLabel={`Review photo ${index + 1} of ${photos.length}`}
               style={[
                 styles.media,
                 { backgroundColor: palette.mediaBackdrop, borderRadius: componentRadii.card },
               ]}
               contentFit="cover"
             />
-            <View style={styles.mediaActions}>
+            {onSetFilter ? (
               <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Edit filter for photo ${index + 1}`}
                 onPress={() => setEditingUri(uri)}
-                style={[styles.actionBtn, { backgroundColor: palette.mediaScrimStrong }]}
+                style={[
+                  styles.actionBtn,
+                  styles.editAction,
+                  { backgroundColor: palette.mediaScrimStrong },
+                ]}
               >
-                <Edit2 size={14} color={palette.white} />
+                <Edit2 size={16} color={palette.white} />
               </Pressable>
-              <Pressable
-                onPress={() => onRemovePhoto(uri)}
-                style={[styles.actionBtn, { backgroundColor: palette.error }]}
-              >
-                <X size={14} color={palette.white} />
-              </Pressable>
-            </View>
+            ) : null}
+            {/* Remove sits in the opposite corner from Edit so a mis-tap can't delete. */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Remove photo ${index + 1}`}
+              onPress={() => onRemovePhoto(uri)}
+              style={[styles.actionBtn, styles.removeAction, { backgroundColor: palette.error }]}
+            >
+              <X size={16} color={palette.white} />
+            </Pressable>
           </View>
         ))}
 
         {photos.length < maxPhotos && (
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Add a photo, ${photos.length} of ${maxPhotos} added`}
             onPress={() => handlePickMedia("image")}
             style={({ pressed }) => [
               styles.pickerBtn,
@@ -189,7 +213,7 @@ export function MediaPicker({
         )}
       </ScrollView>
 
-      {editingUri && (
+      {editingUri && onSetFilter && (
         <MediaEditor
           uri={editingUri}
           isVisible={!!editingUri}
@@ -232,18 +256,21 @@ const styles = StyleSheet.create({
     padding: 4,
     borderRadius: 4,
   },
-  mediaActions: {
-    position: "absolute",
-    bottom: 8,
-    right: 8,
-    flexDirection: "row",
-    gap: 4,
-  },
+  // 44pt touch targets.
   actionBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: componentRadii.card,
+    position: "absolute",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
+  },
+  removeAction: {
+    top: 4,
+    right: 4,
+  },
+  editAction: {
+    bottom: 4,
+    right: 4,
   },
 });

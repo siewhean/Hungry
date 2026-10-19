@@ -3,6 +3,7 @@ import {
   getHungryService,
   getSimilarityScore,
 } from "@/lib/services/serviceProvider";
+import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import type {
@@ -31,11 +32,24 @@ export function getSearchResults(filters: SearchFilters, tasteVector = filters.t
   return getDataRepository().searchDishes(filters, tasteVector);
 }
 
+/** Adds the user's real location (GPS or manual pick) when the caller has none. */
+export function withUserLocation(filters: SearchFilters): SearchFilters {
+  if (typeof filters.latitude === "number" && typeof filters.longitude === "number") {
+    return filters;
+  }
+  const { coordinate, isApproximate } = getEffectiveLocation(useLocationStore.getState());
+  if (isApproximate) return filters;
+  return { ...filters, latitude: coordinate.latitude, longitude: coordinate.longitude };
+}
+
 export async function getSearchResultsAsync(
   filters: SearchFilters,
   tasteVector = filters.tasteValues,
 ) {
-  const results = await getHungryService().discovery.searchDishes(filters, tasteVector);
+  const results = await getHungryService().discovery.searchDishes(
+    withUserLocation(filters),
+    tasteVector,
+  );
   return results.map((result) => result.dish);
 }
 

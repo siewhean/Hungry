@@ -7,12 +7,15 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import { ChecklistItemRow } from "@/components/checklist";
 import { AppText, Button, Card, Input } from "@/components/ui";
-import { getHungryService } from "@/lib/services/serviceProvider";
+import { runListMutation } from "@/features/checklistPortfolio/runListMutation";
+import { useItemLabels } from "@/features/checklistPortfolio/useItemLabels";
 import { useChecklistStore } from "@/store/useChecklistStore";
 import { useHungryTheme } from "@/theme";
 import type { ChecklistItem } from "@/types/domain";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "ChecklistDetail">;
+
+const EMPTY_CHECKLIST_ITEMS: ChecklistItem[] = [];
 
 function formatChecklistItemLabel(item: ChecklistItem, labels: Record<string, string>) {
   if (item.customText) return item.customText;
@@ -35,47 +38,24 @@ export function ChecklistDetailScreen({ navigation, route }: Props) {
     reorderItems,
   } = useChecklistStore();
   const checklist = checklists.find((entry) => entry.id === checklistId);
-  const checklistItems = items[checklistId] ?? [];
+  // Stable fallback: a new [] each render re-ran effects keyed on the items (render loop).
+  const checklistItems = items[checklistId] ?? EMPTY_CHECKLIST_ITEMS;
   const [draftName, setDraftName] = useState(checklist?.name ?? "");
-  const [labels, setLabels] = useState<Record<string, string>>({});
   const insets = useSafeAreaInsets();
   const topSpacing = Math.max(insets.top, spacing[4]);
 
   useEffect(() => {
-    void loadChecklists();
-    void loadChecklistItems(checklistId);
+    void loadChecklists().catch((error) => console.error("Failed to load list:", error));
+    void loadChecklistItems(checklistId).catch((error) =>
+      console.error("Failed to load list:", error),
+    );
   }, [checklistId, loadChecklistItems, loadChecklists]);
 
   useEffect(() => {
     setDraftName(checklist?.name ?? "");
   }, [checklist?.name]);
 
-  useEffect(() => {
-    let mounted = true;
-    const service = getHungryService();
-
-    async function hydrateLabels() {
-      const nextLabels: Record<string, string> = {};
-      await Promise.all(
-        checklistItems.map(async (item) => {
-          if (item.dishId) {
-            const dish = await service.discovery.getDish(item.dishId);
-            if (dish) nextLabels[item.dishId] = dish.name;
-          }
-          if (item.stallId) {
-            const venue = await service.discovery.getVenue(item.stallId);
-            if (venue) nextLabels[item.stallId] = venue.name;
-          }
-        }),
-      );
-      if (mounted) setLabels(nextLabels);
-    }
-
-    void hydrateLabels();
-    return () => {
-      mounted = false;
-    };
-  }, [checklistItems]);
+  const labels = useItemLabels(checklistItems);
 
   const triedCount = useMemo(
     () => checklistItems.filter((item) => Boolean(item.triedAt)).length,
@@ -97,7 +77,9 @@ export function ChecklistDetailScreen({ navigation, route }: Props) {
       const nextIds = checklistItems.map((item) => item.id);
       const [movedItem] = nextIds.splice(currentIndex, 1);
       nextIds.splice(nextIndex, 0, movedItem);
-      await reorderItems(checklistId, nextIds);
+      await runListMutation(() => reorderItems(checklistId, nextIds), {
+        failure: "Couldn't reorder the checklist.",
+      });
     },
     [checklistId, checklistItems, reorderItems],
   );
@@ -200,7 +182,11 @@ export function ChecklistDetailScreen({ navigation, route }: Props) {
             label={formatChecklistItemLabel(item, labels)}
             index={index}
             totalCount={checklistItems.length}
-            onMarkTried={() => markItemTried(item.id)}
+            onMarkTried={() =>
+              void runListMutation(() => markItemTried(item.id), {
+                failure: "Couldn't mark as tried.",
+              })
+            }
             onMoveUp={() => moveItem(item.id, -1)}
             onMoveDown={() => moveItem(item.id, 1)}
             onDelete={() => {
@@ -209,7 +195,11 @@ export function ChecklistDetailScreen({ navigation, route }: Props) {
                 {
                   text: "Remove",
                   style: "destructive",
-                  onPress: () => void deleteItem(item.id, checklistId),
+                  onPress: () =>
+                    void runListMutation(() => deleteItem(item.id, checklistId), {
+                      success: "Removed from checklist",
+                      failure: "Couldn't remove the item.",
+                    }),
                 },
               ]);
             }}

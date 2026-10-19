@@ -117,6 +117,22 @@ export function buildMerchantDashboardMetrics(
   };
 }
 
+export type MetricTrend = "up" | "down" | "flat";
+
+/** Real period-over-period change for a dashboard metric, e.g. "+12%" and "up". */
+export function getMetricDelta(
+  current: number,
+  previous: number,
+): { label: string; trend: MetricTrend } {
+  if (previous <= 0) {
+    return current > 0 ? { label: "New", trend: "up" } : { label: "0%", trend: "flat" };
+  }
+  const change = Math.round(((current - previous) / previous) * 100);
+  if (change > 0) return { label: `+${change}%`, trend: "up" };
+  if (change < 0) return { label: `${change}%`, trend: "down" };
+  return { label: "0%", trend: "flat" };
+}
+
 export function resolvePromotionRuntimeStatus(
   promotion: Pick<MerchantPromotion, "startDate" | "endDate" | "status">,
   now = new Date(),

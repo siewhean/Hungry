@@ -22,6 +22,8 @@ interface StallInteractionBarProps {
   reviewPromptText?: string;
   hasReviewedDishAtVenue?: boolean;
   onReviewRequired?: () => void;
+  /** Called after the stall is saved (not when it is unsaved). */
+  onSaved?: () => void;
   /** Called when user taps "Add to Collection" — parent handles sheet/modal */
   onAddToCollection?: () => void;
 }
@@ -32,6 +34,7 @@ export function StallInteractionBar({
   reviewPromptText,
   hasReviewedDishAtVenue,
   onReviewRequired,
+  onSaved,
   onAddToCollection,
 }: StallInteractionBarProps) {
   const { componentRadii, palette, spacing, typography } = useHungryTheme();
@@ -56,6 +59,7 @@ export function StallInteractionBar({
       await toggleSaved(userId, stallId);
       if (!isSaved) {
         // Just saved (not unsaved) — count toward missions
+        onSaved?.();
         await incrementProgress(userId, "save_stalls");
       }
     } finally {

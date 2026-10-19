@@ -202,7 +202,10 @@ test("Merchant screen contract: merchant navigation buttons are accessible and h
 test("Merchant screen contract: merchant route params match editable sub-screen needs", () => {
   const navigationTypes = read("src/app/navigation/navigationTypes.ts");
 
-  assert.match(navigationTypes, /DishEditor: \{ dishId\?: string \} \| undefined;/);
+  assert.match(
+    navigationTypes,
+    /DishEditor: \{ dishId\?: string; ocrDraftId\?: string \} \| undefined;/,
+  );
   assert.match(navigationTypes, /PromotionBuilder: \{ promotionId\?: string \} \| undefined;/);
   assert.match(navigationTypes, /OCRDrafts: undefined;/);
   assert.match(navigationTypes, /CustomerInbox: undefined;/);
@@ -231,6 +234,16 @@ test("Merchant screen contract: menu management screens are wired to merchant se
   assert.match(dishEditor, /merchant\.suggestAllergens\(/);
   assert.match(dishEditor, /imageUrl/);
   assert.match(dishEditor, /dietaryFlags/);
+  // Template helpers are not labelled AI, and the allergen check never implies "allergen-free".
+  assert.match(dishEditor, /ALLERGEN_CHECK_DISCLAIMER/);
+  assert.doesNotMatch(dishEditor, /AI Suggest|AI Generate|No common allergens detected/);
+  assert.match(dishEditor, /acceptOCRDraft\(ocrDraftId, updates\)/);
+  // Scan taste tags stay tags; they are not pre-filled as ingredients for the allergen check.
+  assert.doesNotMatch(dishEditor, /setIngredients\(\(draft\.suggestedTasteTags/);
+  assert.doesNotMatch(
+    ocrDrafts,
+    /acceptOCRDraft\(draftId\);\s*setDrafts[\s\S]{0,120}navigate\("DishEditor"/,
+  );
 
   assert.match(ocrDrafts, /merchant\.getOCRDrafts\(/);
   assert.match(ocrDrafts, /merchant\.acceptOCRDraft\(/);
@@ -315,7 +328,10 @@ test("Merchant screen contract: inbox, promotions, assistant, and settings scree
   assert.match(inbox, /merchant\.replyToInteraction\(/);
   assert.match(inbox, /merchant\.reportInteraction\(/);
   assert.match(inbox, /merchant\.generateAIReply\(/);
-  assert.match(inbox, /onViewOriginal/);
+  // Reviews are the only inbox source, and a review id is not a useful "original" to show.
+  assert.doesNotMatch(inbox, /onViewOriginal|Source ID:/);
+  assert.doesNotMatch(inbox, /label: "Comments"|label: "Mentions"/);
+  assert.doesNotMatch(inbox, /No \{filter/);
 
   assert.match(featuredVisitors, /merchant\.listPopularVisitorPins\(/);
   assert.match(featuredVisitors, /merchant\.listPopularVisitorCandidates\(/);
@@ -335,14 +351,10 @@ test("Merchant screen contract: inbox, promotions, assistant, and settings scree
   assert.match(assistant, /merchant\.getAIInsights\(/);
   assert.match(assistant, /merchant\.getWeeklySummary\(/);
 
-  assert.match(settings, /merchant\.getTeamMembers\(/);
   assert.match(settings, /merchant\.getMerchantNotifications\(/);
   assert.match(settings, /merchant\.getWeeklySummaryStats\(/);
-  assert.match(settings, /merchant\.sendWeeklySummaryNotifications\(/);
   assert.match(settings, /merchant\.syncLowRatingNotifications\(/);
-  assert.match(settings, /merchant\.getNotificationPreferences\(/);
-  assert.match(settings, /merchant\.updateNotificationPreferences\(/);
-  assert.match(settings, /merchant\.removeTeamMember\(/);
+  assert.doesNotMatch(settings, /Team Management|Invite staff|Every active team member/);
 });
 
 test("Merchant screen contract: merchant screens resolve services through provider", () => {

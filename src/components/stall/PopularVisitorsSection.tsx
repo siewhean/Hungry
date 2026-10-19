@@ -79,6 +79,7 @@ export function PopularVisitorsSection({
       authorName: pin.authorName,
       authorAvatarUrl: pin.authorAvatarUrl,
       authorLocation: pin.authorLocation,
+      authorId: pin.authorProfileId,
       reviewSignalLabel: "Featured visitor",
     });
   }, [navigation, selectedPin]);

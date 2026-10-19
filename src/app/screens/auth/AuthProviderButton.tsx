@@ -4,12 +4,7 @@ import { Pressable, View } from "react-native";
 import { AppleLogo, GoogleLogo } from "@/components/icons/brand/AuthProviderLogos";
 import { AppText } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
-import {
-  getAuthProviderButtonLabel,
-  getAuthProviderUnavailableButtonLabel,
-  type AuthProvider,
-  type AuthProviderIntent,
-} from "./authCopy";
+import { getAuthProviderButtonLabel, type AuthProvider, type AuthProviderIntent } from "./authCopy";
 
 type AuthProviderButtonProps = {
   disabled?: boolean;
@@ -27,9 +22,8 @@ export function AuthProviderButton({
   const { componentCornerCurve, componentRadii, componentSizes, palette, spacing } =
     useHungryTheme();
   const icon = provider === "google" ? <GoogleLogo /> : <AppleLogo />;
-  const label = disabled
-    ? getAuthProviderUnavailableButtonLabel(provider)
-    : getAuthProviderButtonLabel(provider, intent);
+  // Disabled only while another auth request runs; unavailable providers are not rendered.
+  const label = getAuthProviderButtonLabel(provider, intent);
 
   return (
     <Pressable

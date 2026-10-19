@@ -62,7 +62,7 @@ test.describe("buttons and interactions", () => {
 
     await page.getByRole("tab", { name: "Review tab" }).click();
     await page.getByPlaceholder("What did you think of the food?").first().fill("Runtime review only.");
-    await page.getByRole("button", { name: "4 star" }).first().click();
+    await page.getByTestId("star-4").first().click();
     await page.getByRole("button", { name: "Open publish options" }).click();
     await page.getByRole("button", { name: "Select Review Only publish mode" }).click();
     await page.getByRole("button", { name: "Review Only" }).click();

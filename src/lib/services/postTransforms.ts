@@ -38,6 +38,8 @@ export function biteToStallPost(
     visibility: "public",
     likeCount: bite.cravingCount,
     savedCount: bite.savedCount,
+    viewerHasLiked: bite.viewerHasLiked,
+    viewerHasSaved: bite.viewerHasSaved,
     commentCount: 0,
     isStallAccount: false,
   };

@@ -88,6 +88,10 @@ test("Supabase social reactions use post engagement tables", () => {
   assert.match(reactToBite, /post_saves/);
   assert.match(reactToBite, /\.eq\("post_id", biteId\)/);
   assert.doesNotMatch(reactToBite, /bite_reactions/);
+  // Idempotent set, not read-then-toggle: a repeat tap cannot delete a like.
+  assert.match(reactToBite, /async reactToBite\(biteId, reaction, active\)/);
+  assert.match(reactToBite, /ignoreDuplicates: true/);
+  assert.doesNotMatch(reactToBite, /maybeSingle/);
   assert.match(serviceTypes, /shareBite\(/);
   assert.match(shareBite, /from\("post_shares"\)\.insert/);
   assert.match(shareBite, /post_id: biteId/);

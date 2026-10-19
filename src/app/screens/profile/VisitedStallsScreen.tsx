@@ -62,6 +62,9 @@ export function VisitedStallsScreen({ navigation }: Props) {
           visitedVenues.map((venue) => (
             <Pressable
               key={venue.id}
+              accessibilityRole="button"
+              accessibilityLabel={venue.name}
+              accessibilityHint="Opens the stall"
               onPress={() => rootNavigation.navigate("StallDetail", { venueId: venue.id })}
               style={({ pressed }) => [
                 {

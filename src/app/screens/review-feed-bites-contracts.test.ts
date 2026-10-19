@@ -65,7 +65,9 @@ test("Review feed cards do not render bottom bites sections", () => {
   assert.match(reviewFeed, /interaction\.likeCount > 0/);
   assert.match(reviewFeed, /interaction\.shareCount > 0/);
   assert.match(reviewFeed, /shareCount: 0/);
-  assert.match(reviewFeed, /postId: linkedPost\?\.id \?\? ""/);
+  // Reviews never borrow a linked post id for share counting.
+  assert.match(reviewFeed, /postId: "",/);
+  assert.doesNotMatch(reviewFeed, /linkedPost/);
   assert.doesNotMatch(reviewFeed, /postId: linkedPost\?\.id \?\? item\.review\.id/);
   assert.match(reviewFeed, /commentCount: 0/);
   assert.match(reviewFeed, /likeCount: 0/);

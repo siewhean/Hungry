@@ -171,6 +171,11 @@ test("EAS release profiles set explicit MVP feature-flag environments", () => {
   assert.equal(eas.build.development?.env?.EXPO_PUBLIC_HUNGRY_DATA_SOURCE, "supabase");
   assert.equal(eas.build.preview?.env?.EXPO_PUBLIC_HUNGRY_DATA_SOURCE, "supabase");
   assert.equal(eas.build.production?.env?.EXPO_PUBLIC_HUNGRY_DATA_SOURCE, "supabase");
+  // Staging QA must test the same catalog/search path that production ships.
+  assert.equal(
+    eas.build.preview?.env?.EXPO_PUBLIC_CATALOG_READ_V2,
+    eas.build.production?.env?.EXPO_PUBLIC_CATALOG_READ_V2,
+  );
 });
 
 test("production Post route publishes through the canonical composer service path", () => {
@@ -194,7 +199,8 @@ test("production Post route publishes through the canonical composer service pat
   assert.match(postScreen, /const \[selectedDishId, setSelectedDishId\]/);
   assert.match(postScreen, /const \[dishSearchQuery, setDishSearchQuery\]/);
   assert.match(postScreen, /repository\.getDishById\(selectedDishId\) \?\? null/);
-  assert.match(postScreen, /repository\.listDishesByVenue\(selectedVenueId\)\[0\] \?\? null/);
+  // A venue-only entry shows that stall's dishes; it never picks the first one.
+  assert.doesNotMatch(postScreen, /listDishesByVenue\(selectedVenueId\)\[0\]/);
   assert.match(postScreen, /label="Find dish"/);
   assert.match(postScreen, /placeholder="Search dishes, stalls, or tags"/);
   assert.match(postScreen, /setSelectedDishId\(item\.id\)/);
@@ -296,20 +302,27 @@ test("Supabase review reads hydrate review_photos and public profile names and a
   );
   assert.match(service, /photos: photosByReviewId\.get\(id\) \?\? \[\]/);
   assert.match(domain, /authorAvatarUrl\?: string/);
-  assert.match(
-    detailTransforms,
-    /avatarUrl: review\.authorAvatarUrl \?\? AVATAR_POOL\[avatarIndex\]/,
-  );
+  // Reviewers without a photo get the Avatar fallback, never a stock face.
+  assert.match(detailTransforms, /avatarUrl: review\.authorAvatarUrl,/);
+  assert.doesNotMatch(detailTransforms, /AVATAR_POOL|unsplash|Verified Foodie/);
   assert.doesNotMatch(
     service,
     /getReviewsForDish\(dishId\) \{\s*return supabaseRepository\.getDishById\(dishId\)\?\.reviews/,
   );
-  assert.match(stallDetail, /serviceProviderMode === "mock" \? dish\.reviews : \[\]/);
+  // The stall reads its newest reviews in one query scoped to its menu, not one per dish.
+  assert.match(stallDetail, /reviews\.listRecentReviews\(\{\s*dishIds: dishIdsKey\.split\("\|"\)/);
+  assert.doesNotMatch(stallDetail, /getReviewsForDish/);
+  assert.match(stallDetail, /<Avatar uri=\{review\.avatarUrl\}/);
   assert.match(reviewFeed, /getHungryService\(\)\.reviews\.listRecentReviews\(\{/);
   assert.doesNotMatch(reviewFeed, /reviews\.getReviewsForDish\(dish\.id\)/);
   assert.match(
     service,
     /async listRecentReviews\(options\)[\s\S]*\.order\("created_at", \{ ascending: false \}\)[\s\S]*\.limit\(limit\)/,
+  );
+  // Owner replies must come back with the rows or detail screens drop them in Supabase mode.
+  assert.match(
+    service,
+    /async listRecentReviews\(options\)[\s\S]{0,400}\.select\(\s*"[^"]*merchant_reply_text,merchant_replied_at"/,
   );
   assert.match(
     reviewFeed,
@@ -417,8 +430,15 @@ test("social store rolls back failed production reactions instead of persisting 
   const source = read("src/store/useSocialStore.ts");
 
   assert.match(source, /interactionStatesMatch/);
-  assert.match(source, /social\.reactToBite\(postId, "craving"\)/);
-  assert.match(source, /social\.reactToBite\(postId, "save"\)/);
+  // Idempotent: the store sends the state it wants, never a blind toggle.
+  assert.match(source, /social\.reactToBite\(postId, "craving", isLiked\)/);
+  assert.match(source, /social\.reactToBite\(postId, "save", isSaved\)/);
+  // Writes for one post run in tap order.
+  assert.match(source, /enqueueReactionWrite\(postId, "craving"/);
+  // The liker never gets a "liked your post" update in their own inbox.
+  assert.doesNotMatch(source, /addActivityUpdate/);
+  // Feed reads carry the viewer's like/save, which overrides stale local state.
+  assert.match(source, /item\.viewerHasLiked/);
   assert.doesNotMatch(source, /Post save ignored because this post is not backed by Supabase\./);
   assert.match(source, /rolled back optimistic state/);
   assert.match(source, /clearAccountScopedState/);
@@ -431,9 +451,18 @@ test("profile/public-profile post history can read posts through the social serv
   const supabaseService = read("src/lib/services/supabase/supabaseService.ts");
   const profileContent = read("src/app/screens/profile/UserProfileContent.tsx");
 
-  assert.match(serviceTypes, /listUserPosts\(userId: string\): Promise<Bite\[\]>/);
-  assert.match(mockService, /async listUserPosts\(userId: string\)/);
-  assert.match(supabaseService, /async listUserPosts\(userId: string\)/);
-  assert.match(profileContent, /listUserPosts\(normalizedAuthorId\)/);
+  assert.match(
+    serviceTypes,
+    /listUserPosts\(userId: string, page\?: \{ limit\?: number; offset\?: number \}\): Promise<Bite\[\]>/,
+  );
+  assert.match(mockService, /async listUserPosts\(userId: string, page\?/);
+  assert.match(supabaseService, /async listUserPosts\(userId: string, page\?/);
+  assert.match(profileContent, /listUserPosts\(normalizedAuthorId as string, \{/);
+  // Author filtering happens on the server, not over the newest feed window.
+  assert.match(
+    supabaseService,
+    /if \(options\?\.authorId\) query = query\.eq\("author_id", options\.authorId\)/,
+  );
+  assert.doesNotMatch(supabaseService, /bites\.filter\(\(bite\) => bite\.authorId === userId\)/);
   assert.match(profileContent, /mergeStallPosts\(/);
 });
