@@ -1272,15 +1272,73 @@ async function fetchPublishedPostBites(client: SupabaseClient, limit = 40): Prom
   );
 }
 
+async function mapFeedRpcRowToBite(client: SupabaseClient, row: Row): Promise<Bite> {
+  const meta = asRecord(row.generated_content);
+  const authorMeta = asRecord(meta.author);
+  const dishMeta = asRecord(meta.dish);
+  const venueMeta = asRecord(meta.venue);
+  const mediaRows = asRowArray(row.media);
+  const mediaUrls = (
+    await Promise.all(mediaRows.map((mediaRow) => resolvePostMediaDisplayUrl(client, mediaRow)))
+  ).filter((url): url is string => url.length > 0);
+  const fallbackImage =
+    asString(row.dish_image_url) ?? asString(dishMeta.imageUrl) ?? asString(row.public_url) ?? "";
+  const photoUrl = mediaUrls[0] ?? fallbackImage;
+  const mediaType = resolvePostBiteMediaType(mediaRows, meta);
+
+  return {
+    id: asString(row.id) ?? `post-${Date.now()}`,
+    authorId: asString(row.author_id) ?? "unknown-author",
+    authorName:
+      asString(authorMeta.displayName) ?? asString(row.author_display_name) ?? "Hungry User",
+    authorAvatar: asString(authorMeta.avatarUrl) ?? asString(row.author_avatar_url),
+    dishId: asString(row.dish_id) ?? asString(dishMeta.id) ?? "",
+    dishName: asString(row.dish_name) ?? asString(dishMeta.name) ?? "Unknown dish",
+    venueId: asString(row.venue_id) ?? asString(venueMeta.id) ?? "",
+    venueName: asString(row.venue_name) ?? asString(venueMeta.name) ?? "Unknown venue",
+    unitNumber: asString(row.venue_unit_number) ?? asString(venueMeta.unitNumber) ?? "",
+    buildingId:
+      asString(row.building_id) ??
+      asString(row.venue_building_id) ??
+      asString(venueMeta.buildingId) ??
+      "",
+    buildingName: asString(row.building_name) ?? asString(venueMeta.buildingName) ?? "",
+    photoUrl,
+    mediaUrls: mediaUrls.length > 0 ? mediaUrls : photoUrl ? [photoUrl] : [],
+    mediaType,
+    showFoodContextOverlay: meta.showFoodContextOverlay !== false,
+    caption: asString(row.caption) ?? "",
+    tags: asStringArray(meta.tags),
+    tasteStamp: tasteStampFromPostMeta(meta),
+    cravingCount: asNumber(row.like_count) ?? 0,
+    savedCount: asNumber(row.save_count) ?? 0,
+    // Only v3 and get_post_by_id return the viewer's own state.
+    viewerHasLiked: typeof row.viewer_has_liked === "boolean" ? row.viewer_has_liked : undefined,
+    viewerHasSaved: typeof row.viewer_has_saved === "boolean" ? row.viewer_has_saved : undefined,
+    rating: asNumber(meta.rating) ?? asNumber(row.dish_rating) ?? 0,
+    price: asNumber(row.dish_price) ?? asNumber(dishMeta.price) ?? 0,
+    expiresAt: asString(row.published_at) ?? asString(row.created_at) ?? new Date().toISOString(),
+    createdAt: asString(row.published_at) ?? asString(row.created_at) ?? new Date().toISOString(),
+  } satisfies Bite;
+}
+
 async function fetchHomeSocialFeedBitesViaRpc(
   client: SupabaseClient,
   limit = 40,
 ): Promise<Bite[] | undefined> {
-  const v2Result = await client.rpc("get_home_social_feed_v2", {
+  // v3 adds the viewer's like/save state; fall back to v2, then the legacy RPC.
+  const v3Result = await client.rpc("get_home_social_feed_v3", {
     p_limit: limit,
     p_cursor_feed_created_at: null,
     p_cursor_post_id: null,
   });
+  const v2Result = v3Result.error
+    ? await client.rpc("get_home_social_feed_v2", {
+        p_limit: limit,
+        p_cursor_feed_created_at: null,
+        p_cursor_post_id: null,
+      })
+    : v3Result;
   const legacyResult = v2Result.error
     ? await client.rpc("get_home_social_feed", {
         p_limit: limit,
@@ -1296,59 +1354,7 @@ async function fetchHomeSocialFeedBitesViaRpc(
   if (!Array.isArray(legacyResult.data)) return undefined;
 
   const rows = legacyResult.data as Row[];
-  return Promise.all(
-    rows.map(async (row) => {
-      const meta = asRecord(row.generated_content);
-      const authorMeta = asRecord(meta.author);
-      const dishMeta = asRecord(meta.dish);
-      const venueMeta = asRecord(meta.venue);
-      const mediaRows = asRowArray(row.media);
-      const mediaUrls = (
-        await Promise.all(mediaRows.map((mediaRow) => resolvePostMediaDisplayUrl(client, mediaRow)))
-      ).filter((url): url is string => url.length > 0);
-      const fallbackImage =
-        asString(row.dish_image_url) ??
-        asString(dishMeta.imageUrl) ??
-        asString(row.public_url) ??
-        "";
-      const photoUrl = mediaUrls[0] ?? fallbackImage;
-      const mediaType = resolvePostBiteMediaType(mediaRows, meta);
-
-      return {
-        id: asString(row.id) ?? `post-${Date.now()}`,
-        authorId: asString(row.author_id) ?? "unknown-author",
-        authorName:
-          asString(authorMeta.displayName) ?? asString(row.author_display_name) ?? "Hungry User",
-        authorAvatar: asString(authorMeta.avatarUrl) ?? asString(row.author_avatar_url),
-        dishId: asString(row.dish_id) ?? asString(dishMeta.id) ?? "",
-        dishName: asString(row.dish_name) ?? asString(dishMeta.name) ?? "Unknown dish",
-        venueId: asString(row.venue_id) ?? asString(venueMeta.id) ?? "",
-        venueName: asString(row.venue_name) ?? asString(venueMeta.name) ?? "Unknown venue",
-        unitNumber: asString(row.venue_unit_number) ?? asString(venueMeta.unitNumber) ?? "",
-        buildingId:
-          asString(row.building_id) ??
-          asString(row.venue_building_id) ??
-          asString(venueMeta.buildingId) ??
-          "",
-        buildingName: asString(row.building_name) ?? asString(venueMeta.buildingName) ?? "",
-        photoUrl,
-        mediaUrls: mediaUrls.length > 0 ? mediaUrls : photoUrl ? [photoUrl] : [],
-        mediaType,
-        showFoodContextOverlay: meta.showFoodContextOverlay !== false,
-        caption: asString(row.caption) ?? "",
-        tags: asStringArray(meta.tags),
-        tasteStamp: tasteStampFromPostMeta(meta),
-        cravingCount: asNumber(row.like_count) ?? 0,
-        savedCount: asNumber(row.save_count) ?? 0,
-        rating: asNumber(meta.rating) ?? asNumber(row.dish_rating) ?? 0,
-        price: asNumber(row.dish_price) ?? asNumber(dishMeta.price) ?? 0,
-        expiresAt:
-          asString(row.published_at) ?? asString(row.created_at) ?? new Date().toISOString(),
-        createdAt:
-          asString(row.published_at) ?? asString(row.created_at) ?? new Date().toISOString(),
-      } satisfies Bite;
-    }),
-  );
+  return Promise.all(rows.map((row) => mapFeedRpcRowToBite(client, row)));
 }
 
 function listAllDishesFromRepository(): DishDetail[] {
@@ -3807,19 +3813,22 @@ export const supabaseService: HungryService = {
       } satisfies Bite;
     },
 
-    async reactToBite(biteId, reaction) {
+    async getPostById(postId) {
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("get_post_by_id", { p_post_id: postId });
+      if (error) throw error;
+      const row = Array.isArray(data) ? (data[0] as Row | undefined) : undefined;
+      return row ? mapFeedRpcRowToBite(client, row) : null;
+    },
+
+    async reactToBite(biteId, reaction, active) {
       const client = requireSupabaseClient();
       const userId = await getCurrentSupabaseUserId();
       if (!userId) throw new Error("You must be signed in to react.");
       const table = reaction === "craving" ? "post_likes" : "post_saves";
-      const existing = await client
-        .from(table)
-        .select("post_id")
-        .eq("post_id", biteId)
-        .eq("user_id", userId)
-        .maybeSingle();
-      if (existing.error) throw existing.error;
-      if ((existing.data as Row | null)?.post_id) {
+      // Set the requested state instead of toggling: a stale or repeated tap can
+      // never delete a like the viewer meant to keep.
+      if (!active) {
         const { error } = await client
           .from(table)
           .delete()
@@ -3828,7 +3837,12 @@ export const supabaseService: HungryService = {
         if (error) throw error;
         return;
       }
-      const { error } = await client.from(table).insert({ post_id: biteId, user_id: userId });
+      const { error } = await client
+        .from(table)
+        .upsert(
+          { post_id: biteId, user_id: userId },
+          { onConflict: "post_id,user_id", ignoreDuplicates: true },
+        );
       if (error) throw error;
     },
 
@@ -7115,7 +7129,34 @@ export const supabaseService: HungryService = {
         .limit(50);
       if (isMissingActivityEventsSchemaError(error)) return [];
       if (error) throw error;
+      // Reply events target a comment; resolve each to its post so the inbox
+      // row can open it.
+      const commentIds = [
+        ...new Set(
+          (data || [])
+            .filter((row: any) => row.target_type === "comment" && row.target_id)
+            .map((row: any) => String(row.target_id)),
+        ),
+      ];
+      const postIdByCommentId = new Map<string, string>();
+      if (commentIds.length > 0) {
+        const comments = await client
+          .from("post_comments")
+          .select("id,post_id")
+          .in("id", commentIds);
+        if (!comments.error) {
+          (comments.data ?? []).forEach((row: any) => {
+            postIdByCommentId.set(String(row.id), String(row.post_id));
+          });
+        }
+      }
       return (data || []).map((row: any) => ({
+        postId:
+          row.target_type === "comment"
+            ? postIdByCommentId.get(String(row.target_id))
+            : row.target_type === "post"
+              ? (row.target_id as string)
+              : undefined,
         id: row.id as string,
         actorId: row.actor?.id as string,
         actorName: (row.actor?.display_name as string) ?? "Unknown",

@@ -417,8 +417,15 @@ test("social store rolls back failed production reactions instead of persisting 
   const source = read("src/store/useSocialStore.ts");
 
   assert.match(source, /interactionStatesMatch/);
-  assert.match(source, /social\.reactToBite\(postId, "craving"\)/);
-  assert.match(source, /social\.reactToBite\(postId, "save"\)/);
+  // Idempotent: the store sends the state it wants, never a blind toggle.
+  assert.match(source, /social\.reactToBite\(postId, "craving", isLiked\)/);
+  assert.match(source, /social\.reactToBite\(postId, "save", isSaved\)/);
+  // Writes for one post run in tap order.
+  assert.match(source, /enqueueReactionWrite\(postId, "craving"/);
+  // The liker never gets a "liked your post" update in their own inbox.
+  assert.doesNotMatch(source, /addActivityUpdate/);
+  // Feed reads carry the viewer's like/save, which overrides stale local state.
+  assert.match(source, /item\.viewerHasLiked/);
   assert.doesNotMatch(source, /Post save ignored because this post is not backed by Supabase\./);
   assert.match(source, /rolled back optimistic state/);
   assert.match(source, /clearAccountScopedState/);

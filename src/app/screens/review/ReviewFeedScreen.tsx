@@ -534,7 +534,6 @@ export function ReviewFeedScreen() {
       commentSheet.snapToIndex(0);
     });
   }, []);
-  const stallPosts = useMemo(() => repository.listStallPosts(), [repository]);
   const searchBarWidth = screenWidth - spacing[8];
   const setTabSwipeLocked = useCallback(
     (isLocked: boolean) => {
@@ -741,16 +740,15 @@ export function ReviewFeedScreen() {
 
   const openShareReview = useCallback(
     (item: ReviewFeedItem) => {
-      const linkedPost =
-        stallPosts.find((post) => post.dishIds.includes(item.dishId)) ??
-        stallPosts.find((post) => post.venueId === item.venueId);
       const linkedDish = item.dish?.imageUrl ? item.dish : repository.getDishById(item.dishId);
+      // A review is not a post: never borrow another post's id, or its share
+      // count goes up when this review is shared.
       setActiveShareReview({
         reviewId: item.review.id,
-        postId: linkedPost?.id ?? "",
+        postId: "",
         title: item.dishName,
         subtitle: `${item.venueName} · ${item.review.authorName}`,
-        imageUrl: item.review.photos[0] ?? linkedDish?.imageUrl ?? linkedPost?.mediaUrl ?? "",
+        imageUrl: item.review.photos[0] ?? linkedDish?.imageUrl ?? "",
         authorName: item.review.authorName,
         message: `${item.review.authorName} reviewed ${item.dishName} at ${item.venueName} on Hungry: ${item.review.text}`,
         link: webShareUrl("dish", item.dishId),
@@ -759,7 +757,7 @@ export function ReviewFeedScreen() {
         shareSheetRef.current?.present();
       });
     },
-    [repository, stallPosts],
+    [repository],
   );
 
   const handleSavePress = useCallback(

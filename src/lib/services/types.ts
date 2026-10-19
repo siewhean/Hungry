@@ -341,6 +341,9 @@ export interface Bite {
   tasteStamp: TasteStamp;
   cravingCount: number;
   savedCount: number;
+  /** The viewer's own like/save, when the read returns it (undefined = unknown). */
+  viewerHasLiked?: boolean;
+  viewerHasSaved?: boolean;
   rating: number;
   price: number;
   expiresAt: string; // ISO 8601 — Bites expire after 7 days
@@ -826,11 +829,14 @@ export interface HungryService {
     getBitesFeed(lat?: number, lng?: number): Promise<Bite[]>;
     listUserPosts(userId: string): Promise<Bite[]>;
     postBite(draft: BiteDraft): Promise<Bite>;
-    reactToBite(biteId: string, reaction: "craving" | "save"): Promise<void>;
+    /** One readable post for shared links; null when missing or not visible. Works signed out. */
+    getPostById(postId: string): Promise<Bite | null>;
+    /** Idempotent: sets the viewer's like/save to `active` (never toggles server state). */
+    reactToBite(biteId: string, reaction: "craving" | "save", active: boolean): Promise<void>;
     shareBite(
       biteId: string,
       options?: {
-        channel?: "in_app" | "system_share" | "copy_link";
+        channel?: "in_app" | "system_share" | "copy_link" | "whatsapp" | "telegram";
         targetConversationId?: string;
         targetUserId?: string;
       },
@@ -1204,6 +1210,8 @@ export interface HungryService {
         eventType: "new_like" | "new_comment" | "new_reply" | "new_follower" | "follow_request";
         targetType: "post" | "comment" | "profile";
         targetId: string;
+        /** The post a comment target belongs to, so a reply update can open it. */
+        postId?: string;
         readAt?: string;
         createdAt: string;
       }[]

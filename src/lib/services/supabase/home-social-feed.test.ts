@@ -83,8 +83,11 @@ test("Supabase social feed uses RPC-first reads with legacy fallback", () => {
   );
   assert.match(serviceSource, /if\s+\(rpcBites\)\s+return\s+rpcBites/);
   assert.match(serviceSource, /return\s+fetchPublishedPostBites\(client\)/);
-  assert.match(serviceSource, /\.from\(table\)[\s\S]*?\.select\("post_id"\)/);
-  assert.match(serviceSource, /\(existing\.data\s+as\s+Row\s+\|\s+null\)\?\.post_id/);
+  // v3 first: it carries the viewer's like/save state.
+  assert.match(serviceSource, /client\.rpc\("get_home_social_feed_v3"/);
+  assert.match(serviceSource, /viewerHasLiked: typeof row\.viewer_has_liked === "boolean"/);
+  // Reactions are an idempotent upsert/delete, not read-then-toggle.
+  assert.match(serviceSource, /\.from\(table\)[\s\S]{0,40}\.upsert\(/);
   assert.doesNotMatch(serviceSource, /\.from\(table\)[\s\S]{0,80}\.select\("id"\)/);
   assert.doesNotMatch(serviceSource, /\(existing\.data\s+as\s+Row\s+\|\s+null\)\?\.id/);
 });

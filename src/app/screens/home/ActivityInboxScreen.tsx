@@ -20,6 +20,7 @@ import {
   type ActivityUpdate,
 } from "@/features/home/activity";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { listSharedStallPostsSync } from "@/features/social/sharedStallPosts";
 import {
   getDataRepository,
@@ -76,15 +77,18 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
         ? [...ACTIVITY_UPDATES, ...activityUpdates]
         : [...dbActivityEvents, ...activityUpdates];
     return sourceUpdates.map((update) => {
+      if (update.target) return update;
+      if (update.kind === "follow") return { ...update, target: "View profile" };
+      // Label the post by its dish and stall, never by its raw id.
       const post = postById.get(update.postId);
-      const postName = post?.authorName ?? post?.caption ?? "Post";
-      const venueName = post ? `${post.authorLocation}` : "";
-      return {
-        ...update,
-        target: update.target || (venueName ? `${postName} · ${venueName}` : postName),
-      };
+      const dishName = post?.dishIds
+        .map((dishId) => repository.getDishById(dishId)?.name)
+        .find(Boolean);
+      const venueName = post?.authorLocation?.trim();
+      const label = [dishName, venueName].filter(Boolean).join(" · ");
+      return { ...update, target: label || (update.postId ? "Your post" : "") };
     });
-  }, [postById, activityUpdates, dbActivityEvents]);
+  }, [postById, activityUpdates, dbActivityEvents, repository]);
 
   const visibleUpdates = useMemo(() => {
     const parseRelativeMinutes = (value: string) => {
@@ -412,7 +416,9 @@ function UpdatesTab({
             accessibilityLabel={
               update.kind === "follow_request"
                 ? `${update.actorName} requested to follow you. Open follow requests`
-                : `Open update for ${update.target}`
+                : update.kind === "follow"
+                  ? `${update.actorName} started following you. Open their profile`
+                  : `${update.actorName} ${update.text}${update.target ? `: ${update.target}` : ""}. ${formatTimeAgo(update.time)}`
             }
             onPress={() => {
               markActivityRead("update", update.id);
@@ -420,7 +426,15 @@ function UpdatesTab({
                 navigation.navigate("FollowRequests");
                 return;
               }
-              if (post) {
+              if (update.kind === "follow") {
+                navigation.navigate("UserProfile", {
+                  authorName: update.actorName,
+                  authorAvatarUrl: update.actorAvatarUrl,
+                  authorId: update.actorId,
+                });
+                return;
+              }
+              if (update.postId) {
                 navigation.navigate("ActivityPostDetail", {
                   postId: update.postId,
                   updateId: update.id,
@@ -436,7 +450,7 @@ function UpdatesTab({
                 <Share2 color={kindColor} size={20} />
               ) : update.kind === "submission" ? (
                 <Store color={kindColor} size={20} />
-              ) : update.kind === "follow_request" ? (
+              ) : update.kind === "follow_request" || update.kind === "follow" ? (
                 <UserPlus color={kindColor} size={20} />
               ) : (
                 <MessageCircleMore color={kindColor} size={20} />
@@ -446,15 +460,17 @@ function UpdatesTab({
               <View style={stylesInline.rowBetween}>
                 <AppText variant="bodySmallBold">{update.actorName}</AppText>
                 <AppText variant="micro" tone="secondary">
-                  {update.time}
+                  {formatTimeAgo(update.time)}
                 </AppText>
               </View>
               <AppText variant="bodySmall" tone="secondary" style={stylesInline.updateText}>
                 {update.text}
               </AppText>
-              <AppText variant="micro" tone="secondary" numberOfLines={1}>
-                {update.target}
-              </AppText>
+              {update.target ? (
+                <AppText variant="micro" tone="secondary" numberOfLines={1}>
+                  {update.target}
+                </AppText>
+              ) : null}
             </View>
             <View style={stylesInline.updateMediaSlot}>
               {post ? (

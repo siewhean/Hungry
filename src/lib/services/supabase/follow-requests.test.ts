@@ -208,7 +208,9 @@ test("Follow Requests screen is a protected root route reached from Profile and 
   assert.match(profileHome, /rootNavigation\.navigate\("FollowRequests"\)/);
   assert.match(profileHome, /social\.getFollowRequestCount\(\)/);
 
-  assert.match(activityStore, /e\.eventType === "follow_request"\s+\? "follow_request"/);
+  const activityMapping = read("src/features/home/activity.ts");
+  assert.match(activityStore, /events\.map\(mapActivityEventToUpdate\)/);
+  assert.match(activityMapping, /event\.eventType === "follow_request"\s+\? "follow_request"/);
   assert.match(
     inbox,
     /if \(update\.kind === "follow_request"\) \{\s+navigation\.navigate\("FollowRequests"\);/,

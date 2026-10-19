@@ -18,11 +18,13 @@ import { trackAnalyticsEvent } from "@/lib/analytics";
 import { openTrustedMessagingShareUrl } from "@/lib/security/safeLinking";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useActivityStore } from "@/store/useActivityStore";
+import type { ShareChannel } from "@/store/useSocialStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 
 export type ReviewShareTarget = {
   reviewId: string;
+  /** Set only when the shared item IS this post; reviews leave it empty. */
   postId: string;
   title: string;
   subtitle: string;
@@ -37,7 +39,7 @@ type ReviewShareSheetProps = {
   innerRef: RefObject<BottomSheetModal | null>;
   bottomInset: number;
   onDismiss: () => void;
-  onShared: (postId: string, channel: "in_app" | "system_share" | "copy_link") => void;
+  onShared: (postId: string, channel: ShareChannel) => void;
 };
 
 export function ReviewShareSheet({
@@ -123,6 +125,7 @@ export function ReviewShareSheet({
   const copyLink = useCallback(() => {
     if (!activeReview) return;
     Clipboard.setString(withShareSource(activeReview.link, "copy_link"));
+    trackAnalyticsEvent("dish_shared", { review_id: activeReview.reviewId, channel: "copy_link" });
     if (activeReview.postId) {
       onShared(activeReview.postId, "copy_link");
     }
@@ -132,9 +135,15 @@ export function ReviewShareSheet({
   const shareOutsideHungry = useCallback(async () => {
     if (!activeReview) return;
     const link = withShareSource(activeReview.link, "system_share");
-    await Share.share({
+    const result = await Share.share({
       message: `${activeReview.message}\n${link}`,
       url: link,
+    });
+    // A cancelled share sheet is not a share.
+    if (result.action !== Share.sharedAction) return;
+    trackAnalyticsEvent("dish_shared", {
+      review_id: activeReview.reviewId,
+      channel: "system_share",
     });
     if (activeReview.postId) {
       onShared(activeReview.postId, "system_share");
@@ -152,7 +161,7 @@ export function ReviewShareSheet({
       );
       trackAnalyticsEvent("dish_shared", { review_id: activeReview.reviewId, channel });
       if (activeReview.postId) {
-        onShared(activeReview.postId, "system_share");
+        onShared(activeReview.postId, channel);
       }
     },
     [activeReview, onShared],

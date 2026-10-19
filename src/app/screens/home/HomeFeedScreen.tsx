@@ -94,6 +94,8 @@ import {
 } from "@/lib/security/communitySafety";
 import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { webShareUrl } from "@/constants/links";
+import { withShareSource } from "@/features/share/shareAttribution";
 import { useActivityStore } from "@/store/useActivityStore";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
@@ -715,19 +717,24 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
 
   const copySharePostLink = useCallback(() => {
     if (!activeShareItem) return;
-    const firstDish = activeShareItem.dishes[0]?.name ?? "Dish";
-    Clipboard.setString(`${firstDish} - Hungry: ${activeShareItem.venue.name}`);
+    Clipboard.setString(withShareSource(webShareUrl("post", activeShareItem.id), "copy_link"));
     incrementPostShare(activeShareItem.id, "copy_link");
-  }, [activeShareItem, incrementPostShare]);
+    showToast({ message: "Link copied", tone: "success" });
+  }, [activeShareItem, incrementPostShare, showToast]);
 
   const sharePostOutsideApp = useCallback(async () => {
     if (!activeShareItem) return;
-    await Share.share({
+    const link = withShareSource(webShareUrl("post", activeShareItem.id), "system_share");
+    const result = await Share.share({
       message: `${activeShareItem.dishes[0]?.name ?? "Post"} at ${
         activeShareItem.venue.name
-      }. ${activeShareItem.caption}`,
+      }. ${activeShareItem.caption}\n${link}`,
+      url: link,
     });
-    incrementPostShare(activeShareItem.id, "system_share");
+    // Count a share only when the user actually sent it, not on cancel.
+    if (result.action === Share.sharedAction) {
+      incrementPostShare(activeShareItem.id, "system_share");
+    }
   }, [activeShareItem, incrementPostShare]);
 
   const openUserProfile = useCallback(

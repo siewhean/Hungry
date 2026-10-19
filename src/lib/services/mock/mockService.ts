@@ -551,6 +551,20 @@ const _merchantActionEvents: MockMerchantActionEvent[] = [];
 const _merchantNotifications: MerchantNotification[] = [];
 const _merchantMenuByOutlet = new Map<string, DishDetail[]>();
 const _biteReactions: Record<string, { cravings: Set<string>; saves: Set<string> }> = {};
+
+function withMockViewerReactions(bite: Bite): Bite {
+  const reactions = _biteReactions[bite.id];
+  const viewerHasLiked = reactions?.cravings.has(_profile.id) ?? false;
+  const viewerHasSaved = reactions?.saves.has(_profile.id) ?? false;
+  // Seeded counts exclude the viewer, like a server count that includes them.
+  return {
+    ...bite,
+    cravingCount: bite.cravingCount + (viewerHasLiked ? 1 : 0),
+    savedCount: bite.savedCount + (viewerHasSaved ? 1 : 0),
+    viewerHasLiked,
+    viewerHasSaved,
+  };
+}
 const _merchantClaimInterests = new Set<string>();
 const _merchantInteractionReports: {
   interactionId: string;
@@ -1895,8 +1909,21 @@ export const hungryService: HungryService = {
   social: {
     async getBitesFeed(_lat?, _lng?) {
       await hydrateSocial();
-      // Mirrors the Supabase feed read: blocked authors never reach the client.
-      return resolve(MOCK_BITES_FEED.filter((bite) => !_blockedUsers.has(bite.authorId)));
+      // Mirrors the Supabase feed read: blocked authors never reach the client,
+      // and each row carries the viewer's own like/save state.
+      return resolve(
+        MOCK_BITES_FEED.filter((bite) => !_blockedUsers.has(bite.authorId)).map(
+          withMockViewerReactions,
+        ),
+      );
+    },
+
+    async getPostById(postId: string) {
+      await hydrateSocial();
+      const bite = MOCK_BITES_FEED.find(
+        (candidate) => candidate.id === postId && !_blockedUsers.has(candidate.authorId),
+      );
+      return resolve(bite ? withMockViewerReactions(bite) : null);
     },
 
     async listUserPosts(userId: string) {
@@ -1948,7 +1975,7 @@ export const hungryService: HungryService = {
       return resolve(newBite);
     },
 
-    async reactToBite(biteId, reaction) {
+    async reactToBite(biteId, reaction, active) {
       await hydrateSocial();
       if (!_biteReactions[biteId]) {
         _biteReactions[biteId] = { cravings: new Set(), saves: new Set() };
@@ -1956,10 +1983,11 @@ export const hungryService: HungryService = {
       const userId = _profile.id;
       const bucket = reaction === "craving" ? "cravings" : "saves";
       const set = _biteReactions[biteId][bucket];
-      if (set.has(userId)) {
-        set.delete(userId);
-      } else {
+      // Idempotent, like the Supabase upsert/delete.
+      if (active) {
         set.add(userId);
+      } else {
+        set.delete(userId);
       }
 
       // Persist (convert Sets to Arrays for JSON)
