@@ -103,8 +103,16 @@ test("profile home contract: merchant entry loads on sign-in and switching mode 
 test("profile home contract: customer surfaces read the merchant mode flag, not account presence", () => {
   const store = read("src/store/useMerchantStore.ts");
   assert.match(store, /return state\.merchantModeActive && state\.account !== null;/);
-  // The mode flag must not survive a restart, or the customer app reopens in merchant mode.
-  assert.doesNotMatch(store, /merchantModeActive: state\.merchantModeActive/);
+  // The mode is remembered across restarts, but only as a launch restore: the session must confirm
+  // the merchant account before the Merchant Centre opens and activates it.
+  assert.match(
+    store,
+    /merchantModeActive: state\.merchantModeActive \|\| state\.merchantModeRestore === "restore"/,
+  );
+  assert.match(
+    store,
+    /merchantModeActive: false,\s*merchantModeRestore: rememberedMerchantMode === true \? "checking" : "none"/,
+  );
 
   const tabs = read("src/app/navigation/MerchantTabs.tsx");
   // Activated on focus, not mount, so a preloaded Merchant Centre never flips the customer app.
@@ -139,4 +147,30 @@ test("profile home contract: customer surfaces read the merchant mode flag, not 
     assert.match(source, /const isMerchantMode = useMerchantStore\(isMerchantModeActive\);/, file);
     assert.doesNotMatch(source, /isMerchantMode = useMerchantStore\(\(state\) =>/, file);
   }
+});
+
+test("profile home contract: a remembered merchant mode reopens the Merchant Centre after the session check", () => {
+  const bootstrap = read("src/hooks/useAppBootstrap.ts");
+  // The merchant account loads with the session, not only when Profile mounts.
+  assert.match(bootstrap, /getHungryService\(\)\.merchant\.getMerchantAccount\(\)/);
+  assert.match(bootstrap, /if \(!isAuthenticated \|\| !FEATURE_FLAGS\.merchantCentreEnabled\) \{/);
+  assert.match(bootstrap, /merchantStore\.resolveMerchantModeRestore\(false\);/);
+  assert.match(bootstrap, /resolveMerchantModeRestore\(hasMerchantAccount\)/);
+
+  const splash = read("src/app/screens/SplashScreen.tsx");
+  assert.match(splash, /if \(merchantModeRestore === "checking"\) \{\s*return;\s*\}/);
+  assert.match(
+    splash,
+    /if \(merchantModeRestore === "restore"\) \{\s*navigation\.reset\(\{\s*index: 0,\s*routes: \[\{ name: "MerchantTabs"/,
+  );
+
+  const root = read("src/app/navigation/RootNavigator.tsx");
+  assert.match(root, /if \(merchantModeRestore === "restore"\) \{\s*navigationRef\.resetRoot/);
+
+  // Sign-out and account switch reset the whole merchant store, including the remembered mode.
+  const session = read("src/store/useSessionStore.ts");
+  assert.match(session, /getMerchantStoreState\(\)\.clearMerchant\(\);/);
+  const store = read("src/store/useMerchantStore.ts");
+  assert.match(store, /clearMerchant: \(\) => set\(INITIAL_STATE\)/);
+  assert.match(store, /merchantModeActive: false,\s*merchantModeRestore: "none",\s*\};/);
 });

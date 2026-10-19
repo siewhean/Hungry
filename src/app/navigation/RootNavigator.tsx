@@ -475,6 +475,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
   const isMerchantMode = useMerchantStore(isMerchantModeActive);
+  const merchantModeRestore = useMerchantStore((state) => state.merchantModeRestore);
   const resetScrollBack = useUIStore((state) => state.resetScrollBack);
 
   const prefix = Linking.createURL("/");
@@ -584,6 +585,15 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       !isMerchantMode &&
       !isMockE2eDataSource
     ) {
+      // Same launch rule as Splash: a remembered Merchant mode reopens the Merchant Centre.
+      if (merchantModeRestore === "checking") return;
+      if (merchantModeRestore === "restore") {
+        navigationRef.resetRoot({
+          index: 0,
+          routes: [{ name: "MerchantTabs", params: { screen: "Dashboard" } }],
+        });
+        return;
+      }
       navigateHome();
       return;
     }
@@ -611,6 +621,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     isAuthReady,
     isDeveloperMode,
     isMerchantMode,
+    merchantModeRestore,
     navigateHome,
   ]);
 
