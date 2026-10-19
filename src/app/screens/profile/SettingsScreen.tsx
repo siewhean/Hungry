@@ -1,6 +1,7 @@
 import Constants from "expo-constants";
-import { useState } from "react";
-import { Alert, Linking, Share, View } from "react-native";
+import { File, Paths } from "expo-file-system";
+import { useEffect, useState } from "react";
+import { Alert, AppState, Linking, Platform, Share, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
@@ -30,6 +31,7 @@ import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { ACCOUNT_DELETION_GRACE_DAYS } from "@/lib/services/types";
+import { clearImageCache } from "@/features/navigation/prefetch";
 import { buildMyDataExport } from "@/features/profile/exportMyData";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -55,7 +57,8 @@ export function SettingsScreen() {
   const signOut = useSessionStore((state) => state.signOut);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const grantLocation = useLocationStore((state) => state.grantLocation);
-  const denyLocation = useLocationStore((state) => state.denyLocation);
+  const clearManualLocation = useLocationStore((state) => state.clearManualLocation);
+  const syncLocationPermission = useLocationStore((state) => state.syncLocationPermission);
   const setProfileVisibility = useProfileStore((state) => state.setProfileVisibility);
   const setLeftHandedMode = useProfileStore((state) => state.setLeftHandedMode);
 
@@ -85,6 +88,15 @@ export function SettingsScreen() {
 
   const appVersion = Constants.expoConfig?.version ?? "0.1.0";
 
+  // The OS permission can change in system Settings; re-read it whenever the app comes back.
+  useEffect(() => {
+    void syncLocationPermission();
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") void syncLocationPermission();
+    });
+    return () => subscription.remove();
+  }, [syncLocationPermission]);
+
   const purgePersistedAccountData = async () => {
     if (!hungryPersistStorage) return;
     await Promise.all([
@@ -101,10 +113,16 @@ export function SettingsScreen() {
       setIsExportingData(true);
       try {
         const exportData = await buildMyDataExport(getHungryService());
-        await Share.share({
-          title: "My Hungry data",
-          message: JSON.stringify(exportData, null, 2),
-        });
+        const exportJson = JSON.stringify(exportData, null, 2);
+        if (Platform.OS === "ios") {
+          // Share a .json file; Android keeps the text share until expo-sharing ships natively.
+          const exportFile = new File(Paths.cache, "hungry-data-export.json");
+          exportFile.create({ overwrite: true });
+          exportFile.write(exportJson);
+          await Share.share({ title: "My Hungry data", url: exportFile.uri });
+        } else {
+          await Share.share({ title: "My Hungry data", message: exportJson });
+        }
       } catch {
         Alert.alert(
           "Export failed",
@@ -198,24 +216,23 @@ export function SettingsScreen() {
     }
   };
 
-  const handleLocationPermissionToggle = async (enabled: boolean) => {
-    if (enabled) {
-      const granted = await grantLocation({ manualLocation: location });
-      if (!granted) {
-        Alert.alert(
-          "Location permissions",
-          "Hungry could not enable location access. Update this permission in Settings if you previously denied it.",
-          [
-            { text: "Open Settings", onPress: () => void openAppSettings() },
-            { text: "Cancel", style: "cancel" },
-          ],
-        );
-      }
+  // Shows the OS permission; only the system can revoke it, so the row asks or opens Settings.
+  const handleLocationPermissionPress = async () => {
+    if (locationPermission !== "unknown") {
+      void openAppSettings();
       return;
     }
-
-    denyLocation();
-    void openAppSettings();
+    const granted = await grantLocation({ manualLocation: location });
+    if (!granted) {
+      Alert.alert(
+        "Location permissions",
+        "Hungry could not enable location access. Update this permission in Settings if you previously denied it.",
+        [
+          { text: "Open Settings", onPress: () => void openAppSettings() },
+          { text: "Cancel", style: "cancel" },
+        ],
+      );
+    }
   };
 
   const handleSearchHistoryToggle = (enabled: boolean) => {
@@ -227,15 +244,16 @@ export function SettingsScreen() {
 
   const handleResetLocation = () => {
     Alert.alert(
-      "Reset location",
-      "This will clear your selected manual location and use GPS defaults.",
+      "Reset selected location",
+      "This clears the area you picked. Hungry will use your device location when location access is allowed.",
       [
         { text: "Cancel", style: "cancel" },
         {
           text: "Reset",
           onPress: () => {
-            resetLocationState();
-            Alert.alert("Location reset", "Your manual location has been cleared.");
+            void clearManualLocation().then(() =>
+              Alert.alert("Location reset", "Your selected location has been cleared."),
+            );
           },
         },
       ],
@@ -243,20 +261,33 @@ export function SettingsScreen() {
   };
 
   const handleClearLocalData = () => {
-    Alert.alert("Clear local settings", "This will remove cached searches and draft content.", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Clear",
-        onPress: () => {
-          void (async () => {
-            await purgePersistedAccountData();
-            resetDraft();
-            clearSearchState();
-            Alert.alert("Local data cleared", "Cached app data was removed from this device.");
-          })();
+    Alert.alert(
+      "Clear local cache",
+      "This removes recent searches, unsent review drafts and cached images on this device. You stay signed in.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Clear",
+          onPress: () => {
+            void (async () => {
+              // Only caches: the session, profile and location stay so nothing is signed out.
+              await Promise.all([
+                hungryPersistStorage?.removeItem("hungry-search-v1"),
+                hungryPersistStorage?.removeItem("hungry-review-draft-v1"),
+                clearImageCache(),
+              ]);
+              resetDraft();
+              clearSearchState();
+              clearSearchHistory();
+              Alert.alert(
+                "Local cache cleared",
+                "Recent searches, drafts and cached images were removed from this device.",
+              );
+            })();
+          },
         },
-      },
-    ]);
+      ],
+    );
   };
 
   const handleSignOut = () => setAccountDialog("signOut");
@@ -325,7 +356,10 @@ export function SettingsScreen() {
           label="Location"
           icon={<MapPin size={20} color={palette.orange} />}
           onPress={() =>
-            rootNavigation.navigate("OnboardingStack", { screen: "ManualLocationPicker" })
+            rootNavigation.navigate("OnboardingStack", {
+              screen: "ManualLocationPicker",
+              params: { mode: "settings" },
+            })
           }
           value={location || "Use GPS"}
           isLast={false}
@@ -333,9 +367,20 @@ export function SettingsScreen() {
         <SettingsRow
           label="Location permission"
           icon={<MapPin size={20} color={palette.orange} />}
-          type="toggle"
-          isEnabled={locationPermission === "granted"}
-          onToggle={handleLocationPermissionToggle}
+          type="navigation"
+          value={
+            locationPermission === "granted"
+              ? "Allowed"
+              : locationPermission === "denied"
+                ? "Not allowed"
+                : "Not asked yet"
+          }
+          description={
+            locationPermission === "unknown"
+              ? "Tap to allow location access"
+              : "Change this in your device settings"
+          }
+          onPress={() => void handleLocationPermissionPress()}
           isLast={false}
         />
         <SettingsRow
@@ -426,7 +471,8 @@ export function SettingsScreen() {
         <SettingsRow
           label={isExportingData ? "Preparing your data…" : "Download my data"}
           icon={<Download size={20} color={palette.orange} />}
-          onPress={isExportingData ? undefined : handleExportData}
+          onPress={handleExportData}
+          busy={isExportingData}
           isLast={false}
         />
         <SettingsRow

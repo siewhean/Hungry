@@ -3,12 +3,17 @@ import assert from "node:assert/strict";
 
 import { REVIEW_TEXT_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSanitization";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
-import { createClientReviewId, createInitialReviewDraft } from "./reviewDraft";
+import {
+  createClientReviewId,
+  createInitialReviewDraft,
+  reviewDraftHasContent,
+} from "./reviewDraft";
 
-test("initial review draft defaults to not recommended", () => {
+test("initial review draft leaves recommend unanswered", () => {
   const draft = createInitialReviewDraft();
 
-  assert.equal(draft.recommend, false);
+  // null, not false: an untouched review must not be saved as "not recommended".
+  assert.equal(draft.recommend, null);
   assert.equal(draft.rating, 0);
   assert.equal(draft.text, "");
   assert.deepEqual(draft.selectedTags, []);
@@ -49,6 +54,41 @@ test("selecting the same dish keeps the draft; a different dish resets it", () =
   assert.equal(store.getState().pendingReviewId, undefined);
 
   store.getState().resetDraft();
+});
+
+test("picking the first dish keeps rating, text and photos already entered", () => {
+  const store = useReviewDraftStore;
+  store.getState().resetDraft();
+  store.getState().setRating(5);
+  store.getState().setText("Before picking a dish");
+  store.getState().addPhoto("file:///photo.jpg");
+
+  store.getState().selectDish("venue-a", "dish-a");
+  const { draft } = store.getState();
+  assert.equal(draft.selectedDishId, "dish-a");
+  assert.equal(draft.rating, 5);
+  assert.equal(draft.text, "Before picking a dish");
+  assert.deepEqual(draft.photos, ["file:///photo.jpg"]);
+
+  store.getState().resetDraft();
+});
+
+test("draft content counts without a dish", () => {
+  const draft = createInitialReviewDraft();
+  assert.equal(reviewDraftHasContent(draft), false);
+  assert.equal(reviewDraftHasContent({ ...draft, text: "tasty" }), true);
+  assert.equal(reviewDraftHasContent({ ...draft, photos: ["file:///a.jpg"] }), true);
+  assert.equal(reviewDraftHasContent({ ...draft, rating: 3 }), true);
+});
+
+test("a v1 persisted draft's default recommend=false migrates to unanswered", async () => {
+  const options = useReviewDraftStore.persist.getOptions();
+  assert.equal(options.version, 2);
+  const migrated = (await options.migrate?.(
+    { draft: { ...createInitialReviewDraft(), recommend: false } },
+    1,
+  )) as { draft: { recommend: boolean | null } };
+  assert.equal(migrated.draft.recommend, null);
 });
 
 test("setText keeps what the user types: trailing spaces, newlines and ordinary words", () => {

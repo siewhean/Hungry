@@ -4,16 +4,17 @@
  * Bottom-sheet with 4 tabs for adding wheel entries:
  *   1. Search — text search → venue results
  *   2. Random — "Surprise me" from nearby popular venues
- *   3. Category — browse by SearchCategory chips
+ *   3. Browse — browse by SearchCategory chips
  *   4. Favourites — from profile favourite dish IDs
  */
 
-import { useState, useMemo } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { FlatList, Modal, Pressable, ScrollView, View, Alert } from "react-native";
 import { X, Search, Compass, Heart, Plus, ShieldAlert, Sparkles } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 
 import { AccessibleImage, AppText, Badge, Card, EmptyState, Input } from "@/components/ui";
+import { dishMatchesSearchCategory } from "@/lib/services/searchCategoryMatch";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useWheelStore } from "@/store/useWheelStore";
@@ -49,17 +50,17 @@ function calculateMatchScore(dish: DishDetail | undefined, userTaste: any): numb
 
 function VenueRow({
   venue,
+  hero,
   onAdd,
   matchScore = 0,
 }: {
   venue: VenueSummary;
+  /** First dish of the venue, looked up once when the venue list is built. */
+  hero?: DishDetail;
   onAdd: () => void;
   matchScore?: number;
 }) {
   const { palette, spacing, radii } = useHungryTheme();
-  const repository = getDataRepository();
-  const dishes = repository.listDishesByVenue(venue.id);
-  const hero = dishes[0];
   const isHighMatch = matchScore > 120;
 
   return (
@@ -228,39 +229,44 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
 
   // ── Venue list for search + category ─────────────────────────────────────
 
+  // Built once while the sheet is open: each venue's dishes are looked up a single time
+  // (repositories index dishes by venue) and reused by search, browse and the rows.
   const allVenues = useMemo(() => {
+    if (!visible) return [];
     return repository
       .listBuildings()
       .flatMap((b) =>
-        repository.listVenuesByBuilding(b.id).map((v) => ({
-          ...v,
-          buildingId: b.id,
-          matchScore: calculateMatchScore(
-            repository.listDishesByVenue(v.id)[0],
-            profile.tasteVector,
-          ),
-        })),
+        repository.listVenuesByBuilding(b.id).map((v) => {
+          const dishes = repository.listDishesByVenue(v.id);
+          return {
+            ...v,
+            buildingId: b.id,
+            dishes,
+            hero: dishes[0] as DishDetail | undefined,
+            matchScore: calculateMatchScore(dishes[0], profile.tasteVector),
+          };
+        }),
       )
       .sort((a, b) => b.matchScore - a.matchScore);
-  }, [profile.tasteVector, repository]);
+  }, [profile.tasteVector, repository, visible]);
 
-  const searchResults = useMemo(
-    () =>
-      tab === "search" && query.trim()
-        ? allVenues.filter((v) => v.name.toLowerCase().includes(query.toLowerCase()))
-        : [],
-    [allVenues, tab, query],
-  );
+  // Typing stays responsive: filtering runs on the deferred query.
+  const deferredQuery = useDeferredValue(query);
+  const searchResults = useMemo(() => {
+    const normalizedQuery = deferredQuery.trim().toLowerCase();
+    return tab === "search" && normalizedQuery
+      ? allVenues.filter((v) => v.name.toLowerCase().includes(normalizedQuery))
+      : [];
+  }, [allVenues, tab, deferredQuery]);
 
   const categoryResults = useMemo(
     () =>
       tab === "category" && selectedCategory
-        ? allVenues.filter((v) => {
-            const dishes = repository.listDishesByVenue(v.id);
-            return dishes.some((d) => d.tasteTags.includes(selectedCategory));
-          })
+        ? allVenues.filter((v) =>
+            v.dishes.some((dish) => dishMatchesSearchCategory(dish, selectedCategory)),
+          )
         : [],
-    [allVenues, tab, selectedCategory, repository],
+    [allVenues, tab, selectedCategory],
   );
 
   const favouriteVenues = useMemo(
@@ -279,7 +285,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
   const tabs: { id: Tab; label: string; icon: any }[] = [
     { id: "search", label: "Search", icon: <Search size={14} /> },
     { id: "random", label: "Surprise", icon: <Compass size={14} /> },
-    { id: "category", label: "Crave", icon: <Plus size={14} /> },
+    { id: "category", label: "Browse", icon: <Plus size={14} /> },
     { id: "favourites", label: "Faves", icon: <Heart size={14} /> },
   ];
 
@@ -439,6 +445,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                 renderItem={({ item }) => (
                   <VenueRow
                     venue={item}
+                    hero={item.hero}
                     onAdd={() => addVenue(item)}
                     matchScore={item.matchScore}
                   />
@@ -584,6 +591,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                 renderItem={({ item }) => (
                   <VenueRow
                     venue={item}
+                    hero={item.hero}
                     onAdd={() => addVenue(item)}
                     matchScore={item.matchScore}
                   />
@@ -609,7 +617,12 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
               data={favouriteVenues}
               keyExtractor={(v) => v.id}
               renderItem={({ item }) => (
-                <VenueRow venue={item} onAdd={() => addVenue(item)} matchScore={item.matchScore} />
+                <VenueRow
+                  venue={item}
+                  hero={item.hero}
+                  onAdd={() => addVenue(item)}
+                  matchScore={item.matchScore}
+                />
               )}
               contentContainerStyle={{ paddingBottom: 40 }}
               ListEmptyComponent={

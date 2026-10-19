@@ -143,7 +143,8 @@ test("full project audit P1: numeric trust surfaces disclose live or preview dat
   assert.match(disclosure, /Preview score/);
   assert.match(disclosure, /Live map status/);
   assert.match(disclosure, /Preview map status/);
-  assert.match(disclosure, /Live wait estimate/);
+  assert.match(disclosure, /Listed wait estimate/);
+  assert.doesNotMatch(disclosure, /Live wait estimate/);
   assert.match(disclosure, /Preview wait estimate/);
   assert.match(merchantAnalytics, /getDataTrustDisclosure\("merchantAnalytics"\)/);
   assert.match(merchantDashboard, /getDataTrustDisclosure\("merchantAnalytics"\)/);
@@ -163,7 +164,10 @@ test("full project audit P1: user-facing data trust copy avoids live-result over
   assert.doesNotMatch(locationPermission, /precise directions/i);
   assert.match(locationPermission, /Keep a shortlist of nearby dishes/);
   assert.doesNotMatch(aiAssistant, /boost\s+sales/i);
-  assert.match(aiAssistant, /AI-assisted insights/);
+  // Template summaries are not presented as AI, and unenforced audience targeting is not offered.
+  assert.doesNotMatch(aiAssistant, /AI-assisted insights/);
+  assert.match(aiAssistant, /Summaries are counted from your stall&apos;s own data/);
   assert.doesNotMatch(promotionBuilder, /AI-targeted users/i);
-  assert.match(promotionBuilder, /Users whose taste profile matches your menu/);
+  assert.doesNotMatch(promotionBuilder, /Target Audience/);
+  assert.match(promotionBuilder, /shown to everyone who views your stall/);
 });

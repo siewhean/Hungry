@@ -15,6 +15,8 @@ interface SettingsRowProps {
   onToggle?: (value: boolean) => void;
   isLast?: boolean;
   destructive?: boolean;
+  /** Marks a running action (announced as busy and not pressable). */
+  busy?: boolean;
 }
 
 export function SettingsRow({
@@ -28,8 +30,12 @@ export function SettingsRow({
   onToggle,
   isLast = false,
   destructive = false,
+  busy = false,
 }: SettingsRowProps) {
   const { palette, spacing } = useHungryTheme();
+  const isToggle = type === "toggle";
+  // Rows without an action only show a value, so they are not buttons.
+  const isInteractive = isToggle ? Boolean(onToggle) : Boolean(onPress);
 
   // Handle row press even for toggle types
   const handlePress = () => {
@@ -40,23 +46,19 @@ export function SettingsRow({
     }
   };
 
-  return (
-    <Pressable
-      onPress={handlePress}
-      style={({ pressed }) => [
-        {
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          minHeight: 56,
-          backgroundColor: pressed ? palette.bgSoft : "transparent",
-          paddingVertical: spacing[4],
-          paddingHorizontal: spacing[4],
-          borderBottomWidth: isLast ? 0 : 1,
-          borderBottomColor: palette.border,
-        },
-      ]}
-    >
+  const rowStyle = {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
+    minHeight: 56,
+    paddingVertical: spacing[4],
+    paddingHorizontal: spacing[4],
+    borderBottomWidth: isLast ? 0 : 1,
+    borderBottomColor: palette.border,
+  };
+
+  const content = (
+    <>
       <View style={styles.left}>
         {icon ? <View style={styles.iconWrap}>{icon}</View> : null}
         <AppText
@@ -113,12 +115,49 @@ export function SettingsRow({
           <Switch
             value={isEnabled}
             onValueChange={onToggle}
+            disabled={busy}
             trackColor={{ false: palette.border, true: palette.orange }}
             thumbColor={palette.white}
             ios_backgroundColor={palette.border}
+            // The row itself is the accessible switch; avoid a second, unlabeled control.
+            accessible={false}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
           />
         ) : null}
       </View>
+    </>
+  );
+
+  if (!isInteractive) {
+    return (
+      <View
+        accessible
+        accessibilityLabel={[label, value, description].filter(Boolean).join(", ")}
+        style={rowStyle}
+      >
+        {content}
+      </View>
+    );
+  }
+
+  return (
+    <Pressable
+      onPress={handlePress}
+      disabled={busy}
+      accessibilityRole={isToggle ? "switch" : "button"}
+      accessibilityLabel={label}
+      accessibilityHint={description}
+      accessibilityValue={!isToggle && value ? { text: value } : undefined}
+      accessibilityState={
+        isToggle ? { checked: Boolean(isEnabled), busy } : { busy, disabled: busy }
+      }
+      style={({ pressed }) => [
+        rowStyle,
+        { backgroundColor: pressed ? palette.bgSoft : "transparent" },
+      ]}
+    >
+      {content}
     </Pressable>
   );
 }

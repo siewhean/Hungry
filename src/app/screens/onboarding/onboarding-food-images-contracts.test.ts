@@ -45,20 +45,17 @@ test("onboarding food visuals use generated local food assets", () => {
     /generatedImageAsset/,
     "legacy taste quiz scenarios should point at generated local onboarding assets",
   );
+  // Result cards are real catalog dishes: show the dish's own photo or the
+  // shared no-photo tile, never an onboarding stock image of a different dish.
+  assert.match(
+    resultScreenSource,
+    /dish\.imageUrl \? \([\s\S]*source=\{\{ uri: dish\.imageUrl \}\}[\s\S]*<NoDishPhoto dishName=\{dish\.name\}/,
+    "onboarding result recommendations should use dish.imageUrl with the shared no-photo fallback",
+  );
   assert.doesNotMatch(
-    resultScreenSource,
-    /source=\{\{\s*uri:\s*dish\.imageUrl\s*\}\}/,
-    "onboarding result recommendations must not fall back to remote dish image URLs",
-  );
-  assert.match(
-    resultScreenSource,
-    /getOnboardingDishImageSource\(dish\.id\)/,
-    "onboarding result recommendations should reuse generated local dish imagery",
-  );
-  assert.match(
-    source,
-    /ONBOARDING_RESULT_DISH_IMAGES/,
-    "onboarding result recommendations should have an explicit generated image map",
+    `${source}\n${resultScreenSource}`,
+    /getOnboardingDishImageSource|ONBOARDING_RESULT_DISH_IMAGES/,
+    "onboarding result recommendations must not map catalog dishes to onboarding stock images",
   );
   assert.match(
     provenance,

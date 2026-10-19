@@ -1,19 +1,18 @@
-import { ProfileHomeScreen } from "./ProfileHomeScreen";
+import { UserProfileContent } from "./UserProfileContent";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 type UserProfileScreenRouteProps = NativeStackScreenProps<RootStackParamList, "UserProfile">;
 
+// Rendered directly: going through ProfileHomeScreen ran all of the viewer's own profile loads.
 export function UserProfileScreen({ navigation, route }: UserProfileScreenRouteProps) {
   return (
-    <ProfileHomeScreen
+    <UserProfileContent
       navigation={navigation}
-      mode="other"
       authorName={route.params.authorName}
       authorAvatarUrl={route.params.authorAvatarUrl}
       authorId={route.params.authorId}
-      reviewSignalLabel={route.params.reviewSignalLabel}
     />
   );
 }

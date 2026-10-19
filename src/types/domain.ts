@@ -378,6 +378,8 @@ export interface UserProfile {
   recommendationSignals?: RecommendationSignalState;
   leftHandedMode?: boolean;
   onboardingSelectedDishIds?: string[];
+  /** Cuisine card ids picked during onboarding (e.g. "local", "japanese"). */
+  onboardingCuisineIds?: string[];
   /** Usual max price per dish in SGD, set during onboarding. Undefined = no budget limit. */
   maxDishBudget?: number;
 }
@@ -387,7 +389,8 @@ export interface ReviewDraft {
   selectedDishId?: string;
   rating: number;
   selectedTags: string[];
-  recommend: boolean;
+  /** null until the reviewer answers Yes or No. */
+  recommend: boolean | null;
   text: string;
   photos: string[];
   videoUri?: string;
@@ -446,6 +449,9 @@ export interface StallPost {
   likeCount?: number;
   commentCount?: number;
   savedCount?: number;
+  /** The viewer's own like/save from the server read; undefined when the read did not say. */
+  viewerHasLiked?: boolean;
+  viewerHasSaved?: boolean;
   /** true = stall/merchant account (orange ring + fork badge), false = user (grey ring) */
   isStallAccount?: boolean;
   /** Inline dish link references in caption — tap navigates to dish detail */

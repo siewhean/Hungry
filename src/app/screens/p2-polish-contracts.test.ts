@@ -29,12 +29,9 @@ test("P2-1: every new-password field shows the live requirements checklist", () 
 
 test("P2-2: search clear works on the first tap with the keyboard up and keeps focus", () => {
   const dishSearch = read("src/app/screens/search/DishSearchScreen.tsx");
-  assert.match(dishSearch, /<Screen keyboardShouldPersistTaps="handled">/);
+  // Screen's ScrollView always persists taps ("handled"), so DishSearch needs no prop.
   assert.match(dishSearch, /searchInputRef\.current\?\.focus\(\)/);
-  assert.match(
-    read("src/components/ui/Screen.tsx"),
-    /keyboardShouldPersistTaps=\{keyboardShouldPersistTaps\}/,
-  );
+  assert.match(read("src/components/ui/Screen.tsx"), /keyboardShouldPersistTaps="handled"/);
 
   const resultsView = read("src/components/discover/SearchResultsView.tsx");
   assert.match(resultsView, /onPress=\{handleClear\}/);

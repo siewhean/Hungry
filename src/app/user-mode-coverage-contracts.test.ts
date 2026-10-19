@@ -32,7 +32,7 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
       /ResetPassword: \{ email\?: string; code\?: string; error\?: "expired" \| "invalid" \} \| undefined/,
       /TasteQuiz: \{ mode\?: "onboarding" \| "profile"; initialPhase\?: "taste" \| "dietary" \} \| undefined/,
       /LocationPermission: undefined/,
-      /ManualLocationPicker: undefined/,
+      /ManualLocationPicker: \{ mode\?: "settings" \} \| undefined/,
     ],
     "navigation auth/onboarding types",
   );
@@ -277,7 +277,6 @@ test("dish and stall details expose correct detail surfaces without user-mode ma
       /const stallAddress =/,
       /import \{ StallLogoMark \} from "@\/components\/stall\/StallLogoMark"/,
       /logoUrl=\{sanitizeCatalogImageUrl\(venue\.logoUrl\)\}/,
-      /<ChevronRight color=\{palette\.textMuted\} size=\{24\} \/>/,
       /<AppText variant="h2">Address<\/AppText>/,
       /\{stallAddress\}/,
       /Loading stall/,
@@ -507,10 +506,28 @@ test("profile surfaces keep own and other-user layouts linked while hiding taste
       /label="Stalls"/,
       /activeTab === "posts"/,
       /activeTab === "reviews"/,
-      /normalizedAuthorId[\s\S]*post\.authorId === normalizedAuthorId[\s\S]*normalizePersonName\(post\.authorName\) === normalizedAuthorName/,
+      /post\.authorId === normalizedAuthorId/,
+      /reviews\.getUserReviews\(normalizedAuthorId\)/,
+      /rootNavigation\.navigate\(target, \{ userId: resolvedAuthorId/,
+      /accessibilityState=\{\{ selected: activeTab === "posts" \}\}/,
+      /accessibilityState=\{\{ selected: activeTab === "reviews" \}\}/,
     ],
     "UserProfileContent shared profile layout",
   );
+  // Matching is by account id only; display names are not unique.
+  assertSourceExcludes(
+    userProfile,
+    [
+      /normalizePersonName/,
+      /commentsByPostId/,
+      /repliesByCommentId/,
+      /chat\.listConversations/,
+      /navigation\.navigate\("VisitedStalls"\)/,
+      /screen: "Profile"/,
+    ],
+    "UserProfileContent id-only matching",
+  );
+  assert.doesNotMatch(profileHome, /post\.authorName\.toLowerCase\(\) === profile\.displayName/);
   assertSourceExcludes(
     userProfile,
     [/Taste Fingerprint/, /Detailed Analysis/],

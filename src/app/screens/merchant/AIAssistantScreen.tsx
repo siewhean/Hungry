@@ -37,7 +37,7 @@ export function AIAssistantScreen() {
     setIsLoading(true);
     setError(null);
     if (!activeOutlet) {
-      setError("No active outlet selected for AI insights.");
+      setError("No active outlet selected for insights.");
       setIsLoading(false);
       return;
     }
@@ -49,7 +49,7 @@ export function AIAssistantScreen() {
       setWeeklySummary(summary);
     } catch (e) {
       console.error(e);
-      setError(e instanceof Error ? e.message : "Failed to load AI insights.");
+      setError(e instanceof Error ? e.message : "Failed to load insights.");
     } finally {
       setIsLoading(false);
     }
@@ -61,13 +61,13 @@ export function AIAssistantScreen() {
 
   if (error) {
     return (
-      <Screen title="AI Assistant">
+      <Screen title="Insights">
         <EmptyState
-          title="Unable to load AI assistant"
-          body="We could not load your AI assistant data."
+          title="Unable to load insights"
+          body="We could not load your insights."
           icon={<X size={40} color={palette.error} />}
           errorMessage={error}
-          sendErrorContext="AI assistant"
+          sendErrorContext="Merchant insights"
           ctaLabel="Retry"
           onPress={loadInsights}
         />
@@ -116,10 +116,10 @@ export function AIAssistantScreen() {
   };
 
   return (
-    <Screen title="AI Assistant">
+    <Screen title="Insights">
       <View style={{ gap: spacing[6], width: "100%" }}>
         <AppText variant="body" tone="muted" style={{ paddingHorizontal: spacing[1] }}>
-          AI-assisted insights to help you review menu, photo, demand, and promotion opportunities.
+          A simple summary of your stall&apos;s own activity.
         </AppText>
 
         {weeklySummary && (
@@ -152,7 +152,7 @@ export function AIAssistantScreen() {
                 <BarChart2 size={16} color={palette.white} />
               </View>
               <AppText variant="bodySmallBold" style={{ color: palette.orange }}>
-                WEEKLY DIGEST
+                SUMMARY
               </AppText>
             </View>
             <AppText
@@ -169,7 +169,7 @@ export function AIAssistantScreen() {
 
         <View style={{ gap: spacing[4] }}>
           <AppText variant="h3" style={{ fontWeight: "bold", paddingHorizontal: spacing[1] }}>
-            Actionable Insights
+            Suggestions
           </AppText>
 
           {insights.length === 0 && !isLoading ? (
@@ -185,14 +185,14 @@ export function AIAssistantScreen() {
             >
               <CheckCircle2 size={48} color={palette.success} />
               <AppText variant="bodyBold" style={{ marginTop: spacing[3] }}>
-                You&apos;re all set!
+                No suggestions yet
               </AppText>
               <AppText
                 variant="bodySmall"
                 tone="muted"
                 style={{ textAlign: "center", marginTop: 4 }}
               >
-                Check back later for new insights based on customer data.
+                Suggestions will appear here when they are available.
               </AppText>
             </View>
           ) : (
@@ -288,8 +288,8 @@ export function AIAssistantScreen() {
           }}
         >
           <AppText variant="micro" tone="muted" style={{ textAlign: "center" }}>
-            AI insights are generated automatically based on your stall&apos;s data. These are
-            suggestions and drafts; nothing is published automatically.
+            Summaries are counted from your stall&apos;s own data. Nothing is published
+            automatically.
           </AppText>
         </View>
       </View>

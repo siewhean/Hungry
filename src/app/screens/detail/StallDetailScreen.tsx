@@ -1,4 +1,6 @@
 import {
+  Alert,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -9,20 +11,21 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
+import * as ImagePicker from "expo-image-picker";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import {
-  ChevronRight,
+  Bookmark,
   ChevronLeft,
   CircleHelp,
-  Heart,
   Globe,
   Mail,
   MapPin,
   MessageCircle,
   Phone,
   MessageCircleMore,
+  Navigation,
   Send,
   Star,
   Utensils,
@@ -32,6 +35,7 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
   AccessibleImage,
   AppText,
+  Avatar,
   EmptyState,
   FeedErrorBoundary,
   Button,
@@ -41,9 +45,13 @@ import {
   Input,
   Skeleton,
 } from "@/components/ui";
+import { DeliveryPlatformButton } from "@/components/dish/DeliveryPlatformButton";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import { StallLogoMark } from "@/components/stall/StallLogoMark";
-import { deriveStallCommunityReviews } from "@/features/detail/detailTransforms";
+import {
+  deriveStallCommunityReviews,
+  STALL_COMMUNITY_REVIEW_LIMIT,
+} from "@/features/detail/detailTransforms";
 import {
   hasPendingClaimForProfile,
   submitClaimFromStall,
@@ -57,20 +65,25 @@ import {
   getServiceProvider,
 } from "@/lib/services/serviceProvider";
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
+import type { RecentReviewFeedEntry } from "@/lib/services/types";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { openMerchantProfileLink, openTrustedMapsUrl } from "@/lib/security/safeLinking";
 import { getDishSection, isSectionFlag, isSoldOut } from "@/features/merchant/menuSections";
 import {
   buildMapsSearchUrl,
   formatFoodCentreLocation,
+  formatDistanceFromUser,
   formatFullStallAddress,
+  formatStallPriceBand,
   formatWeeklyOperatingHours,
+  summarizeStallRating,
 } from "@/features/detail/stallLocation";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import { PopularVisitorsSection } from "@/components/stall/PopularVisitorsSection";
 import { StallInteractionBar } from "@/components/stall/StallInteractionBar";
 import { FollowStallButton } from "@/components/stall/FollowStallButton";
+import { useLocationStore } from "@/store/useLocationStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -277,22 +290,18 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const venueId = route.params?.venueId ?? route.params?.id ?? "";
   const repository = getDataRepository();
   const serviceProviderMode = getServiceProvider().mode;
-  const [isLoading, setIsLoading] = useState(true);
   const cachedVenue = repository.getVenueById(venueId);
   const [hydratedVenue, setHydratedVenue] = useState<typeof cachedVenue>();
   const [hasLoadedVenueDetail, setHasLoadedVenueDetail] = useState(Boolean(cachedVenue));
   const venue = hydratedVenue ?? cachedVenue;
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 800);
-    return () => clearTimeout(timer);
-  }, [venueId]);
-
-  useEffect(() => {
     let active = true;
     setHydratedVenue(undefined);
     setHasLoadedVenueDetail(Boolean(cachedVenue));
-    if (!venueId || cachedVenue) {
+    // Supabase list caches carry no delivery links, so still read the venue detail
+    // in the background while the cached venue renders.
+    if (!venueId || (cachedVenue && serviceProviderMode !== "supabase")) {
       return () => {
         active = false;
       };
@@ -302,7 +311,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
       .discovery.getVenue(venueId)
       .then((nextVenue) => {
         if (!active) return;
-        setHydratedVenue(nextVenue);
+        if (nextVenue) setHydratedVenue(nextVenue);
         setHasLoadedVenueDetail(true);
       })
       .catch(() => {
@@ -312,7 +321,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
     return () => {
       active = false;
     };
-  }, [cachedVenue, venueId]);
+  }, [cachedVenue, serviceProviderMode, venueId]);
 
   const building = venue ? getBuildingById(venue.buildingId) : undefined;
   const cachedDishes = useMemo(
@@ -320,8 +329,16 @@ export function StallDetailScreen({ navigation, route }: Props) {
     [repository, venue],
   );
   const [hydratedDishes, setHydratedDishes] = useState<DishDetail[] | undefined>();
+  const [menuLoadFailed, setMenuLoadFailed] = useState(false);
+  const [menuReloadKey, setMenuReloadKey] = useState(0);
   const dishes =
     hydratedDishes ?? (serviceProviderMode === "supabase" ? EMPTY_DISHES : cachedDishes);
+  // Supabase mode has no menu until listDishesByVenue resolves; an error is not an empty menu.
+  const menuStatus: "loading" | "error" | "ready" = menuLoadFailed
+    ? "error"
+    : hydratedDishes === undefined && serviceProviderMode === "supabase"
+      ? "loading"
+      : "ready";
   const dishIdsKey = useMemo(() => dishes.map((dish) => dish.id).join("|"), [dishes]);
   const leadDish = dishes[0];
   const leadDishImageUrl = sanitizeCatalogImageUrl(leadDish?.imageUrl);
@@ -330,7 +347,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const showDeferredDetailControls = !FEATURE_FLAGS.release01CoreOnly;
 
   const profile = useProfileStore((state) => state.profile);
-  const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
+  const locationPermission = useLocationStore((state) => state.permission);
+  const currentLocation = useLocationStore((state) => state.currentLocation);
+  const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const showToast = useUIStore((state) => state.showToast);
@@ -341,6 +360,70 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const incrementShare = useSocialStore((state) => state.incrementShare);
   // Review replies are local-only (no backend), so keep them out of production builds.
   const reviewRepliesEnabled = FEATURE_FLAGS.prototypeRoutesEnabled;
+  const [isSubmittingMenuPhoto, setIsSubmittingMenuPhoto] = useState(false);
+  // Menu photos upload from a device file (supply.submitMenuPhoto), so not on web.
+  const canSubmitMenuPhoto = isAuthenticated && Platform.OS !== "web";
+
+  const submitMenuPhotoFrom = useCallback(
+    async (source: "camera" | "library") => {
+      if (!venue) return;
+      const permission =
+        source === "camera"
+          ? await ImagePicker.requestCameraPermissionsAsync()
+          : await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        showToast({
+          message:
+            source === "camera"
+              ? "Camera permission is needed to snap a menu photo."
+              : "Photo library permission is needed to pick a menu photo.",
+          tone: "warning",
+        });
+        return;
+      }
+      const pickerOptions: ImagePicker.ImagePickerOptions = {
+        mediaTypes: ["images"],
+        quality: 0.8,
+        allowsEditing: false,
+        exif: false,
+      };
+      const result =
+        source === "camera"
+          ? await ImagePicker.launchCameraAsync(pickerOptions)
+          : await ImagePicker.launchImageLibraryAsync(pickerOptions);
+      if (result.canceled || result.assets.length === 0) return;
+      const asset = result.assets[0];
+      setIsSubmittingMenuPhoto(true);
+      try {
+        await getHungryService().supply.submitMenuPhoto({
+          venueId: venue.id,
+          photoUri: asset.uri,
+          photoMimeType: asset.mimeType ?? undefined,
+          photoFileSizeBytes: asset.fileSize ?? undefined,
+        });
+        showToast({ message: "Thanks, we'll add the menu soon.", tone: "success" });
+      } catch (error) {
+        showToast({
+          message:
+            error instanceof Error && error.message
+              ? error.message
+              : "Couldn't upload the menu photo. Please try again.",
+          tone: "error",
+        });
+      } finally {
+        setIsSubmittingMenuPhoto(false);
+      }
+    },
+    [showToast, venue],
+  );
+
+  const promptMenuPhoto = useCallback(() => {
+    Alert.alert("Add a menu photo", "Snap or pick a photo of this stall's menu.", [
+      { text: "Take photo", onPress: () => void submitMenuPhotoFrom("camera") },
+      { text: "Choose from library", onPress: () => void submitMenuPhotoFrom("library") },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  }, [submitMenuPhotoFrom]);
   const [activeReplyReviewId, setActiveReplyReviewId] = useState<string | null>(null);
   const [replyDraftByReviewId, setReplyDraftByReviewId] = useState<Record<string, string>>({});
   const [localRepliesByReviewId, setLocalRepliesByReviewId] = useState<
@@ -352,7 +435,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const [isTopNavSolid, setIsTopNavSolid] = useState(false);
   const [isClaimPending, setIsClaimPending] = useState(() => hasPendingClaimForProfile(profile.id));
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
-  const [reviewsByDishId, setReviewsByDishId] = useState<Record<string, DishDetail["reviews"]>>({});
+  const [reviewEntries, setReviewEntries] = useState<RecentReviewFeedEntry[]>([]);
+  const [reviewsStatus, setReviewsStatus] = useState<"loading" | "error" | "ready">("loading");
+  const [reviewsReloadKey, setReviewsReloadKey] = useState(0);
   const [activePromotions, setActivePromotions] = useState<MerchantPromotion[]>([]);
   const [merchantProfile, setMerchantProfile] = useState<PublicMerchantProfile>();
   const [activeMenuCategory, setActiveMenuCategory] = useState(ALL_MENU_CATEGORY);
@@ -401,6 +486,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
   useEffect(() => {
     let active = true;
     setHydratedDishes(undefined);
+    setMenuLoadFailed(false);
     if (!venue?.id) {
       return () => {
         active = false;
@@ -419,13 +505,13 @@ export function StallDetailScreen({ navigation, route }: Props) {
         if (active) setHydratedDishes(nextDishes);
       })
       .catch(() => {
-        if (active) setHydratedDishes([]);
+        if (active) setMenuLoadFailed(true);
       });
 
     return () => {
       active = false;
     };
-  }, [cachedDishes.length, serviceProviderMode, venue?.id]);
+  }, [cachedDishes.length, menuReloadKey, serviceProviderMode, venue?.id]);
 
   useEffect(() => {
     setIsClaimPending(hasPendingClaimForProfile(profile.id));
@@ -502,45 +588,46 @@ export function StallDetailScreen({ navigation, route }: Props) {
     });
   }, [activePromotions, isAuthenticated, profile.id, showDeferredDetailControls, venue]);
 
+  // One query for the stall's newest reviews (not one per dish), scoped to its menu.
   useEffect(() => {
     let active = true;
-    if (!dishes.length) {
-      setReviewsByDishId({});
+    if (menuStatus !== "ready") {
+      setReviewsStatus(menuStatus === "error" ? "error" : "loading");
+      return () => {
+        active = false;
+      };
+    }
+    if (!dishIdsKey) {
+      setReviewEntries([]);
+      setReviewsStatus("ready");
       return () => {
         active = false;
       };
     }
 
-    void Promise.all(
-      dishes.map(async (dish) => {
-        try {
-          const reviews = await getHungryService().reviews.getReviewsForDish(dish.id);
-          return [dish.id, reviews] as const;
-        } catch {
-          return [dish.id, serviceProviderMode === "mock" ? dish.reviews : []] as const;
-        }
-      }),
-    ).then((entries) => {
-      if (!active) return;
-      setReviewsByDishId(Object.fromEntries(entries));
-    });
+    setReviewsStatus("loading");
+    getHungryService()
+      .reviews.listRecentReviews({
+        dishIds: dishIdsKey.split("|"),
+        limit: STALL_COMMUNITY_REVIEW_LIMIT,
+      })
+      .then((entries) => {
+        if (!active) return;
+        setReviewEntries(entries);
+        setReviewsStatus("ready");
+      })
+      .catch(() => {
+        if (active) setReviewsStatus("error");
+      });
 
     return () => {
       active = false;
     };
-  }, [dishIdsKey, dishes, serviceProviderMode]);
+  }, [dishIdsKey, menuStatus, reviewsReloadKey]);
 
-  const reviewHydratedDishes = useMemo(
-    () =>
-      dishes.map((dish) => ({
-        ...dish,
-        reviews: reviewsByDishId[dish.id] ?? (serviceProviderMode === "mock" ? dish.reviews : []),
-      })),
-    [dishes, reviewsByDishId, serviceProviderMode],
-  );
   const communityReviews = useMemo(
-    () => deriveStallCommunityReviews(reviewHydratedDishes),
-    [reviewHydratedDishes],
+    () => deriveStallCommunityReviews(reviewEntries),
+    [reviewEntries],
   );
   const menuCategoryByDishId = useMemo(() => {
     return Object.fromEntries(dishes.map((dish) => [dish.id, inferDishCategory(dish)]));
@@ -591,7 +678,16 @@ export function StallDetailScreen({ navigation, route }: Props) {
     return false;
   };
 
-  if (isLoading || (Boolean(venueId) && !venue && !hasLoadedVenueDetail)) {
+  // A cold-start shared link opens this screen with nothing underneath it.
+  const goBackOrHome = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    navigation.navigate("MainTabs", { screen: "Home" });
+  };
+
+  if (Boolean(venueId) && !venue && !hasLoadedVenueDetail) {
     return <StallDetailSkeleton />;
   }
 
@@ -609,13 +705,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
             title="Stall not found"
             body="The stall you are looking for does not exist in our current directory."
             ctaLabel={navigation.canGoBack() ? "Go back" : "Go to Home"}
-            onPress={() => {
-              if (navigation.canGoBack()) {
-                navigation.goBack();
-                return;
-              }
-              navigation.navigate("MainTabs", { screen: "Home" });
-            }}
+            onPress={goBackOrHome}
             errorMessage={`Missing stall data for ID: ${venueId || "unknown"}`}
             sendErrorContext="Stall detail"
           />
@@ -624,11 +714,18 @@ export function StallDetailScreen({ navigation, route }: Props) {
     );
   }
 
-  const distanceLabel = leadDish
-    ? leadDish.distanceMeters > 1000
-      ? `${(leadDish.distanceMeters / 1000).toFixed(1)}km away`
-      : `${leadDish.distanceMeters}m away`
-    : null;
+  // Distance from the user to the stall's building; hidden when either is unknown.
+  const userOrigin = locationPermission === "granted" ? currentLocation : manualCoordinate;
+  const buildingCoordinate =
+    building?.coordinate ??
+    repository.listBuildings().find((candidate) => candidate.id === venue.buildingId)?.coordinate;
+  const distanceLabel = formatDistanceFromUser(userOrigin, buildingCoordinate);
+  const ratingSummary = summarizeStallRating(dishes);
+  const priceBand = formatStallPriceBand(dishes);
+  const deliveryLinks = venue.deliveryLinks ?? [];
+  const heroImageUrl =
+    sanitizeCatalogImageUrl(merchantProfile?.coverPhotoUrl || venue.imageUrl) ??
+    dishes.map((dish) => getStallDishPhotos(dish)[0]).find(Boolean);
   const isVenueOpen = isVenueOpenFromHours(venue.operatingHours, venue.isOpen);
   const closureNotice = merchantProfile?.temporaryClosure ?? venue.closureNotice;
   const operatingStatusLabel =
@@ -637,6 +734,17 @@ export function StallDetailScreen({ navigation, route }: Props) {
       : (closureNotice ?? "Closed now");
   const merchantWebLinks = (merchantProfile?.socialLinks ?? []).slice(0, 5);
   const weeklyOperatingHours = formatWeeklyOperatingHours(venue.operatingHours);
+  const headerSummary = [
+    ratingSummary
+      ? `${ratingSummary.rating.toFixed(1)} rating (${ratingSummary.reviewCount} ${
+          ratingSummary.reviewCount === 1 ? "review" : "reviews"
+        })`
+      : undefined,
+    priceBand,
+    operatingStatusLabel,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   const reviewedDishIds = profile.reviewedDishIds;
   const hasReviewedDishAtVenue = dishes.some((dish) => reviewedDishIds.includes(dish.id));
@@ -683,6 +791,16 @@ export function StallDetailScreen({ navigation, route }: Props) {
     navigation.navigate("ReviewStack", {
       screen: "ReviewMain",
       params: targetDishId ? { venueId: venue.id, dishId: targetDishId } : { venueId: venue.id },
+    });
+  };
+
+  const openWriteReview = () => {
+    if (!requireAuthForProtectedAction("Sign in to review this stall.")) {
+      return;
+    }
+    navigation.navigate("ReviewStack", {
+      screen: "ReviewMain",
+      params: { venueId: venue.id },
     });
   };
 
@@ -848,54 +966,12 @@ export function StallDetailScreen({ navigation, route }: Props) {
             <IconButton
               variant="floating"
               accessibilityLabel="Go back"
-              onPress={() => navigation.goBack()}
+              onPress={goBackOrHome}
               icon={<ChevronLeft color={palette.text} size={24} />}
               style={{ backgroundColor: headerButtonColor, borderColor: headerButtonBorderColor }}
             />
             <View style={{ flex: 1 }} />
             <View style={{ flexDirection: "row", gap: spacing[2] }}>
-              {showDeferredDetailControls && FEATURE_FLAGS.favouritesEnabled ? (
-                <IconButton
-                  variant="floating"
-                  accessibilityLabel={
-                    profile.favouriteDishIds.includes(leadDish?.id ?? "")
-                      ? "Remove from favourites"
-                      : "Save to favourites"
-                  }
-                  onPress={() => {
-                    if (!requireAuthForProtectedAction("Sign in to save this stall.")) {
-                      return;
-                    }
-                    if (leadDish) {
-                      const wasSaved = profile.favouriteDishIds.includes(leadDish.id);
-                      toggleFavourite(leadDish);
-                      if (!wasSaved) {
-                        void getHungryService().discovery.recordMerchantActionEvent({
-                          eventType: "save",
-                          venueId: venue.id,
-                          dishId: leadDish.id,
-                          userId: profile.id,
-                        });
-                      }
-                    }
-                  }}
-                  icon={
-                    <Heart
-                      color={palette.text}
-                      fill={
-                        profile.favouriteDishIds.includes(leadDish?.id ?? "")
-                          ? palette.text
-                          : "transparent"
-                      }
-                      size={20}
-                    />
-                  }
-                  style={{
-                    backgroundColor: headerButtonColor,
-                    borderColor: headerButtonBorderColor,
-                  }}
-                />
-              ) : null}
               {showDeferredDetailControls ? (
                 <IconButton
                   variant="floating"
@@ -917,38 +993,38 @@ export function StallDetailScreen({ navigation, route }: Props) {
             scrollEventThrottle={32}
             contentContainerStyle={{ paddingBottom: insets.bottom + spacing[8] }}
           >
-            {/* Hero image */}
-            <View
-              style={{
-                width: screenWidth,
-                height: screenWidth * 0.75,
-                position: "relative",
-              }}
-            >
-              {leadDishImageUrl ? (
+            {/* Hero: owner cover, then stall photo, then a dish photo, else a short branded header */}
+            {heroImageUrl ? (
+              <View
+                style={{
+                  width: screenWidth,
+                  height: screenWidth * 0.75,
+                  position: "relative",
+                }}
+              >
                 <AccessibleImage
-                  source={{ uri: leadDishImageUrl }}
+                  source={{ uri: heroImageUrl }}
                   style={StyleSheet.absoluteFill}
                   contentFit="cover"
-                  accessibilityLabel={`${venue.name} hero dish photo`}
+                  accessibilityLabel={`${venue.name} photo`}
                 />
-              ) : (
-                <View
-                  accessibilityRole="image"
-                  accessibilityLabel={`${venue.name} hero dish photo unavailable`}
-                  style={[
-                    StyleSheet.absoluteFill,
-                    {
-                      alignItems: "center",
-                      backgroundColor: palette.surfaceRaised,
-                      justifyContent: "center",
-                    },
-                  ]}
-                >
-                  <Utensils color={palette.orange} size={44} />
-                </View>
-              )}
-            </View>
+              </View>
+            ) : (
+              <View
+                accessibilityRole="image"
+                accessibilityLabel={`${venue.name} photo unavailable`}
+                style={{
+                  alignItems: "center",
+                  backgroundColor: palette.surfaceRaised,
+                  height: insets.top + 56 + spacing[16],
+                  justifyContent: "flex-end",
+                  paddingBottom: spacing[4],
+                  width: screenWidth,
+                }}
+              >
+                <Utensils color={palette.orange} size={32} />
+              </View>
+            )}
 
             <View
               onLayout={handleContentBodyLayout}
@@ -959,30 +1035,76 @@ export function StallDetailScreen({ navigation, route }: Props) {
               }}
             >
               {/* Header Content */}
-              <Card
-                style={{
-                  alignItems: "center",
-                  flexDirection: "row",
-                  gap: spacing[3],
-                  padding: spacing[3],
-                }}
-              >
-                <StallLogoMark logoUrl={sanitizeCatalogImageUrl(venue.logoUrl)} name={venue.name} />
-                <View style={{ flex: 1, gap: spacing[1] }}>
-                  <AppText variant="h2" numberOfLines={1}>
-                    {venue.name}
-                  </AppText>
-                  <AppText variant="bodyLarge" tone="secondary" numberOfLines={1}>
-                    {[
-                      foodCentreLocation || buildingLocation.name || "Food Centre",
-                      venue.unitNumber,
-                      distanceLabel,
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </AppText>
+              <Card style={{ gap: spacing[3], padding: spacing[3] }}>
+                <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[3] }}>
+                  <StallLogoMark
+                    logoUrl={sanitizeCatalogImageUrl(venue.logoUrl)}
+                    name={venue.name}
+                  />
+                  <View style={{ flex: 1, gap: spacing[1] }}>
+                    <AppText variant="h2" numberOfLines={1}>
+                      {venue.name}
+                    </AppText>
+                    <AppText variant="bodyLarge" tone="secondary" numberOfLines={1}>
+                      {[
+                        foodCentreLocation || buildingLocation.name || "Food Centre",
+                        venue.unitNumber,
+                        distanceLabel,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </AppText>
+                  </View>
                 </View>
-                <ChevronRight color={palette.textMuted} size={24} />
+                <AppText variant="bodySmall" tone="secondary">
+                  {headerSummary}
+                </AppText>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+                  {stallAddress ? (
+                    <Chip
+                      label="Directions"
+                      accessibilityLabel={`Directions to ${venue.name}`}
+                      leftIcon={<Navigation color={palette.orange} size={14} />}
+                      onPress={openStallMaps}
+                    />
+                  ) : null}
+                  {merchantProfile?.contactPhone ? (
+                    <Chip
+                      label="Call"
+                      accessibilityLabel={`Call ${venue.name}`}
+                      leftIcon={<Phone color={palette.orange} size={14} />}
+                      onPress={() =>
+                        void openMerchantProfileLink("phone", merchantProfile.contactPhone ?? "")
+                      }
+                    />
+                  ) : null}
+                  {!isAuthenticated ? (
+                    <Chip
+                      label="Save"
+                      accessibilityLabel={`Save ${venue.name}`}
+                      leftIcon={<Bookmark color={palette.orange} size={14} />}
+                      onPress={() => requireAuthForProtectedAction("Sign in to save this stall.")}
+                    />
+                  ) : null}
+                  <Chip
+                    label="Share"
+                    accessibilityLabel="Share stall"
+                    leftIcon={<Send color={palette.orange} size={14} />}
+                    onPress={openShareSheet}
+                  />
+                </View>
+                {deliveryLinks.length > 0 ? (
+                  <View style={{ gap: spacing[2] }}>
+                    {deliveryLinks.map((link) => (
+                      <DeliveryPlatformButton
+                        key={`${link.platform}:${link.webUrl}`}
+                        link={link}
+                        compact
+                        venueId={venue.id}
+                      />
+                    ))}
+                  </View>
+                ) : null}
               </Card>
 
               {/* Save / Visited / Add-to-List */}
@@ -993,6 +1115,13 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   hasReviewedDishAtVenue={hasReviewedDishAtVenue}
                   reviewPromptText="Please review a dish from this stall before marking it as visited."
                   onReviewRequired={handleReviewRequiredForTried}
+                  onSaved={() =>
+                    void getHungryService().discovery.recordMerchantActionEvent({
+                      eventType: "save",
+                      venueId: venue.id,
+                      userId: profile.id,
+                    })
+                  }
                 />
               ) : null}
               {showDeferredDetailControls && isAuthenticated && venue ? (
@@ -1168,7 +1297,26 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     </AppText>
                   ) : null}
                 </View>
-                {dishes.length > 0 ? (
+                {menuStatus === "loading" ? (
+                  <View
+                    accessibilityLabel="Loading menu"
+                    style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[3] }}
+                  >
+                    <Skeleton width="45%" height={160} borderRadius={radii.lg} />
+                    <Skeleton width="45%" height={160} borderRadius={radii.lg} />
+                  </View>
+                ) : menuStatus === "error" ? (
+                  <Card style={{ padding: spacing[4], alignItems: "center", gap: spacing[2] }}>
+                    <AppText variant="body" tone="secondary" style={{ textAlign: "center" }}>
+                      Couldn&apos;t load this stall&apos;s menu.
+                    </AppText>
+                    <Button
+                      label="Retry"
+                      variant="secondary"
+                      onPress={() => setMenuReloadKey((key) => key + 1)}
+                    />
+                  </Card>
+                ) : dishes.length > 0 ? (
                   <View style={{ gap: spacing[4] }}>
                     {menuCategories.length > 2 ? (
                       <ScrollView
@@ -1222,18 +1370,13 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     >
                       No menu available for this stall yet.
                     </AppText>
-                    {showDeferredDetailControls &&
-                    isAuthenticated &&
-                    FEATURE_FLAGS.reviewCreationEnabled ? (
+                    {/* Uploads a menu photo for the team to add the menu from. */}
+                    {showDeferredDetailControls && canSubmitMenuPhoto ? (
                       <Button
-                        label="Add a menu photo"
+                        label={isSubmittingMenuPhoto ? "Uploading..." : "Add a menu photo"}
                         variant="secondary"
-                        onPress={() =>
-                          navigation.navigate("ReviewStack", {
-                            screen: "ReviewMain",
-                            params: { venueId: venue.id },
-                          })
-                        }
+                        disabled={isSubmittingMenuPhoto}
+                        onPress={promptMenuPhoto}
                       />
                     ) : null}
                   </Card>
@@ -1243,8 +1386,45 @@ export function StallDetailScreen({ navigation, route }: Props) {
               {/* Community Reviews */}
               {showDeferredDetailControls && FEATURE_FLAGS.reviewCreationEnabled ? (
                 <View style={{ gap: spacing[4] }}>
-                  <AppText variant="h2">Recent Reviews</AppText>
-                  {communityReviews.length > 0 ? (
+                  <View
+                    style={{
+                      alignItems: "center",
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <AppText variant="h2">Recent Reviews</AppText>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Write a review for ${venue.name}`}
+                      onPress={openWriteReview}
+                      hitSlop={8}
+                    >
+                      <AppText variant="bodySmallBold" tone="accent">
+                        Write a review
+                      </AppText>
+                    </Pressable>
+                  </View>
+                  {reviewsStatus === "loading" ? (
+                    <Skeleton width="100%" height={72} borderRadius={radii.lg} />
+                  ) : reviewsStatus === "error" ? (
+                    <Card style={{ padding: spacing[4], alignItems: "center", gap: spacing[2] }}>
+                      <AppText variant="body" tone="secondary" style={{ textAlign: "center" }}>
+                        Couldn&apos;t load reviews for this stall.
+                      </AppText>
+                      <Button
+                        label="Retry"
+                        variant="secondary"
+                        onPress={() => {
+                          if (menuStatus === "error") {
+                            setMenuReloadKey((key) => key + 1);
+                            return;
+                          }
+                          setReviewsReloadKey((key) => key + 1);
+                        }}
+                      />
+                    </Card>
+                  ) : communityReviews.length > 0 ? (
                     communityReviews.map((review) => (
                       <View
                         key={review.id}
@@ -1261,17 +1441,20 @@ export function StallDetailScreen({ navigation, route }: Props) {
                             gap: spacing[3],
                           }}
                         >
-                          <AccessibleImage
-                            source={{ uri: review.avatarUrl }}
-                            style={{
-                              borderRadius: radii.pill,
-                              height: 40,
-                              width: 40,
-                            }}
-                            accessibilityLabel={`Avatar of ${review.authorName}`}
-                          />
+                          <Avatar uri={review.avatarUrl} name={review.authorName} size={40} />
                           <View style={{ flex: 1 }}>
                             <AppText style={{ fontWeight: "700" }}>{review.authorName}</AppText>
+                            <Pressable
+                              accessibilityRole="link"
+                              accessibilityLabel={`Open ${review.dishName}`}
+                              onPress={() =>
+                                navigation.navigate("DishDetail", { dishId: review.dishId })
+                              }
+                            >
+                              <AppText variant="micro" tone="accent" numberOfLines={1}>
+                                on {review.dishName}
+                              </AppText>
+                            </Pressable>
                             <View
                               style={{
                                 flexDirection: "row",
@@ -1418,6 +1601,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
                       title="No community reviews yet"
                       body="Write your first review for this stall."
                       icon={<CommentIcon size={36} color={palette.textMuted} />}
+                      ctaLabel="Write a review"
+                      onPress={openWriteReview}
                     />
                   )}
                 </View>

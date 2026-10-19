@@ -1,5 +1,5 @@
+import { useEffect, useState } from "react";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useState } from "react";
 import { View } from "react-native";
 import { CheckCircle2 } from "lucide-react-native";
 
@@ -24,10 +24,17 @@ type Props = NativeStackScreenProps<AuthStackParamList, "ResetPasswordSuccess">;
 export function ResetPasswordSuccessScreen({ navigation }: Props) {
   const { palette, radii, spacing } = useHungryTheme();
   const showToast = useUIStore((state) => state.showToast);
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const setPasswordRecoveryInProgress = useSessionStore(
+    (state) => state.setPasswordRecoveryInProgress,
+  );
   const [isContinuing, setIsContinuing] = useState(false);
 
+  // Leaving this screen any other way also releases the recovery hold.
+  useEffect(() => () => setPasswordRecoveryInProgress(false), [setPasswordRecoveryInProgress]);
+
   const goToLogin = () => {
-    useSessionStore.getState().endPasswordRecovery();
+    setPasswordRecoveryInProgress(false);
     navigation.navigate("Login");
   };
 
@@ -62,7 +69,7 @@ export function ResetPasswordSuccessScreen({ navigation }: Props) {
         skippedTasteQuiz: true,
         trackSignInEvent: false,
       });
-      session.endPasswordRecovery();
+      setPasswordRecoveryInProgress(false);
     } catch {
       goToLogin();
     } finally {
@@ -73,7 +80,11 @@ export function ResetPasswordSuccessScreen({ navigation }: Props) {
   return (
     <AuthScreenShell
       title="Password updated"
-      subtitle="Your new password is saved. Use it next time you sign in to Hungry."
+      subtitle={
+        isAuthenticated
+          ? "Your new password is saved and you're signed in."
+          : "Your new password is saved. Sign in with it to continue."
+      }
     >
       <View style={{ gap: spacing[4] }}>
         <View
@@ -91,7 +102,7 @@ export function ResetPasswordSuccessScreen({ navigation }: Props) {
         </View>
 
         <Button
-          label="Continue to Hungry"
+          label="Continue"
           onPress={() => {
             void handleContinue();
           }}

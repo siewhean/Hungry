@@ -146,7 +146,8 @@ test("release-reachable screens hide controls for cut features behind their flag
     /label=\{FEATURE_FLAGS\.socialFeedEnabled \? "Back to Feed" : "Back to Discover"\}/,
   );
 
-  assert.match(search, /\{!shouldUseCatalogReadV2 \? \(\s*<Pressable[\s\S]*?SUGGESTED FOR TONIGHT/);
+  // Catalog v2 has no local suggestion, so the card hides with no data.
+  assert.match(search, /\{suggestedDish \? \(\s*<Pressable[\s\S]*?SUGGESTED FOR TONIGHT/);
 
   // DishDetailV2 is a prototype-only route; release detail links must use DishDetail.
   assert.doesNotMatch(dishDetail, /navigate\("DishDetailV2"/);

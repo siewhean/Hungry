@@ -22,6 +22,7 @@ import {
   listMenuSections,
   withDishSection,
 } from "@/features/merchant/menuSections";
+import { ALLERGEN_CHECK_DISCLAIMER } from "@/features/merchant/allergenKeywords";
 import { NEUTRAL_TASTE_VECTOR, TASTE_DIMENSIONS } from "@/constants/taste";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import type { DietaryFlag, DishDetail, TasteVector } from "@/types/domain";
@@ -75,6 +76,8 @@ export function DishEditorScreen() {
   const navigation = useNavigation();
   const route = useRoute<RouteProps>();
   const dishId = route.params?.dishId;
+  // A menu-scan draft is only published when the merchant saves the editor.
+  const ocrDraftId = dishId ? undefined : route.params?.ocrDraftId;
   const activeOutlet = useMerchantStore(getActiveOutlet);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -84,6 +87,8 @@ export function DishEditorScreen() {
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [ingredients, setIngredients] = useState("");
+  // Menu-scan taste tags are kept as tags, not shown or saved as ingredients.
+  const [draftTasteTags, setDraftTasteTags] = useState<string[]>([]);
   const [imageUrl, setImageUrl] = useState("");
   const [originalImageUrl, setOriginalImageUrl] = useState("");
   const [section, setSection] = useState("");
@@ -107,6 +112,18 @@ export function DishEditorScreen() {
       // (pending verification) are still editable by their owner.
       const menu = await getHungryService().merchant.getMenu(activeOutlet.id);
       setExistingSections(listMenuSections(menu.map((item) => item.availabilityFlags)));
+      if (ocrDraftId) {
+        const drafts = await getHungryService().merchant.getOCRDrafts(activeOutlet.id);
+        const draft = drafts.find((item) => item.id === ocrDraftId);
+        if (draft) {
+          setName(draft.name);
+          setPrice(draft.price ? draft.price.toFixed(2) : "");
+          setDescription(draft.suggestedDescription ?? "");
+          setDraftTasteTags(draft.suggestedTasteTags ?? []);
+          setDietaryFlags(draft.suggestedDietaryTags ?? []);
+        }
+        return;
+      }
       if (!dishId) return;
       const dish =
         menu.find((item) => item.id === dishId) ??
@@ -136,7 +153,7 @@ export function DishEditorScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [activeOutlet, dishId]);
+  }, [activeOutlet, dishId, ocrDraftId]);
 
   useEffect(() => {
     void loadDish();
@@ -167,7 +184,7 @@ export function DishEditorScreen() {
         ...(imageChanged || !dishId
           ? { imageUrl: trimmedImageUrl, gallery: trimmedImageUrl ? [trimmedImageUrl] : [] }
           : {}),
-        tasteTags: parseCommaSeparated(ingredients),
+        tasteTags: Array.from(new Set([...draftTasteTags, ...parseCommaSeparated(ingredients)])),
         tasteVector,
         dietaryFlags,
         availabilityFlags: withDishSection(
@@ -182,6 +199,8 @@ export function DishEditorScreen() {
 
       if (dishId) {
         await getHungryService().merchant.editDish(activeOutlet.id, dishId, updates);
+      } else if (ocrDraftId) {
+        await getHungryService().merchant.acceptOCRDraft(ocrDraftId, updates);
       } else {
         await getHungryService().merchant.addDish(activeOutlet.id, updates);
       }
@@ -263,8 +282,8 @@ export function DishEditorScreen() {
     Alert.alert(
       "Ingredient check",
       allergens.length > 0
-        ? `Detected: ${allergens.join(", ")}. Choose matching customer indicators below.`
-        : "No common allergens detected from these ingredients.",
+        ? `Possible allergens: ${allergens.join(", ")}. ${ALLERGEN_CHECK_DISCLAIMER}`
+        : `No allergen keywords matched. That does not mean the dish is allergen-free. ${ALLERGEN_CHECK_DISCLAIMER}`,
     );
   };
 
@@ -387,7 +406,7 @@ export function DishEditorScreen() {
             >
               <Sparkles size={14} color={palette.orange} />
               <AppText variant="micro" style={{ color: palette.orange, fontWeight: "bold" }}>
-                AI Suggest
+                Suggest
               </AppText>
             </Pressable>
           </View>
@@ -446,7 +465,7 @@ export function DishEditorScreen() {
             >
               <Sparkles size={14} color={palette.orange} />
               <AppText variant="micro" style={{ color: palette.orange, fontWeight: "bold" }}>
-                AI Generate
+                Draft description
               </AppText>
             </Pressable>
           </View>

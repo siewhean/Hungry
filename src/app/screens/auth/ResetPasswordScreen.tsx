@@ -1,11 +1,17 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Controller, useForm } from "react-hook-form";
-import { Pressable, View } from "react-native";
-import { ArrowLeft, Eye, EyeOff } from "lucide-react-native";
-import { useState } from "react";
+import { Pressable, View, type TextInput } from "react-native";
+import { ArrowLeft, CheckCircle2, Eye, EyeOff } from "lucide-react-native";
+import { useEffect, useRef, useState } from "react";
 
 import { AppText, Button, FeedErrorBoundary, InlineBanner, Input } from "@/components/ui";
-import { validateConfirmPassword, validatePassword } from "@/features/auth/validation";
+import { trackAuthFailed, trackAuthScreenViewed } from "@/features/auth/authAnalytics";
+import {
+  getPasswordUpdateErrorMessage,
+  PASSWORD_RULES,
+  validateConfirmPassword,
+  validatePassword,
+} from "@/features/auth/validation";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -30,15 +36,19 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
   const showToast = useUIStore((state) => state.showToast);
   const isSupabaseMode = getConfiguredDataSource() === "supabase";
   const recoveryCode = route.params?.code ?? "";
-  // The PKCE code is single-use. Once exchanged, retries update the password on
-  // the recovery session instead of re-sending the consumed code.
-  const [codeExchanged, setCodeExchanged] = useState(false);
   const [linkError, setLinkError] = useState<string | null>(() => {
     if (!isSupabaseMode) return null;
     if (route.params?.error === "expired") return EXPIRED_LINK_MESSAGE;
     if (route.params?.error || !recoveryCode) return INVALID_LINK_MESSAGE;
     return null;
   });
+  const setPasswordRecoveryInProgress = useSessionStore(
+    (state) => state.setPasswordRecoveryInProgress,
+  );
+  const confirmPasswordRef = useRef<TextInput>(null);
+  // The reset link's code can be exchanged only once; a retry after a rejected
+  // password must call updatePassword alone.
+  const recoveryCodeExchangedRef = useRef(false);
   const {
     control,
     handleSubmit,
@@ -49,40 +59,54 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
   });
   const passwordValue = watch("password");
 
+  useEffect(() => {
+    trackAuthScreenViewed("reset_password");
+  }, []);
+
+  // Leaving the reset flow releases the hold so RootNavigator can route onward.
+  useEffect(() => () => setPasswordRecoveryInProgress(false), [setPasswordRecoveryInProgress]);
+
   const handleReset = handleSubmit(async ({ password }) => {
-    if (!isSupabaseMode) {
-      navigation.navigate("ResetPasswordSuccess");
-      return;
-    }
-    const session = useSessionStore.getState();
-    // Exchanging the code signs the user in; hold the navigator until done.
-    session.beginPasswordRecovery();
-    try {
-      await getHungryService().auth.resetPassword(codeExchanged ? "" : recoveryCode, password);
-      // Recovery flag stays set: the success screen releases it on Continue.
-      navigation.navigate("ResetPasswordSuccess");
-    } catch {
-      const recoverySession = await getHungryService()
-        .auth.getCurrentSession()
-        .catch(() => null);
-      if (recoverySession) {
-        setCodeExchanged(true);
-        showToast({
-          message: "Couldn't update your password. Choose a different password and try again.",
-          tone: "error",
-        });
+    // Exchanging the recovery code signs the user in. Hold RootNavigator's
+    // signed-in redirect until the new password is saved and confirmed on
+    // ResetPasswordSuccess, which releases the hold.
+    setPasswordRecoveryInProgress(true);
+    if (isSupabaseMode) {
+      const auth = getHungryService().auth;
+      if (!recoveryCodeExchangedRef.current) {
+        try {
+          await auth.exchangeRecoveryCode(recoveryCode);
+          recoveryCodeExchangedRef.current = true;
+        } catch (error) {
+          // No session was created, so nothing to hold.
+          setPasswordRecoveryInProgress(false);
+          setLinkError(INVALID_LINK_MESSAGE);
+          trackAuthFailed("password_reset", "email", error);
+          showToast({
+            message: "This reset link has expired or was already used. Request a new one.",
+            tone: "error",
+          });
+          return;
+        }
+      }
+      try {
+        await auth.updatePassword(password);
+      } catch (error) {
+        // The recovery session is signed in: keep the hold so the user stays
+        // here and can retry with a different password.
+        trackAuthFailed("password_reset", "email", error);
+        showToast({ message: getPasswordUpdateErrorMessage(error), tone: "error" });
         return;
       }
-      session.endPasswordRecovery();
-      setLinkError(INVALID_LINK_MESSAGE);
     }
+    navigation.navigate("ResetPasswordSuccess");
   });
 
   const leaveRecovery = (target: "Login" | "ForgotPassword") => {
     const session = useSessionStore.getState();
     // Abandoning after the code was exchanged must not leave a silent sign-in.
-    if (codeExchanged) session.signOut();
-    session.endPasswordRecovery();
+    if (recoveryCodeExchangedRef.current) session.signOut();
+    setPasswordRecoveryInProgress(false);
     navigation.navigate(target);
   };
 
@@ -134,6 +158,12 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
               <Input
                 label="NEW PASSWORD"
                 secureTextEntry={!showPassword}
+                textContentType="newPassword"
+                autoComplete="new-password"
+                passwordRules={PASSWORD_RULES}
+                returnKeyType="next"
+                submitBehavior="submit"
+                onSubmitEditing={() => confirmPasswordRef.current?.focus()}
                 placeholder="••••••••"
                 value={value}
                 onChangeText={onChange}
@@ -168,8 +198,14 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
             rules={{ validate: (value) => validateConfirmPassword(passwordValue ?? "", value) }}
             render={({ field: { onChange, value } }) => (
               <Input
+                ref={confirmPasswordRef}
                 label="CONFIRM NEW PASSWORD"
                 secureTextEntry={!showConfirmPassword}
+                textContentType="newPassword"
+                autoComplete="new-password"
+                passwordRules={PASSWORD_RULES}
+                returnKeyType="go"
+                onSubmitEditing={() => void handleReset()}
                 placeholder="••••••••"
                 value={value}
                 onChangeText={onChange}

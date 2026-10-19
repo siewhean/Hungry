@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { View, FlatList, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -18,14 +18,33 @@ export function ChecklistsHomeScreen() {
   const { checklists, items, isLoaded, loadChecklists, createChecklist } = useChecklistStore();
   const { isAuthenticated } = useSessionStore();
   const [isCreating, setIsCreating] = useState(false);
+  // A failed first load shows an error with Retry instead of "Loading..." forever.
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const insets = useSafeAreaInsets();
   const topSpacing = Math.max(insets.top, theme.spacing[4]);
 
+  const load = useCallback(async () => {
+    setLoadFailed(false);
+    try {
+      await loadChecklists();
+    } catch (error) {
+      console.error("Failed to load checklists:", error);
+      setLoadFailed(true);
+    }
+  }, [loadChecklists]);
+
+  const refresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await load();
+    setIsRefreshing(false);
+  }, [load]);
+
   useEffect(() => {
     if (isAuthenticated && !isLoaded) {
-      loadChecklists();
+      void load();
     }
-  }, [isAuthenticated, isLoaded, loadChecklists]);
+  }, [isAuthenticated, isLoaded, load]);
 
   const handleCreateChecklist = async () => {
     setIsCreating(true);
@@ -56,9 +75,21 @@ export function ChecklistsHomeScreen() {
       <View
         style={[styles.container, { backgroundColor: theme.palette.bg, paddingTop: topSpacing }]}
       >
-        <AppText variant="body" style={styles.emptyText}>
-          Loading...
-        </AppText>
+        {loadFailed ? (
+          <View style={styles.emptyState}>
+            <AppText variant="h3" style={styles.emptyTitle}>
+              {"Couldn't load your checklists"}
+            </AppText>
+            <AppText variant="body" style={styles.emptyText}>
+              Check your connection and try again.
+            </AppText>
+            <Button label="Retry" onPress={() => void load()} variant="secondary" />
+          </View>
+        ) : (
+          <AppText variant="body" style={styles.emptyText}>
+            Loading...
+          </AppText>
+        )}
       </View>
     );
   }
@@ -104,6 +135,8 @@ export function ChecklistsHomeScreen() {
             />
           )}
           contentContainerStyle={styles.listContent}
+          refreshing={isRefreshing}
+          onRefresh={() => void refresh()}
         />
       )}
     </View>

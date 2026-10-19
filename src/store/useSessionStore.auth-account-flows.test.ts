@@ -3,11 +3,6 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 
-import {
-  clearPendingSignUp,
-  getPendingSignUp,
-  setPendingSignUp,
-} from "@/features/auth/pendingSignUp";
 import { setMockServiceProvider } from "@/lib/services/serviceProvider";
 import { setConfiguredDataSource } from "@/lib/services/supabase/client";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
@@ -33,10 +28,7 @@ function resetSession() {
 }
 
 test.beforeEach(resetSession);
-test.afterEach(() => {
-  resetSession();
-  clearPendingSignUp();
-});
+test.afterEach(resetSession);
 
 test("every sign-out path clears account-scoped search history and review drafts", () => {
   useSearchStore.getState().rememberSearch("laksa");
@@ -79,9 +71,9 @@ test("an account notice set before sign-out is still shown on Login afterwards",
 });
 
 test("password recovery hold is session-only state", () => {
-  useSessionStore.getState().beginPasswordRecovery();
+  useSessionStore.getState().setPasswordRecoveryInProgress(true);
   assert.equal(useSessionStore.getState().passwordRecoveryInProgress, true);
-  useSessionStore.getState().endPasswordRecovery();
+  useSessionStore.getState().setPasswordRecoveryInProgress(false);
   assert.equal(useSessionStore.getState().passwordRecoveryInProgress, false);
 
   const store = read("src/store/useSessionStore.ts");
@@ -89,26 +81,14 @@ test("password recovery hold is session-only state", () => {
   assert.doesNotMatch(partialize, /passwordRecoveryInProgress|authNotice/);
 });
 
-test("pending sign-up credentials are memory-only and email-scoped", () => {
-  setPendingSignUp({ email: " New@Hungry.sg ", password: "pw", completedOnboarding: true });
-  assert.equal(getPendingSignUp("new@hungry.sg")?.password, "pw");
-  assert.equal(getPendingSignUp("other@hungry.sg"), null);
-  clearPendingSignUp();
-  assert.equal(getPendingSignUp(), null);
-  assert.doesNotMatch(
-    read("src/features/auth/pendingSignUp.ts"),
-    /persistStorage|AsyncStorage|SecureStore|zustand/,
-  );
-});
-
 test("password reset exchanges the deep-link code without the auth swap unmounting the form", () => {
   const reset = read("src/app/screens/auth/ResetPasswordScreen.tsx");
   assert.match(reset, /const recoveryCode = route\.params\?\.code \?\? ""/);
   assert.match(
     reset,
-    /beginPasswordRecovery\(\);[\s\S]*auth\.resetPassword\(codeExchanged \? "" : recoveryCode, password\)/,
+    /setPasswordRecoveryInProgress\(true\);[\s\S]*auth\.exchangeRecoveryCode\(recoveryCode\)[\s\S]*auth\.updatePassword\(password\)/,
   );
-  assert.match(reset, /if \(codeExchanged\) session\.signOut\(\);/);
+  assert.match(reset, /if \(recoveryCodeExchangedRef\.current\) session\.signOut\(\);/);
 
   const appBody = read("src/app/AppBody.tsx");
   assert.match(appBody, /passwordRecoveryInProgress\s*\?\s*mountedNavigatorIsRoot\.current/);
@@ -116,10 +96,10 @@ test("password reset exchanges the deep-link code without the auth swap unmounti
   const success = read("src/app/screens/auth/ResetPasswordSuccessScreen.tsx");
   assert.match(success, /title="Password updated"/);
   assert.doesNotMatch(success, /Resend link|Open email client|We sent/);
-  assert.match(success, /endPasswordRecovery\(\)/);
+  assert.match(success, /setPasswordRecoveryInProgress\(false\)/);
 });
 
-test("sign-up confirmation uses its own redirect and real sign-in instead of refreshSession", () => {
+test("sign-up confirmation uses its own redirect and a code exchange instead of refreshSession", () => {
   const service = read("src/lib/services/supabase/supabaseService.ts");
   assert.match(read("src/constants/links.ts"), /emailConfirm: "hungry:\/\/auth\/confirm"/);
   assert.match(service, /emailRedirectTo: AUTH_REDIRECTS\.emailConfirm/);
@@ -128,10 +108,9 @@ test("sign-up confirmation uses its own redirect and real sign-in instead of ref
   const verification = read("src/app/screens/auth/EmailVerificationScreen.tsx");
   assert.doesNotMatch(verification, /refreshSession/);
   assert.doesNotMatch(verification, /james\.cook@chef\.com/);
-  assert.match(verification, /auth\.confirmEmail\(confirmationCode\)/);
-  assert.match(verification, /auth\.signIn\(\s*credentials\.email,\s*credentials\.password/);
-
-  assert.match(read("src/app/screens/auth/SignUpScreen.tsx"), /setPendingSignUp\(/);
+  assert.match(verification, /auth\.confirmEmail\(code\)/);
+  // Passwords are never held after sign-up; without a session the user signs in.
+  assert.doesNotMatch(verification, /auth\.signIn\(/);
   assert.match(read("tasks/environment.md"), /hungry:\/\/auth\/confirm/);
 });
 

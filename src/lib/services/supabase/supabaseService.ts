@@ -39,7 +39,9 @@ import {
   uploadImageFromUri,
   uploadPostMediaFromUri,
 } from "@/lib/services/supabase/mediaUpload";
+import { suggestAllergensFromIngredients } from "@/features/merchant/allergenKeywords";
 import { validateMerchantProfileUpdates } from "@/features/merchant/profileValidation";
+import { REVIEW_PHOTOS_NOT_ATTACHED, createClientReviewId } from "@/features/review/reviewDraft";
 import { validateMerchantPromotionInput } from "@/features/merchant/promotionValidation";
 import type {
   Bite,
@@ -252,6 +254,32 @@ function mapPortfolioItem(row: Row): PortfolioItem {
     createdAt: String(row.created_at ?? row.createdAt ?? ""),
     updatedAt: String(row.updated_at ?? row.updatedAt ?? ""),
   };
+}
+
+/**
+ * Readable portfolio_items columns. private_notes is not granted to clients
+ * (20261019111000); owners and collaborators read it via get_portfolio_private_notes.
+ */
+const PORTFOLIO_ITEM_COLUMNS =
+  "id,portfolio_id,item_type,dish_id,stall_id,score,public_notes,position,created_at,updated_at";
+
+async function attachPortfolioPrivateNotes(
+  client: SupabaseClient,
+  portfolioId: string,
+  items: PortfolioItem[],
+): Promise<PortfolioItem[]> {
+  if (!items.length) return items;
+  const { data, error } = await client.rpc("get_portfolio_private_notes", {
+    p_portfolio_id: portfolioId,
+  });
+  // Viewers who are not the owner or a collaborator get no rows; on error show no notes.
+  if (error || !Array.isArray(data)) return items;
+  const notesById = new Map(
+    (data as Row[]).map((row) => [String(row.item_id ?? ""), asString(row.private_notes)]),
+  );
+  return items.map((item) =>
+    notesById.has(item.id) ? { ...item, privateNotes: notesById.get(item.id) } : item,
+  );
 }
 
 function mapPortfolioCollaborator(row: Row): PortfolioCollaborator {
@@ -635,10 +663,10 @@ async function fetchUserProfile(client: SupabaseClient, userId: string, email?: 
     .maybeSingle();
   const row = (data ?? {}) as Row;
   const privacyRow = (privacyData ?? {}) as Row;
-  // user_profiles.email is often null (OAuth/new sign-ups), so fall back to the
-  // auth session's address; otherwise Edit Profile reopens with an empty email.
+  // The sign-in (auth) address is the source of truth; user_profiles.email is only a fallback
+  // because it can be null (OAuth/new sign-ups) or stale.
   const resolvedEmail =
-    asString(row.email) ?? email ?? (await getSessionEmailForUser(client, userId));
+    email ?? (await getSessionEmailForUser(client, userId)) ?? asString(row.email);
   const favouriteDishIds = await fetchFavouriteDishIdsForUser(client, userId);
   const reviewedDishIds = asStringArray(row.reviewed_dish_ids);
   const accountVisibility = asString(privacyRow.account_visibility);
@@ -902,6 +930,7 @@ async function uploadReviewPhotos(
 async function mapSupabaseReviewRows(
   client: SupabaseClient,
   rows: Row[],
+  options: { includePhotos?: boolean } = {},
 ): Promise<DishDetail["reviews"]> {
   const reviewIds = rows.map((row) => asString(row.id)).filter((id): id is string => Boolean(id));
   const userIds = rows
@@ -911,7 +940,7 @@ async function mapSupabaseReviewRows(
   const namesByUserId = new Map<string, string>();
   const avatarsByUserId = new Map<string, string>();
 
-  if (reviewIds.length > 0) {
+  if (options.includePhotos !== false && reviewIds.length > 0) {
     const { data: photoRows } = await client
       .from("review_photos")
       .select("review_id,url,storage_bucket,storage_path,sort_order")
@@ -919,6 +948,17 @@ async function mapSupabaseReviewRows(
       .order("sort_order", { ascending: true });
 
     if (Array.isArray(photoRows)) {
+      // One signing request for the whole page instead of one per photo.
+      const signedUrlByPath = await createSignedStorageUrls(
+        client,
+        "review-media",
+        (photoRows as Row[])
+          .filter(
+            (photoRow) => (asString(photoRow.storage_bucket) || "review-media") === "review-media",
+          )
+          .map((photoRow) => asString(photoRow.storage_path))
+          .filter((path): path is string => Boolean(path)),
+      );
       for (const photoRow of photoRows as Row[]) {
         const reviewId = asString(photoRow.review_id);
         if (!reviewId) continue;
@@ -926,9 +966,7 @@ async function mapSupabaseReviewRows(
         const path = asString(photoRow.storage_path);
         const legacyUrl = asString(photoRow.url);
         const displayUrl =
-          path && bucket === "review-media"
-            ? ((await createSignedStorageUrl(client, bucket, path)) ?? legacyUrl)
-            : legacyUrl;
+          path && bucket === "review-media" ? (signedUrlByPath.get(path) ?? legacyUrl) : legacyUrl;
         if (!displayUrl) continue;
         photosByReviewId.set(reviewId, [...(photosByReviewId.get(reviewId) ?? []), displayUrl]);
       }
@@ -1025,6 +1063,28 @@ async function createSignedStorageUrl(
   } catch {
     return undefined;
   }
+}
+
+async function createSignedStorageUrls(
+  client: SupabaseClient,
+  bucket: string,
+  paths: string[],
+): Promise<Map<string, string>> {
+  const signed = new Map<string, string>();
+  const uniquePaths = Array.from(new Set(paths));
+  if (uniquePaths.length === 0) return signed;
+  try {
+    const { data, error } = await client.storage
+      .from(bucket)
+      .createSignedUrls(uniquePaths, 60 * 60);
+    if (error || !Array.isArray(data)) return signed;
+    data.forEach((entry) => {
+      if (entry.path && entry.signedUrl && !entry.error) signed.set(entry.path, entry.signedUrl);
+    });
+  } catch {
+    // Fall back to the stored urls.
+  }
+  return signed;
 }
 
 async function resolvePostMediaDisplayUrl(client: SupabaseClient, row: Row): Promise<string> {
@@ -1130,15 +1190,24 @@ function groupRowsByStringKey(rows: Row[], key: string): Map<string, Row[]> {
   return grouped;
 }
 
-async function fetchPublishedPostBites(client: SupabaseClient, limit = 40): Promise<Bite[]> {
-  const { data, error } = await client
-    .from("posts")
-    .select("*")
-    .eq("status", "published")
-    .is("deleted_at", null)
+/** Default page size for one user's profile post grid. */
+const USER_POSTS_PAGE_SIZE = 60;
+
+async function fetchPublishedPostBites(
+  client: SupabaseClient,
+  limit = 40,
+  options?: { authorId?: string; offset?: number },
+): Promise<Bite[]> {
+  let query = client.from("posts").select("*").eq("status", "published").is("deleted_at", null);
+  // One author's posts are filtered on the server so older posts are not cut off.
+  if (options?.authorId) query = query.eq("author_id", options.authorId);
+  const offset = options?.offset ?? 0;
+  const { data, error } = await query
     .order("published_at", { ascending: false })
     .order("created_at", { ascending: false })
-    .limit(limit);
+    .range(offset, offset + limit - 1);
+  // An author read throws so a failed load is not shown as "No posts yet".
+  if (error && options?.authorId) throw error;
   if (error || !Array.isArray(data)) return [];
 
   const postRows = data as Row[];
@@ -1272,15 +1341,73 @@ async function fetchPublishedPostBites(client: SupabaseClient, limit = 40): Prom
   );
 }
 
+async function mapFeedRpcRowToBite(client: SupabaseClient, row: Row): Promise<Bite> {
+  const meta = asRecord(row.generated_content);
+  const authorMeta = asRecord(meta.author);
+  const dishMeta = asRecord(meta.dish);
+  const venueMeta = asRecord(meta.venue);
+  const mediaRows = asRowArray(row.media);
+  const mediaUrls = (
+    await Promise.all(mediaRows.map((mediaRow) => resolvePostMediaDisplayUrl(client, mediaRow)))
+  ).filter((url): url is string => url.length > 0);
+  const fallbackImage =
+    asString(row.dish_image_url) ?? asString(dishMeta.imageUrl) ?? asString(row.public_url) ?? "";
+  const photoUrl = mediaUrls[0] ?? fallbackImage;
+  const mediaType = resolvePostBiteMediaType(mediaRows, meta);
+
+  return {
+    id: asString(row.id) ?? `post-${Date.now()}`,
+    authorId: asString(row.author_id) ?? "unknown-author",
+    authorName:
+      asString(authorMeta.displayName) ?? asString(row.author_display_name) ?? "Hungry User",
+    authorAvatar: asString(authorMeta.avatarUrl) ?? asString(row.author_avatar_url),
+    dishId: asString(row.dish_id) ?? asString(dishMeta.id) ?? "",
+    dishName: asString(row.dish_name) ?? asString(dishMeta.name) ?? "Unknown dish",
+    venueId: asString(row.venue_id) ?? asString(venueMeta.id) ?? "",
+    venueName: asString(row.venue_name) ?? asString(venueMeta.name) ?? "Unknown venue",
+    unitNumber: asString(row.venue_unit_number) ?? asString(venueMeta.unitNumber) ?? "",
+    buildingId:
+      asString(row.building_id) ??
+      asString(row.venue_building_id) ??
+      asString(venueMeta.buildingId) ??
+      "",
+    buildingName: asString(row.building_name) ?? asString(venueMeta.buildingName) ?? "",
+    photoUrl,
+    mediaUrls: mediaUrls.length > 0 ? mediaUrls : photoUrl ? [photoUrl] : [],
+    mediaType,
+    showFoodContextOverlay: meta.showFoodContextOverlay !== false,
+    caption: asString(row.caption) ?? "",
+    tags: asStringArray(meta.tags),
+    tasteStamp: tasteStampFromPostMeta(meta),
+    cravingCount: asNumber(row.like_count) ?? 0,
+    savedCount: asNumber(row.save_count) ?? 0,
+    // Only v3 and get_post_by_id return the viewer's own state.
+    viewerHasLiked: typeof row.viewer_has_liked === "boolean" ? row.viewer_has_liked : undefined,
+    viewerHasSaved: typeof row.viewer_has_saved === "boolean" ? row.viewer_has_saved : undefined,
+    rating: asNumber(meta.rating) ?? asNumber(row.dish_rating) ?? 0,
+    price: asNumber(row.dish_price) ?? asNumber(dishMeta.price) ?? 0,
+    expiresAt: asString(row.published_at) ?? asString(row.created_at) ?? new Date().toISOString(),
+    createdAt: asString(row.published_at) ?? asString(row.created_at) ?? new Date().toISOString(),
+  } satisfies Bite;
+}
+
 async function fetchHomeSocialFeedBitesViaRpc(
   client: SupabaseClient,
   limit = 40,
 ): Promise<Bite[] | undefined> {
-  const v2Result = await client.rpc("get_home_social_feed_v2", {
+  // v3 adds the viewer's like/save state; fall back to v2, then the legacy RPC.
+  const v3Result = await client.rpc("get_home_social_feed_v3", {
     p_limit: limit,
     p_cursor_feed_created_at: null,
     p_cursor_post_id: null,
   });
+  const v2Result = v3Result.error
+    ? await client.rpc("get_home_social_feed_v2", {
+        p_limit: limit,
+        p_cursor_feed_created_at: null,
+        p_cursor_post_id: null,
+      })
+    : v3Result;
   const legacyResult = v2Result.error
     ? await client.rpc("get_home_social_feed", {
         p_limit: limit,
@@ -1296,59 +1423,7 @@ async function fetchHomeSocialFeedBitesViaRpc(
   if (!Array.isArray(legacyResult.data)) return undefined;
 
   const rows = legacyResult.data as Row[];
-  return Promise.all(
-    rows.map(async (row) => {
-      const meta = asRecord(row.generated_content);
-      const authorMeta = asRecord(meta.author);
-      const dishMeta = asRecord(meta.dish);
-      const venueMeta = asRecord(meta.venue);
-      const mediaRows = asRowArray(row.media);
-      const mediaUrls = (
-        await Promise.all(mediaRows.map((mediaRow) => resolvePostMediaDisplayUrl(client, mediaRow)))
-      ).filter((url): url is string => url.length > 0);
-      const fallbackImage =
-        asString(row.dish_image_url) ??
-        asString(dishMeta.imageUrl) ??
-        asString(row.public_url) ??
-        "";
-      const photoUrl = mediaUrls[0] ?? fallbackImage;
-      const mediaType = resolvePostBiteMediaType(mediaRows, meta);
-
-      return {
-        id: asString(row.id) ?? `post-${Date.now()}`,
-        authorId: asString(row.author_id) ?? "unknown-author",
-        authorName:
-          asString(authorMeta.displayName) ?? asString(row.author_display_name) ?? "Hungry User",
-        authorAvatar: asString(authorMeta.avatarUrl) ?? asString(row.author_avatar_url),
-        dishId: asString(row.dish_id) ?? asString(dishMeta.id) ?? "",
-        dishName: asString(row.dish_name) ?? asString(dishMeta.name) ?? "Unknown dish",
-        venueId: asString(row.venue_id) ?? asString(venueMeta.id) ?? "",
-        venueName: asString(row.venue_name) ?? asString(venueMeta.name) ?? "Unknown venue",
-        unitNumber: asString(row.venue_unit_number) ?? asString(venueMeta.unitNumber) ?? "",
-        buildingId:
-          asString(row.building_id) ??
-          asString(row.venue_building_id) ??
-          asString(venueMeta.buildingId) ??
-          "",
-        buildingName: asString(row.building_name) ?? asString(venueMeta.buildingName) ?? "",
-        photoUrl,
-        mediaUrls: mediaUrls.length > 0 ? mediaUrls : photoUrl ? [photoUrl] : [],
-        mediaType,
-        showFoodContextOverlay: meta.showFoodContextOverlay !== false,
-        caption: asString(row.caption) ?? "",
-        tags: asStringArray(meta.tags),
-        tasteStamp: tasteStampFromPostMeta(meta),
-        cravingCount: asNumber(row.like_count) ?? 0,
-        savedCount: asNumber(row.save_count) ?? 0,
-        rating: asNumber(meta.rating) ?? asNumber(row.dish_rating) ?? 0,
-        price: asNumber(row.dish_price) ?? asNumber(dishMeta.price) ?? 0,
-        expiresAt:
-          asString(row.published_at) ?? asString(row.created_at) ?? new Date().toISOString(),
-        createdAt:
-          asString(row.published_at) ?? asString(row.created_at) ?? new Date().toISOString(),
-      } satisfies Bite;
-    }),
-  );
+  return Promise.all(rows.map((row) => mapFeedRpcRowToBite(client, row)));
 }
 
 function listAllDishesFromRepository(): DishDetail[] {
@@ -2918,11 +2993,11 @@ export const supabaseService: HungryService = {
 
     async confirmEmail(code) {
       const client = requireSupabaseClient();
-      const trimmed = code.trim();
-      if (!trimmed) throw new Error("Email confirmation link did not include a code.");
-      const { error } = await client.auth.exchangeCodeForSession(trimmed);
+      const { error } = await client.auth.exchangeCodeForSession(code);
       if (error) throw error;
-      return await toAppSession(client);
+      const session = await toAppSession(client);
+      if (!session) throw new Error("Email confirmed but no active session.");
+      return session;
     },
 
     async signIn(email, password) {
@@ -3000,9 +3075,13 @@ export const supabaseService: HungryService = {
       if (error) throw error;
     },
 
-    async resetPassword(token, password) {
+    async exchangeRecoveryCode(token) {
       const client = requireSupabaseClient();
       await exchangeRecoveryCodeIfPresent(client, token);
+    },
+
+    async updatePassword(password) {
+      const client = requireSupabaseClient();
       const { error } = await client.auth.updateUser({ password });
       if (error) throw error;
     },
@@ -3031,6 +3110,17 @@ export const supabaseService: HungryService = {
       });
       if (reauthError) throw new Error("Current password is incorrect.");
       const { error } = await client.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+    },
+
+    async requestEmailChange(newEmail) {
+      const client = requireSupabaseClient();
+      // Supabase (secure email change) emails links to both the current and new address;
+      // auth.users.email changes only after they are opened.
+      const { error } = await client.auth.updateUser(
+        { email: newEmail.trim().toLowerCase() },
+        { emailRedirectTo: AUTH_REDIRECTS.emailConfirm },
+      );
       if (error) throw error;
     },
 
@@ -3261,9 +3351,9 @@ export const supabaseService: HungryService = {
         )
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
-      if (error || !Array.isArray(data)) {
-        return [];
-      }
+      // Thrown so a failed read is not shown as "No reviews yet".
+      if (error) throw error;
+      if (!Array.isArray(data)) return [];
       return mapSupabaseReviewRows(client, data as Row[]);
     },
 
@@ -3272,7 +3362,11 @@ export const supabaseService: HungryService = {
       const userId = await getCurrentSupabaseUserId();
       if (!userId) throw new Error("You must be signed in to submit reviews.");
 
+      // The id is fixed before any write so photos can upload first and a
+      // retry resumes the same review instead of duplicating it.
+      const reviewId = draft.clientReviewId ?? createClientReviewId();
       const reviewRow: Row = {
+        id: reviewId,
         user_id: userId,
         dish_id: draft.dishId,
         venue_id: draft.venueId,
@@ -3281,34 +3375,33 @@ export const supabaseService: HungryService = {
         tags: draft.tags,
         would_recommend: draft.wouldRecommend ?? true,
       };
-      if (draft.clientReviewId) {
-        reviewRow.id = draft.clientReviewId;
+
+      const { data: existing, error: existingError } = await client
+        .from("reviews")
+        .select("id")
+        .eq("id", reviewId)
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (existingError) throw existingError;
+      const isResumedSubmission = Boolean(asString(existing?.id));
+
+      let needsPhotos = draft.photos.length > 0;
+      if (isResumedSubmission && needsPhotos) {
+        const { count, error: photoCountError } = await client
+          .from("review_photos")
+          .select("id", { count: "exact", head: true })
+          .eq("review_id", reviewId);
+        if (photoCountError) throw photoCountError;
+        needsPhotos = (count ?? 0) === 0;
       }
 
-      const { data, error } = await client
-        .from("reviews")
-        .insert(reviewRow)
-        .select("id")
-        .maybeSingle();
-      let reviewId = asString(data?.id);
-      let isResumedSubmission = false;
-      if (error || !reviewId) {
-        // A retry reuses the client id, so a unique violation means an earlier attempt
-        // already created this review: resume with the remaining steps instead of duplicating it.
-        if (!draft.clientReviewId || error?.code !== "23505") {
-          throw error ?? new Error("Review insert failed.");
-        }
-        const { data: existing, error: existingError } = await client
-          .from("reviews")
-          .select("id")
-          .eq("id", draft.clientReviewId)
-          .eq("user_id", userId)
-          .maybeSingle();
-        if (existingError || !existing?.id) {
-          throw existingError ?? error;
-        }
-        reviewId = draft.clientReviewId;
-        isResumedSubmission = true;
+      // Upload before the review exists: reviews are public as soon as they are
+      // inserted, so a failed upload must not leave a live, photo-less review.
+      const uploadedPhotos = needsPhotos
+        ? await uploadReviewPhotos(client, userId, reviewId, draft.photos)
+        : [];
+
+      if (isResumedSubmission) {
         // Keep any edits made between attempts.
         const { error: updateError } = await client
           .from("reviews")
@@ -3321,18 +3414,13 @@ export const supabaseService: HungryService = {
           .eq("id", reviewId)
           .eq("user_id", userId);
         if (updateError) throw updateError;
+      } else {
+        const { error } = await client.from("reviews").insert(reviewRow);
+        // 23505: a parallel attempt already created this review; carry on and
+        // attach the photos to it.
+        if (error && error.code !== "23505") throw error;
       }
 
-      if (isResumedSubmission) {
-        const { count, error: photoCountError } = await client
-          .from("review_photos")
-          .select("id", { count: "exact", head: true })
-          .eq("review_id", reviewId);
-        if (photoCountError) throw photoCountError;
-        if ((count ?? 0) > 0) return;
-      }
-
-      const uploadedPhotos = await uploadReviewPhotos(client, userId, reviewId, draft.photos);
       if (uploadedPhotos.length > 0) {
         const { error: photoInsertError } = await client.from("review_photos").insert(
           uploadedPhotos.map((photo, index) => ({
@@ -3343,22 +3431,33 @@ export const supabaseService: HungryService = {
             sort_order: index,
           })),
         );
-        if (photoInsertError) throw photoInsertError;
+        if (photoInsertError) {
+          // The review itself is saved; only the photos are missing. A retry
+          // with the same clientReviewId attaches them.
+          throw Object.assign(new Error("Review saved, but its photos were not attached."), {
+            code: REVIEW_PHOTOS_NOT_ATTACHED,
+            cause: photoInsertError,
+          });
+        }
       }
     },
 
     async listRecentReviews(options) {
       const client = requireSupabaseClient();
       const limit = Math.min(Math.max(Math.floor(options?.limit ?? 50), 1), 100);
+      if (options?.dishIds && options.dishIds.length === 0) return [];
       let query = client
         .from("reviews")
         .select(
-          "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend",
+          "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend,merchant_reply_text,merchant_replied_at",
         )
         .order("created_at", { ascending: false })
         .limit(limit);
       if (options?.before) {
         query = query.lt("created_at", options.before);
+      }
+      if (options?.dishIds) {
+        query = query.in("dish_id", options.dishIds);
       }
       const { data, error } = await query;
       if (error) throw error;
@@ -3404,7 +3503,10 @@ export const supabaseService: HungryService = {
         }
       }
 
-      const reviews = await mapSupabaseReviewRows(client, rows);
+      // A stall's review list (dishIds) never renders photos, so skip signing them.
+      const reviews = await mapSupabaseReviewRows(client, rows, {
+        includePhotos: !options?.dishIds,
+      });
       return reviews.flatMap((review): RecentReviewFeedEntry[] => {
         const dish = review.dishId ? dishById.get(review.dishId) : undefined;
         // Reviews of dishes the catalog cannot display are skipped.
@@ -3438,7 +3540,7 @@ export const supabaseService: HungryService = {
       if (!userId) throw new Error("You must be signed in to update your profile.");
       const payload: Record<string, unknown> = { id: userId };
       if (updates.displayName !== undefined) payload.display_name = updates.displayName;
-      if (updates.email !== undefined) payload.email = updates.email;
+      // Email is not written here: it changes only through auth.requestEmailChange.
       if (updates.dietaryPreferences !== undefined) {
         payload.dietary_preferences = updates.dietaryPreferences;
       }
@@ -3466,7 +3568,24 @@ export const supabaseService: HungryService = {
         if (error) throw error;
       }
 
-      return fetchUserProfile(client, userId, updates.email);
+      return fetchUserProfile(client, userId);
+    },
+
+    async exportMyData() {
+      // One server-side read scoped to auth.uid(); errors throw instead of dropping sections.
+      const { data, error } = await requireSupabaseClient().rpc("export_my_data");
+      if (error) throw error;
+      const row = (data ?? null) as Row | null;
+      if (!row || typeof row.data !== "object" || row.data === null) {
+        throw new Error("The data export came back empty.");
+      }
+      return {
+        exportVersion: asNumber(row.exportVersion) ?? 2,
+        generatedAt: asString(row.generatedAt) ?? new Date().toISOString(),
+        categories: asStringArray(row.categories),
+        notIncluded: asStringArray(row.notIncluded),
+        data: row.data as Record<string, unknown>,
+      };
     },
 
     async updateDietaryPreferences(flags: DietaryFlag[]) {
@@ -3685,10 +3804,12 @@ export const supabaseService: HungryService = {
       return fetchPublishedPostBites(client);
     },
 
-    async listUserPosts(userId: string) {
+    async listUserPosts(userId: string, page?: { limit?: number; offset?: number }) {
       const client = requireSupabaseClient();
-      const bites = await fetchPublishedPostBites(client);
-      return bites.filter((bite) => bite.authorId === userId);
+      return fetchPublishedPostBites(client, page?.limit ?? USER_POSTS_PAGE_SIZE, {
+        authorId: userId,
+        offset: page?.offset ?? 0,
+      });
     },
 
     async postBite(draft: BiteDraft) {
@@ -3821,19 +3942,24 @@ export const supabaseService: HungryService = {
       } satisfies Bite;
     },
 
-    async reactToBite(biteId, reaction) {
+    async getPostById(postId) {
+      // Stall/legacy ids are not posts rows: not found, not an invalid-uuid error.
+      if (!UUID_PATTERN.test(postId)) return null;
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("get_post_by_id", { p_post_id: postId });
+      if (error) throw error;
+      const row = Array.isArray(data) ? (data[0] as Row | undefined) : undefined;
+      return row ? mapFeedRpcRowToBite(client, row) : null;
+    },
+
+    async reactToBite(biteId, reaction, active) {
       const client = requireSupabaseClient();
       const userId = await getCurrentSupabaseUserId();
       if (!userId) throw new Error("You must be signed in to react.");
       const table = reaction === "craving" ? "post_likes" : "post_saves";
-      const existing = await client
-        .from(table)
-        .select("post_id")
-        .eq("post_id", biteId)
-        .eq("user_id", userId)
-        .maybeSingle();
-      if (existing.error) throw existing.error;
-      if ((existing.data as Row | null)?.post_id) {
+      // Set the requested state instead of toggling: a stale or repeated tap can
+      // never delete a like the viewer meant to keep.
+      if (!active) {
         const { error } = await client
           .from(table)
           .delete()
@@ -3842,7 +3968,12 @@ export const supabaseService: HungryService = {
         if (error) throw error;
         return;
       }
-      const { error } = await client.from(table).insert({ post_id: biteId, user_id: userId });
+      const { error } = await client
+        .from(table)
+        .upsert(
+          { post_id: biteId, user_id: userId },
+          { onConflict: "post_id,user_id", ignoreDuplicates: true },
+        );
       if (error) throw error;
     },
 
@@ -4021,7 +4152,9 @@ export const supabaseService: HungryService = {
         p_limit: page?.limit ?? 100,
         p_offset: page?.offset ?? 0,
       });
-      if (error || !Array.isArray(data)) return [];
+      // Thrown so screens can tell a failed read from an empty list.
+      if (error) throw error;
+      if (!Array.isArray(data)) return [];
       return (data as Row[]).map((row) => ({
         userId: asString(row.user_id) ?? "",
         displayName: asString(row.display_name) ?? "",
@@ -4036,7 +4169,9 @@ export const supabaseService: HungryService = {
         p_limit: page?.limit ?? 100,
         p_offset: page?.offset ?? 0,
       });
-      if (error || !Array.isArray(data)) return [];
+      // Thrown so screens can tell a failed read from an empty list.
+      if (error) throw error;
+      if (!Array.isArray(data)) return [];
       return (data as Row[]).map((row) => ({
         userId: asString(row.user_id) ?? "",
         displayName: asString(row.display_name) ?? "",
@@ -5501,7 +5636,8 @@ export const supabaseService: HungryService = {
         price: asNumber(row.price_cents) ? (asNumber(row.price_cents) ?? 0) / 100 : undefined,
         confidence: asNumber(row.extraction_confidence) ?? 0,
         sourcePhotoUrl: asString(row.source_photo_url) ?? "",
-        suggestedDescription: asString(row.ocr_raw_text),
+        // ocr_raw_text is the raw OCR line, not a customer-facing description.
+        suggestedDescription: undefined,
         suggestedDietaryTags: [],
         suggestedTasteTags: [],
         status: (asString(row.review_status) === "rejected"
@@ -5513,7 +5649,7 @@ export const supabaseService: HungryService = {
       }));
     },
 
-    async acceptOCRDraft(draftId) {
+    async acceptOCRDraft(draftId, edits) {
       const client = requireSupabaseClient();
       const { data, error } = await client
         .from("dishes_draft")
@@ -5530,12 +5666,36 @@ export const supabaseService: HungryService = {
         .limit(1)
         .single();
       if (outletError) throw outletError;
-      const dish = await this.addDish(asString((outletData as Row).id) ?? "", {
-        id: `dish-from-${draftId}`,
-        name: asString(draft.name) ?? "New dish",
-        price: asNumber(draft.price_cents) ? (asNumber(draft.price_cents) ?? 0) / 100 : 0,
-        tasteTags: [],
-      });
+      const outletId = asString((outletData as Row).id) ?? "";
+      const dishId = asString(draft.promoted_dish_id) ?? `dish-from-${draftId}`;
+      const findExistingDish = async () =>
+        (await this.getMenu(outletId)).find((menuDish) => menuDish.id === dishId);
+      // Already added (another device or a list tap): apply the editor's changes, not drop them.
+      const withEdits = (existing: DishDetail) =>
+        edits && Object.keys(edits).length > 0
+          ? this.editDish(outletId, existing.id, edits)
+          : existing;
+      const reviewStatus = asString(draft.review_status);
+      if (reviewStatus === "rejected") throw new Error("This draft was already rejected.");
+      if (reviewStatus === "accepted" || reviewStatus === "promoted") {
+        const existing = await findExistingDish();
+        if (existing) return withEdits(existing);
+      }
+      let dish: DishDetail;
+      try {
+        dish = await this.addDish(outletId, {
+          name: asString(draft.name) ?? "New dish",
+          price: asNumber(draft.price_cents) ? (asNumber(draft.price_cents) ?? 0) / 100 : 0,
+          tasteTags: [],
+          ...edits,
+          id: dishId,
+        });
+      } catch (insertError) {
+        // A repeated tap races the first insert; return the dish it created.
+        const existing = await findExistingDish();
+        if (!existing) throw insertError;
+        dish = await withEdits(existing);
+      }
       const { error: updateError } = await client
         .from("dishes_draft")
         .update({ review_status: "accepted", promoted_dish_id: dish.id })
@@ -6096,12 +6256,7 @@ export const supabaseService: HungryService = {
     },
 
     async suggestAllergens(ingredients) {
-      const lower = ingredients.map((ingredient) => ingredient.toLowerCase());
-      return [
-        ...(lower.some((ingredient) => ingredient.includes("egg")) ? ["Eggs"] : []),
-        ...(lower.some((ingredient) => ingredient.includes("soy")) ? ["Soy"] : []),
-        ...(lower.some((ingredient) => ingredient.includes("noodle")) ? ["Gluten"] : []),
-      ];
+      return suggestAllergensFromIngredients(ingredients);
     },
 
     async suggestTags(dishName) {
@@ -6130,8 +6285,8 @@ export const supabaseService: HungryService = {
           id: `weekly-${outletId}`,
           outletId,
           type: "weekly_summary",
-          title: "Weekly summary",
-          body: `${analytics.reviewCount} customer reviews and ${analytics.topDishes.length} menu items are linked to this outlet.`,
+          title: "Last 7 days",
+          body: `${analytics.reviewCount} customer ${analytics.reviewCount === 1 ? "review" : "reviews"} in the last 7 days.`,
           actionLabel: "Open analytics",
           actionTarget: "Analytics",
           createdAt: new Date().toISOString(),
@@ -6849,11 +7004,15 @@ export const supabaseService: HungryService = {
       const insertedId = String(data ?? "");
       const { data: row, error: fetchError } = await client
         .from("portfolio_items")
-        .select("*")
+        .select(PORTFOLIO_ITEM_COLUMNS)
         .eq("id", insertedId)
         .single();
       if (fetchError) throw fetchError;
-      return mapPortfolioItem(row as Row);
+      // The writer just saved these notes, so they are returned without another read.
+      return {
+        ...mapPortfolioItem(row as unknown as Row),
+        privateNotes: input.privateNotes?.trim() || undefined,
+      };
     },
 
     async getPortfolioItems(portfolioId: string) {
@@ -6861,11 +7020,12 @@ export const supabaseService: HungryService = {
       if (!client) throw new Error("Supabase client not initialized");
       const { data, error } = await client
         .from("portfolio_items")
-        .select("*")
+        .select(PORTFOLIO_ITEM_COLUMNS)
         .eq("portfolio_id", portfolioId)
         .order("position", { ascending: true });
       if (error) throw error;
-      return (data || []).map((row) => mapPortfolioItem(row as Row));
+      const items = (data || []).map((row) => mapPortfolioItem(row as unknown as Row));
+      return attachPortfolioPrivateNotes(client, portfolioId, items);
     },
 
     async updatePortfolioItem(id: string, updates: any, options?: PortfolioMutationOptions) {
@@ -7036,15 +7196,11 @@ export const supabaseService: HungryService = {
     async resolvePortfolioFlag(flagId: string, resolution: "dismissed" | "removed") {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
-      const userId = await getCurrentSupabaseUserId();
-      const { error } = await client
-        .from("portfolio_flags")
-        .update({
-          status: resolution,
-          reviewed_by: userId,
-          reviewed_at: new Date().toISOString(),
-        })
-        .eq("id", flagId);
+      // "removed" also takes the list down (unpublished and private), not just the flag.
+      const { error } = await client.rpc("resolve_portfolio_flag", {
+        p_flag_id: flagId,
+        p_resolution: resolution,
+      });
       if (error) throw error;
     },
 
@@ -7129,7 +7285,34 @@ export const supabaseService: HungryService = {
         .limit(50);
       if (isMissingActivityEventsSchemaError(error)) return [];
       if (error) throw error;
+      // Reply events target a comment; resolve each to its post so the inbox
+      // row can open it.
+      const commentIds = [
+        ...new Set(
+          (data || [])
+            .filter((row: any) => row.target_type === "comment" && row.target_id)
+            .map((row: any) => String(row.target_id)),
+        ),
+      ];
+      const postIdByCommentId = new Map<string, string>();
+      if (commentIds.length > 0) {
+        const comments = await client
+          .from("post_comments")
+          .select("id,post_id")
+          .in("id", commentIds);
+        if (!comments.error) {
+          (comments.data ?? []).forEach((row: any) => {
+            postIdByCommentId.set(String(row.id), String(row.post_id));
+          });
+        }
+      }
       return (data || []).map((row: any) => ({
+        postId:
+          row.target_type === "comment"
+            ? postIdByCommentId.get(String(row.target_id))
+            : row.target_type === "post"
+              ? (row.target_id as string)
+              : undefined,
         id: row.id as string,
         actorId: row.actor?.id as string,
         actorName: (row.actor?.display_name as string) ?? "Unknown",

@@ -213,6 +213,7 @@ export function CuisineSelectionScreen({ navigation }: Props) {
   const { palette } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const setOnboardingSelectedDishIds = useProfileStore((s) => s.setOnboardingSelectedDishIds);
+  const setOnboardingCuisineIds = useProfileStore((s) => s.setOnboardingCuisineIds);
   const [selected, setSelected] = useState<string[]>([]);
   const [selectedDishIds, setSelectedDishIds] = useState<string[]>([]);
 
@@ -258,6 +259,8 @@ export function CuisineSelectionScreen({ navigation }: Props) {
       dishSections.flatMap((section) => section.dishes.map((dish) => dish.id)),
     );
     setOnboardingSelectedDishIds(selectedDishIds.filter((id) => visibleDishIds.has(id)));
+    // Kept on the profile and sent with the quiz response (TasteQuiz handleFinish).
+    setOnboardingCuisineIds(selected);
     navigation.navigate("TasteQuiz");
   };
 

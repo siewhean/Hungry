@@ -2,6 +2,7 @@ import NetInfo from "@react-native-community/netinfo";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { getAuthUserProvider, isFirstSignIn } from "@/features/auth/firstSignIn";
 import { hydrateShareAttribution } from "@/features/share/shareAttribution";
 import { setAnalyticsSink, trackAnalyticsEvent } from "@/lib/analytics";
 import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
@@ -305,6 +306,8 @@ export function useAppBootstrap() {
       applyAuthStateFromSession({
         isAuthenticated: true,
         userId: user.id,
+        authProvider: getAuthUserProvider(user),
+        isNewUser: event === "SIGNED_IN" && isFirstSignIn(user),
       });
       // Interactive sign-in applies its session profile. Cold-session restoration
       // above performs one idle profile hydration without racing that merge.

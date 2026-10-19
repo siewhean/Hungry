@@ -6,6 +6,7 @@ import { ChevronRight, Camera } from "lucide-react-native";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { AccessibleImage, AppText, Button, Card, Input } from "@/components/ui";
+import { validateEmail } from "@/features/auth/validation";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -44,10 +45,13 @@ export function EditProfileScreen({ navigation }: Props) {
   // shows a stale name snapshot.
   const [displayNameDraft, setDisplayNameDraft] = useState<string | null>(null);
   const displayName = displayNameDraft ?? profile.displayName;
+  const [emailDraft, setEmailDraft] = useState<string | null>(null);
+  const email = emailDraft ?? profile.email ?? "";
   const [avatarUri, setAvatarUri] = useState<string | undefined>(undefined);
   useFocusEffect(
     useCallback(() => {
       setDisplayNameDraft(null);
+      setEmailDraft(null);
       setAvatarUri(undefined);
     }, []),
   );
@@ -212,11 +216,12 @@ export function EditProfileScreen({ navigation }: Props) {
               label="Email"
               autoCapitalize="none"
               keyboardType="email-address"
-              value={profile.email}
-              editable={false}
+              value={email}
+              onChangeText={setEmailDraft}
             />
-            <AppText variant="micro" tone="secondary">
-              Account email changes require verification and are managed separately.
+            <AppText variant="micro" tone="muted">
+              Changing your email sends confirmation links to your current and new addresses. Your
+              sign-in email stays the same until both are opened.
             </AppText>
           </View>
           {canChangePassword ? (
@@ -243,6 +248,15 @@ export function EditProfileScreen({ navigation }: Props) {
         onPress={() => {
           if (!trimmedDisplayName) return;
           void (async () => {
+            const nextEmail = email.trim().toLowerCase();
+            const emailChanged = nextEmail !== (profile.email ?? "").trim().toLowerCase();
+            if (emailChanged) {
+              const emailCheck = validateEmail(nextEmail);
+              if (emailCheck !== true) {
+                showToast({ message: emailCheck, tone: "warning" });
+                return;
+              }
+            }
             setIsSaving(true);
             try {
               const savedProfile = await getHungryService().profile.updateProfile({
@@ -252,8 +266,25 @@ export function EditProfileScreen({ navigation }: Props) {
               });
               applySavedProfileEdits(savedProfile);
               setDisplayNameDraft(null);
+              setEmailDraft(null);
               setAvatarUri(undefined);
-              showToast({ message: "Profile updated.", tone: "success" });
+              if (emailChanged) {
+                try {
+                  await getHungryService().auth.requestEmailChange(nextEmail);
+                  showToast({
+                    message: `Check your current inbox and ${nextEmail} for links to confirm the change.`,
+                    tone: "success",
+                  });
+                } catch {
+                  showToast({
+                    message: "Profile saved, but we could not start the email change.",
+                    tone: "warning",
+                  });
+                  return;
+                }
+              } else {
+                showToast({ message: "Profile updated.", tone: "success" });
+              }
               navigation.goBack();
             } catch {
               showToast({

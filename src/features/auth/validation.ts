@@ -4,6 +4,25 @@ const LOWERCASE_REGEX = /[a-z]/;
 const DIGIT_REGEX = /\d/;
 const SYMBOL_REGEX = /[^A-Za-z0-9]/;
 
+/** iOS strong-password rules matching validatePassword, so suggested passwords pass. */
+export const PASSWORD_RULES =
+  "minlength: 12; required: lower; required: upper; required: digit; required: special;";
+
+/** User-facing copy for a rejected password update (Supabase AuthError codes). */
+export function getPasswordUpdateErrorMessage(error: unknown): string {
+  const code =
+    error && typeof error === "object" && "code" in error
+      ? (error as { code?: unknown }).code
+      : undefined;
+  if (code === "same_password") {
+    return "Your new password must be different from your current one.";
+  }
+  if (code === "weak_password") {
+    return "That password is too weak. Try a longer, less common one.";
+  }
+  return "Password reset failed. Please try again.";
+}
+
 export function validateRequired(value: string, label: string): true | string {
   if (value.trim().length > 0) {
     return true;

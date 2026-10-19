@@ -25,7 +25,7 @@ test("legacy search results render the title in the search view header slot", ()
     "LegacySearchResultsScreen",
   );
   assertSourceExcludes(
-    screen,
+    screen.slice(screen.indexOf("function LegacySearchResultsScreen")),
     [/<Screen scroll=\{false\}>\s*<AppHeader/],
     "LegacySearchResultsScreen",
   );
@@ -48,7 +48,8 @@ test("Decide for me measures its radius from the user's location", () => {
     [
       /const currentLocation = useLocationStore\(\(state\) => state\.currentLocation\)/,
       /latitude: location\.latitude,\s*longitude: location\.longitude,/,
-      /searchRadius,\s*currentLocation,\s*profile\.maxDishBudget,/,
+      /getEffectiveLocation\(\{ permission: locationPermission, currentLocation, manualCoordinate \}\)/,
+      /searchRadius,\s*effectiveLocation,\s*profile\.maxDishBudget,/,
     ],
     "DecideForMeResultScreen candidates",
   );

@@ -129,7 +129,14 @@ test("dish and stall detail screens expose checklist and portfolio entry points"
   assert.match(supabaseService, /checklist_id: input\.checklistId/);
   assert.match(supabaseService, /item_type: input\.itemType/);
   assert.match(supabaseService, /return mapChecklistItem\(data as Row\)/);
-  assert.match(supabaseService, /return mapPortfolioItem\(row as Row\)/);
+  assert.match(supabaseService, /\.\.\.mapPortfolioItem\(row as unknown as Row\)/);
+  // Quick save never falls back to another list and never invents a score.
+  assert.doesNotMatch(detailActions, /score: 8/);
+  assert.doesNotMatch(detailActions, /checklists\[0\]/);
+  assert.doesNotMatch(
+    detailActions,
+    /portfolios\.find\(\(entry\) => entry\.ownerId === profile\.id\)/,
+  );
 
   assert.match(migration, /function public\.add_portfolio_item_with_passport/);
   assert.match(migration, /set search_path = public/);

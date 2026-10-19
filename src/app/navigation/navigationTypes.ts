@@ -34,7 +34,8 @@ export type OnboardingStackParamList = {
     | undefined;
   TasteProfileResult: undefined;
   LocationPermission: undefined;
-  ManualLocationPicker: undefined;
+  /** mode "settings": change the location from Settings and go back, without onboarding. */
+  ManualLocationPicker: { mode?: "settings" } | undefined;
   OnboardingAuth: undefined;
 };
 export type ProfileStackParamList = {
@@ -92,7 +93,7 @@ export type MerchantTabParamList = {
   VerificationCentre: undefined;
   HomeBasedVerification: undefined;
   BusinessProfileEditor: undefined;
-  DishEditor: { dishId?: string } | undefined;
+  DishEditor: { dishId?: string; ocrDraftId?: string } | undefined;
   OCRDrafts: undefined;
   CustomerInbox: undefined;
   FeaturedVisitors: undefined;
@@ -142,6 +143,9 @@ export type RootStackParamList = {
   ActivityInbox: { initialTab?: "messages" | "updates" } | undefined;
   ActivityPostDetail: { postId: string; updateId?: string };
   FollowRequests: undefined;
+  /** Another user's follower/following lists, opened from their profile. */
+  UserFollowers: { userId: string; userDisplayName?: string };
+  UserFollowing: { userId: string; userDisplayName?: string };
   DirectMessages: undefined;
   ChatDetail: { chatId: string; name: string; avatar: string; isOnline?: boolean };
   Crave: undefined;

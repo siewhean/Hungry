@@ -255,15 +255,15 @@ export const COLLECTION_COPY: Record<
     emptyBody: "Try changing your filters or search query.",
   },
   trending: {
-    title: "Trending",
-    placeholder: "Find trending dishes...",
-    emptyTitle: "No trending dishes found nearby",
+    title: "Most reviewed",
+    placeholder: "Find most reviewed dishes...",
+    emptyTitle: "No reviewed dishes found nearby",
     emptyBody: "Try another filter or search for a dish.",
   },
   editorChoice: {
-    title: "Editor's Choice",
-    placeholder: "Find curated dishes...",
-    emptyTitle: "No editor's picks found nearby",
+    title: "Top rated",
+    placeholder: "Find top rated dishes...",
+    emptyTitle: "No top rated dishes found nearby",
     emptyBody: "Try another filter or search for a dish.",
   },
   budget: {
@@ -273,9 +273,9 @@ export const COLLECTION_COPY: Record<
     emptyBody: "Try another filter or search for a dish.",
   },
   lateNight: {
-    title: "Late Night Makan",
-    placeholder: "Find late night food...",
-    emptyTitle: "No late night dishes found nearby",
+    title: "Dinner favourites",
+    placeholder: "Find dinner dishes...",
+    emptyTitle: "No dinner dishes found nearby",
     emptyBody: "Try another filter or search for a dish.",
   },
 };

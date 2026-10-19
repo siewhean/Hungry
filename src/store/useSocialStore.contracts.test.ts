@@ -72,19 +72,34 @@ test("social store contract: UUID follows sync to service while local-name fallb
   assert.match(connectionsSource, /const canShowFollowButton = person\.userId !== profile\.id/);
   assert.match(connectionsSource, /onPress=\{\(\) => toggleFollow\(person\.userId\)\}/);
   assert.match(connectionsSource, /`\$\{targetDisplayName\} doesn't have any followers yet\.`/);
-  assert.match(profileContentSource, /const canUseAuthorFallbackFollow =/);
+  // Other profiles follow by account id only; a name-only author shows "Profile unavailable".
+  assert.doesNotMatch(profileContentSource, /canUseAuthorFallbackFollow/);
+  assert.doesNotMatch(profileContentSource, /toggleAuthorFollow/);
+  assert.match(profileContentSource, /title="Profile unavailable"/);
   // Other users' stats come from the server, not hard-coded values.
   assert.match(profileContentSource, /service\.getFollowCounts\(resolvedAuthorId\)/);
   assert.match(profileContentSource, /value=\{followersCount\}/);
   assert.match(profileContentSource, /value=\{followingCount\}/);
   assert.doesNotMatch(profileContentSource, /value=\{isFollowingAuthor \? 1 : 0\}/);
+  assert.match(profileContentSource, /const canShowFollowButton = Boolean\(resolvedAuthorId\)/);
+  assert.match(profileContentSource, /if \(resolvedAuthorId\) toggleFollow\(resolvedAuthorId\)/);
+});
+
+test("social store contract: follow state is loaded from the server on sign-in", () => {
+  const source = read("src/store/useSocialStore.ts");
+  const session = read("src/store/useSessionStore.ts");
+
+  assert.match(source, /syncFollowedUserIds: \(userId: string\) => Promise<void>/);
+  assert.match(source, /social\.listFollowing\(userId, \{/);
+  // A complete server list replaces local follows, so stale ones are cleared.
+  assert.match(source, /return \{ followedUserIds: followed, requestedUserIds: requested \};/);
+  assert.match(session, /syncFollowStateFromServer\(nextUserId\)/);
+  assert.match(session, /\.syncFollowedUserIds\(userId\)/);
+  // A restored session reconciles once per launch, and in-flight local toggles survive.
+  assert.match(session, /syncFollowStateFromServer\(nextUserId, \{ oncePerLaunch: true \}\)/);
   assert.match(
-    profileContentSource,
-    /const canShowFollowButton = Boolean\(resolvedAuthorId\) \|\| canUseAuthorFallbackFollow/,
-  );
-  assert.match(
-    profileContentSource,
-    /resolvedAuthorId \? toggleFollow\(resolvedAuthorId\) : toggleAuthorFollow\(authorName\)/,
+    source,
+    /if \(current !== Boolean\(startFollowed\[id\]\)\) followed\[id\] = current;/,
   );
 });
 
@@ -124,7 +139,16 @@ test("social store contract: real post shares sync to Supabase and unsupported i
   );
   assert.match(reviewShareSheet, /onShared\(activeReview\.postId, "copy_link"\)/);
   assert.match(reviewShareSheet, /onShared\(activeReview\.postId, "system_share"\)/);
-  assert.match(reviewFeed, /postId: linkedPost\?\.id \?\? ""/);
+  // Cancelled system shares are not counted; messaging apps keep their channel.
+  assert.match(reviewShareSheet, /result\.action !== Share\.sharedAction/);
+  assert.match(reviewShareSheet, /onShared\(activeReview\.postId, channel\)/);
+  const homeFeed = read("src/app/screens/home/HomeFeedScreen.tsx");
+  assert.match(homeFeed, /webShareUrl\("post", activeShareItem\.id\)/);
+  assert.match(homeFeed, /if \(result\.action === Share\.sharedAction\) \{/);
+  assert.match(homeFeed, /message: "Link copied"/);
+  // Reviews never borrow a linked post id for share counting.
+  assert.match(reviewFeed, /postId: "",/);
+  assert.doesNotMatch(reviewFeed, /linkedPost/);
   assert.match(reviewFeed, /shareCount: 0/);
   assert.doesNotMatch(reviewFeed, /postId: linkedPost\?\.id \?\? item\.review\.id/);
   assert.doesNotMatch(reviewFeed, /stallPosts\[0\]/);
@@ -152,10 +176,13 @@ test("public profile post history has a service-backed user post path", () => {
   const supabaseService = read("src/lib/services/supabase/supabaseService.ts");
   const profileContent = read("src/app/screens/profile/UserProfileContent.tsx");
 
-  assert.match(serviceTypes, /listUserPosts\(userId: string\): Promise<Bite\[\]>/);
-  assert.match(mockService, /async listUserPosts\(userId: string\)/);
-  assert.match(supabaseService, /async listUserPosts\(userId: string\)/);
-  assert.match(profileContent, /service\s*\.\s*listUserPosts\(normalizedAuthorId\)/);
+  assert.match(
+    serviceTypes,
+    /listUserPosts\(userId: string, page\?: \{ limit\?: number; offset\?: number \}\): Promise<Bite\[\]>/,
+  );
+  assert.match(mockService, /async listUserPosts\(userId: string, page\?/);
+  assert.match(supabaseService, /async listUserPosts\(userId: string, page\?/);
+  assert.match(profileContent, /\.social\.listUserPosts\(normalizedAuthorId as string, \{/);
   assert.match(profileContent, /biteToStallPost/);
 });
 

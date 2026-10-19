@@ -30,7 +30,8 @@ test("profile edits do not claim upload success before persistence or mutate aut
   const profile = read("src/app/screens/profile/EditProfileScreen.tsx");
 
   assert.match(profile, /Photo selected\. Save changes to upload it\./);
-  assert.match(profile, /editable=\{false\}/);
+  // Email changes go through auth.requestEmailChange (confirmed on both addresses).
+  assert.match(profile, /auth\.requestEmailChange\(nextEmail\)/);
   assert.doesNotMatch(profile, /updateProfile\(\{[\s\S]*?email,/);
   assert.match(profile, /Profile updated\./);
 });

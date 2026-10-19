@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import { View, StyleSheet, Alert } from "react-native";
 import { Check, Edit2, RefreshCw, X } from "lucide-react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import {
@@ -29,6 +29,7 @@ export function OCRDraftScreen() {
   const [drafts, setDrafts] = useState<OCRDishDraft[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const busyDraftIds = useRef(new Set<string>());
 
   const loadDrafts = useCallback(async () => {
     setError(null);
@@ -52,9 +53,12 @@ export function OCRDraftScreen() {
     }
   }, [activeOutlet]);
 
-  useEffect(() => {
-    void loadDrafts();
-  }, [loadDrafts]);
+  // Reload on focus so a draft saved from the editor drops off the list.
+  useFocusEffect(
+    useCallback(() => {
+      void loadDrafts();
+    }, [loadDrafts]),
+  );
 
   if (error) {
     return (
@@ -72,26 +76,30 @@ export function OCRDraftScreen() {
     );
   }
 
-  const handleAccept = async (draftId: string, options: { silent?: boolean } = {}) => {
+  const handleAccept = async (
+    draftId: string,
+    options: { silent?: boolean } = {},
+  ): Promise<boolean> => {
+    if (busyDraftIds.current.has(draftId)) return false;
+    busyDraftIds.current.add(draftId);
     try {
       await getHungryService().merchant.acceptOCRDraft(draftId);
       setDrafts((prev) => prev.filter((d) => d.id !== draftId));
       if (!options.silent) {
         Alert.alert("Success", "Dish added to your menu.");
       }
+      return true;
     } catch (e) {
-      Alert.alert("Error", "Failed to accept draft.");
+      if (!options.silent) Alert.alert("Error", "Failed to accept draft.");
+      return false;
+    } finally {
+      busyDraftIds.current.delete(draftId);
     }
   };
 
-  const handleEditDraft = async (draftId: string) => {
-    try {
-      const dish = await getHungryService().merchant.acceptOCRDraft(draftId);
-      setDrafts((prev) => prev.filter((draft) => draft.id !== draftId));
-      navigation.navigate("DishEditor", { dishId: dish.id });
-    } catch (e) {
-      Alert.alert("Error", "Failed to open OCR draft for editing.");
-    }
+  // Nothing is published until the merchant saves the pre-filled editor.
+  const handleEditDraft = (draftId: string) => {
+    navigation.navigate("DishEditor", { ocrDraftId: draftId });
   };
 
   const handleReject = async (draftId: string) => {
@@ -112,10 +120,22 @@ export function OCRDraftScreen() {
         {
           text: "Accept All",
           onPress: async () => {
+            let failed = 0;
             for (const draft of drafts) {
-              await handleAccept(draft.id, { silent: true });
+              if (!(await handleAccept(draft.id, { silent: true }))) failed += 1;
             }
-            Alert.alert("Success", "OCR drafts added to your menu.");
+            const added = drafts.length - failed;
+            if (failed === 0) {
+              Alert.alert(
+                "Success",
+                `${added} ${added === 1 ? "dish" : "dishes"} added to your menu.`,
+              );
+            } else {
+              Alert.alert(
+                "Some drafts were not added",
+                `${added} added, ${failed} failed. The failed drafts are still listed so you can try again.`,
+              );
+            }
           },
         },
       ],

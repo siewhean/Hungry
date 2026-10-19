@@ -34,15 +34,11 @@ const SEARCH_CATEGORIES: SearchCategory[] = [
   "desserts",
   "late night",
 ];
+const CATALOG_V2_CATEGORIES: SearchCategory[] = ["noodles", "rice"];
 const SEARCH_CATEGORY_OPTIONS = SEARCH_CATEGORIES.map((category) => ({
   id: category,
   label: category.replace(/\b\w/g, (char) => char.toUpperCase()),
 }));
-// The catalog search RPC only understands these categories (mapped to cuisine
-// tags in SearchResults); other chips would be silently ignored.
-const CATALOG_SEARCH_CATEGORY_OPTIONS = SEARCH_CATEGORY_OPTIONS.filter((option) =>
-  ["noodles", "rice"].includes(option.id),
-);
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
 const INLINE_RESULT_DEBOUNCE_MS = 250;
@@ -60,8 +56,15 @@ export function DishSearchScreen() {
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
   const [searchText, setSearchText] = useState("");
   const searchInputRef = useRef<TextInput | null>(null);
-  const shouldUseCatalogReadV2 =
-    FEATURE_FLAGS.catalogReadV2 && getServiceProvider().mode === "supabase";
+  const isSupabaseSearch = getServiceProvider().mode === "supabase";
+  const shouldUseCatalogReadV2 = FEATURE_FLAGS.catalogReadV2 && isSupabaseSearch;
+  // Supabase search ignores the taste sliders, and only catalog v2 maps a category
+  // (noodles or rice) into the request, so controls that do nothing stay hidden.
+  const categoryOptions = !isSupabaseSearch
+    ? SEARCH_CATEGORY_OPTIONS
+    : shouldUseCatalogReadV2
+      ? SEARCH_CATEGORY_OPTIONS.filter((option) => CATALOG_V2_CATEGORIES.includes(option.id))
+      : [];
   // Search results own the raw, paged catalog request. Keeping this landing
   // screen empty of local recommendations avoids a whole-catalog hydration.
   const collections = shouldUseCatalogReadV2
@@ -115,7 +118,7 @@ export function DishSearchScreen() {
 
   return (
     // "handled" lets the clear (x) work on the first tap while the keyboard is up.
-    <Screen keyboardShouldPersistTaps="handled">
+    <Screen>
       <Animated.View
         style={{
           gap: spacing[4],
@@ -233,21 +236,20 @@ export function DishSearchScreen() {
             ))}
           </View>
         ) : null}
-        <ChipGroup
-          options={
-            shouldUseCatalogReadV2 ? CATALOG_SEARCH_CATEGORY_OPTIONS : SEARCH_CATEGORY_OPTIONS
-          }
-          selectedIds={selectedCategories}
-          onSelect={toggleCategory}
-        />
-        {/* The taste filter only re-ranks local recommendations; catalog search ignores it. */}
-        {!shouldUseCatalogReadV2 ? (
+        {categoryOptions.length ? (
+          <ChipGroup
+            options={categoryOptions}
+            selectedIds={selectedCategories}
+            onSelect={toggleCategory}
+          />
+        ) : null}
+        {isSupabaseSearch ? null : (
           <Button
             label="Adjust taste filter"
             variant="secondary"
             onPress={() => navigation.navigate("TasteFilter")}
           />
-        ) : null}
+        )}
         <Button
           label={trimmedSearchText ? "See all results" : "View search results"}
           onPress={() => {
@@ -257,8 +259,8 @@ export function DishSearchScreen() {
             navigation.navigate("SearchResults");
           }}
         />
-        {/* Catalog mode renders no local suggestion; hide the card instead of a disabled dead end. */}
-        {!shouldUseCatalogReadV2 ? (
+        {/* Sections with no data stay hidden (catalog v2 has no local suggestions). */}
+        {suggestedDish ? (
           <Pressable
             onPress={() => {
               if (suggestedDish) {
@@ -301,7 +303,7 @@ export function DishSearchScreen() {
                   Craving {suggestedDish?.name ?? "something special"}?
                 </AppText>
                 <AppText variant="bodySmall" tone="secondary" style={{ marginTop: spacing[1] }}>
-                  Best match within 2km. Start strong, widen later if needed.
+                  Best match for your taste profile right now.
                 </AppText>
                 <View
                   style={{
@@ -328,7 +330,7 @@ export function DishSearchScreen() {
           </Pressable>
         ) : null}
 
-        {collections.length > 0 ? (
+        {collections.length ? (
           <View style={{ gap: spacing[3] }}>
             <AppText variant="h2">Stalls worth checking</AppText>
             {collections.map((collection) => (

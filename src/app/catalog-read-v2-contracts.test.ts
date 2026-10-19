@@ -120,7 +120,10 @@ test("V2 Discover consumes bounded authenticated catalog pages and never hydrate
   assert.match(map, /onViewportChange/);
   assert.match(map, /buildingTypes/);
   assert.match(map, /openOnly: mapFilters\.openNow/);
-  assert.match(map, /onMarkerPress=\{shouldUseCatalogReadV2 \? handleRawMarkerPress : undefined\}/);
+  assert.match(
+    map,
+    /onMarkerPress=\{shouldUseCatalogReadV2 \? handleRawMarkerPress : handleLegacyMarkerPress\}/,
+  );
   assert.match(map, /candidate\.kind === "venue" \? "stall" : candidate\.kind/);
 });
 

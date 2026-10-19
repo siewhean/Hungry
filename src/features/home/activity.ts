@@ -35,7 +35,13 @@ export type SharedPostPayload = {
   authorName: string;
 };
 
-export type ActivityUpdateKind = "comment" | "like" | "share" | "submission" | "follow_request";
+export type ActivityUpdateKind =
+  | "comment"
+  | "like"
+  | "share"
+  | "submission"
+  | "follow"
+  | "follow_request";
 export type ActivityItemType = "message" | "update";
 
 export type ActivityUpdate = {
@@ -44,6 +50,7 @@ export type ActivityUpdate = {
   postId: string;
   actorName: string;
   actorId?: string;
+  actorAvatarUrl?: string;
   recipientUserId?: string;
   text: string;
   target: string;
@@ -158,6 +165,56 @@ export const ACTIVITY_UPDATES: ActivityUpdate[] = [
 
 export function getActivityReadKey(type: ActivityItemType, id: string) {
   return `${type}:${id}`;
+}
+
+export type ActivityEventRecord = {
+  id: string;
+  actorId: string;
+  actorName: string;
+  actorAvatarUrl?: string;
+  eventType: "new_like" | "new_comment" | "new_reply" | "new_follower" | "follow_request";
+  targetType: "post" | "comment" | "profile";
+  targetId: string;
+  /** The post a comment/reply target belongs to, resolved by the service. */
+  postId?: string;
+  readAt?: string;
+  createdAt: string;
+};
+
+const ACTIVITY_EVENT_TEXT: Record<ActivityEventRecord["eventType"], string> = {
+  new_like: "liked your post",
+  new_comment: "commented on your post",
+  new_reply: "replied to your comment",
+  new_follower: "started following you",
+  follow_request: "requested to follow you",
+};
+
+/**
+ * Server activity event -> inbox row. `time` stays the ISO timestamp (for
+ * sorting; the inbox formats it) and `target` is left empty so the inbox shows
+ * a readable label (the dish) instead of a raw id.
+ */
+export function mapActivityEventToUpdate(event: ActivityEventRecord): ActivityUpdate {
+  const kind: ActivityUpdateKind =
+    event.eventType === "new_like"
+      ? "like"
+      : event.eventType === "new_follower"
+        ? "follow"
+        : event.eventType === "follow_request"
+          ? "follow_request"
+          : "comment";
+  return {
+    id: event.id,
+    kind,
+    postId: event.postId ?? (event.targetType === "post" ? event.targetId : ""),
+    actorId: event.actorId,
+    actorName: event.actorName,
+    actorAvatarUrl: event.actorAvatarUrl,
+    text: ACTIVITY_EVENT_TEXT[event.eventType] ?? "interacted with you",
+    target: event.eventType === "follow_request" ? "Review follow requests" : "",
+    time: event.createdAt,
+    unread: !event.readAt,
+  };
 }
 
 export function getActivityUnreadCount(

@@ -51,7 +51,7 @@ import {
 import type { CatalogMapItem, CatalogRawVenueCard } from "@/lib/services/catalog";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
-import { useLocationStore } from "@/store/useLocationStore";
+import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail } from "@/types/domain";
@@ -141,7 +141,16 @@ export function HomeMapScreen() {
     [screenWidth, spacing],
   );
 
-  const currentLocation = useLocationStore((state) => state.currentLocation);
+  const gpsLocation = useLocationStore((state) => state.currentLocation);
+  const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
+  const locationPermission = useLocationStore((state) => state.permission);
+  // Same effective location as Discover: a manual pick wins over GPS.
+  const { coordinate: currentLocation, isApproximate: isLocationApproximate } =
+    getEffectiveLocation({
+      permission: locationPermission,
+      currentLocation: gpsLocation,
+      manualCoordinate,
+    });
   const selectedBuilding = useDiscoveryStore((state) => state.selectedBuilding);
   const setSelectedBuilding = useDiscoveryStore((state) => state.setSelectedBuilding);
   const highlightedStallVenueId = useDiscoveryStore((state) => state.highlightedStallVenueId);
@@ -152,8 +161,13 @@ export function HomeMapScreen() {
     const nameMatch = selectedBuilding?.name
       ? singaporeBuildings.find((b) => b.name === selectedBuilding.name)
       : undefined;
-    return nameMatch ?? getBuildingById(DEFAULT_BUILDING_ID)!;
-  }, [selectedBuilding]);
+    // Without a chosen building, open on the building nearest the user, not Maxwell.
+    return (
+      nameMatch ??
+      getNearestBuildings(currentLocation.latitude, currentLocation.longitude, 50, 1)[0] ??
+      getBuildingById(DEFAULT_BUILDING_ID)!
+    );
+  }, [currentLocation, selectedBuilding]);
 
   const visibleBuildings = useMemo(() => {
     const nearest = getNearestBuildings(currentLocation.latitude, currentLocation.longitude, 5, 8);
@@ -189,10 +203,19 @@ export function HomeMapScreen() {
 
   const animatedHeight = useRef(new Animated.Value(CAROUSEL_HEIGHT)).current;
   const isMinimized = useRef(false);
+  // The sheet PanResponder is created once, so it reads the live mode from a ref.
+  const displayModeRef = useRef(displayMode);
+  displayModeRef.current = displayMode;
 
+  // Recentre only when the chosen building changes. A GPS refresh or manual
+  // pick that moves the nearest building must not yank the map mid-pan; the
+  // locate button handles recentring on the user.
+  const centeredBuildingNameRef = useRef(selectedBuilding?.name);
   useEffect(() => {
+    if (centeredBuildingNameRef.current === selectedBuilding?.name) return;
+    centeredBuildingNameRef.current = selectedBuilding?.name;
     setMapCenter(activeBuildingRecord.coordinate);
-  }, [activeBuildingRecord.coordinate.latitude, activeBuildingRecord.coordinate.longitude]);
+  }, [selectedBuilding?.name]);
 
   useEffect(() => {
     if (!shouldUseCatalogReadV2 || !catalogRawService) {
@@ -286,6 +309,22 @@ export function HomeMapScreen() {
     [navigation, rawMapItems, rawReleaseId],
   );
 
+  const handleLegacyMarkerPress = useCallback(
+    (markerId: string) => {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      if (markerId.startsWith("stall-")) {
+        navigation.navigate("StallDetail", { venueId: markerId.slice("stall-".length) });
+        return;
+      }
+      const building = getBuildingById(markerId);
+      if (!building) return;
+      setSelectedBuilding(toSummary(building));
+      setMapCenter(building.coordinate);
+      setCurrentZoom((zoom) => Math.max(zoom, 17));
+    },
+    [navigation, setSelectedBuilding],
+  );
+
   const submitSearch = useCallback(() => {
     const trimmed = searchQuery.trim();
     if (trimmed) {
@@ -299,7 +338,7 @@ export function HomeMapScreen() {
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 10,
       onPanResponderRelease: (_, gestureState) => {
-        if (displayMode === "list") {
+        if (displayModeRef.current === "list") {
           if (gestureState.dy > 100) snapTo(CAROUSEL_HEIGHT);
           else if (gestureState.dy < -100) snapTo(FULL_HEIGHT);
           return;
@@ -406,7 +445,8 @@ export function HomeMapScreen() {
       >
         <MapSurface
           style={StyleSheet.absoluteFill}
-          centerCoordinate={shouldUseCatalogReadV2 ? mapCenter : activeBuildingRecord.coordinate}
+          centerCoordinate={mapCenter}
+          currentLocation={isLocationApproximate ? undefined : currentLocation}
           zoomLevel={currentZoom}
           markers={markers}
           cameraPadding={cameraPadding}
@@ -421,7 +461,6 @@ export function HomeMapScreen() {
           }}
           onZoomChange={setCurrentZoom}
           onViewportChange={({ centerCoordinate, zoom }) => {
-            if (!shouldUseCatalogReadV2) return;
             setCurrentZoom(zoom);
             setMapCenter((current) =>
               Math.abs(current.latitude - centerCoordinate.latitude) < 0.00001 &&
@@ -430,7 +469,7 @@ export function HomeMapScreen() {
                 : centerCoordinate,
             );
           }}
-          onMarkerPress={shouldUseCatalogReadV2 ? handleRawMarkerPress : undefined}
+          onMarkerPress={shouldUseCatalogReadV2 ? handleRawMarkerPress : handleLegacyMarkerPress}
           selectedMarkerId={
             highlightedStallVenueId ? `stall-${highlightedStallVenueId}` : undefined
           }
@@ -517,19 +556,21 @@ export function HomeMapScreen() {
               )}
             </Pressable>
           </View>
-          <FilterChipRail
-            options={HOME_MAP_FILTER_OPTIONS}
-            selectedIds={HOME_MAP_FILTER_OPTIONS.filter((option) => mapFilters[option.id]).map(
-              (option) => option.id,
-            )}
-            onSelect={toggleMapFilter}
-            gap={spacing[2]}
-            renderLeftIcon={(option, selected) =>
-              option.id === "nearMe" ? (
-                <LocateFixed size={14} color={selected ? palette.orange : palette.textMuted} />
-              ) : null
-            }
-          />
+          {shouldUseCatalogReadV2 ? (
+            <FilterChipRail
+              options={HOME_MAP_FILTER_OPTIONS}
+              selectedIds={HOME_MAP_FILTER_OPTIONS.filter((option) => mapFilters[option.id]).map(
+                (option) => option.id,
+              )}
+              onSelect={toggleMapFilter}
+              gap={spacing[2]}
+              renderLeftIcon={(option, selected) =>
+                option.id === "nearMe" ? (
+                  <LocateFixed size={14} color={selected ? palette.orange : palette.textMuted} />
+                ) : null
+              }
+            />
+          ) : null}
         </View>
       </SafeAreaView>
 
@@ -572,10 +613,16 @@ export function HomeMapScreen() {
 
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Recenter map to default building"
+          accessibilityLabel={
+            isLocationApproximate ? "Choose your area" : "Recenter map on your location"
+          }
           onPress={() => {
-            setSelectedBuilding(toSummary(getBuildingById(DEFAULT_BUILDING_ID)!));
             void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            if (isLocationApproximate) {
+              navigation.navigate("OnboardingStack", { screen: "ManualLocationPicker" });
+              return;
+            }
+            setMapCenter(currentLocation);
           }}
           style={[
             {

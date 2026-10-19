@@ -5,6 +5,7 @@ import {
   getPasswordRuleStatuses,
   getPasswordRules,
   PASSWORD_MIN_LENGTH,
+  getPasswordUpdateErrorMessage,
   validateConfirmPassword,
   validateEmail,
   validatePassword,
@@ -69,5 +70,14 @@ test("password rule checklist is driven by the same rules as validatePassword", 
   assert.deepEqual(
     statuses.filter((status) => status.met).map((status) => status.id),
     ["length", "lowercase"],
+  );
+});
+
+test("getPasswordUpdateErrorMessage explains rejected new passwords", () => {
+  assert.match(getPasswordUpdateErrorMessage({ code: "same_password" }), /different/);
+  assert.match(getPasswordUpdateErrorMessage({ code: "weak_password" }), /too weak/);
+  assert.equal(
+    getPasswordUpdateErrorMessage(new Error("network")),
+    "Password reset failed. Please try again.",
   );
 });

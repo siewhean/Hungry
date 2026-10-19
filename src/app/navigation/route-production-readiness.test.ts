@@ -189,7 +189,6 @@ test("protected actions preserve return routes before auth", () => {
     "Post",
     "PostComposerV2",
     "ActivityInbox",
-    "ActivityPostDetail",
     "ChatDetail",
     "DirectMessages",
     "EditProfile",
@@ -203,6 +202,8 @@ test("protected actions preserve return routes before auth", () => {
   ]) {
     assert.match(protectedRoutes, new RegExp(`"${protectedRoute}"`));
   }
+  // Shared post links open for visitors; the screen gates like/save itself.
+  assert.doesNotMatch(protectedRoutes, /"ActivityPostDetail"/);
 
   assert.match(rootNavigator, /setReturnRoute\(/);
   assert.match(rootNavigator, /navigationRef\.resetRoot\(\{[\s\S]*name: "AuthStack"/);

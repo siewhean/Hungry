@@ -1,23 +1,26 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Pressable, View } from "react-native";
 import { ArrowLeft, CircleAlert, MailCheck } from "lucide-react-native";
 
 import { AppText, Button, FeedErrorBoundary } from "@/components/ui";
 import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
-import { clearPendingSignUp, getPendingSignUp } from "@/features/auth/pendingSignUp";
-import { clearShareAttribution, getShareAttribution } from "@/features/share/shareAttribution";
-import { trackAnalyticsEvent } from "@/lib/analytics";
+import { trackAuthFailed, trackAuthScreenViewed } from "@/features/auth/authAnalytics";
+import {
+  rememberPendingEmailVerification,
+  takePendingEmailVerificationCompletesOnboarding,
+} from "@/features/auth/pendingEmailVerification";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
-import type { Session } from "@/lib/services/types";
 import type { AuthStackParamList } from "./AuthStack";
 import { AuthScreenShell } from "./AuthScreenShell";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "EmailVerification">;
+
+const RESEND_COOLDOWN_SECONDS = 60;
 
 export function EmailVerificationScreen({ navigation, route }: Props) {
   const completeAuth = useSessionStore((state) => state.completeAuth);
@@ -25,132 +28,37 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
   const showToast = useUIStore((state) => state.showToast);
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const isSupabaseMode = getConfiguredDataSource() === "supabase";
+  const email = route.params?.email;
   const confirmationCode = route.params?.code;
+  // Supabase redirects with ?error= when the link expired or was already used.
   const confirmationError = route.params?.error;
-  const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
-  const pending = getPendingSignUp(route.params?.email);
-  const email = route.params?.email ?? pending?.email ?? "";
-  const shouldCompleteOnboarding =
-    route.params?.completedOnboarding ?? pending?.completedOnboarding ?? hasCompletedOnboarding;
-  const [resendSeconds, setResendSeconds] = useState(email ? 54 : 0);
+  const completedOnboarding = route.params?.completedOnboarding ?? false;
+  const [resendSeconds, setResendSeconds] = useState(RESEND_COOLDOWN_SECONDS);
+  const [isResending, setIsResending] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
-  const handledConfirmationCode = useRef<string | undefined>(undefined);
+  const exchangedCode = useRef<string | null>(null);
 
-  const finishVerifiedSignIn = async (session: Session | null) => {
-    if (isSupabaseMode) {
-      if (!session) return false;
-      const migration = await applySignedInProfile(session.profile, {
-        profileReady: session.profileReady,
-        onSyncWarning: () => {
-          showToast({
-            message:
-              "Email verified, but your taste profile could not sync. Try updating it again later.",
-            tone: "warning",
-          });
-        },
-      });
-      if (migration.status === "failed") return false;
-    }
-    clearPendingSignUp();
-    const shareAttribution = getShareAttribution();
-    trackAnalyticsEvent("sign_up_completed", {
-      method: "email",
-      ...(shareAttribution
-        ? { share_source: shareAttribution.source, share_route: shareAttribution.route }
-        : {}),
-    });
-    if (shareAttribution) clearShareAttribution();
-    completeAuth({
-      authProvider: "email",
-      completedOnboarding: shouldCompleteOnboarding,
-      trackSignInEvent: false,
-    });
-    if (shouldCompleteOnboarding) {
-      completeOnboarding();
-    }
-    showToast({
-      message: shouldCompleteOnboarding
-        ? "Email verified. Welcome to Hungry."
-        : "Email verified. Continue onboarding.",
-      tone: "success",
-    });
-    return true;
-  };
-
-  const sendToLogin = (message: string) => {
-    showToast({ message, tone: "info" });
-    navigation.navigate("Login");
-  };
-
-  // "I verified": Supabase confirmation happens in the browser and does not
-  // create a session in the app, so retry sign-in with the in-memory sign-up
-  // credentials. Without them (app restarted) the user signs in on Login.
-  const handleVerifiedPress = async () => {
-    if (isConfirming) return;
-    if (!isSupabaseMode) {
-      await finishVerifiedSignIn(null);
-      return;
-    }
-    const credentials = getPendingSignUp(email);
-    if (!credentials) {
-      sendToLogin("If you've confirmed your email, sign in with your email and password.");
-      return;
-    }
-    setIsConfirming(true);
-    try {
-      const session = await getHungryService().auth.signIn(credentials.email, credentials.password);
-      await finishVerifiedSignIn(session);
-    } catch (err) {
-      const code =
-        (err as { error_code?: string; code?: string })?.error_code ??
-        (err as { error_code?: string; code?: string })?.code;
-      showToast({
-        message:
-          code === "email_not_confirmed"
-            ? "Your email isn't confirmed yet. Open the link in your inbox, then try again."
-            : "Could not confirm verification yet. Please try again.",
-        tone: "warning",
-      });
-    } finally {
-      setIsConfirming(false);
-    }
-  };
-
-  // hungry://auth/confirm?code=… — exchange the PKCE code to sign in. The email
-  // is already confirmed server-side before the redirect, so if the exchange
-  // fails (e.g. link opened on another device) fall back to credential sign-in.
   useEffect(() => {
-    if (!isSupabaseMode) return;
-    if (confirmationError) {
-      showToast({
-        message:
-          confirmationError === "expired"
-            ? "That verification link has expired. Resend a new one or sign in."
-            : "That verification link is invalid. Resend a new one or sign in.",
-        tone: "error",
-      });
-      return;
-    }
-    if (!confirmationCode || handledConfirmationCode.current === confirmationCode) return;
-    handledConfirmationCode.current = confirmationCode;
-    setIsConfirming(true);
-    void (async () => {
-      try {
-        const session = await getHungryService().auth.confirmEmail(confirmationCode);
-        if (await finishVerifiedSignIn(session)) return;
-      } catch {
-        // Fall through to credential sign-in or Login.
-      } finally {
-        setIsConfirming(false);
-      }
-      if (getPendingSignUp(email)) {
-        await handleVerifiedPress();
-        return;
-      }
-      sendToLogin("Email confirmed. Sign in to continue.");
-    })();
-    // Runs once per confirmation code; handlers read current values.
-  }, [confirmationCode, confirmationError, isSupabaseMode]);
+    trackAuthScreenViewed("email_verification");
+  }, []);
+
+  // The confirmation link reopens this screen with only `?code=` (often after a
+  // cold start), so each sign-up that opens it records whether it had already
+  // finished onboarding. A plain SignUp passes no flag and resets it to false.
+  useEffect(() => {
+    if (email) rememberPendingEmailVerification(completedOnboarding);
+  }, [completedOnboarding, email]);
+
+  useEffect(() => {
+    if (!confirmationError) return;
+    showToast({
+      message:
+        confirmationError === "expired"
+          ? "That verification link has expired. Resend a new one or sign in."
+          : "That verification link is invalid. Resend a new one or sign in.",
+      tone: "error",
+    });
+  }, [confirmationError, showToast]);
 
   useEffect(() => {
     if (resendSeconds <= 0) {
@@ -162,32 +70,89 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
     return () => clearInterval(timer);
   }, [resendSeconds]);
 
-  const handleResend = async () => {
-    if (resendSeconds > 0 || !email) {
-      return;
-    }
-    try {
-      if (isSupabaseMode) {
-        await getHungryService().auth.resendVerificationEmail(email);
-      } else {
+  // Exchanges the confirmation code (or, in mock mode, simulates the link) and
+  // signs the new account in. RootNavigator then routes to onboarding or Home.
+  const confirm = useCallback(
+    async (code: string) => {
+      setIsConfirming(true);
+      try {
+        const session = await getHungryService().auth.confirmEmail(code);
+        const shouldCompleteOnboarding = await takePendingEmailVerificationCompletesOnboarding();
+        const migration = await applySignedInProfile(session.profile, {
+          profileReady: session.profileReady,
+          onSyncWarning: () => {
+            showToast({
+              message:
+                "Email verified, but your taste profile could not sync. Try updating it again later.",
+              tone: "warning",
+            });
+            if (migration.status === "failed") return;
+          },
+        });
+        completeAuth({
+          authProvider: "email",
+          completedOnboarding: shouldCompleteOnboarding,
+          isNewUser: true,
+        });
+        if (shouldCompleteOnboarding) {
+          completeOnboarding();
+        }
+        showToast({ message: "Email verified. Welcome to Hungry.", tone: "success" });
+      } catch (error) {
+        trackAuthFailed("email_confirm", "email", error);
         showToast({
-          message: "Verification email resend is currently unavailable. Please try again shortly.",
+          message:
+            "We couldn't finish verifying on this device. If you opened the link, sign in to continue.",
           tone: "warning",
         });
-        setResendSeconds(54);
-        return;
+        navigation.navigate("Login");
+      } finally {
+        setIsConfirming(false);
       }
+    },
+    [completeAuth, completeOnboarding, navigation, showToast],
+  );
+
+  useEffect(() => {
+    if (!confirmationCode || exchangedCode.current === confirmationCode) return;
+    exchangedCode.current = confirmationCode;
+    void confirm(confirmationCode);
+  }, [confirm, confirmationCode]);
+
+  const handleResend = async () => {
+    if (resendSeconds > 0 || isResending || !email) {
+      return;
+    }
+    setIsResending(true);
+    try {
+      await getHungryService().auth.resendVerificationEmail(email);
       showToast({
         message: `Verification email resent to ${email}.`,
         tone: "success",
       });
-      setResendSeconds(54);
+      setResendSeconds(RESEND_COOLDOWN_SECONDS);
     } catch {
       showToast({
         message: "Could not resend verification email. Please try again shortly.",
         tone: "error",
       });
+    } finally {
+      setIsResending(false);
     }
+  };
+
+  // A confirmation opened on another device or browser cannot be detected here,
+  // so the honest next step is to sign in. Mock mode simulates tapping the link.
+  const handleConfirmed = () => {
+    if (!isSupabaseMode) {
+      void confirm("mock-confirmation");
+      return;
+    }
+    showToast({
+      message: "Once you've tapped the link in the email, sign in to continue.",
+      tone: "info",
+    });
+    navigation.navigate("Login");
   };
 
   const minuteText = Math.floor(resendSeconds / 60);
@@ -200,9 +165,11 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
     >
       <AuthScreenShell
         title="Verify your email"
-        subtitle="Open the verification link in your inbox, then continue onboarding."
+        subtitle="Tap the link in the email we sent you on this phone to finish signing up."
         footer={
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Back to sign up"
             onPress={() => navigation.navigate("SignUp")}
             style={{
               alignItems: "center",
@@ -232,12 +199,18 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
           >
             <MailCheck color={palette.orange} size={30} />
           </View>
-          {email ? (
-            <AppText tone="secondary" style={{ lineHeight: 24, textAlign: "center" }}>
-              We sent a verification email to{" "}
-              <AppText style={{ fontWeight: "700" }}>{email}</AppText>.
-            </AppText>
-          ) : null}
+          <AppText tone="secondary" style={{ lineHeight: 24, textAlign: "center" }}>
+            {isConfirming ? (
+              "Confirming your email…"
+            ) : email ? (
+              <>
+                We sent a verification email to{" "}
+                <AppText style={{ fontWeight: "700" }}>{email}</AppText>.
+              </>
+            ) : (
+              "Check your inbox for the verification email."
+            )}
+          </AppText>
 
           {email ? (
             <Pressable
@@ -248,8 +221,8 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
                   : "Resend verification email"
               }
               accessibilityHint="Requests a new verification email"
-              accessibilityState={{ disabled: resendSeconds > 0 }}
-              disabled={resendSeconds > 0}
+              accessibilityState={{ disabled: resendSeconds > 0 || isResending }}
+              disabled={resendSeconds > 0 || isResending}
               onPress={() => {
                 void handleResend();
               }}
@@ -266,16 +239,15 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
 
           <View style={{ gap: spacing[3] }}>
             <Button
-              label="I Verified My Email"
+              label="I've confirmed my email"
+              onPress={handleConfirmed}
               loading={isConfirming}
-              onPress={() => {
-                void handleVerifiedPress();
-              }}
               style={{ borderRadius: radii.pill, minHeight: 56 }}
             />
             <Button
               label="Change Email Address"
               variant="secondary"
+              disabled={isConfirming}
               onPress={() => {
                 if (navigation.canGoBack()) {
                   navigation.goBack();
@@ -298,7 +270,7 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
           >
             <CircleAlert color={palette.orange} size={18} />
             <AppText variant="bodySmall" tone="secondary" style={{ flex: 1 }}>
-              Hungry checks this email before saving protected account actions.
+              Opened the link on a computer? Your email is still confirmed. Just sign in here.
             </AppText>
           </View>
         </View>

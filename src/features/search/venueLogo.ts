@@ -1,4 +1,5 @@
 const CLEARBIT_LOGO_HOST = "logo.clearbit.com";
+const STORAGE_OBJECT_PATH = "/storage/v1/object/public/";
 
 function normalizeUrl(value?: string) {
   const trimmed = value?.trim();
@@ -12,6 +13,8 @@ export function getVenueLogoDomain(logoUrl?: string) {
 
   try {
     const url = new URL(normalized);
+    // Our own stored copy says nothing about the brand's domain, so it gets no favicon fallback.
+    if (url.pathname.startsWith(STORAGE_OBJECT_PATH)) return undefined;
     if (url.hostname === CLEARBIT_LOGO_HOST) {
       return url.pathname.replace(/^\/+/, "").split("/")[0]?.toLowerCase() || undefined;
     }

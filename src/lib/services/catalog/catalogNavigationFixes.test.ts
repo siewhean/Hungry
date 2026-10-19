@@ -316,6 +316,6 @@ test("Discover header hides the area count when no in-area venues are known", ()
   const discover = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
   assert.match(
     discover,
-    /discoverAreaCount > 0 \? \([\s\S]{0,200}places to eat in this area[\s\S]{0,80}\) : null/,
+    /discoverAreaCountLabel !== "0" \? \([\s\S]{0,200}places to eat in this area[\s\S]{0,80}\) : null/,
   );
 });

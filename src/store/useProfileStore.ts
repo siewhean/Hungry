@@ -157,6 +157,7 @@ interface ProfileState {
   recordTasteInteraction: (input: RecordTasteInteractionInput) => TasteInteractionEvent | undefined;
   setLeftHandedMode: (enabled: boolean) => void;
   setOnboardingSelectedDishIds: (dishIds: string[]) => void;
+  setOnboardingCuisineIds: (cuisineIds: string[]) => void;
   clearProfile: () => void;
 }
 
@@ -1016,6 +1017,13 @@ export const useProfileStore = create<ProfileState>()(
           profile: {
             ...state.profile,
             onboardingSelectedDishIds: dishIds,
+          },
+        })),
+      setOnboardingCuisineIds: (cuisineIds) =>
+        set((state) => ({
+          profile: {
+            ...state.profile,
+            onboardingCuisineIds: cuisineIds,
           },
         })),
       clearProfile: () => {

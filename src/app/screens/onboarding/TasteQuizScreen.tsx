@@ -148,7 +148,12 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   const carriedAnswers =
     isDietaryRoute && route.params && "answers" in route.params ? route.params.answers : undefined;
   const hasTasteAnswers = !isDietaryRoute || carriedAnswers !== undefined;
-  const [values, setValues] = useState<TasteVector>(carriedAnswers ?? INITIAL);
+  // Answers stay a local draft until the quiz is finished, so swiping does not
+  // write, sync or log anything and backing out discards the draft. A retake from
+  // Profile starts from the saved vector so untouched dimensions keep their values.
+  const [values, setValues] = useState<TasteVector>(
+    carriedAnswers ?? (flowMode === "profile" ? profile.tasteVector : INITIAL),
+  );
   const [dietaryPreferences, setDietaryPreferencesState] = useState<DietaryFlag[]>(
     profile.dietaryPreferences,
   );
@@ -239,6 +244,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
           answers: tasteAnswers,
           dietaryPreferences,
           maxDishBudget: maxDishBudget ?? null,
+          cuisineIds: profile.onboardingCuisineIds ?? [],
           flowMode,
         },
         tasteAnswers,
@@ -285,7 +291,6 @@ export function TasteQuizScreen({ navigation, route }: Props) {
     if (values[currentKey] !== option) {
       const next = { ...values, [currentKey]: option };
       setValues(next);
-      setTasteVector(next);
       setAnsweredKeys((previous) => ({
         ...previous,
         [currentKey]: true,
@@ -536,7 +541,6 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                   if (values[currentKey] !== option) {
                     const next = { ...values, [currentKey]: option };
                     setValues(next);
-                    setTasteVector(next);
                     setAnsweredKeys((previous) => ({
                       ...previous,
                       [currentKey]: true,

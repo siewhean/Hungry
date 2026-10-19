@@ -13,7 +13,6 @@ interface AuthScreenShellProps {
   footer?: ReactNode;
   wordmarkColor?: string;
   compact?: boolean;
-  contentOffsetTop?: number;
 }
 
 /**
@@ -34,7 +33,6 @@ export function AuthScreenShell({
   footer,
   wordmarkColor,
   compact = false,
-  contentOffsetTop = 0,
 }: PropsWithChildren<AuthScreenShellProps>) {
   const { palette, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
@@ -67,7 +65,7 @@ export function AuthScreenShell({
           <View
             // TextInput focus bubbles: re-reveal when focus moves while the keyboard is open.
             onFocus={keyboardReveal.onFocus}
-            style={{ gap, paddingVertical: spacing[3], marginTop: spacing[3] + contentOffsetTop }}
+            style={{ gap, paddingVertical: spacing[3], marginTop: spacing[3] }}
           >
             <View style={{ alignItems: "center", gap: titleGap, marginBottom: innerGap }}>
               <HungryLogo size={logoSize} showWordmark wordmarkColor={effectiveWordmarkColor} />

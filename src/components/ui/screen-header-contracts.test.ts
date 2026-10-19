@@ -85,7 +85,7 @@ test("Screen header contract: live Discover, Review, and New Post headers use Ap
   assert.doesNotMatch(discover, /<AppHeader[\s\S]*title="Discover"/);
   assert.match(
     discover,
-    /const discoverLocationLatitude = manualCoordinate\?\.latitude \?\? currentLocation\.latitude/,
+    /getEffectiveLocation\(\{\s*permission: locationPermission,\s*currentLocation,\s*manualCoordinate,\s*\}\)[\s\S]*const discoverLocationLatitude = discoverCoordinate\.latitude/,
   );
   assert.match(
     discover,
@@ -184,11 +184,11 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /Trending in \{discoverLocationLabel\}[\s\S]*showDiscoverFilterRailSkeleton \? \([\s\S]*<DiscoverFoodRailLoadingSkeleton[\s\S]*\) : trendingCards\.length \? \([\s\S]*\) : isDiscoverFiltering \? \([\s\S]*<FilteredResultsEmptyState preserveHeight minHeight=\{discoverRailReservedHeight\} \/>/,
+    /Most reviewed in \{discoverLocationLabel\}[\s\S]*showDiscoverFilterRailSkeleton \? \([\s\S]*<DiscoverFoodRailLoadingSkeleton[\s\S]*\) : trendingCards\.length \? \([\s\S]*\) : isDiscoverFiltering \? \([\s\S]*<FilteredResultsEmptyState preserveHeight minHeight=\{discoverRailReservedHeight\} \/>/,
   );
   assert.match(
     discover,
-    /Editor&apos;s Choice[\s\S]*showDiscoverFilterRailSkeleton \? \([\s\S]*<DiscoverFoodRailLoadingSkeleton[\s\S]*\) : editorChoiceCards\.length \? \([\s\S]*\) : isDiscoverFiltering \? \([\s\S]*<FilteredResultsEmptyState preserveHeight minHeight=\{discoverRailReservedHeight\} \/>/,
+    /Top rated[\s\S]*showDiscoverFilterRailSkeleton \? \([\s\S]*<DiscoverFoodRailLoadingSkeleton[\s\S]*\) : editorChoiceCards\.length \? \([\s\S]*\) : isDiscoverFiltering \? \([\s\S]*<FilteredResultsEmptyState preserveHeight minHeight=\{discoverRailReservedHeight\} \/>/,
   );
   assert.match(
     discover,
@@ -541,7 +541,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /const areaStallCards = useMemo/);
   assert.match(
     discover,
-    /Quick Bites[\s\S]*&lt; 15 MIN[\s\S]*navigation\.navigate\("QuickBites", \{ collection: "quickBites" \}\)[\s\S]*quickBiteCards\.map/,
+    /Quick Bites[\s\S]*navigation\.navigate\("QuickBites", \{ collection: "quickBites" \}\)[\s\S]*quickBiteCards\.map/,
   );
   assert.doesNotMatch(
     discover.match(
@@ -555,9 +555,9 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /Trending in \{discoverLocationLabel\}[\s\S]*navigation\.navigate\("QuickBites", \{ collection: "trending" \}\)[\s\S]*trendingCards\.map/,
+    /Most reviewed in \{discoverLocationLabel\}[\s\S]*navigation\.navigate\("QuickBites", \{ collection: "trending" \}\)[\s\S]*trendingCards\.map/,
   );
-  assert.match(discover, /Editor&apos;s Choice[\s\S]*editorChoiceCards\.map/);
+  assert.match(discover, /Top rated[\s\S]*editorChoiceCards\.map/);
   assert.match(discover, /Budget &lt; S\$8[\s\S]*VALUE[\s\S]*budgetCards\.map/);
   assert.doesNotMatch(
     discover.match(
@@ -569,7 +569,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /const isLateNightMakanVisible = currentHour >= 21 \|\| currentHour < 4/);
   assert.match(
     discover,
-    /\{isLateNightMakanVisible && shouldRenderDiscoverRail\(lateNightCards\.length\) \? \([\s\S]*Late Night Makan[\s\S]*lateNightCards\.map/,
+    /\{isLateNightMakanVisible && shouldRenderDiscoverRail\(lateNightCards\.length\) \? \([\s\S]*Dinner favourites[\s\S]*lateNightCards\.map/,
   );
   assert.match(discover, /navigation\.navigate\("QuickBites", \{ collection: "trending" \}\)/);
   assert.match(discover, /navigation\.navigate\("QuickBites", \{ collection: "editorChoice" \}\)/);
@@ -679,11 +679,11 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /Trending in \{discoverLocationLabel\}[\s\S]*style=\{edgeToEdgeHorizontalScrollStyle\}[\s\S]*contentContainerStyle=\{\{ gap: spacing\[4\] \}\}[\s\S]*trendingCards\.map/,
+    /Most reviewed in \{discoverLocationLabel\}[\s\S]*style=\{edgeToEdgeHorizontalScrollStyle\}[\s\S]*contentContainerStyle=\{\{ gap: spacing\[4\] \}\}[\s\S]*trendingCards\.map/,
   );
   assert.match(
     discover,
-    /Editor&apos;s Choice[\s\S]*style=\{edgeToEdgeHorizontalScrollStyle\}[\s\S]*contentContainerStyle=\{\{ gap: spacing\[4\] \}\}[\s\S]*editorChoiceCards\.map/,
+    /Top rated[\s\S]*style=\{edgeToEdgeHorizontalScrollStyle\}[\s\S]*contentContainerStyle=\{\{ gap: spacing\[4\] \}\}[\s\S]*editorChoiceCards\.map/,
   );
   assert.match(
     discover,
@@ -734,7 +734,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /numberOfLines=\{1\}/);
   assert.doesNotMatch(discover, /minHeight: 72/);
   assert.doesNotMatch(discover, /height: 52/);
-  assert.match(discover, /Trending in \{discoverLocationLabel\}/);
+  assert.match(discover, /Most reviewed in \{discoverLocationLabel\}/);
   assert.match(discover, /Stalls in \{discoverLocationLabel\}/);
   assert.match(discover, /const DISCOVER_AREA_RADIUS_METERS = 3000/);
   assert.match(
@@ -769,11 +769,12 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /const discoverAreaCount = isSupabaseDataSource[\s\S]*\? supabaseDiscoverAreaCount[\s\S]*: areaVenues\.length/,
+    /const discoverAreaCountLabel = isSupabaseDataSource[\s\S]*\? getDiscoverAreaCountLabel\(\{[\s\S]*rpcCount: supabaseDiscoverAreaCount,[\s\S]*: String\(areaVenues\.length\)/,
   );
+  // The count line shows a skeleton only while the feed loads, and hides on failure.
   assert.match(
     discover,
-    /discoverAreaCount === null \? \([\s\S]*<Skeleton width=\{150\} height=\{14\} borderRadius=\{radii\.sm\} \/>/,
+    /discoverAreaCountLabel === null \? \(\s*isSupabaseDiscoveryFeedLoading \? \([\s\S]*<Skeleton width=\{150\} height=\{14\} borderRadius=\{radii\.sm\} \/>\s*\) : null/,
   );
   assert.match(
     discover,

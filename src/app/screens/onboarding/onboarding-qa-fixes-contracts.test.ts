@@ -16,7 +16,7 @@ test("manual location picker continues like LocationPermission (shared finish st
   assert.match(manual, /const finishLocationStep = useFinishLocationStep\(navigation\)/);
   assert.match(
     manual,
-    /setManualSelection\(selectedArea\.name, selectedArea\.coordinate\);\s*finishLocationStep\(\);/,
+    /setManualSelection\(selectedArea\.name, selectedArea\.coordinate\);[\s\S]*?finishLocationStep\(\);/,
   );
   assert.doesNotMatch(manual, /completeOnboarding\(/);
   assert.match(permission, /const finish = useFinishLocationStep\(navigation\)/);

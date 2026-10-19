@@ -75,6 +75,7 @@ import {
   summarizeCatalogRequest,
 } from "@/lib/services/catalog/diagnostics";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { reportError } from "@/lib/monitoring/reportError";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
@@ -398,6 +399,8 @@ function RawCatalogBrowseGrid({
   const { width } = useWindowDimensions();
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
+  const route = useRoute();
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const initialRawFilter = RAW_BROWSE_FILTER_OPTIONS.find(
     (option) => option.id.toLowerCase() === initialFoodTypeTag?.toLowerCase(),
@@ -460,6 +463,7 @@ function RawCatalogBrowseGrid({
         });
       } catch (loadError) {
         if (requestVersion.current === version) {
+          reportError(loadError, { surface: "catalog_browse", mode });
           const message =
             loadError instanceof Error ? loadError.message : "Could not load the catalog.";
           // A failed continuation keeps the rows already shown (same source) and
@@ -523,9 +527,19 @@ function RawCatalogBrowseGrid({
   if (!isAuthenticated) {
     return (
       <Screen scroll={false}>
+        <AppHeader title={mode === "dishes" ? "Dishes" : "Stalls"} />
         <EmptyState
           title="Sign in to browse the full directory"
           body="The complete Hungry catalog is available after you sign in."
+          ctaLabel="Sign in"
+          onPress={() => {
+            // Bring the guest back to this same page after signing in.
+            setReturnRoute({
+              name: route.name,
+              params: route.params as Record<string, unknown> | undefined,
+            });
+            navigation.navigate("AuthStack", { screen: "Login" });
+          }}
         />
       </Screen>
     );
@@ -623,7 +637,8 @@ function RawCatalogBrowseGrid({
             ) : error ? (
               <EmptyState
                 title="Catalog unavailable"
-                body={error}
+                body="We couldn't load the catalog. Check your connection and try again."
+                errorMessage={error}
                 ctaLabel="Retry"
                 onPress={() => void loadPage()}
               />
@@ -956,16 +971,20 @@ function LegacyBrowseGridScreen({
         .join(" ")
         .toLowerCase();
       const matchesSearch = !query || searchText.includes(query);
+      // Dietary chips match the structured flag, never free text ("non-halal").
       const matchesFilter =
         filter === "all" ||
-        searchText.includes(filter) ||
-        (filter === "local" && searchText.includes("singapore")) ||
-        (filter === "spicy" && item.dish.tasteVector.spicy >= 6);
+        (filter === "halal"
+          ? item.dish.dietaryFlags.includes("halal")
+          : searchText.includes(filter) ||
+            (filter === "local" && searchText.includes("singapore")) ||
+            (filter === "spicy" && item.dish.tasteVector.spicy >= 6));
 
       return matchesSearch && matchesFilter;
     });
 
-    return filtered.length || query ? filtered : feedItems;
+    // An unmatched chip shows the empty state, not every dish.
+    return filtered;
   }, [feedItems, isBrowseDataReady, searchQuery, selectedFilter]);
   const fullTileViewabilityConfig = useRef({ itemVisiblePercentThreshold: 100 }).current;
   const handleFullyVisibleFeedItemsChanged = useRef(
@@ -1515,7 +1534,12 @@ function LegacySearchResultsScreen() {
             : navigation.navigate("MainTabs", { screen: "Discover" })
         }
         onSubmitQuery={recordCommittedSearchQuery}
-        onTasteFilterPress={() => navigation.navigate("TasteFilter")}
+        onTasteFilterPress={
+          // Supabase search does not send taste values, so the filter would do nothing.
+          getServiceProvider().mode === "supabase"
+            ? undefined
+            : () => navigation.navigate("TasteFilter")
+        }
         results={results}
         resultsNote={
           isMoodActive && moodSearch.summary ? `Picks for: ${moodSearch.summary}` : undefined

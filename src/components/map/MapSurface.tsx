@@ -473,7 +473,9 @@ export function MapSurface({
             ]}
           >
             <AppText variant="micro" style={{ color: palette.textMuted }}>
-              Set `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` to enable the live map.
+              {__DEV__
+                ? "Set `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` to enable the live map."
+                : "Map unavailable. Showing an approximate layout."}
             </AppText>
           </View>
         ) : null}
@@ -489,9 +491,10 @@ export function MapSurface({
       <MapboxGL.MapView
         style={styles.map}
         styleURL="mapbox://styles/mapbox/streets-v12"
-        attributionEnabled={false}
+        // Mapbox's terms require the wordmark and attribution to stay visible.
+        attributionEnabled
         compassEnabled={false}
-        logoEnabled={false}
+        logoEnabled
         pitchEnabled={false}
         rotateEnabled={false}
         scaleBarEnabled={false}

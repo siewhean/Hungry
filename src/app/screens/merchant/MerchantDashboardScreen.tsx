@@ -9,6 +9,7 @@ import { View, ScrollView, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   TrendingUp,
+  TrendingDown,
   Users,
   Star,
   ClipboardList,
@@ -35,6 +36,8 @@ import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
 import type { CustomerInteraction, DishDetail, MerchantAnalytics } from "@/types/domain";
 import {
   buildMerchantDashboardMetrics,
+  getMetricDelta,
+  type MetricTrend,
   getMerchantOutletStatus,
   getMerchantOutletStatusLabel,
   getMerchantProfileGaps,
@@ -98,12 +101,14 @@ function MetricCard({
   subtext,
   icon,
   color,
+  trend,
 }: {
   title: string;
   value: string | React.ReactNode;
   subtext: string | React.ReactNode;
   icon: React.ReactNode;
   color: string;
+  trend?: MetricTrend;
 }) {
   const { componentRadii, palette, spacing, shadows } = useHungryTheme();
   return (
@@ -132,7 +137,11 @@ function MetricCard({
         >
           {icon}
         </View>
-        <TrendingUp size={16} color={palette.success} />
+        {trend === "up" ? (
+          <TrendingUp size={16} color={palette.success} />
+        ) : trend === "down" ? (
+          <TrendingDown size={16} color={palette.error} />
+        ) : null}
       </View>
       <View style={{ marginTop: spacing[3] }}>
         {typeof value === "string" ? (
@@ -146,7 +155,18 @@ function MetricCard({
           {title}
         </AppText>
         {typeof subtext === "string" ? (
-          <AppText variant="micro" style={{ color: palette.success, marginTop: 4 }}>
+          <AppText
+            variant="micro"
+            style={{
+              color:
+                trend === "up"
+                  ? palette.success
+                  : trend === "down"
+                    ? palette.error
+                    : palette.textSecondary,
+              marginTop: 4,
+            }}
+          >
             {subtext}
           </AppText>
         ) : (
@@ -325,14 +345,21 @@ export function MerchantDashboardScreen() {
   ) : (
     <Skeleton height={24} width={80} borderRadius={radii.sm} />
   );
-  const viewsSubtext = analytics ? (
-    dateRange === "Today" ? (
-      "vs yesterday"
-    ) : dateRange === "7 Days" ? (
-      "vs last week"
-    ) : (
-      "vs last month"
-    )
+  const viewsDelta = analytics
+    ? getMetricDelta(
+        analytics.profileVisits + analytics.menuViews,
+        analytics.previousPeriodComparison.profileVisits +
+          analytics.previousPeriodComparison.menuViews,
+      )
+    : undefined;
+  const viewsComparison =
+    dateRange === "Today"
+      ? "vs yesterday"
+      : dateRange === "7 Days"
+        ? "vs previous 7 days"
+        : "vs previous 30 days";
+  const viewsSubtext = viewsDelta ? (
+    `${viewsDelta.label} ${viewsComparison}`
   ) : (
     <Skeleton height={12} width={60} borderRadius={radii.sm} />
   );
@@ -343,7 +370,7 @@ export function MerchantDashboardScreen() {
     <Skeleton height={24} width={40} borderRadius={radii.sm} />
   );
   const ratingSubtext = analytics ? (
-    `${analytics.reviewCount} new reviews`
+    `${analytics.reviewCount} ${analytics.reviewCount === 1 ? "review" : "reviews"}`
   ) : (
     <Skeleton height={12} width={80} borderRadius={radii.sm} />
   );
@@ -421,6 +448,7 @@ export function MerchantDashboardScreen() {
               title="Views"
               value={views}
               subtext={viewsSubtext}
+              trend={viewsDelta?.trend}
               icon={<Users size={24} color={palette.orange} />}
               color={palette.orange}
             />
@@ -598,8 +626,8 @@ export function MerchantDashboardScreen() {
           />
 
           <ActionCard
-            title="AI Assistant"
-            description="Review menu, photo, demand, and promotion suggestions."
+            title="Insights"
+            description="See a simple summary of your stall's recent activity."
             icon={<Sparkles size={20} color={palette.orange} />}
             actionText="View Insights"
             onPressIn={() => prefetchMerchantRoute("AIAssistant")}

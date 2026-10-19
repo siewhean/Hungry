@@ -81,7 +81,8 @@ export function PortfolioItemRow({
           </AppText>
         </View>
       ) : null}
-      {item.privateNotes && isOwner ? (
+      {/* The server returns private notes only to the owner and collaborators. */}
+      {item.privateNotes ? (
         <View style={styles.noteRow}>
           <Users color={palette.textMuted} size={15} />
           <AppText variant="bodySmall" tone="secondary" style={styles.copy}>

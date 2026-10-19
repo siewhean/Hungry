@@ -33,6 +33,7 @@ export function CraveScreen() {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const profile = useProfileStore((state) => state.profile);
+  const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const showToast = useUIStore((state) => state.showToast);
@@ -53,6 +54,10 @@ export function CraveScreen() {
   const currentDish = dishes[currentIndex];
   const nextDish = dishes[currentIndex + 1];
 
+  // The responder is created once, so it calls the latest handlers through refs;
+  // otherwise every swipe would act on the first render's dish and auth state.
+  const swipeHandlersRef = useRef({ swipeRight: () => {}, swipeLeft: () => {} });
+
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
@@ -61,9 +66,9 @@ export function CraveScreen() {
       },
       onPanResponderRelease: (_, gestureState) => {
         if (gestureState.dx > SWIPE_THRESHOLD) {
-          swipeRight();
+          swipeHandlersRef.current.swipeRight();
         } else if (gestureState.dx < -SWIPE_THRESHOLD) {
-          swipeLeft();
+          swipeHandlersRef.current.swipeLeft();
         } else {
           Animated.spring(position, {
             toValue: { x: 0, y: 0 },
@@ -89,7 +94,19 @@ export function CraveScreen() {
     }
 
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    if (currentDish) toggleFavourite(currentDish);
+    if (currentDish) {
+      // Saving is idempotent: a dish that is already saved is liked, never unsaved.
+      if (profile.favouriteDishIds.includes(currentDish.id)) {
+        recordTasteInteraction({
+          type: "dish_like",
+          surface: "discover",
+          dish: currentDish,
+          buttonId: "crave_swipe_right",
+        });
+      } else {
+        toggleFavourite(currentDish);
+      }
+    }
 
     Animated.timing(position, {
       toValue: { x: screenWidth + 100, y: 0 },
@@ -100,12 +117,22 @@ export function CraveScreen() {
 
   const swipeLeft = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (currentDish) {
+      recordTasteInteraction({
+        type: "dismissed",
+        surface: "discover",
+        dish: currentDish,
+        buttonId: "crave_swipe_left",
+      });
+    }
     Animated.timing(position, {
       toValue: { x: -screenWidth - 100, y: 0 },
       duration: motion.craveSwipe,
       useNativeDriver: true,
     }).start(() => nextCard());
   };
+
+  swipeHandlersRef.current = { swipeRight, swipeLeft };
 
   const nextCard = () => {
     setCurrentIndex((prev) => prev + 1);

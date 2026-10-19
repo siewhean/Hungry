@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { clearShareAttribution, getShareAttribution } from "@/features/share/shareAttribution";
 import type { AuthProvider } from "@/lib/services/types";
 import { getConfiguredDataSource, type HungryDataSource } from "@/lib/services/supabase/client";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -48,17 +49,18 @@ interface SessionState {
     skippedTasteQuiz?: boolean;
     authProvider?: AuthProvider;
     trackSignInEvent?: boolean;
+    /** The account was just created; logs sign_up_completed instead of sign_in_completed. */
+    isNewUser?: boolean;
   }) => void;
   completeOnboarding: (skippedQuiz?: boolean) => void;
   expireSession: () => void;
   dismissSessionExpiry: () => void;
   setReturnRoute: (route?: string | PendingRoute) => void;
-  beginPasswordRecovery: () => void;
-  endPasswordRecovery: () => void;
   setAuthNotice: (notice: AuthNotice | null) => void;
   /** Returns the pending sign-in notice (session expiry first) and clears it. */
   consumeAuthNotice: () => AuthNotice | null;
   setSkippedTasteQuiz: (skipped: boolean) => void;
+  setPasswordRecoveryInProgress: (inProgress: boolean) => void;
   signOut: () => void;
   clearSession: () => void;
   markHydrated: () => void;
@@ -68,6 +70,8 @@ interface SessionState {
     userId?: string | null;
     completedOnboarding?: boolean;
     skippedTasteQuiz?: boolean;
+    authProvider?: string;
+    isNewUser?: boolean;
   }) => void;
 }
 
@@ -143,6 +147,13 @@ function clearAccountScopedStores(): void {
     require("./useReviewDraftStore") as typeof import("./useReviewDraftStore");
   useSearchStore.getState().clearSearchState();
   useReviewDraftStore.getState().resetDraft();
+  // Lists hold private notes and collaborators: never show them to the next account.
+  const { useChecklistStore } =
+    require("./useChecklistStore") as typeof import("./useChecklistStore");
+  const { usePortfolioStore } =
+    require("./usePortfolioStore") as typeof import("./usePortfolioStore");
+  useChecklistStore.getState()._reset();
+  usePortfolioStore.getState()._reset();
   const { clearCommunitySafetySessionState } =
     require("@/lib/security/communitySafety") as typeof import("@/lib/security/communitySafety");
   clearCommunitySafetySessionState();
@@ -151,6 +162,29 @@ function clearAccountScopedStores(): void {
 function clearAuthenticatedProfile(): void {
   getProfileStoreState().clearProfile();
   getProfileStoreState().syncProfile(false);
+}
+
+/** Account whose follow state was already loaded during this app launch. */
+let followStateSyncedUserId: string | null = null;
+
+/**
+ * Follow state lives on the server; load it on sign-in so a new device shows it, and once
+ * per launch for a restored session so follows changed on another device are picked up.
+ */
+function syncFollowStateFromServer(
+  userId: string | null | undefined,
+  options?: { oncePerLaunch?: boolean },
+): void {
+  if (!userId) return;
+  if (options?.oncePerLaunch && followStateSyncedUserId === userId) return;
+  followStateSyncedUserId = userId;
+  const { useSocialStore } = require("./useSocialStore") as typeof import("./useSocialStore");
+  void useSocialStore
+    .getState()
+    .syncFollowedUserIds(userId)
+    .catch((error) => {
+      console.error("Failed to load follow state", error);
+    });
 }
 
 function shouldEnablePostHogIdentity() {
@@ -206,6 +240,28 @@ function resetSignInTracking(): void {
   signInTrackedForUserId = null;
 }
 
+// The single place sign_up_completed is logged: from the first SIGNED_IN of a new
+// account (Supabase) or from completeAuth({ isNewUser }) (mock / auto-confirm).
+// It also claims the sign-in slot so the same login is not counted twice.
+function trackSignUpCompletedOnce(profileId: string, method: string): void {
+  if (signInTrackedForUserId === profileId) {
+    return;
+  }
+  signInTrackedForUserId = profileId;
+  const shareAttribution = getShareAttribution();
+  trackAnalyticsEvent(
+    "sign_up_completed",
+    {
+      method,
+      ...(shareAttribution
+        ? { share_source: shareAttribution.source, share_route: shareAttribution.route }
+        : {}),
+    },
+    { userId: profileId },
+  );
+  if (shareAttribution) clearShareAttribution();
+}
+
 const PUSH_TOKEN_UNBIND_TIMEOUT_MS = 3000;
 
 // Unbind this device's push token while the session can still authorize it,
@@ -251,7 +307,10 @@ export const useSessionStore = create<SessionState>()(
         scheduleIdleWork(
           () => {
             identifyPostHogUser(profileId, buildPostHogIdentityProperties());
-            if (options?.trackSignInEvent ?? true) {
+            syncFollowStateFromServer(nextUserId);
+            if (options?.isNewUser) {
+              trackSignUpCompletedOnce(profileId, options.authProvider ?? "email");
+            } else if (options?.trackSignInEvent ?? true) {
               trackSignInCompletedOnce(profileId, {
                 method: options?.authProvider ?? "email",
                 has_completed_onboarding: options?.completedOnboarding ?? false,
@@ -289,8 +348,6 @@ export const useSessionStore = create<SessionState>()(
       },
       dismissSessionExpiry: () => set({ sessionExpired: false }),
       setReturnRoute: (returnRoute) => set({ returnRoute }),
-      beginPasswordRecovery: () => set({ passwordRecoveryInProgress: true }),
-      endPasswordRecovery: () => set({ passwordRecoveryInProgress: false }),
       setAuthNotice: (authNotice) => set({ authNotice }),
       consumeAuthNotice: (): AuthNotice | null => {
         const { sessionExpired, authNotice }: SessionState = useSessionStore.getState();
@@ -299,6 +356,8 @@ export const useSessionStore = create<SessionState>()(
         return notice;
       },
       setSkippedTasteQuiz: (hasSkippedTasteQuiz) => set({ hasSkippedTasteQuiz }),
+      setPasswordRecoveryInProgress: (passwordRecoveryInProgress) =>
+        set({ passwordRecoveryInProgress }),
       signOut: () => {
         const profileId = getSafeProfileId();
         const { hasCompletedOnboarding, hasSkippedTasteQuiz, authNotice }: SessionState =
@@ -381,9 +440,14 @@ export const useSessionStore = create<SessionState>()(
           scheduleIdleWork(
             () => {
               identifyPostHogUser(profileId, buildPostHogIdentityProperties());
-              if (!currentlyAuthenticated) {
+              syncFollowStateFromServer(nextUserId, { oncePerLaunch: true });
+              // Only a sign-in that starts a session counts: a SIGNED_IN replayed
+              // for a session restored from storage is never a new sign-up.
+              if (session.isNewUser && !currentlyAuthenticated) {
+                trackSignUpCompletedOnce(profileId, session.authProvider ?? "email");
+              } else if (!currentlyAuthenticated) {
                 trackSignInCompletedOnce(profileId, {
-                  method: "email",
+                  method: session.authProvider ?? "email",
                   has_completed_onboarding: session.completedOnboarding ?? false,
                   skipped_taste_quiz: session.skippedTasteQuiz ?? false,
                 });

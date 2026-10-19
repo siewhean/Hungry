@@ -1,12 +1,13 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Controller, useForm } from "react-hook-form";
-import { Pressable, View } from "react-native";
+import { Pressable, View, type TextInput } from "react-native";
 import { Eye, EyeOff, Lock, Mail, ArrowRight } from "lucide-react-native";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { AppText, Button, FeedErrorBoundary, InlineBanner, Input } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
+import { trackAuthFailed, trackAuthScreenViewed } from "@/features/auth/authAnalytics";
 import { getMockLoginFailure } from "@/features/auth/mockAuth";
 import { validateEmail, validateRequired } from "@/features/auth/validation";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -27,6 +28,8 @@ export function LoginScreen({ navigation }: Props) {
   const { colorScheme, palette, spacing } = useHungryTheme();
   const oauthProvidersEnabled = FEATURE_FLAGS.oauthProvidersEnabled;
   const [showPassword, setShowPassword] = useState(false);
+  const [providerInFlight, setProviderInFlight] = useState<AuthProvider | null>(null);
+  const passwordRef = useRef<TextInput>(null);
   const completeAuth = useSessionStore((state) => state.completeAuth);
   const sessionExpired = useSessionStore((state) => state.sessionExpired);
   const pendingAuthNotice = useSessionStore((state) => state.authNotice);
@@ -46,6 +49,11 @@ export function LoginScreen({ navigation }: Props) {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ defaultValues: { email: "", password: "" } });
+  const isBusy = isSubmitting || providerInFlight !== null;
+
+  useEffect(() => {
+    trackAuthScreenViewed("login");
+  }, []);
 
   const finishLogin = (authProvider: "email" | AuthProvider, trackSignInEvent = true) => {
     completeAuth({
@@ -81,6 +89,7 @@ export function LoginScreen({ navigation }: Props) {
       }
       finishLogin("email");
     } catch (err) {
+      trackAuthFailed("sign_in", "email", err);
       // Diagnostics only: provider code/status, never the email or password.
       console.warn("[auth] Email sign-in failed", getAuthErrorLogContext(err));
       showToast({ message: getLoginErrorMessage(err), tone: "error" });
@@ -105,6 +114,8 @@ export function LoginScreen({ navigation }: Props) {
       return AUTH_COPY.login.genericErrorToast;
     };
 
+    if (isBusy) return;
+    setProviderInFlight(provider);
     try {
       if (getConfiguredDataSource() === "supabase") {
         const service = getHungryService();
@@ -124,11 +135,14 @@ export function LoginScreen({ navigation }: Props) {
       }
       finishLogin(provider);
     } catch (err) {
+      trackAuthFailed("sign_in", provider, err);
       const message = providerErrorMessage(err);
       showToast({
         message,
         tone: message === AUTH_COPY.login.providerCancelledToast ? "warning" : "error",
       });
+    } finally {
+      setProviderInFlight(null);
     }
   };
 
@@ -137,7 +151,6 @@ export function LoginScreen({ navigation }: Props) {
       <AuthScreenShell
         title={AUTH_COPY.login.title}
         compact
-        contentOffsetTop={spacing[16]}
         wordmarkColor={colorScheme === "dark" ? palette.white : palette.navy}
         footer={
           <View
@@ -173,7 +186,13 @@ export function LoginScreen({ navigation }: Props) {
               render={({ field: { onChange, value } }) => (
                 <Input
                   autoCapitalize="none"
+                  autoCorrect={false}
                   keyboardType="email-address"
+                  textContentType="emailAddress"
+                  autoComplete="email"
+                  returnKeyType="next"
+                  submitBehavior="submit"
+                  onSubmitEditing={() => passwordRef.current?.focus()}
                   placeholder={AUTH_COPY.login.emailPlaceholder}
                   value={value}
                   onChangeText={onChange}
@@ -194,8 +213,13 @@ export function LoginScreen({ navigation }: Props) {
               render={({ field: { onChange, value } }) => (
                 <View style={{ gap: spacing[1] }}>
                   <Input
+                    ref={passwordRef}
                     placeholder={AUTH_COPY.login.passwordPlaceholder}
                     secureTextEntry={!showPassword}
+                    textContentType="password"
+                    autoComplete="current-password"
+                    returnKeyType="go"
+                    onSubmitEditing={() => void handleLogin()}
                     value={value}
                     onChangeText={onChange}
                     leftIcon={<Lock color={palette.textMuted} size={18} />}
@@ -244,38 +268,48 @@ export function LoginScreen({ navigation }: Props) {
             label={AUTH_COPY.login.primaryButton}
             onPress={handleLogin}
             loading={isSubmitting}
+            disabled={isBusy}
             rightIcon={<ArrowRight size={18} color={palette.textOnOrange} />}
           />
 
-          <View
-            style={{
-              alignItems: "center",
-              flexDirection: "row",
-              gap: spacing[3],
-              marginVertical: spacing[2],
-            }}
-          >
-            <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
-            <AppText variant="micro" tone="muted">
-              {AUTH_COPY.login.divider}
-            </AppText>
-            <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
-          </View>
+          {/* Google/Apple stay hidden until they are enabled for this build. */}
+          {oauthProvidersEnabled ? (
+            <>
+              <View
+                style={{
+                  alignItems: "center",
+                  flexDirection: "row",
+                  gap: spacing[3],
+                  marginVertical: spacing[2],
+                }}
+              >
+                <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
+                <AppText variant="micro" tone="muted">
+                  {AUTH_COPY.login.divider}
+                </AppText>
+                <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
+              </View>
 
-          <View style={{ gap: spacing[3] }}>
-            <AuthProviderButton
-              disabled={!oauthProvidersEnabled}
-              intent="signIn"
-              provider="google"
-              onPress={() => void handleProviderLogin("google")}
-            />
-            <AuthProviderButton
-              disabled={!oauthProvidersEnabled}
-              intent="signIn"
-              provider="apple"
-              onPress={() => void handleProviderLogin("apple")}
-            />
-          </View>
+              <View style={{ gap: spacing[3] }}>
+                <AuthProviderButton
+                  disabled={isBusy}
+                  intent="signIn"
+                  provider="google"
+                  onPress={() => {
+                    void handleProviderLogin("google");
+                  }}
+                />
+                <AuthProviderButton
+                  disabled={isBusy}
+                  intent="signIn"
+                  provider="apple"
+                  onPress={() => {
+                    void handleProviderLogin("apple");
+                  }}
+                />
+              </View>
+            </>
+          ) : null}
         </View>
       </AuthScreenShell>
     </FeedErrorBoundary>
