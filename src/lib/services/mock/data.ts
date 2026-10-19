@@ -2,10 +2,8 @@ import type {
   AIBusinessInsight,
   BlogPost,
   BuildingSummary,
-  CollectionItem,
   CustomerInteraction,
   DishDetail,
-  FoodCollection,
   MerchantAccount,
   MerchantAnalytics,
   MerchantPromotion,
@@ -1433,138 +1431,6 @@ export const chatMessages: Record<string, ChatMessage[]> = {
 };
 
 // ─── Gamification Mock Data ───────────────────────────────────────────────────
-
-/**
- * Official Hungry-curated collections for Phase 1 launch.
- * Phase 2 adds user-created collections.
- */
-export const mockCollections: FoodCollection[] = [
-  {
-    id: "col-singapore-classics",
-    title: "Singapore Classics",
-    description: "The essential hawker dishes every Singapore food lover should try.",
-    coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/7/71/Hainanese_Chicken_Rice.jpg",
-    createdBy: "hungry",
-    visibility: "public",
-    targetSegment: "general",
-    tags: ["hawker", "local", "classics"],
-    itemCount: 6,
-    saveCount: 128,
-    isFeatured: true,
-    createdAt: "2025-01-15T08:00:00.000Z",
-    updatedAt: "2025-01-15T08:00:00.000Z",
-  },
-  {
-    id: "col-student-budget",
-    title: "Best Student Meals",
-    description: "Great food under S$6 — perfect for students on a budget.",
-    coverImageUrl:
-      "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=800",
-    createdBy: "hungry",
-    visibility: "public",
-    targetSegment: "students",
-    tags: ["budget", "student", "affordable"],
-    itemCount: 8,
-    saveCount: 95,
-    isFeatured: true,
-    createdAt: "2025-01-15T08:00:00.000Z",
-    updatedAt: "2025-01-15T08:00:00.000Z",
-  },
-  {
-    id: "col-office-lunch",
-    title: "Office Lunch Picks",
-    description: "Quick, satisfying lunches for busy weekdays.",
-    coverImageUrl:
-      "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800",
-    createdBy: "hungry",
-    visibility: "public",
-    targetSegment: "office_workers",
-    tags: ["quick", "weekday", "cbd"],
-    itemCount: 7,
-    saveCount: 72,
-    isFeatured: false,
-    createdAt: "2025-01-15T08:00:00.000Z",
-    updatedAt: "2025-01-15T08:00:00.000Z",
-  },
-  {
-    id: "col-halal-finds",
-    title: "Halal Food Finds",
-    description: "Delicious halal-certified options across Singapore.",
-    coverImageUrl:
-      "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=800",
-    createdBy: "hungry",
-    visibility: "public",
-    targetSegment: "general",
-    tags: ["halal", "certified", "muslim-friendly"],
-    itemCount: 10,
-    saveCount: 61,
-    isFeatured: false,
-    createdAt: "2025-01-15T08:00:00.000Z",
-    updatedAt: "2025-01-15T08:00:00.000Z",
-  },
-  {
-    id: "col-hidden-gems",
-    title: "Hidden Gems",
-    description: "Under-the-radar spots that locals swear by.",
-    coverImageUrl:
-      "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?auto=format&fit=crop&q=80&w=800",
-    createdBy: "hungry",
-    visibility: "public",
-    targetSegment: "general",
-    tags: ["hidden", "local-secret", "underrated"],
-    itemCount: 5,
-    saveCount: 84,
-    isFeatured: true,
-    createdAt: "2025-01-15T08:00:00.000Z",
-    updatedAt: "2025-01-15T08:00:00.000Z",
-  },
-];
-
-/**
- * Collection items mapping stalls to their parent collections.
- * Using existing mock venue IDs.
- */
-export const mockCollectionItems: CollectionItem[] = [
-  // Singapore Classics
-  {
-    id: "ci-sc-1",
-    collectionId: "col-singapore-classics",
-    stallId: "venue-tian-tian",
-    displayOrder: 0,
-    note: "Legendary chicken rice — arrive before 12pm to avoid sellout.",
-    addedAt: "2025-01-15T08:00:00.000Z",
-  },
-  {
-    id: "ci-sc-2",
-    collectionId: "col-singapore-classics",
-    stallId: "venue-maxwell-laksa",
-    displayOrder: 1,
-    addedAt: "2025-01-15T08:00:00.000Z",
-  },
-  {
-    id: "ci-sc-3",
-    collectionId: "col-singapore-classics",
-    stallId: "venue-satay-street",
-    displayOrder: 2,
-    addedAt: "2025-01-15T08:00:00.000Z",
-  },
-  // Student Budget
-  {
-    id: "ci-sb-1",
-    collectionId: "col-student-budget",
-    stallId: "venue-kopi-club",
-    displayOrder: 0,
-    note: "Kaya toast set is under S$5.",
-    addedAt: "2025-01-15T08:00:00.000Z",
-  },
-  {
-    id: "ci-sb-2",
-    collectionId: "col-student-budget",
-    stallId: "venue-maxwell-laksa",
-    displayOrder: 1,
-    addedAt: "2025-01-15T08:00:00.000Z",
-  },
-];
 
 /**
  * Mock stall interactions for the demo authenticated user (Wei Ming).

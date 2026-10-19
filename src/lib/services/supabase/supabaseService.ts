@@ -289,6 +289,8 @@ function mapPortfolioCollaborator(row: Row): PortfolioCollaborator {
     userId: String(row.user_id ?? row.userId ?? ""),
     role: String(row.role ?? "viewer") as PortfolioCollaborator["role"],
     createdAt: String(row.created_at ?? row.createdAt ?? ""),
+    displayName: asString(row.display_name),
+    avatarUrl: asString(row.avatar_url),
   };
 }
 
@@ -7097,12 +7099,12 @@ export const supabaseService: HungryService = {
     async getPortfolioCollaborators(portfolioId: string) {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
-      const { data, error } = await client
-        .from("portfolio_collaborators")
-        .select("*")
-        .eq("portfolio_id", portfolioId);
+      // Joins display names/avatars; only the owner and collaborators get rows (20261019180000).
+      const { data, error } = await client.rpc("list_portfolio_collaborators", {
+        p_portfolio_id: portfolioId,
+      });
       if (error) throw error;
-      return (data || []).map((row) => mapPortfolioCollaborator(row as Row));
+      return (Array.isArray(data) ? (data as Row[]) : []).map(mapPortfolioCollaborator);
     },
 
     async followPortfolio(portfolioId: string) {

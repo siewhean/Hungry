@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
+import path from "node:path";
 import test from "node:test";
 
 import { readRepoFile } from "@/test/sourceContracts";
@@ -106,12 +108,31 @@ test("Screens with analytics mount effects are never preloaded", () => {
   );
 });
 
-test("Collection detail cannot hang on a failed load and hides memory-only saves", () => {
-  const screen = readRepoFile("src/app/screens/discover/CollectionDetailScreen.tsx");
+test("Collections are folded into Lists: no Collection screens, store or routes remain", () => {
+  for (const removed of [
+    "src/app/screens/discover/CollectionListScreen.tsx",
+    "src/app/screens/discover/CollectionDetailScreen.tsx",
+    "src/components/collections/CollectionCard.tsx",
+    "src/store/useCollectionStore.ts",
+  ]) {
+    assert.equal(existsSync(path.join(process.cwd(), removed)), false, removed);
+  }
+  const rootNavigator = readRepoFile("src/app/navigation/RootNavigator.tsx");
+  const navigationTypes = readRepoFile("src/app/navigation/navigationTypes.ts");
+  const repositoryTypes = readRepoFile("src/lib/services/types.ts");
+  assert.doesNotMatch(rootNavigator, /Collection(List|Detail)/);
+  assert.doesNotMatch(navigationTypes, /Collection(List|Detail)/);
+  assert.doesNotMatch(repositoryTypes, /listCollections|FoodCollection/);
 
-  assert.match(screen, /\} catch \(error\) \{[\s\S]*setLoadError/);
-  assert.match(screen, /\} finally \{\s*if \(active\) setLoading\(false\);/);
-  assert.doesNotMatch(screen, /trackCollectionSaved|toggleSaveCollection/);
+  // The stall "Add to List" action saves into the user's Lists (portfolio) flow.
+  const bar = readRepoFile("src/components/stall/StallInteractionBar.tsx");
+  const stallDetail = readRepoFile("src/app/screens/detail/StallDetailScreen.tsx");
+  assert.match(bar, /onAddToList\?: \(\) => void;/);
+  assert.doesNotMatch(bar, /onAddToCollection/);
+  assert.match(
+    stallDetail,
+    /onAddToList=\{\s*FEATURE_FLAGS\.portfoliosEnabled\s*\? \(\) => void detailSaveActions\.addToPortfolio\(\)/,
+  );
 });
 
 test("Search hides empty sections and controls the backend ignores", () => {

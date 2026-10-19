@@ -202,7 +202,6 @@ test("Sprint 9 screen contract: stall menu cards expose dish actions", () => {
 
 test("Sprint 9 screen contract: Search cards expose actionable semantics", () => {
   const search = read("src/app/screens/search/DishSearchScreen.tsx");
-  const collectionDetail = read("src/app/screens/discover/CollectionDetailScreen.tsx");
   const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
 
   assert.match(search, /accessibilityLabel="Search dishes, stalls, or hawker centres"/);
@@ -215,14 +214,6 @@ test("Sprint 9 screen contract: Search cards expose actionable semantics", () =>
   assert.match(search, /accessibilityState=\{\{ disabled: !suggestedDish \}\}/);
   assert.match(search, /accessibilityLabel=\{`Open \$\{collection\.venue\.name\} stall details`\}/);
   assert.match(search, /accessibilityHint="Opens this stall page with menu and dish information"/);
-  assert.match(
-    collectionDetail,
-    /accessibilityLabel=\{`Open \$\{row\.venue\?\.name \?\? row\.item\.stallId\} stall details`\}/,
-  );
-  assert.match(
-    collectionDetail,
-    /accessibilityHint="Opens this stall page with menu and dish information"/,
-  );
   assert.match(rootNavigator, /accessibilityLabel="Go back"/);
   assert.match(rootNavigator, /accessibilityHint="Returns to the previous screen"/);
 });
