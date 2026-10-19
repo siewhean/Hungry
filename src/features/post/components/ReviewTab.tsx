@@ -6,7 +6,7 @@ import { AppText, Input, Badge } from "@/components/ui";
 import { StarRating } from "@/components/review";
 import { useHungryTheme } from "@/theme";
 import { useComposerStore } from "../useComposerStore";
-import { useMerchantStore } from "@/store/useMerchantStore";
+import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
 import { spacing, semanticSpacing } from "@/theme/tokens";
 
 const HASHTAG_SUGGESTIONS = [
@@ -24,7 +24,7 @@ export function ReviewTab() {
   const { componentRadii, palette } = useHungryTheme();
   const reviewCaption = useComposerStore((state) => state.reviewCaption);
   const postCaption = useComposerStore((state) => state.postCaption);
-  const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
+  const isMerchantMode = useMerchantStore(isMerchantModeActive);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
   const isUserMode = !isMerchantMode && !isDeveloperMode;
   const shouldShowHashtagSuggestions = !isUserMode;

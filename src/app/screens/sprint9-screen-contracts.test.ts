@@ -186,7 +186,7 @@ test("Sprint 9 screen contract: stall menu cards expose dish actions", () => {
 
   assert.match(
     stallDetail,
-    /accessibilityRole="button"[\s\S]*accessibilityLabel=\{`Open \$\{activeDish\.name\}`\}/,
+    /accessibilityRole="button"[\s\S]*accessibilityLabel=\{`Open \$\{dish\.name\}`\}/,
   );
   assert.match(stallDetail, /accessibilityHint="Opens this dish detail page"/);
 });
@@ -293,7 +293,8 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
   assert.match(source, /commentsByPostId\[activeCommentItem\.id\] \?\? \[\]/);
   assert.match(source, /addPostComment\(activeCommentItem\.id, newComment\)/);
   assert.match(source, /addPostReply\(activeCommentItem\.id, newReply\)/);
-  assert.match(source, /repliesByCommentId\[comment\.id\] \?\? \[\]/);
+  assert.match(source, /repliesByCommentId\[commentId\] \?\? \[\]/);
+  assert.match(source, /visibleRepliesFor\(comment\.id\)\.map\(\(reply\)/);
   assert.match(source, /style=\{styles\.commentText\}/);
   assert.match(source, /style=\{styles\.replyText\}/);
   assert.match(source, /const styles = useMemo\(\(\) => createStyles\(theme\), \[theme\]\)/);

@@ -50,6 +50,19 @@ function dedupeEntries(entries: WheelEntry[]): WheelEntry[] {
   });
 }
 
+/**
+ * Maps a spin seed onto a slice index. Seeds are non-negative integers so every
+ * client derives the same whole-number winner from the broadcast seed.
+ */
+export function getSpinWinnerIndex(seed: number, entryCount: number): number {
+  if (entryCount <= 0) return -1;
+  return Math.abs(Math.floor(seed)) % entryCount;
+}
+
+function generateSpinSeed(): number {
+  return Math.floor(Math.random() * 2 ** 31);
+}
+
 // ─── Store Definition ───────────────────────────────────────────────────────
 
 interface WheelState {
@@ -78,6 +91,10 @@ interface WheelState {
   updateTrigger(triggerMode: WheelTriggerMode, triggerValue?: TriggerValue): void;
   updateEntryLimit(limit: number): void;
   triggerSpin(): void;
+  /** Settles a finished spin: classic resolves the winner, elimination drops the landed entry. */
+  completeSpin(landedEntryId: string): void;
+  /** Returns a resolved/spinning party to the lobby so the next spin starts clean. */
+  resetSpin(): void;
   leaveParty(): void;
   reset(): void;
 
@@ -270,7 +287,7 @@ export const useWheelStore = create<WheelState>((set, get) => ({
     const { party, entries, _channel } = get();
     if (!party || !_channel) return;
 
-    const seed = Math.random();
+    const seed = generateSpinSeed();
     const startedAt = Date.now();
     const activeEntryIds = entries.filter((e) => !e.isEliminated).map((e) => e.id);
 
@@ -288,6 +305,75 @@ export const useWheelStore = create<WheelState>((set, get) => ({
             status: "spinning",
             spinSeed: seed,
             spinStartedAt: startedAt,
+          }
+        : null,
+    }));
+  },
+
+  // ── completeSpin ────────────────────────────────────────────────────────────
+
+  completeSpin(landedEntryId) {
+    const { party, entries, myMemberId, _channel } = get();
+    if (!party || party.status !== "spinning") return;
+    if (!entries.some((e) => e.id === landedEntryId && !e.isEliminated)) return;
+
+    const isHost = party.hostUserId === myMemberId;
+
+    if (party.spinMode === "elimination") {
+      const remaining = entries.filter((e) => !e.isEliminated && e.id !== landedEntryId);
+      const nextRound = party.currentRound + 1;
+      const winnerEntryId = remaining.length === 1 ? remaining[0].id : undefined;
+
+      set((state) => ({
+        entries: state.entries.map((e) =>
+          e.id === landedEntryId ? { ...e, isEliminated: true } : e,
+        ),
+        party: state.party
+          ? {
+              ...state.party,
+              status: winnerEntryId ? "resolved" : "lobby",
+              currentRound: nextRound,
+              winnerEntryId,
+              spinSeed: undefined,
+              spinStartedAt: undefined,
+            }
+          : null,
+      }));
+
+      if (isHost && _channel) {
+        _channel.broadcast({ type: "round_resolved", eliminatedEntryId: landedEntryId, nextRound });
+        if (winnerEntryId) _channel.broadcast({ type: "party_resolved", winnerEntryId });
+      }
+      return;
+    }
+
+    set((state) => ({
+      party: state.party
+        ? {
+            ...state.party,
+            status: "resolved",
+            winnerEntryId: landedEntryId,
+            spinSeed: undefined,
+            spinStartedAt: undefined,
+          }
+        : null,
+    }));
+    if (isHost && _channel) {
+      _channel.broadcast({ type: "party_resolved", winnerEntryId: landedEntryId });
+    }
+  },
+
+  // ── resetSpin ───────────────────────────────────────────────────────────────
+
+  resetSpin() {
+    set((state) => ({
+      party: state.party
+        ? {
+            ...state.party,
+            status: "lobby",
+            winnerEntryId: undefined,
+            spinSeed: undefined,
+            spinStartedAt: undefined,
           }
         : null,
     }));
@@ -323,6 +409,22 @@ export const useWheelStore = create<WheelState>((set, get) => ({
                 status: "spinning",
                 spinSeed: event.seed,
                 spinStartedAt: event.startedAt,
+              }
+            : null,
+        }));
+        break;
+      case "round_resolved":
+        set((state) => ({
+          entries: state.entries.map((e) =>
+            e.id === event.eliminatedEntryId ? { ...e, isEliminated: true } : e,
+          ),
+          party: state.party
+            ? {
+                ...state.party,
+                status: state.party.status === "resolved" ? "resolved" : "lobby",
+                currentRound: event.nextRound,
+                spinSeed: undefined,
+                spinStartedAt: undefined,
               }
             : null,
         }));

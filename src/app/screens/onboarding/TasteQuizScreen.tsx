@@ -143,7 +143,12 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   const flowMode = route.params?.mode ?? "onboarding";
   const isDietaryRoute = route.name === "DietaryPreferences";
   const initialPhase = isDietaryRoute ? "dietary" : (route.params?.initialPhase ?? "taste");
-  const [values, setValues] = useState<TasteVector>(INITIAL);
+  // The dietary step is a separate route instance, so the taste answers from the
+  // quiz route arrive via params; without them we must not overwrite the vector.
+  const carriedAnswers =
+    isDietaryRoute && route.params && "answers" in route.params ? route.params.answers : undefined;
+  const hasTasteAnswers = !isDietaryRoute || carriedAnswers !== undefined;
+  const [values, setValues] = useState<TasteVector>(carriedAnswers ?? INITIAL);
   const [dietaryPreferences, setDietaryPreferencesState] = useState<DietaryFlag[]>(
     profile.dietaryPreferences,
   );
@@ -224,11 +229,19 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   };
 
   const handleFinish = () => {
-    setTasteVector(values);
+    const tasteAnswers = hasTasteAnswers ? values : profile.tasteVector;
+    if (hasTasteAnswers) {
+      setTasteVector(values);
+    }
     void getHungryService()
       .profile.recordQuizResponse(
-        { answers: values, dietaryPreferences, maxDishBudget: maxDishBudget ?? null, flowMode },
-        values,
+        {
+          answers: tasteAnswers,
+          dietaryPreferences,
+          maxDishBudget: maxDishBudget ?? null,
+          flowMode,
+        },
+        tasteAnswers,
       )
       .catch(() => undefined);
     setDietaryPreferences(dietaryPreferences);
@@ -692,6 +705,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                     navigation.navigate("DietaryPreferences", {
                       mode: flowMode,
                       initialPhase: "dietary",
+                      answers: values,
                     });
                   }}
                   style={{ width: PRIMARY_BUTTON_WIDTH }}

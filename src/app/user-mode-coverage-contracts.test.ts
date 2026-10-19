@@ -514,15 +514,21 @@ test("profile surfaces keep own and other-user layouts linked while hiding taste
     connections,
     [
       /authorAvatarUrl: person\.avatarUrl/,
-      /authorLocation: person\.location/,
       /<Avatar name=\{person\.name\} uri=\{person\.avatarUrl\} size=\{44\}/,
-      /listSharedStallPosts/,
-      /chat\.listConversations\(\)/,
-      /commentsByPostId/,
-      /repliesByCommentId/,
+      /avatarUrl: user\.avatarUrl \?\? ""/,
     ],
     "ProfileConnectionsScreen avatar consistency",
   );
+  // Followers/Following lists come only from the server for the viewed profile,
+  // never from feed, comment or chat authors.
+  for (const forbidden of [
+    /listSharedStallPosts/,
+    /chat\.listConversations\(\)/,
+    /commentsByPostId/,
+    /repliesByCommentId/,
+  ]) {
+    assert.doesNotMatch(connections, forbidden);
+  }
   assertSourceIncludes(
     settings,
     [

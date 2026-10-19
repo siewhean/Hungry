@@ -11,7 +11,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppText, Avatar, EmptyState, Input } from "@/components/ui";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
-import { promptCommentSafetyActions } from "@/lib/security/communitySafety";
+import {
+  isContentHiddenForSession,
+  promptCommentSafetyActions,
+} from "@/lib/security/communitySafety";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSocialStore, type SocialComment, type SocialReply } from "@/store/useSocialStore";
 import { useHungryTheme } from "@/theme";
@@ -52,6 +55,9 @@ export function ReviewCommentsSheet({
 
   const [draftComment, setDraftComment] = useState("");
   const [activeReplyCommentId, setActiveReplyCommentId] = useState<string | null>(null);
+  // Bumped after a block so comments and replies re-read the session block filter.
+  const [blockedAuthorsVersion, setBlockedAuthorsVersion] = useState(0);
+  const onAuthorBlocked = useCallback(() => setBlockedAuthorsVersion((version) => version + 1), []);
   const emptyStateSpacing = Math.max(spacing[6], insets.bottom);
 
   useEffect(() => {
@@ -69,6 +75,7 @@ export function ReviewCommentsSheet({
 
     const seen = new Set<string>();
     const deduped = merged.filter((comment) => {
+      if (isContentHiddenForSession({ id: comment.id, authorId: comment.userId })) return false;
       if (seen.has(comment.id)) return false;
       seen.add(comment.id);
       return true;
@@ -77,7 +84,22 @@ export function ReviewCommentsSheet({
     return deduped.sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
-  }, [activeReview, commentsByPostId, seededComments]);
+    // blockedAuthorsVersion re-runs the session block filter after a block.
+  }, [activeReview, blockedAuthorsVersion, commentsByPostId, seededComments]);
+
+  const visibleRepliesByCommentId = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(repliesByCommentId).map(([commentId, replies]) => [
+          commentId,
+          replies.filter(
+            (reply) => !isContentHiddenForSession({ id: reply.id, authorId: reply.userId }),
+          ),
+        ]),
+      ),
+    // blockedAuthorsVersion re-runs the session block filter after a block.
+    [blockedAuthorsVersion, repliesByCommentId],
+  );
 
   const hasComments = commentsForActiveReview.length > 0;
 
@@ -288,8 +310,10 @@ export function ReviewCommentsSheet({
                           promptCommentSafetyActions({
                             commentId: comment.id,
                             authorName: comment.authorName,
+                            authorId: comment.userId,
                             postId: activeReview?.id,
                             label: "comment",
+                            onBlocked: onAuthorBlocked,
                           })
                         }
                       >
@@ -317,9 +341,9 @@ export function ReviewCommentsSheet({
                       </AppText>
                     </Pressable>
 
-                    {(repliesByCommentId[comment.id] ?? []).length > 0 ? (
+                    {(visibleRepliesByCommentId[comment.id] ?? []).length > 0 ? (
                       <View style={{ gap: spacing[3], marginTop: spacing[3] }}>
-                        {(repliesByCommentId[comment.id] ?? []).map((reply) => (
+                        {(visibleRepliesByCommentId[comment.id] ?? []).map((reply) => (
                           <View key={reply.id} style={{ flexDirection: "row", gap: spacing[3] }}>
                             <Avatar uri={reply.authorAvatarUrl} name={reply.authorName} size={24} />
                             <View style={{ flex: 1, gap: 2 }}>
@@ -353,8 +377,10 @@ export function ReviewCommentsSheet({
                                     promptCommentSafetyActions({
                                       commentId: reply.id,
                                       authorName: reply.authorName,
+                                      authorId: reply.userId,
                                       postId: activeReview?.id,
                                       label: "reply",
+                                      onBlocked: onAuthorBlocked,
                                     })
                                   }
                                 >

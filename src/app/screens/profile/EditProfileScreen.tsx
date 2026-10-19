@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { View, Pressable } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ChevronRight, Camera } from "lucide-react-native";
@@ -41,6 +41,7 @@ export function EditProfileScreen({ navigation }: Props) {
   const [email, setEmail] = useState(profile.email);
   const [avatarUri, setAvatarUri] = useState<string | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
+  const [canChangePassword, setCanChangePassword] = useState(false);
   const avatarPreviewUri = avatarUri ?? profile.avatarUrl;
   const avatarSize = spacing[20];
   const avatarInitials = useMemo(
@@ -100,12 +101,22 @@ export function EditProfileScreen({ navigation }: Props) {
     showToast({ message: "Profile photo updated.", tone: "success" });
   };
 
+  useEffect(() => {
+    let isActive = true;
+    // Google/Apple-only accounts have no password to change, so the row stays hidden.
+    getHungryService()
+      .auth.canChangePassword()
+      .then((allowed) => {
+        if (isActive) setCanChangePassword(allowed);
+      })
+      .catch(() => undefined);
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
   const handleChangePassword = () => {
-    const rootNavigation = getRootNavigation(navigation);
-    rootNavigation.navigate("AuthStack", {
-      screen: "ResetPassword",
-      params: { email, code: "profile-settings" },
-    });
+    getRootNavigation(navigation).navigate("ChangePassword");
   };
 
   return (
@@ -182,18 +193,21 @@ export function EditProfileScreen({ navigation }: Props) {
             value={email}
             onChangeText={setEmail}
           />
-          <Pressable
-            onPress={handleChangePassword}
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              paddingVertical: spacing[2],
-            }}
-          >
-            <AppText style={{ fontWeight: "600" }}>Change Password</AppText>
-            <ChevronRight size={18} color={palette.textMuted} />
-          </Pressable>
+          {canChangePassword ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={handleChangePassword}
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingVertical: spacing[2],
+              }}
+            >
+              <AppText style={{ fontWeight: "600" }}>Change Password</AppText>
+              <ChevronRight size={18} color={palette.textMuted} />
+            </Pressable>
+          ) : null}
         </View>
       </Card>
       <Button

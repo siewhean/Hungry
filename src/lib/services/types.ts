@@ -583,7 +583,8 @@ export interface ContentReportRequest {
 }
 
 export interface BlockUserRequest {
-  blockedUserKey: string;
+  /** Auth user id (UUID) of the person being blocked. Never a display name. */
+  blockedUserId: string;
   reason?: string;
 }
 
@@ -712,6 +713,10 @@ export interface HungryService {
     cancelAccountDeletion(): Promise<boolean>;
     forgotPassword(email: string): Promise<void>;
     resetPassword(token: string, password: string): Promise<void>;
+    /** True when the signed-in account has an email+password identity (not Google/Apple only). */
+    canChangePassword(): Promise<boolean>;
+    /** Re-authenticates with the current password, then sets a new one. No recovery code involved. */
+    changePassword(currentPassword: string, newPassword: string): Promise<void>;
     getCurrentSession(): Promise<Session | null>;
     refreshSession(): Promise<Session | null>;
   };
@@ -844,14 +849,25 @@ export interface HungryService {
     getLikedBites(): Promise<Bite[]>;
 
     // Follows
-    followUser(userId: string): Promise<void>;
+    /** "pending" when the target's account is private and must approve the request. */
+    followUser(userId: string): Promise<"approved" | "pending">;
     unfollowUser(userId: string): Promise<void>;
+    /** One page of approved followers; `limit` defaults to 100 (max 500). */
     listFollowers(
       userId: string,
+      page?: { limit?: number; offset?: number },
     ): Promise<{ userId: string; displayName: string; avatarUrl?: string }[]>;
+    /** One page of approved followees; `limit` defaults to 100 (max 500). */
     listFollowing(
       userId: string,
+      page?: { limit?: number; offset?: number },
     ): Promise<{ userId: string; displayName: string; avatarUrl?: string }[]>;
+    /** False when the viewer may not see this user's follower/following lists (private or blocked). */
+    canViewFollowLists(userId: string): Promise<boolean>;
+    /** Approved follower/following counts; null when hidden from the viewer or unavailable. */
+    getFollowCounts(
+      userId: string,
+    ): Promise<{ followersCount: number; followingCount: number } | null>;
     isFollowing(userId: string): Promise<boolean>;
 
     // Comments
@@ -899,7 +915,7 @@ export interface HungryService {
     blockUser(request: BlockUserRequest): Promise<void>;
     hidePost(postId: string, reason?: string): Promise<void>;
     unhidePost(postId: string): Promise<void>;
-    getBlockedUsers(): Promise<{ blockedUserKey: string; reason?: string; createdAt: string }[]>;
+    getBlockedUsers(): Promise<{ blockedUserId: string; reason?: string; createdAt: string }[]>;
   };
 
   contributions: {

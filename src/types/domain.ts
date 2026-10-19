@@ -236,6 +236,8 @@ export interface Review {
   id: string;
   dishId?: string;
   venueId?: string;
+  /** Auth user id of the author, when the review came from a signed-in account. */
+  authorId?: string;
   authorName: string;
   authorAvatarUrl?: string;
   rating: number;

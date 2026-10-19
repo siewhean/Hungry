@@ -5,7 +5,7 @@ import { MapPin, Users, Hash, ChevronRight } from "lucide-react-native";
 import { AppText, Card, Chip, IconButton } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useComposerStore } from "../useComposerStore";
-import { useMerchantStore } from "@/store/useMerchantStore";
+import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
 import { spacing } from "@/theme/tokens";
 
 interface SharedMetadataProps {
@@ -20,7 +20,7 @@ export function SharedMetadata({ onOpenLocation, onOpenCollaborators }: SharedMe
   const foodTags = useComposerStore((state) => state.foodTags);
   const tasteTags = useComposerStore((state) => state.tasteTags);
   const toggleTag = useComposerStore((state) => state.toggleTag);
-  const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
+  const isMerchantMode = useMerchantStore(isMerchantModeActive);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
   const isUserMode = !isMerchantMode && !isDeveloperMode;
   const shouldShowTasteTags = !isUserMode;

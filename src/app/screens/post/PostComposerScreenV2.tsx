@@ -8,7 +8,7 @@ import * as Haptics from "expo-haptics";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { useHungryTheme } from "@/theme";
 import { useComposerStore } from "@/features/post/useComposerStore";
-import { useMerchantStore } from "@/store/useMerchantStore";
+import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
 
 // Components
 import { ComposerHeader } from "@/features/post/components/ComposerHeader";
@@ -38,7 +38,7 @@ export function PostComposerScreenV2({ navigation, route }: Props) {
   const { palette, spacing, semanticSpacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const activeTab = useComposerStore((state) => state.activeTab);
-  const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
+  const isMerchantMode = useMerchantStore(isMerchantModeActive);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
   const isUserMode = !isMerchantMode && !isDeveloperMode;
   const shouldShowAiSuite = !isUserMode;

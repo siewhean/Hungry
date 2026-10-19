@@ -22,7 +22,7 @@ import { POST_CAPTION_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputS
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
-import { useMerchantStore } from "@/store/useMerchantStore";
+import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
 import { useHungryTheme } from "@/theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Post">;
@@ -59,7 +59,7 @@ function PostComposerScreenInner({ navigation, route }: Props) {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const showToast = useUIStore((state) => state.showToast);
-  const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
+  const isMerchantMode = useMerchantStore(isMerchantModeActive);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
   const isUserMode = !isMerchantMode && !isDeveloperMode;
   const shouldShowComposerBusinessFeatures = !isUserMode;
@@ -206,7 +206,7 @@ function PostComposerScreenInner({ navigation, route }: Props) {
         const composer = useComposerStore.getState();
         composer.reset();
         composer.setActiveTab("post");
-        composer.setCaption(caption.trim() || targetDish.name);
+        composer.setCaption(sanitizeFreeText(caption, POST_CAPTION_MAX_LENGTH) || targetDish.name);
         composer.addMedia(selectedMedia);
         await publishComposerPost({
           publishMode: "post",
@@ -373,7 +373,7 @@ function PostComposerScreenInner({ navigation, route }: Props) {
             placeholder="What makes this worth the queue?"
             value={caption}
             maxLength={POST_CAPTION_MAX_LENGTH}
-            onChangeText={(value) => setCaption(sanitizeFreeText(value, POST_CAPTION_MAX_LENGTH))}
+            onChangeText={setCaption}
           />
           {shouldShowComposerBusinessFeatures && (
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
