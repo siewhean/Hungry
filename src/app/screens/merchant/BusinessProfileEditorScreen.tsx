@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { View, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { Camera, Image as ImageIcon } from "lucide-react-native";
 import { useForm, Controller } from "react-hook-form";
@@ -24,6 +24,8 @@ import { getDataRepository, getHungryService } from "@/lib/services/serviceProvi
 import type { MerchantOutlet, LocationPrivacy } from "@/types/domain";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { formatBusinessType } from "@/features/merchant/merchantReadiness";
+import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
+import { useUnsavedChangesGuard } from "@/features/merchant/useUnsavedChangesGuard";
 
 type NavigationProp = NativeStackNavigationProp<MerchantTabParamList, "BusinessProfileEditor">;
 
@@ -62,6 +64,28 @@ const LINK_FIELDS = [
     placeholder: "e.g. facebook.com/yourstall",
   },
 ] as const;
+
+function toFormData(outlet: MerchantOutlet): FormData {
+  return {
+    name: outlet.name || "",
+    description: outlet.description || "",
+    businessType: outlet.businessType || "hawker_stall",
+    cuisineCategories: outlet.cuisineCategories?.join(", ") || "",
+    unitNumber: outlet.unitNumber || "",
+    floor: outlet.floor || "",
+    locationPrivacy: toHomeBasedPrivacy(outlet.locationPrivacy),
+    operatingHours: outlet.operatingHours || "",
+    temporaryClosure: outlet.temporaryClosure || "",
+    profilePhotoUrl: outlet.profilePhotoUrl || "",
+    coverPhotoUrl: outlet.coverPhotoUrl || "",
+    contactPhone: outlet.contactPhone || "",
+    contactEmail: outlet.contactEmail || "",
+    websiteUrl: findLink(outlet.socialLinks, "website"),
+    instagramUrl: findLink(outlet.socialLinks, "instagram"),
+    facebookUrl: findLink(outlet.socialLinks, "facebook"),
+    isLive: outlet.isLive,
+  };
+}
 
 function findLink(links: MerchantOutlet["socialLinks"] | undefined, platform: string): string {
   return links?.find((link) => link.platform.toLowerCase() === platform)?.url ?? "";
@@ -118,9 +142,9 @@ export function BusinessProfileEditorScreen() {
   const {
     control,
     handleSubmit,
-    setValue,
+    reset,
     watch,
-    formState: { isSubmitting, errors },
+    formState: { isSubmitting, isDirty, errors },
   } = useForm<FormData>({
     defaultValues: {
       name: "",
@@ -145,27 +169,18 @@ export function BusinessProfileEditorScreen() {
 
   const businessType = watch("businessType");
 
+  // Seed once per outlet. A background account sync hands back a new outlet object with the
+  // same id: re-seed only while the form is untouched, so it never wipes the merchant's edits.
+  const seededOutletId = useRef<string | null>(null);
   useEffect(() => {
-    if (activeOutlet) {
-      setValue("name", activeOutlet.name || "");
-      setValue("description", activeOutlet.description || "");
-      setValue("businessType", activeOutlet.businessType || "hawker_stall");
-      setValue("cuisineCategories", activeOutlet.cuisineCategories?.join(", ") || "");
-      setValue("unitNumber", activeOutlet.unitNumber || "");
-      setValue("floor", activeOutlet.floor || "");
-      setValue("locationPrivacy", toHomeBasedPrivacy(activeOutlet.locationPrivacy));
-      setValue("operatingHours", activeOutlet.operatingHours || "");
-      setValue("temporaryClosure", activeOutlet.temporaryClosure || "");
-      setValue("profilePhotoUrl", activeOutlet.profilePhotoUrl || "");
-      setValue("coverPhotoUrl", activeOutlet.coverPhotoUrl || "");
-      setValue("contactPhone", activeOutlet.contactPhone || "");
-      setValue("contactEmail", activeOutlet.contactEmail || "");
-      LINK_FIELDS.forEach(({ field, platform }) =>
-        setValue(field, findLink(activeOutlet.socialLinks, platform)),
-      );
-      setValue("isLive", activeOutlet.isLive);
-    }
-  }, [activeOutlet, setValue]);
+    if (!activeOutlet) return;
+    if (seededOutletId.current === activeOutlet.id && isDirty) return;
+    seededOutletId.current = activeOutlet.id;
+    reset(toFormData(activeOutlet));
+  }, [activeOutlet, isDirty, reset]);
+
+  const leaveEditor = useCallback(() => navigation.goBack(), [navigation]);
+  const confirmLeave = useUnsavedChangesGuard(isDirty && !isSubmitting, leaveEditor);
 
   const onSubmit = async (data: FormData) => {
     if (!activeOutlet) return;
@@ -218,7 +233,10 @@ export function BusinessProfileEditorScreen() {
         activeOutlet.id,
         updates,
       );
+      // Saved: the next outlet object re-seeds the form, clearing the unsaved-changes guard.
+      reset(data);
       updateOutletProfile(activeOutlet.id, updated);
+      trackMerchantEvent("merchant_profile_updated", activeOutlet.id, { is_live: data.isLive });
       Alert.alert(
         "Saved",
         !data.isLive
@@ -273,6 +291,7 @@ export function BusinessProfileEditorScreen() {
   return (
     <Screen
       title="Business Profile"
+      onBackPress={confirmLeave}
       contentContainerStyle={{ paddingBottom: spacing[6] }}
       headerRight={
         <TouchableOpacity
@@ -378,6 +397,7 @@ export function BusinessProfileEditorScreen() {
               render={({ field: { onChange, value } }) => (
                 <MerchantImageField
                   label="Profile Image"
+                  rationale="Hungry needs access to your photo library to upload your stall's profile image."
                   value={value}
                   onChange={onChange}
                   isSaving={isUploadingImages}
@@ -392,6 +412,7 @@ export function BusinessProfileEditorScreen() {
               render={({ field: { onChange, value } }) => (
                 <MerchantImageField
                   label="Cover Image"
+                  rationale="Hungry needs access to your photo library to upload your stall's cover image."
                   value={value}
                   onChange={onChange}
                   isSaving={isUploadingImages}

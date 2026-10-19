@@ -19,6 +19,8 @@ interface ScreenProps {
   subtitle?: string;
   headerRight?: ReactNode;
   showBack?: boolean;
+  /** Replaces the header back button's goBack (e.g. to confirm discarding unsaved changes). */
+  onBackPress?: () => void;
   headerGap?: number;
   scroll?: boolean;
   style?: StyleProp<ViewStyle>;
@@ -35,6 +37,7 @@ export function Screen({
   subtitle,
   headerRight,
   showBack = true,
+  onBackPress,
   headerGap,
   scroll = true,
   style,
@@ -55,6 +58,7 @@ export function Screen({
         title={title}
         subtitle={subtitle}
         showBack={showBack}
+        onBackPress={onBackPress}
         right={headerRight}
         horizontalPadding={fullWidth ? semanticSpacing.screenEdge : 0}
       />
