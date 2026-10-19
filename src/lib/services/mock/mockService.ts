@@ -1149,7 +1149,10 @@ function buildMockMerchantAnalytics(
     .slice(0, 5);
 
   const reviews = _merchantInbox.filter(
-    (interaction) => interaction.outletId === outletId && interaction.type === "review",
+    (interaction) =>
+      interaction.outletId === outletId &&
+      interaction.type === "review" &&
+      !isMockInboxReviewModerationHidden(interaction),
   );
   const ratings = reviews
     .map((interaction) => interaction.rating)

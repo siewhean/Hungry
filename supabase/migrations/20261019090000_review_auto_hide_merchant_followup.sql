@@ -59,7 +59,9 @@ with check (
 );
 
 -- 2. Merchant analytics skip hidden reviews ---------------------------------
-create or replace function public.get_merchant_analytics(
+-- The SECURITY DEFINER body lives in app_private (20260527144633); the public
+-- SECURITY INVOKER wrapper stays as it is and calls this body.
+create or replace function app_private.get_merchant_analytics(
   p_outlet_id uuid,
   p_since timestamptz default null,
   p_until timestamptz default null
@@ -68,7 +70,7 @@ returns jsonb
 language plpgsql
 stable
 security definer
-set search_path = public
+set search_path = public, pg_temp
 as $function$
 declare
   v_outlet record;
@@ -319,10 +321,10 @@ begin
 end;
 $function$;
 
-revoke all on function public.get_merchant_analytics(uuid, timestamptz, timestamptz)
-  from public, anon, authenticated;
-grant execute on function public.get_merchant_analytics(uuid, timestamptz, timestamptz)
-  to authenticated;
+revoke all on function app_private.get_merchant_analytics(uuid, timestamptz, timestamptz)
+  from public, anon;
+grant execute on function app_private.get_merchant_analytics(uuid, timestamptz, timestamptz)
+  to authenticated, service_role;
 
 
 -- 3. pg_temp last on the new SECURITY DEFINER bodies ------------------------

@@ -147,14 +147,17 @@ test("merchants can still unpin or reorder a pin whose review was hidden", () =>
 test("merchant analytics leave hidden reviews out of counts, ratings and tags", () => {
   const migration = readFollowupMigration();
 
-  assert.match(migration, /create or replace function public\.get_merchant_analytics\(/);
+  // Replace the app_private definer body; the public invoker wrapper from
+  // 20260527144633 must stay a wrapper (no definer body in the API schema).
+  assert.match(migration, /create or replace function app_private\.get_merchant_analytics\(/);
+  assert.doesNotMatch(migration, /create or replace function public\.get_merchant_analytics\(/);
   assert.equal(
     migration.match(/and not app_private\.review_is_moderation_hidden\(r\.id\)/g)?.length,
     3,
   );
   assert.match(
     migration,
-    /grant execute on function public\.get_merchant_analytics\(uuid, timestamptz, timestamptz\)\s+to authenticated;/,
+    /grant execute on function app_private\.get_merchant_analytics\(uuid, timestamptz, timestamptz\)\s+to authenticated, service_role;/,
   );
   assert.match(
     migration,
