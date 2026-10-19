@@ -567,8 +567,28 @@ const _contentReports: {
 /** Blocked author ids, keyed like the Supabase user_blocks.blocked_user_key column. */
 const _blockedUsers = new Map<string, { reason?: string; createdAt: string }>();
 
-/** Mirrors the Supabase review read policy: hide blocked authors and reviews the viewer reported. */
+/** Distinct reporters that auto-hide a review, like report_content on the server. */
+const REVIEW_REPORT_AUTO_HIDE_THRESHOLD = 3;
+/** Reviews hidden by the report threshold: only their author still sees them. */
+const _moderationHiddenReviewIds = new Set<string>();
+
+function recordMockReviewReport(reviewId: string) {
+  const reporters = new Set(
+    _contentReports
+      .filter((report) => report.targetType === "review" && report.targetId === reviewId)
+      .map((report) => report.reporterId),
+  );
+  if (reporters.size >= REVIEW_REPORT_AUTO_HIDE_THRESHOLD) {
+    _moderationHiddenReviewIds.add(reviewId);
+  }
+}
+
+/**
+ * Mirrors the Supabase review read policies: hide report-threshold reviews from everyone but
+ * their author, blocked authors, and reviews the viewer reported.
+ */
 function isMockReviewHiddenForViewer(review: { id: string; authorId?: string }): boolean {
+  if (_moderationHiddenReviewIds.has(review.id) && review.authorId !== _profile.id) return true;
   if (review.authorId && _blockedUsers.has(review.authorId)) return true;
   return _contentReports.some(
     (report) =>
@@ -1551,7 +1571,19 @@ export const hungryService: HungryService = {
     },
 
     async getDish(id) {
-      return resolve(dishes.find((d) => d.id === id));
+      const dish = dishes.find((d) => d.id === id);
+      if (!dish) return resolve(undefined);
+      const reviews = dish.reviews.filter((review) => !isMockReviewHiddenForViewer(review));
+      // Report-threshold reviews also leave the dish total for everyone, like dish_review_stats.
+      const moderationHidden = dish.reviews.filter((review) =>
+        _moderationHiddenReviewIds.has(review.id),
+      ).length;
+      if (reviews.length === dish.reviews.length && moderationHidden === 0) return resolve(dish);
+      return resolve({
+        ...dish,
+        reviews,
+        reviewCount: Math.max(0, dish.reviewCount - moderationHidden),
+      });
     },
 
     async listActivePromotionsForTarget(input) {
@@ -1695,7 +1727,9 @@ export const hungryService: HungryService = {
       const reviewedDishes = _profile.reviewedDishIds
         .map((id) => dishes.find((d) => d.id === id))
         .filter(Boolean);
-      const reviews = reviewedDishes.flatMap((d) => (d?.reviews ?? []).slice(0, 1));
+      const reviews = reviewedDishes
+        .flatMap((d) => (d?.reviews ?? []).slice(0, 1))
+        .filter((review) => !isMockReviewHiddenForViewer(review));
       return resolve(reviews);
     },
 
@@ -2267,6 +2301,7 @@ export const hungryService: HungryService = {
         targetAuthorKey: request.targetAuthorKey,
         reason: request.reason,
       });
+      if (request.targetType === "review") recordMockReviewReport(request.targetId);
       return resolve(undefined);
     },
 
@@ -2352,7 +2387,12 @@ export const hungryService: HungryService = {
 
     async listPopularVisitorPinsByVenue(venueId) {
       const pins = sortPopularVisitorPins(
-        _popularVisitorPins.filter((pin) => pin.venueId === venueId && pin.isActive),
+        _popularVisitorPins.filter(
+          (pin) =>
+            pin.venueId === venueId &&
+            pin.isActive &&
+            !_moderationHiddenReviewIds.has(pin.reviewId),
+        ),
       ).slice(0, 6);
       return resolve(clone(pins));
     },
