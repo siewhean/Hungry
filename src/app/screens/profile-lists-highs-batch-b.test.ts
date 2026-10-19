@@ -26,12 +26,27 @@ test("H20: listUserPosts pages one author's posts on the server", async () => {
   const firstPage = await hungryService.social.listUserPosts(authorId, { limit: 1, offset: 0 });
   assert.equal(firstPage.length, 1);
   assert.ok(firstPage.every((bite) => bite.authorId === authorId));
+
+  // The own grid pages too, and a failed server read keeps the locally shared posts.
+  const profileHome = read("src/app/screens/profile/ProfileHomeScreen.tsx");
+  assert.match(
+    profileHome,
+    /listUserPosts\(profile\.id, \{ limit: OWN_POSTS_PAGE_SIZE, offset \}\)/,
+  );
+  assert.match(profileHome, /onPress=\{loadMoreProfilePosts\}/);
+  assert.match(profileHome, /loadOwnPostsPage\(0\)\.catch\(/);
+  assert.match(profileHome, /title="Couldn't load posts"/);
 });
 
 test("H22: another user's Reviews tab lists only that account's reviews", async () => {
   const content = read("src/app/screens/profile/UserProfileContent.tsx");
   assert.match(content, /reviews\.getUserReviews\(normalizedAuthorId\)/);
   assert.doesNotMatch(content, /commentsByPostId/);
+  assert.match(content, /title="Couldn't load reviews"/);
+  assert.match(
+    read("src/lib/services/supabase/supabaseService.ts"),
+    /async getUserReviews\(userId\) \{[\s\S]*?if \(error\) throw error;/,
+  );
   const otherUserId = "batch-b-other-user";
   const reviews = await hungryService.reviews.getUserReviews(otherUserId);
   assert.ok(reviews.every((review) => review.authorId === otherUserId));
@@ -52,6 +67,27 @@ test("H23/H24/H28: other profiles render directly and open connection lists on t
   assert.match(content, /openProfileConnections\("UserFollowers"\)/);
   assert.doesNotMatch(content, /navigate\("VisitedStalls"\)/);
   assert.match(connections, /route\.name === "UserFollowing"/);
+});
+
+test("H21/H24: every navigate to UserProfile passes an account id", () => {
+  for (const file of [
+    "src/components/stall/PopularVisitorsSection.tsx",
+    "src/app/screens/home/HomeFeedScreen.tsx",
+    "src/app/screens/profile/ProfileConnectionsScreen.tsx",
+    "src/app/screens/profile/FollowRequestsScreen.tsx",
+  ]) {
+    const calls = read(file)
+      .split(/navigate\("UserProfile", \{/)
+      .slice(1);
+    assert.ok(calls.length > 0, file);
+    for (const call of calls) {
+      assert.match(call.split("})")[0], /authorId:/, file);
+    }
+  }
+  assert.match(
+    read("src/components/stall/PopularVisitorsSection.tsx"),
+    /authorId: pin\.authorProfileId/,
+  );
 });
 
 test("H25: follow list reads throw and the screen shows an error with Retry", () => {
@@ -79,6 +115,9 @@ test("H27: passport celebration is marked at start and persisted per user", () =
   assert.match(store, /reportedEarnedStampIds: Record<string, boolean>/);
   assert.match(store, /\.\.\.Object\.keys\(get\(\)\.reportedEarnedStampIds\)/);
   assert.match(store, /const ensureOwner = \(\) =>/);
+  // Nothing is reported or celebrated before the persisted ids have loaded.
+  assert.match(store, /if \(!usePassportStore\.persist\.hasHydrated\(\)\) \{/);
+  assert.match(screen, /if \(!passportHydrated \|\| !celebrateMarker\?\.shouldCelebrate\) return;/);
 });
 
 test("H29: other-profile stats, tabs and post actions have labels", () => {
@@ -168,6 +207,13 @@ test("H37: wheel Browse tab matches the catalog's dish names and tags", () => {
     ),
   );
   assert.ok(!dishMatchesSearchCategory({ name: "Laksa", tasteTags: ["Spicy"] }, "rice"));
+  // Whole words only: "late" is not "plate" or "chocolate", "rice" is not "price".
+  assert.ok(
+    !dishMatchesSearchCategory({ name: "Chicken Rice Plate", tasteTags: [] }, "late night"),
+  );
+  assert.ok(!dishMatchesSearchCategory({ name: "Chocolate Cake", tasteTags: [] }, "late night"));
+  assert.ok(!dishMatchesSearchCategory({ name: "Fixed Price Set", tasteTags: [] }, "rice"));
+  assert.ok(dishMatchesSearchCategory({ name: "Late Night Supper", tasteTags: [] }, "late night"));
 });
 
 test("H38: wheel sheet looks up each venue's dishes once and repositories index by venue", () => {
@@ -203,4 +249,14 @@ test("H39: removing a reported list unpublishes it", async () => {
   const removed = await hungryService.portfolio.getPortfolio(portfolio.id);
   assert.equal(removed.visibility, "private");
   assert.equal(removed.publishedAt, undefined);
+
+  // The owner cannot undo the takedown.
+  await assert.rejects(hungryService.portfolio.publishPortfolio(portfolio.id));
+  await assert.rejects(
+    hungryService.portfolio.updatePortfolio(portfolio.id, { visibility: "public" }),
+  );
+  const lock = read("supabase/migrations/20261019113000_portfolio_moderation_lock.sql");
+  assert.match(lock, /add column if not exists moderation_removed_at timestamptz/);
+  assert.match(lock, /moderation_removed_at = now\(\)/);
+  assert.match(lock, /before update on public\.portfolios/);
 });

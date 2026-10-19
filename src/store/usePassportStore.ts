@@ -182,6 +182,8 @@ export const usePassportStore = create<PassportState>()(
         if (get().ownerUserId === userId) return;
         set({ ownerUserId: userId, celebratedStampIds: {}, reportedEarnedStampIds: {} });
       };
+      /** Latest input queued before the persisted ids finished loading. */
+      let pendingTriedStallIds: string[] | null = null;
 
       return {
         progressMap: {},
@@ -213,6 +215,19 @@ export const usePassportStore = create<PassportState>()(
         getPortfolioContributionStats: () => buildContributionStats(get().stamps, get().events),
 
         computeProgress: (triedStallIds) => {
+          // Until the persisted reported ids load, every stamp looks new and would re-fire
+          // passport_stamp_earned on cold start; run once hydration finishes instead.
+          if (!usePassportStore.persist.hasHydrated()) {
+            if (pendingTriedStallIds === null) {
+              usePassportStore.persist.onFinishHydration(() => {
+                const queued = pendingTriedStallIds;
+                pendingTriedStallIds = null;
+                if (queued) get().computeProgress(queued);
+              });
+            }
+            pendingTriedStallIds = triedStallIds;
+            return;
+          }
           ensureOwner();
           const previousEarnedIds = new Set([
             ...getEarnedPassportStamps(get().progressMap).map((stamp) => stamp.id),

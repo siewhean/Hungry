@@ -69,6 +69,7 @@ export function UserProfileContent({
   const [isLoadingMorePosts, setIsLoadingMorePosts] = useState(false);
   const [postsLoadFailed, setPostsLoadFailed] = useState(false);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewsLoadFailed, setReviewsLoadFailed] = useState(false);
   // Server follow counts plus whether the server already had the viewer following this user,
   // so a local follow/unfollow afterwards can adjust the follower count without refetching.
   const [serverFollowState, setServerFollowState] = useState<{
@@ -154,10 +155,13 @@ export function UserProfileContent({
     void getHungryService()
       .reviews.getUserReviews(normalizedAuthorId)
       .then((rows) => {
-        if (isMounted) setReviews(rows);
+        if (!isMounted) return;
+        setReviews(rows);
+        setReviewsLoadFailed(false);
       })
       .catch((error) => {
         console.error("Failed to load user reviews:", error);
+        if (isMounted) setReviewsLoadFailed(true);
       });
     return () => {
       isMounted = false;
@@ -508,6 +512,12 @@ export function UserProfileContent({
               ) : activeTab === "posts" && postsLoadFailed ? (
                 <EmptyState
                   title="Couldn't load posts"
+                  body="Check your connection and open this profile again."
+                  icon={<MessageCircleMore color={palette.textSecondary} size={36} />}
+                />
+              ) : activeTab === "reviews" && reviewsLoadFailed ? (
+                <EmptyState
+                  title="Couldn't load reviews"
                   body="Check your connection and open this profile again."
                   icon={<MessageCircleMore color={palette.textSecondary} size={36} />}
                 />

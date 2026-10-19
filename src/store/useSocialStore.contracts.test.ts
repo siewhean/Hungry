@@ -95,6 +95,12 @@ test("social store contract: follow state is loaded from the server on sign-in",
   assert.match(source, /return \{ followedUserIds: followed, requestedUserIds: requested \};/);
   assert.match(session, /syncFollowStateFromServer\(nextUserId\)/);
   assert.match(session, /\.syncFollowedUserIds\(userId\)/);
+  // A restored session reconciles once per launch, and in-flight local toggles survive.
+  assert.match(session, /syncFollowStateFromServer\(nextUserId, \{ oncePerLaunch: true \}\)/);
+  assert.match(
+    source,
+    /if \(current !== Boolean\(startFollowed\[id\]\)\) followed\[id\] = current;/,
+  );
 });
 
 test("social store contract: like and save toggles roll back failed Supabase sync", () => {

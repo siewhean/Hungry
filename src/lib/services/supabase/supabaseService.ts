@@ -3285,9 +3285,9 @@ export const supabaseService: HungryService = {
         )
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
-      if (error || !Array.isArray(data)) {
-        return [];
-      }
+      // Thrown so a failed read is not shown as "No reviews yet".
+      if (error) throw error;
+      if (!Array.isArray(data)) return [];
       return mapSupabaseReviewRows(client, data as Row[]);
     },
 

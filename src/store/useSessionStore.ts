@@ -122,9 +122,20 @@ function clearAccountScopedStores(): void {
   clearCommunitySafetySessionState();
 }
 
-/** Follow state lives on the server; load it on sign-in so a new device shows it. */
-function syncFollowStateFromServer(userId: string | null | undefined): void {
+/** Account whose follow state was already loaded during this app launch. */
+let followStateSyncedUserId: string | null = null;
+
+/**
+ * Follow state lives on the server; load it on sign-in so a new device shows it, and once
+ * per launch for a restored session so follows changed on another device are picked up.
+ */
+function syncFollowStateFromServer(
+  userId: string | null | undefined,
+  options?: { oncePerLaunch?: boolean },
+): void {
   if (!userId) return;
+  if (options?.oncePerLaunch && followStateSyncedUserId === userId) return;
+  followStateSyncedUserId = userId;
   const { useSocialStore } = require("./useSocialStore") as typeof import("./useSocialStore");
   void useSocialStore
     .getState()
@@ -347,8 +358,8 @@ export const useSessionStore = create<SessionState>()(
           scheduleIdleWork(
             () => {
               identifyPostHogUser(profileId, buildPostHogIdentityProperties());
+              syncFollowStateFromServer(nextUserId, { oncePerLaunch: true });
               if (!currentlyAuthenticated) {
-                syncFollowStateFromServer(nextUserId);
                 trackSignInCompletedOnce(profileId, {
                   method: "email",
                   has_completed_onboarding: session.completedOnboarding ?? false,

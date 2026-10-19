@@ -324,6 +324,9 @@ let _portfolioItems: PortfolioItem[] = [];
 let _portfolioCollaborators: PortfolioCollaborator[] = [];
 let _portfolioFollows: PortfolioFollow[] = [];
 let _portfolioFlags: PortfolioFlag[] = [];
+/** Lists a moderator removed; like portfolios.moderation_removed_at they stay private. */
+const _moderationRemovedPortfolioIds = new Set<string>();
+const MODERATION_REMOVED_LIST_MESSAGE = "This list was removed by moderators and can't be shared";
 let _passportStamps: PassportStamp[] = [];
 let _passportEvents: PassportProgressEvent[] = [];
 let _userStallSubmissions: UserStallSubmission[] = [];
@@ -3545,6 +3548,13 @@ export const hungryService: HungryService = {
       options?: PortfolioMutationOptions,
     ) {
       assertMockPortfolioVersion(id, options);
+      if (
+        _moderationRemovedPortfolioIds.has(id) &&
+        updates.visibility &&
+        updates.visibility !== "private"
+      ) {
+        throw new Error(MODERATION_REMOVED_LIST_MESSAGE);
+      }
       const updatedAt = new Date().toISOString();
       let found = false;
       _portfolios = _portfolios.map((portfolio) => {
@@ -3585,6 +3595,9 @@ export const hungryService: HungryService = {
 
     async publishPortfolio(id: string, options?: PortfolioMutationOptions) {
       assertMockPortfolioVersion(id, options);
+      if (_moderationRemovedPortfolioIds.has(id)) {
+        throw new Error(MODERATION_REMOVED_LIST_MESSAGE);
+      }
       const publishedAt = new Date().toISOString();
       let found = false;
       let shouldRecordPublish = false;
@@ -3971,6 +3984,7 @@ export const hungryService: HungryService = {
       if (resolution === "removed") {
         // Like resolve_portfolio_flag: the list is taken down, not just the flag closed.
         const flaggedPortfolioId = _portfolioFlags.find((flag) => flag.id === flagId)?.portfolioId;
+        if (flaggedPortfolioId) _moderationRemovedPortfolioIds.add(flaggedPortfolioId);
         _portfolios = _portfolios.map((portfolio) =>
           portfolio.id === flaggedPortfolioId
             ? { ...portfolio, visibility: "private", publishedAt: undefined, updatedAt: reviewedAt }

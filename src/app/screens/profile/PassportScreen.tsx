@@ -68,6 +68,10 @@ export function PassportScreen({ navigation: _nav }: Props) {
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const progressMap = usePassportStore((s) => s.progressMap);
   const celebratedStampIds = usePassportStore((s) => s.celebratedStampIds);
+  // Celebrated ids load asynchronously; celebrating before then would replay old stamps.
+  const [passportHydrated, setPassportHydrated] = useState(() =>
+    usePassportStore.persist.hasHydrated(),
+  );
   const computeProgress = usePassportStore((s) => s.computeProgress);
   const markStampCelebrated = usePassportStore((s) => s.markStampCelebrated);
   const loadPassportStamps = usePassportStore((s) => s.loadStamps);
@@ -101,6 +105,15 @@ export function PassportScreen({ navigation: _nav }: Props) {
   );
 
   useEffect(() => {
+    if (passportHydrated) return;
+    if (usePassportStore.persist.hasHydrated()) {
+      setPassportHydrated(true);
+      return;
+    }
+    return usePassportStore.persist.onFinishHydration(() => setPassportHydrated(true));
+  }, [passportHydrated]);
+
+  useEffect(() => {
     void AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
     const subscription = AccessibilityInfo.addEventListener("reduceMotionChanged", setReduceMotion);
     return () => subscription.remove();
@@ -121,7 +134,7 @@ export function PassportScreen({ navigation: _nav }: Props) {
   // Mark the stamp celebrated as soon as the celebration starts, so it never re-fires;
   // the visual flag is local state cleared by its own timer below.
   useEffect(() => {
-    if (!celebrateMarker?.shouldCelebrate) return;
+    if (!passportHydrated || !celebrateMarker?.shouldCelebrate) return;
 
     markStampCelebrated(celebrateMarker.stampId);
     setCelebratingStampId(celebrateMarker.stampId);
@@ -129,7 +142,7 @@ export function PassportScreen({ navigation: _nav }: Props) {
     if (!reduceMotion) {
       void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-  }, [celebrateMarker, markStampCelebrated, reduceMotion]);
+  }, [celebrateMarker, markStampCelebrated, passportHydrated, reduceMotion]);
 
   useEffect(() => {
     if (!celebratingStampId) return;
