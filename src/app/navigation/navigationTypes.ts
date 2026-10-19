@@ -124,7 +124,6 @@ export type RootStackParamList = {
     | undefined;
   BrowseDishes: undefined;
   BrowseStalls: undefined;
-  TasteFilter: undefined;
   DiscoverMap: undefined;
   DecideForMeResult: { surface?: "home" | "discover" } | undefined;
   MapZoomedIn: { buildingId: string };

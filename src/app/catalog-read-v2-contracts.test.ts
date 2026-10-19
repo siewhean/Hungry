@@ -6,14 +6,22 @@ import test from "node:test";
 const root = path.resolve(__dirname, "../..");
 const read = (file: string) => fs.readFileSync(path.join(root, file), "utf8");
 
-test("catalog read v2 uses RPC pages instead of the BrowseIndex in its active branch", () => {
+test("search and browse read only the paged catalog (no legacy path or flag)", () => {
   const source = read("src/app/screens/search/SearchResultsScreen.tsx");
-  assert.match(source, /FEATURE_FLAGS\.catalogReadV2/);
+  assert.doesNotMatch(source, /catalogReadV2|LegacyBrowseGridScreen|LegacySearchResultsScreen/);
+  assert.doesNotMatch(source, /browseIndex|getDataRepository|SearchResultsView/);
   assert.match(source, /RawCatalogBrowseGrid/);
   assert.match(source, /service\.listDishes\(request\)/);
   assert.match(source, /service\.listVenues\(request\)/);
-  assert.match(source, /LegacyBrowseGridScreen/);
   assert.match(source, /export function SearchResultsScreen\(\)[\s\S]*RawCatalogBrowseGrid/);
+  assert.match(
+    source,
+    /export function BrowseDishesScreen\(\)[\s\S]*<RawCatalogBrowseGrid mode="dishes"/,
+  );
+  assert.match(
+    source,
+    /export function BrowseStallsScreen\(\)[\s\S]*<RawCatalogBrowseGrid mode="stalls"/,
+  );
   assert.match(source, /const storedQuery = useSearchStore\(\(state\) => state\.filters\.query\)/);
   assert.match(
     source,
@@ -26,6 +34,19 @@ test("catalog read v2 uses RPC pages instead of the BrowseIndex in its active br
     /initialFoodTypeTag=\{route\.params\?\.foodTypeTag \?\? storedCatalogCategory\}/,
   );
   assert.match(source, /request\.releaseId = cursor \? releaseIdRef\.current : undefined/);
+
+  const flags = read("src/constants/featureFlags.ts");
+  assert.doesNotMatch(flags, /catalogReadV2|CATALOG_READ_V2/);
+  const eas = read("eas.json");
+  assert.doesNotMatch(eas, /CATALOG_READ_V2/);
+});
+
+test("every data source serves the catalog contract (no null service, no Supabase-only gate)", () => {
+  const provider = read("src/lib/services/serviceProvider.ts");
+  assert.match(provider, /export function getCatalogRawService\(\): CatalogRawService \{/);
+  assert.match(provider, /createLocalCatalogService\(provider\.repository\)/);
+  const detail = read("src/app/screens/catalog/CatalogRawDetailScreen.tsx");
+  assert.doesNotMatch(detail, /getServiceProvider\(\)\.mode !== "supabase"/);
 });
 
 test("raw catalog service is authenticated, cursor-paged, and non-persistent", () => {
@@ -74,34 +95,31 @@ test("raw catalog migration preserves a separate authenticated release lane", ()
   );
 });
 
-test("V2 discovery entry points do not warm the legacy browse index and map passes viewport filters", () => {
+test("discovery entry points never warm a local catalog index and map passes viewport filters", () => {
   const prefetch = read("src/features/navigation/prefetch.ts");
   const searchHome = read("src/app/screens/search/DishSearchScreen.tsx");
   const discoverHome = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
   const map = read("src/app/screens/discover/HomeMapScreen.tsx");
-  assert.match(prefetch, /FEATURE_FLAGS\.catalogReadV2[\s\S]*return;/);
+  assert.doesNotMatch(prefetch, /catalogReadV2|browseIndex|getBrowseIndex/);
   assert.match(
     prefetch,
-    /export function prefetchDishDetail[\s\S]*FEATURE_FLAGS\.catalogReadV2[\s\S]*return;/,
+    /export function prefetchDishDetail[\s\S]*getServiceProvider\(\)\.mode === "supabase"\) \{\s*return;/,
   );
   assert.match(
     prefetch,
-    /export function prefetchStallDetail[\s\S]*FEATURE_FLAGS\.catalogReadV2[\s\S]*return;/,
+    /export function prefetchStallDetail[\s\S]*getServiceProvider\(\)\.mode === "supabase"\) \{\s*return;/,
   );
-  assert.match(searchHome, /shouldUseCatalogReadV2[\s\S]*getDiscoverStallCollections/);
-  assert.doesNotMatch(searchHome, /FEATURE_FLAGS\.catalogReadV2 && isAuthenticated/);
   assert.match(
-    discoverHome,
-    /if \(shouldUseCatalogReadV2\) \{\s*return;\s*\}[\s\S]*refreshPopularNearby/,
+    prefetch,
+    /export function prefetchBrowseResults[\s\S]*preloadRoute\(navigation, "SearchResults"/,
   );
-  assert.doesNotMatch(discoverHome, /FEATURE_FLAGS\.catalogReadV2 && isAuthenticated/);
+  assert.doesNotMatch(searchHome, /getDiscoverStallCollections|getSearchResultsAsync|TasteFilter/);
+  assert.doesNotMatch(discoverHome, /catalogReadV2|refreshPopularNearby/);
   assert.match(map, /onViewportChange/);
   assert.match(map, /buildingTypes/);
   assert.match(map, /openOnly: mapFilters\.openNow/);
-  assert.match(
-    map,
-    /onMarkerPress=\{shouldUseCatalogReadV2 \? handleRawMarkerPress : handleLegacyMarkerPress\}/,
-  );
+  assert.match(map, /onMarkerPress=\{handleRawMarkerPress\}/);
+  assert.doesNotMatch(map, /catalogReadV2|handleLegacyMarkerPress|getDataRepository/);
   assert.match(map, /candidate\.kind === "venue" \? "stall" : candidate\.kind/);
 });
 

@@ -8,7 +8,6 @@ export function useDiscoverData() {
   const profile = useProfileStore((state) => state.profile);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const buildings = getDataRepository().listBuildings();
-  const popularNearby = useDiscoveryStore((state) => state.popularNearby);
   const selectedBuilding = useDiscoveryStore((state) => state.selectedBuilding);
   const selectedFloor = useDiscoveryStore((state) => state.selectedFloor);
   const decideForMe = useDiscoveryStore((state) => state.decideForMe);
@@ -17,7 +16,6 @@ export function useDiscoverData() {
     profile,
     isAuthenticated,
     buildings,
-    popularNearby,
     selectedBuilding,
     selectedFloor,
     decideForMe,

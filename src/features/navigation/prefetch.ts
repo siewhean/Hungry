@@ -1,7 +1,5 @@
 import { Image as ExpoImage } from "expo-image";
 
-import { getBrowseIndex, searchBrowseDishes } from "@/features/search/browseIndex";
-import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import {
   getDataRepository,
   getHungryService,
@@ -34,7 +32,6 @@ const prefetchedStallDetails = new Set<string>();
 const scheduledDishDetails = new Set<string>();
 const scheduledStallDetails = new Set<string>();
 const scheduledRoutePreloads = new Set<string>();
-const scheduledBrowseResultPrefetches = new Set<string>();
 const PREFETCH_IDLE_TIMEOUT_MS = 700;
 const PREFETCH_FALLBACK_DELAY_MS = 160;
 const MAX_IDLE_PREFETCH_WORK_PER_TICK = 8;
@@ -119,7 +116,9 @@ export function prefetchImages(uris: (string | null | undefined)[], limit = 6) {
 }
 
 export function prefetchDishDetail(dishId?: string | null, repository?: DataRepository) {
-  if (FEATURE_FLAGS.catalogReadV2 && getServiceProvider().mode === "supabase") {
+  // Supabase detail reads are paged per record; warming them from the
+  // repository would hydrate the whole catalog.
+  if (getServiceProvider().mode === "supabase") {
     return;
   }
   if (!dishId || prefetchedDishDetails.has(dishId) || scheduledDishDetails.has(dishId)) {
@@ -150,7 +149,9 @@ export function prefetchDishDetail(dishId?: string | null, repository?: DataRepo
 }
 
 export function prefetchStallDetail(venueId?: string | null, repository?: DataRepository) {
-  if (FEATURE_FLAGS.catalogReadV2 && getServiceProvider().mode === "supabase") {
+  // Supabase detail reads are paged per record; warming them from the
+  // repository would hydrate the whole catalog.
+  if (getServiceProvider().mode === "supabase") {
     return;
   }
   if (!venueId || prefetchedStallDetails.has(venueId) || scheduledStallDetails.has(venueId)) {
@@ -238,60 +239,17 @@ export function preloadRoute(navigation: unknown, routeName: string, params?: ob
 export function prefetchBrowseResults(
   query: string,
   navigation?: unknown,
-  options?: { browseMode?: "dishes" | "stalls"; limit?: number },
+  options?: { browseMode?: "dishes" | "stalls" },
 ) {
   const normalizedQuery = query.trim();
-  const browseMode = options?.browseMode ?? "stalls";
-  const limit = options?.limit ?? 8;
-
-  // Catalog V2 is server-paged. Never warm the legacy index in that lane: it
-  // would hydrate the entire Supabase catalog before the destination renders.
-  if (FEATURE_FLAGS.catalogReadV2 && getServiceProvider().mode === "supabase") {
-    if (navigation && normalizedQuery) {
-      preloadRoute(navigation, "SearchResults", {
-        browseMode,
-        initialQuery: normalizedQuery,
-      });
-    }
-    return;
+  // The catalog is server-paged, so there is no local index to warm: preload
+  // only the results route that will request the first page.
+  if (navigation && normalizedQuery) {
+    preloadRoute(navigation, "SearchResults", {
+      browseMode: options?.browseMode ?? "stalls",
+      initialQuery: normalizedQuery,
+    });
   }
-  const key = `${browseMode}:${normalizedQuery.toLowerCase()}:${limit}`;
-
-  if (scheduledBrowseResultPrefetches.has(key)) {
-    return;
-  }
-
-  scheduledBrowseResultPrefetches.add(key);
-  schedulePrefetchWork(() => {
-    try {
-      const repository = getDataRepository();
-      const browseIndex = getBrowseIndex(repository);
-      const dishes = searchBrowseDishes(browseIndex, {
-        query: normalizedQuery,
-        radiusMeters: 100000,
-      }).slice(0, limit);
-
-      prefetchImages(
-        dishes.map((dish) => dish.imageUrl),
-        limit,
-      );
-      dishes.slice(0, 3).forEach((dish) => {
-        prefetchDishDetail(dish.id, repository);
-        prefetchStallDetail(dish.venueId, repository);
-      });
-
-      if (navigation && normalizedQuery) {
-        preloadRoute(navigation, "SearchResults", {
-          browseMode,
-          initialQuery: normalizedQuery,
-        });
-      }
-    } catch {
-      // Prefetching must never block or alter navigation.
-    } finally {
-      scheduledBrowseResultPrefetches.delete(key);
-    }
-  });
 }
 
 export function prefetchMerchantTab(

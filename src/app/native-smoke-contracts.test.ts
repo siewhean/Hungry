@@ -96,12 +96,12 @@ test("native interaction smoke covers discovery search, chips, and browse search
   assert.match(flow, /text: "Search dishes, stalls, or hawker centres"/);
   assert.match(flow, /tapOn: "Noodles"/);
   assert.match(flow, /inputText: "Laksa"/);
-  assert.match(flow, /tapOn: "View search results"/);
+  assert.match(flow, /tapOn: "See all results"/);
   assert.match(flow, /id: "browse-results-search-input"/);
-  assert.match(flow, /text: "Clear browse search"/);
-  assert.match(flow, /tapOn: "Spicy"/);
+  assert.match(flow, /eraseText/);
+  assert.match(flow, /tapOn: "Halal"/);
   assert.match(quickBites, /accessibilityLabel="Go back"/);
-  assert.match(searchResults, /accessibilityLabel="Search browse results"/);
+  assert.match(searchResults, /accessibilityLabel=\{`Search \$\{mode\}`\}/);
   assert.match(searchResults, /testID="browse-results-search-input"/);
 });
 

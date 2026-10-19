@@ -56,10 +56,14 @@ test("primary user filter surfaces use shared chip primitives", () => {
     [/<FilterChipRail[\s\S]*options=\{cuisineFilterOptions\}/],
     "Quick Bites",
   );
-  assertSourceIncludes(dishSearch, [/<ChipGroup[\s\S]*options=\{categoryOptions\}/], "Dish Search");
+  assertSourceIncludes(
+    dishSearch,
+    [/<ChipGroup[\s\S]*options=\{CATEGORY_OPTIONS\}/],
+    "Dish Search",
+  );
   assertSourceIncludes(
     searchResults,
-    [/<FilterChipRail[\s\S]*options=\{BROWSE_FILTER_OPTIONS\}/],
+    [/<FilterChipRail[\s\S]*options=\{RAW_BROWSE_FILTER_OPTIONS\}/],
     "Search Results browse filters",
   );
   assertSourceIncludes(

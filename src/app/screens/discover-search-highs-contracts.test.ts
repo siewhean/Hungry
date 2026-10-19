@@ -74,16 +74,13 @@ test("Crave swipes act on the current card and record taste signals", () => {
   assert.match(crave, /buttonId: "crave_swipe_left"/);
 });
 
-test("Home map centres on the user, wires legacy pins and keeps Mapbox attribution", () => {
+test("Home map centres on the user, wires catalog pins and keeps Mapbox attribution", () => {
   const map = readRepoFile("src/app/screens/discover/HomeMapScreen.tsx");
   const surface = readRepoFile("src/components/map/MapSurface.tsx");
 
   assert.match(map, /centerCoordinate=\{mapCenter\}/);
   assert.match(map, /currentLocation=\{isLocationApproximate \? undefined : currentLocation\}/);
-  assert.match(
-    map,
-    /onMarkerPress=\{shouldUseCatalogReadV2 \? handleRawMarkerPress : handleLegacyMarkerPress\}/,
-  );
+  assert.match(map, /onMarkerPress=\{handleRawMarkerPress\}/);
   assert.match(map, /displayModeRef\.current === "list"/);
   assert.match(map, /"Recenter map on your location"/);
   assert.doesNotMatch(map, /Recenter map to default building/);
@@ -120,10 +117,11 @@ test("Search hides empty sections and controls the backend ignores", () => {
   const repository = readRepoFile("src/lib/services/supabase/supabaseRepository.ts");
 
   assert.doesNotMatch(home, /within 2km/);
-  assert.match(home, /\{suggestedDish \? \(/);
-  assert.match(home, /\{collections\.length \? \(/);
-  assert.match(home, /\{isSupabaseSearch \? null : \(/);
-  assert.match(results, /getServiceProvider\(\)\.mode === "supabase"\s*\? undefined/);
+  // The paged catalog has no local suggestions or taste sliders, and maps only
+  // noodles/rice into a cuisine filter, so the landing offers just those chips.
+  assert.doesNotMatch(home, /suggestedDish|collections|TasteFilter|getSearchResultsAsync/);
+  assert.match(home, /const CATALOG_CATEGORIES: SearchCategory\[\] = \["noodles", "rice"\]/);
+  assert.match(results, /radiusMeters: query\.trim\(\) \? undefined : 3_000/);
   assert.match(
     repository,
     /p_radius_meters: hasLocation && !query \? filters\.radius \|\| null : null/,
@@ -137,8 +135,7 @@ test("Search browse: guests get a way out, chips never show everything, errors s
     results,
     /ctaLabel="Sign in"[\s\S]*setReturnRoute\(\{[\s\S]*navigation\.navigate\("AuthStack", \{ screen: "Login" \}\)/,
   );
-  assert.doesNotMatch(results, /filtered\.length \|\| query \? filtered : feedItems/);
-  assert.match(results, /item\.dish\.dietaryFlags\.includes\("halal"\)/);
+  assert.match(results, /dietaryFlags: filter === "halal" \? \["halal"\] : \[\]/);
   assert.doesNotMatch(results, /body=\{error\}/);
   assert.match(results, /errorMessage=\{error\}/);
   assert.match(results, /reportError\(loadError/);
@@ -163,5 +160,36 @@ test("Home map recentres only when the chosen building changes", () => {
   assert.doesNotMatch(
     map,
     /\}, \[activeBuildingRecord\.coordinate\.latitude, activeBuildingRecord\.coordinate\.longitude\]\);/,
+  );
+});
+
+test("Map is open to every diner from a List/Map toggle on Discover, guests included", () => {
+  const discover = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const map = readRepoFile("src/app/screens/discover/HomeMapScreen.tsx");
+  const toggle = readRepoFile("src/components/discover/DiscoverViewToggle.tsx");
+  const navigator = readRepoFile("src/app/navigation/RootNavigator.tsx");
+
+  // No merchant/dev-only gate on the Discover map entry.
+  assert.match(
+    discover,
+    /<DiscoverViewToggle\s+value="list"[\s\S]*?onChange=\{\(\) => navigation\.navigate\("DiscoverMap"\)\}/,
+  );
+  assert.doesNotMatch(
+    discover,
+    /\{isUserMode \? null : \(\s*<View style=\{\{ marginTop: -spacing\[0\.5\] \}\}>/,
+  );
+  assert.match(map, /<DiscoverViewToggle value="map" onChange=\{backToList\} \/>/);
+  assert.match(toggle, /accessibilityRole="tab"/);
+  assert.match(toggle, /accessibilityState=\{\{ selected \}\}/);
+
+  // DiscoverMap is not an auth-required route; guests see the map and a sign-in prompt.
+  const protectedRoutes = navigator.match(/const PROTECTED_ROOT_ROUTES[\s\S]*?\]\);/)?.[0] ?? "";
+  assert.ok(protectedRoutes, "PROTECTED_ROOT_ROUTES should exist");
+  assert.doesNotMatch(protectedRoutes, /"DiscoverMap"/);
+  assert.match(map, /if \(!isAuthenticated\) \{\s*setRawMapItems\(\[\]\);/);
+  assert.match(map, /\{isAuthenticated \? null : <GuestMapPrompt/);
+  assert.match(
+    map,
+    /setReturnRoute\(\{[\s\S]*navigation\.navigate\("AuthStack", \{ screen: "Login" \}\)/,
   );
 });

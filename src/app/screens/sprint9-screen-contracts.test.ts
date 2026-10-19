@@ -206,15 +206,6 @@ test("Sprint 9 screen contract: Search cards expose actionable semantics", () =>
   const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
 
   assert.match(search, /accessibilityLabel="Search dishes, stalls, or hawker centres"/);
-  assert.match(search, /const suggestedDish = collections\[0\]\?\.topDishes\[0\]/);
-  assert.match(
-    search,
-    /accessibilityRole="button"[\s\S]*accessibilityLabel=\{[\s\S]*`Open suggested dish \$\{suggestedDish\.name\}`/,
-  );
-  assert.match(search, /accessibilityHint="Opens this dish detail page"/);
-  assert.match(search, /accessibilityState=\{\{ disabled: !suggestedDish \}\}/);
-  assert.match(search, /accessibilityLabel=\{`Open \$\{collection\.venue\.name\} stall details`\}/);
-  assert.match(search, /accessibilityHint="Opens this stall page with menu and dish information"/);
   assert.match(
     collectionDetail,
     /accessibilityLabel=\{`Open \$\{row\.venue\?\.name \?\? row\.item\.stallId\} stall details`\}/,
@@ -542,7 +533,7 @@ test("Taste recommendation contract: core surfaces use shared ranking and explic
   assert.match(homeFeedSource, /runRecommendationPipeline/);
   assert.match(mockRepositorySource, /runRecommendationPipeline\(results/);
   assert.match(supabaseRepositorySource, /runRecommendationPipeline\(matched/);
-  assert.match(searchSource, /return cloned;/);
+  assert.match(searchSource, /discovery\.searchDishes\(/);
   assert.match(homeScreenSource, /recordTasteInteraction/);
   assert.match(homeScreenSource, /type: "dish_like"/);
   assert.match(profileStoreSource, /recommendations\.recordExplicitFeedback/);
@@ -550,7 +541,7 @@ test("Taste recommendation contract: core surfaces use shared ranking and explic
   assert.match(discoverSource, /type: "dish_result_click"/);
   assert.match(searchScreenSource, /type: "search_query"/);
   assert.match(searchScreenSource, /type: "dish_result_click"/);
-  assert.match(searchScreenSource, /onSubmitQuery=\{recordCommittedSearchQuery\}/);
+  assert.match(searchScreenSource, /lastRecordedQueryRef\.current !== committedQuery/);
   assert.match(decideSource, /type: "dismissed"/);
   assert.match(decideSource, /type: "food_button_click"/);
   assert.doesNotMatch(decideSource, /dish: nextDish,[\s\S]*buttonId: "try_another_pick"/);
@@ -628,14 +619,10 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.match(launcherSource, /label="Dish"[\s\S]*onPress=\{\(\) => openSampleDishDetail\(\)\}/);
 });
 
-test("search home shows debounced inline results and keeps a see-all action", () => {
+test("search home hands every query to the paged results and keeps a see-all action", () => {
   const search = read("src/app/screens/search/DishSearchScreen.tsx");
 
-  assert.match(search, /const INLINE_RESULT_DEBOUNCE_MS = 250/);
-  assert.match(search, /setTimeout\([\s\S]*getSearchResultsAsync\(/);
-  assert.match(search, /clearTimeout\(timer\)/);
-  assert.match(search, /inlineResults\.map\(\(dish, index\) =>/);
-  assert.match(search, /navigation\.navigate\("DishDetail", \{ dishId: dish\.id \}\)/);
+  assert.doesNotMatch(search, /getSearchResultsAsync|inlineResults/);
   assert.match(search, /"See all results"/);
   assert.match(search, /navigation\.navigate\("SearchResults"\)/);
 });

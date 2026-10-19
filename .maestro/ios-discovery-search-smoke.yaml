@@ -55,17 +55,15 @@ appId: ${APP_ID}
 - tapOn:
     text: "Search dishes, stalls, or hawker centres"
 - inputText: "Laksa"
-- tapOn: "View search results"
-- extendedWaitUntil:
-    visible: "Dishes"
-    timeout: 30000
-- tapOn: "Search"
+- tapOn: "See all results"
 - extendedWaitUntil:
     visible:
       id: "browse-results-search-input"
-    timeout: 10000
-- inputText: "Laksa"
+    timeout: 30000
 - tapOn:
-    text: "Clear browse search"
-- tapOn: "Spicy"
-- assertVisible: "Dishes"
+    id: "browse-results-search-input"
+- eraseText
+- inputText: "Chicken"
+- tapOn: "Halal"
+- assertVisible:
+    id: "browse-results-search-input"
