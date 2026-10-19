@@ -2,7 +2,7 @@ import type { PropsWithChildren } from "react";
 import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useProfileStore } from "@/store/useProfileStore";
+import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 
 interface FABProps {
@@ -14,7 +14,7 @@ interface FABProps {
 export function FAB({ children, position, style, offset }: PropsWithChildren<FABProps>) {
   const { spacing, zIndex } = useHungryTheme();
   const insets = useSafeAreaInsets();
-  const leftHandedMode = useProfileStore((state) => state.profile.leftHandedMode);
+  const leftHandedMode = useUIStore((state) => state.leftHandedMode);
 
   // Default to Trailing if right-handed, Leading if left-handed
   const effectivePosition = position ?? (leftHandedMode ? "bottomLeading" : "bottomTrailing");

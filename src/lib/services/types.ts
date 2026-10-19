@@ -720,7 +720,8 @@ export interface HungryService {
     signInWithGoogle(): Promise<Session>;
     signInWithApple(): Promise<Session>;
     signOut(): Promise<void>;
-    requestAccountDeletion(request?: AccountDeletionRequest): Promise<void>;
+    /** Queues deletion; resolves with the server's scheduled date. */
+    requestAccountDeletion(request?: AccountDeletionRequest): Promise<PendingAccountDeletion>;
     getPendingAccountDeletion(): Promise<PendingAccountDeletion | null>;
     cancelAccountDeletion(): Promise<boolean>;
     forgotPassword(email: string): Promise<void>;

@@ -30,6 +30,50 @@ function isAlreadyDeletedAuthError(error: unknown): boolean {
   return message.includes("not found") || message.includes("no user");
 }
 
+// Buckets whose objects live under the owner's `{userId}/` folder. Menu photos are
+// kept on purpose (they stay on the stall page without the uploader's name).
+const USER_MEDIA_BUCKETS = ["avatars", "review-media", "post-media", "bites-media"];
+
+async function listStoragePaths(
+  client: ReturnType<typeof createClient>,
+  bucket: string,
+  prefix: string,
+  depth = 0,
+): Promise<string[]> {
+  const paths: string[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await client.storage
+      .from(bucket)
+      .list(prefix, { limit: 1000, offset });
+    if (error) throw error;
+    const entries = Array.isArray(data) ? data : [];
+    for (const entry of entries) {
+      const path = `${prefix}/${entry.name}`;
+      // Folders come back without an id.
+      if (entry.id) paths.push(path);
+      else if (depth < 4) paths.push(...(await listStoragePaths(client, bucket, path, depth + 1)));
+    }
+    if (entries.length < 1000) return paths;
+  }
+}
+
+async function removeUserMedia(
+  client: ReturnType<typeof createClient>,
+  userId: string,
+): Promise<number> {
+  let removed = 0;
+  for (const bucket of USER_MEDIA_BUCKETS) {
+    const paths = await listStoragePaths(client, bucket, userId);
+    for (let index = 0; index < paths.length; index += 100) {
+      const chunk = paths.slice(index, index + 100);
+      const { error } = await client.storage.from(bucket).remove(chunk);
+      if (error) throw error;
+      removed += chunk.length;
+    }
+  }
+  return removed;
+}
+
 async function markFailure(
   client: ReturnType<typeof createClient>,
   requestId: string,
@@ -106,6 +150,14 @@ Deno.serve(async (request) => {
         .eq("submitted_by", userId);
       if (menuPhotoError) throw menuPhotoError;
 
+      // The anonymized profile row stays, so drop its avatar link and the files behind it.
+      const { error: avatarError } = await client
+        .from("user_profiles")
+        .update({ avatar_url: null })
+        .eq("id", userId);
+      if (avatarError) throw avatarError;
+      const removedMedia = await removeUserMedia(client, userId);
+
       const { error: deleteError } = await client.auth.admin.deleteUser(userId);
       if (deleteError && !isAlreadyDeletedAuthError(deleteError)) {
         throw deleteError;
@@ -118,7 +170,7 @@ Deno.serve(async (request) => {
       });
       if (completeError) throw completeError;
 
-      results.push({ requestId, userId, status: "completed" });
+      results.push({ requestId, userId, status: "completed", removedMedia });
     } catch (error) {
       await markFailure(client, requestId, userId, workerId, error);
       results.push({

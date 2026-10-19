@@ -84,7 +84,8 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
       /purgePersistedAccountData\(\)/,
       /clearSession\(\)/,
       /clearProfile\(\)/,
-      /rootNavigation\.navigate\("AuthStack", \{ screen: "SignUp" \}\)/,
+      /rootNavigation\.reset\(\{[\s\S]*name: "AuthStack", params: \{ screen: "Login" \}/,
+      /Deletion scheduled/,
     ],
     "SettingsScreen delete account",
   );
@@ -545,15 +546,16 @@ test("profile surfaces keep own and other-user layouts linked while hiding taste
     settings,
     [
       /label="Profile visibility"/,
-      /onPress: \(\) => setProfileVisibility\("public"\)/,
-      /onPress: \(\) => setProfileVisibility\("private"\)/,
+      /onPress: \(\) => void changeProfileVisibility\("public"\)/,
+      /onPress: \(\) => void changeProfileVisibility\("private"\)/,
+      /const saved = await setProfileVisibility\(visibility\)/,
     ],
     "Settings profile visibility UI",
   );
   assertSourceIncludes(
     profileStore,
     [
-      /setProfileVisibility: \(profileVisibility\) =>/,
+      /setProfileVisibility: async \(profileVisibility\) =>/,
       /profileVisibility,/,
       /getServiceProvider\(\)\.mode === "mock"/,
       /profile\.updateProfile\(\{ profileVisibility \}\)/,

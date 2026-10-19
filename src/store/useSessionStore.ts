@@ -131,6 +131,18 @@ function clearAccountScopedStores(): void {
   clearCommunitySafetySessionState();
 }
 
+/**
+ * Recent searches and unsent review drafts belong to the account that wrote them. Cleared on a
+ * deliberate sign-out or an account switch, not on session expiry (the same user signs back in).
+ */
+function clearAccountLocalHistory(): void {
+  const { useSearchStore } = require("./useSearchStore") as typeof import("./useSearchStore");
+  const { useReviewDraftStore } =
+    require("./useReviewDraftStore") as typeof import("./useReviewDraftStore");
+  useSearchStore.getState().clearSearchState();
+  useReviewDraftStore.getState().resetDraft();
+}
+
 /** Account whose follow state was already loaded during this app launch. */
 let followStateSyncedUserId: string | null = null;
 
@@ -260,6 +272,7 @@ export const useSessionStore = create<SessionState>()(
         const previousUserId = useSessionStore.getState().authenticatedUserId;
         if (previousUserId && nextUserId && previousUserId !== nextUserId) {
           clearAccountScopedStores();
+          clearAccountLocalHistory();
         }
         set((state) => ({
           isAuthReady: true,
@@ -334,6 +347,7 @@ export const useSessionStore = create<SessionState>()(
           hasSkippedTasteQuiz,
         });
         clearAccountScopedStores();
+        clearAccountLocalHistory();
         getProfileStoreState().clearProfile();
         getProfileStoreState().syncProfile(false);
         resetPostHogUser();
@@ -379,6 +393,7 @@ export const useSessionStore = create<SessionState>()(
           const nextUserId = session.userId ?? null;
           if (previousUserId && nextUserId && previousUserId !== nextUserId) {
             clearAccountScopedStores();
+            clearAccountLocalHistory();
           }
           set((state) => ({
             isAuthenticated: true,

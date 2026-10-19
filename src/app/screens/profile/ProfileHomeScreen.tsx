@@ -684,11 +684,20 @@ export function ProfileHomeScreen({
                   icon={<LogOut size={20} color={palette.error} />}
                   onPress={() => {
                     setMenuOpen(false);
-                    signOut();
-                    rootNavigation.reset({
-                      index: 0,
-                      routes: [{ name: "AuthStack", params: { screen: "Login" } }],
-                    });
+                    Alert.alert("Sign out", "You will be signed out from Hungry on this device.", [
+                      { text: "Cancel", style: "cancel" },
+                      {
+                        text: "Sign out",
+                        style: "destructive",
+                        onPress: () => {
+                          signOut();
+                          rootNavigation.reset({
+                            index: 0,
+                            routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+                          });
+                        },
+                      },
+                    ]);
                   }}
                 />
               )}

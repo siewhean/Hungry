@@ -1520,7 +1520,7 @@ export const hungryService: HungryService = {
       ).toISOString();
       _isAuthenticated = false;
       _profile = { ...guestProfile };
-      return resolve(undefined);
+      return resolve({ scheduledFor: _pendingDeletionScheduledFor });
     },
 
     async getPendingAccountDeletion() {

@@ -110,14 +110,14 @@ import { useLocationStore } from "@/store/useLocationStore";
 import { useHungryTheme, type HungryTheme } from "@/theme";
 import type { DishDetail, StoryItem } from "@/types/domain";
 
-type HapticsModule = typeof import("expo-haptics");
+type HapticsModule = typeof import("@/lib/haptics");
 
 let hapticsModule: HapticsModule | null | undefined;
 
 async function triggerDoubleTapHaptic() {
   try {
     if (hapticsModule === undefined) {
-      hapticsModule = await import("expo-haptics");
+      hapticsModule = await import("@/lib/haptics");
     }
     await hapticsModule?.impactAsync(hapticsModule.ImpactFeedbackStyle.Light);
   } catch {
@@ -265,6 +265,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const headerActionSize = spacing[8] + spacing[2.5];
   const insets = useSafeAreaInsets();
   const profile = useProfileStore((state) => state.profile);
+  const leftHandedMode = useUIStore((state) => state.leftHandedMode);
   const publishedPostsVersion = usePublishedPostStore((state) => state.version);
   const stories = useStoryStore((state) => state.stories);
   const loadStories = useStoryStore((state) => state.loadStories);
@@ -1713,7 +1714,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                       onTextLayout={(event) => handleCaptionTextLayout(item.id, event)}
                       style={{
                         color: themeTints.text,
-                        textAlign: profile.leftHandedMode ? "right" : "left",
+                        textAlign: leftHandedMode ? "right" : "left",
                         marginTop: spacing[1],
                       }}
                     >
@@ -1741,7 +1742,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                       onTextLayout={(event) => handleCaptionTextLayout(item.id, event)}
                       style={{
                         color: themeTints.text,
-                        textAlign: profile.leftHandedMode ? "right" : "left",
+                        textAlign: leftHandedMode ? "right" : "left",
                         marginTop: spacing[1],
                       }}
                     >
@@ -1760,7 +1761,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                 <AppText
                   variant="micro"
                   tone="secondary"
-                  style={{ alignSelf: profile.leftHandedMode ? "flex-end" : "flex-start" }}
+                  style={{ alignSelf: leftHandedMode ? "flex-end" : "flex-start" }}
                 >
                   {postAgeLabel}
                 </AppText>
@@ -1826,8 +1827,8 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
             style={{
               position: "absolute",
               top: spacing[3],
-              left: profile.leftHandedMode ? spacing[3] : undefined,
-              right: profile.leftHandedMode ? undefined : spacing[3],
+              left: leftHandedMode ? spacing[3] : undefined,
+              right: leftHandedMode ? undefined : spacing[3],
               gap: spacing[2],
             }}
           >
@@ -2047,7 +2048,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       prefetchMapRoute,
       prefetchUserProfileRoute,
       profile.id,
-      profile.leftHandedMode,
+      leftHandedMode,
       palette.white,
       carouselIndexByPostId,
       commentsEnabled,
