@@ -250,17 +250,6 @@ function RawCatalogBrowseGrid({
         if (requestVersion.current !== version) return;
         setItems((current) => (append ? [...current, ...page.items] : page.items));
         setNextCursor(page.nextCursor);
-        // A query that settled into a page is a committed search: one taste signal each.
-        const committedQuery = searchQuery.trim().toLowerCase();
-        if (!append && committedQuery && lastRecordedQueryRef.current !== committedQuery) {
-          lastRecordedQueryRef.current = committedQuery;
-          recordTasteInteraction({
-            type: "search_query",
-            surface: "search",
-            query: committedQuery,
-            chipId: selectedFilter === "All" ? undefined : selectedFilter,
-          });
-        }
         releaseIdRef.current = page.releaseId || undefined;
         setReleaseId(releaseIdRef.current);
       } catch (loadError) {
@@ -276,16 +265,32 @@ function RawCatalogBrowseGrid({
         }
       }
     },
-    [
-      currentLocation,
-      isAuthenticated,
-      mode,
-      recordTasteInteraction,
-      searchQuery,
-      selectedFilter,
-      service,
-    ],
+    [currentLocation, isAuthenticated, mode, searchQuery, selectedFilter, service],
   );
+
+  // Only a submitted query is a committed search: one taste signal each, not one per typing pause.
+  const recordCommittedQuery = useCallback(
+    (query: string) => {
+      const committedQuery = query.trim().toLowerCase();
+      if (!committedQuery || lastRecordedQueryRef.current === committedQuery) return;
+      lastRecordedQueryRef.current = committedQuery;
+      recordTasteInteraction({
+        type: "search_query",
+        surface: "search",
+        query: committedQuery,
+        chipId: selectedFilter === "All" ? undefined : selectedFilter,
+      });
+    },
+    [recordTasteInteraction, selectedFilter],
+  );
+
+  // A query sent from Search home was already submitted there.
+  const initialQueryRecordedRef = useRef(false);
+  useEffect(() => {
+    if (!isAuthenticated || initialQueryRecordedRef.current) return;
+    initialQueryRecordedRef.current = true;
+    recordCommittedQuery(initialSearchQuery);
+  }, [initialSearchQuery, isAuthenticated, recordCommittedQuery]);
 
   useEffect(() => {
     requestVersion.current += 1;
@@ -339,6 +344,7 @@ function RawCatalogBrowseGrid({
               accessibilityLabel={`Search ${mode}`}
               autoCorrect={false}
               onChangeText={setSearchQuery}
+              onSubmitEditing={() => recordCommittedQuery(searchQuery)}
               placeholder={mode === "dishes" ? "Search all dishes" : "Search all stalls"}
               placeholderTextColor={palette.textMuted}
               testID="browse-results-search-input"

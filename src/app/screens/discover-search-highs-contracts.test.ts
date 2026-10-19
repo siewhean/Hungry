@@ -179,6 +179,11 @@ test("Map is open to every diner from a List/Map toggle on Discover, guests incl
     /\{isUserMode \? null : \(\s*<View style=\{\{ marginTop: -spacing\[0\.5\] \}\}>/,
   );
   assert.match(map, /<DiscoverViewToggle value="map" onChange=\{backToList\} \/>/);
+  // List always returns to the Discover tab, even when the stack below the map is Home.
+  const backToList =
+    map.match(/const backToList = useCallback\([\s\S]*?\}, \[navigation\]\);/)?.[0] ?? "";
+  assert.match(backToList, /navigation\.popTo\("MainTabs", \{ screen: "Discover" \}\)/);
+  assert.doesNotMatch(backToList, /goBack\(\)/);
   assert.match(toggle, /accessibilityRole="tab"/);
   assert.match(toggle, /accessibilityState=\{\{ selected \}\}/);
 

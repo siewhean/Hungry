@@ -223,6 +223,13 @@ test("discover routes diners to details, opens the map from a toggle, and search
     ],
     "SearchResultsScreen catalog card to detail consistency",
   );
+  // Taste signal fires on a submitted query, not on every debounced page load.
+  const loadPageBody =
+    searchResults.match(/const loadPage = useCallback\([\s\S]*?\n  \);/)?.[0] ?? "";
+  assert.ok(loadPageBody, "loadPage should exist");
+  assert.doesNotMatch(loadPageBody, /search_query/);
+  assert.match(searchResults, /onSubmitEditing=\{\(\) => recordCommittedQuery\(searchQuery\)\}/);
+  assert.match(searchResults, /recordCommittedQuery\(initialSearchQuery\)/);
   assertSourceIncludes(
     rootNavigator,
     [/name="BrowseDishes"/, /name="BrowseStalls"/, /name="DecideForMeResult"/, /name="WheelStack"/],

@@ -289,12 +289,9 @@ export function HomeMapScreen() {
     navigation.navigate("AuthStack", { screen: "Login" });
   }, [navigation, route.name, route.params, setReturnRoute]);
 
+  // Always land on Discover: after sign-in or "open on map" the screen below may be Home.
   const backToList = useCallback(() => {
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-      return;
-    }
-    navigation.navigate("MainTabs", { screen: "Discover" });
+    navigation.popTo("MainTabs", { screen: "Discover" });
   }, [navigation]);
 
   const cameraPadding = useMemo(

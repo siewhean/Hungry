@@ -102,7 +102,6 @@ test("signed-out app entry opens the app as a guest while public routes stay unp
     "SearchResults",
     "BrowseDishes",
     "BrowseStalls",
-    "TasteFilter",
     "DiscoverMap",
     "MapZoomedIn",
     "DishDetail",
