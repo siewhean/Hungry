@@ -33,6 +33,7 @@ export function WheelResultModal({ navigation, route }: Props) {
   const party = useWheelStore((s) => s.party);
   const entries = useWheelStore((s) => s.entries);
   const resetParty = useWheelStore((s) => s.reset);
+  const resetSpin = useWheelStore((s) => s.resetSpin);
 
   const winnerEntry = entries.find((e) => e.id === winnerEntryId);
   const venue = winnerEntry ? repository.getVenueById(winnerEntry.venueId) : undefined;
@@ -67,6 +68,8 @@ export function WheelResultModal({ navigation, route }: Props) {
 
   function handleSpinAgain() {
     if (!party) return;
+    // Clear the finished seed/winner so the spin screen waits for a fresh spin.
+    resetSpin();
     navigation.replace("WheelSpin", { partyId: party.id });
   }
 

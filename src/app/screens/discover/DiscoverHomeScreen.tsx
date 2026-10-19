@@ -81,7 +81,7 @@ import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
-import { useMerchantStore } from "@/store/useMerchantStore";
+import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useMovingSearchPlaceholder } from "@/features/search/useMovingSearchPlaceholder";
 import { useHungryTheme } from "@/theme";
@@ -1249,7 +1249,7 @@ export function DiscoverHomeScreen() {
   const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
   const grantLocation = useLocationStore((state) => state.grantLocation);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
-  const isMerchantMode = useMerchantStore((state) => state.account !== null);
+  const isMerchantMode = useMerchantStore(isMerchantModeActive);
   const isUserMode = !isDeveloperMode && !isMerchantMode;
 
   useEffect(() => {

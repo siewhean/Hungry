@@ -960,6 +960,7 @@ async function mapSupabaseReviewRows(
       id,
       dishId: asString(row.dish_id),
       venueId: asString(row.venue_id),
+      authorId: userId,
       authorName:
         (userId ? namesByUserId.get(userId) : undefined) ??
         asString(row.author_name) ??
@@ -1833,6 +1834,16 @@ function normalizeCallbackPath(path: string): string {
   if (!path) return "/";
   const normalized = path.endsWith("/") ? path.slice(0, -1) : path;
   return normalized || "/";
+}
+
+function hasEmailPasswordIdentity(user: {
+  app_metadata?: { providers?: unknown; provider?: unknown };
+  identities?: { provider?: string }[] | null;
+}): boolean {
+  if (user.identities?.some((identity) => identity.provider === "email")) return true;
+  const providers = user.app_metadata?.providers;
+  if (Array.isArray(providers)) return providers.includes("email");
+  return user.app_metadata?.provider === "email";
 }
 
 async function exchangeRecoveryCodeIfPresent(client: SupabaseClient, token: string): Promise<void> {
@@ -2985,6 +2996,33 @@ export const supabaseService: HungryService = {
       if (error) throw error;
     },
 
+    async canChangePassword() {
+      const client = getSupabaseClient();
+      if (!client) return false;
+      const { data, error } = await client.auth.getUser();
+      if (error || !data.user) return false;
+      return hasEmailPasswordIdentity(data.user);
+    },
+
+    async changePassword(currentPassword, newPassword) {
+      const client = requireSupabaseClient();
+      const { data, error: userError } = await client.auth.getUser();
+      if (userError) throw userError;
+      const user = data.user;
+      if (!user) throw new Error("You must be signed in to change your password.");
+      if (!user.email || !hasEmailPasswordIdentity(user)) {
+        throw new Error("This account signs in with Google or Apple and has no password.");
+      }
+      // Re-authenticate so a stolen unlocked session cannot silently swap the password.
+      const { error: reauthError } = await client.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword,
+      });
+      if (reauthError) throw new Error("Current password is incorrect.");
+      const { error } = await client.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+    },
+
     async getCurrentSession() {
       const client = getSupabaseClient();
       if (!client) return null;
@@ -3943,13 +3981,11 @@ export const supabaseService: HungryService = {
       const client = requireSupabaseClient();
       const currentUserId = await getCurrentSupabaseUserId();
       if (!currentUserId) throw new Error("You must be signed in to follow users.");
-      const { error } = await client
-        .from("follows")
-        .upsert(
-          { follower_id: currentUserId, followee_id: userId, status: "approved" },
-          { onConflict: "follower_id,followee_id" },
-        );
+      // follow_user writes "approved" for public accounts and "pending" for private ones;
+      // a direct insert can only be "pending" under the follows RLS policy.
+      const { data, error } = await client.rpc("follow_user", { p_target_user_id: userId });
       if (error) throw error;
+      return data === "pending" ? "pending" : "approved";
     },
 
     async unfollowUser(userId: string) {
@@ -3964,40 +4000,53 @@ export const supabaseService: HungryService = {
       if (error) throw error;
     },
 
-    async listFollowers(userId: string) {
+    async listFollowers(userId: string, page?: { limit?: number; offset?: number }) {
       const client = requireSupabaseClient();
-      const { data, error } = await client
-        .from("follows")
-        .select("follower_id, user_profiles!follows_follower_id_fkey(id, display_name, avatar_url)")
-        .eq("followee_id", userId)
-        .eq("status", "approved");
-      if (error || !data) return [];
-      return (data as Row[]).map((row) => {
-        const p = row.user_profiles as Row | null;
-        return {
-          userId: asString(row.follower_id) ?? "",
-          displayName: asString(p?.display_name) ?? "",
-          avatarUrl: asString(p?.avatar_url),
-        };
+      const { data, error } = await client.rpc("list_user_followers", {
+        p_user_id: userId,
+        p_limit: page?.limit ?? 100,
+        p_offset: page?.offset ?? 0,
       });
+      if (error || !Array.isArray(data)) return [];
+      return (data as Row[]).map((row) => ({
+        userId: asString(row.user_id) ?? "",
+        displayName: asString(row.display_name) ?? "",
+        avatarUrl: asString(row.avatar_url),
+      }));
     },
 
-    async listFollowing(userId: string) {
+    async listFollowing(userId: string, page?: { limit?: number; offset?: number }) {
       const client = requireSupabaseClient();
-      const { data, error } = await client
-        .from("follows")
-        .select("followee_id, user_profiles!follows_followee_id_fkey(id, display_name, avatar_url)")
-        .eq("follower_id", userId)
-        .eq("status", "approved");
-      if (error || !data) return [];
-      return (data as Row[]).map((row) => {
-        const p = row.user_profiles as Row | null;
-        return {
-          userId: asString(row.followee_id) ?? "",
-          displayName: asString(p?.display_name) ?? "",
-          avatarUrl: asString(p?.avatar_url),
-        };
+      const { data, error } = await client.rpc("list_user_following", {
+        p_user_id: userId,
+        p_limit: page?.limit ?? 100,
+        p_offset: page?.offset ?? 0,
       });
+      if (error || !Array.isArray(data)) return [];
+      return (data as Row[]).map((row) => ({
+        userId: asString(row.user_id) ?? "",
+        displayName: asString(row.display_name) ?? "",
+        avatarUrl: asString(row.avatar_url),
+      }));
+    },
+
+    async canViewFollowLists(userId: string) {
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("can_view_follow_lists", { p_user_id: userId });
+      // Unknown visibility: assume visible so the screen falls back to its normal empty state.
+      if (error) return true;
+      return data !== false;
+    },
+
+    async getFollowCounts(userId: string) {
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("get_follow_counts", { p_user_id: userId });
+      if (error || !Array.isArray(data) || data.length === 0) return null;
+      const row = data[0] as Row;
+      return {
+        followersCount: asNumber(row.followers_count) ?? 0,
+        followingCount: asNumber(row.following_count) ?? 0,
+      };
     },
 
     async isFollowing(userId: string) {
@@ -4366,12 +4415,21 @@ export const supabaseService: HungryService = {
       const client = requireSupabaseClient();
       const userId = await getCurrentSupabaseUserId();
       if (!userId) throw new Error("You must be signed in to block users.");
+      // Server block checks compare blocked_user_key with the author's auth id.
+      if (!UUID_PATTERN.test(request.blockedUserId)) {
+        throw new Error("Blocking requires a valid user id.");
+      }
+      if (request.blockedUserId === userId) throw new Error("You cannot block yourself.");
 
-      const { error } = await client.from("user_blocks").upsert({
-        blocker_id: userId,
-        blocked_user_key: request.blockedUserKey,
-        reason: request.reason ?? "user_initiated_block",
-      });
+      const { error } = await client.from("user_blocks").upsert(
+        {
+          blocker_id: userId,
+          blocked_user_key: request.blockedUserId.toLowerCase(),
+          reason: request.reason ?? "user_initiated_block",
+        },
+        // There is no update policy on user_blocks, so re-blocking is a no-op.
+        { onConflict: "blocker_id,blocked_user_key", ignoreDuplicates: true },
+      );
       if (error) throw error;
     },
 
@@ -4408,7 +4466,7 @@ export const supabaseService: HungryService = {
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data || []).map((row: any) => ({
-        blockedUserKey: row.blocked_user_key as string,
+        blockedUserId: row.blocked_user_key as string,
         reason: row.reason as string | undefined,
         createdAt: row.created_at as string,
       }));

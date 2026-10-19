@@ -22,7 +22,7 @@ import { isNetworkOffline } from "@/lib/network/connectivity";
 import { UserProfileScreen } from "@/app/screens/profile/UserProfileScreen";
 
 import { useSessionStore } from "@/store/useSessionStore";
-import { useMerchantStore } from "@/store/useMerchantStore";
+import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
@@ -75,6 +75,7 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "ReviewHistory",
   "Settings",
   "EditProfile",
+  "ChangePassword",
   "DesignGallery",
   "PostComposerV2",
   "StoryViewer",
@@ -101,6 +102,7 @@ const PROTECTED_ROOT_ROUTES = new Set<RootRouteName>([
   "ChatDetail",
   "DirectMessages",
   "EditProfile",
+  "ChangePassword",
   "Favourites",
   "ReviewHistory",
   "Settings",
@@ -175,6 +177,10 @@ const loadEditProfileScreen = () =>
   (
     require("@/app/screens/profile/EditProfileScreen") as typeof import("@/app/screens/profile/EditProfileScreen")
   ).EditProfileScreen;
+const loadChangePasswordScreen = () =>
+  (
+    require("@/app/screens/profile/ChangePasswordScreen") as typeof import("@/app/screens/profile/ChangePasswordScreen")
+  ).ChangePasswordScreen;
 const loadFavouritesScreen = () =>
   (
     require("@/app/screens/profile/FavouritesScreen") as typeof import("@/app/screens/profile/FavouritesScreen")
@@ -462,7 +468,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
   const dismissSessionExpiry = useSessionStore((state) => state.dismissSessionExpiry);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
-  const isMerchantMode = useMerchantStore((state) => state.account !== null);
+  const isMerchantMode = useMerchantStore(isMerchantModeActive);
   const resetScrollBack = useUIStore((state) => state.resetScrollBack);
 
   const prefix = Linking.createURL("/");
@@ -687,6 +693,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen getComponent={loadMapZoomedInScreen} name="MapZoomedIn" />
           <RootStack.Screen getComponent={loadPostComposerScreen} name="Post" />
           <RootStack.Screen getComponent={loadEditProfileScreen} name="EditProfile" />
+          <RootStack.Screen getComponent={loadChangePasswordScreen} name="ChangePassword" />
           <RootStack.Screen getComponent={loadFavouritesScreen} name="Favourites" />
           <RootStack.Screen getComponent={loadReviewHistoryScreen} name="ReviewHistory" />
           <RootStack.Screen getComponent={loadSettingsScreen} name="Settings" />

@@ -17,7 +17,7 @@ import { isNetworkOffline } from "@/lib/network/connectivity";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
-import { useMerchantStore } from "@/store/useMerchantStore";
+import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
 import type { UserProfile } from "@/types/domain";
 
 function shouldEnablePostHogSink() {
@@ -105,7 +105,7 @@ export function useAppBootstrap() {
   const markAuthReady = useSessionStore((state) => state.markAuthReady);
   const setOffline = useUIStore((state) => state.setOffline);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
-  const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
+  const isMerchantMode = useMerchantStore(isMerchantModeActive);
   const isUserMode = !isDeveloperMode && !isMerchantMode;
   const previousAuth = useRef<boolean | undefined>(undefined);
   const [isDataSourceReady, setIsDataSourceReady] = useState(false);

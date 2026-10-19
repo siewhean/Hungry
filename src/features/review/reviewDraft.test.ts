@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+import { REVIEW_TEXT_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSanitization";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { createClientReviewId, createInitialReviewDraft } from "./reviewDraft";
 
@@ -48,4 +49,33 @@ test("selecting the same dish keeps the draft; a different dish resets it", () =
   assert.equal(store.getState().pendingReviewId, undefined);
 
   store.getState().resetDraft();
+});
+
+test("setText keeps what the user types: trailing spaces, newlines and ordinary words", () => {
+  const store = useReviewDraftStore;
+  store.getState().resetDraft();
+
+  store.getState().setText("a ");
+  assert.equal(store.getState().draft.text, "a ");
+
+  const typed = "Select the laksa; don't update your order --\nworth it";
+  store.getState().setText(typed);
+  assert.equal(store.getState().draft.text, typed);
+
+  store.getState().setText("x".repeat(REVIEW_TEXT_MAX_LENGTH + 20));
+  assert.equal(store.getState().draft.text.length, REVIEW_TEXT_MAX_LENGTH);
+
+  store.getState().resetDraft();
+});
+
+test("sanitizeFreeText strips markup and trims at submit but keeps words and line breaks", () => {
+  assert.equal(
+    sanitizeFreeText(
+      "  Great food <script>alert(1)</script><b>here</b>;\r\n\n\n\nSelect the delete-me noodles  ",
+      500,
+    ),
+    "Great food alert(1)here;\n\nSelect the delete-me noodles",
+  );
+  assert.equal(sanitizeFreeText("one   two\t three", 500), "one two three");
+  assert.equal(sanitizeFreeText("abc def", 4), "abc");
 });

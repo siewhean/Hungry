@@ -82,7 +82,7 @@ test("Review feed cards do not render bottom bites sections", () => {
   assert.match(commentsSheet, /commentsByPostId\[activeReview\.id\] \?\? \[\]/);
   assert.match(commentsSheet, /addComment\(activeReview\.id, newComment\)/);
   assert.match(commentsSheet, /addReply\(activeReview\.id, newReply\)/);
-  assert.match(commentsSheet, /repliesByCommentId\[comment\.id\] \?\? \[\]/);
+  assert.match(commentsSheet, /visibleRepliesByCommentId\[comment\.id\] \?\? \[\]/);
   assert.match(
     commentsSheet,
     /placeholder=\{activeReplyCommentId \? "Write a reply\.\.\." : "Add a comment\.\.\."\}/,

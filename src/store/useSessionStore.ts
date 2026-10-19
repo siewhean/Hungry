@@ -110,6 +110,9 @@ function clearAccountScopedStores(): void {
   const { useStallFollowStore } =
     require("./useStallFollowStore") as typeof import("./useStallFollowStore");
   useStallFollowStore.getState()._reset();
+  const { clearCommunitySafetySessionState } =
+    require("@/lib/security/communitySafety") as typeof import("@/lib/security/communitySafety");
+  clearCommunitySafetySessionState();
 }
 
 function shouldEnablePostHogIdentity() {
