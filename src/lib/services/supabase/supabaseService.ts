@@ -4000,9 +4000,13 @@ export const supabaseService: HungryService = {
       if (error) throw error;
     },
 
-    async listFollowers(userId: string) {
+    async listFollowers(userId: string, page?: { limit?: number; offset?: number }) {
       const client = requireSupabaseClient();
-      const { data, error } = await client.rpc("list_user_followers", { p_user_id: userId });
+      const { data, error } = await client.rpc("list_user_followers", {
+        p_user_id: userId,
+        p_limit: page?.limit ?? 100,
+        p_offset: page?.offset ?? 0,
+      });
       if (error || !Array.isArray(data)) return [];
       return (data as Row[]).map((row) => ({
         userId: asString(row.user_id) ?? "",
@@ -4011,15 +4015,27 @@ export const supabaseService: HungryService = {
       }));
     },
 
-    async listFollowing(userId: string) {
+    async listFollowing(userId: string, page?: { limit?: number; offset?: number }) {
       const client = requireSupabaseClient();
-      const { data, error } = await client.rpc("list_user_following", { p_user_id: userId });
+      const { data, error } = await client.rpc("list_user_following", {
+        p_user_id: userId,
+        p_limit: page?.limit ?? 100,
+        p_offset: page?.offset ?? 0,
+      });
       if (error || !Array.isArray(data)) return [];
       return (data as Row[]).map((row) => ({
         userId: asString(row.user_id) ?? "",
         displayName: asString(row.display_name) ?? "",
         avatarUrl: asString(row.avatar_url),
       }));
+    },
+
+    async canViewFollowLists(userId: string) {
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("can_view_follow_lists", { p_user_id: userId });
+      // Unknown visibility: assume visible so the screen falls back to its normal empty state.
+      if (error) return true;
+      return data !== false;
     },
 
     async getFollowCounts(userId: string) {

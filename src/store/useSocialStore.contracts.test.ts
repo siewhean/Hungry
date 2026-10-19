@@ -64,8 +64,8 @@ test("social store contract: UUID follows sync to service while local-name fallb
   assert.doesNotMatch(profileSource, /Object\.values\(followedUserIds\)\.filter/);
   assert.doesNotMatch(profileSource, /Object\.values\(followedAuthors\)\.filter/);
   assert.match(connectionsSource, /const targetUserId = route\.params\?\.userId \?\? profile\.id/);
-  assert.match(connectionsSource, /service\.listFollowers\(targetUserId\)/);
-  assert.match(connectionsSource, /service\.listFollowing\(targetUserId\)/);
+  assert.match(connectionsSource, /service\.listFollowers\(targetUserId, page\)/);
+  assert.match(connectionsSource, /service\.listFollowing\(targetUserId, page\)/);
   // Lists are the viewed profile's server lists; the viewer's local follows only drive buttons.
   assert.doesNotMatch(connectionsSource, /Object\.entries\(followedUserIds\)/);
   assert.doesNotMatch(connectionsSource, /followedAuthors/);

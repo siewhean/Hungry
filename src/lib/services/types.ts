@@ -852,12 +852,18 @@ export interface HungryService {
     /** "pending" when the target's account is private and must approve the request. */
     followUser(userId: string): Promise<"approved" | "pending">;
     unfollowUser(userId: string): Promise<void>;
+    /** One page of approved followers; `limit` defaults to 100 (max 500). */
     listFollowers(
       userId: string,
+      page?: { limit?: number; offset?: number },
     ): Promise<{ userId: string; displayName: string; avatarUrl?: string }[]>;
+    /** One page of approved followees; `limit` defaults to 100 (max 500). */
     listFollowing(
       userId: string,
+      page?: { limit?: number; offset?: number },
     ): Promise<{ userId: string; displayName: string; avatarUrl?: string }[]>;
+    /** False when the viewer may not see this user's follower/following lists (private or blocked). */
+    canViewFollowLists(userId: string): Promise<boolean>;
     /** Approved follower/following counts; null when hidden from the viewer or unavailable. */
     getFollowCounts(
       userId: string,

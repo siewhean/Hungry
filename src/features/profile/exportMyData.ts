@@ -13,6 +13,20 @@ async function section<T>(load: () => Promise<T>): Promise<Section<T>> {
   }
 }
 
+const FOLLOW_EXPORT_PAGE_SIZE = 500;
+
+/** Reads every page so the export is not cut off at the list RPCs' default page size. */
+async function loadAllFollowRows<T>(
+  loadPage: (page: { limit: number; offset: number }) => Promise<T[]>,
+): Promise<T[]> {
+  const rows: T[] = [];
+  for (;;) {
+    const page = await loadPage({ limit: FOLLOW_EXPORT_PAGE_SIZE, offset: rows.length });
+    rows.push(...page);
+    if (page.length < FOLLOW_EXPORT_PAGE_SIZE) return rows;
+  }
+}
+
 /**
  * PDPA access request: a copy of the personal data the signed-in user can read
  * through the app. Each section loads independently so one failing read does
@@ -29,8 +43,8 @@ export async function buildMyDataExport(
     section(() => service.social.listUserPosts(userId)),
     section(() => service.profile.getFavouriteDishIds()),
     section(() => service.social.getSavedBites()),
-    section(() => service.social.listFollowers(userId)),
-    section(() => service.social.listFollowing(userId)),
+    section(() => loadAllFollowRows((page) => service.social.listFollowers(userId, page))),
+    section(() => loadAllFollowRows((page) => service.social.listFollowing(userId, page))),
   ]);
 
   return {

@@ -34,8 +34,23 @@ test("supabase follows use the RPCs; mock matches the contract", () => {
   assert.match(types, /getFollowCounts\(\s*userId: string,\s*\)/);
   assert.match(supabase, /client\.rpc\("follow_user", \{ p_target_user_id: userId \}\)/);
   assert.doesNotMatch(supabase, /followee_id: userId, status: "approved"/);
-  assert.match(supabase, /client\.rpc\("list_user_followers", \{ p_user_id: userId \}\)/);
-  assert.match(supabase, /client\.rpc\("list_user_following", \{ p_user_id: userId \}\)/);
+  // Lists are paged; callers pass limit/offset through to the RPC.
+  assert.match(
+    supabase,
+    /client\.rpc\("list_user_followers", \{\s*p_user_id: userId,\s*p_limit: page\?\.limit \?\? 100,\s*p_offset: page\?\.offset \?\? 0,/,
+  );
+  assert.match(
+    supabase,
+    /client\.rpc\("list_user_following", \{\s*p_user_id: userId,\s*p_limit: page\?\.limit \?\? 100,\s*p_offset: page\?\.offset \?\? 0,/,
+  );
+  assert.match(supabase, /client\.rpc\("can_view_follow_lists", \{ p_user_id: userId \}\)/);
+  assert.match(types, /canViewFollowLists\(userId: string\): Promise<boolean>/);
+  assert.match(mock, /async canViewFollowLists\(/);
+  // Mock refuses self-follows like the SQL does.
+  assert.match(
+    mock,
+    /if \(userId === _profile\.id\) throw new Error\("You can't follow yourself\."\)/,
+  );
   assert.match(supabase, /client\.rpc\("get_follow_counts", \{ p_user_id: userId \}\)/);
   assert.match(mock, /async getFollowCounts\(userId: string\)/);
   // Mock must not hand every user the signed-in profile's followers.
@@ -61,4 +76,92 @@ test("mock follow counts match the follower list and follows", async () => {
 
   await service.social.unfollowUser(otherUserId);
   assert.equal((await service.social.getFollowCounts(otherUserId))?.followersCount, 0);
+});
+
+test("follow list follow-up: own lists keep blocked-pair rows and visibility is exposed", () => {
+  const sql = read("supabase/migrations/20261019063000_follow_lists_own_and_visibility.sql");
+
+  // Own lists match own counts (and the data export); other users' lists keep the block filter.
+  assert.equal(
+    (sql.match(/p_user_id = auth\.uid\(\)\s+or up\.id = auth\.uid\(\)/g) ?? []).length,
+    2,
+  );
+  assert.match(sql, /not app_private\.app_user_block_exists\(auth\.uid\(\), up\.id\)/);
+  assert.match(sql, /create or replace function public\.can_view_follow_lists\(p_user_id uuid\)/);
+  assert.match(
+    sql,
+    /app_private\.can_read_author_content\(p_user_id\)\s+and not app_private\.app_user_block_exists\(auth\.uid\(\), p_user_id\)/,
+  );
+  assert.match(
+    sql,
+    /revoke all on function public\.can_view_follow_lists\(uuid\) from public, anon/,
+  );
+});
+
+test("mock follow lists page like the RPCs and refuse self-follow", async () => {
+  const { hungryService: service } = await import("@/lib/services/mock/mockService");
+  const me = await service.profile.getProfile();
+  const ids = ["user-page-a", "user-page-b", "user-page-c"];
+  await Promise.all(ids.map((id) => service.social.followUser(id)));
+  try {
+    const all = await service.social.listFollowing(me.id);
+    const first = await service.social.listFollowing(me.id, { limit: 2, offset: 0 });
+    const rest = await service.social.listFollowing(me.id, { limit: 2, offset: 2 });
+    assert.equal(first.length, 2);
+    assert.deepEqual([...first, ...rest], all.slice(0, first.length + rest.length));
+    await assert.rejects(service.social.followUser(me.id), /can't follow yourself/);
+    assert.equal(await service.social.canViewFollowLists("user-page-a"), true);
+  } finally {
+    await Promise.all(ids.map((id) => service.social.unfollowUser(id)));
+  }
+});
+
+test("data export reads every follow page instead of the first 100", async () => {
+  const { buildMyDataExport } = await import("@/features/profile/exportMyData");
+  const rows = Array.from({ length: 1203 }, (_, index) => ({
+    userId: `u-${index}`,
+    displayName: `User ${index}`,
+  }));
+  const pages: { limit?: number; offset?: number }[] = [];
+  const listPage = async (_userId: string, page?: { limit?: number; offset?: number }) => {
+    pages.push(page ?? {});
+    const offset = page?.offset ?? 0;
+    return rows.slice(offset, offset + (page?.limit ?? 100));
+  };
+  const service = {
+    profile: { getProfile: async () => ({ id: "me" }), getFavouriteDishIds: async () => [] },
+    reviews: { getUserReviews: async () => [] },
+    social: {
+      listUserPosts: async () => [],
+      getSavedBites: async () => [],
+      listFollowers: listPage,
+      listFollowing: async () => [],
+    },
+  } as unknown as Parameters<typeof buildMyDataExport>[0];
+
+  const exported = await buildMyDataExport(service);
+  assert.equal(exported.followers.ok, true);
+  assert.equal(exported.followers.ok && exported.followers.data.length, 1203);
+  assert.deepEqual(
+    pages.map((page) => page.offset),
+    [0, 500, 1000],
+  );
+});
+
+test("connections screen pages, explains hidden lists, and profile reconciles both ways", () => {
+  const screen = read("src/app/screens/profile/ProfileConnectionsScreen.tsx");
+  const profile = read("src/app/screens/profile/UserProfileContent.tsx");
+  const store = read("src/store/useSocialStore.ts");
+
+  assert.match(screen, /const CONNECTIONS_PAGE_SIZE = 100;/);
+  assert.match(screen, /setHasMore\(rowCount === CONNECTIONS_PAGE_SIZE\)/);
+  assert.match(screen, /label="Load more"/);
+  assert.match(screen, /service\.canViewFollowLists\(targetUserId\)/);
+  assert.match(screen, /This account is private/);
+  assert.match(store, /setFollowedUserId: \(userId, isFollowing\) =>/);
+  assert.match(
+    profile,
+    /if \(serverIsFollowing !== null\) setFollowedUserId\(resolvedAuthorId, serverIsFollowing\)/,
+  );
+  assert.doesNotMatch(profile, /markFollowedUserIds\(\[resolvedAuthorId\]\)/);
 });

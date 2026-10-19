@@ -84,6 +84,8 @@ interface SocialState {
   toggleFollow: (userId: string) => void;
   /** Record server-confirmed follows (e.g. from the viewer's own Following list). */
   markFollowedUserIds: (userIds: string[]) => void;
+  /** Reconcile one user's follow state with the server (true or false). */
+  setFollowedUserId: (userId: string, isFollowing: boolean) => void;
   incrementShare: (postId: string, channel?: ShareChannel) => void;
   addComment: (postId: string, comment: SocialComment) => void;
   addReply: (postId: string, reply: SocialReply) => void;
@@ -343,6 +345,14 @@ export const useSocialStore = create<SocialState>()(
           });
           return { followedUserIds: next };
         });
+      },
+
+      setFollowedUserId: (userId, isFollowing) => {
+        if (!userId) return;
+        if (Boolean(get().followedUserIds[userId]) === isFollowing) return;
+        set((prev) => ({
+          followedUserIds: { ...prev.followedUserIds, [userId]: isFollowing },
+        }));
       },
 
       loadCommentsForPost: async (postId) => {

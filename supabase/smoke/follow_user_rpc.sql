@@ -1,4 +1,5 @@
--- Smoke checks for 20261019060000_follow_user_rpc_and_counts.sql.
+-- Smoke checks for 20261019060000_follow_user_rpc_and_counts.sql and
+-- 20261019063000_follow_lists_own_and_visibility.sql.
 -- Follows a public and a private user through follow_user, then checks
 -- counts, lists and privacy. Runs in a transaction and rolls back.
 
@@ -105,6 +106,17 @@ begin
   if v_rows <> 0 then
     raise exception 'Private user followers should be hidden from a pending follower';
   end if;
+
+  -- 20261019063000: list visibility matches what the lists return.
+  if not public.can_view_follow_lists('00000000-0000-0043-b000-000000000001') then
+    raise exception 'Viewer should see their own follow lists';
+  end if;
+  if not public.can_view_follow_lists('00000000-0000-0043-b000-000000000002') then
+    raise exception 'Public user follow lists should be visible';
+  end if;
+  if public.can_view_follow_lists('00000000-0000-0043-b000-000000000003') then
+    raise exception 'Private user follow lists should be hidden from a pending follower';
+  end if;
 end $$;
 
 -- Blocking hides counts and refuses new follows.
@@ -118,6 +130,14 @@ values (
 delete from follows
 where follower_id = '00000000-0000-0043-b000-000000000001'
   and followee_id = '00000000-0000-0043-b000-000000000002';
+-- The blocker still follows the viewer; the viewer's OWN list keeps that row.
+insert into follows (follower_id, followee_id, status, approved_at)
+values (
+  '00000000-0000-0043-b000-000000000002',
+  '00000000-0000-0043-b000-000000000001',
+  'approved',
+  now()
+);
 set local role authenticated;
 
 do $$
@@ -128,6 +148,17 @@ begin
   from public.get_follow_counts('00000000-0000-0043-b000-000000000002');
   if v_rows <> 0 then
     raise exception 'Blocked pair should not see follow counts';
+  end if;
+
+  if public.can_view_follow_lists('00000000-0000-0043-b000-000000000002') then
+    raise exception 'Blocked pair should not see follow lists';
+  end if;
+
+  select count(*) into v_rows
+  from public.list_user_followers('00000000-0000-0043-b000-000000000001')
+  where user_id = '00000000-0000-0043-b000-000000000002';
+  if v_rows <> 1 then
+    raise exception 'Own followers list should keep a blocked-pair follower (matches own counts/export)';
   end if;
 
   begin

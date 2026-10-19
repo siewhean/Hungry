@@ -643,6 +643,12 @@ function listMockFollowers(userId: string) {
       : [];
   return dedupeMockFollowers([...seeded.filter(Boolean), ...viewerFollows]);
 }
+/** Same paging rules as the list_user_followers/list_user_following RPCs (default 100, max 500). */
+function pageMockFollowRows<T>(rows: T[], page?: { limit?: number; offset?: number }) {
+  const limit = Math.min(Math.max(page?.limit ?? 100, 1), 500);
+  const offset = Math.max(page?.offset ?? 0, 0);
+  return rows.slice(offset, offset + limit);
+}
 const _mockComments: Record<
   string,
   {
@@ -1997,6 +2003,7 @@ export const hungryService: HungryService = {
     },
 
     async followUser(userId: string) {
+      if (userId === _profile.id) throw new Error("You can't follow yourself.");
       _userFollows.add(userId);
       return resolve("approved" as const);
     },
@@ -2006,19 +2013,26 @@ export const hungryService: HungryService = {
       return resolve(undefined as void);
     },
 
-    async listFollowers(userId: string) {
-      return resolve(listMockFollowers(userId));
+    async listFollowers(userId: string, page?: { limit?: number; offset?: number }) {
+      return resolve(pageMockFollowRows(listMockFollowers(userId), page));
     },
 
-    async listFollowing(userId: string) {
+    async listFollowing(userId: string, page?: { limit?: number; offset?: number }) {
       if (userId !== _profile.id) return resolve([]);
       return resolve(
-        Array.from(_userFollows).map((id) => ({
-          userId: id,
-          displayName: id,
-          avatarUrl: undefined,
-        })),
+        pageMockFollowRows(
+          Array.from(_userFollows).map((id) => ({
+            userId: id,
+            displayName: id,
+            avatarUrl: undefined,
+          })),
+          page,
+        ),
       );
+    },
+
+    async canViewFollowLists(_userId: string) {
+      return resolve(true);
     },
 
     async getFollowCounts(userId: string) {

@@ -78,7 +78,7 @@ export function UserProfileContent({
   const followedUserIds = useSocialStore((state) => state.followedUserIds);
   const toggleAuthorFollow = useSocialStore((state) => state.toggleAuthorFollow);
   const toggleFollow = useSocialStore((state) => state.toggleFollow);
-  const markFollowedUserIds = useSocialStore((state) => state.markFollowedUserIds);
+  const setFollowedUserId = useSocialStore((state) => state.setFollowedUserId);
   const serviceProviderMode = getServiceProvider().mode;
   const canUseAuthorFallbackFollow =
     serviceProviderMode === "mock" || (typeof __DEV__ !== "undefined" && __DEV__);
@@ -281,11 +281,14 @@ export function UserProfileContent({
 
     void Promise.all([
       service.getFollowCounts(resolvedAuthorId),
-      service.isFollowing(resolvedAuthorId).catch(() => false),
+      service.isFollowing(resolvedAuthorId).catch(() => null),
     ])
-      .then(([counts, viewerIsFollowing]) => {
+      .then(([counts, serverIsFollowing]) => {
         if (!isActive) return;
-        if (viewerIsFollowing) markFollowedUserIds([resolvedAuthorId]);
+        // The server wins both ways, so a stale persisted follow is cleared too.
+        if (serverIsFollowing !== null) setFollowedUserId(resolvedAuthorId, serverIsFollowing);
+        const viewerIsFollowing =
+          serverIsFollowing ?? Boolean(useSocialStore.getState().followedUserIds[resolvedAuthorId]);
         setServerFollowState({
           userId: resolvedAuthorId,
           followersCount: counts?.followersCount ?? 0,
@@ -307,7 +310,7 @@ export function UserProfileContent({
     return () => {
       isActive = false;
     };
-  }, [markFollowedUserIds, resolvedAuthorId]);
+  }, [resolvedAuthorId, setFollowedUserId]);
 
   const reviewCount = userReviewItems.length;
   const stallsCount = useMemo(

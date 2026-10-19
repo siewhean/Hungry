@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RouteProp, useRoute } from "@react-navigation/native";
 import { Search } from "lucide-react-native";
 
-import { AppText, Avatar, Card, EmptyState, Input } from "@/components/ui";
+import { AppText, Avatar, Button, Card, EmptyState, Input } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useSocialStore } from "@/store/useSocialStore";
@@ -23,6 +23,30 @@ type UserProfileItem = {
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "Followers" | "Following">;
 
+/** Rows per request; matches the list RPCs' default page size. */
+const CONNECTIONS_PAGE_SIZE = 100;
+
+function toPersonItems(users: { userId: string; displayName: string; avatarUrl?: string }[]) {
+  return users
+    .filter((user) => Boolean(user.userId))
+    .map((user) => ({
+      userId: user.userId,
+      name: user.displayName.trim() || "Hungry User",
+      avatarUrl: user.avatarUrl ?? "",
+    }));
+}
+
+function mergePeople(current: UserProfileItem[], next: UserProfileItem[]) {
+  const seen = new Set(current.map((person) => person.userId));
+  const merged = [...current];
+  next.forEach((person) => {
+    if (seen.has(person.userId)) return;
+    seen.add(person.userId);
+    merged.push(person);
+  });
+  return merged;
+}
+
 function ProfileConnectionsScreen({ navigation }: Props) {
   const { componentRadii, palette, spacing } = useHungryTheme();
   const route = useRoute<ProfileConnectionsRoute>();
@@ -40,34 +64,53 @@ function ProfileConnectionsScreen({ navigation }: Props) {
   // only drives each row's Follow button.
   const [people, setPeople] = useState<UserProfileItem[]>([]);
   const [isLoadingConnections, setIsLoadingConnections] = useState(true);
+  // Server rows fetched so far (offset for the next page) and whether another page may exist.
+  const [loadedRowCount, setLoadedRowCount] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  // Private account (viewer not an approved follower) or blocked pair: the lists are hidden.
+  const [listsHidden, setListsHidden] = useState(false);
   const normalizedQuery = searchQuery.toLowerCase().trim();
+
+  const loadPage = useCallback(
+    (offset: number) => {
+      const service = getHungryService().social;
+      const page = { limit: CONNECTIONS_PAGE_SIZE, offset };
+      return (
+        isFollowingTab
+          ? service.listFollowing(targetUserId, page)
+          : service.listFollowers(targetUserId, page)
+      ).then((users) => {
+        const nextPeople = toPersonItems(users);
+        if (isFollowingTab && isOwnProfile) {
+          markFollowedUserIds(nextPeople.map((person) => person.userId));
+        }
+        return { nextPeople, rowCount: users.length };
+      });
+    },
+    [isFollowingTab, isOwnProfile, markFollowedUserIds, targetUserId],
+  );
 
   useEffect(() => {
     let isActive = true;
     const service = getHungryService().social;
     setIsLoadingConnections(true);
+    setListsHidden(false);
+    setHasMore(false);
+    setLoadedRowCount(0);
 
-    void (
-      isFollowingTab ? service.listFollowing(targetUserId) : service.listFollowers(targetUserId)
-    )
-      .then((users) => {
+    void Promise.all([
+      loadPage(0),
+      isOwnProfile
+        ? Promise.resolve(true)
+        : service.canViewFollowLists(targetUserId).catch(() => true),
+    ])
+      .then(([{ nextPeople, rowCount }, canView]) => {
         if (!isActive) return;
-        const seen = new Set<string>();
-        const nextPeople = users
-          .filter((user) => {
-            if (!user.userId || seen.has(user.userId)) return false;
-            seen.add(user.userId);
-            return true;
-          })
-          .map((user) => ({
-            userId: user.userId,
-            name: user.displayName.trim() || "Hungry User",
-            avatarUrl: user.avatarUrl ?? "",
-          }));
-        if (isFollowingTab && isOwnProfile) {
-          markFollowedUserIds(nextPeople.map((person) => person.userId));
-        }
-        setPeople(nextPeople);
+        setListsHidden(!canView);
+        setPeople(mergePeople([], nextPeople));
+        setLoadedRowCount(rowCount);
+        setHasMore(rowCount === CONNECTIONS_PAGE_SIZE);
       })
       .catch(() => {
         if (!isActive) return;
@@ -81,7 +124,22 @@ function ProfileConnectionsScreen({ navigation }: Props) {
     return () => {
       isActive = false;
     };
-  }, [isFollowingTab, isOwnProfile, markFollowedUserIds, targetUserId]);
+  }, [isOwnProfile, loadPage, targetUserId]);
+
+  const loadMore = () => {
+    if (isLoadingMore || !hasMore) return;
+    setIsLoadingMore(true);
+    void loadPage(loadedRowCount)
+      .then(({ nextPeople, rowCount }) => {
+        setPeople((current) => mergePeople(current, nextPeople));
+        setLoadedRowCount((current) => current + rowCount);
+        setHasMore(rowCount === CONNECTIONS_PAGE_SIZE);
+      })
+      .catch((error) => {
+        console.error("Failed to load more connections:", error);
+      })
+      .finally(() => setIsLoadingMore(false));
+  };
 
   const visiblePeople = useMemo(() => {
     if (!normalizedQuery) return people;
@@ -89,14 +147,20 @@ function ProfileConnectionsScreen({ navigation }: Props) {
   }, [people, normalizedQuery]);
 
   const title = route.name === "Followers" ? "Followers" : "Following";
-  const emptyTitle = isFollowingTab ? "No users followed yet" : "No followers yet";
-  const emptyBody = isFollowingTab
-    ? isOwnProfile
-      ? "You aren't following anyone yet. Start following users to see them here."
-      : `${targetDisplayName} isn't following anyone yet.`
-    : isOwnProfile
-      ? "You don't have any followers yet."
-      : `${targetDisplayName} doesn't have any followers yet.`;
+  const emptyTitle = listsHidden
+    ? "This account is private"
+    : isFollowingTab
+      ? "No users followed yet"
+      : "No followers yet";
+  const emptyBody = listsHidden
+    ? `Only ${targetDisplayName}'s approved followers can see this list.`
+    : isFollowingTab
+      ? isOwnProfile
+        ? "You aren't following anyone yet. Start following users to see them here."
+        : `${targetDisplayName} isn't following anyone yet.`
+      : isOwnProfile
+        ? "You don't have any followers yet."
+        : `${targetDisplayName} doesn't have any followers yet.`;
   const loadingTitle = isFollowingTab ? "Loading following" : "Loading followers";
   const loadingBody = isFollowingTab
     ? isOwnProfile
@@ -184,6 +248,15 @@ function ProfileConnectionsScreen({ navigation }: Props) {
         ) : (
           <EmptyState title={emptyTitle} body={emptyBody} />
         )}
+        {!isLoadingConnections && hasMore ? (
+          <Button
+            label="Load more"
+            variant="ghost"
+            size="sm"
+            loading={isLoadingMore}
+            onPress={loadMore}
+          />
+        ) : null}
       </ScrollView>
     </ProfileScreenShell>
   );
