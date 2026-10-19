@@ -2,18 +2,22 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import { Pressable, View } from "react-native";
 import { Heart, MessageCircleMore, PencilLine, Send, Utensils } from "lucide-react-native";
 
-import { AccessibleImage, AppText, Avatar, Card, EmptyState, Skeleton } from "@/components/ui";
+import {
+  AccessibleImage,
+  AppText,
+  Avatar,
+  Button,
+  Card,
+  EmptyState,
+  Skeleton,
+} from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { listSharedStallPosts, mergeStallPosts } from "@/features/social/sharedStallPosts";
 import { biteToStallPost } from "@/lib/services/postTransforms";
-import {
-  getDataRepository,
-  getHungryService,
-  getServiceProvider,
-} from "@/lib/services/serviceProvider";
+import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useSocialStore } from "@/store/useSocialStore";
 import { useHungryTheme } from "@/theme";
-import type { StallPost } from "@/types/domain";
+import type { Review, StallPost } from "@/types/domain";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 
 type UserProfileContentProps = {
@@ -22,22 +26,8 @@ type UserProfileContentProps = {
   authorAvatarUrl?: string;
   authorId?: string;
 };
-type UserReviewItem = {
-  id: string;
-  postId?: string;
-  text: string;
-  createdAt: string;
-  kind: "comment" | "reply";
-};
-type UserProfileItem = {
-  userId?: string;
-  name: string;
-  avatarUrl?: string;
-};
-
-function normalizePersonName(name: string) {
-  return name.trim().toLowerCase();
-}
+/** Posts per server page; matches listUserPosts' default page size. */
+const USER_POSTS_PAGE_SIZE = 60;
 
 function haveSamePosts(left: StallPost[], right: StallPost[]) {
   if (left.length !== right.length) return false;
@@ -57,36 +47,28 @@ function haveSamePosts(left: StallPost[], right: StallPost[]) {
   return true;
 }
 
-function toEpochMs(value: string) {
-  const parsed = Date.parse(value);
-  return Number.isNaN(parsed) ? 0 : parsed;
-}
-
 export function UserProfileContent({
   navigation,
   authorName,
   authorAvatarUrl,
   authorId,
 }: UserProfileContentProps) {
-  const normalizedAuthorName = normalizePersonName(authorName);
   const { colorScheme, componentRadii, palette, radii, shadows, spacing } = useHungryTheme();
   const repository = getDataRepository();
   const rootNavigation = getRootNavigation(navigation);
-  const commentsByPostId = useSocialStore((state) => state.commentsByPostId);
-  const repliesByCommentId = useSocialStore((state) => state.repliesByCommentId);
-  const followedAuthors = useSocialStore((state) => state.followedAuthors);
   const followedUserIds = useSocialStore((state) => state.followedUserIds);
-  const toggleAuthorFollow = useSocialStore((state) => state.toggleAuthorFollow);
   const toggleFollow = useSocialStore((state) => state.toggleFollow);
   const setFollowedUserId = useSocialStore((state) => state.setFollowedUserId);
   const requestedUserIds = useSocialStore((state) => state.requestedUserIds);
   const setFollowRequested = useSocialStore((state) => state.setFollowRequested);
-  const serviceProviderMode = getServiceProvider().mode;
-  const canUseAuthorFallbackFollow =
-    serviceProviderMode === "mock" || (typeof __DEV__ !== "undefined" && __DEV__);
   const [activeTab, setActiveTab] = useState<"posts" | "reviews">("posts");
   const [posts, setPosts] = useState<StallPost[]>([]);
-  const [chatProfilesByName, setChatProfilesByName] = useState<Record<string, UserProfileItem>>({});
+  // Server rows fetched so far (offset for the next page) and whether another page may exist.
+  const [loadedPostRows, setLoadedPostRows] = useState(0);
+  const [hasMorePosts, setHasMorePosts] = useState(false);
+  const [isLoadingMorePosts, setIsLoadingMorePosts] = useState(false);
+  const [postsLoadFailed, setPostsLoadFailed] = useState(false);
+  const [reviews, setReviews] = useState<Review[]>([]);
   // Server follow counts plus whether the server already had the viewer following this user,
   // so a local follow/unfollow afterwards can adjust the follower count without refetching.
   const [serverFollowState, setServerFollowState] = useState<{
@@ -96,184 +78,96 @@ export function UserProfileContent({
     viewerIsFollowing: boolean;
   } | null>(null);
 
-  const normalizedAuthorId = authorId?.trim();
-  const resolvedAuthorId = useMemo(
-    () =>
-      normalizedAuthorId ??
-      posts.find((post) => normalizePersonName(post.authorName) === normalizedAuthorName)?.authorId,
-    [normalizedAuthorId, normalizedAuthorName, posts],
-  );
+  // Posts, reviews and follows are matched only by account id: display names are not unique.
+  const normalizedAuthorId = authorId?.trim() || undefined;
+  const resolvedAuthorId = normalizedAuthorId;
 
   const openProfileConnections = useCallback(
-    (target: "Followers" | "Following", userId?: string) => {
-      const targetUserId = userId || resolvedAuthorId;
-
-      if (!targetUserId) {
-        return;
-      }
-
-      const routeNames = navigation?.getState?.()?.routeNames ?? [];
-      const params = { userId: targetUserId, userDisplayName: authorName };
-
-      if (routeNames.includes(target)) {
-        navigation.navigate(target, params);
-        return;
-      }
-
-      rootNavigation.navigate("MainTabs", {
-        screen: "Profile",
-        params: { screen: target, params },
-      });
+    (target: "UserFollowers" | "UserFollowing") => {
+      if (!resolvedAuthorId) return;
+      // Root routes, so Back returns to this profile instead of switching to the Profile tab.
+      rootNavigation.navigate(target, { userId: resolvedAuthorId, userDisplayName: authorName });
     },
-    [authorName, navigation, resolvedAuthorId, rootNavigation],
+    [authorName, resolvedAuthorId, rootNavigation],
+  );
+
+  const loadAuthorPosts = useCallback(
+    (offset: number) =>
+      getHungryService()
+        .social.listUserPosts(normalizedAuthorId as string, {
+          limit: USER_POSTS_PAGE_SIZE,
+          offset,
+        })
+        .then((bites) => ({
+          rowCount: bites.length,
+          nextPosts: bites.map((bite) =>
+            biteToStallPost(bite, { authorAvatarUrl: bite.authorAvatar }),
+          ),
+        })),
+    [normalizedAuthorId],
   );
 
   useEffect(() => {
-    let isActive = true;
-    void getHungryService()
-      .chat.listConversations()
-      .then((conversations) => {
-        if (!isActive) return;
-        const next: Record<string, UserProfileItem> = {};
-
-        conversations.forEach((conversation) => {
-          const conversationAvatar = conversation.avatarUrl?.trim();
-
-          conversation.participants.forEach((participant) => {
-            const normalizedName = normalizePersonName(participant.displayName);
-            const avatarUrl = participant.avatarUrl?.trim();
-            const resolvedAvatar =
-              avatarUrl ||
-              (conversationAvatar && !participant.isCurrentUser ? conversationAvatar : "");
-
-            if (!normalizedName || !resolvedAvatar) {
-              return;
-            }
-
-            if (!next[normalizedName]) {
-              next[normalizedName] = {
-                userId: participant.userId,
-                name: participant.displayName,
-                avatarUrl: resolvedAvatar,
-              };
-            }
-          });
-        });
-
-        setChatProfilesByName(next);
-      })
-      .catch(() => {
-        if (!isActive) return;
-        setChatProfilesByName({});
-      });
-
-    return () => {
-      isActive = false;
-    };
-  }, []);
-
-  useEffect(() => {
+    if (!normalizedAuthorId) return;
     let isMounted = true;
+    setPostsLoadFailed(false);
     void (async () => {
-      const service = getHungryService().social;
-      const [sharedPosts, authorPosts] = await Promise.all([
-        listSharedStallPosts(repository),
-        normalizedAuthorId
-          ? service
-              .listUserPosts(normalizedAuthorId)
-              .then((bites) =>
-                bites.map((bite) => biteToStallPost(bite, { authorAvatarUrl: bite.authorAvatar })),
-              )
-              .catch(() => [])
-          : Promise.resolve([]),
+      const [sharedPosts, authorPage] = await Promise.all([
+        listSharedStallPosts(repository).catch(() => [] as StallPost[]),
+        loadAuthorPosts(0).catch(() => null),
       ]);
       if (!isMounted) return;
-      const matchingSharedPosts = sharedPosts.filter((post) =>
-        normalizedAuthorId
-          ? post.authorId === normalizedAuthorId
-          : normalizePersonName(post.authorName) === normalizedAuthorName,
+      const matchingSharedPosts = sharedPosts.filter(
+        (post) => post.authorId === normalizedAuthorId,
       );
-      const nextPosts = mergeStallPosts(authorPosts, matchingSharedPosts);
+      const nextPosts = mergeStallPosts(authorPage?.nextPosts ?? [], matchingSharedPosts);
       setPosts((current) => (haveSamePosts(current, nextPosts) ? current : nextPosts));
+      setPostsLoadFailed(authorPage === null);
+      setLoadedPostRows(authorPage?.rowCount ?? 0);
+      setHasMorePosts(authorPage?.rowCount === USER_POSTS_PAGE_SIZE);
     })();
 
     return () => {
       isMounted = false;
     };
-  }, [repository, normalizedAuthorId, normalizedAuthorName]);
+  }, [loadAuthorPosts, normalizedAuthorId, repository]);
+
+  const loadMorePosts = () => {
+    if (isLoadingMorePosts || !hasMorePosts) return;
+    setIsLoadingMorePosts(true);
+    void loadAuthorPosts(loadedPostRows)
+      .then(({ nextPosts, rowCount }) => {
+        setPosts((current) => mergeStallPosts(current, nextPosts));
+        setLoadedPostRows((current) => current + rowCount);
+        setHasMorePosts(rowCount === USER_POSTS_PAGE_SIZE);
+      })
+      .catch((error) => {
+        console.error("Failed to load more posts:", error);
+      })
+      .finally(() => setIsLoadingMorePosts(false));
+  };
+
+  // The Reviews tab lists this user's own dish reviews from the server.
+  useEffect(() => {
+    if (!normalizedAuthorId) return;
+    let isMounted = true;
+    void getHungryService()
+      .reviews.getUserReviews(normalizedAuthorId)
+      .then((rows) => {
+        if (isMounted) setReviews(rows);
+      })
+      .catch((error) => {
+        console.error("Failed to load user reviews:", error);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [normalizedAuthorId]);
 
   const resolvedAuthorAvatarUrl = useMemo(() => {
     if (authorAvatarUrl?.trim()) return authorAvatarUrl.trim();
-
-    const avatarFromPosts = posts.find(
-      (post) =>
-        normalizePersonName(post.authorName) === normalizedAuthorName && post.authorAvatarUrl,
-    )?.authorAvatarUrl;
-
-    if (avatarFromPosts?.trim()) {
-      return avatarFromPosts.trim();
-    }
-
-    const commentWithAvatar = Object.values(commentsByPostId)
-      .flat()
-      .find(
-        (comment) =>
-          normalizePersonName(comment.authorName) === normalizedAuthorName &&
-          comment.authorAvatarUrl?.trim(),
-      )?.authorAvatarUrl;
-
-    if (commentWithAvatar?.trim()) {
-      return commentWithAvatar.trim();
-    }
-
-    const replyWithAvatar = Object.values(repliesByCommentId)
-      .flat()
-      .find(
-        (reply) =>
-          normalizePersonName(reply.authorName) === normalizedAuthorName &&
-          reply.authorAvatarUrl?.trim(),
-      )?.authorAvatarUrl;
-
-    return replyWithAvatar?.trim() ?? "";
-  }, [authorAvatarUrl, commentsByPostId, normalizedAuthorName, posts, repliesByCommentId]);
-
-  const userReviewItems = useMemo<UserReviewItem[]>(() => {
-    const items: UserReviewItem[] = [];
-    const postIdByCommentId = new Map<string, string>();
-
-    Object.entries(commentsByPostId).forEach(([postId, comments]) => {
-      comments.forEach((comment) => {
-        postIdByCommentId.set(comment.id, postId);
-
-        if (normalizePersonName(comment.authorName) === normalizedAuthorName) {
-          items.push({
-            id: comment.id,
-            postId,
-            text: comment.text,
-            createdAt: comment.createdAt,
-            kind: "comment",
-          });
-        }
-      });
-    });
-
-    Object.entries(repliesByCommentId).forEach(([parentCommentId, replies]) => {
-      const postId = postIdByCommentId.get(parentCommentId);
-      replies.forEach((reply) => {
-        if (normalizePersonName(reply.authorName) === normalizedAuthorName) {
-          items.push({
-            id: reply.id,
-            postId,
-            text: reply.text,
-            createdAt: reply.createdAt,
-            kind: "reply",
-          });
-        }
-      });
-    });
-
-    return items.sort((a, b) => toEpochMs(b.createdAt) - toEpochMs(a.createdAt));
-  }, [commentsByPostId, normalizedAuthorName, repliesByCommentId]);
+    return posts.find((post) => post.authorAvatarUrl?.trim())?.authorAvatarUrl?.trim() ?? "";
+  }, [authorAvatarUrl, posts]);
 
   useEffect(() => {
     if (!resolvedAuthorId) return;
@@ -319,15 +213,12 @@ export function UserProfileContent({
     };
   }, [resolvedAuthorId, setFollowRequested, setFollowedUserId]);
 
-  const reviewCount = userReviewItems.length;
+  const reviewCount = reviews.length;
   const stallsCount = useMemo(
     () => new Set(posts.map((post) => post.venueId).filter(Boolean)).size,
     [posts],
   );
-  const isFollowingAuthor = resolvedAuthorId
-    ? Boolean(followedUserIds[resolvedAuthorId])
-    : canUseAuthorFallbackFollow &&
-      Boolean(followedAuthors[authorName] || followedAuthors[normalizedAuthorName]);
+  const isFollowingAuthor = resolvedAuthorId ? Boolean(followedUserIds[resolvedAuthorId]) : false;
   // Pending request to a private account: tapping again cancels it.
   const isFollowRequested = Boolean(
     resolvedAuthorId && !isFollowingAuthor && requestedUserIds[resolvedAuthorId],
@@ -338,7 +229,7 @@ export function UserProfileContent({
     : isFollowingAuthor
       ? "Following"
       : "Follow";
-  const canShowFollowButton = Boolean(resolvedAuthorId) || canUseAuthorFallbackFollow;
+  const canShowFollowButton = Boolean(resolvedAuthorId);
   const loadedFollowState =
     serverFollowState && serverFollowState.userId === resolvedAuthorId ? serverFollowState : null;
   // No account id (name-only author): there is no server follow data to show.
@@ -358,7 +249,7 @@ export function UserProfileContent({
   const followingCount = !resolvedAuthorId ? 0 : (loadedFollowState?.followingCount ?? null);
 
   const activeTitle = activeTab === "posts" ? "Post" : "Review";
-  const activeItemsCount = activeTab === "posts" ? posts.length : userReviewItems.length;
+  const activeItemsCount = activeTab === "posts" ? posts.length : reviews.length;
 
   return (
     <ProfileScreenShell title={authorName}>
@@ -402,9 +293,9 @@ export function UserProfileContent({
                 }
                 accessibilityHint={isFollowRequested ? "Cancels your follow request" : undefined}
                 hitSlop={8}
-                onPress={() =>
-                  resolvedAuthorId ? toggleFollow(resolvedAuthorId) : toggleAuthorFollow(authorName)
-                }
+                onPress={() => {
+                  if (resolvedAuthorId) toggleFollow(resolvedAuthorId);
+                }}
                 style={{
                   alignItems: "center",
                   borderRadius: componentRadii.button,
@@ -433,162 +324,212 @@ export function UserProfileContent({
           </View>
         </View>
 
-        <View style={{ gap: spacing[4] }}>
-          <View style={{ flexDirection: "row", gap: spacing[2] }}>
-            <StatBlock
-              icon={<Heart color={palette.orange} size={14} />}
-              label="Followers"
-              value={followersCount}
-              onPress={() => openProfileConnections("Followers", resolvedAuthorId)}
-            />
-            <StatBlock
-              icon={<Send color={palette.orange} size={14} />}
-              label="Following"
-              value={followingCount}
-              onPress={() => openProfileConnections("Following", resolvedAuthorId)}
-            />
-          </View>
-          <View style={{ flexDirection: "row", gap: spacing[2] }}>
-            <StatBlock
-              icon={<PencilLine color={palette.orange} size={14} />}
-              label="Reviews"
-              value={reviewCount}
-              onPress={() => setActiveTab("reviews")}
-            />
-            <StatBlock
-              icon={<Utensils color={palette.orange} size={14} />}
-              label="Stalls"
-              value={stallsCount}
-              onPress={() => navigation.navigate("VisitedStalls")}
-            />
-          </View>
-        </View>
+        {!resolvedAuthorId ? (
+          // Without an account id there is no reliable way to tell whose posts these are.
+          <EmptyState
+            title="Profile unavailable"
+            body={`We can't open ${authorName}'s profile right now.`}
+            icon={<MessageCircleMore color={palette.textSecondary} size={36} />}
+          />
+        ) : (
+          <>
+            <View style={{ gap: spacing[4] }}>
+              <View style={{ flexDirection: "row", gap: spacing[2] }}>
+                <StatBlock
+                  icon={<Heart color={palette.orange} size={14} />}
+                  label="Followers"
+                  value={followersCount}
+                  accessibilityHint={`Opens ${authorName}'s followers`}
+                  onPress={() => openProfileConnections("UserFollowers")}
+                />
+                <StatBlock
+                  icon={<Send color={palette.orange} size={14} />}
+                  label="Following"
+                  value={followingCount}
+                  accessibilityHint={`Opens the people ${authorName} follows`}
+                  onPress={() => openProfileConnections("UserFollowing")}
+                />
+              </View>
+              <View style={{ flexDirection: "row", gap: spacing[2] }}>
+                <StatBlock
+                  icon={<PencilLine color={palette.orange} size={14} />}
+                  label="Reviews"
+                  value={reviewCount}
+                  accessibilityHint={`Shows ${authorName}'s reviews`}
+                  onPress={() => setActiveTab("reviews")}
+                />
+                {/* Count only: the visited-stalls list is the viewer's own and is not shown for others. */}
+                <StatBlock
+                  icon={<Utensils color={palette.orange} size={14} />}
+                  label="Stalls"
+                  value={stallsCount}
+                />
+              </View>
+            </View>
 
-        <View style={{ gap: spacing[4], marginTop: spacing[2] }}>
-          <AppText variant="h2">Posts</AppText>
-          <View
-            style={{
-              alignSelf: "stretch",
-              flexDirection: "row",
-              borderWidth: 1,
-              borderRadius: componentRadii.button,
-              borderColor: palette.border,
-              backgroundColor: palette.surface,
-              overflow: "hidden",
-            }}
-          >
-            <Pressable
-              onPress={() => setActiveTab("posts")}
-              style={{
-                flex: 1,
-                paddingVertical: spacing[2],
-                alignItems: "center",
-                backgroundColor: activeTab === "posts" ? palette.orange : "transparent",
-              }}
-            >
-              <AppText
-                style={{
-                  fontWeight: activeTab === "posts" ? 700 : 500,
-                  color: activeTab === "posts" ? palette.white : palette.text,
-                }}
-              >
-                Posts
-              </AppText>
-            </Pressable>
-            <Pressable
-              onPress={() => setActiveTab("reviews")}
-              style={{
-                flex: 1,
-                paddingVertical: spacing[2],
-                alignItems: "center",
-                backgroundColor: activeTab === "reviews" ? palette.orange : "transparent",
-              }}
-            >
-              <AppText
-                style={{
-                  fontWeight: activeTab === "reviews" ? 700 : 500,
-                  color: activeTab === "reviews" ? palette.white : palette.text,
-                }}
-              >
-                Reviews
-              </AppText>
-            </Pressable>
-          </View>
-
-          {activeItemsCount > 0 ? (
-            activeTab === "posts" ? (
+            <View style={{ gap: spacing[4], marginTop: spacing[2] }}>
+              <AppText variant="h2">Posts</AppText>
               <View
-                style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -spacing[4] }}
+                accessibilityRole="tablist"
+                style={{
+                  alignSelf: "stretch",
+                  flexDirection: "row",
+                  borderWidth: 1,
+                  borderRadius: componentRadii.button,
+                  borderColor: palette.border,
+                  backgroundColor: palette.surface,
+                  overflow: "hidden",
+                }}
               >
-                {posts.map((post) => {
-                  return (
-                    <Pressable
-                      key={post.id}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Open post ${post.caption || post.id}`}
-                      onPress={() =>
-                        rootNavigation.navigate("ActivityPostDetail", {
-                          postId: post.id,
-                        })
-                      }
-                      style={{ width: "33.333%", aspectRatio: 1 }}
-                    >
-                      <AccessibleImage
-                        source={{ uri: post.mediaUrl }}
-                        decorative
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                        }}
-                        contentFit="cover"
-                      />
-                    </Pressable>
-                  );
-                })}
+                <Pressable
+                  accessibilityRole="tab"
+                  accessibilityLabel="Show posts"
+                  accessibilityState={{ selected: activeTab === "posts" }}
+                  onPress={() => setActiveTab("posts")}
+                  style={{
+                    flex: 1,
+                    paddingVertical: spacing[2],
+                    alignItems: "center",
+                    backgroundColor: activeTab === "posts" ? palette.orange : "transparent",
+                  }}
+                >
+                  <AppText
+                    style={{
+                      fontWeight: activeTab === "posts" ? 700 : 500,
+                      color: activeTab === "posts" ? palette.white : palette.text,
+                    }}
+                  >
+                    Posts
+                  </AppText>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="tab"
+                  accessibilityLabel="Show reviews"
+                  accessibilityState={{ selected: activeTab === "reviews" }}
+                  onPress={() => setActiveTab("reviews")}
+                  style={{
+                    flex: 1,
+                    paddingVertical: spacing[2],
+                    alignItems: "center",
+                    backgroundColor: activeTab === "reviews" ? palette.orange : "transparent",
+                  }}
+                >
+                  <AppText
+                    style={{
+                      fontWeight: activeTab === "reviews" ? 700 : 500,
+                      color: activeTab === "reviews" ? palette.white : palette.text,
+                    }}
+                  >
+                    Reviews
+                  </AppText>
+                </Pressable>
               </View>
-            ) : (
-              <View style={{ gap: spacing[3] }}>
-                {userReviewItems.map((item) => {
-                  const reviewCard = (
-                    <Card
-                      style={{
-                        borderColor: palette.border,
-                        borderWidth: 1,
-                        gap: spacing[2],
-                        padding: spacing[3],
-                        backgroundColor:
-                          colorScheme === "dark" ? palette.surfaceRaised : palette.surface,
-                      }}
-                    >
-                      <AppText>{item.text}</AppText>
-                    </Card>
-                  );
 
-                  return item.postId ? (
-                    <Pressable
-                      key={item.id}
-                      onPress={() =>
-                        rootNavigation.navigate("ActivityPostDetail", {
-                          postId: item.postId as string,
-                        })
-                      }
-                    >
-                      {reviewCard}
-                    </Pressable>
-                  ) : (
-                    <View key={item.id}>{reviewCard}</View>
-                  );
-                })}
-              </View>
-            )
-          ) : (
-            <EmptyState
-              title={`No ${activeTitle.toLowerCase()}s yet`}
-              body="Shared profile activity will appear here."
-              icon={<MessageCircleMore color={palette.textSecondary} size={36} />}
-            />
-          )}
-        </View>
+              {activeItemsCount > 0 ? (
+                activeTab === "posts" ? (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      flexWrap: "wrap",
+                      marginHorizontal: -spacing[4],
+                    }}
+                  >
+                    {posts.map((post) => {
+                      return (
+                        <Pressable
+                          key={post.id}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Open post ${post.caption || post.id}`}
+                          onPress={() =>
+                            rootNavigation.navigate("ActivityPostDetail", {
+                              postId: post.id,
+                            })
+                          }
+                          style={{ width: "33.333%", aspectRatio: 1 }}
+                        >
+                          <AccessibleImage
+                            source={{ uri: post.mediaUrl }}
+                            decorative
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                            }}
+                            contentFit="cover"
+                          />
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                ) : (
+                  <View style={{ gap: spacing[3] }}>
+                    {reviews.map((review) => {
+                      const dishName = review.dishId
+                        ? repository.getDishById(review.dishId)?.name
+                        : undefined;
+                      const reviewCard = (
+                        <Card
+                          style={{
+                            borderColor: palette.border,
+                            borderWidth: 1,
+                            gap: spacing[2],
+                            padding: spacing[3],
+                            backgroundColor:
+                              colorScheme === "dark" ? palette.surfaceRaised : palette.surface,
+                          }}
+                        >
+                          {dishName ? <AppText variant="bodyBold">{dishName}</AppText> : null}
+                          <AppText variant="micro" tone="secondary">
+                            {`Rated ${review.rating}/5`}
+                          </AppText>
+                          {review.text ? <AppText>{review.text}</AppText> : null}
+                        </Card>
+                      );
+
+                      return review.dishId ? (
+                        <Pressable
+                          key={review.id}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Review of ${dishName ?? "dish"}, rated ${review.rating} out of 5`}
+                          accessibilityHint="Opens the dish"
+                          onPress={() =>
+                            rootNavigation.navigate("DishDetail", {
+                              dishId: review.dishId as string,
+                            })
+                          }
+                        >
+                          {reviewCard}
+                        </Pressable>
+                      ) : (
+                        <View key={review.id}>{reviewCard}</View>
+                      );
+                    })}
+                  </View>
+                )
+              ) : activeTab === "posts" && postsLoadFailed ? (
+                <EmptyState
+                  title="Couldn't load posts"
+                  body="Check your connection and open this profile again."
+                  icon={<MessageCircleMore color={palette.textSecondary} size={36} />}
+                />
+              ) : (
+                <EmptyState
+                  title={`No ${activeTitle.toLowerCase()}s yet`}
+                  body="Shared profile activity will appear here."
+                  icon={<MessageCircleMore color={palette.textSecondary} size={36} />}
+                />
+              )}
+              {activeTab === "posts" && hasMorePosts ? (
+                <Button
+                  label="Load more"
+                  variant="ghost"
+                  size="sm"
+                  loading={isLoadingMorePosts}
+                  onPress={loadMorePosts}
+                />
+              ) : null}
+            </View>
+          </>
+        )}
       </View>
     </ProfileScreenShell>
   );
@@ -598,21 +539,25 @@ function StatBlock({
   icon,
   label,
   value,
+  accessibilityHint,
   onPress,
-  onPressIn,
 }: {
   icon: ReactNode;
   label: string;
   /** null while loading. */
   value: number | null;
+  accessibilityHint?: string;
   onPress?: () => void;
-  onPressIn?: () => void;
 }) {
   const { colorScheme, componentRadii, palette, spacing } = useHungryTheme();
   return (
     <Pressable
+      accessible
+      accessibilityRole={onPress ? "button" : "text"}
+      accessibilityLabel={value === null ? `${label}, loading` : `${value} ${label}`}
+      accessibilityHint={accessibilityHint}
+      disabled={!onPress}
       onPress={onPress}
-      onPressIn={onPressIn}
       style={{
         backgroundColor: colorScheme === "dark" ? palette.surfaceRaised : palette.bgSoft,
         borderRadius: componentRadii.card,

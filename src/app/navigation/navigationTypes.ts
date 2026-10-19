@@ -133,6 +133,9 @@ export type RootStackParamList = {
   ActivityInbox: { initialTab?: "messages" | "updates" } | undefined;
   ActivityPostDetail: { postId: string; updateId?: string };
   FollowRequests: undefined;
+  /** Another user's follower/following lists, opened from their profile. */
+  UserFollowers: { userId: string; userDisplayName?: string };
+  UserFollowing: { userId: string; userDisplayName?: string };
   DirectMessages: undefined;
   ChatDetail: { chatId: string; name: string; avatar: string; isOnline?: boolean };
   Crave: undefined;

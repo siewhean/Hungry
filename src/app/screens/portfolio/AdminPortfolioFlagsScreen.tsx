@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ArrowLeft, ShieldCheck, Trash2 } from "lucide-react-native";
 
@@ -27,8 +27,26 @@ export function AdminPortfolioFlagsScreen({ navigation }: Props) {
   }
 
   async function resolve(flagId: string, resolution: "dismissed" | "removed") {
-    await getHungryService().portfolio.resolvePortfolioFlag(flagId, resolution);
+    try {
+      await getHungryService().portfolio.resolvePortfolioFlag(flagId, resolution);
+    } catch (error) {
+      console.error("Failed to resolve portfolio flag", error);
+      Alert.alert("Couldn't resolve report", "Please try again.");
+      return;
+    }
     await loadFlags();
+  }
+
+  // Remove takes the whole list down (private and unpublished), so confirm first.
+  function confirmRemove(flagId: string) {
+    Alert.alert(
+      "Remove this list?",
+      "The list becomes private and unpublished, and its other reports are closed.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Remove", style: "destructive", onPress: () => void resolve(flagId, "removed") },
+      ],
+    );
   }
 
   useEffect(() => {
@@ -88,12 +106,21 @@ export function AdminPortfolioFlagsScreen({ navigation }: Props) {
                 onPress={() => resolve(flag.id, "dismissed")}
               />
               <Button
+                label="View list"
+                size="sm"
+                fullWidth={false}
+                variant="secondary"
+                onPress={() =>
+                  navigation.navigate("PortfolioPublicView", { portfolioId: flag.portfolioId })
+                }
+              />
+              <Button
                 label="Remove"
                 size="sm"
                 fullWidth={false}
                 variant="destructive"
                 leftIcon={<Trash2 color={palette.textOnDark} size={16} />}
-                onPress={() => resolve(flag.id, "removed")}
+                onPress={() => confirmRemove(flag.id)}
               />
             </View>
           </Card>

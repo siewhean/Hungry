@@ -1739,6 +1739,16 @@ export const hungryService: HungryService = {
     },
 
     async getUserReviews(_userId) {
+      // Another user's profile: only reviews written by that account, like the Supabase read.
+      if (_userId !== _profile.id) {
+        return resolve(
+          dishes
+            .flatMap((dish) => dish.reviews ?? [])
+            .filter(
+              (review) => review.authorId === _userId && !isMockReviewHiddenForViewer(review),
+            ),
+        );
+      }
       // Mock: return the demo user's reviews (keyed by reviewedDishIds)
       const reviewedDishes = _profile.reviewedDishIds
         .map((id) => dishes.find((d) => d.id === id))
@@ -1899,9 +1909,15 @@ export const hungryService: HungryService = {
       return resolve(MOCK_BITES_FEED.filter((bite) => !_blockedUsers.has(bite.authorId)));
     },
 
-    async listUserPosts(userId: string) {
+    async listUserPosts(userId: string, page?: { limit?: number; offset?: number }) {
       await hydrateSocial();
-      return resolve(MOCK_BITES_FEED.filter((bite) => bite.authorId === userId));
+      const offset = page?.offset ?? 0;
+      return resolve(
+        MOCK_BITES_FEED.filter((bite) => bite.authorId === userId).slice(
+          offset,
+          offset + (page?.limit ?? 60),
+        ),
+      );
     },
 
     async postBite(draft: BiteDraft) {
@@ -3662,11 +3678,19 @@ export const hungryService: HungryService = {
       if (!portfolio || !canViewMockPortfolio(portfolio)) {
         throw new Error(`Portfolio ${portfolioId} not found`);
       }
+      // Private notes are only for the owner and collaborators, like the Supabase column guard.
+      const canReadPrivateNotes =
+        portfolio.ownerId === _profile.id ||
+        _portfolioCollaborators.some(
+          (collaborator) =>
+            collaborator.portfolioId === portfolioId && collaborator.userId === _profile.id,
+        );
       return resolve(
         clone(
           _portfolioItems
             .filter((item) => item.portfolioId === portfolioId)
-            .sort((left, right) => left.position - right.position),
+            .sort((left, right) => left.position - right.position)
+            .map((item) => (canReadPrivateNotes ? item : { ...item, privateNotes: undefined })),
         ),
       );
     },
@@ -3943,6 +3967,20 @@ export const hungryService: HungryService = {
       });
       if (!found) {
         throw new Error(`Portfolio flag ${flagId} not found`);
+      }
+      if (resolution === "removed") {
+        // Like resolve_portfolio_flag: the list is taken down, not just the flag closed.
+        const flaggedPortfolioId = _portfolioFlags.find((flag) => flag.id === flagId)?.portfolioId;
+        _portfolios = _portfolios.map((portfolio) =>
+          portfolio.id === flaggedPortfolioId
+            ? { ...portfolio, visibility: "private", publishedAt: undefined, updatedAt: reviewedAt }
+            : portfolio,
+        );
+        _portfolioFlags = _portfolioFlags.map((flag) =>
+          flag.portfolioId === flaggedPortfolioId && flag.status === "pending"
+            ? { ...flag, status: "removed", reviewedAt, reviewedBy: _profile.id }
+            : flag,
+        );
       }
       return resolve(undefined);
     },

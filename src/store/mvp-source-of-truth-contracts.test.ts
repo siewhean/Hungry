@@ -431,9 +431,18 @@ test("profile/public-profile post history can read posts through the social serv
   const supabaseService = read("src/lib/services/supabase/supabaseService.ts");
   const profileContent = read("src/app/screens/profile/UserProfileContent.tsx");
 
-  assert.match(serviceTypes, /listUserPosts\(userId: string\): Promise<Bite\[\]>/);
-  assert.match(mockService, /async listUserPosts\(userId: string\)/);
-  assert.match(supabaseService, /async listUserPosts\(userId: string\)/);
-  assert.match(profileContent, /listUserPosts\(normalizedAuthorId\)/);
+  assert.match(
+    serviceTypes,
+    /listUserPosts\(userId: string, page\?: \{ limit\?: number; offset\?: number \}\): Promise<Bite\[\]>/,
+  );
+  assert.match(mockService, /async listUserPosts\(userId: string, page\?/);
+  assert.match(supabaseService, /async listUserPosts\(userId: string, page\?/);
+  assert.match(profileContent, /listUserPosts\(normalizedAuthorId as string, \{/);
+  // Author filtering happens on the server, not over the newest feed window.
+  assert.match(
+    supabaseService,
+    /if \(options\?\.authorId\) query = query\.eq\("author_id", options\.authorId\)/,
+  );
+  assert.doesNotMatch(supabaseService, /bites\.filter\(\(bite\) => bite\.authorId === userId\)/);
   assert.match(profileContent, /mergeStallPosts\(/);
 });

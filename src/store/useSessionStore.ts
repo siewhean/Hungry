@@ -110,9 +110,28 @@ function clearAccountScopedStores(): void {
   const { useStallFollowStore } =
     require("./useStallFollowStore") as typeof import("./useStallFollowStore");
   useStallFollowStore.getState()._reset();
+  // Lists hold private notes and collaborators: never show them to the next account.
+  const { useChecklistStore } =
+    require("./useChecklistStore") as typeof import("./useChecklistStore");
+  const { usePortfolioStore } =
+    require("./usePortfolioStore") as typeof import("./usePortfolioStore");
+  useChecklistStore.getState()._reset();
+  usePortfolioStore.getState()._reset();
   const { clearCommunitySafetySessionState } =
     require("@/lib/security/communitySafety") as typeof import("@/lib/security/communitySafety");
   clearCommunitySafetySessionState();
+}
+
+/** Follow state lives on the server; load it on sign-in so a new device shows it. */
+function syncFollowStateFromServer(userId: string | null | undefined): void {
+  if (!userId) return;
+  const { useSocialStore } = require("./useSocialStore") as typeof import("./useSocialStore");
+  void useSocialStore
+    .getState()
+    .syncFollowedUserIds(userId)
+    .catch((error) => {
+      console.error("Failed to load follow state", error);
+    });
 }
 
 function shouldEnablePostHogIdentity() {
@@ -220,6 +239,7 @@ export const useSessionStore = create<SessionState>()(
         scheduleIdleWork(
           () => {
             identifyPostHogUser(profileId, buildPostHogIdentityProperties());
+            syncFollowStateFromServer(nextUserId);
             if (options?.trackSignInEvent ?? true) {
               trackSignInCompletedOnce(profileId, {
                 method: options?.authProvider ?? "email",
@@ -328,6 +348,7 @@ export const useSessionStore = create<SessionState>()(
             () => {
               identifyPostHogUser(profileId, buildPostHogIdentityProperties());
               if (!currentlyAuthenticated) {
+                syncFollowStateFromServer(nextUserId);
                 trackSignInCompletedOnce(profileId, {
                   method: "email",
                   has_completed_onboarding: session.completedOnboarding ?? false,

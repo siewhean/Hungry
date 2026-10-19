@@ -7,14 +7,17 @@ import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import { PortfolioItemRow } from "@/components/portfolio";
 import { AppText, Button, Card, Input } from "@/components/ui";
 import { webShareUrl } from "@/constants/links";
+import { useItemLabels } from "@/features/checklistPortfolio/useItemLabels";
+import { runListMutation } from "@/features/checklistPortfolio/runListMutation";
 import { shareLink, type ShareChannel } from "@/features/share/messagingShare";
-import { getHungryService } from "@/lib/services/serviceProvider";
 import { usePortfolioStore } from "@/store/usePortfolioStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
 import type { PortfolioItem } from "@/types/domain";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "PortfolioDetail">;
+
+const EMPTY_PORTFOLIO_ITEMS: PortfolioItem[] = [];
 
 function formatPortfolioItemLabel(item: PortfolioItem, labels: Record<string, string>) {
   if (item.dishId) return labels[item.dishId] ?? "Deleted dish";
@@ -51,17 +54,19 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
   } = usePortfolioStore();
   const portfolio = portfolios.find((entry) => entry.id === portfolioId);
   const conflict = conflicts[portfolioId];
-  const portfolioItems = items[portfolioId] ?? [];
+  // Stable fallback: a new [] each render re-ran effects keyed on the items (render loop).
+  const portfolioItems = items[portfolioId] ?? EMPTY_PORTFOLIO_ITEMS;
   const isOwner = portfolio?.ownerId === profile.id;
   const isFollowing = follows[portfolioId] === true;
   const [draftName, setDraftName] = useState(portfolio?.name ?? "");
   const [draftDescription, setDraftDescription] = useState(portfolio?.description ?? "");
-  const [labels, setLabels] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    void loadPortfolios();
-    void loadPortfolioItems(portfolioId);
+    void loadPortfolios().catch((error) => console.error("Failed to load list:", error));
+    void loadPortfolioItems(portfolioId).catch((error) =>
+      console.error("Failed to load list:", error),
+    );
   }, [loadPortfolioItems, loadPortfolios, portfolioId]);
 
   useEffect(() => {
@@ -69,32 +74,7 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
     setDraftDescription(portfolio?.description ?? "");
   }, [portfolio?.description, portfolio?.name]);
 
-  useEffect(() => {
-    let mounted = true;
-    const service = getHungryService();
-
-    async function hydrateLabels() {
-      const nextLabels: Record<string, string> = {};
-      await Promise.all(
-        portfolioItems.map(async (item) => {
-          if (item.dishId) {
-            const dish = await service.discovery.getDish(item.dishId);
-            if (dish) nextLabels[item.dishId] = dish.name;
-          }
-          if (item.stallId) {
-            const venue = await service.discovery.getVenue(item.stallId);
-            if (venue) nextLabels[item.stallId] = venue.name;
-          }
-        }),
-      );
-      if (mounted) setLabels(nextLabels);
-    }
-
-    void hydrateLabels();
-    return () => {
-      mounted = false;
-    };
-  }, [portfolioItems]);
+  const labels = useItemLabels(portfolioItems);
 
   const statsLabel = useMemo(() => {
     const itemCount = portfolioItems.length;
@@ -275,26 +255,40 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
                 fullWidth={false}
                 variant={isFollowing ? "secondary" : "primary"}
                 onPress={() =>
-                  isFollowing ? unfollowPortfolio(portfolio.id) : followPortfolio(portfolio.id)
+                  void runListMutation(
+                    () =>
+                      isFollowing ? unfollowPortfolio(portfolio.id) : followPortfolio(portfolio.id),
+                    {
+                      success: isFollowing ? "Unfollowed list" : "Following list",
+                      failure: isFollowing ? "Couldn't unfollow." : "Couldn't follow.",
+                    },
+                  )
                 }
               />
-              <Button
-                label="Report"
-                size="sm"
-                fullWidth={false}
-                variant="secondary"
-                leftIcon={<Flag color={palette.text} size={16} />}
-                onPress={() => {
-                  Alert.alert("Report portfolio?", "This sends the portfolio to moderation.", [
-                    { text: "Cancel", style: "cancel" },
-                    {
-                      text: "Report",
-                      style: "destructive",
-                      onPress: () => void flagPortfolio(portfolio.id, "inappropriate"),
-                    },
-                  ]);
-                }}
-              />
+              {/* Only public lists can be reported (portfolio_flags insert policy). */}
+              {portfolio.visibility === "public" ? (
+                <Button
+                  label="Report"
+                  size="sm"
+                  fullWidth={false}
+                  variant="secondary"
+                  leftIcon={<Flag color={palette.text} size={16} />}
+                  onPress={() => {
+                    Alert.alert("Report portfolio?", "This sends the portfolio to moderation.", [
+                      { text: "Cancel", style: "cancel" },
+                      {
+                        text: "Report",
+                        style: "destructive",
+                        onPress: () =>
+                          void runListMutation(() => flagPortfolio(portfolio.id, "inappropriate"), {
+                            success: "Thanks. We'll review this list.",
+                            failure: "Couldn't send the report.",
+                          }),
+                      },
+                    ]);
+                  }}
+                />
+              ) : null}
             </>
           )}
         </View>

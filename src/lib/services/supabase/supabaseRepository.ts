@@ -170,6 +170,22 @@ let hydratedAt = 0;
 let cachedBuildings: BuildingSummary[] = [];
 let cachedVenues: VenueSummary[] = [];
 let cachedDishes: DishDetail[] = [];
+// Built once per catalog load, so per-venue lookups don't scan every dish.
+let dishesByVenueIndex: { source: DishDetail[]; byVenueId: Map<string, DishDetail[]> } | null =
+  null;
+
+function getDishesByVenueIndex(): Map<string, DishDetail[]> {
+  if (!dishesByVenueIndex || dishesByVenueIndex.source !== cachedDishes) {
+    const byVenueId = new Map<string, DishDetail[]>();
+    cachedDishes.forEach((dish) => {
+      const list = byVenueId.get(dish.venueId);
+      if (list) list.push(dish);
+      else byVenueId.set(dish.venueId, [dish]);
+    });
+    dishesByVenueIndex = { source: cachedDishes, byVenueId };
+  }
+  return dishesByVenueIndex.byVenueId;
+}
 let cachedBlogPosts: BlogPost[] = [];
 let cachedStallPosts: StallPost[] = [];
 
@@ -1068,7 +1084,7 @@ const supabaseRepositoryImpl: DataRepository = {
 
   listDishesByVenue(venueId: string): DishDetail[] {
     ensureHydrated();
-    return cachedDishes.filter((dish) => dish.venueId === venueId);
+    return [...(getDishesByVenueIndex().get(venueId) ?? [])];
   },
 
   listPopularNearby(): DishDetail[] {

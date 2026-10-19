@@ -15,7 +15,7 @@ async function section<T>(load: () => Promise<T>): Promise<Section<T>> {
 
 const FOLLOW_EXPORT_PAGE_SIZE = 500;
 
-/** Reads every page so the export is not cut off at the list RPCs' default page size. */
+/** Reads every page so the export is not cut off at the list reads' default page size. */
 async function loadAllFollowRows<T>(
   loadPage: (page: { limit: number; offset: number }) => Promise<T[]>,
 ): Promise<T[]> {
@@ -40,7 +40,7 @@ export async function buildMyDataExport(
 
   const [reviews, posts, favouriteDishIds, savedPosts, followers, following] = await Promise.all([
     section(() => service.reviews.getUserReviews(userId)),
-    section(() => service.social.listUserPosts(userId)),
+    section(() => loadAllFollowRows((page) => service.social.listUserPosts(userId, page))),
     section(() => service.profile.getFavouriteDishIds()),
     section(() => service.social.getSavedBites()),
     section(() => loadAllFollowRows((page) => service.social.listFollowers(userId, page))),

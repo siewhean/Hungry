@@ -118,27 +118,24 @@ export function PassportScreen({ navigation: _nav }: Props) {
 
   const totalStamps = earnedStamps.length;
 
+  // Mark the stamp celebrated as soon as the celebration starts, so it never re-fires;
+  // the visual flag is local state cleared by its own timer below.
   useEffect(() => {
-    if (!celebrateMarker?.shouldCelebrate || celebratingStampId === celebrateMarker.stampId) {
-      return;
-    }
+    if (!celebrateMarker?.shouldCelebrate) return;
 
+    markStampCelebrated(celebrateMarker.stampId);
     setCelebratingStampId(celebrateMarker.stampId);
     AccessibilityInfo.announceForAccessibility(`Achievement stamped: ${celebrateMarker.title}`);
     if (!reduceMotion) {
       void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+  }, [celebrateMarker, markStampCelebrated, reduceMotion]);
 
-    const timeout = setTimeout(
-      () => {
-        markStampCelebrated(celebrateMarker.stampId);
-        setCelebratingStampId(null);
-      },
-      reduceMotion ? 300 : 1400,
-    );
-
+  useEffect(() => {
+    if (!celebratingStampId) return;
+    const timeout = setTimeout(() => setCelebratingStampId(null), reduceMotion ? 300 : 1400);
     return () => clearTimeout(timeout);
-  }, [celebrateMarker, celebratingStampId, markStampCelebrated, reduceMotion]);
+  }, [celebratingStampId, reduceMotion]);
 
   const sections = useMemo(
     () =>

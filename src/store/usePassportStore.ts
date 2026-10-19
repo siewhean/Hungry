@@ -14,7 +14,9 @@
  */
 
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { hungryPersistStorage } from "@/store/persistStorage";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import {
   ALL_PASSPORT_CATEGORIES,
@@ -40,6 +42,10 @@ interface PassportState {
   /** Map of categoryId → computed progress */
   progressMap: Record<string, UserPassportProgress>;
   celebratedStampIds: Record<string, boolean>;
+  /** Stamps already reported as passport_stamp_earned, so a cold start does not re-emit them. */
+  reportedEarnedStampIds: Record<string, boolean>;
+  /** User the persisted celebrated/reported ids belong to. */
+  ownerUserId: string | null;
   isComputed: boolean;
 
   /** Database-backed stamps (new gamification features) */
@@ -162,97 +168,142 @@ function buildContributionStats(
 
 // ─── Store ────────────────────────────────────────────────────────────────────
 
-export const usePassportStore = create<PassportState>()((set, get) => ({
-  progressMap: {},
-  celebratedStampIds: {},
-  isComputed: false,
-  stamps: [],
-  events: [],
-  isLoaded: false,
+function getCurrentProfileId(): string | null {
+  const { useProfileStore } = require("./useProfileStore") as typeof import("./useProfileStore");
+  return useProfileStore.getState().profile?.id ?? null;
+}
 
-  getProgress: (categoryId) => get().progressMap[categoryId] ?? null,
+export const usePassportStore = create<PassportState>()(
+  persist(
+    (set, get) => {
+      /** Persisted ids are per user: switch accounts and they start empty. */
+      const ensureOwner = () => {
+        const userId = getCurrentProfileId();
+        if (get().ownerUserId === userId) return;
+        set({ ownerUserId: userId, celebratedStampIds: {}, reportedEarnedStampIds: {} });
+      };
 
-  getEarnedCategories: () =>
-    Object.values(get().progressMap).filter((p) => p.earnedStampThresholds.length > 0),
+      return {
+        progressMap: {},
+        celebratedStampIds: {},
+        reportedEarnedStampIds: {},
+        ownerUserId: null,
+        isComputed: false,
+        stamps: [],
+        events: [],
+        isLoaded: false,
 
-  getEarnedStamps: () => getEarnedPassportStamps(get().progressMap),
+        getProgress: (categoryId) => get().progressMap[categoryId] ?? null,
 
-  getNextStamp: () => getNextPassportStamp(get().progressMap),
+        getEarnedCategories: () =>
+          Object.values(get().progressMap).filter((p) => p.earnedStampThresholds.length > 0),
 
-  getNewlyEarnedUncelebratedStamp: () =>
-    getNewlyEarnedUncelebratedStamp(get().progressMap, get().celebratedStampIds),
+        getEarnedStamps: () => getEarnedPassportStamps(get().progressMap),
 
-  getCelebrateMarker: () =>
-    createPassportCelebrateMarker(
-      getNewlyEarnedUncelebratedStamp(get().progressMap, get().celebratedStampIds),
-    ),
+        getNextStamp: () => getNextPassportStamp(get().progressMap),
 
-  getPortfolioContributionStats: () => buildContributionStats(get().stamps, get().events),
+        getNewlyEarnedUncelebratedStamp: () =>
+          getNewlyEarnedUncelebratedStamp(get().progressMap, get().celebratedStampIds),
 
-  computeProgress: (triedStallIds) => {
-    const previousEarnedIds = new Set(
-      getEarnedPassportStamps(get().progressMap).map((stamp) => stamp.id),
-    );
-    const stallSet = new Set(triedStallIds);
-    const newMap: Record<string, UserPassportProgress> = {};
+        getCelebrateMarker: () =>
+          createPassportCelebrateMarker(
+            getNewlyEarnedUncelebratedStamp(get().progressMap, get().celebratedStampIds),
+          ),
 
-    for (const category of ALL_PASSPORT_CATEGORIES) {
-      const matchCount = countMatchingTriedStalls(stallSet, category.matchTag);
-      newMap[category.id] = computePassportProgress(category, matchCount);
-    }
+        getPortfolioContributionStats: () => buildContributionStats(get().stamps, get().events),
 
-    set({ progressMap: newMap, isComputed: true });
-    for (const stamp of getEarnedPassportStamps(newMap)) {
-      if (!previousEarnedIds.has(stamp.id)) {
-        trackAnalyticsEvent("passport_stamp_earned", {
-          stamp_id: stamp.id,
-          category_id: stamp.categoryId,
-          threshold: stamp.threshold,
-        });
-      }
-    }
-  },
+        computeProgress: (triedStallIds) => {
+          ensureOwner();
+          const previousEarnedIds = new Set([
+            ...getEarnedPassportStamps(get().progressMap).map((stamp) => stamp.id),
+            ...Object.keys(get().reportedEarnedStampIds),
+          ]);
+          const stallSet = new Set(triedStallIds);
+          const newMap: Record<string, UserPassportProgress> = {};
 
-  markStampCelebrated: (stampId) =>
-    set((state) => ({
-      celebratedStampIds: {
-        ...state.celebratedStampIds,
-        [stampId]: true,
-      },
-    })),
+          for (const category of ALL_PASSPORT_CATEGORIES) {
+            const matchCount = countMatchingTriedStalls(stallSet, category.matchTag);
+            newMap[category.id] = computePassportProgress(category, matchCount);
+          }
 
-  loadStamps: async () => {
-    const service = getHungryService();
-    const stamps = await service.passport.getPassportStamps();
-    set({ stamps, isLoaded: true });
-  },
+          const newlyEarned = getEarnedPassportStamps(newMap).filter(
+            (stamp) => !previousEarnedIds.has(stamp.id),
+          );
+          set((state) => ({
+            progressMap: newMap,
+            isComputed: true,
+            reportedEarnedStampIds: newlyEarned.length
+              ? {
+                  ...state.reportedEarnedStampIds,
+                  ...Object.fromEntries(newlyEarned.map((stamp) => [stamp.id, true])),
+                }
+              : state.reportedEarnedStampIds,
+          }));
+          for (const stamp of newlyEarned) {
+            trackAnalyticsEvent("passport_stamp_earned", {
+              stamp_id: stamp.id,
+              category_id: stamp.categoryId,
+              threshold: stamp.threshold,
+            });
+          }
+        },
 
-  loadEvents: async (categoryId?: string) => {
-    const service = getHungryService();
-    const events = await service.passport.getPassportProgressEvents(categoryId);
-    set({ events });
-  },
+        markStampCelebrated: (stampId) => {
+          ensureOwner();
+          set((state) => ({
+            celebratedStampIds: {
+              ...state.celebratedStampIds,
+              [stampId]: true,
+            },
+          }));
+        },
 
-  recordContribution: async (_userId, eventType, referenceId) => {
-    const service = getHungryService();
-    await service.passport.recordProgress("contributor", eventType, referenceId);
-    const [stamps, events] = await Promise.all([
-      service.passport.getPassportStamps(),
-      service.passport.getPassportProgressEvents("contributor"),
-    ]);
-    set({ stamps, events, isLoaded: true });
-  },
+        loadStamps: async () => {
+          const service = getHungryService();
+          const stamps = await service.passport.getPassportStamps();
+          set({ stamps, isLoaded: true });
+        },
 
-  _reset: () =>
-    set({
-      progressMap: {},
-      celebratedStampIds: {},
-      isComputed: false,
-      stamps: [],
-      events: [],
-      isLoaded: false,
-    }),
-}));
+        loadEvents: async (categoryId?: string) => {
+          const service = getHungryService();
+          const events = await service.passport.getPassportProgressEvents(categoryId);
+          set({ events });
+        },
+
+        recordContribution: async (_userId, eventType, referenceId) => {
+          const service = getHungryService();
+          await service.passport.recordProgress("contributor", eventType, referenceId);
+          const [stamps, events] = await Promise.all([
+            service.passport.getPassportStamps(),
+            service.passport.getPassportProgressEvents("contributor"),
+          ]);
+          set({ stamps, events, isLoaded: true });
+        },
+
+        _reset: () =>
+          set({
+            progressMap: {},
+            celebratedStampIds: {},
+            reportedEarnedStampIds: {},
+            ownerUserId: null,
+            isComputed: false,
+            stamps: [],
+            events: [],
+            isLoaded: false,
+          }),
+      };
+    },
+    {
+      name: "passport-celebrations-v1",
+      storage: hungryPersistStorage,
+      partialize: (state) => ({
+        celebratedStampIds: state.celebratedStampIds,
+        reportedEarnedStampIds: state.reportedEarnedStampIds,
+        ownerUserId: state.ownerUserId,
+      }),
+    },
+  ),
+);
 
 /** All passport category configs — for display in the Passport screen */
 export { ALL_PASSPORT_CATEGORIES };

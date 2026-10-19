@@ -28,7 +28,8 @@ import { MissionBanner } from "@/components/gamification/MissionBanner";
 import { PassportCard } from "@/components/gamification/PassportCard";
 import { toChatShareRecipient, type ChatShareRecipient } from "@/features/home/chatShare";
 import { prefetchMerchantTab, preloadRoute } from "@/features/navigation/prefetch";
-import { listSharedStallPosts } from "@/features/social/sharedStallPosts";
+import { listSharedStallPosts, mergeStallPosts } from "@/features/social/sharedStallPosts";
+import { biteToStallPost } from "@/lib/services/postTransforms";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -304,12 +305,16 @@ export function ProfileHomeScreen({
 
     const loadProfilePosts = async () => {
       try {
-        const posts = await listSharedStallPosts();
+        // Own posts come from a server read filtered by author id, so older posts are not
+        // cut off by the feed window; matching is by id only (display names are not unique).
+        const [ownBites, sharedPosts] = await Promise.all([
+          getHungryService().social.listUserPosts(profile.id),
+          listSharedStallPosts(),
+        ]);
         if (!isMounted) return;
-        const nextPosts = posts.filter(
-          (post) =>
-            post.authorId === profile.id ||
-            post.authorName.toLowerCase() === profile.displayName.toLowerCase(),
+        const nextPosts = mergeStallPosts(
+          ownBites.map((bite) => biteToStallPost(bite, { authorAvatarUrl: bite.authorAvatar })),
+          sharedPosts.filter((post) => post.authorId === profile.id),
         );
         setProfilePosts((current) => (haveEqualPosts(current, nextPosts) ? current : nextPosts));
       } catch (error) {
@@ -325,7 +330,7 @@ export function ProfileHomeScreen({
     return () => {
       isMounted = false;
     };
-  }, [isAuthenticated, profile.displayName, profile.id]);
+  }, [isAuthenticated, profile.id]);
 
   const sortedProfilePosts = useMemo(() => {
     return [...profilePosts].sort((a, b) => {

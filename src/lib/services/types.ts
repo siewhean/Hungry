@@ -824,7 +824,8 @@ export interface HungryService {
   // Social (Bites)
   social: {
     getBitesFeed(lat?: number, lng?: number): Promise<Bite[]>;
-    listUserPosts(userId: string): Promise<Bite[]>;
+    /** One author's published posts, newest first, paged on the server (default 60). */
+    listUserPosts(userId: string, page?: { limit?: number; offset?: number }): Promise<Bite[]>;
     postBite(draft: BiteDraft): Promise<Bite>;
     reactToBite(biteId: string, reaction: "craving" | "save"): Promise<void>;
     shareBite(
