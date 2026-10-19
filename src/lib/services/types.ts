@@ -16,6 +16,7 @@ import type {
   DietaryFlag,
   PushPreferences,
   LifecycleSnapshot,
+  WelcomeBackDish,
   FoodCredAction,
   HawkerTasteTag,
   InteractionType,
@@ -849,6 +850,8 @@ export interface HungryService {
      * returns the user's lifecycle state. Null when nobody is signed in.
      */
     recordAppOpen(): Promise<LifecycleSnapshot | null>;
+    /** Up to 3 dishes added at stalls the user follows on or after a Singapore date (YYYY-MM-DD). */
+    getWelcomeBackDishes(sinceDate: string): Promise<WelcomeBackDish[]>;
   };
 
   // Social (Bites)

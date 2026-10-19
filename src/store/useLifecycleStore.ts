@@ -17,7 +17,10 @@ interface LifecycleStoreState {
   snapshot: LifecycleSnapshot | null;
   /** Singapore date the visit was last recorded for. */
   recordedDate: string | null;
+  /** The welcome back card was closed this app session. */
+  welcomeBackDismissed: boolean;
   recordAppOpen: () => Promise<void>;
+  dismissWelcomeBack: () => void;
   reset: () => void;
 }
 
@@ -36,6 +39,7 @@ function registerLifecycleProperty(state: LifecycleSnapshot["state"]) {
 export const useLifecycleStore = create<LifecycleStoreState>()((set, get) => ({
   snapshot: null,
   recordedDate: null,
+  welcomeBackDismissed: false,
 
   recordAppOpen: async () => {
     const today = singaporeDateKey();
@@ -57,5 +61,7 @@ export const useLifecycleStore = create<LifecycleStoreState>()((set, get) => ({
     }
   },
 
-  reset: () => set({ snapshot: null, recordedDate: null }),
+  dismissWelcomeBack: () => set({ welcomeBackDismissed: true }),
+
+  reset: () => set({ snapshot: null, recordedDate: null, welcomeBackDismissed: false }),
 }));

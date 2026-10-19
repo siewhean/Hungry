@@ -113,6 +113,7 @@ import type {
   VerificationEvidence,
   PushPreferences,
   LifecycleSnapshot,
+  WelcomeBackDish,
 } from "@/types/domain";
 import { DEFAULT_PUSH_PREFERENCES } from "@/types/domain";
 
@@ -638,6 +639,7 @@ function mapLifecycleSnapshot(data: unknown): LifecycleSnapshot | null {
 function mapPushPreferencesRow(row: {
   stall_updates: boolean;
   weekly_picks: boolean;
+  mealtime_suggestions: boolean;
   quiet_start_hour: number;
   quiet_end_hour: number;
   weekly_cap: number;
@@ -645,6 +647,7 @@ function mapPushPreferencesRow(row: {
   return {
     stallUpdates: row.stall_updates,
     weeklyPicks: row.weekly_picks,
+    mealtimeSuggestions: row.mealtime_suggestions,
     quietStartHour: row.quiet_start_hour,
     quietEndHour: row.quiet_end_hour,
     weeklyCap: row.weekly_cap,
@@ -3762,7 +3765,9 @@ export const supabaseService: HungryService = {
       if (!userId) return { ...DEFAULT_PUSH_PREFERENCES };
       const { data, error } = await client
         .from("notification_preferences")
-        .select("stall_updates,weekly_picks,quiet_start_hour,quiet_end_hour,weekly_cap")
+        .select(
+          "stall_updates,weekly_picks,mealtime_suggestions,quiet_start_hour,quiet_end_hour,weekly_cap",
+        )
         .eq("user_id", userId)
         .maybeSingle();
       if (error) throw error;
@@ -3782,13 +3787,16 @@ export const supabaseService: HungryService = {
             user_id: userId,
             stall_updates: next.stallUpdates,
             weekly_picks: next.weeklyPicks,
+            mealtime_suggestions: next.mealtimeSuggestions,
             quiet_start_hour: next.quietStartHour,
             quiet_end_hour: next.quietEndHour,
             weekly_cap: next.weeklyCap,
           },
           { onConflict: "user_id" },
         )
-        .select("stall_updates,weekly_picks,quiet_start_hour,quiet_end_hour,weekly_cap")
+        .select(
+          "stall_updates,weekly_picks,mealtime_suggestions,quiet_start_hour,quiet_end_hour,weekly_cap",
+        )
         .single();
       if (error) throw error;
       return mapPushPreferencesRow(data);
@@ -3822,6 +3830,45 @@ export const supabaseService: HungryService = {
       const { data, error } = await client.rpc("record_app_open");
       if (error) throw error;
       return mapLifecycleSnapshot(data);
+    },
+
+    async getWelcomeBackDishes(sinceDate: string): Promise<WelcomeBackDish[]> {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) return [];
+      const { data: follows, error: followsError } = await client
+        .from("stall_follows")
+        .select("stall_id")
+        .eq("user_id", userId);
+      if (followsError) throw followsError;
+      const stallIds = (follows ?? []).map((row: { stall_id: string }) => row.stall_id);
+      if (!stallIds.length) return [];
+
+      const { data: newDishes, error: dishesError } = await client
+        .from("dishes")
+        .select("id,name,venue_id")
+        .in("venue_id", stallIds)
+        .gte("created_at", `${sinceDate}T00:00:00+08:00`)
+        .order("created_at", { ascending: false })
+        .limit(3);
+      if (dishesError) throw dishesError;
+      const rows = (newDishes ?? []) as { id: string; name: string; venue_id: string }[];
+      if (!rows.length) return [];
+
+      const { data: venues, error: venuesError } = await client
+        .from("venues")
+        .select("id,name")
+        .in("id", [...new Set(rows.map((row) => row.venue_id))]);
+      if (venuesError) throw venuesError;
+      const venueNames = new Map(
+        ((venues ?? []) as { id: string; name: string }[]).map((venue) => [venue.id, venue.name]),
+      );
+      return rows.map((row) => ({
+        dishId: row.id,
+        dishName: row.name,
+        stallId: row.venue_id,
+        stallName: venueNames.get(row.venue_id) ?? "",
+      }));
     },
   },
 

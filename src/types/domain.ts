@@ -1176,6 +1176,14 @@ export interface LifecycleSnapshot {
   daysSincePrevious: number | null;
 }
 
+/** A dish added at a followed stall since the user's last visit, for the welcome back card. */
+export interface WelcomeBackDish {
+  dishId: string;
+  dishName: string;
+  stallId: string;
+  stallName: string;
+}
+
 // ─── Notifications ────────────────────────────────────────────────────────────
 
 /** Per-user push settings. Hours are Singapore time (0-23); quiet hours wrap past midnight. */
@@ -1183,6 +1191,8 @@ export interface PushPreferences {
   stallUpdates: boolean;
   /** Weekly "Your new picks are ready" push. On unless the user opts out. */
   weeklyPicks: boolean;
+  /** Lunch (11:30) and dinner (17:30) suggestion pushes. Off unless the user turns them on. */
+  mealtimeSuggestions: boolean;
   quietStartHour: number;
   quietEndHour: number;
   weeklyCap: number;
@@ -1191,6 +1201,7 @@ export interface PushPreferences {
 export const DEFAULT_PUSH_PREFERENCES: PushPreferences = {
   stallUpdates: false,
   weeklyPicks: true,
+  mealtimeSuggestions: false,
   quietStartHour: 22,
   quietEndHour: 8,
   weeklyCap: 3,

@@ -102,6 +102,7 @@ import type {
   UserStallSubmission,
   PushPreferences,
   LifecycleSnapshot,
+  WelcomeBackDish,
 } from "@/types/domain";
 import { DEFAULT_PUSH_PREFERENCES } from "@/types/domain";
 import { computeTasteProfileFromQuiz } from "@/lib/ai/tasteQuiz";
@@ -1999,6 +2000,21 @@ export const hungryService: HungryService = {
       const snapshot = buildLifecycleSnapshot([..._activityDates], today);
       _activityDates.add(today);
       return resolve(snapshot);
+    },
+
+    async getWelcomeBackDishes(): Promise<WelcomeBackDish[]> {
+      // Mock dishes carry no created date, so any dish at a followed stall counts as new.
+      return resolve(
+        dishes
+          .filter((dish) => _followedStallIds.has(dish.venueId))
+          .slice(0, 3)
+          .map((dish) => ({
+            dishId: dish.id,
+            dishName: dish.name,
+            stallId: dish.venueId,
+            stallName: dish.venueName,
+          })),
+      );
     },
   },
 
