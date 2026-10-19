@@ -58,7 +58,9 @@ test("Two-column image grids cycle images every four seconds with page-scoped sl
   assert.match(quickBites, /getQuickBiteCycleSlides/);
   assert.match(quickBites, /candidate\.venueId !== item\.venueId/);
   assert.match(quickBites, /itemVisiblePercentThreshold: 100/);
-  assert.match(quickBites, /fullyVisibleBiteIds\.has\(item\.id\)/);
+  // Visibility reaches cells through extraData so renderItem stays stable.
+  assert.match(quickBites, /extraData=\{fullyVisibleBiteIds\}/);
+  assert.match(quickBites, /isAutoCycleActive=\{Boolean\(extraData\?\.has\(item\.id\)\)\}/);
   assert.match(
     quickBites,
     /<CyclingGridImage[\s\S]*cycleMs=\{CYCLING_GRID_IMAGE_INTERVAL_MS\}[\s\S]*isAutoCycleActive=\{isAutoCycleActive\}/,

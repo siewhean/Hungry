@@ -807,9 +807,9 @@ test("Quick Bites contract: empty-state icon is not clipped", () => {
   );
   assert.match(
     quickBites,
-    /onOpen=\{\(activeItem\) => navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dishId \}\)\}/,
+    /const openBite = useCallback\([\s\S]*navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dishId \}\)/,
   );
-  assert.match(quickBites, /navigation\.navigate\("DishDetail", \{ dishId: bite\.dishId \}\)/);
+  assert.match(quickBites, /onOpen=\{openBite\}/);
   assert.doesNotMatch(quickBites, /navigation\.navigate\("StallDetail"/);
   const mockData = read("src/lib/services/mock/data.ts");
   assert.match(mockData, /id: "dish-pandan-cake"[\s\S]*name: "Pandan Cake"/);
@@ -848,8 +848,13 @@ test("Quick Bites contract: empty-state icon is not clipped", () => {
   );
   assert.match(discoverBites, /const lateNight = syncedBites/);
   assert.match(quickBites, /return getDiscoverBiteCollection\(collection, bites\)/);
-  assert.match(quickBites, /ListFooterComponent=\{renderFoodCarousel\}/);
-  assert.match(quickBites, /key=\{`carousel-\$\{bite\.id\}`\}/);
+  // The footer carousel repeated the grid above it.
+  assert.doesNotMatch(quickBites, /renderFoodCarousel|carousel-\$\{bite\.id\}/);
+  // Distances come from the read or are hidden; counts are labelled as ratings.
+  assert.doesNotMatch(quickBites, /\{activeSlide\.distance\}m/);
+  assert.match(quickBites, /activeSlide\.distance !== undefined \?/);
+  assert.match(quickBites, /route\.params\?\.latitude/);
+  assert.match(quickBites, /Couldn't load dishes/);
   assert.match(quickBites, /<AppText style=\{styles\.emptyStateIcon\}>🥣<\/AppText>/);
   assert.match(
     quickBites,

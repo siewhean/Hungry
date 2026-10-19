@@ -1738,9 +1738,14 @@ export function DiscoverHomeScreen() {
   const openDiscoverCollection = useCallback(
     (collection: keyof typeof discoverBiteCollections) => {
       trackAnalyticsEvent("discover_see_all_tapped", { collection });
-      navigation.navigate("QuickBites", { collection });
+      // Same area as the rail the viewer was looking at, not a fresh GPS read.
+      navigation.navigate("QuickBites", {
+        collection,
+        latitude: discoverLocationLatitude,
+        longitude: discoverLocationLongitude,
+      });
     },
-    [navigation],
+    [discoverLocationLatitude, discoverLocationLongitude, navigation],
   );
 
   const prefetchBiteCollectionRoute = useCallback(

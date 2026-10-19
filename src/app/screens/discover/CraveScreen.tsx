@@ -19,6 +19,7 @@ import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail } from "@/types/domain";
 
@@ -31,6 +32,9 @@ export function CraveScreen() {
   const insets = useSafeAreaInsets();
   const { componentRadii, palette, spacing, radii, shadows, motion, zIndex } = useHungryTheme();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  // Reduce Motion: cards leave instantly and do not tilt while dragged.
+  const reduceMotion = useReduceMotion();
+  const swipeOutDuration = reduceMotion ? 0 : motion.craveSwipe;
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const profile = useProfileStore((state) => state.profile);
   const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
@@ -110,7 +114,7 @@ export function CraveScreen() {
 
     Animated.timing(position, {
       toValue: { x: screenWidth + 100, y: 0 },
-      duration: motion.craveSwipe,
+      duration: swipeOutDuration,
       useNativeDriver: true,
     }).start(() => nextCard());
   };
@@ -127,7 +131,7 @@ export function CraveScreen() {
     }
     Animated.timing(position, {
       toValue: { x: -screenWidth - 100, y: 0 },
-      duration: motion.craveSwipe,
+      duration: swipeOutDuration,
       useNativeDriver: true,
     }).start(() => nextCard());
   };
@@ -141,7 +145,7 @@ export function CraveScreen() {
 
   const rotation = position.x.interpolate({
     inputRange: [-screenWidth / 2, 0, screenWidth / 2],
-    outputRange: ["-10deg", "0deg", "10deg"],
+    outputRange: reduceMotion ? ["0deg", "0deg", "0deg"] : ["-10deg", "0deg", "10deg"],
     extrapolate: "clamp",
   });
 
@@ -201,6 +205,9 @@ export function CraveScreen() {
           }}
         >
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            hitSlop={4}
             onPress={() => navigation.goBack()}
             style={{
               width: 40,
@@ -394,6 +401,8 @@ export function CraveScreen() {
           }}
         >
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={currentDish ? `Pass on ${currentDish.name}` : "Pass"}
             onPress={swipeLeft}
             style={({ pressed }) => [
               {
@@ -413,6 +422,8 @@ export function CraveScreen() {
           </Pressable>
 
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={currentDish ? `Save ${currentDish.name}` : "Save"}
             onPress={swipeRight}
             style={({ pressed }) => [
               {
