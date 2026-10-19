@@ -74,7 +74,6 @@ export function ProfileStack() {
     >
       <Stack.Navigator initialRouteName="ProfileHome" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="ProfileHome" component={ProfileHomeScreen} />
-        <Stack.Screen name="ProfilePremium" component={ProfileHomeScreen} />
         <Stack.Screen name="EditProfile" component={EditProfileScreen} />
         <Stack.Screen name="AddStall" component={AddStallScreen} />
         <Stack.Screen name="Followers" component={FollowersScreen} />

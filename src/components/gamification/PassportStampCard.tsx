@@ -27,6 +27,8 @@ interface PassportStampCardProps {
   nextStamp?: PassportNextStamp | null;
   celebrating?: boolean;
   reduceMotion?: boolean;
+  /** Stalls tried in this card's category; drives locked cards' own remaining count. */
+  triedInCategory?: number;
 }
 
 export function PassportStampCard({
@@ -34,14 +36,23 @@ export function PassportStampCard({
   stamp,
   earned = false,
   nextStamp = null,
+  triedInCategory = 0,
   celebrating = false,
   reduceMotion = false,
 }: PassportStampCardProps) {
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const prefersReducedMotion = useReduceMotion();
   const shouldReduceMotion = reduceMotion || prefersReducedMotion;
-  const progressFraction =
-    nextStamp && nextStamp.stamp.id === stamp.id ? nextStamp.progressFraction : earned ? 1 : 0;
+  const isNextStamp = Boolean(nextStamp && nextStamp.stamp.id === stamp.id);
+  const progressFraction = isNextStamp
+    ? (nextStamp?.progressFraction ?? 0)
+    : earned
+      ? 1
+      : Math.min(1, Math.max(0, triedInCategory / Math.max(1, stamp.threshold)));
+  // The global next stamp's count belongs to one category; other cards use their own.
+  const remainingForThisStamp = isNextStamp
+    ? (nextStamp?.remainingCount ?? stamp.threshold)
+    : Math.max(0, stamp.threshold - triedInCategory);
   const stampScale = useSharedValue(1);
   const stampRotate = useSharedValue(0);
 
@@ -113,7 +124,7 @@ export function PassportStampCard({
         </View>
         <View style={styles.metaRow}>
           <AppText tone="muted" variant="micro">
-            {earned ? "Stamped" : `${nextStamp?.remainingCount ?? stamp.threshold} to next stamp`}
+            {earned ? "Stamped" : `${remainingForThisStamp} to next stamp`}
           </AppText>
           <AppText variant="micro" style={{ color: earned ? palette.orange : palette.textMuted }}>
             {stamp.threshold} tried

@@ -55,8 +55,8 @@ export function MissionsScreen({ navigation: _nav }: Props) {
         <EmptyState title="No missions this week" body="Check back on Monday for new missions." />
       ) : (
         <View style={{ gap: spacing[3] }}>
-          {/* Completed first, then active */}
-          {[...completedMissions, ...activeMissions].map((mission) => (
+          {/* Active first (what is left to do), then completed */}
+          {[...activeMissions, ...completedMissions].map((mission) => (
             <MissionCard
               key={mission.id}
               mission={mission}

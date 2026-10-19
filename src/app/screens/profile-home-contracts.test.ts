@@ -38,7 +38,9 @@ test("profile home contract: profile stats use dynamic profile and social store 
   assert.match(source, /value=\{profileFollowCounts\?\.followersCount \?\? null\}/);
   assert.match(source, /value=\{profileFollowCounts\?\.followingCount \?\? null\}/);
   assert.doesNotMatch(source, /mergeFollowerNames|localFollowerCount|localFollowingCount/);
-  assert.match(source, /value=\{profile\.stats\.dishesReviewed\}/);
+  // Reviews count real reviews from the server; Stalls share the Visited stalls source.
+  assert.match(source, /value=\{ownReviews\?\.length \?\? null\}/);
+  assert.match(source, /value=\{visitedStallIds\.length\}/);
   assert.match(source, /label="Followers"/);
   assert.match(source, /label="Following"/);
   assert.match(source, /label="Reviews"[\s\S]*<PencilLine size=\{14\}/);

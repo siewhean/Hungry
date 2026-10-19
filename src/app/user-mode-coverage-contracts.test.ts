@@ -474,7 +474,7 @@ test("profile surfaces keep own and other-user layouts linked while hiding taste
       /label="Stalls"/,
       /label="Saved"/,
       /accessibilityLabel=\{menuOpen \? "Close quick access" : "Open quick access"\}/,
-      /accessibilityLabel="Edit profile photo"/,
+      /accessibilityLabel="Edit profile"/,
       /accessibilityLabel="Share Taste Fingerprint"/,
       /<AppText\s+variant="h1"\s+numberOfLines=\{1\}\s+adjustsFontSizeToFit\s+minimumFontScale=\{0\.78\}[\s\S]*profile\.displayName/,
       /accessibilityLabel="Show profile posts"/,
@@ -487,7 +487,7 @@ test("profile surfaces keep own and other-user layouts linked while hiding taste
   assertSourceIncludes(
     userProfile,
     [
-      /ProfileScreenShell title=\{authorName\}/,
+      /<ProfileScreenShell\s+title=\{authorName\}/,
       /Avatar name=\{authorName\} uri=\{resolvedAuthorAvatarUrl\}/,
       /label="Followers"/,
       /label="Following"/,

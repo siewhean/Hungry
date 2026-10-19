@@ -126,6 +126,16 @@ function clearAccountScopedStores(): void {
     require("./usePortfolioStore") as typeof import("./usePortfolioStore");
   useChecklistStore.getState()._reset();
   usePortfolioStore.getState()._reset();
+  // Gamification and submissions skip reloading once isLoaded is set: reset them per account.
+  const { useFoodCredStore } = require("./useFoodCredStore") as typeof import("./useFoodCredStore");
+  const { useMissionStore } = require("./useMissionStore") as typeof import("./useMissionStore");
+  const { usePassportStore } = require("./usePassportStore") as typeof import("./usePassportStore");
+  const { useStallSubmissionStore } =
+    require("./useStallSubmissionStore") as typeof import("./useStallSubmissionStore");
+  useFoodCredStore.getState()._reset();
+  useMissionStore.getState()._reset();
+  usePassportStore.getState()._reset();
+  useStallSubmissionStore.getState()._reset();
   const { clearCommunitySafetySessionState } =
     require("@/lib/security/communitySafety") as typeof import("@/lib/security/communitySafety");
   clearCommunitySafetySessionState();

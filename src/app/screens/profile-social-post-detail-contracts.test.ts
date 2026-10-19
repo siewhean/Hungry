@@ -41,7 +41,12 @@ test("profile social post detail shows a continuous feed of the selected collect
   assert.doesNotMatch(source, /IconButton/);
   assert.doesNotMatch(source, /More liked posts/);
   assert.doesNotMatch(source, /More saved posts/);
-  assert.doesNotMatch(source, /<ScrollView[\s\S]*horizontal/);
+  // The only horizontal scroller is the multi-photo pager inside a post.
+  assert.match(source, /<ScrollView\s+horizontal\s+pagingEnabled/);
+  assert.match(
+    source,
+    /\(mediaIndexByPost\[feedPost\.id\] \?\? 0\) \+ 1\} \/ \{mediaUrls\.length\}/,
+  );
   assert.doesNotMatch(source, /styles\.bottomPost/);
 });
 
@@ -52,8 +57,9 @@ test("profile social grid removes side padding for edge-to-edge tiles", () => {
     gridSource,
     /<Screen[\s\S]*fullWidth[\s\S]*contentContainerStyle=\{\{ paddingHorizontal: 0 \}\}/,
   );
-  assert.match(gridSource, /const ITEM_WIDTH = width \/ COLUMN_COUNT/);
-  assert.match(gridSource, /width: ITEM_WIDTH/);
+  assert.match(gridSource, /const itemWidth = windowWidth \/ COLUMN_COUNT/);
+  assert.match(gridSource, /width: itemWidth/);
+  assert.doesNotMatch(gridSource, /Dimensions\.get/);
 });
 
 test("profile social post detail shows only stored social counts", () => {
