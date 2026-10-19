@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BellRing, Sparkles, Store } from "lucide-react-native";
+import { BellRing, Sparkles, Store, UtensilsCrossed } from "lucide-react-native";
 
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { registerForStallAlerts } from "@/lib/notifications/push";
@@ -15,13 +15,20 @@ function formatHour(hour: number) {
   return `${hour % 12 === 0 ? 12 : hour % 12}${suffix}`;
 }
 
+const PREFERENCE_EVENT_KEYS = {
+  stallUpdates: "stall_updates",
+  weeklyPicks: "weekly_picks",
+  mealtimeSuggestions: "mealtime_suggestions",
+} as const;
+
 interface StallAlertsSettingsProps {
   onOpenFollowedStalls: () => void;
 }
 
 /**
- * Push alerts: opt-in menu changes at followed stalls (off until turned on) and
- * the weekly picks push (on unless the user opts out).
+ * Push alerts: opt-in menu changes at followed stalls and lunch and dinner
+ * suggestions (both off until turned on), and the weekly picks push (on unless
+ * the user opts out).
  */
 export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSettingsProps) {
   const { palette } = useHungryTheme();
@@ -42,7 +49,10 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
     };
   }, []);
 
-  const handleToggle = async (key: "stallUpdates" | "weeklyPicks", enabled: boolean) => {
+  const handleToggle = async (
+    key: "stallUpdates" | "weeklyPicks" | "mealtimeSuggestions",
+    enabled: boolean,
+  ) => {
     if (isSaving) return;
     setIsSaving(true);
     try {
@@ -55,10 +65,9 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
       }
       const next = await getHungryService().push.updatePreferences({ [key]: enabled });
       setPreferences(next);
-      trackAnalyticsEvent(
-        "notification_preferences_updated",
-        key === "stallUpdates" ? { stall_updates: enabled } : { weekly_picks: enabled },
-      );
+      trackAnalyticsEvent("notification_preferences_updated", {
+        [PREFERENCE_EVENT_KEYS[key]]: enabled,
+      });
     } catch {
       showToast({ message: "Couldn't update alerts. Please try again.", tone: "error" });
     } finally {
@@ -86,6 +95,15 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
         type="toggle"
         isEnabled={preferences.weeklyPicks}
         onToggle={(value) => void handleToggle("weeklyPicks", value)}
+        isLast={false}
+      />
+      <SettingsRow
+        label="Lunch and dinner ideas"
+        description="Three picks at 11:30am or 5:30pm, only on days you haven't opened Hungry yet."
+        icon={<UtensilsCrossed size={20} color={palette.orange} />}
+        type="toggle"
+        isEnabled={preferences.mealtimeSuggestions}
+        onToggle={(value) => void handleToggle("mealtimeSuggestions", value)}
         isLast={false}
       />
       <SettingsRow
