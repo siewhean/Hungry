@@ -96,8 +96,9 @@ begin
 end;
 $$;
 
-revoke all on function public.catalog_raw_dishes_page(text, double precision, double precision, integer, text[], text[], numeric, boolean, text, text, uuid, integer, text, text[]) from public, anon;
-grant execute on function public.catalog_raw_dishes_page(text, double precision, double precision, integer, text[], text[], numeric, boolean, text, text, uuid, integer, text, text[]) to authenticated;
+-- Guests browse the catalog too (20261019210000_guest_catalog_raw_reads.sql).
+revoke all on function public.catalog_raw_dishes_page(text, double precision, double precision, integer, text[], text[], numeric, boolean, text, text, uuid, integer, text, text[]) from public;
+grant execute on function public.catalog_raw_dishes_page(text, double precision, double precision, integer, text[], text[], numeric, boolean, text, text, uuid, integer, text, text[]) to anon, authenticated;
 
 create or replace function public.catalog_raw_venues_page(
   p_query text default null, p_lat double precision default null, p_lng double precision default null, p_radius_meters integer default null,
@@ -157,5 +158,6 @@ begin
 end;
 $$;
 
-revoke all on function public.catalog_raw_venues_page(text, double precision, double precision, integer, text[], text[], numeric, boolean, text, text, uuid, integer, text[]) from public, anon;
-grant execute on function public.catalog_raw_venues_page(text, double precision, double precision, integer, text[], text[], numeric, boolean, text, text, uuid, integer, text[]) to authenticated;
+-- Guests browse the catalog too (20261019210000_guest_catalog_raw_reads.sql).
+revoke all on function public.catalog_raw_venues_page(text, double precision, double precision, integer, text[], text[], numeric, boolean, text, text, uuid, integer, text[]) from public;
+grant execute on function public.catalog_raw_venues_page(text, double precision, double precision, integer, text[], text[], numeric, boolean, text, text, uuid, integer, text[]) to anon, authenticated;

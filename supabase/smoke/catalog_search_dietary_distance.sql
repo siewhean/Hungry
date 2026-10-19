@@ -67,8 +67,12 @@ begin
   )) <> 2 then
     raise exception 'catalog search trigram indexes missing';
   end if;
-  if has_function_privilege('anon', 'public.catalog_raw_dishes_page(text,double precision,double precision,integer,text[],text[],numeric,boolean,text,text,uuid,integer,text,text[])', 'execute') then
-    raise exception 'anon must not execute catalog_raw_dishes_page';
+  -- Guests browse and search the catalog (PR #83); re-creating the RPCs keeps their anon grant.
+  if not has_function_privilege('anon', 'public.catalog_raw_dishes_page(text,double precision,double precision,integer,text[],text[],numeric,boolean,text,text,uuid,integer,text,text[])', 'execute') then
+    raise exception 'anon must execute catalog_raw_dishes_page';
+  end if;
+  if not has_function_privilege('anon', 'public.catalog_raw_venues_page(text,double precision,double precision,integer,text[],text[],numeric,boolean,text,text,uuid,integer,text[])', 'execute') then
+    raise exception 'anon must execute catalog_raw_venues_page';
   end if;
 end;
 $$;
