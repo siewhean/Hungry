@@ -244,6 +244,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const [reviewsStatus, setReviewsStatus] = useState<"loading" | "error" | "ready">("loading");
   const [reviewsReloadKey, setReviewsReloadKey] = useState(0);
   const [showAllReviews, setShowAllReviews] = useState(false);
+  const [hasMoreReviews, setHasMoreReviews] = useState(false);
+  const [isLoadingMoreReviews, setIsLoadingMoreReviews] = useState(false);
   const { addToPortfolio, isAddingToPortfolio } = useDetailSaveActions({
     navigation,
     target: {
@@ -347,6 +349,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       .then((entries) => {
         if (!active) return;
         setDishReviews(entries.map((entry) => entry.review));
+        setHasMoreReviews(entries.length === DISH_REVIEW_PAGE_SIZE);
         setReviewsStatus("ready");
       })
       .catch(() => {
@@ -356,6 +359,24 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       active = false;
     };
   }, [reviewDishId, reviewsReloadKey]);
+
+  const loadMoreReviews = () => {
+    const before = dishReviews[dishReviews.length - 1]?.createdAt;
+    if (!reviewDishId || !before || isLoadingMoreReviews) return;
+    setIsLoadingMoreReviews(true);
+    getHungryService()
+      .reviews.listRecentReviews({
+        dishIds: [reviewDishId],
+        limit: DISH_REVIEW_PAGE_SIZE,
+        before,
+      })
+      .then((entries) => {
+        setDishReviews((current) => [...current, ...entries.map((entry) => entry.review)]);
+        setHasMoreReviews(entries.length === DISH_REVIEW_PAGE_SIZE);
+      })
+      .catch(() => undefined)
+      .finally(() => setIsLoadingMoreReviews(false));
+  };
 
   useEffect(() => {
     if (!dish || lastRecordedDishViewId.current === dish.id) return;
@@ -1084,10 +1105,20 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         label={
                           showAllReviews
                             ? "Show fewer reviews"
-                            : `See all ${dishReviews.length} reviews`
+                            : hasMoreReviews
+                              ? "See all reviews"
+                              : `See all ${dishReviews.length} reviews`
                         }
                         variant="secondary"
                         onPress={() => setShowAllReviews((current) => !current)}
+                      />
+                    ) : null}
+                    {showAllReviews && hasMoreReviews ? (
+                      <Button
+                        label="Show more reviews"
+                        variant="secondary"
+                        loading={isLoadingMoreReviews}
+                        onPress={loadMoreReviews}
                       />
                     ) : null}
                   </>

@@ -9,7 +9,7 @@ export interface StallCommunityReview {
   rating: number;
   text: string;
   createdAt: string;
-  /** The author's own photo; without one the UI shows their initials. */
+  /** The author's own photo; without one the Avatar falls back to the Hungry logo. */
   avatarUrl?: string;
   merchantReply?: { text: string; repliedAt: string };
 }

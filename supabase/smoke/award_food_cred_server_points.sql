@@ -59,6 +59,16 @@ begin
     raise exception 'Expected 0 points for a repeat award on the same stall, got %', v_awarded;
   end if;
 
+  -- Repeats earn 0 and do not use up the daily cap (stall_marked_tried cap is 5).
+  for i in 1..5 loop
+    perform public.award_food_cred('stall_marked_tried', 'smoke-stall', 'stall', null);
+  end loop;
+  select points_awarded into v_awarded
+  from public.award_food_cred('stall_marked_tried', 'smoke-stall-2', 'stall', null);
+  if v_awarded <> 5 then
+    raise exception 'Expected a new stall to still pay 5 after repeats, got %', v_awarded;
+  end if;
+
   -- A mission the caller has not completed pays nothing, whatever p_points says.
   select points_awarded into v_awarded
   from public.award_food_cred('mission_completed', 'smoke-award-food-cred-mission', 'mission', 9999);
@@ -90,8 +100,8 @@ begin
   if v_awarded <> 20 then
     raise exception 'Expected the mission reward of 20 points, got %', v_awarded;
   end if;
-  if v_total <> 25 then
-    raise exception 'Expected a total of 25 points, got %', v_total;
+  if v_total <> 30 then
+    raise exception 'Expected a total of 30 points, got %', v_total;
   end if;
 
   select points_awarded into v_awarded

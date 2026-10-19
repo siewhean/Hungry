@@ -313,6 +313,11 @@ test("Supabase review reads hydrate review_photos and public profile names and a
     service,
     /async listRecentReviews\(options\)[\s\S]*\.order\("created_at", \{ ascending: false \}\)[\s\S]*\.limit\(limit\)/,
   );
+  // Owner replies must come back with the rows or detail screens drop them in Supabase mode.
+  assert.match(
+    service,
+    /async listRecentReviews\(options\)[\s\S]{0,400}\.select\(\s*"[^"]*merchant_reply_text,merchant_replied_at"/,
+  );
   assert.match(
     reviewFeed,
     /serviceProviderMode === "mock" \? listReviewFeedItems\(repository\) : \(serviceReviewItems \?\? \[\]\)/,

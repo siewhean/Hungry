@@ -13,6 +13,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import {
+  Bookmark,
   ChevronLeft,
   CircleHelp,
   Globe,
@@ -983,6 +984,14 @@ export function StallDetailScreen({ navigation, route }: Props) {
                       onPress={() =>
                         void openMerchantProfileLink("phone", merchantProfile.contactPhone ?? "")
                       }
+                    />
+                  ) : null}
+                  {!isAuthenticated ? (
+                    <Chip
+                      label="Save"
+                      accessibilityLabel={`Save ${venue.name}`}
+                      leftIcon={<Bookmark color={palette.orange} size={14} />}
+                      onPress={() => requireAuthForProtectedAction("Sign in to save this stall.")}
                     />
                   ) : null}
                   <Chip

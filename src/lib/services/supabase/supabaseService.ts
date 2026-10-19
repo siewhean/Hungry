@@ -3353,7 +3353,7 @@ export const supabaseService: HungryService = {
       let query = client
         .from("reviews")
         .select(
-          "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend",
+          "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend,merchant_reply_text,merchant_replied_at",
         )
         .order("created_at", { ascending: false })
         .limit(limit);

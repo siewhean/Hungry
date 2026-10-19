@@ -59,6 +59,11 @@ test("Supabase stall review reads skip photo signing and sign the rest in parall
 
 test("stall page has no fake save, timer skeleton, or menu-empty flash while loading", () => {
   assert.doesNotMatch(stallDetail, /toggleFavourite/);
+  // Signed-out visitors keep a Save entry point that asks them to sign in.
+  assert.match(
+    stallDetail,
+    /!isAuthenticated \? \(\s*<Chip\s*label="Save"[\s\S]{0,240}requireAuthForProtectedAction\("Sign in to save this stall\."\)/,
+  );
   assert.doesNotMatch(stallDetail, /<Heart/);
   assert.doesNotMatch(stallDetail, /setTimeout\(\(\) => setIsLoading\(false\), 800\)/);
   assert.match(stallDetail, /menuStatus === "loading"/);
@@ -110,6 +115,10 @@ test("stall rating and price summaries come from the menu, and are absent withou
 test("dish detail always reads its reviews and only says 'No reviews yet' at zero", () => {
   assert.match(dishDetail, /reviews\.listRecentReviews\(\{ dishIds: \[reviewDishId\]/);
   assert.match(dishDetail, /See all \$\{dishReviews\.length\} reviews/);
+  // Past the first page the button pages with the createdAt cursor instead of claiming a total.
+  assert.match(dishDetail, /setHasMoreReviews\(entries\.length === DISH_REVIEW_PAGE_SIZE\)/);
+  assert.match(dishDetail, /before,\s*\}\)/);
+  assert.match(dishDetail, /label="Show more reviews"/);
   assert.match(dishDetail, /dish\.reviewCount === 0 \? \(\s*<EmptyState\s*title="No reviews yet"/);
   assert.match(dishDetail, /formatTimeAgo\(review\.createdAt\)/);
   assert.match(dishDetail, /Reply from the owner/);
@@ -131,7 +140,9 @@ test("dish Tried is per dish and never clears the stall; Food Cred copy uses awa
   assert.match(dishDetail, /FEATURE_FLAGS\.gamificationEnabled && pointsAwarded > 0/);
   const store = read("src/store/useStallInteractionStore.ts");
   assert.doesNotMatch(store, /pointsAwarded = 5;/);
-  assert.match(store, /pointsAwarded = Math\.max\(0, totalAfter - totalBefore\)/);
+  // Points come from what the award call actually credited, not a stale before/after total.
+  assert.match(store, /pointsAwarded = useFoodCredStore\.getState\(\)\.lastEarnedPoints;/);
+  assert.doesNotMatch(store, /totalAfter - totalBefore/);
 });
 
 test("detail back buttons fall back to Home on cold-start links", () => {
@@ -153,6 +164,11 @@ test("award_food_cred ignores client-chosen amounts and dedupes per entity", () 
   );
   assert.doesNotMatch(migration, /resolved_points := coalesce\(p_points/);
   assert.match(migration, /fce\.related_entity_id = normalized_entity_id/);
+  // 0-point dedupe rows must not use up the daily cap.
+  assert.match(
+    migration,
+    /into today_count[\s\S]*?and fce\.points > 0[\s\S]*?if today_count >= cap/,
+  );
   assert.match(smoke, /^begin;/m);
   assert.match(smoke, /^rollback;/m);
 });

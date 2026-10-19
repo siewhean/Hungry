@@ -13,7 +13,8 @@
 --    the reward value; the body now reads the same value itself.
 -- 3. Per-entity daily dedupe: a second award for the same action and related
 --    entity on the same Singapore day earns 0 (for example toggling a stall's
---    "tried" mark off and on).
+--    "tried" mark off and on). The daily cap counts only paid awards, so
+--    these 0-point rows never use up the day's cap.
 --
 -- The body stays SECURITY DEFINER in app_private; the public SECURITY INVOKER
 -- wrapper and its grants are unchanged.
@@ -99,6 +100,7 @@ begin
   from food_cred_events fce
   where fce.user_id = current_user_id
     and fce.source_action = normalized_action
+    and fce.points > 0
     and (fce.created_at at time zone 'Asia/Singapore')::date =
       (now() at time zone 'Asia/Singapore')::date;
 
