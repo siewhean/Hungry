@@ -5,7 +5,6 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   AtSign,
-  Bell,
   CircleHelp,
   Database,
   Download,
@@ -17,7 +16,6 @@ import {
   Moon,
   RefreshCw,
   Shield,
-  Star,
   Smartphone,
   User,
   Trash2,
@@ -52,6 +50,7 @@ export function SettingsScreen() {
   const setAuthNotice = useSessionStore((state) => state.setAuthNotice);
   const resetDraft = useReviewDraftStore((state) => state.resetDraft);
   const clearSearchState = useSearchStore((state) => state.clearSearchState);
+  const clearSearchHistory = useSearchStore((state) => state.clearSearchHistory);
   const resetLocationState = useLocationStore((state) => state.resetLocationState);
   const signOut = useSessionStore((state) => state.signOut);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
@@ -66,44 +65,15 @@ export function SettingsScreen() {
   const setHapticFeedbackEnabled = useUIStore((state) => state.setHapticFeedbackEnabled);
   const reducedMotionEnabled = useUIStore((state) => state.reducedMotionEnabled);
   const setReducedMotionEnabled = useUIStore((state) => state.setReducedMotionEnabled);
-  const showLocationBadge = useUIStore((state) => state.showLocationBadge);
-  const setShowLocationBadge = useUIStore((state) => state.setShowLocationBadge);
   const allowSearchHistory = useUIStore((state) => state.allowSearchHistory);
   const setAllowSearchHistory = useUIStore((state) => state.setAllowSearchHistory);
-  const openToExternalApps = useUIStore((state) => state.openToExternalApps);
-  const setOpenToExternalApps = useUIStore((state) => state.setOpenToExternalApps);
-  const dietaryFiltersEnabled = useUIStore((state) => state.dietaryFiltersEnabled);
-  const setDietaryFiltersEnabled = useUIStore((state) => state.setDietaryFiltersEnabled);
-  const activityFeedEnabled = useUIStore((state) => state.activityFeedEnabled);
-  const setActivityFeedEnabled = useUIStore((state) => state.setActivityFeedEnabled);
-  const hideReviewedDishesFromFeed = useUIStore((state) => state.hideReviewedDishesFromFeed);
-  const setHideReviewedDishesFromFeed = useUIStore((state) => state.setHideReviewedDishesFromFeed);
-  const showOnlyFavoriteDishes = useUIStore((state) => state.showOnlyFavoriteDishes);
-  const setShowOnlyFavoriteDishes = useUIStore((state) => state.setShowOnlyFavoriteDishes);
-  const pushNotificationsEnabled = useUIStore((state) => state.pushNotificationsEnabled);
-  const setPushNotificationsEnabled = useUIStore((state) => state.setPushNotificationsEnabled);
-  const missionNotificationsEnabled = useUIStore((state) => state.missionNotificationsEnabled);
-  const setMissionNotificationsEnabled = useUIStore(
-    (state) => state.setMissionNotificationsEnabled,
-  );
-  const showCredTier = useUIStore((state) => state.showCredTier);
-  const setShowCredTier = useUIStore((state) => state.setShowCredTier);
-  const showPassportProgress = useUIStore((state) => state.showPassportProgress);
-  const setShowPassportProgress = useUIStore((state) => state.setShowPassportProgress);
-  const showProfileBadges = useUIStore((state) => state.showProfileBadges);
-  const setShowProfileBadges = useUIStore((state) => state.setShowProfileBadges);
 
   const profile = useProfileStore((state) => state.profile);
   const location = useLocationStore((state) => state.manualLocation);
   const locationPermission = useLocationStore((state) => state.permission);
   const isProfilePrivate = profile.profileVisibility === "private";
-  const showNotificationSettings = FEATURE_FLAGS.notificationsEnabled;
-  const showGamificationSettings = FEATURE_FLAGS.gamificationEnabled;
-  // Profile visibility and public-feed controls only matter when social surfaces ship.
+  // Profile visibility only matters when social surfaces ship.
   const showSocialPrivacySettings = FEATURE_FLAGS.socialFeedEnabled;
-  // Location badge, dietary filters, and favourites-only are persisted but not yet read by
-  // any screen, store, or service. Keep them dev-only (prototype flag) until they are wired.
-  const showUnwiredPreferenceSettings = FEATURE_FLAGS.prototypeRoutesEnabled;
 
   const normalizedThemePreference: ThemePreference =
     themePreference === "system" || themePreference === "light" || themePreference === "dark"
@@ -248,6 +218,13 @@ export function SettingsScreen() {
     void openAppSettings();
   };
 
+  const handleSearchHistoryToggle = (enabled: boolean) => {
+    setAllowSearchHistory(enabled);
+    if (!enabled) {
+      clearSearchHistory();
+    }
+  };
+
   const handleResetLocation = () => {
     Alert.alert(
       "Reset location",
@@ -324,54 +301,22 @@ export function SettingsScreen() {
         />
       </SettingsSection>
 
-      {showSocialPrivacySettings || showGamificationSettings ? (
+      {showSocialPrivacySettings ? (
         <SettingsSection title="Privacy">
-          {showSocialPrivacySettings ? (
-            <>
-              <SettingsRow
-                label="Profile visibility"
-                icon={
-                  isProfilePrivate ? (
-                    <Lock size={20} color={palette.orange} />
-                  ) : (
-                    <Globe size={20} color={palette.orange} />
-                  )
-                }
-                type="navigation"
-                value={isProfilePrivate ? "Private" : "Public"}
-                onPress={showProfileVisibilityDialog}
-                isLast={false}
-              />
-              <SettingsRow
-                label="Hide reviewed dishes from public feed"
-                icon={<Bell size={20} color={palette.orange} />}
-                type="toggle"
-                isEnabled={hideReviewedDishesFromFeed}
-                onToggle={setHideReviewedDishesFromFeed}
-                isLast={!showGamificationSettings}
-              />
-            </>
-          ) : null}
-          {showGamificationSettings ? (
-            <>
-              <SettingsRow
-                label="Show Food Cred tier"
-                icon={<Star size={20} color={palette.orange} />}
-                type="toggle"
-                isEnabled={showCredTier}
-                onToggle={setShowCredTier}
-                isLast={false}
-              />
-              <SettingsRow
-                label="Show Passport progress"
-                icon={<Globe size={20} color={palette.orange} />}
-                type="toggle"
-                isEnabled={showPassportProgress}
-                onToggle={setShowPassportProgress}
-                isLast
-              />
-            </>
-          ) : null}
+          <SettingsRow
+            label="Profile visibility"
+            icon={
+              isProfilePrivate ? (
+                <Lock size={20} color={palette.orange} />
+              ) : (
+                <Globe size={20} color={palette.orange} />
+              )
+            }
+            type="navigation"
+            value={isProfilePrivate ? "Private" : "Public"}
+            onPress={showProfileVisibilityDialog}
+            isLast
+          />
         </SettingsSection>
       ) : null}
 
@@ -393,16 +338,6 @@ export function SettingsScreen() {
           onToggle={handleLocationPermissionToggle}
           isLast={false}
         />
-        {showUnwiredPreferenceSettings ? (
-          <SettingsRow
-            label="Show location badge"
-            icon={<MapPin size={20} color={palette.orange} />}
-            type="toggle"
-            isEnabled={showLocationBadge}
-            onToggle={setShowLocationBadge}
-            isLast={false}
-          />
-        ) : null}
         <SettingsRow
           label="Reset selected location"
           icon={<RefreshCw size={20} color={palette.orange} />}
@@ -412,70 +347,15 @@ export function SettingsScreen() {
       </SettingsSection>
 
       <SettingsSection title="Feed and discovery settings">
-        {showUnwiredPreferenceSettings ? (
-          <SettingsRow
-            label="Dietary filters"
-            icon={<Shield size={20} color={palette.orange} />}
-            type="toggle"
-            isEnabled={dietaryFiltersEnabled}
-            onToggle={setDietaryFiltersEnabled}
-            isLast={false}
-          />
-        ) : null}
-        {FEATURE_FLAGS.activityEnabled ? (
-          <SettingsRow
-            label="Show activity feed"
-            icon={<Star size={20} color={palette.orange} />}
-            type="toggle"
-            isEnabled={activityFeedEnabled}
-            onToggle={setActivityFeedEnabled}
-            isLast={false}
-          />
-        ) : null}
         <SettingsRow
           label="Left-handed mode"
           icon={<HandMetal size={20} color={palette.orange} />}
           type="toggle"
           isEnabled={profile.leftHandedMode}
           onToggle={setLeftHandedMode}
-          isLast={!showUnwiredPreferenceSettings}
+          isLast
         />
-        {showUnwiredPreferenceSettings ? (
-          <SettingsRow
-            label="Show only favourite dishes"
-            icon={<Globe size={20} color={palette.orange} />}
-            type="toggle"
-            isEnabled={showOnlyFavoriteDishes}
-            onToggle={setShowOnlyFavoriteDishes}
-            isLast
-          />
-        ) : null}
       </SettingsSection>
-
-      {showNotificationSettings || showGamificationSettings ? (
-        <SettingsSection title="Notifications">
-          {showNotificationSettings ? (
-            <SettingsRow
-              label="Push notifications"
-              icon={<Bell size={20} color={palette.orange} />}
-              type="toggle"
-              isEnabled={pushNotificationsEnabled}
-              onToggle={setPushNotificationsEnabled}
-              isLast={!showGamificationSettings}
-            />
-          ) : null}
-          {showGamificationSettings ? (
-            <SettingsRow
-              label="Mission notifications"
-              icon={<Bell size={20} color={palette.orange} />}
-              type="toggle"
-              isEnabled={missionNotificationsEnabled}
-              onToggle={setMissionNotificationsEnabled}
-              isLast
-            />
-          ) : null}
-        </SettingsSection>
-      ) : null}
 
       {FEATURE_FLAGS.stallAlertsEnabled && isAuthenticated ? (
         <StallAlertsSettings
@@ -519,24 +399,6 @@ export function SettingsScreen() {
           onToggle={setHapticFeedbackEnabled}
           isLast={false}
         />
-        {showGamificationSettings ? (
-          <SettingsRow
-            label="Show badges on profile"
-            icon={<Star size={20} color={palette.orange} />}
-            type="toggle"
-            isEnabled={showProfileBadges}
-            onToggle={setShowProfileBadges}
-            isLast={false}
-          />
-        ) : null}
-        <SettingsRow
-          label="Open in external browsers"
-          icon={<Globe size={20} color={palette.orange} />}
-          type="toggle"
-          isEnabled={openToExternalApps}
-          onToggle={setOpenToExternalApps}
-          isLast={false}
-        />
         <SettingsRow
           label="Open app settings"
           icon={<Smartphone size={20} color={palette.orange} />}
@@ -552,7 +414,7 @@ export function SettingsScreen() {
           icon={<Database size={20} color={palette.orange} />}
           type="toggle"
           isEnabled={allowSearchHistory}
-          onToggle={setAllowSearchHistory}
+          onToggle={handleSearchHistoryToggle}
           isLast={false}
         />
         <SettingsRow

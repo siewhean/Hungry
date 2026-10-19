@@ -135,11 +135,10 @@ test("sign-up confirmation uses its own redirect and real sign-in instead of ref
   assert.match(read("tasks/environment.md"), /hungry:\/\/auth\/confirm/);
 });
 
-test("EditProfile sends a reset email instead of opening ResetPassword with a fake code", () => {
+test("EditProfile does not open ResetPassword with a fake code", () => {
   const editProfile = read("src/app/screens/profile/EditProfileScreen.tsx");
   assert.doesNotMatch(editProfile, /profile-settings/);
   assert.doesNotMatch(editProfile, /screen: "ResetPassword"/);
-  assert.match(editProfile, /auth\.forgotPassword\(email\)/);
   assert.match(editProfile, /accessibilityLabel="Change profile photo"/);
   assert.match(editProfile, /disabled=\{!trimmedDisplayName\}/);
 });

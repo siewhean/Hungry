@@ -4,7 +4,10 @@ import {
   getServiceProvider,
 } from "@/lib/services/serviceProvider";
 import { biteToStallPost } from "@/lib/services/postTransforms";
-import { isContentHiddenForSession } from "@/lib/security/communitySafety";
+import {
+  isContentHiddenForSession,
+  loadBlockedAuthorsForSession,
+} from "@/lib/security/communitySafety";
 import type { DataRepository } from "@/lib/services/types";
 import type { StallPost } from "@/types/domain";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
@@ -12,7 +15,7 @@ import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 export function mergeStallPosts(...postLists: StallPost[][]): StallPost[] {
   const seen = new Set<string>();
   return postLists.flat().filter((post) => {
-    if (isContentHiddenForSession({ id: post.id, authorName: post.authorName })) return false;
+    if (isContentHiddenForSession({ id: post.id, authorId: post.authorId })) return false;
     if (seen.has(post.id)) return false;
     seen.add(post.id);
     return true;
@@ -30,6 +33,9 @@ export async function listSharedStallPosts(repository: DataRepository = getDataR
   const service = getHungryService();
   let servicePosts: StallPost[] = [];
   let bitePosts: StallPost[] = [];
+
+  // Saved blocks must apply after a restart, before any post is merged in.
+  await loadBlockedAuthorsForSession();
 
   try {
     servicePosts = await service.content.listStallPosts();

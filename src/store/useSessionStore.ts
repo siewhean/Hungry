@@ -143,6 +143,9 @@ function clearAccountScopedStores(): void {
     require("./useReviewDraftStore") as typeof import("./useReviewDraftStore");
   useSearchStore.getState().clearSearchState();
   useReviewDraftStore.getState().resetDraft();
+  const { clearCommunitySafetySessionState } =
+    require("@/lib/security/communitySafety") as typeof import("@/lib/security/communitySafety");
+  clearCommunitySafetySessionState();
 }
 
 function clearAuthenticatedProfile(): void {

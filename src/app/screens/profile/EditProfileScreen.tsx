@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Pressable } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -7,7 +7,6 @@ import { ChevronRight, Camera } from "lucide-react-native";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { AccessibleImage, AppText, Button, Card, Input } from "@/components/ui";
 import { getHungryService } from "@/lib/services/serviceProvider";
-import { getConfiguredDataSource } from "@/lib/services/supabase/client";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -53,7 +52,7 @@ export function EditProfileScreen({ navigation }: Props) {
     }, []),
   );
   const [isSaving, setIsSaving] = useState(false);
-  const [isSendingReset, setIsSendingReset] = useState(false);
+  const [canChangePassword, setCanChangePassword] = useState(false);
   const trimmedDisplayName = displayName.trim();
   const avatarPreviewUri = avatarUri ?? profile.avatarUrl;
   const avatarSize = spacing[20];
@@ -114,32 +113,22 @@ export function EditProfileScreen({ navigation }: Props) {
     showToast({ message: "Photo selected. Save changes to upload it.", tone: "info" });
   };
 
-  // MVP password change: email a reset link to the account email (same flow as
-  // Forgot password). The link opens hungry://auth/callback → ResetPassword.
-  const handleSendPasswordReset = async () => {
-    if (isSendingReset) return;
-    const email = profile.email?.trim();
-    if (!email) {
-      showToast({ message: "No account email is available for a reset link.", tone: "warning" });
-      return;
-    }
-    setIsSendingReset(true);
-    try {
-      if (getConfiguredDataSource() === "supabase") {
-        await getHungryService().auth.forgotPassword(email);
-      }
-      showToast({
-        message: `Password reset link sent to ${email}. Open it on this device to set a new password.`,
-        tone: "success",
-      });
-    } catch {
-      showToast({
-        message: "Could not send a password reset link right now. Please try again.",
-        tone: "error",
-      });
-    } finally {
-      setIsSendingReset(false);
-    }
+  useEffect(() => {
+    let isActive = true;
+    // Google/Apple-only accounts have no password to change, so the row stays hidden.
+    getHungryService()
+      .auth.canChangePassword()
+      .then((allowed) => {
+        if (isActive) setCanChangePassword(allowed);
+      })
+      .catch(() => undefined);
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const handleChangePassword = () => {
+    getRootNavigation(navigation).navigate("ChangePassword");
   };
 
   return (
@@ -230,27 +219,21 @@ export function EditProfileScreen({ navigation }: Props) {
               Account email changes require verification and are managed separately.
             </AppText>
           </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Reset password"
-            accessibilityHint="Emails a password reset link to your account email"
-            accessibilityState={{ disabled: isSendingReset, busy: isSendingReset }}
-            disabled={isSendingReset}
-            onPress={() => {
-              void handleSendPasswordReset();
-            }}
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              paddingVertical: spacing[2],
-            }}
-          >
-            <AppText style={{ fontWeight: "600" }}>
-              {isSendingReset ? "Sending reset link…" : "Reset password"}
-            </AppText>
-            <ChevronRight size={18} color={palette.textMuted} />
-          </Pressable>
+          {canChangePassword ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={handleChangePassword}
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingVertical: spacing[2],
+              }}
+            >
+              <AppText style={{ fontWeight: "600" }}>Change Password</AppText>
+              <ChevronRight size={18} color={palette.textMuted} />
+            </Pressable>
+          ) : null}
         </View>
       </Card>
       <Button

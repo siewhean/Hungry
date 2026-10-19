@@ -19,7 +19,6 @@ const allowedServiceInternalImports = new Set([
   "src/app/screens/discover/CatalogDiagnosticsModal.tsx",
   "src/app/screens/dev/DeveloperLauncherScreen.tsx",
   "src/app/screens/onboarding/OnboardingAuthScreen.tsx",
-  "src/app/screens/profile/EditProfileScreen.tsx",
   "src/hooks/useAppBootstrap.ts",
   "src/store/useProfileStore.ts",
   "src/store/useSessionStore.ts",

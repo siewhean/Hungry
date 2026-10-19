@@ -6,7 +6,7 @@ import { AccessibleImage, AppText, IconButton, HungryLogo, Badge } from "@/compo
 import { useHungryTheme } from "@/theme";
 import { componentRadii } from "@/theme/tokens";
 import { useComposerStore } from "../useComposerStore";
-import { useMerchantStore } from "@/store/useMerchantStore";
+import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -25,7 +25,7 @@ export function LivePreviewSheet() {
   const tasteTags = useComposerStore((state) => state.tasteTags);
   const rating = useComposerStore((state) => state.rating);
   const showFoodContextOverlay = useComposerStore((state) => state.showFoodContextOverlay);
-  const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
+  const isMerchantMode = useMerchantStore(isMerchantModeActive);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
   const isUserMode = !isMerchantMode && !isDeveloperMode;
   const shouldShowTasteTags = !isUserMode;

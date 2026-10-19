@@ -127,29 +127,19 @@ test("release-reachable screens hide controls for cut features behind their flag
   assert.match(settings, /const showSocialPrivacySettings = FEATURE_FLAGS\.socialFeedEnabled;/);
   assert.match(
     settings,
-    /\{showSocialPrivacySettings \? \([\s\S]*?label="Profile visibility"[\s\S]*?label="Hide reviewed dishes from public feed"/,
+    /\{showSocialPrivacySettings \? \(\s*<SettingsSection title="Privacy">[\s\S]*?label="Profile visibility"/,
   );
-  assert.match(
-    settings,
-    /\{FEATURE_FLAGS\.activityEnabled \? \(\s*<SettingsRow\s*label="Show activity feed"/,
-  );
-  // Unwired preferences (no reader outside useUIStore) stay dev-only via the prototype flag.
-  assert.match(
-    settings,
-    /const showUnwiredPreferenceSettings = FEATURE_FLAGS\.prototypeRoutesEnabled;/,
-  );
-  for (const label of ["Show location badge", "Dietary filters", "Show only favourite dishes"]) {
-    assert.match(
-      settings,
-      new RegExp(`\\{showUnwiredPreferenceSettings \\? \\(\\s*<SettingsRow\\s*label="${label}"`),
-      `${label} must be gated behind showUnwiredPreferenceSettings`,
-    );
+  // Unwired preferences were removed outright (see mvp-source-of-truth-contracts).
+  for (const label of [
+    "Show location badge",
+    "Dietary filters",
+    "Show only favourite dishes",
+    "Show activity feed",
+    "Hide reviewed dishes from public feed",
+  ]) {
+    assert.doesNotMatch(settings, new RegExp(`label="${label}"`));
   }
-  // Left-handed mode keeps "Feed and discovery settings" non-empty and closes the section.
-  assert.match(
-    settings,
-    /onToggle=\{setLeftHandedMode\}\s*isLast=\{!showUnwiredPreferenceSettings\}/,
-  );
+  assert.match(settings, /onToggle=\{setLeftHandedMode\}\s*isLast\s/);
 
   assert.match(
     notFound,

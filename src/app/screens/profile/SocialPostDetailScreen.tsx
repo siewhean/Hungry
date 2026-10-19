@@ -26,7 +26,7 @@ import {
 import { prefetchDishDetail, preloadRoute } from "@/features/navigation/prefetch";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
 import { listSharedStallPosts, listSharedStallPostsSync } from "@/features/social/sharedStallPosts";
-import { promptPostSafetyActions, targetAuthorKey } from "@/lib/security/communitySafety";
+import { promptPostSafetyActions } from "@/lib/security/communitySafety";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useSocialStore, type SocialComment } from "@/store/useSocialStore";
@@ -74,10 +74,8 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
   const hidePostFromCurrentFeed = useCallback((postId: string) => {
     setPosts((current) => current.filter((post) => post.id !== postId));
   }, []);
-  const hideAuthorFromCurrentFeed = useCallback((blockedAuthorKey: string) => {
-    setPosts((current) =>
-      current.filter((post) => targetAuthorKey(post.authorName) !== blockedAuthorKey),
-    );
+  const hideAuthorFromCurrentFeed = useCallback((blockedAuthorId: string) => {
+    setPosts((current) => current.filter((post) => post.authorId?.trim() !== blockedAuthorId));
   }, []);
 
   useEffect(() => {
@@ -274,6 +272,7 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
                   promptPostSafetyActions({
                     postId: feedPost.id,
                     authorName: feedPost.authorName,
+                    authorId: feedPost.authorId,
                     label: "post",
                     onHidden: hidePostFromCurrentFeed,
                     onBlocked: hideAuthorFromCurrentFeed,

@@ -58,8 +58,41 @@ test("MVP settings split keeps device-only preferences in local UI storage", () 
     "themePreference",
     "hapticFeedbackEnabled",
     "reducedMotionEnabled",
-    "showLocationBadge",
     "allowSearchHistory",
+  ]) {
+    assert.match(uiStore, new RegExp(`${key}: state\\.${key}`));
+  }
+
+  assert.match(settingsScreen, /useUIStore\(\(state\) => state\.hapticFeedbackEnabled\)/);
+  assert.match(settingsScreen, /useUIStore\(\(state\) => state\.reducedMotionEnabled\)/);
+  assert.match(settingsScreen, /setProfileVisibility\("private"\)/);
+  assert.match(settingsScreen, /label="Reduce motion"/);
+  assert.doesNotMatch(settingsScreen, /label="Analytics sharing"/);
+});
+
+test("every Settings switch backed by useUIStore has a consumer outside Settings", () => {
+  const uiStore = read("src/store/useUIStore.ts");
+  const settingsScreen = read("src/app/screens/profile/SettingsScreen.tsx");
+  const consumers: Record<string, string> = {
+    hapticFeedbackEnabled: "src/store/useSocialStore.ts",
+    reducedMotionEnabled: "src/hooks/useReduceMotion.ts",
+    allowSearchHistory: "src/store/useSearchStore.ts",
+  };
+
+  const settingsKeys = [
+    ...settingsScreen.matchAll(
+      /useUIStore\(\(state\) => state\.(?!set)([A-Za-z]+Enabled|allow[A-Za-z]+|show[A-Za-z]+)\)/g,
+    ),
+  ].map((match) => match[1]);
+  for (const key of settingsKeys) {
+    const consumer = consumers[key];
+    assert.ok(consumer, `${key} is shown in Settings without a known consumer`);
+    assert.match(read(consumer), new RegExp(key));
+  }
+
+  // Toggles that were saved but read by nothing must not come back as no-ops.
+  for (const removed of [
+    "showLocationBadge",
     "openToExternalApps",
     "dietaryFiltersEnabled",
     "activityFeedEnabled",
@@ -71,21 +104,60 @@ test("MVP settings split keeps device-only preferences in local UI storage", () 
     "showPassportProgress",
     "showProfileBadges",
   ]) {
-    assert.match(uiStore, new RegExp(`${key}: state\\.${key}`));
+    assert.doesNotMatch(uiStore, new RegExp(removed));
+    assert.doesNotMatch(settingsScreen, new RegExp(removed));
   }
+});
 
-  assert.match(settingsScreen, /showNotificationSettings = FEATURE_FLAGS\.notificationsEnabled/);
-  assert.match(settingsScreen, /showGamificationSettings = FEATURE_FLAGS\.gamificationEnabled/);
-  assert.match(settingsScreen, /useUIStore\(\(state\) => state\.hapticFeedbackEnabled\)/);
-  assert.match(settingsScreen, /useUIStore\(\(state\) => state\.reducedMotionEnabled\)/);
-  assert.match(settingsScreen, /useUIStore\(\(state\) => state\.dietaryFiltersEnabled\)/);
-  assert.match(settingsScreen, /useUIStore\(\(state\) => state\.activityFeedEnabled\)/);
-  assert.match(settingsScreen, /\{showGamificationSettings \? \(/);
-  assert.match(settingsScreen, /\{showNotificationSettings \|\| showGamificationSettings \? \(/);
-  assert.match(settingsScreen, /setProfileVisibility\("private"\)/);
-  assert.match(settingsScreen, /label="Dietary filters"/);
-  assert.match(settingsScreen, /label="Reduce motion"/);
-  assert.doesNotMatch(settingsScreen, /label="Analytics sharing"/);
+test("Allow search history gates recording and clears history when turned off", () => {
+  const searchStore = read("src/store/useSearchStore.ts");
+  const settingsScreen = read("src/app/screens/profile/SettingsScreen.tsx");
+
+  assert.match(searchStore, /useUIStore\.getState\(\)\.allowSearchHistory/);
+  assert.match(
+    searchStore,
+    /rememberSearch:[\s\S]*?if \(!isSearchHistoryAllowed\(\)\) \{\s*return state;/,
+  );
+  assert.match(
+    searchStore,
+    /addHistoryEntry:[\s\S]*?if \(!isSearchHistoryAllowed\(\)\) \{\s*return state;/,
+  );
+  assert.match(
+    searchStore,
+    /clearSearchHistory: \(\) => set\(\{ recentSearches: \[\], history: \[\] \}\)/,
+  );
+  assert.match(settingsScreen, /onToggle=\{handleSearchHistoryToggle\}/);
+  assert.match(
+    settingsScreen,
+    /handleSearchHistoryToggle = \(enabled: boolean\) => \{[\s\S]*?if \(!enabled\) \{\s*clearSearchHistory\(\);/,
+  );
+});
+
+test("Change Password re-authenticates instead of exchanging a fake recovery code", () => {
+  const editProfile = read("src/app/screens/profile/EditProfileScreen.tsx");
+  const changePassword = read("src/app/screens/profile/ChangePasswordScreen.tsx");
+  const supabase = read("src/lib/services/supabase/supabaseService.ts");
+  const mock = read("src/lib/services/mock/mockService.ts");
+  const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
+
+  assert.doesNotMatch(editProfile, /profile-settings/);
+  assert.doesNotMatch(editProfile, /screen: "ResetPassword"/);
+  assert.match(editProfile, /navigate\("ChangePassword"\)/);
+  assert.match(editProfile, /auth\.canChangePassword\(\)/);
+  assert.match(editProfile, /\{canChangePassword \? \(/);
+  assert.match(changePassword, /auth\.changePassword\(currentPassword, newPassword\)/);
+  assert.match(rootNavigator, /name="ChangePassword"/);
+
+  const supabaseChange = supabase.slice(
+    supabase.indexOf("async changePassword("),
+    supabase.indexOf("async getCurrentSession("),
+  );
+  assert.match(supabaseChange, /signInWithPassword\(\{/);
+  assert.match(supabaseChange, /updateUser\(\{ password: newPassword \}\)/);
+  assert.doesNotMatch(supabaseChange, /exchange/i);
+  assert.match(supabase, /identity\.provider === "email"/);
+  assert.match(mock, /async canChangePassword\(\)/);
+  assert.match(mock, /_authProvider = "google"/);
 });
 
 test("EAS release profiles set explicit MVP feature-flag environments", () => {

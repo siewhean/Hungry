@@ -556,12 +556,12 @@ test("UGC surfaces expose report, hide, and block safety actions", () => {
   assert.match(helper, /promptPostSafetyActions/);
   assert.match(helper, /promptCommentSafetyActions/);
   assert.match(helper, /getHiddenPostIdsForSession/);
-  assert.match(helper, /getBlockedAuthorKeysForSession/);
+  assert.match(helper, /getBlockedAuthorIdsForSession/);
   assert.match(helper, /isContentHiddenForSession/);
   assert.match(helper, /communitySafety\.reportContent/);
   assert.match(helper, /communitySafety\.blockUser/);
   assert.match(helper, /communitySafety\.hidePost/);
-  assert.match(helper, /blockedAuthorKeys\.add\(targetAuthorKey\(target\.authorName\)\)/);
+  assert.match(helper, /blockedAuthorIds\.add\(blockedAuthorId\)/);
   assert.match(helper, /hiddenPostIds\.add\(postId\)/);
   assert.match(home, /promptPostSafetyActions/);
   assert.match(home, /promptCommentSafetyActions/);
@@ -577,7 +577,7 @@ test("shared post reads apply session hide and block filters before rendering", 
   assert.match(sharedPosts, /isContentHiddenForSession/);
   assert.match(
     sharedPosts,
-    /if \(isContentHiddenForSession\(\{ id: post\.id, authorName: post\.authorName \}\)\) return false;/,
+    /if \(isContentHiddenForSession\(\{ id: post\.id, authorId: post\.authorId \}\)\) return false;/,
   );
   assert.match(sharedPosts, /return mergeStallPosts\(localPublishedPosts, bitePosts, servicePosts/);
 });

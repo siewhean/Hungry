@@ -25,6 +25,11 @@ interface MerchantState {
   notificationPreferences: MerchantNotificationPreferences;
   /** Dev-only bypass used by the launcher to open merchant tools without the sign-in gate */
   developerMerchantMode: boolean;
+  /**
+   * True only while the user is in the Merchant Centre. Having an account makes the user a
+   * merchant; this flag is the current mode. Not persisted, so the app reopens in customer mode.
+   */
+  merchantModeActive: boolean;
 }
 
 interface MerchantActions {
@@ -35,6 +40,7 @@ interface MerchantActions {
   setAnalyticsCache: (analytics: MerchantAnalytics | null) => void;
   setNotificationPreferences: (prefs: Partial<MerchantNotificationPreferences>) => void;
   setDeveloperMerchantMode: (enabled: boolean) => void;
+  setMerchantModeActive: (active: boolean) => void;
   clearMerchant: () => void;
 }
 
@@ -56,6 +62,7 @@ const INITIAL_STATE: MerchantState = {
   analyticsCache: null,
   notificationPreferences: DEFAULT_NOTIFICATION_PREFS,
   developerMerchantMode: false,
+  merchantModeActive: false,
 };
 
 // ─── Store ────────────────────────────────────────────────────────────────────
@@ -118,6 +125,8 @@ export const useMerchantStore = create<MerchantState & MerchantActions>()(
 
       setDeveloperMerchantMode: (enabled) => set({ developerMerchantMode: enabled }),
 
+      setMerchantModeActive: (active) => set({ merchantModeActive: active }),
+
       clearMerchant: () => set(INITIAL_STATE),
     }),
     {
@@ -150,4 +159,9 @@ export function isActiveOutletVerified(state: MerchantState): boolean {
 /** Check if the user has a merchant account */
 export function isMerchant(state: MerchantState): boolean {
   return state.account !== null;
+}
+
+/** Check if the user is currently in merchant mode (a merchant who has entered the Merchant Centre) */
+export function isMerchantModeActive(state: MerchantState): boolean {
+  return state.merchantModeActive && state.account !== null;
 }

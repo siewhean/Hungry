@@ -46,6 +46,15 @@ test("onboarding typed routes are registered and flow through cuisine, taste, an
     /navigation\.navigate\("DietaryPreferences", \{[\s\S]*initialPhase: "dietary"[\s\S]*\}\)/,
   );
   assert.match(quiz, /route\.name === "DietaryPreferences"/);
+  // The dietary route is a fresh TasteQuizScreen instance: the taste answers must be
+  // carried over, and a missing draft must never reset the vector to neutral.
+  assert.match(
+    quiz,
+    /navigation\.navigate\("DietaryPreferences", \{[\s\S]*answers: values,[\s\S]*\}\)/,
+  );
+  assert.match(quiz, /useState<TasteVector>\(carriedAnswers \?\? INITIAL\)/);
+  assert.match(quiz, /if \(hasTasteAnswers\) \{\s*setTasteVector\(values\);/);
+  assert.match(types, /DietaryPreferences:[\s\S]*answers\?: TasteVector;/);
   assert.match(quiz, /navigation\.navigate\("TasteProfileResult"\)/);
   assert.match(quiz, /setSkippedTasteQuiz\(true\);\s*navigation\.navigate\("LocationPermission"\)/);
   assert.match(result, /navigation\.navigate\("LocationPermission"\)/);

@@ -12,8 +12,14 @@ import type {
   SearchHistoryEntry,
 } from "@/types/domain";
 import { hungryPersistStorage } from "./persistStorage";
+import { useUIStore } from "./useUIStore";
 
 const MAX_RECENT_SEARCHES = 5;
+
+/** Settings > "Allow search history"; when off, searches are never written to history. */
+function isSearchHistoryAllowed() {
+  return useUIStore.getState().allowSearchHistory;
+}
 
 function normalizeSearchQuery(query: string) {
   return sanitizeSearchQuery(query);
@@ -32,6 +38,8 @@ interface SearchState {
   addHistoryEntry: (entry: Omit<SearchHistoryEntry, "id" | "timestamp">) => void;
   removeHistoryEntry: (id: string) => void;
   clearHistory: () => void;
+  /** Drops recent searches and history, e.g. when search history is turned off. */
+  clearSearchHistory: () => void;
   clearSearchState: () => void;
 }
 
@@ -121,6 +129,10 @@ export const useSearchStore = create<SearchState>()(
             query_length: normalizedQuery.length,
           });
 
+          if (!isSearchHistoryAllowed()) {
+            return state;
+          }
+
           return {
             recentSearches: [
               normalizedQuery,
@@ -132,6 +144,9 @@ export const useSearchStore = create<SearchState>()(
         }),
       addHistoryEntry: (entry) =>
         set((state) => {
+          if (!isSearchHistoryAllowed()) {
+            return state;
+          }
           const newEntry: SearchHistoryEntry = {
             ...entry,
             id: `sh-${Date.now()}`,
@@ -146,6 +161,7 @@ export const useSearchStore = create<SearchState>()(
           history: state.history.filter((h) => h.id !== id),
         })),
       clearHistory: () => set({ history: [] }),
+      clearSearchHistory: () => set({ recentSearches: [], history: [] }),
       clearSearchState: () =>
         set({
           filters: {

@@ -41,6 +41,7 @@ import {
   Input,
   Skeleton,
 } from "@/components/ui";
+import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import { StallLogoMark } from "@/components/stall/StallLogoMark";
 import { deriveStallCommunityReviews } from "@/features/detail/detailTransforms";
 import {
@@ -192,92 +193,78 @@ function inferDishCategory(dish: DishDetail) {
   return "Menu";
 }
 
-function getStallDishCycleSlides(dish: DishDetail, dishes: DishDetail[]) {
-  return [dish, ...dishes.filter((candidate) => candidate.id !== dish.id)].slice(0, 4);
+function getStallDishPhotos(dish: DishDetail) {
+  // A menu tile only ever cycles the dish's own photos, so the image, name,
+  // price and tap target always describe the same dish. URLs go through the
+  // shared catalog sanitizer so unsafe or placeholder hosts fall back to NoDishPhoto.
+  return Array.from(
+    new Set(
+      [dish.imageUrl, ...(dish.gallery ?? [])]
+        .map((url) => sanitizeCatalogImageUrl(url))
+        .filter((url): url is string => Boolean(url?.trim())),
+    ),
+  );
 }
 
 function StallMenuDishCard({
   dish,
-  dishes,
   index,
   onPress,
   width,
 }: {
   dish: DishDetail;
-  dishes: DishDetail[];
   index: number;
   onPress: (dish: DishDetail) => void;
   width: number;
 }) {
   const { componentRadii, palette, spacing } = useHungryTheme();
-  const slides = useMemo(() => getStallDishCycleSlides(dish, dishes), [dish, dishes]);
-  const safeImageUrls = useMemo(
-    () =>
-      slides
-        .map((slide) => sanitizeCatalogImageUrl(slide.imageUrl))
-        .filter((imageUrl): imageUrl is string => Boolean(imageUrl)),
-    [slides],
-  );
-  const [activeIndex, setActiveIndex] = useState(0);
-  const activeDish = slides[activeIndex] ?? dish;
-  const handleActiveIndexChange = useCallback((nextIndex: number) => {
-    setActiveIndex(nextIndex);
-  }, []);
-
-  useEffect(() => {
-    if (activeIndex >= slides.length) {
-      setActiveIndex(0);
-    }
-  }, [activeIndex, slides.length]);
+  const photos = useMemo(() => getStallDishPhotos(dish), [dish]);
+  const imageStyle = {
+    width: "100%" as const,
+    height: 120,
+    borderRadius: componentRadii.card,
+  };
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Open ${activeDish.name}`}
+      accessibilityLabel={`Open ${dish.name}`}
       accessibilityHint="Opens this dish detail page"
-      onPress={() => onPress(activeDish)}
+      onPress={() => onPress(dish)}
       style={{ width }}
     >
       <View style={{ gap: spacing[2] }}>
-        {safeImageUrls.length > 0 ? (
+        {photos.length > 1 ? (
           <CyclingGridImage
-            images={safeImageUrls}
+            images={photos}
             cycleMs={CYCLING_GRID_IMAGE_INTERVAL_MS}
             startDelayMs={(index % 4) * 350}
-            onActiveIndexChange={handleActiveIndexChange}
-            style={{
-              borderRadius: componentRadii.card,
-              height: 120,
-              width: "100%",
-            }}
+            accessibilityLabel={`${dish.name} photo`}
+            style={imageStyle}
+          />
+        ) : photos[0] ? (
+          <AccessibleImage
+            source={{ uri: photos[0] }}
+            accessibilityLabel={`${dish.name} photo`}
+            style={imageStyle}
+            contentFit="cover"
+            placeholder={dish.blurhash}
+            transition={180}
           />
         ) : (
-          <View
-            accessibilityRole="image"
-            accessibilityLabel={`${activeDish.name} photo unavailable`}
-            style={{
-              alignItems: "center",
-              backgroundColor: palette.surfaceRaised,
-              borderRadius: componentRadii.card,
-              height: 120,
-              justifyContent: "center",
-              width: "100%",
-            }}
-          >
-            <Utensils color={palette.orange} size={28} />
-          </View>
+          <NoDishPhoto dishName={dish.name} style={imageStyle} />
         )}
         <View style={{ gap: spacing[1] }}>
           <AppText variant="bodyBold" numberOfLines={1}>
-            {activeDish.name}
+            {dish.name}
           </AppText>
-          {isSoldOut(activeDish.availabilityFlags) ? (
+          {isSoldOut(dish.availabilityFlags) ? (
             <AppText variant="bodySmallBold" style={{ color: palette.error }}>
               Sold out today
             </AppText>
           ) : (
             <AppText variant="price" style={{ color: palette.orange }}>
-              {activeDish.priceRange}
+              {dish.priceRange}
             </AppText>
           )}
         </View>
@@ -1212,7 +1199,6 @@ export function StallDetailScreen({ navigation, route }: Props) {
                           <StallMenuDishCard
                             key={dish.id}
                             dish={dish}
-                            dishes={filteredMenuDishes}
                             index={index}
                             width={(screenWidth - spacing[5] * 2 - spacing[3]) / 2}
                             onPress={openMenuDish}

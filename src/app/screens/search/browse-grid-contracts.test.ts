@@ -94,7 +94,14 @@ test("Two-column image grids cycle images every four seconds with page-scoped sl
     /navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dish\.id \}\)/,
   );
 
-  assert.match(stallDetail, /getStallDishCycleSlides/);
+  assert.match(stallDetail, /getStallDishPhotos/);
+  assert.match(stallDetail, /\[dish\.imageUrl, \.\.\.\(dish\.gallery \?\? \[\]\)\]/);
+  assert.doesNotMatch(
+    stallDetail,
+    /getStallDishCycleSlides|activeDish\.name|dishes=\{filteredMenuDishes\}/,
+  );
+  assert.match(stallDetail, /onPress=\{\(\) => onPress\(dish\)\}/);
+  assert.match(stallDetail, /<NoDishPhoto dishName=\{dish\.name\}/);
   assert.match(stallDetail, /<StallMenuDishCard/);
   assert.match(stallDetail, /navigation\.navigate\("DishDetail", \{ dishId: activeDish\.id \}\)/);
 });

@@ -294,6 +294,7 @@ const _submittedClientReviewIds = new Set<string>();
 let _followedStallIds = new Set<string>();
 let _pushPreferences: PushPreferences = { ...DEFAULT_PUSH_PREFERENCES };
 let _isAuthenticated = false;
+let _authProvider: "email" | "google" | "apple" = "email";
 let _pendingDeletionScheduledFor: string | undefined;
 let _merchantAccount: MerchantAccount = clone(merchantAccount);
 let _merchantDishCounter = 0;
@@ -563,7 +564,19 @@ const _contentReports: {
   targetAuthorKey?: string;
   reason: string;
 }[] = [];
-const _blockedUserKeys = new Set<string>();
+/** Blocked author ids, keyed like the Supabase user_blocks.blocked_user_key column. */
+const _blockedUsers = new Map<string, { reason?: string; createdAt: string }>();
+
+/** Mirrors the Supabase review read policy: hide blocked authors and reviews the viewer reported. */
+function isMockReviewHiddenForViewer(review: { id: string; authorId?: string }): boolean {
+  if (review.authorId && _blockedUsers.has(review.authorId)) return true;
+  return _contentReports.some(
+    (report) =>
+      report.reporterId === _profile.id &&
+      report.targetType === "review" &&
+      report.targetId === review.id,
+  );
+}
 const _userFollows = new Set<string>(); // Set of followee userId strings (current user follows these)
 const _mockFollowersByUser: Record<
   string,
@@ -617,6 +630,24 @@ function dedupeMockFollowers(
     seen.add(key);
     return true;
   });
+}
+/** Only the signed-in mock profile has seeded followers; other users get their real mock follows. */
+function listMockFollowers(userId: string) {
+  const seeded =
+    _mockFollowersByUser[userId] ??
+    (userId === _profile.id ? _mockFollowersByUser[userProfile.id] : undefined) ??
+    [];
+  const viewerFollows =
+    userId !== _profile.id && _userFollows.has(userId)
+      ? [{ userId: _profile.id, displayName: _profile.displayName, avatarUrl: _profile.avatarUrl }]
+      : [];
+  return dedupeMockFollowers([...seeded.filter(Boolean), ...viewerFollows]);
+}
+/** Same paging rules as the list_user_followers/list_user_following RPCs (default 100, max 500). */
+function pageMockFollowRows<T>(rows: T[], page?: { limit?: number; offset?: number }) {
+  const limit = Math.min(Math.max(page?.limit ?? 100, 1), 500);
+  const offset = Math.max(page?.offset ?? 0, 0);
+  return rows.slice(offset, offset + limit);
 }
 const _mockComments: Record<
   string,
@@ -1328,6 +1359,7 @@ export const hungryService: HungryService = {
   auth: {
     async signUp(email, _password, name) {
       _isAuthenticated = true;
+      _authProvider = "email";
       _profile = {
         ...userProfile,
         id: mockUserIdFromEmail(email),
@@ -1352,18 +1384,21 @@ export const hungryService: HungryService = {
 
     async signIn(email, _password) {
       _isAuthenticated = true;
+      _authProvider = "email";
       _profile = { ...userProfile, email };
       return resolve(mockSession(_profile));
     },
 
     async signInWithGoogle() {
       _isAuthenticated = true;
+      _authProvider = "google";
       _profile = { ...userProfile };
       return resolve(mockSession(_profile));
     },
 
     async signInWithApple() {
       _isAuthenticated = true;
+      _authProvider = "apple";
       _profile = { ...userProfile };
       return resolve(mockSession(_profile));
     },
@@ -1407,6 +1442,19 @@ export const hungryService: HungryService = {
 
     async resetPassword(_token, _password) {
       // Mock: no-op — in production verifies token and updates password
+      return resolve(undefined);
+    },
+
+    async canChangePassword() {
+      return resolve(_isAuthenticated && _authProvider === "email");
+    },
+
+    async changePassword(currentPassword, _newPassword) {
+      if (!_isAuthenticated) throw new Error("You must be signed in to change your password.");
+      if (_authProvider !== "email") {
+        throw new Error("This account signs in with Google or Apple and has no password.");
+      }
+      if (!currentPassword) throw new Error("Current password is incorrect.");
       return resolve(undefined);
     },
 
@@ -1615,7 +1663,9 @@ export const hungryService: HungryService = {
   reviews: {
     async getReviewsForDish(dishId) {
       const dish = dishes.find((d) => d.id === dishId);
-      return resolve(dish?.reviews ?? []);
+      return resolve(
+        (dish?.reviews ?? []).filter((review) => !isMockReviewHiddenForViewer(review)),
+      );
     },
 
     async getUserReviews(_userId) {
@@ -1652,13 +1702,15 @@ export const hungryService: HungryService = {
       const before = options?.before ? new Date(options.before).getTime() : undefined;
       const entries = dishes
         .flatMap((dish): RecentReviewFeedEntry[] =>
-          dish.reviews.map((review) => ({
-            review,
-            dishId: dish.id,
-            dishName: dish.name,
-            venueId: dish.venueId,
-            venueName: dish.venueName,
-          })),
+          dish.reviews
+            .filter((review) => !isMockReviewHiddenForViewer(review))
+            .map((review) => ({
+              review,
+              dishId: dish.id,
+              dishName: dish.name,
+              venueId: dish.venueId,
+              venueName: dish.venueName,
+            })),
         )
         .filter((entry) =>
           before === undefined ? true : new Date(entry.review.createdAt).getTime() < before,
@@ -1771,7 +1823,8 @@ export const hungryService: HungryService = {
   social: {
     async getBitesFeed(_lat?, _lng?) {
       await hydrateSocial();
-      return resolve([...MOCK_BITES_FEED]);
+      // Mirrors the Supabase feed read: blocked authors never reach the client.
+      return resolve(MOCK_BITES_FEED.filter((bite) => !_blockedUsers.has(bite.authorId)));
     },
 
     async listUserPosts(userId: string) {
@@ -1955,8 +2008,9 @@ export const hungryService: HungryService = {
     },
 
     async followUser(userId: string) {
+      if (userId === _profile.id) throw new Error("You can't follow yourself.");
       _userFollows.add(userId);
-      return resolve(undefined as void);
+      return resolve("approved" as const);
     },
 
     async unfollowUser(userId: string) {
@@ -1964,24 +2018,34 @@ export const hungryService: HungryService = {
       return resolve(undefined as void);
     },
 
-    async listFollowers(_userId: string) {
+    async listFollowers(userId: string, page?: { limit?: number; offset?: number }) {
+      return resolve(pageMockFollowRows(listMockFollowers(userId), page));
+    },
+
+    async listFollowing(userId: string, page?: { limit?: number; offset?: number }) {
+      if (userId !== _profile.id) return resolve([]);
       return resolve(
-        dedupeMockFollowers(
-          _mockFollowersByUser[_userId]?.filter(Boolean) ??
-            _mockFollowersByUser[userProfile.id] ??
-            [],
+        pageMockFollowRows(
+          Array.from(_userFollows).map((id) => ({
+            userId: id,
+            displayName: id,
+            avatarUrl: undefined,
+          })),
+          page,
         ),
       );
     },
 
-    async listFollowing(_userId: string) {
-      return resolve(
-        Array.from(_userFollows).map((id) => ({
-          userId: id,
-          displayName: id,
-          avatarUrl: undefined,
-        })),
-      );
+    async canViewFollowLists(_userId: string) {
+      return resolve(true);
+    },
+
+    async getFollowCounts(userId: string) {
+      const isOwnProfile = userId === _profile.id;
+      return resolve({
+        followersCount: listMockFollowers(userId).length,
+        followingCount: isOwnProfile ? _userFollows.size : 0,
+      });
     },
 
     async isFollowing(userId: string) {
@@ -2129,7 +2193,12 @@ export const hungryService: HungryService = {
     },
 
     async blockUser(request) {
-      _blockedUserKeys.add(request.blockedUserKey);
+      if (!request.blockedUserId.trim()) throw new Error("Blocking requires a valid user id.");
+      if (request.blockedUserId === _profile.id) throw new Error("You cannot block yourself.");
+      _blockedUsers.set(request.blockedUserId, {
+        reason: request.reason,
+        createdAt: new Date().toISOString(),
+      });
       return resolve(undefined);
     },
 
@@ -2154,7 +2223,13 @@ export const hungryService: HungryService = {
     },
 
     async getBlockedUsers() {
-      return resolve([]);
+      return resolve(
+        Array.from(_blockedUsers.entries()).map(([blockedUserId, entry]) => ({
+          blockedUserId,
+          reason: entry.reason,
+          createdAt: entry.createdAt,
+        })),
+      );
     },
   },
 

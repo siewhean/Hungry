@@ -8,7 +8,7 @@
  *  - Host: "Spin" button; Members: "Waiting for host…" label
  *
  * Spin math (matches plan §3):
- *   winnerIndex   = seed % activeEntries.length
+ *   winnerIndex   = getSpinWinnerIndex(seed, activeEntries.length)  // integer seed % n
  *   segmentAngle  = 360 / activeEntries.length
  *   winnerAngle   = winnerIndex * segmentAngle + segmentAngle / 2
  *   totalRotation = 5 * 360 + (360 - winnerAngle)  // 5 full spins + correction
@@ -17,14 +17,14 @@
 import { useEffect, useRef } from "react";
 import { Animated, Easing, Pressable, View, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Play } from "lucide-react-native";
+import { Play, X } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { AppText, Badge, Card } from "@/components/ui";
 import { MemberAvatarRow } from "@/components/wheel/MemberAvatarRow";
 import { WheelSvg } from "@/components/wheel/WheelSvg";
-import { useWheelStore } from "@/store/useWheelStore";
+import { getSpinWinnerIndex, useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
 import type { WheelStackParamList } from "./WheelStack";
 
@@ -40,6 +40,8 @@ export function WheelSpinScreen({ navigation }: Props) {
   const entries = useWheelStore((s) => s.entries);
   const myMemberId = useWheelStore((s) => s.myMemberId);
   const triggerSpin = useWheelStore((s) => s.triggerSpin);
+  const completeSpin = useWheelStore((s) => s.completeSpin);
+  const resetSpin = useWheelStore((s) => s.resetSpin);
 
   const spinAnim = useRef(new Animated.Value(0)).current;
   const isSpinning = useRef(false);
@@ -84,7 +86,7 @@ export function WheelSpinScreen({ navigation }: Props) {
 
   // Watch for spin_triggered event — party.spinSeed is set when it fires.
   useEffect(() => {
-    if (!party?.spinSeed || !party.spinStartedAt) return;
+    if (party?.status !== "spinning" || party.spinSeed == null || !party.spinStartedAt) return;
     if (isSpinning.current) return;
     if (activeEntries.length < 2) return;
 
@@ -92,8 +94,7 @@ export function WheelSpinScreen({ navigation }: Props) {
     const startedAt = party.spinStartedAt;
 
     const segmentAngle = 360 / activeEntries.length;
-    const winnerIndex =
-      ((seed % activeEntries.length) + activeEntries.length) % activeEntries.length;
+    const winnerIndex = getSpinWinnerIndex(seed, activeEntries.length);
     const winnerAngle = winnerIndex * segmentAngle + segmentAngle / 2;
     const totalRotation = 5 * 360 + (360 - winnerAngle);
 
@@ -117,10 +118,11 @@ export function WheelSpinScreen({ navigation }: Props) {
         const winnerEntry = activeEntries[winnerIndex];
         if (!winnerEntry) return;
 
-        // Navigate to result when spin animation completes.
-        // party_resolved / round_resolved event will have already updated store.
+        // Settle the spin locally (solo has no server to broadcast party_resolved),
+        // then route on the resolved state.
+        completeSpin(winnerEntry.id);
         const currentParty = useWheelStore.getState().party;
-        if (currentParty?.winnerEntryId) {
+        if (currentParty?.status === "resolved" && currentParty.winnerEntryId) {
           navigation.replace("WheelResult", {
             partyId: currentParty.id,
             winnerEntryId: currentParty.winnerEntryId,
@@ -146,6 +148,17 @@ export function WheelSpinScreen({ navigation }: Props) {
 
   const spinning = party.status === "spinning";
   const canSpin = isHost && !spinning && activeEntries.length >= 2;
+
+  function handleClose() {
+    spinAnim.stopAnimation();
+    isSpinning.current = false;
+    resetSpin();
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.replace("WheelLobby", { partyId: party!.id });
+    }
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: palette.bg }}>
@@ -198,6 +211,25 @@ export function WheelSpinScreen({ navigation }: Props) {
           paddingBottom: spacing[4],
         }}
       >
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Close wheel"
+          hitSlop={8}
+          onPress={handleClose}
+          style={({ pressed }) => ({
+            alignSelf: "flex-start",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 44,
+            height: 44,
+            borderRadius: radii.pill,
+            backgroundColor: palette.bgSoft,
+            marginBottom: spacing[2],
+            opacity: pressed ? 0.7 : 1,
+          })}
+        >
+          <X size={20} color={palette.text} />
+        </Pressable>
         <MemberAvatarRow members={members} />
       </View>
 
