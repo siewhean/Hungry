@@ -893,6 +893,16 @@ export async function countVenuesInAreaViaRpc(
 
   const normalizedAreaName = areaName?.trim();
   if (normalizedAreaName) {
+    // Indexed equality on lower(trim(planning_area)); the ILIKE read below is the
+    // fallback until the RPC is deployed.
+    const { data: areaCount, error: areaCountError } = await client.rpc(
+      "count_venues_in_planning_area",
+      { p_area_name: normalizedAreaName },
+    );
+    if (!areaCountError && typeof areaCount === "number" && Number.isFinite(areaCount)) {
+      return areaCount;
+    }
+
     const { count, error } = await client
       .from("venues")
       .select("id", { count: "exact", head: true })
