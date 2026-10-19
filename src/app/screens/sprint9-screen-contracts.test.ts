@@ -137,7 +137,7 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
   // From Settings (already onboarded) Continue saves and returns instead of re-completing onboarding.
   assert.match(
     manualLocation,
-    /if \(hasCompletedOnboarding\) \{[\s\S]*?navigation\.goBack\(\);[\s\S]*?return;[\s\S]*?completeOnboarding\(hasSkippedTasteQuiz\)/,
+    /if \(isSettingsMode \|\| hasCompletedOnboarding\) \{[\s\S]*?navigation\.goBack\(\);[\s\S]*?return;[\s\S]*?completeOnboarding\(hasSkippedTasteQuiz\)/,
   );
   assert.match(manualLocation, /accessibilityLabel="Search Singapore location"/);
   assert.match(manualLocation, /accessibilityLabel=\{`Choose \$\{area\.name\}`\}/);

@@ -54,7 +54,7 @@ test("Supabase stall review reads skip photo signing and sign the rest in parall
     /if \(options\?\.dishIds\) \{\s*query = query\.in\("dish_id", options\.dishIds\)/,
   );
   assert.match(service, /includePhotos: !options\?\.dishIds/);
-  assert.match(service, /const signedPhotos = await Promise\.all\(/);
+  assert.match(service, /One signing request for the whole page instead of one per photo\./);
 });
 
 test("stall page has no fake save, timer skeleton, or menu-empty flash while loading", () => {

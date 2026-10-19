@@ -46,7 +46,7 @@ test("Settings location rows respect the OS permission and return from the picke
     submit.indexOf("navigation.goBack()") < submit.indexOf("completeOnboarding("),
     "settings mode must go back before the onboarding completion path",
   );
-  assert.match(submit, /if \(isSettingsMode\)/);
+  assert.match(submit, /if \(isSettingsMode \|\| hasCompletedOnboarding\)/);
 });
 
 test("Email edits go through the auth email-change flow, not the profile column", () => {

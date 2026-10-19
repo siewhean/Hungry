@@ -158,6 +158,6 @@ test("H119: picking a location from Settings returns there instead of re-complet
   const picker = read("src/app/screens/onboarding/ManualLocationPickerScreen.tsx");
   assert.match(
     picker,
-    /if \(hasCompletedOnboarding\) \{[\s\S]*?navigation\.goBack\(\);\s*return;\s*\}[\s\S]*?completeOnboarding\(hasSkippedTasteQuiz\);/,
+    /if \(isSettingsMode \|\| hasCompletedOnboarding\) \{[\s\S]*?navigation\.goBack\(\);\s*return;\s*\}[\s\S]*?completeOnboarding\(hasSkippedTasteQuiz\);/,
   );
 });

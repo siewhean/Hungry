@@ -19,7 +19,7 @@ test("H20: listUserPosts pages one author's posts on the server", async () => {
     read("supabase/migrations/20261019110000_user_posts_author_index.sql"),
     /on public\.posts \(author_id, published_at desc, created_at desc\)/,
   );
-  assert.match(read("src/features/profile/exportMyData.ts"), /listUserPosts\(userId, page\)/);
+  assert.match(read("src/features/profile/exportMyData.ts"), /service\.profile\.exportMyData\(\)/);
 
   const authorId = (await hungryService.social.getBitesFeed())[0]?.authorId;
   assert.ok(authorId);

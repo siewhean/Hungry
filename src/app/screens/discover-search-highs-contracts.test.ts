@@ -151,7 +151,7 @@ test("Area picker returns already-onboarded users without re-completing onboardi
   assert.ok(submit, "handleSubmit should exist");
   assert.match(
     submit,
-    /if \(useSessionStore\.getState\(\)\.hasCompletedOnboarding\) \{\s*navigation\.goBack\(\);\s*return;\s*\}\s*completeOnboarding/,
+    /if \(isSettingsMode \|\| hasCompletedOnboarding\) \{[\s\S]*?navigation\.goBack\(\);\s*return;\s*\}[\s\S]*?completeOnboarding/,
   );
 });
 
