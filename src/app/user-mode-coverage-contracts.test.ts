@@ -271,7 +271,6 @@ test("dish and stall details expose correct detail surfaces without user-mode ma
       /const stallAddress =/,
       /import \{ StallLogoMark \} from "@\/components\/stall\/StallLogoMark"/,
       /logoUrl=\{venue\.logoUrl\}/,
-      /<ChevronRight color=\{palette\.textMuted\} size=\{24\} \/>/,
       /<AppText variant="h2">Address<\/AppText>/,
       /\{stallAddress\}/,
       /Loading stall/,

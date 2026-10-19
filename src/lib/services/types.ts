@@ -544,6 +544,8 @@ export interface ListRecentReviewsOptions {
   limit?: number;
   /** Cursor: only return reviews created strictly before this ISO timestamp. */
   before?: string;
+  /** Only reviews of these dishes (for example one stall's menu). An empty list returns none. */
+  dishIds?: string[];
 }
 
 export interface SubmitMenuPhotoInput {

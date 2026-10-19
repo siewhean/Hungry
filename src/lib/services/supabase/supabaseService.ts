@@ -930,6 +930,7 @@ async function uploadReviewPhotos(
 async function mapSupabaseReviewRows(
   client: SupabaseClient,
   rows: Row[],
+  options: { includePhotos?: boolean } = {},
 ): Promise<DishDetail["reviews"]> {
   const reviewIds = rows.map((row) => asString(row.id)).filter((id): id is string => Boolean(id));
   const userIds = rows
@@ -939,7 +940,7 @@ async function mapSupabaseReviewRows(
   const namesByUserId = new Map<string, string>();
   const avatarsByUserId = new Map<string, string>();
 
-  if (reviewIds.length > 0) {
+  if (options.includePhotos !== false && reviewIds.length > 0) {
     const { data: photoRows } = await client
       .from("review_photos")
       .select("review_id,url,storage_bucket,storage_path,sort_order")
@@ -3429,15 +3430,19 @@ export const supabaseService: HungryService = {
     async listRecentReviews(options) {
       const client = requireSupabaseClient();
       const limit = Math.min(Math.max(Math.floor(options?.limit ?? 50), 1), 100);
+      if (options?.dishIds && options.dishIds.length === 0) return [];
       let query = client
         .from("reviews")
         .select(
-          "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend",
+          "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend,merchant_reply_text,merchant_replied_at",
         )
         .order("created_at", { ascending: false })
         .limit(limit);
       if (options?.before) {
         query = query.lt("created_at", options.before);
+      }
+      if (options?.dishIds) {
+        query = query.in("dish_id", options.dishIds);
       }
       const { data, error } = await query;
       if (error) throw error;
@@ -3483,7 +3488,10 @@ export const supabaseService: HungryService = {
         }
       }
 
-      const reviews = await mapSupabaseReviewRows(client, rows);
+      // A stall's review list (dishIds) never renders photos, so skip signing them.
+      const reviews = await mapSupabaseReviewRows(client, rows, {
+        includePhotos: !options?.dishIds,
+      });
       return reviews.flatMap((review): RecentReviewFeedEntry[] => {
         const dish = review.dishId ? dishById.get(review.dishId) : undefined;
         // Reviews of dishes the catalog cannot display are skipped.

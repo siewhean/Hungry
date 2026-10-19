@@ -302,20 +302,27 @@ test("Supabase review reads hydrate review_photos and public profile names and a
   );
   assert.match(service, /photos: photosByReviewId\.get\(id\) \?\? \[\]/);
   assert.match(domain, /authorAvatarUrl\?: string/);
-  assert.match(
-    detailTransforms,
-    /avatarUrl: review\.authorAvatarUrl \?\? AVATAR_POOL\[avatarIndex\]/,
-  );
+  // Reviewers without a photo get the Avatar fallback, never a stock face.
+  assert.match(detailTransforms, /avatarUrl: review\.authorAvatarUrl,/);
+  assert.doesNotMatch(detailTransforms, /AVATAR_POOL|unsplash|Verified Foodie/);
   assert.doesNotMatch(
     service,
     /getReviewsForDish\(dishId\) \{\s*return supabaseRepository\.getDishById\(dishId\)\?\.reviews/,
   );
-  assert.match(stallDetail, /serviceProviderMode === "mock" \? dish\.reviews : \[\]/);
+  // The stall reads its newest reviews in one query scoped to its menu, not one per dish.
+  assert.match(stallDetail, /reviews\.listRecentReviews\(\{\s*dishIds: dishIdsKey\.split\("\|"\)/);
+  assert.doesNotMatch(stallDetail, /getReviewsForDish/);
+  assert.match(stallDetail, /<Avatar uri=\{review\.avatarUrl\}/);
   assert.match(reviewFeed, /getHungryService\(\)\.reviews\.listRecentReviews\(\{/);
   assert.doesNotMatch(reviewFeed, /reviews\.getReviewsForDish\(dish\.id\)/);
   assert.match(
     service,
     /async listRecentReviews\(options\)[\s\S]*\.order\("created_at", \{ ascending: false \}\)[\s\S]*\.limit\(limit\)/,
+  );
+  // Owner replies must come back with the rows or detail screens drop them in Supabase mode.
+  assert.match(
+    service,
+    /async listRecentReviews\(options\)[\s\S]{0,400}\.select\(\s*"[^"]*merchant_reply_text,merchant_replied_at"/,
   );
   assert.match(
     reviewFeed,

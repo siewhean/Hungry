@@ -1807,7 +1807,9 @@ export const hungryService: HungryService = {
     async listRecentReviews(options) {
       const limit = Math.min(Math.max(Math.floor(options?.limit ?? 50), 1), 100);
       const before = options?.before ? new Date(options.before).getTime() : undefined;
+      const dishIdFilter = options?.dishIds ? new Set(options.dishIds) : undefined;
       const entries = dishes
+        .filter((dish) => !dishIdFilter || dishIdFilter.has(dish.id))
         .flatMap((dish): RecentReviewFeedEntry[] =>
           dish.reviews
             .filter((review) => !isMockReviewHiddenForViewer(review))

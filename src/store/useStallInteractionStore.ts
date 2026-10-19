@@ -159,8 +159,9 @@ export const useStallInteractionStore = create<StallInteractionState>()((set, ge
         (i) => i.isTried && i.triedAt && isToday(i.triedAt),
       ).length;
       if (withinCredCutoff("stall_marked_tried", todayTriedCount)) {
+        // Report what was actually credited: the server can award 0 (daily cap, repeat).
         await useFoodCredStore.getState().awardPoints("stall_marked_tried", stallId);
-        pointsAwarded = 5;
+        pointsAwarded = useFoodCredStore.getState().lastEarnedPoints;
       }
 
       trackStallMarkedTried({ stallId, sourceScreen: "StallDetail" });
