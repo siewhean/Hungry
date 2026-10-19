@@ -3228,7 +3228,14 @@ export const supabaseService: HungryService = {
     },
 
     async getDish(id) {
-      return (await getDishByIdViaRpc(id)) ?? supabaseRepository.getDishById(id);
+      try {
+        return (await getDishByIdViaRpc(id)) ?? supabaseRepository.getDishById(id);
+      } catch (error) {
+        // A failed read still shows the cached dish; with no cache the screen shows a retry.
+        const cached = supabaseRepository.getDishById(id);
+        if (cached) return cached;
+        throw error;
+      }
     },
 
     async listActivePromotionsForTarget(input) {
