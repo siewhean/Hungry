@@ -1,4 +1,4 @@
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 import { Pressable, View } from "react-native";
 
 import { AppleLogo, GoogleLogo } from "@/components/icons/brand/AuthProviderLogos";

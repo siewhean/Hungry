@@ -27,18 +27,15 @@ export interface SocialReply extends SocialComment {
   parentCommentId: string;
 }
 
-type HapticsModule = typeof import("expo-haptics");
+type HapticsModule = typeof import("@/lib/haptics");
 
 let hapticsModule: HapticsModule | null | undefined;
 
 async function triggerLightImpact() {
   try {
-    const { useUIStore } = require("./useUIStore") as typeof import("./useUIStore");
-    if (!useUIStore.getState().hapticFeedbackEnabled) {
-      return;
-    }
+    // The shared wrapper checks Settings > Haptic feedback.
     if (hapticsModule === undefined) {
-      hapticsModule = await import("expo-haptics");
+      hapticsModule = await import("@/lib/haptics");
     }
     await hapticsModule?.impactAsync(hapticsModule.ImpactFeedbackStyle.Light);
   } catch {

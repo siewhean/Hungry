@@ -18,7 +18,7 @@ import { useEffect, useRef } from "react";
 import { Animated, Easing, Pressable, View, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Play, X } from "lucide-react-native";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { AppText, Badge, Card } from "@/components/ui";

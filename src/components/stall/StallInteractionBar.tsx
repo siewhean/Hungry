@@ -8,7 +8,7 @@
 import { View, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { useState } from "react";
 import { Bookmark, CheckCircle, ListPlus } from "lucide-react-native";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 
 import { useHungryTheme } from "@/theme";
 import { AppText } from "@/components/ui/AppText";

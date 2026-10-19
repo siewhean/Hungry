@@ -36,6 +36,22 @@ module.exports = defineConfig([
       "import/no-duplicates": "off",
       "@typescript-eslint/no-empty-object-type": "off",
       "@typescript-eslint/no-useless-constructor": "off",
+      // Haptics must go through src/lib/haptics.ts so the Settings switch applies everywhere.
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "expo-haptics",
+              message: 'Import haptics from "@/lib/haptics" so Settings > Haptic feedback is respected.',
+            },
+          ],
+        },
+      ],
     },
+  },
+  {
+    files: ["src/lib/haptics.ts"],
+    rules: { "no-restricted-imports": "off" },
   }
 ]);

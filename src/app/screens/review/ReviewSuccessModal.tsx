@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Modal, Pressable, View } from "react-native";
 import { CheckCircle2, Sparkles, X } from "lucide-react-native";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 
 import { AppText, Badge, Button, Card } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";

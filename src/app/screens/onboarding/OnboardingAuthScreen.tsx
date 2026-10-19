@@ -13,7 +13,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Controller, useForm } from "react-hook-form";
 import { Eye, EyeOff, Mail, Lock, User } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 
 import { AppText, Button, Input } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
