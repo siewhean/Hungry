@@ -49,11 +49,12 @@ test("onboarding typed routes are registered and flow through cuisine, taste, an
   assert.match(quiz, /navigation\.navigate\("TasteProfileResult"\)/);
   assert.match(quiz, /setSkippedTasteQuiz\(true\);\s*navigation\.navigate\("LocationPermission"\)/);
   assert.match(result, /navigation\.navigate\("LocationPermission"\)/);
-  // Mandatory sign-in: account creation is the final step (after Location), so
-  // the result screen never opens it early and OnboardingAuth completes onboarding.
-  const onboardingAuth = read("src/app/screens/onboarding/OnboardingAuthScreen.tsx");
-  assert.match(onboardingAuth, /completeOnboarding\(/);
-  assert.doesNotMatch(result, /navigation\.navigate\("OnboardingAuth"\)/);
+  // Mandatory sign-in: account creation follows the final step (Location), so
+  // the result screen never opens it early; the shared location finish step
+  // completes onboarding and resets to Create account (AuthStack SignUp).
+  const finish = read("src/app/screens/onboarding/finishLocationStep.ts");
+  assert.match(finish, /completeOnboarding\(/);
+  assert.doesNotMatch(result, /OnboardingAuth|"SignUp"/);
   assert.doesNotMatch(result, /completeOnboarding/);
 });
 

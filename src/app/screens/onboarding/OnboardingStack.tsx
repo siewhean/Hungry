@@ -4,7 +4,6 @@ import type { OnboardingStackParamList } from "@/app/navigation/navigationTypes"
 import { CuisineSelectionScreen } from "./CuisineSelectionScreen";
 import { LocationPermissionScreen } from "./LocationPermissionScreen";
 import { ManualLocationPickerScreen } from "./ManualLocationPickerScreen";
-import { MandatoryOnboardingAuthScreen } from "./MandatoryOnboardingAuthScreen";
 import { OnboardingIntro1Screen } from "./OnboardingIntro1Screen";
 import { TasteQuizScreen } from "./TasteQuizScreen";
 import { TasteProfileResultScreen } from "./TasteProfileResultScreen";
@@ -24,7 +23,6 @@ export function OnboardingStack() {
       <Stack.Screen name="TasteProfileResult" component={TasteProfileResultScreen} />
       <Stack.Screen name="LocationPermission" component={LocationPermissionScreen} />
       <Stack.Screen name="ManualLocationPicker" component={ManualLocationPickerScreen} />
-      <Stack.Screen name="OnboardingAuth" component={MandatoryOnboardingAuthScreen} />
     </Stack.Navigator>
   );
 }

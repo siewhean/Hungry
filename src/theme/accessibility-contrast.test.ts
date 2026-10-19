@@ -144,3 +144,20 @@ test("bottom tab active label and create icon meet contrast targets", () => {
   assert.ok(contrast(colors.dark.textOnOrange as HexColor, colors.dark.orange as HexColor) >= 4.5);
   assert.ok(contrast(colors.dark.white as HexColor, colors.dark.orange as HexColor) < 3);
 });
+
+test("Input focus border is neutral and meets 3:1 non-text contrast in light and dark", () => {
+  // Mirrors src/components/ui/Input.tsx: focus border = palette.textSecondary.
+  for (const mode of ["light", "dark"] as const) {
+    const palette = colors[mode];
+    const focusBorder = palette.textSecondary as HexColor;
+    assert.notEqual(focusBorder, palette.orange, `${mode}: focus border must not be brand orange`);
+    assert.notEqual(focusBorder, palette.orangeControl, `${mode}: focus border must not be orange`);
+    for (const adjacent of [palette.surface, palette.bg] as HexColor[]) {
+      const ratio = contrast(focusBorder, adjacent);
+      assert.ok(
+        ratio >= 3,
+        `${mode}: focus border ${focusBorder} on ${adjacent} is ${ratio.toFixed(2)}:1`,
+      );
+    }
+  }
+});

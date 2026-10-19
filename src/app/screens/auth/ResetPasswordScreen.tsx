@@ -24,8 +24,9 @@ const EXPIRED_LINK_MESSAGE =
   "This password reset link has expired. Request a new link to continue.";
 
 export function ResetPasswordScreen({ navigation, route }: Props) {
-  const { colorScheme, componentRadii, palette, spacing } = useHungryTheme();
+  const { colorScheme, palette, spacing } = useHungryTheme();
   const [showPassword, setShowPassword] = useState(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const showToast = useUIStore((state) => state.showToast);
   const isSupabaseMode = getConfiguredDataSource() === "supabase";
@@ -137,6 +138,8 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
                 placeholder="••••••••"
                 value={value}
                 onChangeText={onChange}
+                onFocus={() => setIsPasswordFocused(true)}
+                onBlur={() => setIsPasswordFocused(false)}
                 error={!!errors.password}
                 errorText={errors.password?.message}
                 rightIcon={
@@ -203,15 +206,7 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
             )}
           />
 
-          <View
-            style={{
-              backgroundColor: palette.surfaceRaised,
-              borderRadius: componentRadii.card,
-              padding: spacing[4],
-            }}
-          >
-            <PasswordRequirements password={passwordValue ?? ""} />
-          </View>
+          <PasswordRequirements password={passwordValue ?? ""} revealed={isPasswordFocused} />
 
           <Button
             label="Update Password"

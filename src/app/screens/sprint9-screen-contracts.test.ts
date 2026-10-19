@@ -25,23 +25,25 @@ test("Sprint 9 screen contract: Login screen uses service auth + error boundary"
   assert.match(source, /service\.auth\.signInWithApple\(/);
   assert.match(source, /FEATURE_FLAGS\.oauthProvidersEnabled/);
   assert.match(source, /AUTH_COPY\.login/);
+  // Social buttons render only when the OAuth flag is on (no dead disabled
+  // buttons in production, where the flag is off).
   assert.match(
     source,
-    /<AuthProviderButton[\s\S]*disabled=\{!oauthProvidersEnabled\}[\s\S]*intent="signIn"[\s\S]*provider="google"/,
+    /\{oauthProvidersEnabled \?[\s\S]*<AuthProviderButton[\s\S]*intent="signIn"[\s\S]*provider="google"/,
   );
   assert.match(
     source,
-    /<AuthProviderButton[\s\S]*disabled=\{!oauthProvidersEnabled\}[\s\S]*intent="signIn"[\s\S]*provider="apple"/,
+    /\{oauthProvidersEnabled \?[\s\S]*<AuthProviderButton[\s\S]*intent="signIn"[\s\S]*provider="apple"/,
   );
   assert.match(signUpSource, /AUTH_COPY\.signUp/);
   assert.match(signUpSource, /FEATURE_FLAGS\.oauthProvidersEnabled/);
   assert.match(
     signUpSource,
-    /<AuthProviderButton[\s\S]*disabled=\{!oauthProvidersEnabled\}[\s\S]*intent="continue"[\s\S]*provider="google"/,
+    /oauthProvidersEnabled \?[\s\S]*<AuthProviderButton[\s\S]*intent="continue"[\s\S]*provider="google"/,
   );
   assert.match(
     signUpSource,
-    /<AuthProviderButton[\s\S]*disabled=\{!oauthProvidersEnabled\}[\s\S]*intent="continue"[\s\S]*provider="apple"/,
+    /oauthProvidersEnabled \?[\s\S]*<AuthProviderButton[\s\S]*intent="continue"[\s\S]*provider="apple"/,
   );
   assert.match(forgotPasswordSource, /AUTH_COPY\.forgotPassword/);
   assert.match(source, /<FeedErrorBoundary/);
@@ -76,7 +78,10 @@ test("Sprint 9 screen contract: Login screen uses service auth + error boundary"
   );
   assert.match(source, /accessibilityHint="Opens password reset"/);
   assert.match(signUpSource, /accessibilityLabel=\{AUTH_COPY\.signUp\.footerAction\}/);
-  assert.match(signUpSource, /accessibilityHint="Returns to the sign in screen"/);
+  assert.match(
+    signUpSource,
+    /accessibilityHint="Opens the sign in screen for an existing account"/,
+  );
   assert.match(
     signUpSource,
     /accessibilityLabel=\{showPassword \? "Hide password" : "Show password"\}/,

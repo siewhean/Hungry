@@ -2,6 +2,7 @@ import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { WEB_BASE_URL } from "@/constants/links";
 import { parseShareSource, rememberShareAttribution } from "@/features/share/shareAttribution";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { getPreAuthRootRoute, resolveLaunchRoute } from "./launchRoute";
 
 const SAFE_DEEP_LINK_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const SAFE_JOIN_CODE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
@@ -237,9 +238,15 @@ function isAuthRouteState(state: LinkingState | undefined): boolean {
 }
 
 function signedOutState(hasCompletedOnboarding: boolean | undefined): LinkingState {
-  return hasCompletedOnboarding
-    ? createState("AuthStack", { screen: "Login" })
-    : createState("OnboardingStack", { screen: "OnboardingWelcome" });
+  const launch = resolveLaunchRoute({
+    isAuthReady: true,
+    isAuthenticated: false,
+    hasCompletedOnboarding: Boolean(hasCompletedOnboarding),
+  });
+  const route = getPreAuthRootRoute(
+    launch.kind === "onboarding" ? launch : { kind: "auth", screen: "Login" },
+  );
+  return createState(route.name, route.params);
 }
 
 export function createRootLinking(

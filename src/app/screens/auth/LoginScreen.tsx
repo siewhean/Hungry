@@ -24,7 +24,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
 type FormValues = { email: string; password: string };
 
 export function LoginScreen({ navigation }: Props) {
-  const { colorScheme, palette, spacing } = useHungryTheme();
+  const { componentSizes, palette, spacing } = useHungryTheme();
   const oauthProvidersEnabled = FEATURE_FLAGS.oauthProvidersEnabled;
   const [showPassword, setShowPassword] = useState(false);
   const completeAuth = useSessionStore((state) => state.completeAuth);
@@ -44,6 +44,7 @@ export function LoginScreen({ navigation }: Props) {
   const {
     control,
     handleSubmit,
+    setFocus,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ defaultValues: { email: "", password: "" } });
 
@@ -137,46 +138,50 @@ export function LoginScreen({ navigation }: Props) {
       <AuthScreenShell
         title={AUTH_COPY.login.title}
         compact
-        contentOffsetTop={spacing[16]}
-        wordmarkColor={colorScheme === "dark" ? palette.white : palette.navy}
+        layout="balanced"
         footer={
-          <View
+          <Pressable
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={AUTH_COPY.login.footerAction}
+            accessibilityHint="Opens the account creation screen"
+            onPress={() => navigation.navigate("SignUp")}
             style={{
               alignItems: "center",
               flexDirection: "row",
               justifyContent: "center",
               marginTop: spacing[2],
+              minHeight: componentSizes.touchTarget,
             }}
           >
             <AppText tone="secondary">{AUTH_COPY.login.footerPrompt}</AppText>
-            <Pressable
-              accessible
-              accessibilityRole="button"
-              accessibilityLabel={AUTH_COPY.login.footerAction}
-              accessibilityHint="Opens the account creation screen"
-              onPress={() => navigation.navigate("SignUp")}
-            >
-              <AppText variant="bodyBold" tone="accent">
-                {AUTH_COPY.login.footerAction}
-              </AppText>
-            </Pressable>
-          </View>
+            <AppText variant="bodyBold" tone="accent">
+              {AUTH_COPY.login.footerAction}
+            </AppText>
+          </Pressable>
         }
       >
         <View style={{ gap: spacing[4] }}>
           {authNotice ? <InlineBanner message={authNotice.message} tone={authNotice.tone} /> : null}
-          <View style={{ gap: spacing[2] }}>
+          <View style={{ gap: spacing[4] }}>
             <Controller
               control={control}
               name="email"
               rules={{ validate: validateEmail }}
-              render={({ field: { onChange, value } }) => (
+              render={({ field: { onChange, onBlur, value } }) => (
                 <Input
+                  accessibilityLabel={AUTH_COPY.login.emailPlaceholder}
                   autoCapitalize="none"
+                  autoComplete="email"
+                  textContentType="emailAddress"
                   keyboardType="email-address"
+                  returnKeyType="next"
+                  submitBehavior="submit"
+                  onSubmitEditing={() => setFocus("password")}
                   placeholder={AUTH_COPY.login.emailPlaceholder}
                   value={value}
                   onChangeText={onChange}
+                  onBlur={onBlur}
                   leftIcon={<Mail color={palette.textMuted} size={18} />}
                   error={!!errors.email}
                   errorText={errors.email?.message}
@@ -191,13 +196,21 @@ export function LoginScreen({ navigation }: Props) {
                 validate: (value) =>
                   validateRequired(value, AUTH_COPY.login.passwordValidationLabel),
               }}
-              render={({ field: { onChange, value } }) => (
+              render={({ field: { onChange, onBlur, value, ref } }) => (
                 <View style={{ gap: spacing[1] }}>
                   <Input
+                    ref={ref}
+                    accessibilityLabel={AUTH_COPY.login.passwordPlaceholder}
                     placeholder={AUTH_COPY.login.passwordPlaceholder}
                     secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                    autoComplete="current-password"
+                    textContentType="password"
+                    returnKeyType="go"
+                    onSubmitEditing={() => void handleLogin()}
                     value={value}
                     onChangeText={onChange}
+                    onBlur={onBlur}
                     leftIcon={<Lock color={palette.textMuted} size={18} />}
                     rightIcon={
                       <Pressable
@@ -210,7 +223,13 @@ export function LoginScreen({ navigation }: Props) {
                             : "Shows the password characters"
                         }
                         onPress={() => setShowPassword((current) => !current)}
-                        hitSlop={8}
+                        hitSlop={10}
+                        style={{
+                          alignItems: "center",
+                          justifyContent: "center",
+                          minHeight: componentSizes.touchTarget,
+                          minWidth: componentSizes.touchTarget,
+                        }}
                       >
                         {showPassword ? (
                           <EyeOff color={palette.textMuted} size={18} />
@@ -229,6 +248,7 @@ export function LoginScreen({ navigation }: Props) {
                       accessibilityLabel={AUTH_COPY.login.forgotPasswordLink}
                       accessibilityHint="Opens password reset"
                       onPress={() => navigation.navigate("ForgotPassword")}
+                      style={{ justifyContent: "center", minHeight: componentSizes.touchTarget }}
                     >
                       <AppText variant="micro" tone="accent">
                         {AUTH_COPY.login.forgotPasswordLink}
@@ -247,35 +267,37 @@ export function LoginScreen({ navigation }: Props) {
             rightIcon={<ArrowRight size={18} color={palette.textOnOrange} />}
           />
 
-          <View
-            style={{
-              alignItems: "center",
-              flexDirection: "row",
-              gap: spacing[3],
-              marginVertical: spacing[2],
-            }}
-          >
-            <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
-            <AppText variant="micro" tone="muted">
-              {AUTH_COPY.login.divider}
-            </AppText>
-            <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
-          </View>
+          {oauthProvidersEnabled ? (
+            <>
+              <View
+                style={{
+                  alignItems: "center",
+                  flexDirection: "row",
+                  gap: spacing[3],
+                  marginVertical: spacing[2],
+                }}
+              >
+                <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
+                <AppText variant="micro" tone="muted">
+                  {AUTH_COPY.login.divider}
+                </AppText>
+                <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
+              </View>
 
-          <View style={{ gap: spacing[3] }}>
-            <AuthProviderButton
-              disabled={!oauthProvidersEnabled}
-              intent="signIn"
-              provider="google"
-              onPress={() => void handleProviderLogin("google")}
-            />
-            <AuthProviderButton
-              disabled={!oauthProvidersEnabled}
-              intent="signIn"
-              provider="apple"
-              onPress={() => void handleProviderLogin("apple")}
-            />
-          </View>
+              <View style={{ gap: spacing[3] }}>
+                <AuthProviderButton
+                  intent="signIn"
+                  provider="google"
+                  onPress={() => void handleProviderLogin("google")}
+                />
+                <AuthProviderButton
+                  intent="signIn"
+                  provider="apple"
+                  onPress={() => void handleProviderLogin("apple")}
+                />
+              </View>
+            </>
+          ) : null}
         </View>
       </AuthScreenShell>
     </FeedErrorBoundary>

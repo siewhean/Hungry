@@ -43,10 +43,8 @@ test("never scrolls the focused field above the viewport top", () => {
 });
 
 test("auth forms wire the reveal hook onto their ScrollView", () => {
-  for (const file of [
-    "src/app/screens/auth/AuthScreenShell.tsx",
-    "src/app/screens/onboarding/OnboardingAuthScreen.tsx",
-  ]) {
+  // OnboardingAuthScreen was consolidated into SignUp, which uses AuthScreenShell.
+  for (const file of ["src/app/screens/auth/AuthScreenShell.tsx"]) {
     const source = readFileSync(file, "utf8");
     assert.match(source, /behavior=\{Platform\.OS === "ios" \? "padding" : undefined\}/, file);
     assert.match(source, /ref=\{keyboardReveal\.scrollRef\}/, file);

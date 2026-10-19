@@ -9,8 +9,8 @@ async function authenticateFromFreshInstall(page: Page) {
   await expect(page.getByRole("button", { name: "Get started" })).toBeVisible({ timeout: 60_000 });
   await page.getByRole("button", { name: "Sign in to existing account" }).click();
   await expect(page.getByText("Welcome back", { exact: true })).toBeVisible();
-  await page.getByPlaceholder("Email address").fill(stagingEmail ?? "");
-  await page.getByPlaceholder("Password").fill(stagingPassword ?? "");
+  await page.getByRole("textbox", { name: "Email Address", exact: true }).fill(stagingEmail ?? "");
+  await page.getByRole("textbox", { name: "Password", exact: true }).fill(stagingPassword ?? "");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByText("Discover", { exact: true })).toBeVisible({ timeout: 60_000 });
 }
@@ -34,11 +34,13 @@ test.describe("authenticated Excel fallback on a deployed staging build", () => 
     await expect(page.getByText("Nearby dishes", { exact: true })).toBeVisible();
     await expect(page.getByText("Stalls near you", { exact: true })).toBeVisible();
 
-    const imageSources = await page.locator("img").evaluateAll((images) =>
-      images
-        .map((image) => image.getAttribute("src") ?? "")
-        .filter((source) => source.length > 0),
-    );
+    const imageSources = await page
+      .locator("img")
+      .evaluateAll((images) =>
+        images
+          .map((image) => image.getAttribute("src") ?? "")
+          .filter((source) => source.length > 0),
+      );
     expect(imageSources.some((source) => /unsplash|picsum/i.test(source))).toBe(false);
   });
 

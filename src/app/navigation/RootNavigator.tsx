@@ -16,6 +16,7 @@ import { SafeAreaInsetsContext, useSafeAreaInsets } from "react-native-safe-area
 
 import { SplashScreen } from "@/app/screens/SplashScreen";
 import { AuthStack } from "@/app/screens/auth/AuthStack";
+import { getPreAuthRootRoute, resolveLaunchRoute, resolveOnboardingExitRoute } from "./launchRoute";
 import { OnboardingStack } from "@/app/screens/onboarding/OnboardingStack";
 import { AppText, FloatingToast } from "@/components/ui";
 import { isNetworkOffline } from "@/lib/network/connectivity";
@@ -641,28 +642,24 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       return;
     }
 
-    if (currentTopRoute === "AuthStack") {
-      if (isAuthenticated && !hasCompletedOnboarding) {
-        navigationRef.resetRoot({
-          index: 0,
-          routes: [{ name: "OnboardingStack", params: { screen: "OnboardingWelcome" } }],
-        });
-        return;
-      }
-
-      if (isAuthenticated && hasCompletedOnboarding) {
+    // A session established on an auth screen leaves it (to onboarding or the
+    // app); signed-out users stay on whichever auth screen they chose.
+    if (currentTopRoute === "AuthStack" && isAuthenticated) {
+      const launch = resolveLaunchRoute({ isAuthReady, isAuthenticated, hasCompletedOnboarding });
+      if (launch.kind === "app") {
         navigateHome();
+      } else if (launch.kind === "onboarding") {
+        navigationRef.resetRoot({ index: 0, routes: [getPreAuthRootRoute(launch)] });
       }
     }
 
+    // Onboarding just completed: signed-out users create an account (not Login).
     if (currentTopRoute === "OnboardingStack" && hasCompletedOnboarding) {
-      if (isAuthenticated) {
+      const exit = resolveOnboardingExitRoute({ isAuthenticated });
+      if (exit.kind === "app") {
         navigateHome();
       } else {
-        navigationRef.resetRoot({
-          index: 0,
-          routes: [{ name: "AuthStack", params: { screen: "Login" } }],
-        });
+        navigationRef.resetRoot({ index: 0, routes: [getPreAuthRootRoute(exit)] });
       }
     }
   }, [

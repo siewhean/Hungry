@@ -304,10 +304,12 @@ test("visible sign-out actions reset to login instead of onboarding", () => {
   const profileHomeScreen = read("src/app/screens/profile/ProfileHomeScreen.tsx");
   const merchantProfileScreen = read("src/app/screens/merchant/MerchantProfileScreen.tsx");
 
-  // Mandatory sign-in: signed-out cold starts open Login, never MainTabs.
+  // Mandatory sign-in: signed-out cold starts open Login, never MainTabs. The
+  // rule now lives in resolveLaunchRoute (unit tested in launchRoute.test.ts).
+  assert.match(splashScreen, /resolveLaunchRoute\(/);
   assert.match(
-    splashScreen,
-    /if \(!isAuthenticated\) \{[\s\S]*name: "AuthStack"[\s\S]*screen: "Login"/,
+    read("src/app/navigation/launchRoute.ts"),
+    /if \(!input\.isAuthenticated\) return \{ kind: "auth", screen: "Login" \}/,
   );
 
   [settingsScreen, profileHomeScreen, merchantProfileScreen].forEach((source) => {

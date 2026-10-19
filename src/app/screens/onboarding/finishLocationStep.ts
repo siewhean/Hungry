@@ -1,17 +1,19 @@
 import { useCallback } from "react";
 
+import { getPreAuthRootRoute, resolveOnboardingExitRoute } from "@/app/navigation/launchRoute";
 import { useSessionStore } from "@/store/useSessionStore";
 
 type ResettableNavigation = { reset: (state: object) => void };
 
 export type FinishLocationStepNavigation = {
-  navigate: (name: "OnboardingAuth") => void;
   getParent: () => unknown;
 };
 
 /**
- * Shared exit for the location step (device permission or manual area pick).
- * Signed-in users land in the main tabs; guests continue to onboarding auth.
+ * Shared exit for the location step (device permission or manual area pick),
+ * the last onboarding step. It completes onboarding, then signed-in users land
+ * in the main tabs and signed-out users go to Create account (AuthStack SignUp),
+ * the one canonical account-creation screen. Rules: resolveOnboardingExitRoute.
  */
 export function useFinishLocationStep(navigation: FinishLocationStepNavigation) {
   const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
@@ -20,17 +22,17 @@ export function useFinishLocationStep(navigation: FinishLocationStepNavigation) 
 
   return useCallback(() => {
     completeOnboarding(hasSkippedTasteQuiz);
-    if (isAuthenticated) {
-      const rootNav = navigation.getParent() as Partial<ResettableNavigation> | undefined;
-      if (rootNav && typeof rootNav.reset === "function") {
-        rootNav.reset({
-          index: 0,
-          routes: [{ name: "MainTabs", params: { screen: "Home" } }],
-        });
-      }
-      return;
-    }
+    const rootNav = navigation.getParent() as Partial<ResettableNavigation> | undefined;
+    if (!rootNav || typeof rootNav.reset !== "function") return;
 
-    navigation.navigate("OnboardingAuth");
+    const exit = resolveOnboardingExitRoute({ isAuthenticated });
+    rootNav.reset({
+      index: 0,
+      routes: [
+        exit.kind === "app"
+          ? { name: "MainTabs", params: { screen: "Home" } }
+          : getPreAuthRootRoute(exit),
+      ],
+    });
   }, [completeOnboarding, hasSkippedTasteQuiz, isAuthenticated, navigation]);
 }

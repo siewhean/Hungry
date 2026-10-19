@@ -29,7 +29,6 @@ export type OnboardingStackParamList = {
   TasteProfileResult: undefined;
   LocationPermission: undefined;
   ManualLocationPicker: undefined;
-  OnboardingAuth: undefined;
 };
 export type ProfileStackParamList = {
   ProfileHome: undefined;

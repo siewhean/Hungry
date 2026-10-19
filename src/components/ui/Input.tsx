@@ -1,5 +1,12 @@
 import { forwardRef, useEffect, useState, type ReactNode } from "react";
-import { AccessibilityInfo, StyleSheet, TextInput, View, type TextInputProps } from "react-native";
+import {
+  AccessibilityInfo,
+  Platform,
+  StyleSheet,
+  TextInput,
+  View,
+  type TextInputProps,
+} from "react-native";
 
 import { useHungryTheme } from "@/theme";
 import { AppText } from "./AppText";
@@ -14,6 +21,8 @@ interface InputProps extends TextInputProps {
   rightIcon?: ReactNode;
   enableMovingPlaceholder?: boolean;
   movingPlaceholderPhrases?: string[];
+  /** Overrides the neutral focus border; only pass when a surface needs a bespoke focus colour. */
+  focusBorderColor?: string;
 }
 
 /**
@@ -21,6 +30,9 @@ interface InputProps extends TextInputProps {
  * - Prefer a visible `label`; otherwise the static placeholder becomes the accessible name.
  * - Moving search placeholders are disabled while a screen reader is enabled.
  * - Error text uses a polite live region so validation changes are announced.
+ * - Focus is a neutral 2px border (`textSecondary`, >=3:1 against the field in light and
+ *   dark, WCAG 1.4.11 / 2.4.7) rather than brand orange; error red always wins. On web the
+ *   browser's own outline on the inner <input> is suppressed because the wrapper shows focus.
  */
 export const Input = forwardRef<TextInput, InputProps>(
   (
@@ -33,7 +45,10 @@ export const Input = forwardRef<TextInput, InputProps>(
       rightIcon,
       enableMovingPlaceholder,
       movingPlaceholderPhrases,
+      focusBorderColor,
       placeholder,
+      onFocus,
+      onBlur,
       style,
       secureTextEntry,
       autoCorrect,
@@ -60,6 +75,13 @@ export const Input = forwardRef<TextInput, InputProps>(
     const resolvedSpellCheck = spellCheck ?? !isSecureField;
     const resolvedAutoComplete = autoComplete ?? (isSecureField ? "off" : undefined);
     const [isScreenReaderEnabled, setIsScreenReaderEnabled] = useState(false);
+    const [isFocused, setIsFocused] = useState(false);
+    const borderColor = error
+      ? palette.error
+      : isFocused
+        ? (focusBorderColor ?? palette.textSecondary)
+        : palette.border;
+    const borderWidth = isFocused ? FOCUSED_BORDER_WIDTH : RESTING_BORDER_WIDTH;
     useEffect(() => {
       let mounted = true;
       void AccessibilityInfo.isScreenReaderEnabled().then((enabled) => {
@@ -96,12 +118,14 @@ export const Input = forwardRef<TextInput, InputProps>(
             styles.field,
             {
               backgroundColor: palette.surface,
-              borderColor: error ? palette.error : palette.border,
+              borderColor,
+              borderWidth,
               borderRadius: componentRadii.input,
               borderCurve: componentCornerCurve.borderCurve,
               gap: spacing[2],
               minHeight: componentSizes.inputMinHeight,
-              paddingHorizontal: spacing[3],
+              // Absorb the thicker focus/error border so content never shifts.
+              paddingHorizontal: spacing[3] - (borderWidth - RESTING_BORDER_WIDTH),
             },
           ]}
         >
@@ -119,6 +143,14 @@ export const Input = forwardRef<TextInput, InputProps>(
             autoCorrect={resolvedAutoCorrect}
             spellCheck={resolvedSpellCheck}
             autoComplete={resolvedAutoComplete}
+            onFocus={(event) => {
+              setIsFocused(true);
+              onFocus?.(event);
+            }}
+            onBlur={(event) => {
+              setIsFocused(false);
+              onBlur?.(event);
+            }}
             allowFontScaling={allowFontScaling ?? true}
             maxFontSizeMultiplier={maxFontSizeMultiplier ?? fontScaling.bodyMaxMultiplier}
             style={[
@@ -129,6 +161,7 @@ export const Input = forwardRef<TextInput, InputProps>(
                 minHeight: componentSizes.inputMinHeight,
                 paddingVertical: spacing[3],
               },
+              Platform.OS === "web" ? WEB_NO_OUTLINE : null,
               style,
             ]}
             {...props}
@@ -159,10 +192,14 @@ export const Input = forwardRef<TextInput, InputProps>(
 
 Input.displayName = "Input";
 
+const RESTING_BORDER_WIDTH = 1;
+const FOCUSED_BORDER_WIDTH = 2;
+// react-native-web forwards outline styles; the wrapper border is the focus indicator.
+const WEB_NO_OUTLINE = { outlineStyle: "none", outlineWidth: 0 } as unknown as object;
+
 const styles = StyleSheet.create({
   field: {
     alignItems: "center",
-    borderWidth: 1,
     flexDirection: "row",
   },
   iconWrap: {

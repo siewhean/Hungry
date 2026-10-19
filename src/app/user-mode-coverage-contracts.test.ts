@@ -113,7 +113,7 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
   );
   assertSourceIncludes(
     readRepoFile("src/app/screens/onboarding/finishLocationStep.ts"),
-    [/completeOnboarding\(hasSkippedTasteQuiz\)/, /navigation\.navigate\("OnboardingAuth"\)/],
+    [/completeOnboarding\(hasSkippedTasteQuiz\)/, /resolveOnboardingExitRoute\(/],
     "finishLocationStep",
   );
 });

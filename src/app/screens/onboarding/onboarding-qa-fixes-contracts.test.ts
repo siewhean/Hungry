@@ -21,8 +21,9 @@ test("manual location picker continues like LocationPermission (shared finish st
   assert.doesNotMatch(manual, /completeOnboarding\(/);
   assert.match(permission, /const finish = useFinishLocationStep\(navigation\)/);
   assert.match(finish, /completeOnboarding\(hasSkippedTasteQuiz\)/);
-  assert.match(finish, /navigation\.navigate\("OnboardingAuth"\)/);
-  assert.match(finish, /routes: \[\{ name: "MainTabs", params: \{ screen: "Home" \} \}\]/);
+  // Signed out → Create account (AuthStack SignUp) via the launch resolver; signed in → app.
+  assert.match(finish, /resolveOnboardingExitRoute\(\{ isAuthenticated \}\)/);
+  assert.match(finish, /\{ name: "MainTabs", params: \{ screen: "Home" \} \}/);
 });
 
 test("manual location list is alphabetical", () => {

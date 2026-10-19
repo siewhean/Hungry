@@ -31,16 +31,22 @@ import { WEB_LINKS } from "@/constants/links";
 type Props = NativeStackScreenProps<AuthStackParamList, "SignUp">;
 type FormValues = { displayName: string; email: string; password: string };
 
+// iOS strong-password generation honours the same rules as validatePassword.
+const NEW_PASSWORD_RULES =
+  "minlength: 12; required: lower; required: upper; required: digit; required: special;";
+
 export function SignUpScreen({ navigation }: Props) {
-  const { colorScheme, palette, spacing } = useHungryTheme();
+  const { componentSizes, palette, spacing } = useHungryTheme();
   const oauthProvidersEnabled = FEATURE_FLAGS.oauthProvidersEnabled;
   const [showPassword, setShowPassword] = useState(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const showToast = useUIStore((state) => state.showToast);
   const completeAuth = useSessionStore((state) => state.completeAuth);
   const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
   const {
     control,
     handleSubmit,
+    setFocus,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     defaultValues: { displayName: "", email: "", password: "" },
@@ -167,89 +173,95 @@ export function SignUpScreen({ navigation }: Props) {
     }
   };
 
+  const providerButtons = oauthProvidersEnabled ? (
+    <View style={{ gap: spacing[3] }}>
+      <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[3] }}>
+        <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
+        <AppText variant="micro" tone="muted">
+          {AUTH_COPY.signUp.divider}
+        </AppText>
+        <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
+      </View>
+      <AuthProviderButton
+        intent="continue"
+        provider="google"
+        onPress={() => void handleProviderContinue("google")}
+      />
+      <AuthProviderButton
+        intent="continue"
+        provider="apple"
+        onPress={() => void handleProviderContinue("apple")}
+      />
+    </View>
+  ) : null;
+
   return (
     <FeedErrorBoundary title={AUTH_COPY.signUp.errorTitle} body={AUTH_COPY.signUp.errorBody}>
       <AuthScreenShell
         title={AUTH_COPY.signUp.title}
-        subtitle={AUTH_COPY.signUp.subtitle}
         compact
-        wordmarkColor={colorScheme === "dark" ? palette.white : palette.navy}
-        footer={
-          <View style={{ alignItems: "center", gap: spacing[4] }}>
-            <View
+        layout="balanced"
+        // Consent, the primary action and the Sign in link stay pinned above the
+        // keyboard and visible without scrolling.
+        stickyAction={
+          <>
+            <AppText
+              testID="signup-terms-consent"
+              variant="micro"
+              tone="secondary"
+              style={{ textAlign: "center" }}
+            >
+              {AUTH_COPY.signUp.termsPrefix}
+              <AppText
+                variant="micro"
+                tone="accent"
+                accessibilityRole="link"
+                onPress={() => void openTrustedExternalUrl(WEB_LINKS.terms)}
+              >
+                {AUTH_COPY.signUp.termsLabel}
+              </AppText>
+              {AUTH_COPY.signUp.privacyJoiner}
+              <AppText
+                variant="micro"
+                tone="accent"
+                accessibilityRole="link"
+                onPress={() => void openTrustedExternalUrl(WEB_LINKS.privacy)}
+              >
+                {AUTH_COPY.signUp.privacyLabel}
+              </AppText>
+              {AUTH_COPY.signUp.termsSuffix}
+            </AppText>
+            <Button
+              label={AUTH_COPY.signUp.primaryButton}
+              onPress={handleSignUp}
+              loading={isSubmitting}
+            />
+            <Pressable
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={AUTH_COPY.signUp.footerAction}
+              accessibilityHint="Opens the sign in screen for an existing account"
+              onPress={() => {
+                if (navigation.canGoBack()) navigation.goBack();
+                else navigation.navigate("Login");
+              }}
               style={{
                 alignItems: "center",
                 flexDirection: "row",
-                flexWrap: "wrap",
                 justifyContent: "center",
+                minHeight: componentSizes.touchTarget,
               }}
             >
-              <AppText variant="micro" tone="secondary" style={{ textAlign: "center" }}>
-                {AUTH_COPY.signUp.termsPrefix}
-                <AppText
-                  variant="micro"
-                  tone="accent"
-                  onPress={() => void openTrustedExternalUrl(WEB_LINKS.terms)}
-                >
-                  {AUTH_COPY.signUp.termsLabel}
-                </AppText>
-                {AUTH_COPY.signUp.privacyJoiner}
-                <AppText
-                  variant="micro"
-                  tone="accent"
-                  onPress={() => void openTrustedExternalUrl(WEB_LINKS.privacy)}
-                >
-                  {AUTH_COPY.signUp.privacyLabel}
-                </AppText>
-                {AUTH_COPY.signUp.termsSuffix}
-              </AppText>
-            </View>
-
-            <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "center" }}>
               <AppText tone="secondary">{AUTH_COPY.signUp.footerPrompt}</AppText>
-              <Pressable
-                accessible
-                accessibilityRole="button"
-                accessibilityLabel={AUTH_COPY.signUp.footerAction}
-                accessibilityHint="Returns to the sign in screen"
-                onPress={() => {
-                  if (navigation.canGoBack()) navigation.goBack();
-                  else navigation.navigate("Login");
-                }}
-              >
-                <AppText variant="bodyBold" tone="accent">
-                  {AUTH_COPY.signUp.footerAction}
-                </AppText>
-              </Pressable>
-            </View>
-          </View>
+              <AppText variant="bodyBold" tone="accent">
+                {AUTH_COPY.signUp.footerAction}
+              </AppText>
+            </Pressable>
+          </>
         }
       >
-        <View style={{ gap: spacing[4] }}>
-          <View style={{ gap: spacing[3] }}>
-            <AuthProviderButton
-              disabled={!oauthProvidersEnabled}
-              intent="continue"
-              provider="google"
-              onPress={() => void handleProviderContinue("google")}
-            />
-            <AuthProviderButton
-              disabled={!oauthProvidersEnabled}
-              intent="continue"
-              provider="apple"
-              onPress={() => void handleProviderContinue("apple")}
-            />
-          </View>
-
-          <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[3] }}>
-            <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
-            <AppText variant="micro" tone="muted">
-              {AUTH_COPY.signUp.divider}
-            </AppText>
-            <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
-          </View>
-
-          <View style={{ gap: spacing[2] }}>
+        <View style={{ gap: spacing[5] }}>
+          <View style={{ gap: spacing[4] }}>
             <Controller
               control={control}
               name="displayName"
@@ -257,49 +269,74 @@ export function SignUpScreen({ navigation }: Props) {
                 validate: (value) =>
                   validateRequired(value, AUTH_COPY.signUp.displayNameValidationLabel),
               }}
-              render={({ field: { onChange, value } }) => (
-                <View style={{ gap: spacing[1] }}>
-                  <Input
-                    placeholder={AUTH_COPY.signUp.displayNamePlaceholder}
-                    value={value}
-                    onChangeText={onChange}
-                    leftIcon={<User color={palette.textMuted} size={18} />}
-                    error={!!errors.displayName}
-                    errorText={errors.displayName?.message}
-                  />
-                </View>
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  accessibilityLabel={AUTH_COPY.signUp.displayNamePlaceholder}
+                  placeholder={AUTH_COPY.signUp.displayNamePlaceholder}
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  autoCapitalize="words"
+                  autoComplete="name"
+                  textContentType="name"
+                  returnKeyType="next"
+                  submitBehavior="submit"
+                  onSubmitEditing={() => setFocus("email")}
+                  leftIcon={<User color={palette.textMuted} size={18} />}
+                  error={!!errors.displayName}
+                  errorText={errors.displayName?.message}
+                />
               )}
             />
             <Controller
               control={control}
               name="email"
               rules={{ validate: validateEmail }}
-              render={({ field: { onChange, value } }) => (
-                <View style={{ gap: spacing[1] }}>
-                  <Input
-                    placeholder={AUTH_COPY.signUp.emailPlaceholder}
-                    value={value}
-                    onChangeText={onChange}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    leftIcon={<Mail color={palette.textMuted} size={18} />}
-                    error={!!errors.email}
-                    errorText={errors.email?.message}
-                  />
-                </View>
+              render={({ field: { onChange, onBlur, value, ref } }) => (
+                <Input
+                  ref={ref}
+                  accessibilityLabel={AUTH_COPY.signUp.emailPlaceholder}
+                  placeholder={AUTH_COPY.signUp.emailPlaceholder}
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  textContentType="emailAddress"
+                  keyboardType="email-address"
+                  returnKeyType="next"
+                  submitBehavior="submit"
+                  onSubmitEditing={() => setFocus("password")}
+                  leftIcon={<Mail color={palette.textMuted} size={18} />}
+                  error={!!errors.email}
+                  errorText={errors.email?.message}
+                />
               )}
             />
             <Controller
               control={control}
               name="password"
               rules={{ validate: (value) => validatePassword(value) }}
-              render={({ field: { onChange, value } }) => (
-                <View style={{ gap: spacing[1] }}>
+              render={({ field: { onChange, onBlur, value, ref } }) => (
+                <View style={{ gap: spacing[2] }}>
                   <Input
+                    ref={ref}
+                    accessibilityLabel={AUTH_COPY.signUp.passwordPlaceholder}
                     placeholder={AUTH_COPY.signUp.passwordPlaceholder}
                     value={value}
                     onChangeText={onChange}
+                    onFocus={() => setIsPasswordFocused(true)}
+                    onBlur={() => {
+                      setIsPasswordFocused(false);
+                      onBlur();
+                    }}
                     secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                    autoComplete="new-password"
+                    textContentType="newPassword"
+                    passwordRules={NEW_PASSWORD_RULES}
+                    returnKeyType="go"
+                    onSubmitEditing={() => void handleSignUp()}
                     accessibilityHint={AUTH_COPY.signUp.passwordRules}
                     leftIcon={<Lock color={palette.textMuted} size={18} />}
                     rightIcon={
@@ -313,7 +350,13 @@ export function SignUpScreen({ navigation }: Props) {
                             : "Shows the password characters"
                         }
                         onPress={() => setShowPassword((current) => !current)}
-                        hitSlop={8}
+                        hitSlop={10}
+                        style={{
+                          alignItems: "center",
+                          justifyContent: "center",
+                          minHeight: componentSizes.touchTarget,
+                          minWidth: componentSizes.touchTarget,
+                        }}
                       >
                         {showPassword ? (
                           <EyeOff color={palette.textMuted} size={18} />
@@ -325,17 +368,13 @@ export function SignUpScreen({ navigation }: Props) {
                     error={!!errors.password}
                     errorText={errors.password?.message}
                   />
-                  <PasswordRequirements password={value} />
+                  <PasswordRequirements password={value} revealed={isPasswordFocused} />
                 </View>
               )}
             />
           </View>
 
-          <Button
-            label={AUTH_COPY.signUp.primaryButton}
-            onPress={handleSignUp}
-            loading={isSubmitting}
-          />
+          {providerButtons}
         </View>
       </AuthScreenShell>
     </FeedErrorBoundary>

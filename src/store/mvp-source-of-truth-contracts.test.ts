@@ -146,22 +146,22 @@ test("post composer remains isolated behind the Release 0.1 post flag", () => {
 });
 
 test("signed-in onboarding persists and awaits provisional preference migration", () => {
-  const onboardingAuth = read("src/app/screens/onboarding/OnboardingAuthScreen.tsx");
   const emailVerification = read("src/app/screens/auth/EmailVerificationScreen.tsx");
   const login = read("src/app/screens/auth/LoginScreen.tsx");
   const signUp = read("src/app/screens/auth/SignUpScreen.tsx");
   const mergeHelper = read("src/features/auth/applySignedInProfile.ts");
   const profileStore = read("src/store/useProfileStore.ts");
 
-  assert.match(onboardingAuth, /import \{ applySignedInProfile \}/);
-  assert.match(onboardingAuth, /completedOnboarding: true/);
+  // OnboardingAuth was consolidated into SignUp; onboarding is completed before
+  // SignUp opens, so SignUp carries the persisted flag into the new session.
+  assert.match(signUp, /completedOnboarding: hasCompletedOnboarding/);
   assert.match(emailVerification, /import \{ applySignedInProfile \}/);
   assert.match(emailVerification, /applySignedInProfile\(session\.profile/);
   assert.match(emailVerification, /completedOnboarding: shouldCompleteOnboarding/);
   assert.match(emailVerification, /completeOnboarding\(\)/);
   assert.match(login, /import \{ applySignedInProfile \}/);
   assert.match(signUp, /import \{ applySignedInProfile \}/);
-  for (const caller of [onboardingAuth, emailVerification, login, signUp]) {
+  for (const caller of [emailVerification, login, signUp]) {
     assert.match(caller, /migration\.status === "failed"/);
   }
   assert.match(

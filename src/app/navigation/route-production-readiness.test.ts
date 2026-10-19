@@ -150,11 +150,12 @@ test("signed-out app entry requires an account (no guest mode)", () => {
   );
   // Mandatory sign-in: new users go to onboarding (which ends at the account step),
   // returning signed-out users go to Login; MainTabs opens only with a session.
-  assert.match(splash, /if \(!isAuthenticated\) \{[\s\S]*name: "AuthStack"[\s\S]*screen: "Login"/);
+  // The rules moved into the unit-tested resolveLaunchRoute (launchRoute.test.ts).
   assert.match(
     splash,
-    /if \(!hasCompletedOnboarding\) \{[\s\S]*name: "OnboardingStack"[\s\S]*screen: "OnboardingWelcome"/,
+    /resolveLaunchRoute\(\{ isAuthReady, isAuthenticated, hasCompletedOnboarding \}\)/,
   );
+  assert.match(splash, /routes: \[getPreAuthRootRoute\(launch\)\]/);
   assert.match(splash, /name: "MainTabs"[\s\S]*params: \{ screen: "Home" \}/);
   assert.match(profileHome, /setReturnRoute\("Profile"\)/);
   assert.match(
@@ -164,7 +165,8 @@ test("signed-out app entry requires an account (no guest mode)", () => {
   assert.doesNotMatch(profileHome, /Unlock your taste profile|Sign In \/ Create Account/);
   assert.match(
     rootNavigator,
-    /if \(currentTopRoute === "OnboardingStack" && hasCompletedOnboarding\) \{[\s\S]*if \(isAuthenticated\) \{[\s\S]*navigateHome\(\);[\s\S]*name: "AuthStack"[\s\S]*screen: "Login"/,
+    // Finishing onboarding signed out now opens Create account (SignUp), not Login.
+    /if \(currentTopRoute === "OnboardingStack" && hasCompletedOnboarding\) \{[\s\S]*resolveOnboardingExitRoute\(\{ isAuthenticated \}\)[\s\S]*navigateHome\(\);[\s\S]*getPreAuthRootRoute\(exit\)/,
   );
   assert.match(rootNavigator, /const isDeveloperMode = useMerchantStore/);
   assert.match(rootNavigator, /const isMerchantMode = useMerchantStore/);

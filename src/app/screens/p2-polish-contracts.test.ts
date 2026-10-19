@@ -13,7 +13,6 @@ test("P2-1: every new-password field shows the live requirements checklist", () 
   for (const file of [
     "src/app/screens/auth/SignUpScreen.tsx",
     "src/app/screens/auth/ResetPasswordScreen.tsx",
-    "src/app/screens/onboarding/OnboardingAuthScreen.tsx",
   ]) {
     const source = read(file);
     assert.match(source, /<PasswordRequirements password=\{/, file);
@@ -52,11 +51,9 @@ test("P2-3: auth scroll containers clip content below the top safe-area inset", 
   assert.match(shell, /<Screen scroll=\{false\}>\s*<ScrollView/);
   assert.match(read("src/components/ui/Screen.tsx"), /edges=\{\["top", "left", "right"\]\}/);
 
-  // Onboarding sign-up owns its own ScrollView: the inset must sit on the
-  // container, not inside the scrolling content (retest final-76).
-  const onboarding = read("src/app/screens/onboarding/OnboardingAuthScreen.tsx");
-  assert.match(onboarding, /backgroundColor: palette\.bg, paddingTop: insets\.top \}/);
-  assert.doesNotMatch(onboarding, /paddingTop: insets\.top \+/);
+  // The onboarding sign-up screen that owned its own ScrollView (retest final-76)
+  // was consolidated into SignUp, which uses this shell.
+  assert.match(read("src/app/screens/onboarding/finishLocationStep.ts"), /getPreAuthRootRoute/);
 });
 
 test("P2-4: destructive dialog actions use the AA destructive fill and light label", () => {

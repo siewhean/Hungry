@@ -26,18 +26,19 @@ test("the signed-out app mounts only Splash, Onboarding, and Auth outside the is
   assert.doesNotMatch(preAuth, /DeveloperLauncher|MerchantTabs|DishDetail|StallDetail/);
 });
 
-test("fresh users complete onboarding before the mandatory account step", () => {
+test("fresh users complete onboarding, then land on the one canonical Create account screen", () => {
+  // Superseded: the onboarding-only OnboardingAuth tab screen was consolidated into
+  // AuthStack SignUp, so onboarding now resets to Create account (not Login).
   const splash = read("src/app/screens/SplashScreen.tsx");
   const onboarding = read("src/app/screens/onboarding/OnboardingStack.tsx");
-  const mandatoryStep = read("src/app/screens/onboarding/MandatoryOnboardingAuthScreen.tsx");
+  const finish = read("src/app/screens/onboarding/finishLocationStep.ts");
   const welcome = read("src/app/screens/onboarding/WelcomeScreen.tsx");
 
-  const onboardingIndex = splash.indexOf('name: "OnboardingStack"');
-  const authIndex = splash.indexOf('name: "AuthStack"');
-  assert.ok(onboardingIndex >= 0 && authIndex > onboardingIndex);
-  assert.match(onboarding, /name="OnboardingAuth" component=\{MandatoryOnboardingAuthScreen\}/);
-  assert.match(mandatoryStep, /completeOnboarding\(\)/);
-  assert.match(mandatoryStep, /<OnboardingAuthScreen/);
+  assert.match(splash, /resolveLaunchRoute\(/);
+  assert.doesNotMatch(onboarding, /OnboardingAuth/);
+  assert.match(finish, /completeOnboarding\(hasSkippedTasteQuiz\)/);
+  assert.match(finish, /resolveOnboardingExitRoute\(\{ isAuthenticated \}\)/);
+  assert.match(finish, /getPreAuthRootRoute\(exit\)/);
   assert.doesNotMatch(welcome, /Continue as Guest|Skip Login|Skip login/);
 });
 

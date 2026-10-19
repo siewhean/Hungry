@@ -3,7 +3,7 @@
  *
  * The splash only stays up until auth/bootstrap is ready, with a short
  * minimum (motion.splashTotal) so the logo animation does not flash.
- * New users go to onboarding (which ends at sign-up/sign-in); signed-out
+ * New users go to onboarding (which ends at Create account); signed-out
  * returning users go to Login. Main app screens never mount without a session.
  */
 
@@ -12,6 +12,7 @@ import { View, Animated, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import Constants from "expo-constants";
 
+import { getPreAuthRootRoute, resolveLaunchRoute } from "@/app/navigation/launchRoute";
 import type { MainTabParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
 import { HUNGRY_LOGO_ICON, HUNGRY_LOGO_STANDARD_SIZE } from "@/constants/brandAssets";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -129,21 +130,13 @@ export function SplashScreen({ navigation }: Props) {
 
     const remaining = Math.max(0, motion.splashTotal - (Date.now() - mountedAt));
     const timer = setTimeout(() => {
-      // Fresh users complete local onboarding before they are offered account
-      // creation/sign-in. Main app screens never mount during either step.
-      if (!hasCompletedOnboarding) {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "OnboardingStack", params: { screen: "OnboardingWelcome" } }],
-        });
-        return;
-      }
-
-      if (!isAuthenticated) {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "AuthStack", params: { screen: "Login" } }],
-        });
+      // Fresh installs see onboarding first (which ends at Create account);
+      // returning signed-out users land on Login. Main app screens never mount
+      // without a session. Rules live in resolveLaunchRoute (launchRoute.test.ts).
+      const launch = resolveLaunchRoute({ isAuthReady, isAuthenticated, hasCompletedOnboarding });
+      if (launch.kind === "wait") return;
+      if (launch.kind !== "app") {
+        navigation.reset({ index: 0, routes: [getPreAuthRootRoute(launch)] });
         return;
       }
 
