@@ -16,7 +16,6 @@ export type AnalyticsEventName =
   | "search_submitted"
   | "category_chip_tapped"
   | "dietary_chip_tapped"
-  | "taste_filter_applied"
   | "map_pin_tapped"
   | "floor_switched"
   | "dish_viewed"

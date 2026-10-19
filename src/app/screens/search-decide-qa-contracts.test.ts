@@ -2,43 +2,6 @@ import test from "node:test";
 
 import { assertSourceExcludes, assertSourceIncludes, readRepoFile } from "@/test/sourceContracts";
 
-test("search result rows show the stall name so identical dishes can be told apart", () => {
-  const view = readRepoFile("src/components/discover/SearchResultsView.tsx");
-
-  assertSourceIncludes(
-    view,
-    [
-      /\{dish\.venueName \? \(\s*<AppText variant="bodySmall" tone="secondary" numberOfLines=\{1\}>\s*\{dish\.venueName\}/,
-      /`Open \$\{dish\.name\} from \$\{dish\.venueName\}`/,
-    ],
-    "SearchResultsView row",
-  );
-});
-
-test("legacy search results put the title and search launcher on one row", () => {
-  const screen = readRepoFile("src/app/screens/search/SearchResultsScreen.tsx");
-  const view = readRepoFile("src/components/discover/SearchResultsView.tsx");
-
-  assertSourceIncludes(
-    screen,
-    [/<Screen scroll=\{false\} fullWidth>\s*<SearchResultsView\s+header=\{\s*<AppHeader/],
-    "LegacySearchResultsScreen",
-  );
-  assertSourceExcludes(
-    screen.slice(screen.indexOf("function LegacySearchResultsScreen")),
-    [/<Screen scroll=\{false\}>\s*<AppHeader/],
-    "LegacySearchResultsScreen",
-  );
-  assertSourceIncludes(
-    view,
-    [
-      /header\?: ReactNode;/,
-      /\{header && !isSearchExpanded \? <View style=\{\{ flex: 1 \}\}>\{header\}<\/View> : null\}/,
-    ],
-    "SearchResultsView header slot",
-  );
-});
-
 test("Decide for me measures its radius from the user's location", () => {
   const screen = readRepoFile("src/app/screens/discover/DecideForMeResultScreen.tsx");
   const repository = readRepoFile("src/lib/services/supabase/supabaseRepository.ts");

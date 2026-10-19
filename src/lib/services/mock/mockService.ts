@@ -716,6 +716,18 @@ function listMockFollowers(userId: string) {
       : [];
   return dedupeMockFollowers([...seeded.filter(Boolean), ...viewerFollows]);
 }
+/** Name/avatar for a mock user id, like the user_profiles join in the list RPCs. */
+function findMockPerson(userId: string): { displayName: string; avatarUrl?: string } {
+  if (userId === _profile.id) {
+    return { displayName: _profile.displayName, avatarUrl: _profile.avatarUrl };
+  }
+  const known = [...Object.values(_mockFollowersByUser).flat(), ..._incomingFollowRequests].find(
+    (person) => person.userId === userId,
+  );
+  return known
+    ? { displayName: known.displayName, avatarUrl: known.avatarUrl }
+    : { displayName: "Hungry member" };
+}
 /** Same paging rules as the list_user_followers/list_user_following RPCs (default 100, max 500). */
 function pageMockFollowRows<T>(rows: T[], page?: { limit?: number; offset?: number }) {
   const limit = Math.min(Math.max(page?.limit ?? 100, 1), 500);
@@ -2209,11 +2221,7 @@ export const hungryService: HungryService = {
       if (userId !== _profile.id) return resolve([]);
       return resolve(
         pageMockFollowRows(
-          Array.from(_userFollows).map((id) => ({
-            userId: id,
-            displayName: id,
-            avatarUrl: undefined,
-          })),
+          Array.from(_userFollows).map((id) => ({ userId: id, ...findMockPerson(id) })),
           page,
         ),
       );
@@ -3943,8 +3951,21 @@ export const hungryService: HungryService = {
       if (!portfolio || !canViewMockPortfolio(portfolio)) {
         throw new Error(`Portfolio ${portfolioId} not found`);
       }
+      const collaborators = _portfolioCollaborators.filter(
+        (entry) => entry.portfolioId === portfolioId,
+      );
+      // Like list_portfolio_collaborators: only the owner and collaborators get rows.
+      const isMember =
+        portfolio.ownerId === _profile.id ||
+        collaborators.some((entry) => entry.userId === _profile.id);
+      if (!isMember) return resolve([]);
+      // Non-owners don't see collaborators they blocked (mock blocks are one-way).
+      const visible =
+        portfolio.ownerId === _profile.id
+          ? collaborators
+          : collaborators.filter((entry) => !_blockedUsers.has(entry.userId));
       return resolve(
-        clone(_portfolioCollaborators.filter((entry) => entry.portfolioId === portfolioId)),
+        clone(visible.map((entry) => ({ ...entry, ...findMockPerson(entry.userId) }))),
       );
     },
 

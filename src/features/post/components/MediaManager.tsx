@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, ScrollView, Pressable, StyleSheet, Dimensions } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { Camera, Plus, Wand2, Scissors, Video } from "lucide-react-native";
+import { Camera, Plus, Video } from "lucide-react-native";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { AccessibleImage, AppText, IconButton, Dialog } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
@@ -55,7 +55,6 @@ export function MediaManager() {
   const media = useComposerStore((state) => state.media);
   const addMedia = useComposerStore((state) => state.addMedia);
   const removeMedia = useComposerStore((state) => state.removeMedia);
-  const setEditingMediaId = useComposerStore((state) => state.setEditingMediaId);
 
   const [dialogConfig, setDialogConfig] = useState<{
     visible: boolean;
@@ -132,23 +131,16 @@ export function MediaManager() {
       >
         {media.map((item) => (
           <View key={item.id} style={[styles.mediaWrapper, { borderRadius: componentRadii.card }]}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Edit selected media"
-              onPress={() => setEditingMediaId(item.id)}
-              style={styles.mediaTouchable}
-            >
-              {item.type === "video" ? (
-                <ComposerVideoPreview uri={item.uri} />
-              ) : (
-                <AccessibleImage
-                  source={{ uri: item.uri }}
-                  style={styles.media}
-                  contentFit="cover"
-                  decorative
-                />
-              )}
-            </Pressable>
+            {item.type === "video" ? (
+              <ComposerVideoPreview uri={item.uri} />
+            ) : (
+              <AccessibleImage
+                source={{ uri: item.uri }}
+                style={styles.media}
+                contentFit="cover"
+                decorative
+              />
+            )}
             <IconButton
               variant="surface"
               size={28}
@@ -159,24 +151,6 @@ export function MediaManager() {
                 <Plus size={14} color={palette.text} style={{ transform: [{ rotate: "45deg" }] }} />
               }
             />
-            <View style={[styles.mediaActions, { gap: semanticSpacing.textStack + 2 }]}>
-              <IconButton
-                variant="surface"
-                size={28}
-                accessibilityLabel="Edit with AI"
-                onPress={() => setEditingMediaId(item.id)}
-                icon={<Wand2 size={14} color={palette.orange} />}
-              />
-              {item.type === "video" ? (
-                <IconButton
-                  variant="surface"
-                  size={28}
-                  accessibilityLabel="Open video edit tools"
-                  onPress={() => setEditingMediaId(item.id)}
-                  icon={<Scissors size={14} color={palette.text} />}
-                />
-              ) : null}
-            </View>
           </View>
         ))}
 
@@ -221,9 +195,6 @@ const styles = StyleSheet.create({
     position: "relative",
     overflow: "hidden",
   },
-  mediaTouchable: {
-    ...StyleSheet.absoluteFillObject,
-  },
   media: {
     width: "100%",
     height: "100%",
@@ -233,13 +204,6 @@ const styles = StyleSheet.create({
     zIndex: 2,
     top: 6,
     right: 6,
-  },
-  mediaActions: {
-    position: "absolute",
-    bottom: 6,
-    right: 6,
-    flexDirection: "row",
-    zIndex: 2,
   },
   videoBadge: {
     alignItems: "center",

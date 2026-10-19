@@ -20,7 +20,6 @@ import { ReviewTab } from "@/features/post/components/ReviewTab";
 import { ComposerBottomBar } from "@/features/post/components/ComposerBottomBar";
 import { StatusOverlay } from "@/features/post/components/StatusOverlay";
 import { LivePreviewSheet } from "@/features/post/components/LivePreviewSheet";
-import { MediaEditor } from "@/features/post/components/MediaEditor";
 import { MusicSearchModal } from "@/features/post/components/MusicSearchModal";
 import { LocationSearchModal } from "@/features/post/components/LocationSearchModal";
 import { CollaboratorModal } from "@/features/post/components/CollaboratorModal";
@@ -43,8 +42,6 @@ export function PostComposerScreenV2({ navigation, route }: Props) {
   const isUserMode = !isMerchantMode && !isDeveloperMode;
   const shouldShowAiSuite = !isUserMode;
   const reset = useComposerStore((state) => state.reset);
-  const editingMediaId = useComposerStore((state) => state.editingMediaId);
-  const setEditingMediaId = useComposerStore((state) => state.setEditingMediaId);
 
   const musicModalRef = React.useRef<BottomSheetModal>(null);
   const locationModalRef = React.useRef<BottomSheetModal>(null);
@@ -230,7 +227,6 @@ export function PostComposerScreenV2({ navigation, route }: Props) {
       <ComposerBottomBar routeDishId={route.params?.dishId} routeVenueId={route.params?.venueId} />
       <StatusOverlay onFinish={finishAndReturnToHomeFeed} />
       <LivePreviewSheet />
-      <MediaEditor mediaId={editingMediaId} onClose={() => setEditingMediaId(null)} />
       <MusicSearchModal innerRef={musicModalRef} />
       <LocationSearchModal innerRef={locationModalRef} />
       <CollaboratorModal innerRef={collaboratorModalRef} />

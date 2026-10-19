@@ -5,7 +5,9 @@
 
 export const STALL_UPDATES_CHANNEL_ID = "stall-updates";
 
-export async function registerForStallAlerts(): Promise<boolean> {
+export async function registerForStallAlerts(_options?: {
+  askPermission?: boolean;
+}): Promise<boolean> {
   return false;
 }
 

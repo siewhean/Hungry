@@ -52,22 +52,6 @@ export function trackFoodCredLevelChanged(params: {
   });
 }
 
-// ─── Collections ─────────────────────────────────────────────────────────────
-
-export function trackCollectionViewed(params: {
-  collectionId: string;
-  createdBy: "hungry" | "user";
-}) {
-  trackAnalyticsEvent("collection_viewed", {
-    collection_id: params.collectionId,
-    created_by: params.createdBy,
-  });
-}
-
-export function trackCollectionSaved(collectionId: string) {
-  trackAnalyticsEvent("collection_saved", { collection_id: collectionId });
-}
-
 // ─── Missions ────────────────────────────────────────────────────────────────
 
 export function trackMissionViewed() {
@@ -97,7 +81,7 @@ export function trackMissionCompleted(params: { missionId: string; timeToComplet
 
 export function trackStallSaved(params: {
   stallId: string;
-  sourceScreen: "StallDetail" | "CollectionDetail" | "SearchResults";
+  sourceScreen: "StallDetail" | "SearchResults";
 }) {
   trackAnalyticsEvent("stall_saved", {
     stall_id: params.stallId,
@@ -107,18 +91,11 @@ export function trackStallSaved(params: {
 
 export function trackStallMarkedTried(params: {
   stallId: string;
-  sourceScreen: "StallDetail" | "CollectionDetail" | "SearchResults";
+  sourceScreen: "StallDetail" | "SearchResults";
 }) {
   trackAnalyticsEvent("stall_marked_tried", {
     stall_id: params.stallId,
     source_screen: params.sourceScreen,
-  });
-}
-
-export function trackStallAddedToCollection(params: { stallId: string; collectionId: string }) {
-  trackAnalyticsEvent("stall_added_to_collection", {
-    stall_id: params.stallId,
-    collection_id: params.collectionId,
   });
 }
 

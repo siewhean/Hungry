@@ -12,8 +12,6 @@ export type AuthStackParamList = {
 
 export type OnboardingStackParamList = {
   OnboardingWelcome: undefined;
-  OnboardingIntro1: undefined;
-  CuisineSelection: undefined;
   TasteQuiz: { mode?: "onboarding" | "profile"; initialPhase?: "taste" | "dietary" } | undefined;
   DietaryPreferences:
     | {
@@ -23,6 +21,7 @@ export type OnboardingStackParamList = {
         answers?: TasteVector;
       }
     | undefined;
+  /** Last step: "you're all set", then Home. */
   TasteProfileResult: undefined;
   LocationPermission: undefined;
   /** mode "settings": change the location from Settings and go back, without onboarding. */
@@ -124,7 +123,6 @@ export type RootStackParamList = {
     | undefined;
   BrowseDishes: undefined;
   BrowseStalls: undefined;
-  TasteFilter: undefined;
   DiscoverMap: undefined;
   DecideForMeResult: { surface?: "home" | "discover" } | undefined;
   MapZoomedIn: { buildingId: string };
@@ -168,8 +166,6 @@ export type RootStackParamList = {
   // Gamification
   PassportScreen: undefined;
   MissionsScreen: undefined;
-  CollectionList: undefined;
-  CollectionDetail: { collectionId: string };
   // Checklist & Portfolio (root-level access)
   ChecklistDetail: { checklistId: string };
   PortfolioDetail: { portfolioId: string };

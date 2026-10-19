@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
+import path from "node:path";
 import test from "node:test";
 
 import { readRepoFile } from "@/test/sourceContracts";
@@ -74,16 +76,13 @@ test("Crave swipes act on the current card and record taste signals", () => {
   assert.match(crave, /buttonId: "crave_swipe_left"/);
 });
 
-test("Home map centres on the user, wires legacy pins and keeps Mapbox attribution", () => {
+test("Home map centres on the user, wires catalog pins and keeps Mapbox attribution", () => {
   const map = readRepoFile("src/app/screens/discover/HomeMapScreen.tsx");
   const surface = readRepoFile("src/components/map/MapSurface.tsx");
 
   assert.match(map, /centerCoordinate=\{mapCenter\}/);
   assert.match(map, /currentLocation=\{isLocationApproximate \? undefined : currentLocation\}/);
-  assert.match(
-    map,
-    /onMarkerPress=\{shouldUseCatalogReadV2 \? handleRawMarkerPress : handleLegacyMarkerPress\}/,
-  );
+  assert.match(map, /onMarkerPress=\{handleRawMarkerPress\}/);
   assert.match(map, /displayModeRef\.current === "list"/);
   assert.match(map, /"Recenter map on your location"/);
   assert.doesNotMatch(map, /Recenter map to default building/);
@@ -106,12 +105,31 @@ test("Screens with analytics mount effects are never preloaded", () => {
   );
 });
 
-test("Collection detail cannot hang on a failed load and hides memory-only saves", () => {
-  const screen = readRepoFile("src/app/screens/discover/CollectionDetailScreen.tsx");
+test("Collections are folded into Lists: no Collection screens, store or routes remain", () => {
+  for (const removed of [
+    "src/app/screens/discover/CollectionListScreen.tsx",
+    "src/app/screens/discover/CollectionDetailScreen.tsx",
+    "src/components/collections/CollectionCard.tsx",
+    "src/store/useCollectionStore.ts",
+  ]) {
+    assert.equal(existsSync(path.join(process.cwd(), removed)), false, removed);
+  }
+  const rootNavigator = readRepoFile("src/app/navigation/RootNavigator.tsx");
+  const navigationTypes = readRepoFile("src/app/navigation/navigationTypes.ts");
+  const repositoryTypes = readRepoFile("src/lib/services/types.ts");
+  assert.doesNotMatch(rootNavigator, /Collection(List|Detail)/);
+  assert.doesNotMatch(navigationTypes, /Collection(List|Detail)/);
+  assert.doesNotMatch(repositoryTypes, /listCollections|FoodCollection/);
 
-  assert.match(screen, /\} catch \(error\) \{[\s\S]*setLoadError/);
-  assert.match(screen, /\} finally \{\s*if \(active\) setLoading\(false\);/);
-  assert.doesNotMatch(screen, /trackCollectionSaved|toggleSaveCollection/);
+  // The stall "Add to List" action saves into the user's Lists (portfolio) flow.
+  const bar = readRepoFile("src/components/stall/StallInteractionBar.tsx");
+  const stallDetail = readRepoFile("src/app/screens/detail/StallDetailScreen.tsx");
+  assert.match(bar, /onAddToList\?: \(\) => void;/);
+  assert.doesNotMatch(bar, /onAddToCollection/);
+  assert.match(
+    stallDetail,
+    /onAddToList=\{\s*FEATURE_FLAGS\.portfoliosEnabled\s*\? \(\) => void detailSaveActions\.addToPortfolio\(\)/,
+  );
 });
 
 test("Search hides empty sections and controls the backend ignores", () => {
@@ -120,10 +138,11 @@ test("Search hides empty sections and controls the backend ignores", () => {
   const repository = readRepoFile("src/lib/services/supabase/supabaseRepository.ts");
 
   assert.doesNotMatch(home, /within 2km/);
-  assert.match(home, /\{suggestedDish \? \(/);
-  assert.match(home, /\{collections\.length \? \(/);
-  assert.match(home, /\{isSupabaseSearch \? null : \(/);
-  assert.match(results, /getServiceProvider\(\)\.mode === "supabase"\s*\? undefined/);
+  // The paged catalog has no local suggestions or taste sliders, and maps only
+  // noodles/rice into a cuisine filter, so the landing offers just those chips.
+  assert.doesNotMatch(home, /suggestedDish|collections|TasteFilter|getSearchResultsAsync/);
+  assert.match(home, /const CATALOG_CATEGORIES: SearchCategory\[\] = \["noodles", "rice"\]/);
+  assert.match(results, /radiusMeters: query\.trim\(\) \? undefined : 3_000/);
   assert.match(
     repository,
     /p_radius_meters: hasLocation && !query \? filters\.radius \|\| null : null/,
@@ -137,8 +156,7 @@ test("Search browse: guests get a way out, chips never show everything, errors s
     results,
     /ctaLabel="Sign in"[\s\S]*setReturnRoute\(\{[\s\S]*navigation\.navigate\("AuthStack", \{ screen: "Login" \}\)/,
   );
-  assert.doesNotMatch(results, /filtered\.length \|\| query \? filtered : feedItems/);
-  assert.match(results, /item\.dish\.dietaryFlags\.includes\("halal"\)/);
+  assert.match(results, /dietaryFlags: filter === "halal" \? \["halal"\] : \[\]/);
   assert.doesNotMatch(results, /body=\{error\}/);
   assert.match(results, /errorMessage=\{error\}/);
   assert.match(results, /reportError\(loadError/);
@@ -151,8 +169,10 @@ test("Area picker returns already-onboarded users without re-completing onboardi
   assert.ok(submit, "handleSubmit should exist");
   assert.match(
     submit,
-    /if \(isSettingsMode \|\| hasCompletedOnboarding\) \{[\s\S]*?navigation\.goBack\(\);\s*return;\s*\}[\s\S]*?completeOnboarding/,
+    /if \(!isOnboarding\) \{[\s\S]*?navigation\.goBack\(\);\s*return;\s*\}[\s\S]*?navigation\.navigate\("TasteQuiz"\)/,
   );
+  assert.match(picker, /const isOnboarding = !isSettingsMode && !hasCompletedOnboarding;/);
+  assert.doesNotMatch(picker, /completeOnboarding/);
 });
 
 test("Home map recentres only when the chosen building changes", () => {
@@ -163,5 +183,41 @@ test("Home map recentres only when the chosen building changes", () => {
   assert.doesNotMatch(
     map,
     /\}, \[activeBuildingRecord\.coordinate\.latitude, activeBuildingRecord\.coordinate\.longitude\]\);/,
+  );
+});
+
+test("Map is open to every diner from a List/Map toggle on Discover, guests included", () => {
+  const discover = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const map = readRepoFile("src/app/screens/discover/HomeMapScreen.tsx");
+  const toggle = readRepoFile("src/components/discover/DiscoverViewToggle.tsx");
+  const navigator = readRepoFile("src/app/navigation/RootNavigator.tsx");
+
+  // No merchant/dev-only gate on the Discover map entry.
+  assert.match(
+    discover,
+    /<DiscoverViewToggle\s+value="list"[\s\S]*?onChange=\{\(\) => navigation\.navigate\("DiscoverMap"\)\}/,
+  );
+  assert.doesNotMatch(
+    discover,
+    /\{isUserMode \? null : \(\s*<View style=\{\{ marginTop: -spacing\[0\.5\] \}\}>/,
+  );
+  assert.match(map, /<DiscoverViewToggle value="map" onChange=\{backToList\} \/>/);
+  // List always returns to the Discover tab, even when the stack below the map is Home.
+  const backToList =
+    map.match(/const backToList = useCallback\([\s\S]*?\}, \[navigation\]\);/)?.[0] ?? "";
+  assert.match(backToList, /navigation\.popTo\("MainTabs", \{ screen: "Discover" \}\)/);
+  assert.doesNotMatch(backToList, /goBack\(\)/);
+  assert.match(toggle, /accessibilityRole="tab"/);
+  assert.match(toggle, /accessibilityState=\{\{ selected \}\}/);
+
+  // DiscoverMap is not an auth-required route; guests see the map and a sign-in prompt.
+  const protectedRoutes = navigator.match(/const PROTECTED_ROOT_ROUTES[\s\S]*?\]\);/)?.[0] ?? "";
+  assert.ok(protectedRoutes, "PROTECTED_ROOT_ROUTES should exist");
+  assert.doesNotMatch(protectedRoutes, /"DiscoverMap"/);
+  assert.match(map, /if \(!isAuthenticated\) \{\s*setRawMapItems\(\[\]\);/);
+  assert.match(map, /\{isAuthenticated \? null : <GuestMapPrompt/);
+  assert.match(
+    map,
+    /setReturnRoute\(\{[\s\S]*navigation\.navigate\("AuthStack", \{ screen: "Login" \}\)/,
   );
 });

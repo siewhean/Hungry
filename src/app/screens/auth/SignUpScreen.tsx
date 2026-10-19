@@ -178,12 +178,12 @@ export function SignUpScreen({ navigation }: Props) {
         trackSignInEvent: false,
       });
       // Guests who already finished onboarding on this device go straight home
-      // (RootNavigator handles that); everyone else continues Intro -> Cuisine -> ... -> Location.
+      // (RootNavigator handles that); everyone else runs the short onboarding flow.
       if (!useSessionStore.getState().hasCompletedOnboarding) {
         navigation.getParent()?.reset({
           index: 0,
           routes: [
-            { name: "OnboardingStack" as never, params: { screen: "OnboardingIntro1" } as never },
+            { name: "OnboardingStack" as never, params: { screen: "OnboardingWelcome" } as never },
           ],
         });
       }

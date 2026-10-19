@@ -66,7 +66,7 @@ export const MISSION_TEMPLATE_POOL: Omit<WeeklyMission, "weekStart" | "weekEnd" 
   },
   {
     id: "mission-add-collection",
-    title: "Add 2 stalls to a collection",
+    title: "Add 2 stalls to a list",
     description: "Build your personal food lists.",
     missionType: "add_to_collection",
     requirementCount: 2,

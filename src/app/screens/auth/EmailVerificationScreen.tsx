@@ -6,13 +6,13 @@ import { ArrowLeft, CircleAlert, MailCheck } from "lucide-react-native";
 import { AppText, Button, FeedErrorBoundary } from "@/components/ui";
 import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
 import { trackAuthFailed, trackAuthScreenViewed } from "@/features/auth/authAnalytics";
+import { completeVerifiedSignUp } from "@/features/auth/completeVerifiedSignUp";
 import {
   rememberPendingEmailVerification,
   takePendingEmailVerificationCompletesOnboarding,
 } from "@/features/auth/pendingEmailVerification";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
-import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { AuthStackParamList } from "./AuthStack";
@@ -23,8 +23,6 @@ type Props = NativeStackScreenProps<AuthStackParamList, "EmailVerification">;
 const RESEND_COOLDOWN_SECONDS = 60;
 
 export function EmailVerificationScreen({ navigation, route }: Props) {
-  const completeAuth = useSessionStore((state) => state.completeAuth);
-  const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
   const showToast = useUIStore((state) => state.showToast);
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const isSupabaseMode = getConfiguredDataSource() === "supabase";
@@ -75,14 +73,7 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
             });
           },
         });
-        completeAuth({
-          authProvider: "email",
-          completedOnboarding: shouldCompleteOnboarding,
-          isNewUser: true,
-        });
-        if (shouldCompleteOnboarding) {
-          completeOnboarding();
-        }
+        completeVerifiedSignUp(shouldCompleteOnboarding);
         showToast({ message: "Email verified. Welcome to Hungry.", tone: "success" });
       } catch (error) {
         trackAuthFailed("email_confirm", "email", error);
@@ -96,7 +87,7 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
         setIsConfirming(false);
       }
     },
-    [completeAuth, completeOnboarding, navigation, showToast],
+    [navigation, showToast],
   );
 
   useEffect(() => {

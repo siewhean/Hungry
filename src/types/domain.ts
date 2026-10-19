@@ -377,8 +377,9 @@ export interface UserProfile {
   };
   recommendationSignals?: RecommendationSignalState;
   leftHandedMode?: boolean;
+  /** Legacy: dishes picked by the old cuisine step; kept for profiles saved before it was cut. */
   onboardingSelectedDishIds?: string[];
-  /** Cuisine card ids picked during onboarding (e.g. "local", "japanese"). */
+  /** Legacy: cuisine ids picked by the old cuisine step (e.g. "local", "japanese"). */
   onboardingCuisineIds?: string[];
   /** Usual max price per dish in SGD, set during onboarding. Undefined = no budget limit. */
   maxDishBudget?: number;
@@ -394,7 +395,6 @@ export interface ReviewDraft {
   text: string;
   photos: string[];
   videoUri?: string;
-  filterId?: string;
   musicId?: string;
 }
 
@@ -773,9 +773,12 @@ export interface PublicPortfolioItem {
 export interface PortfolioCollaborator {
   id: string;
   portfolioId: string;
+  /** Internal key for add/remove; never shown in the UI. */
   userId: string;
   role: PortfolioCollaboratorRole;
   createdAt: string;
+  displayName?: string;
+  avatarUrl?: string;
 }
 
 export interface PortfolioFollow {
@@ -1281,57 +1284,6 @@ export interface UserPassportStamp {
   earnedAt: string;
   triggerAction: FoodCredAction | "initial_sync";
   celebratedAt?: string;
-}
-
-// ─── Collections ──────────────────────────────────────────────────────────────
-
-export type CollectionVisibility = "public" | "friends" | "private";
-export type CollectionCreator = "hungry" | "user";
-export type CollectionSegment = "students" | "office_workers" | "families" | "general";
-
-/**
- * A curated list of stalls.
- * Phase 1: only Hungry-official collections with public visibility.
- * Phase 2: user-created collections with configurable visibility.
- */
-export interface FoodCollection {
-  id: string;
-  title: string;
-  description: string;
-  coverImageUrl?: string;
-  createdBy: CollectionCreator;
-  creatorUserId?: string;
-  visibility: CollectionVisibility;
-  targetSegment: CollectionSegment;
-  tags: string[];
-  /** Denormalised count — updated when items are added/removed */
-  itemCount: number;
-  saveCount: number;
-  isFeatured: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-/** A single stall entry within a collection */
-export interface CollectionItem {
-  id: string;
-  collectionId: string;
-  stallId: string;
-  /** 0-based display order */
-  displayOrder: number;
-  /** Optional editorial note for this stall in this collection */
-  note?: string;
-  addedAt: string;
-}
-
-/**
- * Whether a user has saved a collection.
- * Per-user, per-collection — primary key: (userId, collectionId).
- */
-export interface UserCollectionSave {
-  userId: string;
-  collectionId: string;
-  savedAt: string;
 }
 
 // ─── Weekly Missions ──────────────────────────────────────────────────────────

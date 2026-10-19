@@ -101,7 +101,6 @@ test("root navigation and linking do not expose advanced production routes witho
     "FEATURE_FLAGS.directMessagesEnabled",
     "FEATURE_FLAGS.storiesEnabled",
     "FEATURE_FLAGS.gamificationEnabled",
-    "FEATURE_FLAGS.collectionsEnabled",
     "FEATURE_FLAGS.prototypeRoutesEnabled",
   ]) {
     assert.match(rootNavigator, new RegExp(gate.replace(".", "\\.")));
@@ -115,8 +114,6 @@ test("root navigation and linking do not expose advanced production routes witho
     "AddStory",
     "PassportScreen",
     "MissionsScreen",
-    "CollectionList",
-    "CollectionDetail",
     "AdminPortfolioFlags",
   ]) {
     assert.match(rootNavigator, new RegExp(`name="${route}"`));

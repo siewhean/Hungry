@@ -21,12 +21,6 @@ export interface MediaItem {
   type: "image" | "video";
   width?: number;
   height?: number;
-  filterId?: string;
-  adjustments?: {
-    brightness: number;
-    contrast: number;
-    saturation: number;
-  };
 }
 
 interface ComposerState {
@@ -63,7 +57,6 @@ interface ComposerState {
   publishingError: string | null;
   showPreview: boolean;
   previewPlatform: "hungry" | "instagram";
-  editingMediaId: string | null;
   isAiProcessing: boolean;
   lastPublishRequest: {
     publishMode: PublishMode;
@@ -76,7 +69,6 @@ interface ComposerState {
   // Actions
   addMedia: (items: MediaItem[]) => void;
   removeMedia: (id: string) => void;
-  updateMediaAdjustment: (id: string, adjustments: Partial<MediaItem["adjustments"]>) => void;
   setCaption: (text: string) => void;
   setUseSameCaption: (useSame: boolean) => void;
   setShowFoodContextOverlay: (show: boolean) => void;
@@ -95,7 +87,6 @@ interface ComposerState {
   setPublishingState: (state: PublishingState) => void;
   setShowPreview: (show: boolean) => void;
   setPreviewPlatform: (platform: "hungry" | "instagram") => void;
-  setEditingMediaId: (id: string | null) => void;
   setPublishingError: (message: string | null) => void;
   setLastPublishRequest: (request: ComposerState["lastPublishRequest"]) => void;
   setPendingReviewId: (id: string | null) => void;
@@ -142,7 +133,6 @@ export const useComposerStore = create<ComposerState>((set, get) => ({
   publishingError: null,
   showPreview: false,
   previewPlatform: "hungry",
-  editingMediaId: null,
   isAiProcessing: false,
   lastPublishRequest: null,
   pendingReviewId: null,
@@ -153,20 +143,6 @@ export const useComposerStore = create<ComposerState>((set, get) => ({
     set((state) => ({
       media: state.media.filter((m) => m.id !== id),
       publishingState: state.media.length <= 1 ? "empty" : state.publishingState,
-    })),
-  updateMediaAdjustment: (id, adjustments) =>
-    set((state) => ({
-      media: state.media.map((m) =>
-        m.id === id
-          ? {
-              ...m,
-              adjustments: {
-                ...(m.adjustments || { brightness: 1, contrast: 1, saturation: 1 }),
-                ...adjustments,
-              },
-            }
-          : m,
-      ),
     })),
   setCaption: (text) =>
     set((state) => {
@@ -216,7 +192,6 @@ export const useComposerStore = create<ComposerState>((set, get) => ({
   setPublishingState: (publishingState) => set({ publishingState }),
   setShowPreview: (showPreview) => set({ showPreview }),
   setPreviewPlatform: (previewPlatform) => set({ previewPlatform }),
-  setEditingMediaId: (editingMediaId) => set({ editingMediaId }),
   setPublishingError: (publishingError) => set({ publishingError }),
   setLastPublishRequest: (lastPublishRequest) => set({ lastPublishRequest }),
   setPendingReviewId: (pendingReviewId) => set({ pendingReviewId }),

@@ -6,6 +6,7 @@ import { View } from "react-native";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Button, Card } from "@/components/ui";
 import { useChecklistStore } from "@/store/useChecklistStore";
+import { useMissionStore } from "@/store/useMissionStore";
 import { usePortfolioStore } from "@/store/usePortfolioStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -187,6 +188,13 @@ export function useDetailSaveActions({ navigation, target }: UseDetailSaveAction
             : { portfolioId: portfolio.id, itemType: "stall", stallId: target.id },
         );
       showToast({ message: `Added to ${portfolio.name}.`, tone: "success" });
+      if (target.itemType === "stall") {
+        // Mission progress is best-effort: the save already succeeded.
+        void useMissionStore
+          .getState()
+          .incrementProgress(profile.id, "add_to_collection")
+          .catch(() => undefined);
+      }
     } catch (error) {
       showToast({
         message: isDuplicateError(error)
@@ -211,7 +219,8 @@ interface DetailSaveActionsCardProps {
   title: string;
   body: string;
   onAddToChecklist: () => void;
-  onAddToPortfolio: () => void;
+  /** Omit to hide the portfolio action (stalls save to Lists from the interaction bar). */
+  onAddToPortfolio?: () => void;
   isAddingToChecklist?: boolean;
   isAddingToPortfolio?: boolean;
 }
@@ -247,18 +256,20 @@ export function DetailSaveActionsCard({
           labelNumberOfLines={1}
           labelEllipsizeMode="tail"
         />
-        <Button
-          label="Add to Portfolio"
-          variant="secondary"
-          size="sm"
-          fullWidth={false}
-          loading={isAddingToPortfolio}
-          onPress={onAddToPortfolio}
-          leftIcon={<Plus color={palette.text} size={14} />}
-          style={{ flex: 1, minWidth: 0 }}
-          labelNumberOfLines={1}
-          labelEllipsizeMode="tail"
-        />
+        {onAddToPortfolio ? (
+          <Button
+            label="Add to Portfolio"
+            variant="secondary"
+            size="sm"
+            fullWidth={false}
+            loading={isAddingToPortfolio}
+            onPress={onAddToPortfolio}
+            leftIcon={<Plus color={palette.text} size={14} />}
+            style={{ flex: 1, minWidth: 0 }}
+            labelNumberOfLines={1}
+            labelEllipsizeMode="tail"
+          />
+        ) : null}
       </View>
     </Card>
   );

@@ -5,7 +5,7 @@ import { ArrowLeft, ExternalLink, MapPin } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AccessibleImage, AppText, EmptyState, Screen, Skeleton } from "@/components/ui";
-import { getCatalogRawService, getServiceProvider } from "@/lib/services/serviceProvider";
+import { getCatalogRawService } from "@/lib/services/serviceProvider";
 import type { CatalogRawDishDetail, CatalogRawVenueDetail } from "@/lib/services/catalog";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
@@ -31,8 +31,8 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
   const isDish = route.params.kind === "dish";
 
   const load = useCallback(async () => {
-    if (!service || !isAuthenticated || getServiceProvider().mode !== "supabase") {
-      setError("Sign in with the live Hungry data source to view this catalog record.");
+    if (!isAuthenticated) {
+      setError("Sign in to view this catalog record.");
       setIsLoading(false);
       return;
     }

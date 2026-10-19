@@ -9,6 +9,7 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import type { Coordinate } from "@/types/domain";
 import { useHungryTheme } from "@/theme";
+import { OnboardingProgress } from "./OnboardingProgress";
 import type { OnboardingStackParamList } from "./OnboardingStack";
 import { useMemo, useState } from "react";
 import {
@@ -97,8 +98,6 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
   const { palette, radii, shadows, spacing } = useHungryTheme();
   const setManualSelection = useLocationStore((state) => state.setManualSelection);
   const storedManualLocation = useLocationStore((state) => state.manualLocation);
-  const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
-  const hasSkippedTasteQuiz = useSessionStore((state) => state.hasSkippedTasteQuiz);
   const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
   const showToast = useUIStore((state) => state.showToast);
   const [query, setQuery] = useState("");
@@ -117,20 +116,20 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
   );
   const selectedArea = SINGAPORE_AREAS.find((area) => area.id === selectedAreaId) ?? null;
   const showNoResults = normalizedQuery.length > 0 && filteredAreas.length === 0;
+  const isOnboarding = !isSettingsMode && !hasCompletedOnboarding;
 
   const handleSubmit = () => {
     if (!selectedArea) return;
     setManualSelection(selectedArea.name, selectedArea.coordinate);
     // Already-onboarded users reach this picker from Discover, the map or
-    // Settings; completing onboarding again would not change any state (so
-    // nothing navigates home) and would re-fire onboarding_completed.
-    if (isSettingsMode || hasCompletedOnboarding) {
+    // Settings; they go straight back to where they came from.
+    if (!isOnboarding) {
       showToast({ message: `Location set to ${selectedArea.name}.`, tone: "success" });
       navigation.goBack();
       return;
     }
-    // First run: RootNavigator moves on to Home once onboarding is complete.
-    completeOnboarding(hasSkippedTasteQuiz);
+    // First run: the location step is done; the optional taste quiz is next.
+    navigation.navigate("TasteQuiz");
   };
 
   return (
@@ -161,6 +160,7 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
           }
         />
 
+        {isOnboarding ? <OnboardingProgress step="location" /> : null}
         <Input
           placeholder="Search..."
           value={query}

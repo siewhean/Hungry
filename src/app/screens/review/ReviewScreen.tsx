@@ -41,8 +41,6 @@ type Props = NativeStackScreenProps<ReviewStackParamList, "ReviewMain">;
 // Music is never saved and video is never uploaded with a review, so both stay prototype-only.
 const reviewMusicEnabled = FEATURE_FLAGS.prototypeRoutesEnabled;
 const reviewVideoEnabled = FEATURE_FLAGS.prototypeRoutesEnabled;
-// Filters only change the preview (the original file uploads), so prototype-only too.
-const reviewFiltersEnabled = FEATURE_FLAGS.prototypeRoutesEnabled;
 
 export function ReviewScreen({ navigation, route }: Props) {
   const repository = getDataRepository();
@@ -66,7 +64,6 @@ export function ReviewScreen({ navigation, route }: Props) {
   const addPhoto = useReviewDraftStore((state) => state.addPhoto);
   const removePhoto = useReviewDraftStore((state) => state.removePhoto);
   const setVideoUri = useReviewDraftStore((state) => state.setVideoUri);
-  const setFilterId = useReviewDraftStore((state) => state.setFilterId);
   const setSubmitting = useReviewDraftStore((state) => state.setSubmitting);
   const resetDraft = useReviewDraftStore((state) => state.resetDraft);
   const ensurePendingReviewId = useReviewDraftStore((state) => state.ensurePendingReviewId);
@@ -237,7 +234,6 @@ export function ReviewScreen({ navigation, route }: Props) {
         venue_id: selectedDish.venueId,
         media_count: draft.photos.length + (hasVideo ? 1 : 0),
         has_music: reviewMusicEnabled && !!draft.musicId,
-        filter_id: reviewFiltersEnabled ? draft.filterId : undefined,
       });
 
       // One confirmation: the success modal.
@@ -342,11 +338,9 @@ export function ReviewScreen({ navigation, route }: Props) {
           <MediaPicker
             photos={draft.photos}
             videoUri={reviewVideoEnabled ? draft.videoUri : undefined}
-            filterId={draft.filterId}
             onAddPhoto={addPhoto}
             onRemovePhoto={removePhoto}
             onSetVideo={reviewVideoEnabled ? setVideoUri : undefined}
-            onSetFilter={reviewFiltersEnabled ? setFilterId : undefined}
           />
 
           {/* Music Picker (Navigation Button) */}
