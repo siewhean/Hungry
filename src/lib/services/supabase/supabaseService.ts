@@ -3851,6 +3851,8 @@ export const supabaseService: HungryService = {
     },
 
     async getPostById(postId) {
+      // Stall/legacy ids are not posts rows: not found, not an invalid-uuid error.
+      if (!UUID_PATTERN.test(postId)) return null;
       const client = requireSupabaseClient();
       const { data, error } = await client.rpc("get_post_by_id", { p_post_id: postId });
       if (error) throw error;

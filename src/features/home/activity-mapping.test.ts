@@ -54,4 +54,9 @@ test("inbox formats times and routes follows to UserProfile", () => {
   assert.match(source, /\{formatTimeAgo\(update\.time\)\}/);
   assert.match(source, /update\.kind === "follow"\) \{\s*navigation\.navigate\("UserProfile"/);
   assert.doesNotMatch(source, /Open update for \$\{update\.target\}/);
+  // Each update row shows who acted.
+  assert.match(
+    source,
+    /<Avatar uri=\{update\.actorAvatarUrl\} name=\{update\.actorName\} size=\{40\} \/>/,
+  );
 });

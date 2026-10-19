@@ -54,6 +54,9 @@ export type ShareChannel = "in_app" | "system_share" | "copy_link" | "whatsapp" 
 // state when a feed read lands.
 const reactionQueues = new Map<string, Promise<void>>();
 const pendingReactionCounts = new Map<string, number>();
+// When each post's last like/save write settled. A feed read that started
+// before then may carry pre-write viewer state, so it is ignored for that post.
+const lastReactionSettledAt = new Map<string, number>();
 
 function enqueueReactionWrite(
   postId: string,
@@ -69,6 +72,7 @@ function enqueueReactionWrite(
       const remaining = (pendingReactionCounts.get(postId) ?? 1) - 1;
       if (remaining > 0) pendingReactionCounts.set(postId, remaining);
       else pendingReactionCounts.delete(postId);
+      lastReactionSettledAt.set(postId, Date.now());
       if (reactionQueues.get(key) === settled) reactionQueues.delete(key);
     });
   reactionQueues.set(key, settled);
@@ -122,7 +126,12 @@ interface SocialState {
   addReply: (postId: string, reply: SocialReply) => void;
   loadCommentsForPost: (postId: string) => Promise<void>;
   setInteraction: (postId: string, state: InteractionState) => void;
-  initializeInteractions: (items: any[]) => void;
+  /**
+   * Seed or refresh interaction state from fetched posts. readStartedAt is when
+   * the fetch began: server viewer state is skipped for posts whose like/save
+   * write settled after that (the read may predate the write).
+   */
+  initializeInteractions: (items: any[], readStartedAt?: number) => void;
   clearAccountScopedState: () => void;
 }
 
@@ -161,7 +170,7 @@ export const useSocialStore = create<SocialState>()(
           repliesByCommentId: {},
         }),
 
-      initializeInteractions: (items) => {
+      initializeInteractions: (items, readStartedAt) => {
         const { commentsByPostId, repliesByCommentId, interactions } = get();
         const next = { ...interactions };
         items.forEach((item) => {
@@ -182,7 +191,12 @@ export const useSocialStore = create<SocialState>()(
           const seededComments = seededCommentCount + storedCommentCount + storedReplyCount;
           const hasServerViewerState =
             typeof item.viewerHasLiked === "boolean" || typeof item.viewerHasSaved === "boolean";
-          if (hasServerViewerState && !pendingReactionCounts.has(item.id)) {
+          const settledAt = lastReactionSettledAt.get(item.id);
+          const readPredatesWrite =
+            typeof readStartedAt === "number" &&
+            typeof settledAt === "number" &&
+            settledAt >= readStartedAt;
+          if (hasServerViewerState && !pendingReactionCounts.has(item.id) && !readPredatesWrite) {
             // The server knows the viewer's like/save and the latest counts:
             // trust it on every fetch instead of a stale local default.
             const previous = next[item.id];

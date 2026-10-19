@@ -484,10 +484,10 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         }
         setSections(bundle.sections);
         setSocialFeed(bundle.socialFeed);
-        initializeInteractions([
-          ...bundle.socialFeed,
-          ...bundle.sections.flatMap((section) => section.items),
-        ]);
+        initializeInteractions(
+          [...bundle.socialFeed, ...bundle.sections.flatMap((section) => section.items)],
+          now,
+        );
         lastLoadedFeedKeyRef.current = requestKey;
         lastLoadedFeedAtRef.current = Date.now();
         setFeedError("");
@@ -1390,9 +1390,11 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                       delete carouselScrollRefs.current[carouselPostKey];
                     }
                   }}
-                  // Index state changes once per page settle, not every scroll
-                  // frame: each write re-renders every mounted feed card.
-                  onMomentumScrollEnd={(event) => {
+                  // State is written only when the rounded page index changes,
+                  // not every scroll frame: each write re-renders every mounted
+                  // feed card. onScroll (not onMomentumScrollEnd) so web updates too.
+                  scrollEventThrottle={16}
+                  onScroll={(event) => {
                     const viewportWidth = Math.max(event.nativeEvent.layoutMeasurement.width, 1);
                     const nextIndex = Math.round(event.nativeEvent.contentOffset.x / viewportWidth);
                     const clampedIndex = Math.max(

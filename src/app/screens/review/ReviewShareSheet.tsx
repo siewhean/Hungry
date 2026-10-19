@@ -40,6 +40,8 @@ type ReviewShareSheetProps = {
   bottomInset: number;
   onDismiss: () => void;
   onShared: (postId: string, channel: ShareChannel) => void;
+  /** False for signed-out viewers: only link/system shares, no in-app sends. */
+  inAppSharingEnabled?: boolean;
 };
 
 export function ReviewShareSheet({
@@ -48,17 +50,22 @@ export function ReviewShareSheet({
   bottomInset,
   onDismiss,
   onShared,
+  inAppSharingEnabled = true,
 }: ReviewShareSheetProps) {
   const { palette, spacing } = useHungryTheme();
   const sharePostToChat = useActivityStore((state) => state.sharePostToChat);
   const showToast = useUIStore((state) => state.showToast);
   const [selectedChatIds, setSelectedChatIds] = useState<string[]>([]);
   const [shareRecipients, setShareRecipients] = useState<ChatShareRecipient[]>([]);
-  const directMessagesEnabled = FEATURE_FLAGS.directMessagesEnabled;
+  const directMessagesEnabled = FEATURE_FLAGS.directMessagesEnabled && inAppSharingEnabled;
   const snapPoints = useMemo(() => ["62%"], []);
 
   const loadChatConversations = useCallback(async () => {
     if (!FEATURE_FLAGS.directMessagesEnabled) {
+      setShareRecipients([]);
+      return;
+    }
+    if (!inAppSharingEnabled) {
       setShareRecipients([]);
       return;
     }
@@ -69,7 +76,7 @@ export function ReviewShareSheet({
     } catch {
       setShareRecipients([]);
     }
-  }, []);
+  }, [inAppSharingEnabled]);
 
   useEffect(() => {
     if (activeReview) {
@@ -91,7 +98,7 @@ export function ReviewShareSheet({
   }, [onDismiss]);
 
   const sendToHungryUsers = useCallback(async () => {
-    if (!FEATURE_FLAGS.directMessagesEnabled) return;
+    if (!directMessagesEnabled) return;
     if (!activeReview || selectedChatIds.length === 0) return;
 
     try {
@@ -120,7 +127,15 @@ export function ReviewShareSheet({
       tone: "success",
     });
     innerRef.current?.dismiss();
-  }, [activeReview, innerRef, onShared, selectedChatIds, sharePostToChat, showToast]);
+  }, [
+    activeReview,
+    directMessagesEnabled,
+    innerRef,
+    onShared,
+    selectedChatIds,
+    sharePostToChat,
+    showToast,
+  ]);
 
   const copyLink = useCallback(() => {
     if (!activeReview) return;

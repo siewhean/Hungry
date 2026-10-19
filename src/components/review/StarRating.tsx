@@ -68,6 +68,7 @@ export function StarRating({
         return (
           <Pressable
             key={starValue}
+            testID={`star-${starValue}`}
             importantForAccessibility="no-hide-descendants"
             accessibilityElementsHidden
             onPress={() => onChange?.(starValue)}

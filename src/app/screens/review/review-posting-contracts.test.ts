@@ -81,6 +81,9 @@ test("review editor: dish first, helper text, modal picker, route wins over a st
   assert.match(review, /No stalls match/);
   assert.match(review, /"Unfinished review"/);
   assert.match(review, /\{ text: "Start new", onPress: startFromRoute \}/);
+  // A draft with content but no dish still counts; a manual dish switch asks first.
+  assert.match(review, /if \(!reviewDraftHasContent\(draft\)\) \{\s*startFromRoute\(\);/);
+  assert.match(review, /"Change dish\?"/);
   // Filters are preview-only, so they stay out of production.
   assert.match(review, /onSetFilter=\{reviewFiltersEnabled \? setFilterId : undefined\}/);
 });
@@ -120,9 +123,14 @@ test("post composer never attaches a venue-only post to the stall's first dish",
   assert.match(composer, /onPress=\{\(\) => setSelectedDishId\(null\)\}/);
 });
 
-test("stall detail no longer offers a dead-end menu photo button", () => {
+test("stall detail's menu photo button uploads through supply.submitMenuPhoto", () => {
   const stall = read("src/app/screens/detail/StallDetailScreen.tsx");
-  assert.doesNotMatch(stall, /label="Add a menu photo"/);
+  assert.match(stall, /"Add a menu photo"/);
+  assert.match(stall, /getHungryService\(\)\.supply\.submitMenuPhoto\(\{\s*venueId: venue\.id/);
+  assert.match(stall, /"Thanks, we'll add the menu soon\."/);
+  assert.match(stall, /const canSubmitMenuPhoto = isAuthenticated && Platform\.OS !== "web"/);
+  // No longer a detour into a review editor with no dishes.
+  assert.doesNotMatch(stall, /label="Add a menu photo"[\s\S]{0,200}ReviewMain/);
 });
 
 test("prototype-only review features stay out of production", () => {

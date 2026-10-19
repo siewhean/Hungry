@@ -28,7 +28,11 @@ import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore
 import { useHungryTheme } from "@/theme";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { REVIEW_TEXT_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSanitization";
-import { REVIEW_PHOTOS_NOT_ATTACHED, resolveWouldRecommend } from "@/features/review/reviewDraft";
+import {
+  REVIEW_PHOTOS_NOT_ATTACHED,
+  resolveWouldRecommend,
+  reviewDraftHasContent,
+} from "@/features/review/reviewDraft";
 import type { ReviewStackParamList } from "@/app/navigation/navigationTypes";
 import type { DishDetail } from "@/types/domain";
 
@@ -113,32 +117,37 @@ export function ReviewScreen({ navigation, route }: Props) {
     if (draftMatchesRoute) return;
 
     const startFromRoute = () => {
+      // Start from an empty draft (selectDish keeps content when no dish was
+      // picked yet, so reset first).
+      resetDraft();
       if (routeDishId && routeVenueForDish) {
         selectDish(routeVenueForDish, routeDishId);
         return;
       }
       // Opened for a stall without a dish: ask which dish instead of guessing.
-      resetDraft();
       if (routeVenueId) {
         setPickerVenueId(routeVenueId);
         setIsSearching(true);
       }
     };
 
-    const draftHasContent =
-      Boolean(draft.selectedDishId) &&
-      (draft.rating > 0 || draft.text.trim().length > 0 || draft.photos.length > 0);
-    if (!draftHasContent) {
+    if (!reviewDraftHasContent(draft)) {
       startFromRoute();
       return;
     }
-    const previousDishName =
-      repository.getDishById(draft.selectedDishId ?? "")?.name ?? "your last dish";
+    const previousDishName = draft.selectedDishId
+      ? (repository.getDishById(draft.selectedDishId)?.name ?? "your last dish")
+      : undefined;
     Alert.alert(
       "Unfinished review",
-      `You started a review of ${previousDishName}. Continue it, or start a new one here?`,
+      previousDishName
+        ? `You started a review of ${previousDishName}. Continue it, or start a new one here?`
+        : "You have an unfinished review. Continue it, or start a new one here?",
       [
-        { text: `Continue ${previousDishName}`, style: "cancel" },
+        {
+          text: previousDishName ? `Continue ${previousDishName}` : "Continue",
+          style: "cancel",
+        },
         { text: "Start new", onPress: startFromRoute },
       ],
     );
@@ -500,8 +509,28 @@ export function ReviewScreen({ navigation, route }: Props) {
                   accessibilityRole="button"
                   accessibilityLabel={`Review ${item.name}`}
                   onPress={() => {
-                    selectDish(pickerVenue.id, item.id);
-                    closePicker();
+                    const switchingDish =
+                      Boolean(draft.selectedDishId) && draft.selectedDishId !== item.id;
+                    if (!switchingDish || !reviewDraftHasContent(draft)) {
+                      selectDish(pickerVenue.id, item.id);
+                      closePicker();
+                      return;
+                    }
+                    Alert.alert(
+                      "Change dish?",
+                      "Switching dish clears the rating, text and photos you added.",
+                      [
+                        { text: "Keep current dish", style: "cancel" },
+                        {
+                          text: "Change dish",
+                          style: "destructive",
+                          onPress: () => {
+                            selectDish(pickerVenue.id, item.id);
+                            closePicker();
+                          },
+                        },
+                      ],
+                    );
                   }}
                   style={{
                     paddingVertical: spacing[3],

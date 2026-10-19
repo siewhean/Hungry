@@ -126,7 +126,7 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
   const requireSignIn = useCallback(() => {
     if (isAuthenticated) return true;
     setReturnRoute({ name: "ActivityPostDetail", params: { postId } });
-    showToast({ message: "Sign in to like or save posts.", tone: "warning" });
+    showToast({ message: "Sign in to like, save or comment on posts.", tone: "warning" });
     navigation.navigate("AuthStack", { screen: "Login" });
     return false;
   }, [isAuthenticated, navigation, postId, setReturnRoute, showToast]);
@@ -322,6 +322,7 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
             accessibilityLabel={`Manage ${post.authorName}'s post`}
             hitSlop={10}
             onPress={() =>
+              requireSignIn() &&
               promptPostSafetyActions({
                 postId: post.id,
                 authorName: post.authorName,
@@ -407,6 +408,7 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
                   accessibilityLabel="Open comments"
                   hitSlop={10}
                   onPress={() => {
+                    if (!requireSignIn()) return;
                     setActiveCommentReview({
                       id: post.id,
                       authorName: post.authorName,
@@ -478,8 +480,11 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
         bottomInset={insets.bottom}
         innerRef={shareSheetRef}
         onDismiss={() => setActiveShareReview(null)}
+        // Signed-out visitors can copy or system-share the link; recording a
+        // share (and in-app sends) needs an account.
+        inAppSharingEnabled={isAuthenticated}
         onShared={(postId, channel) => {
-          incrementShare(postId, channel);
+          if (isAuthenticated) incrementShare(postId, channel);
         }}
       />
     </Screen>

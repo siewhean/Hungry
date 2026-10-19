@@ -204,6 +204,15 @@ test("activity messages and update posts are functional routes, not static mocku
   assert.match(detail, /social\.getPostById\(postId\)/);
   assert.match(detail, /title="This post is no longer available"/);
   assert.match(detail, /if \(requireSignIn\(\)\) void toggleLike\(post\.id\)/);
+  // Visitors: comments and the safety menu need sign-in; share is link-only.
+  assert.match(detail, /if \(!requireSignIn\(\)\) return;\s*setActiveCommentReview/);
+  assert.match(detail, /requireSignIn\(\) &&\s*promptPostSafetyActions/);
+  assert.match(detail, /inAppSharingEnabled=\{isAuthenticated\}/);
+  assert.match(detail, /if \(isAuthenticated\) incrementShare\(postId, channel\)/);
+  assert.match(
+    read("src/lib/services/supabase/supabaseService.ts"),
+    /async getPostById\(postId\) \{[^}]*if \(!UUID_PATTERN\.test\(postId\)\) return null;/,
+  );
   assert.match(detail, /dbActivityEvents\.find/);
   assert.match(detail, /void fetchActivityEvents\(\)/);
   assert.match(detail, /markActivityRead\("update", updateId\)/);

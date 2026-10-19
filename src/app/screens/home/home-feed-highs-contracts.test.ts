@@ -23,7 +23,12 @@ test("consumer feed posts lead to the dish, the stall and the post", () => {
 test("carousel index is not written to screen state on every scroll frame", () => {
   const home = read("src/app/screens/home/HomeFeedScreen.tsx");
   assert.doesNotMatch(home, /contentOffset\.x \/ viewportWidth;\n/);
-  assert.match(home, /onMomentumScrollEnd=/);
+  // Rounded page index, and the state setter bails out when it is unchanged.
+  assert.match(
+    home,
+    /const nextIndex = Math\.round\(event\.nativeEvent\.contentOffset\.x \/ viewportWidth\)/,
+  );
+  assert.match(home, /if \(current\[carouselPostKey\] === clampedIndex\) \{\s*return current;/);
 });
 
 test("repository post cache is bounded and honours the viewer's hidden posts", () => {
@@ -33,4 +38,12 @@ test("repository post cache is bounded and honours the viewer's hidden posts", (
   assert.match(repo, /\.in\("post_id", cachedPostIds\)/);
   assert.match(repo, /!hiddenPostIds\.has\(toString\(row\.id\)\)/);
   assert.doesNotMatch(repo, /client\.from\("post_media"\)\.select\("\*"\)\.order/);
+});
+
+test("repository post cache also keeps the viewer's saved and liked posts", () => {
+  const repo = read("src/lib/services/supabase/supabaseRepository.ts");
+  assert.match(repo, /from\("post_saves"\)\.select\("post_id"\)\.eq\("user_id", viewerId\)/);
+  assert.match(repo, /from\("post_likes"\)\.select\("post_id"\)\.eq\("user_id", viewerId\)/);
+  assert.match(repo, /\.in\("id", \[\.\.\.reactedIds\]\)/);
+  assert.match(repo, /const cachedPostRows = \[\.\.\.recentPostRows, \.\.\.viewerPostRows\]/);
 });

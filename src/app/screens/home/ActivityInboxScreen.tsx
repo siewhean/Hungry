@@ -13,7 +13,14 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AccessibleImage, AppHeader, AppText, EmptyState, IconButton } from "@/components/ui";
+import {
+  AccessibleImage,
+  AppHeader,
+  AppText,
+  Avatar,
+  EmptyState,
+  IconButton,
+} from "@/components/ui";
 import {
   ACTIVITY_UPDATES,
   getActivityReadKey,
@@ -443,6 +450,7 @@ function UpdatesTab({
             }}
             style={[stylesInline.updateRow, { gap: spacing[3] }]}
           >
+            <Avatar uri={update.actorAvatarUrl} name={update.actorName} size={40} />
             <View style={[stylesInline.kindBadge, { backgroundColor: palette.bgSoft }]}>
               {update.kind === "like" ? (
                 <Heart color={kindColor} size={20} />
