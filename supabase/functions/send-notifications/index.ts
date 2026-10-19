@@ -4,12 +4,14 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
 import { timingSafeEqual } from "../_shared/timingSafeEqual.ts";
 
 // Drains public.notification_jobs (filled by the dishes trigger, the weekly
-// picks cron and the merchant low-rating reviews trigger) and sends Expo
+// picks and meal-time crons and the merchant low-rating reviews trigger) and sends Expo
 // pushes. Each job is rechecked before sending: the user (or, for low-rating
 // alerts, the merchant account) still opted in, the dish (if any) still exists
 // and is not sold out, the review (if any) is not hidden by moderation, outside
 // the user's quiet hours (Singapore time; consumer pushes only), under their
-// weekly cap (consumer pushes only), and not older than 48 hours. Low-rating
+// weekly cap (consumer pushes only), and not older than 48 hours (two hours
+// for meal-time suggestions, which are also skipped once the user has opened
+// the app that Singapore day). Low-rating
 // alerts open Merchant Centre, so they are only sent when the
 // MERCHANT_ALERTS_ENABLED secret is "true" (set it when Merchant Centre ships).
 
@@ -20,6 +22,7 @@ type JsonObject = Record<string, unknown>;
 const DEFAULT_PREFERENCES = {
   stall_updates: false,
   weekly_picks: true,
+  mealtime_suggestions: false,
   quiet_start_hour: 22,
   quiet_end_hour: 8,
   weekly_cap: 3,
@@ -28,10 +31,13 @@ const DEFAULT_PREFERENCES = {
 const MAX_BATCH_SIZE = 500;
 const MAX_ATTEMPTS = 3;
 const STALE_AFTER_MS = 48 * 60 * 60 * 1000;
+// A lunch nudge at 3pm is noise: meal-time jobs expire after two hours.
+const MEALTIME_STALE_AFTER_MS = 2 * 60 * 60 * 1000;
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
 const ANDROID_CHANNEL_ID = "stall-updates";
 const MERCHANT_LOW_RATING = "merchant_low_rating";
+const MEALTIME = "mealtime";
 
 function toJson(status: number, body: JsonObject): Response {
   return new Response(JSON.stringify(body), {
@@ -53,6 +59,10 @@ function parseLimit(value: unknown): number {
 
 function singaporeHour(now: Date): number {
   return (now.getUTCHours() + 8) % 24;
+}
+
+function singaporeDate(now: Date): string {
+  return new Date(now.getTime() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10);
 }
 
 function isQuietHour(hour: number, start: number, end: number): boolean {
@@ -126,6 +136,7 @@ Deno.serve(async (request) => {
     { data: reviews },
     { data: hiddenReviews },
     { data: merchantPrefs },
+    { data: activeToday },
   ] = await Promise.all([
     client.from("notification_preferences").select("*").in("user_id", userIds),
     client.from("user_push_tokens").select("token, user_id").in("user_id", userIds),
@@ -147,8 +158,14 @@ Deno.serve(async (request) => {
       .from("merchant_notification_preferences")
       .select("merchant_account_id, low_rating_alerts")
       .in("merchant_account_id", merchantAccountIds),
+    client
+      .from("user_activity_days")
+      .select("user_id")
+      .eq("activity_date", singaporeDate(now))
+      .in("user_id", userIds),
   ]);
 
+  const activeTodayUserIds = new Set((activeToday ?? []).map((row) => row.user_id));
   const prefsByUser = new Map((prefs ?? []).map((row) => [row.user_id, row]));
   const dishesById = new Map((dishes ?? []).map((row) => [row.id, row]));
   const liveReviewIds = new Set((reviews ?? []).map((row) => row.id));
@@ -181,6 +198,7 @@ Deno.serve(async (request) => {
     const pref = { ...DEFAULT_PREFERENCES, ...(prefsByUser.get(job.user_id) ?? {}) };
     const isWeeklyPicks = job.category === "weekly_picks";
     const isLowRating = job.category === MERCHANT_LOW_RATING;
+    const isMealtime = job.category === MEALTIME;
     const dish = job.dish_id ? dishesById.get(job.dish_id) : null;
     let skipReason: string | null = null;
 
@@ -188,17 +206,23 @@ Deno.serve(async (request) => {
     else if (
       isLowRating
         ? lowRatingOffAccounts.has(job.merchant_account_id)
-        : isWeeklyPicks
-          ? !pref.weekly_picks
-          : !pref.stall_updates
+        : isMealtime
+          ? !pref.mealtime_suggestions
+          : isWeeklyPicks
+            ? !pref.weekly_picks
+            : !pref.stall_updates
     )
       skipReason = "opted_out";
-    else if (now.getTime() - new Date(job.created_at).getTime() > STALE_AFTER_MS)
+    else if (
+      now.getTime() - new Date(job.created_at).getTime() >
+      (isMealtime ? MEALTIME_STALE_AFTER_MS : STALE_AFTER_MS)
+    )
       skipReason = "stale";
+    else if (isMealtime && activeTodayUserIds.has(job.user_id)) skipReason = "already_active";
     else if (
       isLowRating
         ? !liveReviewIds.has(job.review_id)
-        : !isWeeklyPicks && (!dish || isSoldOut(dish.availability_flags))
+        : !isMealtime && !isWeeklyPicks && (!dish || isSoldOut(dish.availability_flags))
     )
       skipReason = "no_longer_relevant";
     else if (!isLowRating && (sentThisWeek.get(job.user_id) ?? 0) >= pref.weekly_cap)

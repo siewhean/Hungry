@@ -162,6 +162,8 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
     const id = decodePathSegment(parts[2]);
     return id ? createState("CatalogRawDetail", { kind, id }) : undefined;
   }
+  // Lunch and dinner suggestion pushes open https://usehungry.com/decide.
+  if (path === "decide") return createState("DecideForMeResult", { surface: "home" });
   if (parts[0] === "dish") {
     const dishId = decodePathSegment(parts[1]);
     if (!dishId) return undefined;

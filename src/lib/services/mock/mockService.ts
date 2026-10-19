@@ -101,6 +101,8 @@ import type {
   SubmitUserStallSubmissionInput,
   UserStallSubmission,
   PushPreferences,
+  LifecycleSnapshot,
+  WelcomeBackDish,
 } from "@/types/domain";
 import { DEFAULT_PUSH_PREFERENCES } from "@/types/domain";
 import { computeTasteProfileFromQuiz } from "@/lib/ai/tasteQuiz";
@@ -109,6 +111,7 @@ import {
   processExplicitFeedback as processExplicitFeedbackCore,
 } from "@/lib/ai/tasteEngine";
 import type { ExplicitFeedbackEvent } from "@/lib/ai/tasteEngine";
+import { buildLifecycleSnapshot, singaporeDateKey } from "@/features/lifecycle/lifecycle";
 import { suggestAllergensFromIngredients } from "@/features/merchant/allergenKeywords";
 import { applyVerificationSubmission } from "@/features/merchant/verificationStateMachine";
 import { validateMerchantProfileUpdates } from "@/features/merchant/profileValidation";
@@ -294,6 +297,8 @@ let _profile: UserProfile = { ...guestProfile };
 const _submittedClientReviewIds = new Set<string>();
 let _followedStallIds = new Set<string>();
 let _pushPreferences: PushPreferences = { ...DEFAULT_PUSH_PREFERENCES };
+/** Singapore dates the mock user opened the app (record_app_open). */
+const _activityDates = new Set<string>();
 let _isAuthenticated = false;
 let _authProvider: "email" | "google" | "apple" = "email";
 let _pendingDeletionScheduledFor: string | undefined;
@@ -1986,6 +1991,30 @@ export const hungryService: HungryService = {
 
     async markOpened() {
       return resolve(undefined);
+    },
+  },
+
+  lifecycle: {
+    async recordAppOpen(): Promise<LifecycleSnapshot | null> {
+      const today = singaporeDateKey();
+      const snapshot = buildLifecycleSnapshot([..._activityDates], today);
+      _activityDates.add(today);
+      return resolve(snapshot);
+    },
+
+    async getWelcomeBackDishes(): Promise<WelcomeBackDish[]> {
+      // Mock dishes carry no created date, so any dish at a followed stall counts as new.
+      return resolve(
+        dishes
+          .filter((dish) => _followedStallIds.has(dish.venueId))
+          .slice(0, 3)
+          .map((dish) => ({
+            dishId: dish.id,
+            dishName: dish.name,
+            stallId: dish.venueId,
+            stallName: dish.venueName,
+          })),
+      );
     },
   },
 

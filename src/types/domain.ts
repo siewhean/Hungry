@@ -1153,6 +1153,37 @@ export interface StallInteraction {
   reviewedAt?: string;
 }
 
+// ─── Lifecycle ────────────────────────────────────────────────────────────────
+
+/**
+ * Where a user is in their Hungry habit, from the Singapore days they opened the app.
+ * Active today: new, current (back within 7 days), reactivated (8-30), resurrected (31+).
+ * Not active today: at_risk_weekly (last visit within 7 days), at_risk_monthly (8-30), dormant.
+ */
+export type LifecycleState =
+  | "new"
+  | "current"
+  | "reactivated"
+  | "resurrected"
+  | "at_risk_weekly"
+  | "at_risk_monthly"
+  | "dormant";
+
+export interface LifecycleSnapshot {
+  state: LifecycleState;
+  /** Singapore date (YYYY-MM-DD) of the visit before today, if any. */
+  previousActiveDate: string | null;
+  daysSincePrevious: number | null;
+}
+
+/** A dish added at a followed stall since the user's last visit, for the welcome back card. */
+export interface WelcomeBackDish {
+  dishId: string;
+  dishName: string;
+  stallId: string;
+  stallName: string;
+}
+
 // ─── Notifications ────────────────────────────────────────────────────────────
 
 /** Per-user push settings. Hours are Singapore time (0-23); quiet hours wrap past midnight. */
@@ -1160,6 +1191,8 @@ export interface PushPreferences {
   stallUpdates: boolean;
   /** Weekly "Your new picks are ready" push. On unless the user opts out. */
   weeklyPicks: boolean;
+  /** Lunch (11:30) and dinner (17:30) suggestion pushes. Off unless the user turns them on. */
+  mealtimeSuggestions: boolean;
   quietStartHour: number;
   quietEndHour: number;
   weeklyCap: number;
@@ -1168,6 +1201,7 @@ export interface PushPreferences {
 export const DEFAULT_PUSH_PREFERENCES: PushPreferences = {
   stallUpdates: false,
   weeklyPicks: true,
+  mealtimeSuggestions: false,
   quietStartHour: 22,
   quietEndHour: 8,
   weeklyCap: 3,
