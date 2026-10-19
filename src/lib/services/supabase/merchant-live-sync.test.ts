@@ -78,3 +78,36 @@ test("raw catalog refresh runs per venue, only for app-user writes, and is not c
     );
   }
 });
+
+const hardening = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20261018171000_merchant_live_sync_hardening.sql"),
+  "utf8",
+);
+
+function hardeningBody(name: string): string {
+  const start = hardening.indexOf(`create or replace function public.${name}(`);
+  assert.ok(start >= 0, `${name} should be defined`);
+  return hardening.slice(start, hardening.indexOf("$$;", start));
+}
+
+test("merchant verification is tied to an outlet the caller manages", () => {
+  const body = hardeningBody("merchant_venue_is_verified");
+  assert.match(body, /ma\.user_id = auth\.uid\(\)/);
+  assert.match(body, /mr\.role in \('owner', 'manager'\)/);
+});
+
+test("outlet sync and public profile only trust the verified outlet itself", () => {
+  assert.match(
+    hardeningBody("sync_merchant_outlet_to_venue"),
+    /merchant_outlet_is_verified\(new\.id\)/,
+  );
+  assert.match(hardeningBody("sync_merchant_outlet_to_venue"), /\^https:\/\//);
+  assert.match(
+    hardeningBody("get_public_merchant_profile"),
+    /merchant_outlet_is_verified\(mo\.id\)/,
+  );
+  const guard = hardeningBody("enforce_merchant_outlet_link_guard");
+  for (const column of ["venue_id", "building_id", "merchant_account_id"]) {
+    assert.match(guard, new RegExp(`new\\.${column} is distinct from old\\.${column}`));
+  }
+});

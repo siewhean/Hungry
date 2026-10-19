@@ -18,7 +18,8 @@ interface LocationState {
    * Re-reads GPS when permission is already granted and the last fix is older
    * than LOCATION_REFRESH_MAX_AGE_MS. Never prompts. Resolves true on a new fix.
    */
-  refreshLocation: () => Promise<boolean>;
+  /** Skips when the last fix is fresh unless `force` (used on cold launch). */
+  refreshLocation: (options?: { force?: boolean }) => Promise<boolean>;
   denyLocation: () => void;
   setManualLocation: (label: string) => void;
   setManualSelection: (label: string, coordinate: Coordinate) => void;
@@ -133,11 +134,14 @@ export const useLocationStore = create<LocationState>()(
           return false;
         }
       },
-      refreshLocation: () => {
+      refreshLocation: (options) => {
         if (refreshInFlight) return refreshInFlight;
         const state = get();
         if (state.permission !== "granted") return Promise.resolve(false);
-        if (Date.now() - (state.lastLocationFixAt ?? 0) < LOCATION_REFRESH_MAX_AGE_MS) {
+        if (
+          !options?.force &&
+          Date.now() - (state.lastLocationFixAt ?? 0) < LOCATION_REFRESH_MAX_AGE_MS
+        ) {
           return Promise.resolve(false);
         }
         const Location = loadExpoLocationModule();

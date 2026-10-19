@@ -65,3 +65,6 @@ scrape_orchestrator.log
 scripts/temp_main.js
 tasks/Roadmap/Database/excel-source-quality-review-queue-*.csv
 tasks/Roadmap/Database/excel-source-quality-audit-*.json
+
+# Open-data enrichment response cache (scripts/enrich_from_open_data.py)
+data/open_data_cache/

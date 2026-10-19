@@ -1,4 +1,5 @@
 import { runRecommendationPipeline } from "@/lib/ai/tasteEngine";
+import { getDistanceMetersFromBuildingId } from "@/lib/geo/distance";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/services/supabase/client";
 import type {
   BuildingDetail,
@@ -1080,7 +1081,31 @@ const supabaseRepositoryImpl: DataRepository = {
   searchDishes(filters: SearchFilters, tasteProfile): DishDetail[] {
     ensureHydrated();
     const query = filters.query.trim().toLowerCase();
-    const matched = cachedDishes.filter((dish) => {
+    // dishes.distance_meters is a stored column, not the distance from the user.
+    // When the caller passes a location, measure from the dish's building instead.
+    const origin =
+      typeof filters.latitude === "number" && typeof filters.longitude === "number"
+        ? { latitude: filters.latitude, longitude: filters.longitude }
+        : undefined;
+    const buildingCoordinatesById = new Map(
+      origin
+        ? cachedBuildings
+            .filter(({ coordinate }) => coordinate.latitude !== 0 || coordinate.longitude !== 0)
+            .map((building) => [building.id, building.coordinate])
+        : [],
+    );
+    const locatedDishes = origin
+      ? cachedDishes.map((dish) => ({
+          ...dish,
+          distanceMeters: getDistanceMetersFromBuildingId(
+            origin,
+            dish.buildingId,
+            buildingCoordinatesById,
+            dish.distanceMeters,
+          ),
+        }))
+      : cachedDishes;
+    const matched = locatedDishes.filter((dish) => {
       const matchesQuery = !query || dish.name.toLowerCase().includes(query);
       const matchesDietary =
         filters.dietaryFlags.length === 0 ||
