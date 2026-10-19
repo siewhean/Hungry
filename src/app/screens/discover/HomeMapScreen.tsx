@@ -43,10 +43,40 @@ import { DiscoverViewToggle } from "@/components/discover/DiscoverViewToggle";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useSearchStore } from "@/store/useSearchStore";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { useHungryTheme } from "@/theme";
 
 const DEFAULT_BUILDING_ID = "hc-maxwell";
 type HomeMapFilterId = "nearMe" | "hawkerOnly" | "topRated" | "openNow";
+
+/** Camera moves settle before the catalog is read again. */
+const MAP_REFETCH_DEBOUNCE_MS = 350;
+
+/** "Open · 450m · Maxwell Food Centre" from what the catalog card actually knows. */
+function formatVenueCardDetail(venue: CatalogRawVenueCard) {
+  const distance =
+    typeof venue.distanceMeters === "number"
+      ? venue.distanceMeters >= 1000
+        ? `${(venue.distanceMeters / 1000).toFixed(1)}km`
+        : `${Math.round(venue.distanceMeters)}m`
+      : undefined;
+  return [
+    venue.isOpen === true ? "Open" : venue.isOpen === false ? "Closed" : undefined,
+    distance,
+    venue.buildingName,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+/** Representative dish name with its listed price (never rounded), or the menu size. */
+function formatVenueCardDish(venue: CatalogRawVenueCard) {
+  const dish = venue.representativeDish;
+  if (!dish) return `${venue.menuCount} dishes`;
+  return typeof dish.price === "number" && dish.price > 0
+    ? `${dish.name} · S$${dish.price.toFixed(2)}`
+    : dish.name;
+}
 
 const HOME_MAP_FILTER_OPTIONS: readonly { id: HomeMapFilterId; label: string }[] = [
   { id: "nearMe", label: "Near me" },
@@ -82,6 +112,9 @@ export function HomeMapScreen() {
     });
   const selectedBuilding = useDiscoveryStore((state) => state.selectedBuilding);
   const highlightedStallVenueId = useDiscoveryStore((state) => state.highlightedStallVenueId);
+  const setHighlightedStallVenueId = useDiscoveryStore((state) => state.setHighlightedStallVenueId);
+  // The highlight is a one-shot hand-off from Home: clear it when the map closes.
+  useEffect(() => () => setHighlightedStallVenueId(undefined), [setHighlightedStallVenueId]);
   const mapFilters = useDiscoveryStore((state) => state.mapFilters);
   const toggleMapFilter = useDiscoveryStore((state) => state.toggleMapFilter);
 
@@ -104,6 +137,8 @@ export function HomeMapScreen() {
   const [rawMapItems, setRawMapItems] = useState<CatalogMapItem[]>([]);
   const [rawVenueCards, setRawVenueCards] = useState<CatalogRawVenueCard[]>([]);
   const [rawReleaseId, setRawReleaseId] = useState<string | undefined>();
+  const [mapLoadState, setMapLoadState] = useState<"idle" | "loading" | "error">("idle");
+  const [mapReloadKey, setMapReloadKey] = useState(0);
 
   const CAROUSEL_HEIGHT = 240;
   const MINIMIZED_HEIGHT = 60;
@@ -130,43 +165,55 @@ export function HomeMapScreen() {
     const span = currentZoom >= 15 ? 0.018 : currentZoom >= 13 ? 0.08 : 0.3;
     const buildingTypes = mapFilters.hawkerOnly ? ["hawker_centre"] : [];
     const nearCoordinate = mapFilters.nearMe ? currentLocation : undefined;
-    void (async () => {
-      const mapPage = await catalogRawService.getMapViewport({
-        minLatitude: mapCenter.latitude - span,
-        minLongitude: mapCenter.longitude - span,
-        maxLatitude: mapCenter.latitude + span,
-        maxLongitude: mapCenter.longitude + span,
-        zoom: currentZoom,
-        coordinate: nearCoordinate,
-        radiusMeters: nearCoordinate ? 3_000 : undefined,
-        buildingTypes,
-        openOnly: mapFilters.openNow,
-        minRating: mapFilters.topRated ? 4.5 : undefined,
-      });
-      const venuePage = await catalogRawService.listVenues({
-        coordinate: nearCoordinate ?? mapCenter,
-        limit: 24,
-        radiusMeters: nearCoordinate ? 3_000 : undefined,
-        buildingTypes,
-        openOnly: mapFilters.openNow,
-        sort: mapFilters.topRated ? "quality" : "nearby",
-        releaseId: mapPage.releaseId,
-      });
-      if (active) {
-        setRawMapItems(mapPage.items);
-        setRawVenueCards(venuePage.items);
-        setRawReleaseId(mapPage.releaseId);
-      }
-    })().catch(() => {
-      if (!active) return;
-      setRawMapItems([]);
-      setRawVenueCards([]);
-      setRawReleaseId(undefined);
-    });
+    // Debounced so a pan or pinch reads once it settles; both reads run together.
+    const timer = setTimeout(() => {
+      setMapLoadState("loading");
+      void Promise.all([
+        catalogRawService.getMapViewport({
+          minLatitude: mapCenter.latitude - span,
+          minLongitude: mapCenter.longitude - span,
+          maxLatitude: mapCenter.latitude + span,
+          maxLongitude: mapCenter.longitude + span,
+          zoom: currentZoom,
+          coordinate: nearCoordinate,
+          radiusMeters: nearCoordinate ? 3_000 : undefined,
+          buildingTypes,
+          openOnly: mapFilters.openNow,
+          minRating: mapFilters.topRated ? 4.5 : undefined,
+        }),
+        catalogRawService.listVenues({
+          coordinate: nearCoordinate ?? mapCenter,
+          limit: 24,
+          radiusMeters: nearCoordinate ? 3_000 : undefined,
+          buildingTypes,
+          openOnly: mapFilters.openNow,
+          sort: mapFilters.topRated ? "quality" : "nearby",
+        }),
+      ])
+        .then(([mapPage, venuePage]) => {
+          if (!active) return;
+          setRawMapItems(mapPage.items);
+          setRawVenueCards(venuePage.items);
+          setRawReleaseId(mapPage.releaseId);
+          setMapLoadState("idle");
+        })
+        .catch(() => {
+          // Keep the last good pins and cards on screen; say the refresh failed.
+          if (active) setMapLoadState("error");
+        });
+    }, MAP_REFETCH_DEBOUNCE_MS);
     return () => {
       active = false;
+      clearTimeout(timer);
     };
-  }, [catalogRawService, currentLocation, currentZoom, mapCenter, mapFilters]);
+  }, [
+    catalogRawService,
+    currentLocation,
+    currentZoom,
+    mapCenter,
+    mapFilters,
+    mapReloadKey,
+  ]);
 
   const snapTo = (height: number) => {
     Animated.spring(animatedHeight, {
@@ -184,6 +231,7 @@ export function HomeMapScreen() {
           `${candidate.kind === "venue" ? "stall" : candidate.kind}-${candidate.id}` === markerId,
       );
       if (!item) return;
+      trackAnalyticsEvent("map_pin_tapped", { pin_kind: item.kind, pin_id: item.id });
       if (item.kind === "cluster") {
         setMapCenter({ latitude: item.latitude, longitude: item.longitude });
         setCurrentZoom((zoom) => Math.max(14, zoom + 1.5));
@@ -229,19 +277,24 @@ export function HomeMapScreen() {
     }),
   ).current;
 
+  // Left-edge swipe back without an overlay strip: the root view only captures a
+  // horizontal move that began at the edge, so taps on the map, legend and cards pass through.
+  const edgeBackZoneWidth = Math.max(28, insets.left + 24);
   const edgeBackPanResponder = useMemo(
     () =>
       PanResponder.create({
         onStartShouldSetPanResponder: () => false,
-        onMoveShouldSetPanResponder: (_, gestureState) =>
-          gestureState.dx > 12 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.5,
+        onMoveShouldSetPanResponderCapture: (_, gestureState) =>
+          gestureState.x0 <= edgeBackZoneWidth &&
+          gestureState.dx > 12 &&
+          Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.5,
         onPanResponderRelease: (_, gestureState) => {
           if ((gestureState.dx > 64 || gestureState.vx > 0.35) && navigation.canGoBack()) {
             navigation.goBack();
           }
         },
       }),
-    [navigation],
+    [edgeBackZoneWidth, navigation],
   );
 
   useEffect(() => {
@@ -281,7 +334,7 @@ export function HomeMapScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: palette.bg }}>
+    <View style={{ flex: 1, backgroundColor: palette.bg }} {...edgeBackPanResponder.panHandlers}>
       <FeedErrorBoundary
         title="Map currently unavailable"
         body="We hit a rendering issue with the map. Please try again."
@@ -316,18 +369,6 @@ export function HomeMapScreen() {
           }
         />
       </FeedErrorBoundary>
-
-      <View
-        {...edgeBackPanResponder.panHandlers}
-        pointerEvents="box-only"
-        style={[
-          styles.edgeBackGestureZone,
-          {
-            width: Math.max(28, insets.left + 24),
-            zIndex: zIndex.overlay + 1,
-          },
-        ]}
-      />
 
       {/* Top Floating UI */}
       <SafeAreaView
@@ -410,6 +451,34 @@ export function HomeMapScreen() {
               ) : null
             }
           />
+          {mapLoadState === "idle" ? null : (
+            <Pressable
+              accessibilityRole={mapLoadState === "error" ? "button" : "text"}
+              accessibilityLabel={
+                mapLoadState === "error" ? "Couldn't load places. Tap to retry." : "Loading places"
+              }
+              accessibilityLiveRegion="polite"
+              disabled={mapLoadState !== "error"}
+              onPress={() => setMapReloadKey((key) => key + 1)}
+              style={{
+                alignSelf: "flex-start",
+                backgroundColor: palette.surface,
+                borderColor: palette.border,
+                borderRadius: radii.pill,
+                borderWidth: 1,
+                minHeight: 32,
+                justifyContent: "center",
+                paddingHorizontal: spacing[3],
+                ...shadows.floating,
+              }}
+            >
+              <AppText variant="micro" tone={mapLoadState === "error" ? "accent" : "secondary"}>
+                {mapLoadState === "error"
+                  ? "Couldn't load places. Tap to retry."
+                  : "Loading places…"}
+              </AppText>
+            </Pressable>
+          )}
         </View>
       </SafeAreaView>
 
@@ -430,6 +499,9 @@ export function HomeMapScreen() {
         <View style={{ gap: spacing[3], alignItems: "flex-start" }}>
           {showLegend && <BuildingLegend />}
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={showLegend ? "Hide map legend" : "Show map legend"}
+            accessibilityState={{ expanded: showLegend }}
             onPress={() => {
               setShowLegend(!showLegend);
               void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -539,13 +611,13 @@ export function HomeMapScreen() {
                 <View style={{ flex: 1, gap: spacing[1] }}>
                   <AppText variant="h3">{venue.name}</AppText>
                   <AppText variant="micro" tone="secondary">
-                    {venue.representativeDish?.name ?? `${venue.menuCount} listed dishes`}
+                    {formatVenueCardDish(venue)}
                   </AppText>
-                  <AppText variant="micro" tone="muted">
-                    {venue.verificationStatus === "approved"
-                      ? "Approved source"
-                      : "Raw catalog record"}
-                  </AppText>
+                  {formatVenueCardDetail(venue) ? (
+                    <AppText variant="micro" tone="muted">
+                      {formatVenueCardDetail(venue)}
+                    </AppText>
+                  ) : null}
                 </View>
                 <ChevronRight size={16} color={palette.orange} />
               </Pressable>
@@ -627,13 +699,13 @@ export function HomeMapScreen() {
                       {venue.name}
                     </AppText>
                     <AppText variant="micro" tone="secondary">
-                      {venue.representativeDish?.name ?? `${venue.menuCount} listed dishes`}
+                      {formatVenueCardDish(venue)}
                     </AppText>
-                    <AppText variant="micro" tone="muted">
-                      {venue.verificationStatus === "approved"
-                        ? "Approved source"
-                        : "Raw catalog record"}
-                    </AppText>
+                    {formatVenueCardDetail(venue) ? (
+                      <AppText variant="micro" tone="muted">
+                        {formatVenueCardDetail(venue)}
+                      </AppText>
+                    ) : null}
                   </View>
                 </Pressable>
               ))}
@@ -650,12 +722,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 0,
     right: 0,
-  },
-  edgeBackGestureZone: {
-    bottom: 0,
-    left: 0,
-    position: "absolute",
-    top: 0,
   },
   dragHandle: {
     width: "100%",

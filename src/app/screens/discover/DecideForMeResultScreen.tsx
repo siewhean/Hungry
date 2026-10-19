@@ -29,6 +29,7 @@ import { webShareUrl } from "@/constants/links";
 import { blendedMatchScore, TASTE_LABELS } from "@/lib/ai/tasteEngine";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import type { DataRepository } from "@/lib/services/types";
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -91,9 +92,15 @@ function TasteMiniBar({
 function AnimatedMatchBadge({ percent }: { percent: number }) {
   const { palette, radii, spacing, motion } = useHungryTheme();
   const counter = useRef(new Animated.Value(0)).current;
+  const reduceMotion = useReduceMotion();
   const [displayValue, setDisplayValue] = useState(0);
 
   useEffect(() => {
+    if (reduceMotion) {
+      // Reduce Motion: show the final number without counting up.
+      setDisplayValue(percent);
+      return;
+    }
     counter.setValue(0);
     const listenerId = counter.addListener(({ value }) => {
       setDisplayValue(Math.round(value));
@@ -109,7 +116,7 @@ function AnimatedMatchBadge({ percent }: { percent: number }) {
     return () => {
       counter.removeListener(listenerId);
     };
-  }, [counter, motion.decideForMeCounter, percent]);
+  }, [counter, motion.decideForMeCounter, percent, reduceMotion]);
 
   return (
     <View
@@ -543,6 +550,9 @@ export function DecideForMeResultScreen() {
       {/* Navigation Overlay */}
       <View style={[styles.navOverlay, { top: insets.top, zIndex: 10 }]}>
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          hitSlop={4}
           onPress={() => navigation.goBack()}
           style={[styles.navBtn, { backgroundColor: palette.surfaceTranslucent }]}
         >
@@ -640,13 +650,14 @@ export function DecideForMeResultScreen() {
             </View>
           </View>
 
-          <View style={{ gap: spacing[2] }}>
-            <AppText variant="h3">Description</AppText>
-            <AppText variant="body" tone="secondary" style={{ lineHeight: 24 }}>
-              {dish.description ||
-                "A flavorful local specialty recommended specifically for your current taste profile and proximity."}
-            </AppText>
-          </View>
+          {dish.description?.trim() ? (
+            <View style={{ gap: spacing[2] }}>
+              <AppText variant="h3">Description</AppText>
+              <AppText variant="body" tone="secondary" style={{ lineHeight: 24 }}>
+                {dish.description}
+              </AppText>
+            </View>
+          ) : null}
 
           <View style={{ gap: spacing[3] }}>
             <Button

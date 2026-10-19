@@ -12,11 +12,6 @@ test("native loading and idle animations stop during teardown", () => {
 
   assert.match(skeleton, /const animation = Animated\.loop\(/);
   assert.match(skeleton, /return \(\) => \{\s*animation\.stop\(\);\s*opacity\.stopAnimation\(\);/);
-  assert.match(
-    discover,
-    /useEffect\(\(\) => \{\s*return \(\) => \{\s*if \(idleTimerRef\.current\) clearTimeout\(idleTimerRef\.current\);\s*pulseAnim\.stopAnimation\(\);\s*pulseAnim\.setValue\(1\);\s*isPulsingRef\.current = false;\s*\};\s*\}, \[pulseAnim\]\);/,
-  );
-  assert.match(discover, /const isPulsingRef = useRef\(false\);/);
-  assert.match(discover, /if \(isPulsingRef\.current\) return;/);
-  assert.doesNotMatch(discover, /\[isPulsing, pulseAnim, startPulse\]/);
+  // The idle pulse was never bound to a view; it is removed rather than torn down.
+  assert.doesNotMatch(discover, /pulseAnim|idleTimerRef|resetIdleTimer/);
 });

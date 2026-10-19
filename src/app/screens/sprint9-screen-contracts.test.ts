@@ -559,8 +559,10 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.match(source, /getDataRepository\(\)/);
   assert.match(source, /type Props = NativeStackScreenProps<RootStackParamList, "DishDetail">/);
   assert.match(source, /buildDishGallery\(dish\)/);
-  assert.match(source, /function formatBasePrice\(price: number\)/);
-  assert.match(source, /formatBasePrice\(dish\.price\)/);
+  // Unpriced dishes show the range or "Price not listed", never S$0.00.
+  assert.match(source, /function formatDishPrice\(/);
+  assert.match(source, /Price not listed/);
+  assert.match(source, /const dishPrice = formatDishPrice\(dish\)/);
   assert.match(source, /fontSize: 28, lineHeight: 34/);
   assert.match(source, /const heroGradientColors: readonly \[ColorValue, ColorValue, ColorValue\]/);
   assert.match(source, /palette\.detailHeroGradientStart/);
@@ -572,24 +574,27 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.doesNotMatch(source, /borderBottomWidth: 1,[\s\S]*Epicurean Discovery/);
   assert.match(source, /View Taste Profile/);
   assert.match(source, /Opening Hours/);
-  assert.match(source, /Signature Dishes/);
+  assert.match(source, /More from \{venueName\}/);
   assert.match(source, /From the Community/);
-  assert.match(source, /const venueDishes = useMemo/);
-  assert.match(source, /getSignatureDishes\(dish, venueDishes\)/);
+  assert.match(source, /const cachedVenueDishes = useMemo/);
+  // Never repeats the dish being viewed.
+  assert.match(source, /getMoreFromStall\(dish, venueDishes\)/);
+  assert.match(source, /if \(dish\.id !== currentDish\.id\)/);
   assert.doesNotMatch(source, /supplementalDishes/);
   assert.match(source, /const signatureGridItemWidth = width \/ 2/);
   assert.match(source, /const signatureGridItemHeight = signatureGridItemWidth \* 1\.5/);
   assert.match(source, /marginHorizontal: -spacing\[4\]/);
-  assert.match(source, /signatureDishes\.slice\(0, 4\)\.map/);
+  assert.match(source, /moreFromStall\.map/);
   assert.match(source, /height: signatureGridItemHeight/);
   assert.match(source, /width: signatureGridItemWidth/);
   assert.match(source, /palette\.detailImageBadgeSurface/);
   assert.match(source, /shadowRadius: 12/);
   assert.match(source, /textShadowRadius: 3/);
-  assert.match(source, /formatBasePrice\(item\.price\)/);
+  assert.match(source, /formatDishPrice\(item\)/);
   assert.doesNotMatch(source, /\{dish\.priceRange\}/);
   assert.doesNotMatch(source, /\{item\.priceRange\}/);
-  assert.match(source, /navigation\.navigate\("DishDetail", \{ dishId: item\.id \}\)/);
+  // push, so Back returns to the previous dish.
+  assert.match(source, /navigation\.push\("DishDetail", \{ dishId: item\.id \}\)/);
   assert.match(navigatorSource, /const loadDishDetailScreenV2 =/);
   // The redundant DishDetailV2 alias route was removed; DishDetail is the V2 screen.
   assert.doesNotMatch(navigatorSource, /name="DishDetailV2"/);

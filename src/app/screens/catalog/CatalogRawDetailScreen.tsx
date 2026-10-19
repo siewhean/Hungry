@@ -5,6 +5,7 @@ import { ArrowLeft, ExternalLink, MapPin } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AccessibleImage, AppText, EmptyState, Screen, Skeleton } from "@/components/ui";
+import { openMerchantProfileLink } from "@/lib/security/safeLinking";
 import { getCatalogRawService } from "@/lib/services/serviceProvider";
 import type { CatalogRawDishDetail, CatalogRawVenueDetail } from "@/lib/services/catalog";
 import { useHungryTheme } from "@/theme";
@@ -37,10 +38,9 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
         ? await service.getDish(route.params.id, route.params.releaseId)
         : await service.getVenue(route.params.id, route.params.releaseId);
       setDetail(next);
-    } catch (loadError) {
-      setError(
-        loadError instanceof Error ? loadError.message : "Could not load this catalog record.",
-      );
+    } catch {
+      // Raw service errors are not user copy.
+      setError("load_failed");
     } finally {
       setIsLoading(false);
     }
@@ -66,8 +66,12 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
     return (
       <Screen scroll={false}>
         <EmptyState
-          title="Catalog record unavailable"
-          body={error ?? "This record was not found in the active catalog release."}
+          title={error ? "Couldn't load this listing" : "Listing not found"}
+          body={
+            error
+              ? "Check your connection and try again."
+              : "This listing isn't in the current catalog."
+          }
           ctaLabel="Retry"
           onPress={() => void load()}
         />
@@ -96,6 +100,7 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
             accessibilityRole="button"
             accessibilityLabel="Go back"
             onPress={() => navigation.goBack()}
+            hitSlop={10}
           >
             <ArrowLeft color={palette.text} size={24} />
           </Pressable>
@@ -175,12 +180,17 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
             </AppText>
           </View>
           {sourceUrl ? (
-            <View style={{ flexDirection: "row", gap: spacing[2] }}>
+            <Pressable
+              accessibilityRole="link"
+              accessibilityLabel="Open the source page"
+              onPress={() => void openMerchantProfileLink("web", sourceUrl)}
+              style={{ alignItems: "center", flexDirection: "row", gap: spacing[2], minHeight: 44 }}
+            >
               <ExternalLink color={palette.textMuted} size={18} />
-              <AppText tone="muted" variant="bodySmall" numberOfLines={1}>
+              <AppText tone="accent" variant="bodySmall" numberOfLines={1} style={{ flex: 1 }}>
                 {sourceUrl}
               </AppText>
-            </View>
+            </Pressable>
           ) : null}
         </View>
       </ScrollView>

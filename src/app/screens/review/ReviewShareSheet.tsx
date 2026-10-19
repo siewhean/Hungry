@@ -22,7 +22,11 @@ import type { ShareChannel } from "@/store/useSocialStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 
+export type ShareTargetKind = "review" | "dish" | "stall";
+
 export type ReviewShareTarget = {
+  /** What is being shared; sets the sheet title and the analytics event. Defaults to "review". */
+  kind?: ShareTargetKind;
   reviewId: string;
   /** Set only when the shared item IS this post; reviews leave it empty. */
   postId: string;
@@ -40,6 +44,8 @@ type ReviewShareSheetProps = {
   bottomInset: number;
   onDismiss: () => void;
   onShared: (postId: string, channel: ShareChannel) => void;
+  /** Called after every completed share, on any channel (copy, apps, system, in-app). */
+  onShareCompleted?: (channel: ShareChannel) => void;
   /** False for signed-out viewers: only link/system shares, no in-app sends. */
   inAppSharingEnabled?: boolean;
 };
@@ -50,6 +56,7 @@ export function ReviewShareSheet({
   bottomInset,
   onDismiss,
   onShared,
+  onShareCompleted,
   inAppSharingEnabled = true,
 }: ReviewShareSheetProps) {
   const { palette, spacing } = useHungryTheme();
@@ -57,7 +64,11 @@ export function ReviewShareSheet({
   const showToast = useUIStore((state) => state.showToast);
   const [selectedChatIds, setSelectedChatIds] = useState<string[]>([]);
   const [shareRecipients, setShareRecipients] = useState<ChatShareRecipient[]>([]);
-  const directMessagesEnabled = FEATURE_FLAGS.directMessagesEnabled && inAppSharingEnabled;
+  const kind = activeReview?.kind ?? "review";
+  const kindNoun = kind === "stall" ? "stall" : kind === "dish" ? "dish" : "review";
+  // A chat share sends a post card, so it needs a real post id.
+  const directMessagesEnabled =
+    FEATURE_FLAGS.directMessagesEnabled && inAppSharingEnabled && Boolean(activeReview?.postId);
   const snapPoints = useMemo(() => ["62%"], []);
 
   const loadChatConversations = useCallback(async () => {
@@ -83,6 +94,30 @@ export function ReviewShareSheet({
       void loadChatConversations();
     }
   }, [activeReview, loadChatConversations]);
+
+  const trackShare = useCallback(
+    (target: ReviewShareTarget, channel: ShareChannel) => {
+      const targetKind = target.kind ?? "review";
+      if (targetKind === "stall") {
+        trackAnalyticsEvent("stall_shared", {
+          stall_id: target.reviewId.replace(/^stall-/, ""),
+          channel,
+        });
+      } else if (targetKind === "dish") {
+        trackAnalyticsEvent("dish_shared", {
+          dish_id: target.reviewId.replace(/^dish-/, ""),
+          channel,
+        });
+      } else {
+        trackAnalyticsEvent("dish_shared", { review_id: target.reviewId, channel });
+      }
+      if (target.postId) {
+        onShared(target.postId, channel);
+      }
+      onShareCompleted?.(channel);
+    },
+    [onShareCompleted, onShared],
+  );
 
   const toggleChat = useCallback((chatId: string) => {
     setSelectedChatIds((current) =>
@@ -117,11 +152,9 @@ export function ReviewShareSheet({
       showToast({ message: "Could not share review. Please try again.", tone: "error" });
       return;
     }
-    if (activeReview.postId) {
-      onShared(activeReview.postId, "in_app");
-    }
+    trackShare(activeReview, "in_app");
     showToast({
-      message: `Review shared with ${selectedChatIds.length} ${
+      message: `${kindNoun === "review" ? "Review" : kindNoun === "dish" ? "Dish" : "Stall"} shared with ${selectedChatIds.length} ${
         selectedChatIds.length === 1 ? "person" : "people"
       }.`,
       tone: "success",
@@ -131,21 +164,19 @@ export function ReviewShareSheet({
     activeReview,
     directMessagesEnabled,
     innerRef,
-    onShared,
+    kindNoun,
     selectedChatIds,
     sharePostToChat,
     showToast,
+    trackShare,
   ]);
 
   const copyLink = useCallback(() => {
     if (!activeReview) return;
     Clipboard.setString(withShareSource(activeReview.link, "copy_link"));
-    trackAnalyticsEvent("dish_shared", { review_id: activeReview.reviewId, channel: "copy_link" });
-    if (activeReview.postId) {
-      onShared(activeReview.postId, "copy_link");
-    }
-    showToast({ message: "Review link copied.", tone: "success" });
-  }, [activeReview, onShared, showToast]);
+    trackShare(activeReview, "copy_link");
+    showToast({ message: "Link copied.", tone: "success" });
+  }, [activeReview, showToast, trackShare]);
 
   const shareOutsideHungry = useCallback(async () => {
     if (!activeReview) return;
@@ -156,14 +187,8 @@ export function ReviewShareSheet({
     });
     // A cancelled share sheet is not a share.
     if (result.action !== Share.sharedAction) return;
-    trackAnalyticsEvent("dish_shared", {
-      review_id: activeReview.reviewId,
-      channel: "system_share",
-    });
-    if (activeReview.postId) {
-      onShared(activeReview.postId, "system_share");
-    }
-  }, [activeReview, onShared]);
+    trackShare(activeReview, "system_share");
+  }, [activeReview, trackShare]);
 
   const shareToMessagingApp = useCallback(
     async (channel: "whatsapp" | "telegram") => {
@@ -174,12 +199,9 @@ export function ReviewShareSheet({
           ? buildWhatsAppShareUrl(activeReview.message, link)
           : buildTelegramShareUrl(activeReview.message, link),
       );
-      trackAnalyticsEvent("dish_shared", { review_id: activeReview.reviewId, channel });
-      if (activeReview.postId) {
-        onShared(activeReview.postId, channel);
-      }
+      trackShare(activeReview, channel);
     },
-    [activeReview, onShared],
+    [activeReview, trackShare],
   );
 
   return (
@@ -189,7 +211,7 @@ export function ReviewShareSheet({
         snapPoints={snapPoints}
         index={0}
         enablePanDownToClose
-        accessibilityLabel="Share review"
+        accessibilityLabel={`Share ${kindNoun}`}
         accessibilityViewIsModal
         onDismiss={resetAndDismiss}
         backdropComponent={(props) => (
@@ -201,7 +223,7 @@ export function ReviewShareSheet({
             pressBehavior="close"
             accessibilityRole="button"
             accessibilityLabel="Close share sheet"
-            accessibilityHint="Dismisses the review sharing sheet"
+            accessibilityHint={`Dismisses the ${kindNoun} sharing sheet`}
           />
         )}
         backgroundStyle={{ backgroundColor: palette.surface }}
@@ -214,7 +236,7 @@ export function ReviewShareSheet({
                     selectedCount={selectedChatIds.length}
                     onPress={sendToHungryUsers}
                     bottomInset={bottomInset}
-                    accessibilityLabel="Send shared review"
+                    accessibilityLabel={`Send shared ${kindNoun}`}
                     placement="inline"
                   />
                 </BottomSheetFooter>
@@ -232,12 +254,12 @@ export function ReviewShareSheet({
             }}
           >
             <InAppShareCard
-              title={directMessagesEnabled ? "Share review" : "Share review link"}
+              title={directMessagesEnabled ? `Share ${kindNoun}` : `Share ${kindNoun} link`}
               quickActions={[
                 {
                   key: "copy",
                   label: "Copy link",
-                  accessibilityLabel: "Copy review link",
+                  accessibilityLabel: `Copy ${kindNoun} link`,
                   icon: ({ color, size }) => <Copy color={color} size={size} />,
                   onPress: copyLink,
                 },
@@ -258,7 +280,7 @@ export function ReviewShareSheet({
                 {
                   key: "share",
                   label: "Share",
-                  accessibilityLabel: "Share review to another app",
+                  accessibilityLabel: `Share ${kindNoun} to another app`,
                   icon: ({ color, size }) => <Share2 color={color} size={size} />,
                   onPress: () => void shareOutsideHungry(),
                 },

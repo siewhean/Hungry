@@ -2,7 +2,8 @@
  * StallInteractionBar — Save / Visited / Add to List actions for a stall.
  *
  * Mounted inside StallDetailScreen. Uses useStallInteractionStore + useFoodCredStore.
- * Each action is idempotent (tried cannot be un-tried in Phase 1).
+ * Save and Visited both toggle. Visited needs a tried or reviewed dish from this
+ * stall first (the same rule the dish page's "Tried" feeds).
  */
 
 import { View, Pressable, StyleSheet, ActivityIndicator } from "react-native";
@@ -75,9 +76,14 @@ export function StallInteractionBar({
     try {
       const hasReviewed = hasReviewedDishAtVenue ?? false;
       if (!hasReviewed) {
-        const message = reviewPromptText ?? "Review this stall once before marking it as visited.";
-        showToast({ message, tone: "warning", duration: 3000 });
-        onReviewRequired?.();
+        // One toast only: the screen's handler shows its own when it is given.
+        if (onReviewRequired) {
+          onReviewRequired();
+        } else {
+          const message =
+            reviewPromptText ?? "Try or review a dish here before marking this stall visited.";
+          showToast({ message, tone: "warning", duration: 3000 });
+        }
         return;
       }
 

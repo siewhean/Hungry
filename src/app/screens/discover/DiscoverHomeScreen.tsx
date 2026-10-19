@@ -1,6 +1,5 @@
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Animated,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -9,10 +8,7 @@ import {
   useWindowDimensions,
   type ImageSourcePropType,
   type StyleProp,
-  type GestureResponderEvent,
   type LayoutChangeEvent,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
   type ViewStyle,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -29,7 +25,12 @@ import {
   Dices,
   Utensils,
 } from "lucide-react-native";
-import { useNavigation, useRoute, type CompositeNavigationProp } from "@react-navigation/native";
+import {
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+  type CompositeNavigationProp,
+} from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { MaterialTopTabNavigationProp } from "@react-navigation/material-top-tabs";
 
@@ -83,13 +84,8 @@ import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore
 import { useSearchStore } from "@/store/useSearchStore";
 import { useMovingSearchPlaceholder } from "@/features/search/useMovingSearchPlaceholder";
 import { useHungryTheme } from "@/theme";
-import type {
-  BuildingSummary,
-  DietaryFlag,
-  DishDetail,
-  SearchCategory,
-  VenueSummary,
-} from "@/types/domain";
+import type { BuildingSummary, DietaryFlag, DishDetail, VenueSummary } from "@/types/domain";
+import { getVenueOpenState } from "@/utils/operatingHours";
 import { isVenueOpenFromHours } from "@/utils/stallStatus";
 
 type DiscoverChipId = "dietary" | "spicy" | "halal" | "late" | "cheap";
@@ -97,12 +93,11 @@ type DiscoverChipId = "dietary" | "spicy" | "halal" | "late" | "cheap";
 const INTENT_CHIPS: readonly {
   id: Exclude<DiscoverChipId, "dietary">;
   label: string;
-  category: SearchCategory;
 }[] = [
-  { id: "spicy", label: "Spicy", category: "local favourites" },
-  { id: "halal", label: "Halal", category: "rice" },
-  { id: "late", label: "Late night", category: "late night" },
-  { id: "cheap", label: "Value", category: "noodles" },
+  { id: "spicy", label: "Spicy" },
+  { id: "halal", label: "Halal" },
+  { id: "late", label: "Late night" },
+  { id: "cheap", label: "Value" },
 ] as const;
 
 const DISCOVER_DIETARY_FALLBACKS: readonly DietaryFlag[] = ["halal", "vegetarian", "pork_free"];
@@ -145,9 +140,15 @@ type DiscoverRepositoryLookup = Pick<
 >;
 
 const STALL_SHOWCASE_CARD_LIMIT = 30;
-const STALL_SHOWCASE_IMAGE_REPEAT_BUFFER = 2;
+/** Lifts the 12px SEE ALL / VIEW MAP links to a 44pt touch target. */
+const DISCOVER_TEXT_LINK_HIT_SLOP = { top: 16, bottom: 16, left: 12, right: 12 } as const;
+/** Stable empties so memos keyed on the feed do not rerun every render. */
+const EMPTY_FEED_VENUES: DiscoveryLocationFeed["venues"] = [];
+const EMPTY_FEED_RESULTS: DiscoveryLocationFeed["results"] = [];
 const DISCOVER_AREA_RADIUS_METERS = 3000;
 const DISCOVER_FEED_LIMIT = 100;
+/** 500 steps per degree ≈ a 220m grid: small GPS moves keep the same Discover read. */
+const DISCOVER_GEOCELL_STEPS_PER_DEGREE = 500;
 const STALL_SHOWCASE_FALLBACK_IMAGES = [
   POPULAR_LAKSA_GRAPHIC,
   POPULAR_CHICKEN_RICE_GRAPHIC,
@@ -155,85 +156,49 @@ const STALL_SHOWCASE_FALLBACK_IMAGES = [
   POPULAR_BAK_CHOR_MEE_GRAPHIC,
 ] as const;
 
+/** "Open · Closes 9pm" / "Closed · Opens 5pm" for stall rows; nothing when hours are unknown. */
+function getStallRowOpenLabel(venue: Pick<VenueSummary, "operatingHours" | "isOpen">) {
+  const state = getVenueOpenState(venue.operatingHours, venue.isOpen);
+  if (state.status === "unknown") return undefined;
+  const status = state.status === "open" ? "Open" : "Closed";
+  return state.detail && state.detail !== "Closed today" ? `${status} · ${state.detail}` : status;
+}
+
 function buildStallShowcaseCardsFromVenues(
   venues: VenueSummary[],
   repositoryLookup: Pick<DiscoverRepositoryLookup, "getDishById" | "listDishesByVenue">,
 ): DiscoverStallShowcaseCard[] {
   const uniqueVenues = Array.from(new Map(venues.map((venue) => [venue.id, venue])).values());
 
-  return uniqueVenues.flatMap((venue) => {
+  // One card per stall: the stall's top dish (or first listed dish) is the hero.
+  return uniqueVenues.flatMap((venue, venueIndex) => {
     const venueDishes = repositoryLookup.listDishesByVenue(venue.id);
-    const topDish = repositoryLookup.getDishById(venue.topDishId);
-    const heroCandidates = [
-      ...(topDish ? [topDish] : []),
-      ...venueDishes.filter((dish) => dish.id !== topDish?.id),
-    ];
+    const heroDish = repositoryLookup.getDishById(venue.topDishId) ?? venueDishes[0];
+    if (!heroDish) {
+      return [];
+    }
 
-    return heroCandidates.map((heroDish, heroIndex) => {
-      const products = [heroDish, ...venueDishes.filter((dish) => dish.id !== heroDish.id)].slice(
-        0,
-        4,
-      );
-      const image = getDiscoverCardImage([
-        ...getDishImageCandidates(heroDish),
-        { imageUrl: venue.imageUrl, imageSourceType: "venue" },
-      ]);
+    const products = [heroDish, ...venueDishes.filter((dish) => dish.id !== heroDish.id)].slice(
+      0,
+      4,
+    );
+    const image = getDiscoverCardImage([
+      ...getDishImageCandidates(heroDish),
+      { imageUrl: venue.imageUrl, imageSourceType: "venue" },
+    ]);
 
-      return {
-        id: `${venue.id}-${heroDish.id}-${heroIndex}`,
+    return [
+      {
+        id: venue.id,
         venue,
         heroDish,
         imageSource: image.imageUrl
           ? { uri: image.imageUrl }
-          : STALL_SHOWCASE_FALLBACK_IMAGES[heroIndex % STALL_SHOWCASE_FALLBACK_IMAGES.length],
+          : STALL_SHOWCASE_FALLBACK_IMAGES[venueIndex % STALL_SHOWCASE_FALLBACK_IMAGES.length],
         products,
-      };
-    });
+      },
+    ];
   });
-}
-
-function extendStallShowcaseCards(
-  cards: DiscoverStallShowcaseCard[],
-  limit = STALL_SHOWCASE_CARD_LIMIT,
-) {
-  if (!cards.length) {
-    return [];
-  }
-
-  if (cards.length >= limit) {
-    return cards.slice(0, limit);
-  }
-
-  return Array.from({ length: limit }, (_, index) => cards[index % cards.length]);
-}
-
-function getStallShowcaseImageSources(card: DiscoverStallShowcaseCard) {
-  const sources = [
-    card.imageSource,
-    ...card.products
-      .flatMap((product) => getDiscoverCardImage(getDishImageCandidates(product)).candidateUrls)
-      .map((imageUrl) => ({ uri: imageUrl })),
-  ];
-  const uniqueSources = new Map<string, ImageSourcePropType>();
-
-  sources.forEach((source) => {
-    const key = typeof source === "number" ? String(source) : JSON.stringify(source);
-    uniqueSources.set(key, source);
-  });
-
-  return Array.from(uniqueSources.values());
-}
-
-function buildLoopingStallShowcaseImageSources(
-  card: DiscoverStallShowcaseCard,
-  minimumFrameCount: number,
-) {
-  const sources = getStallShowcaseImageSources(card);
-
-  return Array.from(
-    { length: Math.max(minimumFrameCount, sources.length) },
-    (_, index) => sources[index % sources.length],
-  );
 }
 
 function searchResultToDiscoverBite(result: SearchResult, index: number): Bite {
@@ -719,27 +684,15 @@ function VerticalStallShowcaseSection({
   locationLabel,
   pageHeight,
   cardWidth,
-  scrollY,
   onOpenCard,
   onPrefetchCard,
-  onGestureStart,
-  onGestureEnd,
-  onTopBoundaryPull,
-  onRequestSectionFocus,
-  onSectionLayout,
 }: {
   cards: DiscoverStallShowcaseCard[];
   locationLabel: string;
   pageHeight: number;
   cardWidth: number;
-  scrollY: Animated.Value;
   onOpenCard: (card: DiscoverStallShowcaseCard) => void;
   onPrefetchCard: (card: DiscoverStallShowcaseCard) => void;
-  onGestureStart: () => void;
-  onGestureEnd: () => void;
-  onTopBoundaryPull: (deltaY: number) => void;
-  onRequestSectionFocus: () => void;
-  onSectionLayout: (event: LayoutChangeEvent) => void;
 }) {
   const { componentRadii, palette, radii, spacing, shadows, typography } = useHungryTheme();
   const visibleCards = useMemo(() => cards.slice(0, STALL_SHOWCASE_CARD_LIMIT), [cards]);
@@ -752,7 +705,7 @@ function VerticalStallShowcaseSection({
   const maxTallCardHeight = columnCardWidth * 1.1;
   const tallCardHeight = Math.max(0, Math.floor(Math.min(availableRowHeight, maxTallCardHeight)));
   const compactCardDetailsHeight = typography.bodySmall.lineHeight * 2 + spacing[0.5] + spacing[1];
-  const rowSnapInterval = tallCardHeight + rowGap;
+  const cardImageHeight = Math.max(0, Math.floor(tallCardHeight - compactCardDetailsHeight));
   const showcaseRows = useMemo(() => {
     const rows: DiscoverStallShowcaseCard[][] = [];
     for (let index = 0; index < visibleCards.length; index += 2) {
@@ -760,77 +713,10 @@ function VerticalStallShowcaseSection({
     }
     return rows;
   }, [visibleCards]);
-  const cardImageHeight = Math.max(0, Math.floor(tallCardHeight - compactCardDetailsHeight));
-  const contentTravel = columnCardWidth;
-  const showcaseKey = useMemo(
-    () => visibleCards.map((card, index) => `${card.id}-${index}`).join("|"),
-    [visibleCards],
-  );
-  const showcaseScrollOffsetRef = useRef(0);
-  const isParentScrollLockedRef = useRef(false);
-  const lastTouchYRef = useRef<number | null>(null);
-  const updateParentScrollLock = useCallback(
-    (isLocked: boolean) => {
-      if (isParentScrollLockedRef.current === isLocked) {
-        return;
-      }
 
-      isParentScrollLockedRef.current = isLocked;
-      if (isLocked) {
-        onGestureStart();
-        return;
-      }
-
-      onGestureEnd();
-    },
-    [onGestureEnd, onGestureStart],
-  );
-  const handleShowcaseGestureStart = useCallback(() => {
-    onRequestSectionFocus();
-    updateParentScrollLock(true);
-  }, [onRequestSectionFocus, updateParentScrollLock]);
-  const handleShowcaseGestureEnd = useCallback(() => {
-    lastTouchYRef.current = null;
-    updateParentScrollLock(false);
-  }, [updateParentScrollLock]);
-  const handleShowcaseTouchStart = useCallback(
-    (event: GestureResponderEvent) => {
-      lastTouchYRef.current = event.nativeEvent.pageY;
-      handleShowcaseGestureStart();
-    },
-    [handleShowcaseGestureStart],
-  );
-  const handleShowcaseTouchMove = useCallback(
-    (event: GestureResponderEvent) => {
-      const nextTouchY = event.nativeEvent.pageY;
-      const lastTouchY = lastTouchYRef.current ?? nextTouchY;
-      const deltaY = nextTouchY - lastTouchY;
-      lastTouchYRef.current = nextTouchY;
-
-      if (showcaseScrollOffsetRef.current <= 1 && deltaY > 0) {
-        updateParentScrollLock(false);
-        onTopBoundaryPull(deltaY);
-      }
-    },
-    [onTopBoundaryPull, updateParentScrollLock],
-  );
-  const handleShowcaseScroll = useCallback(
-    (event: { nativeEvent: { contentOffset: { y: number } } }) => {
-      const nextOffsetY = event.nativeEvent.contentOffset.y;
-      showcaseScrollOffsetRef.current = nextOffsetY;
-      updateParentScrollLock(nextOffsetY > 1);
-    },
-    [updateParentScrollLock],
-  );
-
-  useEffect(() => {
-    showcaseScrollOffsetRef.current = 0;
-    updateParentScrollLock(false);
-    scrollY.setValue(0);
-  }, [scrollY, showcaseKey, updateParentScrollLock]);
-
+  // A plain two-column grid inside the page scroll: no nested scroller or scroll locking.
   return (
-    <View onLayout={onSectionLayout} style={{ gap: spacing[2], height: pageHeight }}>
+    <View style={{ gap: spacing[2] }}>
       <View
         style={{
           alignItems: "center",
@@ -845,261 +731,176 @@ function VerticalStallShowcaseSection({
           variant="micro"
           style={{ color: palette.textSecondary, fontWeight: "800", marginLeft: spacing[2] }}
         >
-          {visibleCards.length} {visibleCards.length === 1 ? "card" : "cards"}
+          {visibleCards.length} {visibleCards.length === 1 ? "stall" : "stalls"}
         </AppText>
       </View>
-      <Animated.ScrollView
-        key={showcaseKey}
-        directionalLockEnabled
-        nestedScrollEnabled
-        snapToInterval={rowSnapInterval}
-        snapToAlignment="start"
-        decelerationRate="fast"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ gap: rowGap }}
-        style={{ height: showcaseViewportHeight, width: cardWidth }}
-        onTouchStart={handleShowcaseTouchStart}
-        onTouchMove={handleShowcaseTouchMove}
-        onTouchEnd={handleShowcaseGestureEnd}
-        onTouchCancel={handleShowcaseGestureEnd}
-        onScrollBeginDrag={handleShowcaseGestureStart}
-        onScrollEndDrag={handleShowcaseGestureEnd}
-        onMomentumScrollEnd={handleShowcaseGestureEnd}
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
-          listener: handleShowcaseScroll,
-          useNativeDriver: true,
-        })}
-        scrollEventThrottle={16}
-      >
-        {showcaseRows.map((rowCards, rowIndex) => {
-          const inputRange = [
-            (rowIndex - 3) * rowSnapInterval,
-            (rowIndex - 2) * rowSnapInterval,
-            rowIndex * rowSnapInterval,
-            (rowIndex + 1) * rowSnapInterval,
-          ];
-
-          return (
-            <View
-              key={`stall-showcase-row-${rowIndex}`}
-              style={{
-                flexDirection: "row",
-                gap: columnGap,
-                height: tallCardHeight,
-                width: cardWidth,
-              }}
-            >
-              {rowCards.map((card, columnIndex) => {
-                const imageInputStart = Math.max(0, (rowIndex - 3) * rowSnapInterval);
-                const imageInputEnd = Math.max(rowSnapInterval, (rowIndex + 1) * rowSnapInterval);
-                const imageScrollStepCount = Math.max(
-                  1,
-                  Math.round((imageInputEnd - imageInputStart) / rowSnapInterval),
-                );
-                const imageTravel = columnCardWidth * imageScrollStepCount;
-                const imageFrameCount = imageScrollStepCount + STALL_SHOWCASE_IMAGE_REPEAT_BUFFER;
-                const imageRailSources = buildLoopingStallShowcaseImageSources(
-                  card,
-                  imageFrameCount,
-                );
-                const direction = columnIndex === 0 ? -1 : 1;
-                const imageTranslateX = scrollY.interpolate({
-                  inputRange: [imageInputStart, imageInputEnd],
-                  outputRange: columnIndex === 0 ? [0, -imageTravel] : [-imageTravel, 0],
-                  extrapolate: "clamp",
-                });
-                const translateX = scrollY.interpolate({
-                  inputRange,
-                  outputRange: [-contentTravel * direction, 0, 0, contentTravel * direction],
-                  extrapolate: "clamp",
-                });
-                const opacity = scrollY.interpolate({
-                  inputRange,
-                  outputRange: [0.42, 1, 1, 0.42],
-                  extrapolate: "clamp",
-                });
-
-                return (
-                  <Pressable
-                    key={`${card.id}-${rowIndex}-${columnIndex}`}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Open ${card.venue.name} details`}
-                    onPressIn={() => onPrefetchCard(card)}
-                    onPress={() => onOpenCard(card)}
-                    style={[
-                      shadows.card,
-                      {
-                        backgroundColor: palette.surface,
-                        borderColor: palette.border,
-                        borderRadius: componentRadii.card,
-                        borderWidth: 1,
-                        height: tallCardHeight,
-                        overflow: "hidden",
-                        width: columnCardWidth,
-                      },
-                    ]}
+      <View style={{ gap: rowGap, width: cardWidth }}>
+        {showcaseRows.map((rowCards, rowIndex) => (
+          <View
+            key={`stall-showcase-row-${rowIndex}`}
+            style={{
+              flexDirection: "row",
+              gap: columnGap,
+              height: tallCardHeight,
+              width: cardWidth,
+            }}
+          >
+            {rowCards.map((card) => (
+              <Pressable
+                key={card.id}
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${card.venue.name} details`}
+                onPressIn={() => onPrefetchCard(card)}
+                onPress={() => onOpenCard(card)}
+                style={[
+                  shadows.card,
+                  {
+                    backgroundColor: palette.surface,
+                    borderColor: palette.border,
+                    borderRadius: componentRadii.card,
+                    borderWidth: 1,
+                    height: tallCardHeight,
+                    overflow: "hidden",
+                    width: columnCardWidth,
+                  },
+                ]}
+              >
+                <View
+                  style={{
+                    backgroundColor: palette.surfaceRaised,
+                    height: cardImageHeight,
+                    overflow: "hidden",
+                    width: "100%",
+                  }}
+                >
+                  <AccessibleImage
+                    source={card.imageSource}
+                    style={{ height: "100%", width: "100%" }}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                    transition={120}
+                    decorative
+                  />
+                  <View
+                    style={{
+                      backgroundColor: palette.imageLabelSurface,
+                      borderColor: palette.imageLabelBorder,
+                      borderRadius: radii.pill,
+                      borderWidth: 1,
+                      left: spacing[2],
+                      paddingHorizontal: spacing[1.5],
+                      paddingVertical: spacing[0.5],
+                      position: "absolute",
+                      top: spacing[2],
+                    }}
                   >
-                    <Animated.View
+                    <AppText
+                      variant="micro"
+                      style={{ color: palette.textOnDark, fontWeight: "900" }}
+                    >
+                      {isVenueOpenFromHours(card.venue.operatingHours, card.venue.isOpen)
+                        ? "OPEN"
+                        : "CLOSED"}
+                    </AppText>
+                  </View>
+                  {card.heroDish.reviewCount > 0 ? (
+                    <View
                       style={{
-                        height: "100%",
-                        opacity,
-                        transform: [{ translateX }],
-                        width: "100%",
+                        alignItems: "center",
+                        backgroundColor: palette.imageLabelSurface,
+                        borderColor: palette.imageLabelBorder,
+                        borderRadius: radii.pill,
+                        borderWidth: 1,
+                        bottom: spacing[2],
+                        flexDirection: "row",
+                        gap: spacing[0.5],
+                        paddingHorizontal: spacing[1.5],
+                        paddingVertical: spacing[0.5],
+                        position: "absolute",
+                        right: spacing[2],
                       }}
                     >
-                      <View
+                      <Star color={palette.amber} size={11} fill={palette.amber} />
+                      <AppText
+                        variant="micro"
+                        style={{ color: palette.textOnDark, fontWeight: "900" }}
+                      >
+                        {card.heroDish.rating.toFixed(1)}
+                      </AppText>
+                    </View>
+                  ) : null}
+                </View>
+                <View
+                  style={{
+                    flex: 1,
+                    gap: spacing[0.5],
+                    justifyContent: "center",
+                    paddingHorizontal: spacing[2],
+                    paddingVertical: spacing[0.5],
+                  }}
+                >
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
+                    <View
+                      style={{
+                        alignItems: "center",
+                        flex: 1,
+                        flexDirection: "row",
+                        gap: spacing[1],
+                      }}
+                    >
+                      <AppText
+                        variant="bodySmall"
+                        numberOfLines={1}
+                        style={{ color: palette.text, flex: 1, fontWeight: "900" }}
+                      >
+                        {card.venue.name}
+                      </AppText>
+                      <AppText
+                        variant="micro"
+                        numberOfLines={1}
+                        style={{ color: palette.textSecondary, flexShrink: 0 }}
+                      >
+                        {card.venue.planningArea ? `${card.venue.planningArea} · ` : ""}
+                        {card.venue.unitNumber}
+                      </AppText>
+                    </View>
+                    <ChevronRight color={palette.textMuted} size={16} />
+                  </View>
+                  <View
+                    style={{
+                      alignItems: "center",
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <AppText
+                      variant="bodySmall"
+                      numberOfLines={1}
+                      style={{ color: palette.text, flex: 1, fontWeight: "800" }}
+                    >
+                      {card.heroDish.name}
+                    </AppText>
+                    {card.heroDish.price > 0 ? (
+                      <AppText
+                        variant="price"
                         style={{
-                          backgroundColor: palette.surfaceRaised,
-                          height: cardImageHeight,
-                          overflow: "hidden",
-                          width: "100%",
+                          color: palette.orange,
+                          fontSize: typography.bodySmallBold.fontSize,
+                          fontWeight: "800",
+                          lineHeight: typography.bodySmallBold.lineHeight,
+                          marginLeft: spacing[1],
                         }}
                       >
-                        <Animated.View
-                          style={{
-                            flexDirection: "row",
-                            height: "100%",
-                            transform: [{ translateX: imageTranslateX }],
-                            width: columnCardWidth * imageRailSources.length,
-                          }}
-                        >
-                          {imageRailSources.map((imageSource, imageIndex) => (
-                            <AccessibleImage
-                              key={`${card.id}-image-${imageIndex}`}
-                              source={imageSource}
-                              style={{ height: "100%", width: columnCardWidth }}
-                              contentFit="cover"
-                              cachePolicy="memory-disk"
-                              transition={120}
-                              decorative
-                            />
-                          ))}
-                        </Animated.View>
-                        <View
-                          style={{
-                            backgroundColor: palette.imageLabelSurface,
-                            borderColor: palette.imageLabelBorder,
-                            borderRadius: radii.pill,
-                            borderWidth: 1,
-                            left: spacing[2],
-                            paddingHorizontal: spacing[1.5],
-                            paddingVertical: spacing[0.5],
-                            position: "absolute",
-                            top: spacing[2],
-                          }}
-                        >
-                          <AppText
-                            variant="micro"
-                            style={{ color: palette.textOnDark, fontWeight: "900" }}
-                          >
-                            {isVenueOpenFromHours(card.venue.operatingHours, card.venue.isOpen)
-                              ? "OPEN"
-                              : "CLOSED"}
-                          </AppText>
-                        </View>
-                        <View
-                          style={{
-                            alignItems: "center",
-                            backgroundColor: palette.imageLabelSurface,
-                            borderColor: palette.imageLabelBorder,
-                            borderRadius: radii.pill,
-                            borderWidth: 1,
-                            bottom: spacing[2],
-                            flexDirection: "row",
-                            gap: spacing[0.5],
-                            paddingHorizontal: spacing[1.5],
-                            paddingVertical: spacing[0.5],
-                            position: "absolute",
-                            right: spacing[2],
-                          }}
-                        >
-                          <Star color={palette.amber} size={11} fill={palette.amber} />
-                          <AppText
-                            variant="micro"
-                            style={{ color: palette.textOnDark, fontWeight: "900" }}
-                          >
-                            {card.heroDish.rating.toFixed(1)}
-                          </AppText>
-                        </View>
-                      </View>
-                      <View
-                        style={{
-                          flex: 1,
-                          gap: spacing[0.5],
-                          justifyContent: "center",
-                          paddingHorizontal: spacing[2],
-                          paddingVertical: spacing[0.5],
-                        }}
-                      >
-                        <View
-                          style={{
-                            alignItems: "center",
-                            flexDirection: "row",
-                            gap: spacing[1],
-                          }}
-                        >
-                          <View
-                            style={{
-                              alignItems: "center",
-                              flex: 1,
-                              flexDirection: "row",
-                              gap: spacing[1],
-                            }}
-                          >
-                            <AppText
-                              variant="bodySmall"
-                              numberOfLines={1}
-                              style={{ color: palette.text, flex: 1, fontWeight: "900" }}
-                            >
-                              {card.venue.name}
-                            </AppText>
-                            <AppText
-                              variant="micro"
-                              numberOfLines={1}
-                              style={{ color: palette.textSecondary, flexShrink: 0 }}
-                            >
-                              {card.venue.planningArea ? `${card.venue.planningArea} · ` : ""}
-                              {card.venue.unitNumber}
-                            </AppText>
-                          </View>
-                          <ChevronRight color={palette.textMuted} size={16} />
-                        </View>
-                        <View
-                          style={{
-                            alignItems: "center",
-                            flexDirection: "row",
-                            justifyContent: "space-between",
-                          }}
-                        >
-                          <AppText
-                            variant="bodySmall"
-                            numberOfLines={1}
-                            style={{ color: palette.text, flex: 1, fontWeight: "800" }}
-                          >
-                            {card.heroDish.name}
-                          </AppText>
-                          <AppText
-                            variant="price"
-                            style={{
-                              color: palette.orange,
-                              fontSize: typography.bodySmallBold.fontSize,
-                              fontWeight: "800",
-                              lineHeight: typography.bodySmallBold.lineHeight,
-                              marginLeft: spacing[1],
-                            }}
-                          >
-                            S${card.heroDish.price.toFixed(2)}
-                          </AppText>
-                        </View>
-                      </View>
-                    </Animated.View>
-                  </Pressable>
-                );
-              })}
-            </View>
-          );
-        })}
-      </Animated.ScrollView>
+                        S${card.heroDish.price.toFixed(2)}
+                      </AppText>
+                    ) : null}
+                  </View>
+                </View>
+              </Pressable>
+            ))}
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
@@ -1178,7 +979,6 @@ export function DiscoverHomeScreen() {
     spacing,
     semanticSpacing,
     shadows,
-    motion,
     colorScheme,
     typography,
   } = useHungryTheme();
@@ -1287,8 +1087,8 @@ export function DiscoverHomeScreen() {
   const [visibleAreaStallCount, setVisibleAreaStallCount] = useState(
     DISCOVER_STALL_INITIAL_VISIBLE_COUNT,
   );
-  const supabaseFeedVenues = supabaseDiscoveryFeed?.venues ?? [];
-  const supabaseFeedResults = supabaseDiscoveryFeed?.results ?? [];
+  const supabaseFeedVenues = supabaseDiscoveryFeed?.venues ?? EMPTY_FEED_VENUES;
+  const supabaseFeedResults = supabaseDiscoveryFeed?.results ?? EMPTY_FEED_RESULTS;
   const supabaseDiscoverBites = useMemo(
     () => supabaseFeedResults.map(searchResultToDiscoverBite),
     [supabaseFeedResults],
@@ -1323,6 +1123,13 @@ export function DiscoverHomeScreen() {
     });
   const discoverLocationLatitude = discoverCoordinate.latitude;
   const discoverLocationLongitude = discoverCoordinate.longitude;
+  // GPS jitter must not refetch Discover: reads are keyed on a ~200m grid cell.
+  const discoverGeoCellLatitude =
+    Math.round(discoverLocationLatitude * DISCOVER_GEOCELL_STEPS_PER_DEGREE) /
+    DISCOVER_GEOCELL_STEPS_PER_DEGREE;
+  const discoverGeoCellLongitude =
+    Math.round(discoverLocationLongitude * DISCOVER_GEOCELL_STEPS_PER_DEGREE) /
+    DISCOVER_GEOCELL_STEPS_PER_DEGREE;
   // Without a GPS fix or a manual pick the coordinate is only the built-in default,
   // so the header asks the user to choose an area instead of asserting one.
   const needsDiscoverAreaChoice = isDiscoverLocationApproximate && !manualLocation;
@@ -1346,50 +1153,48 @@ export function DiscoverHomeScreen() {
     }
 
     let isActive = true;
+    // Keep the current feed on screen while a new area or GPS fix loads.
     setIsSupabaseDiscoveryFeedLoading(true);
     setDiscoverLoadError(false);
-    setSupabaseDiscoverAreaCount(null);
-    setSupabaseDiscoveryFeed(null);
     const discoveryService = getHungryService().discovery;
-    void Promise.all([
+    void Promise.allSettled([
       discoveryService.countVenuesInArea(
-        discoverLocationLatitude,
-        discoverLocationLongitude,
+        discoverGeoCellLatitude,
+        discoverGeoCellLongitude,
         DISCOVER_AREA_RADIUS_METERS,
         discoverLocationLabel,
       ),
       discoveryService.listDiscoveryFeedByLocation({
         areaName: discoverLocationLabel,
-        lat: discoverLocationLatitude,
-        lng: discoverLocationLongitude,
+        lat: discoverGeoCellLatitude,
+        lng: discoverGeoCellLongitude,
         radiusMeters: DISCOVER_AREA_RADIUS_METERS,
         limit: DISCOVER_FEED_LIMIT,
       }),
-    ])
-      .then(([venueCount, discoveryFeed]) => {
-        if (!isActive) return;
-        setSupabaseDiscoverAreaCount(typeof venueCount === "number" ? venueCount : null);
-        setSupabaseDiscoveryFeed(discoveryFeed ?? null);
-        setIsSupabaseDiscoveryFeedLoading(false);
-        setIsDiscoverRefreshing(false);
-      })
-      .catch(() => {
-        if (isActive) {
-          setSupabaseDiscoverAreaCount(null);
-          setSupabaseDiscoveryFeed(null);
-          setIsSupabaseDiscoveryFeedLoading(false);
-          setDiscoverLoadError(true);
-          setIsDiscoverRefreshing(false);
-        }
-      });
+    ]).then(([venueCountResult, discoveryFeedResult]) => {
+      if (!isActive) return;
+      // A failed count never throws away a good feed.
+      setSupabaseDiscoverAreaCount(
+        venueCountResult.status === "fulfilled" && typeof venueCountResult.value === "number"
+          ? venueCountResult.value
+          : null,
+      );
+      if (discoveryFeedResult.status === "fulfilled") {
+        setSupabaseDiscoveryFeed(discoveryFeedResult.value ?? null);
+      } else {
+        setDiscoverLoadError(true);
+      }
+      setIsSupabaseDiscoveryFeedLoading(false);
+      setIsDiscoverRefreshing(false);
+    });
 
     return () => {
       isActive = false;
     };
   }, [
     discoverLocationLabel,
-    discoverLocationLatitude,
-    discoverLocationLongitude,
+    discoverGeoCellLatitude,
+    discoverGeoCellLongitude,
     discoverReloadKey,
     isSupabaseDataSource,
   ]);
@@ -1413,147 +1218,21 @@ export function DiscoverHomeScreen() {
     };
   }, [palette, colorScheme]);
 
+  // One hour value for the chip order and the late-night rail, refreshed on focus.
+  const [currentHour, setCurrentHour] = useState(() => new Date().getHours());
+  useFocusEffect(
+    useCallback(() => {
+      setCurrentHour(new Date().getHours());
+    }, []),
+  );
   const sortedChips = useMemo(() => {
-    const baseChips = [
-      { id: "dietary" as const, label: "Dietary Needs", category: "dietary" },
-      ...INTENT_CHIPS,
-    ];
-    const hour = new Date().getHours();
-    const prioritizeLateNight = hour >= 22 || hour < 4;
+    const baseChips = [{ id: "dietary" as const, label: "Dietary Needs" }, ...INTENT_CHIPS];
+    const prioritizeLateNight = currentHour >= 22 || currentHour < 4;
     if (prioritizeLateNight) {
       return baseChips.sort((a, b) => (a.id === "late" ? -1 : b.id === "late" ? 1 : 0));
     }
     return baseChips;
-  }, []);
-
-  // ─── Idle Pulse Animation (Psychological Nudge) ───────────────────────────
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const isPulsingRef = useRef(false);
-
-  const startPulse = useCallback(() => {
-    if (isPulsingRef.current) return;
-    isPulsingRef.current = true;
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.05,
-          duration: motion.idlePulse,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: motion.idlePulse,
-          useNativeDriver: true,
-        }),
-      ]),
-    ).start();
-  }, [pulseAnim, motion.idlePulse]);
-
-  const resetIdleTimer = useCallback(() => {
-    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-    if (isPulsingRef.current) {
-      pulseAnim.stopAnimation();
-      pulseAnim.setValue(1);
-      isPulsingRef.current = false;
-    }
-    idleTimerRef.current = setTimeout(() => {
-      startPulse();
-    }, 7000); // 7 seconds of inactivity
-  }, [pulseAnim, startPulse]);
-
-  useEffect(() => {
-    resetIdleTimer();
-    return () => {
-      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-    };
-  }, [resetIdleTimer]);
-
-  useEffect(() => {
-    return () => {
-      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-      pulseAnim.stopAnimation();
-      pulseAnim.setValue(1);
-      isPulsingRef.current = false;
-    };
-  }, [pulseAnim]);
-  const discoverScrollRef = useRef<ScrollView | null>(null);
-  const discoverScrollOffsetYRef = useRef(0);
-  const discoverScrollDirectionRef = useRef<"up" | "down" | null>(null);
-  const stallShowcaseTopYRef = useRef(0);
-  const stallShowcaseScrollY = useRef(new Animated.Value(0)).current;
-  const [isStallShowcaseGestureActive, setIsStallShowcaseGestureActive] = useState(false);
-  const handleDiscoverScroll = useCallback(
-    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const nextOffsetY = event.nativeEvent.contentOffset.y;
-      const previousOffsetY = discoverScrollOffsetYRef.current;
-      if (nextOffsetY > previousOffsetY + 1) {
-        discoverScrollDirectionRef.current = "down";
-      } else if (nextOffsetY < previousOffsetY - 1) {
-        discoverScrollDirectionRef.current = "up";
-      }
-
-      discoverScrollOffsetYRef.current = nextOffsetY;
-      resetIdleTimer();
-    },
-    [resetIdleTimer],
-  );
-  const handleStallShowcaseLayout = useCallback((event: LayoutChangeEvent) => {
-    stallShowcaseTopYRef.current = event.nativeEvent.layout.y;
-  }, []);
-  const focusStallShowcaseSection = useCallback((animated = false) => {
-    const sectionTopY = stallShowcaseTopYRef.current;
-    if (sectionTopY <= 0) {
-      return;
-    }
-
-    if (Math.abs(discoverScrollOffsetYRef.current - sectionTopY) <= 1) {
-      return;
-    }
-
-    discoverScrollOffsetYRef.current = sectionTopY;
-    discoverScrollRef.current?.scrollTo({ x: 0, y: sectionTopY, animated });
-  }, []);
-  const handleDiscoverScrollEnd = useCallback(
-    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const nextOffsetY = event.nativeEvent.contentOffset.y;
-      const sectionTopY = stallShowcaseTopYRef.current;
-      discoverScrollOffsetYRef.current = nextOffsetY;
-      resetIdleTimer();
-
-      if (
-        discoverScrollDirectionRef.current !== "down" ||
-        sectionTopY <= 0 ||
-        nextOffsetY < sectionTopY - stallShowcasePageHeight / 2 ||
-        nextOffsetY >= sectionTopY - 1
-      ) {
-        return;
-      }
-
-      focusStallShowcaseSection(true);
-    },
-    [focusStallShowcaseSection, resetIdleTimer, stallShowcasePageHeight],
-  );
-  const handleStallShowcaseGestureStart = useCallback(() => {
-    resetIdleTimer();
-    focusStallShowcaseSection();
-    setIsStallShowcaseGestureActive(true);
-  }, [focusStallShowcaseSection, resetIdleTimer]);
-  const handleStallShowcaseGestureEnd = useCallback(() => {
-    resetIdleTimer();
-    setIsStallShowcaseGestureActive(false);
-  }, [resetIdleTimer]);
-  const handleStallShowcaseTopBoundaryPull = useCallback(
-    (deltaY: number) => {
-      resetIdleTimer();
-      setIsStallShowcaseGestureActive(false);
-      const nextParentOffsetY = Math.max(0, discoverScrollOffsetYRef.current - deltaY);
-      discoverScrollDirectionRef.current = "up";
-      discoverScrollOffsetYRef.current = nextParentOffsetY;
-      discoverScrollRef.current?.scrollTo({ x: 0, y: nextParentOffsetY, animated: false });
-    },
-    [resetIdleTimer],
-  );
+  }, [currentHour]);
 
   // Tab press-to-top behavior intentionally disabled for bottom navigation.
 
@@ -1622,7 +1301,6 @@ export function DiscoverHomeScreen() {
     );
     return image.imageUrl ? { uri: image.imageUrl } : DISHES_CARD_GRAPHIC;
   }, [areaDishPool]);
-  const currentHour = new Date().getHours();
   const isLateNightMakanVisible = currentHour >= 21 || currentHour < 4;
   const discoverDietaryFlags = useMemo(
     () =>
@@ -1636,6 +1314,7 @@ export function DiscoverHomeScreen() {
         ? activeDiscoverChipIds.filter((value) => value !== chipId)
         : [...activeDiscoverChipIds, chipId];
 
+      trackAnalyticsEvent("discover_chip_tapped", { chip: chipId, selected: !wasActive });
       clearPopularFoodFilterSkeletonTimer();
       if (nextChipIds.length > 0) {
         setIsPopularFoodFilterSkeletonPending(true);
@@ -1691,15 +1370,15 @@ export function DiscoverHomeScreen() {
 
       return Array.from(deferredDiscoverChipSet).every((chipId) => {
         if (chipId === "dietary") {
-          return dish
-            ? discoverDietaryFlags.some((flag) => dish.dietaryFlags.includes(flag))
-            : false;
+          if (!dish) return false;
+          // Saved needs must all hold; without saved needs, any common diet flag counts.
+          return profile.dietaryPreferences.length
+            ? discoverDietaryFlags.every((flag) => dish.dietaryFlags.includes(flag))
+            : discoverDietaryFlags.some((flag) => dish.dietaryFlags.includes(flag));
         }
         if (chipId === "halal") {
-          if (dish?.dietaryFlags.includes("halal")) {
-            return true;
-          }
-          return getLateNightHaystack().includes("halal");
+          // Structured flag only: text matching let "non-halal" through.
+          return Boolean(dish?.dietaryFlags.includes("halal"));
         }
         if (chipId === "spicy") {
           return (
@@ -1718,7 +1397,7 @@ export function DiscoverHomeScreen() {
         return true;
       });
     },
-    [deferredDiscoverChipSet, discoverDietaryFlags],
+    [deferredDiscoverChipSet, discoverDietaryFlags, profile.dietaryPreferences.length],
   );
   const areaVenueIds = useMemo(() => new Set(areaVenues.map((venue) => venue.id)), [areaVenues]);
   const discoverBaseBites = useMemo(() => {
@@ -1953,7 +1632,7 @@ export function DiscoverHomeScreen() {
         )
       : unfilteredStallShowcaseCards;
 
-    return extendStallShowcaseCards(filteredCards);
+    return filteredCards.slice(0, STALL_SHOWCASE_CARD_LIMIT);
   }, [isDiscoverFiltering, matchesDiscoverChipSelection, unfilteredStallShowcaseCards]);
   const discoverAreaCountLabel = isSupabaseDataSource
     ? getDiscoverAreaCountLabel({
@@ -2056,6 +1735,19 @@ export function DiscoverHomeScreen() {
     [getBiteDish, navigation, recordTasteInteraction],
   );
 
+  const openDiscoverCollection = useCallback(
+    (collection: keyof typeof discoverBiteCollections) => {
+      trackAnalyticsEvent("discover_see_all_tapped", { collection });
+      // Same area as the rail the viewer was looking at, not a fresh GPS read.
+      navigation.navigate("QuickBites", {
+        collection,
+        latitude: discoverLocationLatitude,
+        longitude: discoverLocationLongitude,
+      });
+    },
+    [discoverLocationLatitude, discoverLocationLongitude, navigation],
+  );
+
   const prefetchBiteCollectionRoute = useCallback(
     (collection: keyof typeof discoverBiteCollections) => {
       prefetchImages(
@@ -2136,18 +1828,12 @@ export function DiscoverHomeScreen() {
   return (
     <Screen scroll={false} fullWidth style={{ backgroundColor: themeTints.bg }}>
       <ScrollView
-        ref={discoverScrollRef}
         showsVerticalScrollIndicator={false}
-        scrollEnabled={!isStallShowcaseGestureActive}
         onLayout={handleDiscoverViewportLayout}
         contentContainerStyle={{
           gap: discoverSectionGap,
           paddingHorizontal: semanticSpacing.screenEdge,
         }}
-        onScroll={handleDiscoverScroll}
-        onScrollEndDrag={handleDiscoverScrollEnd}
-        onMomentumScrollEnd={handleDiscoverScrollEnd}
-        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
             colors={[palette.orange]}
@@ -2268,6 +1954,27 @@ export function DiscoverHomeScreen() {
               void reloadDiscover();
             }}
           />
+        ) : supabaseDiscoveryFeed?.isFallback ? (
+          // The live read failed and the feed came from the saved cache: say so.
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Showing saved results. Tap to retry."
+            onPress={() => {
+              void reloadDiscover();
+            }}
+            style={{
+              backgroundColor: palette.warningSoft,
+              borderRadius: componentRadii.card,
+              minHeight: 44,
+              justifyContent: "center",
+              paddingHorizontal: spacing[3],
+              paddingVertical: spacing[2],
+            }}
+          >
+            <AppText variant="bodySmall" style={{ color: palette.warningText }}>
+              Showing saved results. Tap to retry.
+            </AppText>
+          </Pressable>
         ) : null}
 
         {/* Intent Chips with Icons */}
@@ -2637,8 +2344,9 @@ export function DiscoverHomeScreen() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="See all quick bites"
+                hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
                 onPressIn={() => prefetchBiteCollectionRoute("quickBites")}
-                onPress={() => navigation.navigate("QuickBites", { collection: "quickBites" })}
+                onPress={() => openDiscoverCollection("quickBites")}
               >
                 <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
                   SEE ALL
@@ -2745,8 +2453,9 @@ export function DiscoverHomeScreen() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`See all most reviewed dishes in ${discoverLocationLabel}`}
+                hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
                 onPressIn={() => prefetchBiteCollectionRoute("trending")}
-                onPress={() => navigation.navigate("QuickBites", { collection: "trending" })}
+                onPress={() => openDiscoverCollection("trending")}
               >
                 <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
                   SEE ALL
@@ -2865,7 +2574,10 @@ export function DiscoverHomeScreen() {
                     borderRadius: radii.sm,
                   }}
                 >
-                  <AppText variant="micro" style={{ color: palette.white, fontWeight: "800" }}>
+                  <AppText
+                    variant="micro"
+                    style={{ color: palette.textOnOrange, fontWeight: "800" }}
+                  >
                     ★ 4.4+
                   </AppText>
                 </View>
@@ -2873,8 +2585,9 @@ export function DiscoverHomeScreen() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="See all top rated dishes"
+                hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
                 onPressIn={() => prefetchBiteCollectionRoute("editorChoice")}
-                onPress={() => navigation.navigate("QuickBites", { collection: "editorChoice" })}
+                onPress={() => openDiscoverCollection("editorChoice")}
               >
                 <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
                   SEE ALL
@@ -2935,7 +2648,7 @@ export function DiscoverHomeScreen() {
                       >
                         <AppText
                           variant="micro"
-                          style={{ color: palette.white, fontWeight: "800" }}
+                          style={{ color: palette.textOnOrange, fontWeight: "800" }}
                         >
                           {`★ ${bite.rating.toFixed(1)}`}
                         </AppText>
@@ -3010,7 +2723,13 @@ export function DiscoverHomeScreen() {
                     borderRadius: radii.sm,
                   }}
                 >
-                  <AppText variant="micro" style={{ color: palette.white, fontWeight: "800" }}>
+                  <AppText
+                    variant="micro"
+                    style={{
+                      color: themeTints.isDark ? palette.textOnOrange : palette.white,
+                      fontWeight: "800",
+                    }}
+                  >
                     VALUE
                   </AppText>
                 </View>
@@ -3018,8 +2737,9 @@ export function DiscoverHomeScreen() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="See all budget dishes under $8"
+                hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
                 onPressIn={() => prefetchBiteCollectionRoute("budget")}
-                onPress={() => navigation.navigate("QuickBites", { collection: "budget" })}
+                onPress={() => openDiscoverCollection("budget")}
               >
                 <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
                   SEE ALL
@@ -3118,8 +2838,9 @@ export function DiscoverHomeScreen() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="See all late night stalls"
+                hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
                 onPressIn={() => prefetchBiteCollectionRoute("lateNight")}
-                onPress={() => navigation.navigate("QuickBites", { collection: "lateNight" })}
+                onPress={() => openDiscoverCollection("lateNight")}
               >
                 <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
                   SEE ALL
@@ -3210,6 +2931,7 @@ export function DiscoverHomeScreen() {
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="View hawker centres on map"
+                  hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
                   onPressIn={() => preloadRoute(navigation, "DiscoverMap")}
                   onPress={() => navigation.navigate("DiscoverMap")}
                 >
@@ -3275,9 +2997,12 @@ export function DiscoverHomeScreen() {
                         numberOfLines={1}
                       >
                         {[
+                          getStallRowOpenLabel(venue),
+                          topDish && topDish.reviewCount > 0
+                            ? `★ ${topDish.rating.toFixed(1)}`
+                            : undefined,
                           venue.planningArea,
                           venue.unitNumber,
-                          venue.operatingHours.split(" – ")[0],
                         ]
                           .filter(Boolean)
                           .join(" · ")}
@@ -3335,14 +3060,8 @@ export function DiscoverHomeScreen() {
             locationLabel={discoverLocationLabel}
             pageHeight={stallShowcasePageHeight}
             cardWidth={stallShowcaseCardWidth}
-            scrollY={stallShowcaseScrollY}
             onOpenCard={openStallShowcaseCard}
             onPrefetchCard={prefetchStallShowcaseCard}
-            onGestureStart={handleStallShowcaseGestureStart}
-            onGestureEnd={handleStallShowcaseGestureEnd}
-            onTopBoundaryPull={handleStallShowcaseTopBoundaryPull}
-            onRequestSectionFocus={focusStallShowcaseSection}
-            onSectionLayout={handleStallShowcaseLayout}
           />
         ) : null}
       </ScrollView>

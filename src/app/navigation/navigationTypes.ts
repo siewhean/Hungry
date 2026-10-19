@@ -150,7 +150,12 @@ export type RootStackParamList = {
   NotFound: { title?: string; body?: string } | undefined;
   Post: { venueId?: string; dishId?: string } | undefined;
   QuickBites:
-    | { collection?: "quickBites" | "trending" | "editorChoice" | "budget" | "lateNight" }
+    | {
+        collection?: "quickBites" | "trending" | "editorChoice" | "budget" | "lateNight";
+        /** The Discover area the list was opened from; GPS is used when absent. */
+        latitude?: number;
+        longitude?: number;
+      }
     | undefined;
   DeveloperLauncher: undefined;
   Favourites: undefined;

@@ -27,7 +27,7 @@ test("stall reviews are one newest-first query naming each dish, with a write-re
   assert.match(stallDetail, /ctaLabel="Write a review"\s*onPress=\{openWriteReview\}/);
   assert.match(
     stallDetail,
-    /const openWriteReview = \(\) => \{\s*if \(!requireAuthForProtectedAction\(/,
+    /const openWriteReview = \(\) => \{[\s\S]*?if \(!requireAuthForProtectedAction\(/,
   );
 });
 

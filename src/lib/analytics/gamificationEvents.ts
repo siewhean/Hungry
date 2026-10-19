@@ -89,9 +89,11 @@ export function trackStallSaved(params: {
   });
 }
 
+export type StallInteractionSourceScreen = "StallDetail" | "DishDetail" | "SearchResults";
+
 export function trackStallMarkedTried(params: {
   stallId: string;
-  sourceScreen: "StallDetail" | "SearchResults";
+  sourceScreen: StallInteractionSourceScreen;
 }) {
   trackAnalyticsEvent("stall_marked_tried", {
     stall_id: params.stallId,

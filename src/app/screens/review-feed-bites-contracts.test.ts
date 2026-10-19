@@ -104,7 +104,7 @@ test("Review feed cards do not render bottom bites sections", () => {
   assert.match(reviewShareSheet, /recipientAccessibilityLabelPrefix="Select"/);
   assert.match(reviewShareSheet, /FloatingShareSendButton/);
   assert.match(reviewShareSheet, /selectedCount=\{selectedChatIds\.length\}/);
-  assert.match(reviewShareSheet, /accessibilityLabel="Send shared review"/);
+  assert.match(reviewShareSheet, /accessibilityLabel=\{`Send shared \$\{kindNoun\}`\}/);
   assert.doesNotMatch(reviewShareSheet, /showSendAction/);
 
   assert.match(bitesCarousel, /FEATURE_FLAGS\.commentsEnabled/);

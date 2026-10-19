@@ -25,6 +25,8 @@ export const colors = {
     navy: "#1A2E44",
     amber: "#F5A623",
     amberLight: "#FFFBEB",
+    /** Rating stars: a darker amber that reads on white (3:1 non-text minimum). */
+    ratingStar: "#B45309",
     teal: "#14B8A6",
     success: "#4F7E17",
     successText: "#4F7E17",
@@ -101,6 +103,7 @@ export const colors = {
     navy: "#0D0F14",
     amber: "#F5A623",
     amberLight: "rgba(245, 166, 35, 0.1)",
+    ratingStar: "#F5A623",
     teal: "#14B8A6",
     success: "#4ADE80",
     successText: "#4ADE80",

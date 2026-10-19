@@ -337,6 +337,8 @@ export interface Bite {
   tasteStamp: TasteStamp;
   cravingCount: number;
   savedCount: number;
+  /** Server distance from the query point, when the read computed one. */
+  distanceMeters?: number;
   /** The viewer's own like/save, when the read returns it (undefined = unknown). */
   viewerHasLiked?: boolean;
   viewerHasSaved?: boolean;
@@ -490,6 +492,8 @@ export interface DiscoveryLocationFeedRequest {
 export interface DiscoveryLocationFeed {
   venues: VenueSummary[];
   results: SearchResult[];
+  /** True when the live read failed and these rows come from the local cache. */
+  isFallback?: boolean;
 }
 
 export interface VenueLocationSearchRequest extends DiscoveryLocationFeedRequest {

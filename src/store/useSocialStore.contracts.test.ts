@@ -137,15 +137,14 @@ test("social store contract: real post shares sync to Supabase and unsupported i
   assert.match(source, /isUuidPostId\(postId\)/);
   assert.match(source, /social\.shareBite\(postId, \{ channel \}\)/);
   assert.match(source, /rolled back optimistic state/);
-  assert.match(
-    reviewShareSheet,
-    /if \(activeReview\.postId\) \{\s*onShared\(activeReview\.postId, "in_app"\)/,
-  );
-  assert.match(reviewShareSheet, /onShared\(activeReview\.postId, "copy_link"\)/);
-  assert.match(reviewShareSheet, /onShared\(activeReview\.postId, "system_share"\)/);
+  // Every channel goes through one tracker; only real posts count toward post shares.
+  assert.match(reviewShareSheet, /if \(target\.postId\) \{\s*onShared\(target\.postId, channel\)/);
+  assert.match(reviewShareSheet, /trackShare\(activeReview, "in_app"\)/);
+  assert.match(reviewShareSheet, /trackShare\(activeReview, "copy_link"\)/);
+  assert.match(reviewShareSheet, /trackShare\(activeReview, "system_share"\)/);
   // Cancelled system shares are not counted; messaging apps keep their channel.
   assert.match(reviewShareSheet, /result\.action !== Share\.sharedAction/);
-  assert.match(reviewShareSheet, /onShared\(activeReview\.postId, channel\)/);
+  assert.match(reviewShareSheet, /trackShare\(activeReview, channel\)/);
   const homeFeed = read("src/app/screens/home/HomeFeedScreen.tsx");
   assert.match(homeFeed, /webShareUrl\("post", activeShareItem\.id\)/);
   assert.match(homeFeed, /if \(result\.action === Share\.sharedAction\) \{/);

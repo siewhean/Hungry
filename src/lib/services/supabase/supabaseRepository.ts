@@ -186,6 +186,30 @@ function getDishesByVenueIndex(): Map<string, DishDetail[]> {
   }
   return dishesByVenueIndex.byVenueId;
 }
+
+// Detail screens look up by id on every render: index the caches instead of scanning.
+let venueByIdIndex: { source: VenueSummary[]; byId: Map<string, VenueSummary> } | null = null;
+let dishByIdIndex: { source: DishDetail[]; byId: Map<string, DishDetail> } | null = null;
+
+function getVenueByIdIndex(): Map<string, VenueSummary> {
+  if (!venueByIdIndex || venueByIdIndex.source !== cachedVenues) {
+    venueByIdIndex = {
+      source: cachedVenues,
+      byId: new Map(cachedVenues.map((venue) => [venue.id, venue])),
+    };
+  }
+  return venueByIdIndex.byId;
+}
+
+function getDishByIdIndex(): Map<string, DishDetail> {
+  if (!dishByIdIndex || dishByIdIndex.source !== cachedDishes) {
+    dishByIdIndex = {
+      source: cachedDishes,
+      byId: new Map(cachedDishes.map((dish) => [dish.id, dish])),
+    };
+  }
+  return dishByIdIndex.byId;
+}
 let cachedBlogPosts: BlogPost[] = [];
 let cachedStallPosts: StallPost[] = [];
 
@@ -869,6 +893,16 @@ export async function countVenuesInAreaViaRpc(
 
   const normalizedAreaName = areaName?.trim();
   if (normalizedAreaName) {
+    // Indexed equality on lower(trim(planning_area)); the ILIKE read below is the
+    // fallback until the RPC is deployed.
+    const { data: areaCount, error: areaCountError } = await client.rpc(
+      "count_venues_in_planning_area",
+      { p_area_name: normalizedAreaName },
+    );
+    if (!areaCountError && typeof areaCount === "number" && Number.isFinite(areaCount)) {
+      return areaCount;
+    }
+
     const { count, error } = await client
       .from("venues")
       .select("id", { count: "exact", head: true })
@@ -981,13 +1015,43 @@ export async function searchVenuesByLocationViaRpc(
   return rows?.map(mapLocationSearchVenue);
 }
 
+/**
+ * Undefined means "no such dish". Throws when the configured RPC itself failed,
+ * so a network error is never shown as "this dish was removed".
+ */
 export async function getDishByIdViaRpc(dishId: string): Promise<DishDetail | undefined> {
   const rows = await rpcRows("get_dish_detail", { p_dish_id: dishId });
+  if (!rows && isSupabaseConfigured() && getSupabaseClient()) {
+    throw new Error("Couldn't load this dish.");
+  }
   return rows?.[0] ? mapRpcDish(rows[0]) : undefined;
 }
 
+/** search_dishes caps a page at 50 rows. */
+const VENUE_MENU_PAGE_SIZE = 50;
+/** Up to 500 menu items per stall (1 embedded page + 9 more). */
+const VENUE_MENU_MAX_EXTRA_PAGES = 9;
+
+/** How long one get_venue_detail result is reused (venue + menu on the same open). */
+const VENUE_DETAIL_REUSE_MS = 30_000;
+const venueDetailRequests = new Map<string, { at: number; rows: Promise<Row[] | undefined> }>();
+
+/** getVenue and listDishesByVenue share one get_venue_detail call per stall open. */
+function getVenueDetailRows(venueId: string): Promise<Row[] | undefined> {
+  const now = Date.now();
+  const cached = venueDetailRequests.get(venueId);
+  if (cached && now - cached.at < VENUE_DETAIL_REUSE_MS) return cached.rows;
+  const rows = rpcRows("get_venue_detail", { p_venue_id: venueId }).then((result) => {
+    // Never reuse a failure: the next open retries.
+    if (!result) venueDetailRequests.delete(venueId);
+    return result;
+  });
+  venueDetailRequests.set(venueId, { at: now, rows });
+  return rows;
+}
+
 export async function getVenueByIdViaRpc(venueId: string): Promise<VenueSummary | undefined> {
-  const rows = await rpcRows("get_venue_detail", { p_venue_id: venueId });
+  const rows = await getVenueDetailRows(venueId);
   return rows?.[0] ? mapRpcVenue(rows[0]) : undefined;
 }
 
@@ -1061,10 +1125,41 @@ export async function listVenuesByBuildingViaRpc(
 }
 
 export async function listDishesByVenueViaRpc(venueId: string): Promise<DishDetail[] | undefined> {
-  const rows = await rpcRows("get_venue_detail", { p_venue_id: venueId });
+  const rows = await getVenueDetailRows(venueId);
   const venue = rows?.[0];
   if (!venue) return rows ? [] : undefined;
-  return toRowArray(venue.dishes).map(mapRpcDish);
+  // Copy: the venue row is shared with getVenue through the request cache.
+  const dishRows = [...toRowArray(venue.dishes)];
+  // get_venue_detail embeds one search_dishes page (50). A full page means the menu
+  // may be longer: keep reading pages with the same keyset cursor so no dish is lost.
+  const seen = new Set(dishRows.map((row) => toString(row.dish_id)));
+  let lastPage = dishRows;
+  for (let index = 0; index < VENUE_MENU_MAX_EXTRA_PAGES; index += 1) {
+    if (lastPage.length < VENUE_MENU_PAGE_SIZE) break;
+    const last = lastPage[lastPage.length - 1];
+    const next = await rpcRows("search_dishes", {
+      p_query: null,
+      p_lat: null,
+      p_lng: null,
+      p_radius_meters: null,
+      p_dietary_flags: [],
+      p_limit: VENUE_MENU_PAGE_SIZE,
+      p_cursor_score: toNumber(last.cursor_score ?? last.rank_score),
+      p_cursor_id: toString(last.cursor_id ?? last.dish_id),
+      p_venue_id: venueId,
+      p_area_name: null,
+      p_cuisine_tags: null,
+      p_max_price: null,
+      p_open_only: false,
+    });
+    if (!next || next.length === 0) break;
+    const fresh = next.filter((row) => !seen.has(toString(row.dish_id)));
+    if (fresh.length === 0) break;
+    fresh.forEach((row) => seen.add(toString(row.dish_id)));
+    dishRows.push(...fresh);
+    lastPage = next;
+  }
+  return dishRows.map(mapRpcDish);
 }
 
 export async function listPopularNearbyViaRpc(
@@ -1140,12 +1235,12 @@ const supabaseRepositoryImpl: DataRepository = {
 
   getVenueById(venueId: string): VenueSummary | undefined {
     ensureHydrated();
-    return cachedVenues.find((venue) => venue.id === venueId);
+    return getVenueByIdIndex().get(venueId);
   },
 
   getDishById(dishId: string): DishDetail | undefined {
     ensureHydrated();
-    return cachedDishes.find((dish) => dish.id === dishId);
+    return getDishByIdIndex().get(dishId);
   },
 
   listDishesByVenue(venueId: string): DishDetail[] {

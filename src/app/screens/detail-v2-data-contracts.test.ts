@@ -15,9 +15,9 @@ test("stall detail uses real venue hours and popular visitors", () => {
   assert.match(stall, /PopularVisitorsSection/);
   assert.match(
     stall,
-    /const isVenueOpen = isVenueOpenFromHours\(venue\.operatingHours, venue\.isOpen\)/,
+    /const openState = getVenueOpenState\(venue\.operatingHours, venue\.isOpen\)/,
   );
-  assert.match(stall, /formatWeeklyOperatingHours\(venue\.operatingHours\)/);
+  assert.match(stall, /parseOperatingHours\(venue\.operatingHours\)/);
   assert.match(stall, /weeklyOperatingHours\.map/);
   assert.doesNotMatch(stall, /venue\.operatingHours\.split\(" – "\)/);
   assert.doesNotMatch(stall, /Open Now/);

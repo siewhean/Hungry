@@ -53,7 +53,7 @@ import {
   STALL_COMMUNITY_REVIEW_LIMIT,
 } from "@/features/detail/detailTransforms";
 import {
-  hasPendingClaimForProfile,
+  hasPendingClaimForVenue,
   submitClaimFromStall,
 } from "@/features/merchantClaim/submitClaimFromStall";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
@@ -70,11 +70,9 @@ import { openMerchantProfileLink, openTrustedMapsUrl } from "@/lib/security/safe
 import { getDishSection, isSectionFlag, isSoldOut } from "@/features/merchant/menuSections";
 import {
   buildMapsSearchUrl,
-  formatFoodCentreLocation,
   formatDistanceFromUser,
   formatFullStallAddress,
   formatStallPriceBand,
-  formatWeeklyOperatingHours,
   summarizeStallRating,
 } from "@/features/detail/stallLocation";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -86,7 +84,7 @@ import { useLocationStore } from "@/store/useLocationStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
-import { isVenueOpenFromHours } from "@/utils/stallStatus";
+import { formatHoursRows, getVenueOpenState, parseOperatingHours } from "@/utils/operatingHours";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
 import {
   CyclingGridImage,
@@ -175,19 +173,22 @@ function inferDishCategory(dish: DishDetail) {
   if (merchantSection) return merchantSection;
   const name = dish.name.toLowerCase();
   if (dish.mustOrder) return "Popular";
-  if (/(rice|nasi|biryani|donburi|porridge|congee)/.test(name)) return "Rice";
-  if (/(noodle|mee|hor fun|kway teow|ramen|pasta|spaghetti|bee hoon|udon|soba)/.test(name)) {
+  // Whole words only: "Steak" is not tea, "Watercress soup" is not water.
+  if (/\b(rice|nasi|biryani|donburi|porridge|congee)\b/.test(name)) return "Rice";
+  if (/\b(noodles?|mee|hor fun|kway teow|ramen|pasta|spaghetti|bee hoon|udon|soba)\b/.test(name)) {
     return "Noodles";
   }
-  if (/(chicken|ayam|wing|drumstick)/.test(name)) return "Chicken";
-  if (/(fish|prawn|crab|seafood|squid|sotong|salmon)/.test(name)) return "Seafood";
-  if (/(vegetarian|vegan|tofu|mushroom|salad)/.test(name)) return "Vegetarian";
-  if (/(coffee|tea|milo|juice|drink|latte|smoothie|water|soda|kopi|teh)/.test(name)) {
+  if (/\b(chicken|ayam|wings?|drumsticks?)\b/.test(name)) return "Chicken";
+  if (/\b(fish|prawns?|crabs?|seafood|squid|sotong|salmon)\b/.test(name)) return "Seafood";
+  if (/\b(vegetarian|vegan|tofu|mushrooms?|salad)\b/.test(name)) return "Vegetarian";
+  if (/\b(coffee|tea|milo|juice|drinks?|latte|smoothie|water|soda|kopi|teh)\b/.test(name)) {
     return "Drinks";
   }
-  if (/(cake|dessert|ice cream|pudding|waffle|tart|muffin|sweet)/.test(name)) return "Dessert";
-  if (/(set|combo|meal|bundle|platter|party)/.test(name)) return "Sets";
-  if (/(side|fries|snack|soup|egg|toast|bread)/.test(name)) return "Sides";
+  if (/\b(cakes?|dessert|ice cream|pudding|waffles?|tarts?|muffins?)\b/.test(name)) {
+    return "Dessert";
+  }
+  if (/\b(set|combo|meal|bundle|platter)\b/.test(name)) return "Sets";
+  if (/\b(sides?|fries|snacks?|toast|bread)\b/.test(name)) return "Sides";
 
   const dietaryLabels = dish.dietaryFlags ?? [];
   if (dietaryLabels.some((label) => /vegetarian|vegan/i.test(label))) return "Vegetarian";
@@ -422,7 +423,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
     Record<string, ReviewReply[]>
   >({});
   const [isSubmittingClaim, setIsSubmittingClaim] = useState(false);
-  const [isClaimPending, setIsClaimPending] = useState(() => hasPendingClaimForProfile(profile.id));
+  const [isClaimPending, setIsClaimPending] = useState(() =>
+    hasPendingClaimForVenue(profile.id, venueId),
+  );
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
   const [reviewEntries, setReviewEntries] = useState<RecentReviewFeedEntry[]>([]);
   const [reviewsStatus, setReviewsStatus] = useState<"loading" | "error" | "ready">("loading");
@@ -449,15 +452,15 @@ export function StallDetailScreen({ navigation, route }: Props) {
     address: venue?.address ?? (building as { address?: string } | undefined)?.address,
     postalCode: venue?.postalCode ?? (building as { postalCode?: string } | undefined)?.postalCode,
   };
-  const foodCentreLocation = formatFoodCentreLocation(buildingLocation);
   const stallAddress = venue ? formatFullStallAddress(venue, buildingLocation) : "";
 
   const shareReviewTarget = useMemo<ReviewShareTarget>(() => {
     return {
+      kind: "stall",
       reviewId: `stall-${venue?.id ?? ""}`,
       postId: "",
       title: venue?.name ?? "Stall",
-      subtitle: `${buildingLocation.name ?? "Hungry"} · ${venue?.unitNumber ?? ""}`.trim(),
+      subtitle: [buildingLocation.name, venue?.unitNumber?.trim()].filter(Boolean).join(" · "),
       imageUrl: leadDish?.imageUrl ?? "",
       authorName: profile.displayName,
       message: `Check out ${venue?.name ?? "this stall"} at ${buildingLocation.name ?? "Hungry"}!`,
@@ -503,12 +506,17 @@ export function StallDetailScreen({ navigation, route }: Props) {
   }, [cachedDishes.length, menuReloadKey, serviceProviderMode, venue?.id]);
 
   useEffect(() => {
-    setIsClaimPending(hasPendingClaimForProfile(profile.id));
-  }, [profile.id]);
+    setIsClaimPending(hasPendingClaimForVenue(profile.id, venueId));
+  }, [profile.id, venueId]);
 
   useEffect(() => {
     if (!venue || trackedStallViewId.current === venue.id) return;
     trackedStallViewId.current = venue.id;
+    trackAnalyticsEvent(
+      "stall_viewed",
+      { stall_id: venue.id, building_id: venue.buildingId },
+      isAuthenticated ? { userId: profile.id } : undefined,
+    );
     void getHungryService().discovery.recordMerchantActionEvent({
       eventType: "stall_profile_view",
       venueId: venue.id,
@@ -678,7 +686,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
     return (
       <FeedErrorBoundary
         title="Stall details unavailable"
-        body="Couldn't load this dish — try again."
+        body="Couldn't load this stall — try again."
       >
         <SafeAreaView
           style={{ flex: 1, backgroundColor: palette.bg }}
@@ -710,14 +718,26 @@ export function StallDetailScreen({ navigation, route }: Props) {
     merchantProfile?.coverPhotoUrl ||
     venue.imageUrl ||
     dishes.map((dish) => getStallDishPhotos(dish)[0]).find(Boolean);
-  const isVenueOpen = isVenueOpenFromHours(venue.operatingHours, venue.isOpen);
+  const openState = getVenueOpenState(venue.operatingHours, venue.isOpen);
   const closureNotice = merchantProfile?.temporaryClosure ?? venue.closureNotice;
-  const operatingStatusLabel =
-    isVenueOpen && !merchantProfile?.temporaryClosure
-      ? "Open now"
-      : (closureNotice ?? "Closed now");
+  const operatingStatusLabel = merchantProfile?.temporaryClosure
+    ? merchantProfile.temporaryClosure
+    : openState.status === "open"
+      ? ["Open now", openState.detail].filter(Boolean).join(" · ")
+      : openState.status === "unknown"
+        ? venue.operatingHours?.trim()
+          ? "Check listed hours"
+          : "Hours not listed"
+        : (closureNotice ?? ["Closed now", openState.detail].filter(Boolean).join(" · "));
   const merchantWebLinks = (merchantProfile?.socialLinks ?? []).slice(0, 5);
-  const weeklyOperatingHours = formatWeeklyOperatingHours(venue.operatingHours);
+  const parsedHoursRows = formatHoursRows(parseOperatingHours(venue.operatingHours));
+  // Unreadable text is still shown as written rather than dropped.
+  const weeklyOperatingHours =
+    parsedHoursRows.length > 0
+      ? parsedHoursRows.map((row) => `${row.label}: ${row.text}`)
+      : venue.operatingHours?.trim()
+        ? [venue.operatingHours.trim()]
+        : [];
   const headerSummary = [
     ratingSummary
       ? `${ratingSummary.rating.toFixed(1)} rating (${ratingSummary.reviewCount} ${
@@ -768,7 +788,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
     }
 
     showToast({
-      message: "Please review this stall first before marking it as visited.",
+      message: "Try or review a dish here first, then mark this stall visited.",
       tone: "info",
       duration: 3000,
     });
@@ -779,6 +799,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
   };
 
   const openWriteReview = () => {
+    // The composer sends review_started once a dish is picked; this is the entry tap.
+    trackAnalyticsEvent("review_cta_tapped", { stall_id: venue.id, source_screen: "StallDetail" });
     if (!requireAuthForProtectedAction("Sign in to review this stall.")) {
       return;
     }
@@ -848,17 +870,21 @@ export function StallDetailScreen({ navigation, route }: Props) {
     }));
   };
 
-  const openShareSheet = () => {
-    if (!venue) {
-      return;
-    }
-
+  // The merchant "share" counts a completed share, not an opened sheet.
+  const recordMerchantShare = () => {
     void getHungryService().discovery.recordMerchantActionEvent({
       eventType: "share",
       venueId: venue.id,
       dishId: leadDish?.id,
       userId: isAuthenticated ? profile.id : undefined,
     });
+  };
+
+  const openShareSheet = () => {
+    if (!venue) {
+      return;
+    }
+
     setActiveShareReview(shareReviewTarget);
     requestAnimationFrame(() => {
       shareSheetRef.current?.present();
@@ -866,6 +892,11 @@ export function StallDetailScreen({ navigation, route }: Props) {
   };
 
   const openMenuDish = (activeDish: DishDetail) => {
+    trackAnalyticsEvent("stall_menu_dish_opened", {
+      stall_id: venue.id,
+      dish_id: activeDish.id,
+      menu_category: activeMenuCategory,
+    });
     void getHungryService().discovery.recordMerchantActionEvent({
       eventType: "menu_view",
       venueId: venue.id,
@@ -926,7 +957,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
   return (
     <FeedErrorBoundary
       title="Stall details unavailable"
-      body="Couldn't load this dish — try again."
+      body="Couldn't load this stall — try again."
     >
       <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["left", "right"]}>
         <View style={{ flex: 1 }}>
@@ -1021,11 +1052,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
                       {venue.name}
                     </AppText>
                     <AppText variant="bodyLarge" tone="secondary" numberOfLines={1}>
-                      {[
-                        foodCentreLocation || buildingLocation.name || "Food Centre",
-                        venue.unitNumber,
-                        distanceLabel,
-                      ]
+                      {/* Centre · unit · distance; the full address lives in the Address card. */}
+                      {[buildingLocation.name, venue.unitNumber?.trim(), distanceLabel]
                         .filter(Boolean)
                         .join(" · ")}
                     </AppText>
@@ -1088,7 +1116,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   stallId={venue.id}
                   userId={profile.id}
                   hasReviewedDishAtVenue={hasReviewedDishAtVenue}
-                  reviewPromptText="Please review a dish from this stall before marking it as visited."
+                  reviewPromptText="Try or review a dish here first, then mark this stall visited."
                   onReviewRequired={handleReviewRequiredForTried}
                   onSaved={() =>
                     void getHungryService().discovery.recordMerchantActionEvent({
@@ -1105,9 +1133,14 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   isAddingToList={detailSaveActions.isAddingToPortfolio}
                 />
               )}
-              {isAuthenticated && venue ? (
-                <FollowStallButton stallId={venue.id} stallName={venue.name} />
-              ) : null}
+              {/* Guests see Follow too; a tap goes through sign-in. */}
+              <FollowStallButton
+                stallId={venue.id}
+                stallName={venue.name}
+                isAuthenticated={isAuthenticated}
+                onRequireAuth={() => requireAuthForProtectedAction("Sign in to follow this stall.")}
+                onOpenAppSettings={() => navigation.navigate("Settings")}
+              />
 
               {FEATURE_FLAGS.collectionsEnabled ? (
                 <DetailSaveActionsCard
@@ -1171,7 +1204,12 @@ export function StallDetailScreen({ navigation, route }: Props) {
                         onPress={() =>
                           void openMerchantProfileLink("phone", merchantProfile.contactPhone ?? "")
                         }
-                        style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: spacing[2],
+                          minHeight: 44,
+                        }}
                       >
                         <Phone color={palette.orange} size={16} />
                         <AppText variant="body">{merchantProfile.contactPhone}</AppText>
@@ -1184,7 +1222,12 @@ export function StallDetailScreen({ navigation, route }: Props) {
                         onPress={() =>
                           void openMerchantProfileLink("email", merchantProfile.contactEmail ?? "")
                         }
-                        style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: spacing[2],
+                          minHeight: 44,
+                        }}
                       >
                         <Mail color={palette.orange} size={16} />
                         <AppText variant="body">{merchantProfile.contactEmail}</AppText>
@@ -1196,7 +1239,12 @@ export function StallDetailScreen({ navigation, route }: Props) {
                         accessibilityRole="link"
                         accessibilityLabel={`Open ${venue.name} ${link.platform}`}
                         onPress={() => void openMerchantProfileLink("web", link.url)}
-                        style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: spacing[2],
+                          minHeight: 44,
+                        }}
                       >
                         <Globe color={palette.orange} size={16} />
                         <AppText variant="body" numberOfLines={1} style={{ flex: 1 }}>
@@ -1325,7 +1373,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
                             key={dish.id}
                             dish={dish}
                             index={index}
-                            width={(screenWidth - spacing[5] * 2 - spacing[3]) / 2}
+                            // Two columns inside the body's spacing[3] padding and gap.
+                            width={(screenWidth - spacing[3] * 3) / 2}
                             onPress={openMenuDish}
                           />
                         ))}
@@ -1432,6 +1481,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
                             </AppText>
                           </Pressable>
                           <View
+                            accessible
+                            accessibilityRole="text"
+                            accessibilityLabel={`Rated ${review.rating} out of 5`}
                             style={{
                               flexDirection: "row",
                               gap: spacing[0.5],
@@ -1441,8 +1493,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
                               <Star
                                 key={i}
                                 size={12}
-                                color={i < review.rating ? palette.amber : palette.border}
-                                fill={i < review.rating ? palette.amber : "transparent"}
+                                color={i < review.rating ? palette.ratingStar : palette.border}
+                                fill={i < review.rating ? palette.ratingStar : "transparent"}
                               />
                             ))}
                           </View>
@@ -1490,6 +1542,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                           <Pressable
                             accessibilityRole="button"
                             accessibilityLabel={`Reply to review by ${review.authorName}`}
+                            hitSlop={14}
                             onPress={() =>
                               setActiveReplyReviewId((current) =>
                                 current === review.id ? null : review.id,
@@ -1595,6 +1648,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                       accessibilityRole="button"
                       accessibilityLabel="View verification process"
                       onPress={() => navigation.navigate("MerchantClaimExplainer")}
+                      hitSlop={13}
                     >
                       <CircleHelp color={palette.orange} size={18} />
                     </Pressable>
@@ -1627,6 +1681,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
             onShared={(postId, channel) => {
               incrementShare(postId, channel);
             }}
+            onShareCompleted={recordMerchantShare}
           />
         </View>
       </SafeAreaView>
