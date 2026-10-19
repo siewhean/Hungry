@@ -52,8 +52,13 @@ test("onboarding typed routes are registered and flow through cuisine, taste, an
     quiz,
     /navigation\.navigate\("DietaryPreferences", \{[\s\S]*answers: values,[\s\S]*\}\)/,
   );
-  assert.match(quiz, /useState<TasteVector>\(carriedAnswers \?\? INITIAL\)/);
+  assert.match(
+    quiz,
+    /useState<TasteVector>\(\s*carriedAnswers \?\? \(flowMode === "profile" \? profile\.tasteVector : INITIAL\),?\s*\)/,
+  );
   assert.match(quiz, /if \(hasTasteAnswers\) \{\s*setTasteVector\(values\);/);
+  // Swipes only change the local draft; the vector is committed once in handleFinish.
+  assert.equal(quiz.match(/setTasteVector\(/g)?.length, 1);
   assert.match(types, /DietaryPreferences:[\s\S]*answers\?: TasteVector;/);
   assert.match(quiz, /navigation\.navigate\("TasteProfileResult"\)/);
   assert.match(quiz, /setSkippedTasteQuiz\(true\);\s*navigation\.navigate\("LocationPermission"\)/);

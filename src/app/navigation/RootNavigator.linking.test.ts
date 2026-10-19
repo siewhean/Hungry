@@ -139,6 +139,10 @@ test("email confirm, password reset, and OAuth callbacks use separate paths", ()
   });
   assert.deepEqual(linking.getStateFromPath(`auth/confirm?code=${code}`)?.routes?.[0], {
     name: "AuthStack",
+    params: { screen: "EmailVerification", params: { code }, pop: true },
+  });
+  assert.deepEqual(linking.getStateFromPath("auth/confirm")?.routes?.[0], {
+    name: "AuthStack",
     params: { screen: "Login", pop: true },
   });
   assert.equal(linking.getStateFromPath(`auth/oauth?code=${code}`), undefined);

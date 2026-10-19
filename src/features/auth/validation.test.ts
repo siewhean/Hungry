@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  getPasswordUpdateErrorMessage,
   validateConfirmPassword,
   validateEmail,
   validatePassword,
@@ -42,4 +43,13 @@ test("validateConfirmPassword requires matching values", () => {
   assert.equal(validateConfirmPassword("abcdefgh", ""), "Confirm password is required");
   assert.equal(validateConfirmPassword("abcdefgh", "abcdefgz"), "Passwords do not match");
   assert.equal(validateConfirmPassword("abcdefgh", "abcdefgh"), true);
+});
+
+test("getPasswordUpdateErrorMessage explains rejected new passwords", () => {
+  assert.match(getPasswordUpdateErrorMessage({ code: "same_password" }), /different/);
+  assert.match(getPasswordUpdateErrorMessage({ code: "weak_password" }), /too weak/);
+  assert.equal(
+    getPasswordUpdateErrorMessage(new Error("network")),
+    "Password reset failed. Please try again.",
+  );
 });

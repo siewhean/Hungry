@@ -1463,6 +1463,12 @@ export const hungryService: HungryService = {
       return resolve(undefined);
     },
 
+    async confirmEmail(_code) {
+      _isAuthenticated = true;
+      _authProvider = "email";
+      return resolve(mockSession(_profile));
+    },
+
     async signIn(email, _password) {
       _isAuthenticated = true;
       _authProvider = "email";
@@ -1516,8 +1522,13 @@ export const hungryService: HungryService = {
       return resolve(undefined);
     },
 
-    async resetPassword(_token, _password) {
-      // Mock: no-op — in production verifies token and updates password
+    async exchangeRecoveryCode(_token) {
+      // Mock: no-op — in production exchanges the reset link code for a session
+      return resolve(undefined);
+    },
+
+    async updatePassword(_password) {
+      // Mock: no-op — in production updates the recovery session's password
       return resolve(undefined);
     },
 

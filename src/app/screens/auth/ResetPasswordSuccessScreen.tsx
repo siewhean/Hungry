@@ -1,32 +1,41 @@
+import { useEffect } from "react";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Pressable, View } from "react-native";
-import { MailCheck } from "lucide-react-native";
+import { View } from "react-native";
+import { CheckCircle2 } from "lucide-react-native";
 
-import { AppText, Button } from "@/components/ui";
+import { Button } from "@/components/ui";
+import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
-import { useUIStore } from "@/store/useUIStore";
 import type { AuthStackParamList } from "./AuthStack";
 import { AuthScreenShell } from "./AuthScreenShell";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "ResetPasswordSuccess">;
 
+/** Shown after the new password is saved. Continue releases the recovery hold. */
 export function ResetPasswordSuccessScreen({ navigation }: Props) {
   const { palette, radii, spacing } = useHungryTheme();
-  const showToast = useUIStore((state) => state.showToast);
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const setPasswordRecoveryInProgress = useSessionStore(
+    (state) => state.setPasswordRecoveryInProgress,
+  );
+
+  useEffect(() => () => setPasswordRecoveryInProgress(false), [setPasswordRecoveryInProgress]);
+
+  const handleContinue = () => {
+    setPasswordRecoveryInProgress(false);
+    // A signed-in recovery session is routed onward by RootNavigator once the hold lifts.
+    if (!isAuthenticated) {
+      navigation.navigate("Login");
+    }
+  };
 
   return (
     <AuthScreenShell
-      title="Check your inbox"
-      subtitle="We sent password reset instructions to your email."
-      footer={
-        <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "center" }}>
-          <AppText tone="secondary">Didn&apos;t receive an email? </AppText>
-          <Pressable onPress={() => showToast({ message: "Reset link resent.", tone: "success" })}>
-            <AppText tone="accent" style={{ fontWeight: "700", textDecorationLine: "underline" }}>
-              Resend link
-            </AppText>
-          </Pressable>
-        </View>
+      title="Password updated"
+      subtitle={
+        isAuthenticated
+          ? "Your new password is saved and you're signed in."
+          : "Your new password is saved. Sign in with it to continue."
       }
     >
       <View style={{ gap: spacing[4] }}>
@@ -41,28 +50,10 @@ export function ResetPasswordSuccessScreen({ navigation }: Props) {
             alignSelf: "center",
           }}
         >
-          <MailCheck color={palette.orange} size={40} />
+          <CheckCircle2 color={palette.orange} size={40} />
         </View>
 
-        <View style={{ gap: spacing[3] }}>
-          <Button
-            label="Open email client"
-            onPress={() => showToast({ message: "Open your email app to continue.", tone: "info" })}
-            style={{ minHeight: 56 }}
-          />
-          <Button
-            label="I'll do it later"
-            variant="secondary"
-            onPress={() => navigation.navigate("Login")}
-            style={{ minHeight: 56 }}
-          />
-        </View>
-
-        <View style={{ backgroundColor: palette.infoSoft, borderRadius: 16, padding: spacing[3] }}>
-          <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
-            Your account stays secure until the reset link is used.
-          </AppText>
-        </View>
+        <Button label="Continue" onPress={handleContinue} style={{ minHeight: 56 }} />
       </View>
     </AuthScreenShell>
   );

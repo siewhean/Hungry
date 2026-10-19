@@ -224,27 +224,6 @@ export const ONBOARDING_CUISINE_FOOD_CHOICES: Record<string, OnboardingFoodChoic
   ],
 };
 
-export const ONBOARDING_RESULT_DISH_IMAGES: Record<string, ImageSourcePropType> = {
-  "dish-chicken-rice": ONBOARDING_FOOD_IMAGES.chickenRice,
-  "dish-ban-mian": ONBOARDING_FOOD_IMAGES.fishSoup,
-  "dish-satay": ONBOARDING_FOOD_IMAGES.satay,
-  "dish-japanese-curry": ONBOARDING_FOOD_IMAGES.japaneseCurry,
-  "dish-laksa": ONBOARDING_FOOD_IMAGES.laksa,
-  "dish-fish-soup": ONBOARDING_FOOD_IMAGES.fishSoup,
-  "dish-kaya-toast": ONBOARDING_FOOD_IMAGES.kayaToast,
-  "dish-salmon-don": ONBOARDING_FOOD_IMAGES.ramenSet,
-  "dish-pandan-cake": ONBOARDING_FOOD_IMAGES.pandanCake,
-  "dish-wagyu-burger": ONBOARDING_FOOD_IMAGES.burger,
-  "dish-sushi-set": ONBOARDING_FOOD_IMAGES.ramenSet,
-  "dish-mala-xiang-guo": ONBOARDING_FOOD_IMAGES.mala,
-  "dish-truffle-tagliatelle": ONBOARDING_FOOD_IMAGES.pasta,
-  "dish-burrata-pizza": ONBOARDING_FOOD_IMAGES.pizza,
-};
-
-export function getOnboardingDishImageSource(dishId: string): ImageSourcePropType {
-  return ONBOARDING_RESULT_DISH_IMAGES[dishId] ?? ONBOARDING_FOOD_IMAGES.chickenRice;
-}
-
 export const TASTE_QUESTION_FOODS: Record<TasteKey, readonly OnboardingFoodImage[]> = {
   sweet: [
     { label: "Kueh tutu", imageSource: ONBOARDING_FOOD_IMAGES.kuehTutu },

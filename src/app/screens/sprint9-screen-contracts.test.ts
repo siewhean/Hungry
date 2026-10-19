@@ -25,31 +25,34 @@ test("Sprint 9 screen contract: Login screen uses service auth + error boundary"
   assert.match(source, /service\.auth\.signInWithApple\(/);
   assert.match(source, /FEATURE_FLAGS\.oauthProvidersEnabled/);
   assert.match(source, /AUTH_COPY\.login/);
+  // Google/Apple (and the "or" divider) are hidden, not shown disabled, when the flag is off;
+  // while a request runs every auth button is disabled and the submit shows loading.
   assert.match(
     source,
-    /<AuthProviderButton[\s\S]*disabled=\{!oauthProvidersEnabled\}[\s\S]*intent="signIn"[\s\S]*provider="google"/,
+    /\{oauthProvidersEnabled \? \([\s\S]*<AuthProviderButton[\s\S]*disabled=\{isBusy\}[\s\S]*intent="signIn"[\s\S]*provider="google"[\s\S]*provider="apple"[\s\S]*\) : null\}/,
   );
-  assert.match(
-    source,
-    /<AuthProviderButton[\s\S]*disabled=\{!oauthProvidersEnabled\}[\s\S]*intent="signIn"[\s\S]*provider="apple"/,
-  );
+  assert.match(source, /loading=\{isSubmitting\}/);
+  assert.doesNotMatch(source, /disabled=\{!oauthProvidersEnabled\}/);
   assert.match(signUpSource, /AUTH_COPY\.signUp/);
   assert.match(signUpSource, /FEATURE_FLAGS\.oauthProvidersEnabled/);
   assert.match(
     signUpSource,
-    /<AuthProviderButton[\s\S]*disabled=\{!oauthProvidersEnabled\}[\s\S]*intent="continue"[\s\S]*provider="google"/,
+    /\{oauthProvidersEnabled \? \([\s\S]*<AuthProviderButton[\s\S]*disabled=\{isBusy\}[\s\S]*intent="continue"[\s\S]*provider="google"[\s\S]*provider="apple"[\s\S]*\) : null\}/,
   );
-  assert.match(
-    signUpSource,
-    /<AuthProviderButton[\s\S]*disabled=\{!oauthProvidersEnabled\}[\s\S]*intent="continue"[\s\S]*provider="apple"/,
-  );
+  assert.match(signUpSource, /loading=\{isSubmitting\}/);
+  assert.doesNotMatch(signUpSource, /disabled=\{!oauthProvidersEnabled\}/);
+  // Password managers: email, current-password on Login, new-password with rules on SignUp.
+  assert.match(source, /autoComplete="email"/);
+  assert.match(source, /autoComplete="current-password"/);
+  assert.match(signUpSource, /autoComplete="new-password"/);
+  assert.match(signUpSource, /passwordRules=\{PASSWORD_RULES\}/);
   assert.match(forgotPasswordSource, /AUTH_COPY\.forgotPassword/);
   assert.match(source, /<FeedErrorBoundary/);
   assert.match(authCopySource, /login: \{/);
   assert.match(authCopySource, /signUp: \{/);
   assert.match(authCopySource, /forgotPassword: \{/);
   assert.match(authCopySource, /getAuthProviderButtonLabel/);
-  assert.match(authCopySource, /getAuthProviderUnavailableButtonLabel/);
+  assert.doesNotMatch(authCopySource, /getAuthProviderUnavailableButtonLabel|Supabase Auth/);
   assert.match(authCopySource, /getAuthProviderUnavailableMessage/);
   assert.match(authCopySource, /getSignUpProviderSuccessMessage/);
   assert.doesNotMatch(source, /"Welcome back\."/);
@@ -59,7 +62,7 @@ test("Sprint 9 screen contract: Login screen uses service auth + error boundary"
   assert.match(providerButtonSource, /position: "absolute"/);
   assert.match(providerButtonSource, /textAlign: "center"/);
   assert.match(providerButtonSource, /getAuthProviderButtonLabel\(provider, intent\)/);
-  assert.match(providerButtonSource, /getAuthProviderUnavailableButtonLabel\(provider\)/);
+  assert.doesNotMatch(providerButtonSource, /getAuthProviderUnavailableButtonLabel/);
   assert.match(providerButtonSource, /accessibilityLabel=\{label\}/);
   assert.match(providerButtonSource, /accessibilityState=\{\{ disabled \}\}/);
   assert.match(providerButtonSource, /disabled=\{disabled\}/);
@@ -130,7 +133,12 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
 
   assert.match(locationPermission, /accessibilityLabel="Back to taste quiz"/);
   assert.match(locationPermission, /accessibilityHint="Returns to the taste preference questions"/);
-  assert.match(manualLocation, /accessibilityLabel="Back to location permission"/);
+  assert.match(manualLocation, /accessibilityLabel="Go back"/);
+  // From Settings (already onboarded) Continue saves and returns instead of re-completing onboarding.
+  assert.match(
+    manualLocation,
+    /if \(hasCompletedOnboarding\) \{[\s\S]*?navigation\.goBack\(\);[\s\S]*?return;[\s\S]*?completeOnboarding\(hasSkippedTasteQuiz\)/,
+  );
   assert.match(manualLocation, /accessibilityLabel="Search Singapore location"/);
   assert.match(manualLocation, /accessibilityLabel=\{`Choose \$\{area\.name\}`\}/);
   assert.match(manualLocation, /accessibilityHint="Sets this as your Hungry discovery location"/);

@@ -1,10 +1,16 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Pressable, View } from "react-native";
 import { ArrowLeft, LockKeyhole, Mail } from "lucide-react-native";
 
 import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
 import { useUIStore } from "@/store/useUIStore";
+import {
+  trackAuthFailed,
+  trackAuthScreenViewed,
+  trackPasswordResetRequested,
+} from "@/features/auth/authAnalytics";
 import { validateEmail } from "@/features/auth/validation";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
@@ -22,20 +28,26 @@ export function ForgotPasswordScreen({ navigation }: Props) {
   const {
     control,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<FormValues>({ defaultValues: { email: "" } });
+
+  useEffect(() => {
+    trackAuthScreenViewed("forgot_password");
+  }, []);
 
   const handleSend = handleSubmit(async ({ email }) => {
     try {
       if (getConfiguredDataSource() === "supabase") {
         await getHungryService().auth.forgotPassword(email);
+        trackPasswordResetRequested();
         showToast({ message: AUTH_COPY.forgotPassword.sentToast, tone: "info" });
         navigation.navigate("Login");
         return;
       }
       showToast({ message: AUTH_COPY.forgotPassword.sentToast, tone: "info" });
       navigation.navigate("ResetPassword", { email });
-    } catch {
+    } catch (error) {
+      trackAuthFailed("password_reset", "email", error);
       showToast({ message: AUTH_COPY.forgotPassword.genericErrorToast, tone: "error" });
     }
   });
@@ -49,7 +61,6 @@ export function ForgotPasswordScreen({ navigation }: Props) {
         title={AUTH_COPY.forgotPassword.title}
         subtitle={AUTH_COPY.forgotPassword.subtitle}
         compact
-        contentOffsetTop={spacing[16]}
         wordmarkColor={colorScheme === "dark" ? palette.white : palette.navy}
         footer={
           <Pressable
@@ -102,6 +113,11 @@ export function ForgotPasswordScreen({ navigation }: Props) {
               <Input
                 keyboardType="email-address"
                 autoCapitalize="none"
+                autoCorrect={false}
+                textContentType="emailAddress"
+                autoComplete="email"
+                returnKeyType="send"
+                onSubmitEditing={() => void handleSend()}
                 placeholder={AUTH_COPY.forgotPassword.emailPlaceholder}
                 value={value}
                 onChangeText={onChange}
@@ -111,7 +127,11 @@ export function ForgotPasswordScreen({ navigation }: Props) {
               />
             )}
           />
-          <Button label={AUTH_COPY.forgotPassword.primaryButton} onPress={handleSend} />
+          <Button
+            label={AUTH_COPY.forgotPassword.primaryButton}
+            onPress={handleSend}
+            loading={isSubmitting}
+          />
         </View>
       </AuthScreenShell>
     </FeedErrorBoundary>

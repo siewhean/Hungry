@@ -40,10 +40,7 @@ test("shared links carry a source tag that is credited on signup", () => {
     read("src/app/screens/review/ReviewShareSheet.tsx"),
     /withShareSource\(activeReview\.link, channel\)/,
   );
-  assert.match(
-    read("src/app/screens/auth/EmailVerificationScreen.tsx"),
-    /share_source: shareAttribution\.source/,
-  );
+  assert.match(read("src/store/useSessionStore.ts"), /share_source: shareAttribution\.source/);
 });
 
 test("dishes show when they were last updated and never a stock photo", () => {

@@ -1,5 +1,13 @@
 import { useState, useRef, useEffect } from "react";
-import { View, Animated, Pressable } from "react-native";
+import {
+  Animated,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  View,
+  type TextInput,
+} from "react-native";
 import type { NavigationProp } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Controller, useForm } from "react-hook-form";
@@ -10,8 +18,14 @@ import * as Haptics from "expo-haptics";
 import { AppText, Button, Input } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
+import { trackAuthFailed, trackAuthScreenViewed } from "@/features/auth/authAnalytics";
 import { getMockSignUpFailure } from "@/features/auth/mockAuth";
-import { validateEmail, validatePassword, validateRequired } from "@/features/auth/validation";
+import {
+  PASSWORD_RULES,
+  validateEmail,
+  validatePassword,
+  validateRequired,
+} from "@/features/auth/validation";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -39,12 +53,20 @@ export function OnboardingAuthScreen({ navigation }: Props) {
 
   const [tab, setTab] = useState<Tab>("signup");
   const [showPassword, setShowPassword] = useState(false);
+  const [providerInFlight, setProviderInFlight] = useState<AuthProvider | null>(null);
+  const signUpEmailRef = useRef<TextInput>(null);
+  const signUpPasswordRef = useRef<TextInput>(null);
+  const loginPasswordRef = useRef<TextInput>(null);
 
   const showToast = useUIStore((s) => s.showToast);
   const completeAuth = useSessionStore((s) => s.completeAuth);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    trackAuthScreenViewed("onboarding_auth");
+  }, []);
 
   useEffect(() => {
     Animated.parallel([
@@ -66,6 +88,10 @@ export function OnboardingAuthScreen({ navigation }: Props) {
   const loginForm = useForm<LoginValues>({
     defaultValues: { email: "", password: "" },
   });
+  const isBusy =
+    signUpForm.formState.isSubmitting ||
+    loginForm.formState.isSubmitting ||
+    providerInFlight !== null;
 
   // Signing up here happens before the location step; continue onboarding there.
   // LocationPermission marks onboarding complete like every other path.
@@ -113,7 +139,7 @@ export function OnboardingAuthScreen({ navigation }: Props) {
           return;
         }
         await applySessionProfile(session.profile);
-        completeAuth({ authProvider: "email", trackSignInEvent: false });
+        completeAuth({ authProvider: "email", isNewUser: true });
         finishOnboarding();
         return;
       }
@@ -122,9 +148,10 @@ export function OnboardingAuthScreen({ navigation }: Props) {
         showToast({ message: failure.message, tone: "error" });
         return;
       }
-      completeAuth({ authProvider: "email", trackSignInEvent: false });
+      completeAuth({ authProvider: "email", isNewUser: true });
       finishOnboarding();
     } catch (err) {
+      trackAuthFailed("sign_up", "email", err);
       const code =
         (err as { error_code?: string; code?: string })?.error_code ??
         (err as { error_code?: string; code?: string })?.code;
@@ -151,13 +178,16 @@ export function OnboardingAuthScreen({ navigation }: Props) {
       }
       completeAuth({ authProvider: "email", trackSignInEvent: false });
       finishOnboarding();
-    } catch {
+    } catch (err) {
+      trackAuthFailed("sign_in", "email", err);
       showToast({ message: AUTH_COPY.signUp.genericErrorToast, tone: "error" });
     }
   });
 
   const handleProvider = async (provider: AuthProvider) => {
+    if (isBusy) return;
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setProviderInFlight(provider);
     try {
       if (getConfiguredDataSource() === "supabase") {
         const service = getHungryService();
@@ -171,6 +201,7 @@ export function OnboardingAuthScreen({ navigation }: Props) {
       completeAuth({ authProvider: provider, trackSignInEvent: false });
       finishOnboarding();
     } catch (err) {
+      trackAuthFailed("sign_up", provider, err);
       const message = (err as { message?: string })?.message?.toLowerCase() ?? "";
       if (message.includes("provider is not enabled")) {
         showToast({ message: getAuthProviderUnavailableMessage(provider), tone: "error" });
@@ -181,6 +212,8 @@ export function OnboardingAuthScreen({ navigation }: Props) {
         return;
       }
       showToast({ message: AUTH_COPY.signUp.genericErrorToast, tone: "error" });
+    } finally {
+      setProviderInFlight(null);
     }
   };
 
@@ -189,275 +222,323 @@ export function OnboardingAuthScreen({ navigation }: Props) {
 
   return (
     <View style={{ flex: 1, backgroundColor: palette.bg }}>
-      <Animated.View
-        style={{
-          flex: 1,
-          paddingTop: insets.top + 20,
-          paddingBottom: insets.bottom + 24,
-          paddingHorizontal: 24,
-          opacity: fadeAnim,
-          transform: [{ translateY: slideAnim }],
-        }}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={{ flex: 1 }}
       >
-        {/* Header */}
-        <View style={{ marginBottom: 28 }}>
-          <AppText
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <Animated.View
             style={{
-              fontFamily: "Fraunces_700Bold",
-              fontSize: 32,
-              lineHeight: 38,
-              color: palette.text,
-              marginBottom: 6,
+              flexGrow: 1,
+              paddingTop: insets.top + 20,
+              paddingBottom: insets.bottom + 24,
+              paddingHorizontal: 24,
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
             }}
           >
-            {"Save your\ntaste profile"}
-          </AppText>
-          <AppText style={{ color: palette.textSecondary, fontSize: 14, lineHeight: 20 }}>
-            Create an account to keep your preferences and discover more.
-          </AppText>
-        </View>
-
-        {/* Tab switcher */}
-        <View
-          style={{
-            flexDirection: "row",
-            backgroundColor: palette.bgSoft,
-            borderRadius: 12,
-            padding: 4,
-            marginBottom: 24,
-          }}
-        >
-          {(["signup", "login"] as Tab[]).map((t) => (
-            <Pressable
-              key={t}
-              onPress={() => setTab(t)}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: tab === t }}
-              style={{
-                flex: 1,
-                paddingVertical: 9,
-                borderRadius: 9,
-                alignItems: "center",
-                backgroundColor: tab === t ? palette.surface : "transparent",
-              }}
-            >
+            {/* Header */}
+            <View style={{ marginBottom: 28 }}>
               <AppText
                 style={{
-                  fontFamily: tab === t ? "Nunito_700Bold" : "Nunito_400Regular",
-                  fontSize: 14,
-                  color: tab === t ? palette.text : palette.textSecondary,
+                  fontFamily: "Fraunces_700Bold",
+                  fontSize: 32,
+                  lineHeight: 38,
+                  color: palette.text,
+                  marginBottom: 6,
                 }}
               >
-                {t === "signup" ? "Create account" : "Sign in"}
+                {"Save your\ntaste profile"}
               </AppText>
-            </Pressable>
-          ))}
-        </View>
+              <AppText style={{ color: palette.textSecondary, fontSize: 14, lineHeight: 20 }}>
+                Create an account to keep your preferences and discover more.
+              </AppText>
+            </View>
 
-        {/* OAuth buttons */}
-        <View style={{ gap: spacing[3], marginBottom: 20 }}>
-          <AuthProviderButton
-            disabled={!oauthEnabled}
-            intent="continue"
-            provider="google"
-            onPress={() => void handleProvider("google")}
-          />
-          <AuthProviderButton
-            disabled={!oauthEnabled}
-            intent="continue"
-            provider="apple"
-            onPress={() => void handleProvider("apple")}
-          />
-        </View>
+            {/* Tab switcher */}
+            <View
+              style={{
+                flexDirection: "row",
+                backgroundColor: palette.bgSoft,
+                borderRadius: 12,
+                padding: 4,
+                marginBottom: 24,
+              }}
+            >
+              {(["signup", "login"] as Tab[]).map((t) => (
+                <Pressable
+                  key={t}
+                  onPress={() => setTab(t)}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: tab === t }}
+                  style={{
+                    flex: 1,
+                    paddingVertical: 9,
+                    borderRadius: 9,
+                    alignItems: "center",
+                    backgroundColor: tab === t ? palette.surface : "transparent",
+                  }}
+                >
+                  <AppText
+                    style={{
+                      fontFamily: tab === t ? "Nunito_700Bold" : "Nunito_400Regular",
+                      fontSize: 14,
+                      color: tab === t ? palette.text : palette.textSecondary,
+                    }}
+                  >
+                    {t === "signup" ? "Create account" : "Sign in"}
+                  </AppText>
+                </Pressable>
+              ))}
+            </View>
 
-        {/* Divider */}
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: spacing[3],
-            marginBottom: 20,
-          }}
-        >
-          <View style={{ flex: 1, height: 1, backgroundColor: palette.border }} />
-          <AppText variant="micro" tone="muted">
-            or
-          </AppText>
-          <View style={{ flex: 1, height: 1, backgroundColor: palette.border }} />
-        </View>
+            {/* OAuth buttons stay hidden until Google/Apple are enabled for this build. */}
+            {oauthEnabled ? (
+              <>
+                <View style={{ gap: spacing[3], marginBottom: 20 }}>
+                  <AuthProviderButton
+                    disabled={isBusy}
+                    intent="continue"
+                    provider="google"
+                    onPress={() => void handleProvider("google")}
+                  />
+                  <AuthProviderButton
+                    disabled={isBusy}
+                    intent="continue"
+                    provider="apple"
+                    onPress={() => void handleProvider("apple")}
+                  />
+                </View>
 
-        {/* Form */}
-        <Animated.View
-          style={{
-            gap: spacing[2],
-            opacity: tabAnim,
-            transform: [
-              {
-                translateY: tabAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [6, 0],
-                }),
-              },
-            ],
-          }}
-        >
-          {tab === "signup" ? (
-            <>
-              <Controller
-                control={signUpForm.control}
-                name="displayName"
-                rules={{
-                  validate: (v) => validateRequired(v, "Name"),
-                }}
-                render={({ field: { onChange, value } }) => (
-                  <View style={{ gap: spacing[1] }}>
-                    <Input
-                      placeholder="Your name"
-                      value={value}
-                      onChangeText={onChange}
-                      leftIcon={<User color={palette.textMuted} size={18} />}
-                    />
-                    {signUpErrors.displayName ? (
-                      <AppText variant="bodySmall" style={{ color: palette.error }}>
-                        {signUpErrors.displayName.message}
-                      </AppText>
-                    ) : null}
-                  </View>
-                )}
-              />
-              <Controller
-                control={signUpForm.control}
-                name="email"
-                rules={{ validate: validateEmail }}
-                render={({ field: { onChange, value } }) => (
-                  <View style={{ gap: spacing[1] }}>
-                    <Input
-                      placeholder="Email address"
-                      value={value}
-                      onChangeText={onChange}
-                      autoCapitalize="none"
-                      keyboardType="email-address"
-                      leftIcon={<Mail color={palette.textMuted} size={18} />}
-                    />
-                    {signUpErrors.email ? (
-                      <AppText variant="bodySmall" style={{ color: palette.error }}>
-                        {signUpErrors.email.message}
-                      </AppText>
-                    ) : null}
-                  </View>
-                )}
-              />
-              <Controller
-                control={signUpForm.control}
-                name="password"
-                rules={{ validate: (value) => validatePassword(value) }}
-                render={({ field: { onChange, value } }) => (
-                  <View style={{ gap: spacing[1] }}>
-                    <Input
-                      placeholder="Password"
-                      value={value}
-                      onChangeText={onChange}
-                      secureTextEntry={!showPassword}
-                      leftIcon={<Lock color={palette.textMuted} size={18} />}
-                      rightIcon={
-                        <Pressable
-                          accessibilityRole="button"
-                          accessibilityLabel={showPassword ? "Hide password" : "Show password"}
-                          onPress={() => setShowPassword((p) => !p)}
-                          hitSlop={8}
-                        >
-                          {showPassword ? (
-                            <EyeOff color={palette.textMuted} size={18} />
-                          ) : (
-                            <Eye color={palette.textMuted} size={18} />
-                          )}
-                        </Pressable>
-                      }
-                    />
-                    {signUpErrors.password ? (
-                      <AppText variant="bodySmall" style={{ color: palette.error }}>
-                        {signUpErrors.password.message}
-                      </AppText>
-                    ) : null}
-                  </View>
-                )}
-              />
-              <Button
-                label="Create account"
-                onPress={handleSignUp}
-                variant="primary"
-                style={{ marginTop: spacing[2] }}
-              />
-            </>
-          ) : (
-            <>
-              <Controller
-                control={loginForm.control}
-                name="email"
-                rules={{ validate: validateEmail }}
-                render={({ field: { onChange, value } }) => (
-                  <View style={{ gap: spacing[1] }}>
-                    <Input
-                      placeholder="Email address"
-                      value={value}
-                      onChangeText={onChange}
-                      autoCapitalize="none"
-                      keyboardType="email-address"
-                      leftIcon={<Mail color={palette.textMuted} size={18} />}
-                    />
-                    {loginErrors.email ? (
-                      <AppText variant="bodySmall" style={{ color: palette.error }}>
-                        {loginErrors.email.message}
-                      </AppText>
-                    ) : null}
-                  </View>
-                )}
-              />
-              <Controller
-                control={loginForm.control}
-                name="password"
-                rules={{ validate: (v) => validateRequired(v, "Password") }}
-                render={({ field: { onChange, value } }) => (
-                  <View style={{ gap: spacing[1] }}>
-                    <Input
-                      placeholder="Password"
-                      value={value}
-                      onChangeText={onChange}
-                      secureTextEntry={!showPassword}
-                      leftIcon={<Lock color={palette.textMuted} size={18} />}
-                      rightIcon={
-                        <Pressable
-                          accessibilityRole="button"
-                          accessibilityLabel={showPassword ? "Hide password" : "Show password"}
-                          onPress={() => setShowPassword((p) => !p)}
-                          hitSlop={8}
-                        >
-                          {showPassword ? (
-                            <EyeOff color={palette.textMuted} size={18} />
-                          ) : (
-                            <Eye color={palette.textMuted} size={18} />
-                          )}
-                        </Pressable>
-                      }
-                    />
-                    {loginErrors.password ? (
-                      <AppText variant="bodySmall" style={{ color: palette.error }}>
-                        {loginErrors.password.message}
-                      </AppText>
-                    ) : null}
-                  </View>
-                )}
-              />
-              <Button
-                label="Sign in"
-                onPress={handleLogin}
-                variant="primary"
-                style={{ marginTop: spacing[2] }}
-              />
-            </>
-          )}
-        </Animated.View>
-      </Animated.View>
+                {/* Divider */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: spacing[3],
+                    marginBottom: 20,
+                  }}
+                >
+                  <View style={{ flex: 1, height: 1, backgroundColor: palette.border }} />
+                  <AppText variant="micro" tone="muted">
+                    or
+                  </AppText>
+                  <View style={{ flex: 1, height: 1, backgroundColor: palette.border }} />
+                </View>
+              </>
+            ) : null}
+
+            {/* Form */}
+            <Animated.View
+              style={{
+                gap: spacing[2],
+                opacity: tabAnim,
+                transform: [
+                  {
+                    translateY: tabAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [6, 0],
+                    }),
+                  },
+                ],
+              }}
+            >
+              {tab === "signup" ? (
+                <>
+                  <Controller
+                    control={signUpForm.control}
+                    name="displayName"
+                    rules={{
+                      validate: (v) => validateRequired(v, "Name"),
+                    }}
+                    render={({ field: { onChange, value } }) => (
+                      <View style={{ gap: spacing[1] }}>
+                        <Input
+                          placeholder="Your name"
+                          value={value}
+                          onChangeText={onChange}
+                          textContentType="name"
+                          autoComplete="name"
+                          returnKeyType="next"
+                          submitBehavior="submit"
+                          onSubmitEditing={() => signUpEmailRef.current?.focus()}
+                          leftIcon={<User color={palette.textMuted} size={18} />}
+                        />
+                        {signUpErrors.displayName ? (
+                          <AppText variant="bodySmall" style={{ color: palette.error }}>
+                            {signUpErrors.displayName.message}
+                          </AppText>
+                        ) : null}
+                      </View>
+                    )}
+                  />
+                  <Controller
+                    control={signUpForm.control}
+                    name="email"
+                    rules={{ validate: validateEmail }}
+                    render={({ field: { onChange, value } }) => (
+                      <View style={{ gap: spacing[1] }}>
+                        <Input
+                          ref={signUpEmailRef}
+                          placeholder="Email address"
+                          value={value}
+                          onChangeText={onChange}
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                          keyboardType="email-address"
+                          textContentType="emailAddress"
+                          autoComplete="email"
+                          returnKeyType="next"
+                          submitBehavior="submit"
+                          onSubmitEditing={() => signUpPasswordRef.current?.focus()}
+                          leftIcon={<Mail color={palette.textMuted} size={18} />}
+                        />
+                        {signUpErrors.email ? (
+                          <AppText variant="bodySmall" style={{ color: palette.error }}>
+                            {signUpErrors.email.message}
+                          </AppText>
+                        ) : null}
+                      </View>
+                    )}
+                  />
+                  <Controller
+                    control={signUpForm.control}
+                    name="password"
+                    rules={{ validate: (value) => validatePassword(value) }}
+                    render={({ field: { onChange, value } }) => (
+                      <View style={{ gap: spacing[1] }}>
+                        <Input
+                          ref={signUpPasswordRef}
+                          placeholder="Password"
+                          value={value}
+                          onChangeText={onChange}
+                          secureTextEntry={!showPassword}
+                          textContentType="newPassword"
+                          autoComplete="new-password"
+                          passwordRules={PASSWORD_RULES}
+                          returnKeyType="go"
+                          onSubmitEditing={() => void handleSignUp()}
+                          leftIcon={<Lock color={palette.textMuted} size={18} />}
+                          rightIcon={
+                            <Pressable
+                              accessibilityRole="button"
+                              accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+                              onPress={() => setShowPassword((p) => !p)}
+                              hitSlop={8}
+                            >
+                              {showPassword ? (
+                                <EyeOff color={palette.textMuted} size={18} />
+                              ) : (
+                                <Eye color={palette.textMuted} size={18} />
+                              )}
+                            </Pressable>
+                          }
+                        />
+                        {signUpErrors.password ? (
+                          <AppText variant="bodySmall" style={{ color: palette.error }}>
+                            {signUpErrors.password.message}
+                          </AppText>
+                        ) : null}
+                      </View>
+                    )}
+                  />
+                  <Button
+                    label="Create account"
+                    onPress={handleSignUp}
+                    loading={signUpForm.formState.isSubmitting}
+                    disabled={isBusy}
+                    variant="primary"
+                    style={{ marginTop: spacing[2] }}
+                  />
+                </>
+              ) : (
+                <>
+                  <Controller
+                    control={loginForm.control}
+                    name="email"
+                    rules={{ validate: validateEmail }}
+                    render={({ field: { onChange, value } }) => (
+                      <View style={{ gap: spacing[1] }}>
+                        <Input
+                          placeholder="Email address"
+                          value={value}
+                          onChangeText={onChange}
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                          keyboardType="email-address"
+                          textContentType="emailAddress"
+                          autoComplete="email"
+                          returnKeyType="next"
+                          submitBehavior="submit"
+                          onSubmitEditing={() => loginPasswordRef.current?.focus()}
+                          leftIcon={<Mail color={palette.textMuted} size={18} />}
+                        />
+                        {loginErrors.email ? (
+                          <AppText variant="bodySmall" style={{ color: palette.error }}>
+                            {loginErrors.email.message}
+                          </AppText>
+                        ) : null}
+                      </View>
+                    )}
+                  />
+                  <Controller
+                    control={loginForm.control}
+                    name="password"
+                    rules={{ validate: (v) => validateRequired(v, "Password") }}
+                    render={({ field: { onChange, value } }) => (
+                      <View style={{ gap: spacing[1] }}>
+                        <Input
+                          ref={loginPasswordRef}
+                          placeholder="Password"
+                          value={value}
+                          onChangeText={onChange}
+                          secureTextEntry={!showPassword}
+                          textContentType="password"
+                          autoComplete="current-password"
+                          returnKeyType="go"
+                          onSubmitEditing={() => void handleLogin()}
+                          leftIcon={<Lock color={palette.textMuted} size={18} />}
+                          rightIcon={
+                            <Pressable
+                              accessibilityRole="button"
+                              accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+                              onPress={() => setShowPassword((p) => !p)}
+                              hitSlop={8}
+                            >
+                              {showPassword ? (
+                                <EyeOff color={palette.textMuted} size={18} />
+                              ) : (
+                                <Eye color={palette.textMuted} size={18} />
+                              )}
+                            </Pressable>
+                          }
+                        />
+                        {loginErrors.password ? (
+                          <AppText variant="bodySmall" style={{ color: palette.error }}>
+                            {loginErrors.password.message}
+                          </AppText>
+                        ) : null}
+                      </View>
+                    )}
+                  />
+                  <Button
+                    label="Sign in"
+                    onPress={handleLogin}
+                    loading={loginForm.formState.isSubmitting}
+                    disabled={isBusy}
+                    variant="primary"
+                    style={{ marginTop: spacing[2] }}
+                  />
+                </>
+              )}
+            </Animated.View>
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }

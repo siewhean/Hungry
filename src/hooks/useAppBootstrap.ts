@@ -2,6 +2,7 @@ import NetInfo from "@react-native-community/netinfo";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { getAuthUserProvider, isFirstSignIn } from "@/features/auth/firstSignIn";
 import { hydrateShareAttribution } from "@/features/share/shareAttribution";
 import { setAnalyticsSink, trackAnalyticsEvent } from "@/lib/analytics";
 import {
@@ -360,6 +361,8 @@ export function useAppBootstrap() {
       applyAuthStateFromSession({
         isAuthenticated: true,
         userId: user.id,
+        authProvider: getAuthUserProvider(user),
+        isNewUser: event === "SIGNED_IN" && isFirstSignIn(user),
       });
       // Interactive sign-in already applies the session profile (and may be
       // merging guest preferences). Do not race that merge with a second

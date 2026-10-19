@@ -718,6 +718,8 @@ export interface HungryService {
   auth: {
     signUp(email: string, password: string, name: string): Promise<Session | null>;
     resendVerificationEmail(email: string): Promise<void>;
+    /** Exchanges the `?code` from the signup confirmation link for a session. */
+    confirmEmail(code: string): Promise<Session>;
     signIn(email: string, password: string): Promise<Session>;
     signInWithGoogle(): Promise<Session>;
     signInWithApple(): Promise<Session>;
@@ -726,7 +728,10 @@ export interface HungryService {
     getPendingAccountDeletion(): Promise<PendingAccountDeletion | null>;
     cancelAccountDeletion(): Promise<boolean>;
     forgotPassword(email: string): Promise<void>;
-    resetPassword(token: string, password: string): Promise<void>;
+    /** Exchanges the `?code` from the password-reset link; this signs the user in. */
+    exchangeRecoveryCode(token: string): Promise<void>;
+    /** Sets a new password for the signed-in recovery session. Safe to retry. */
+    updatePassword(password: string): Promise<void>;
     /** True when the signed-in account has an email+password identity (not Google/Apple only). */
     canChangePassword(): Promise<boolean>;
     /** Re-authenticates with the current password, then sets a new one. No recovery code involved. */

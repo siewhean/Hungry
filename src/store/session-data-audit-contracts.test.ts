@@ -88,9 +88,14 @@ test("share attribution is cleared once a signup is credited to it", async () =>
   clearShareAttribution();
   assert.equal(getShareAttribution(), null);
 
+  // sign_up_completed is logged in one place, the session store, which credits the share tag.
   assert.match(
+    read("src/store/useSessionStore.ts"),
+    /"sign_up_completed",[\s\S]*if \(shareAttribution\) clearShareAttribution\(\);/,
+  );
+  assert.doesNotMatch(
     read("src/app/screens/auth/EmailVerificationScreen.tsx"),
-    /trackAnalyticsEvent\("sign_up_completed"[\s\S]*if \(shareAttribution\) clearShareAttribution\(\);/,
+    /sign_up_completed/,
   );
 });
 

@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { clearShareAttribution, getShareAttribution } from "@/features/share/shareAttribution";
 import type { AuthProvider } from "@/lib/services/types";
 import { getConfiguredDataSource, type HungryDataSource } from "@/lib/services/supabase/client";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -24,17 +25,22 @@ interface SessionState {
   authDataSource?: HungryDataSource | null;
   returnRoute?: string | PendingRoute;
   sessionExpired: boolean;
+  /** True while a password-recovery session finishes; the auth redirect waits for it. */
+  passwordRecoveryInProgress: boolean;
   completeAuth: (options?: {
     completedOnboarding?: boolean;
     skippedTasteQuiz?: boolean;
     authProvider?: AuthProvider;
     trackSignInEvent?: boolean;
+    /** The account was just created; logs sign_up_completed instead of sign_in_completed. */
+    isNewUser?: boolean;
   }) => void;
   completeOnboarding: (skippedQuiz?: boolean) => void;
   expireSession: () => void;
   dismissSessionExpiry: () => void;
   setReturnRoute: (route?: string | PendingRoute) => void;
   setSkippedTasteQuiz: (skipped: boolean) => void;
+  setPasswordRecoveryInProgress: (inProgress: boolean) => void;
   signOut: () => void;
   clearSession: () => void;
   markHydrated: () => void;
@@ -44,6 +50,8 @@ interface SessionState {
     userId?: string | null;
     completedOnboarding?: boolean;
     skippedTasteQuiz?: boolean;
+    authProvider?: string;
+    isNewUser?: boolean;
   }) => void;
 }
 
@@ -57,6 +65,7 @@ const initialState = {
   authDataSource: null,
   returnRoute: undefined,
   sessionExpired: false,
+  passwordRecoveryInProgress: false,
 } as const;
 
 function getProfileStoreState() {
@@ -204,6 +213,28 @@ function resetSignInTracking(): void {
   signInTrackedForUserId = null;
 }
 
+// The single place sign_up_completed is logged: from the first SIGNED_IN of a new
+// account (Supabase) or from completeAuth({ isNewUser }) (mock / auto-confirm).
+// It also claims the sign-in slot so the same login is not counted twice.
+function trackSignUpCompletedOnce(profileId: string, method: string): void {
+  if (signInTrackedForUserId === profileId) {
+    return;
+  }
+  signInTrackedForUserId = profileId;
+  const shareAttribution = getShareAttribution();
+  trackAnalyticsEvent(
+    "sign_up_completed",
+    {
+      method,
+      ...(shareAttribution
+        ? { share_source: shareAttribution.source, share_route: shareAttribution.route }
+        : {}),
+    },
+    { userId: profileId },
+  );
+  if (shareAttribution) clearShareAttribution();
+}
+
 const PUSH_TOKEN_UNBIND_TIMEOUT_MS = 3000;
 
 // Unbind this device's push token while the session can still authorize it,
@@ -251,7 +282,9 @@ export const useSessionStore = create<SessionState>()(
           () => {
             identifyPostHogUser(profileId, buildPostHogIdentityProperties());
             syncFollowStateFromServer(nextUserId);
-            if (options?.trackSignInEvent ?? true) {
+            if (options?.isNewUser) {
+              trackSignUpCompletedOnce(profileId, options.authProvider ?? "email");
+            } else if (options?.trackSignInEvent ?? true) {
               trackSignInCompletedOnce(profileId, {
                 method: options?.authProvider ?? "email",
                 has_completed_onboarding: options?.completedOnboarding ?? false,
@@ -282,6 +315,8 @@ export const useSessionStore = create<SessionState>()(
       dismissSessionExpiry: () => set({ sessionExpired: false }),
       setReturnRoute: (returnRoute) => set({ returnRoute }),
       setSkippedTasteQuiz: (hasSkippedTasteQuiz) => set({ hasSkippedTasteQuiz }),
+      setPasswordRecoveryInProgress: (passwordRecoveryInProgress) =>
+        set({ passwordRecoveryInProgress }),
       signOut: () => {
         const profileId = getSafeProfileId();
         const hasSkippedTasteQuiz = useSessionStore.getState().hasSkippedTasteQuiz;
@@ -359,9 +394,13 @@ export const useSessionStore = create<SessionState>()(
             () => {
               identifyPostHogUser(profileId, buildPostHogIdentityProperties());
               syncFollowStateFromServer(nextUserId, { oncePerLaunch: true });
-              if (!currentlyAuthenticated) {
+              // Only a sign-in that starts a session counts: a SIGNED_IN replayed
+              // for a session restored from storage is never a new sign-up.
+              if (session.isNewUser && !currentlyAuthenticated) {
+                trackSignUpCompletedOnce(profileId, session.authProvider ?? "email");
+              } else if (!currentlyAuthenticated) {
                 trackSignInCompletedOnce(profileId, {
-                  method: "email",
+                  method: session.authProvider ?? "email",
                   has_completed_onboarding: session.completedOnboarding ?? false,
                   skipped_taste_quiz: session.skippedTasteQuiz ?? false,
                 });
