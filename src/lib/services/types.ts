@@ -713,6 +713,10 @@ export interface HungryService {
     cancelAccountDeletion(): Promise<boolean>;
     forgotPassword(email: string): Promise<void>;
     resetPassword(token: string, password: string): Promise<void>;
+    /** True when the signed-in account has an email+password identity (not Google/Apple only). */
+    canChangePassword(): Promise<boolean>;
+    /** Re-authenticates with the current password, then sets a new one. No recovery code involved. */
+    changePassword(currentPassword: string, newPassword: string): Promise<void>;
     getCurrentSession(): Promise<Session | null>;
     refreshSession(): Promise<Session | null>;
   };

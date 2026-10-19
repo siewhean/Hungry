@@ -1836,6 +1836,16 @@ function normalizeCallbackPath(path: string): string {
   return normalized || "/";
 }
 
+function hasEmailPasswordIdentity(user: {
+  app_metadata?: { providers?: unknown; provider?: unknown };
+  identities?: { provider?: string }[] | null;
+}): boolean {
+  if (user.identities?.some((identity) => identity.provider === "email")) return true;
+  const providers = user.app_metadata?.providers;
+  if (Array.isArray(providers)) return providers.includes("email");
+  return user.app_metadata?.provider === "email";
+}
+
 async function exchangeRecoveryCodeIfPresent(client: SupabaseClient, token: string): Promise<void> {
   const trimmed = token.trim();
   if (!trimmed) return;
@@ -2983,6 +2993,33 @@ export const supabaseService: HungryService = {
       const client = requireSupabaseClient();
       await exchangeRecoveryCodeIfPresent(client, token);
       const { error } = await client.auth.updateUser({ password });
+      if (error) throw error;
+    },
+
+    async canChangePassword() {
+      const client = getSupabaseClient();
+      if (!client) return false;
+      const { data, error } = await client.auth.getUser();
+      if (error || !data.user) return false;
+      return hasEmailPasswordIdentity(data.user);
+    },
+
+    async changePassword(currentPassword, newPassword) {
+      const client = requireSupabaseClient();
+      const { data, error: userError } = await client.auth.getUser();
+      if (userError) throw userError;
+      const user = data.user;
+      if (!user) throw new Error("You must be signed in to change your password.");
+      if (!user.email || !hasEmailPasswordIdentity(user)) {
+        throw new Error("This account signs in with Google or Apple and has no password.");
+      }
+      // Re-authenticate so a stolen unlocked session cannot silently swap the password.
+      const { error: reauthError } = await client.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword,
+      });
+      if (reauthError) throw new Error("Current password is incorrect.");
+      const { error } = await client.auth.updateUser({ password: newPassword });
       if (error) throw error;
     },
 

@@ -154,6 +154,7 @@ export type RootStackParamList = {
   ReviewHistory: undefined;
   Settings: undefined;
   EditProfile: undefined;
+  ChangePassword: undefined;
   DesignGallery: undefined;
   // V2 Prototypes
   PostComposerV2: { venueId?: string; dishId?: string } | undefined;

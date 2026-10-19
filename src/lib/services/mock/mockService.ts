@@ -294,6 +294,7 @@ const _submittedClientReviewIds = new Set<string>();
 let _followedStallIds = new Set<string>();
 let _pushPreferences: PushPreferences = { ...DEFAULT_PUSH_PREFERENCES };
 let _isAuthenticated = false;
+let _authProvider: "email" | "google" | "apple" = "email";
 let _pendingDeletionScheduledFor: string | undefined;
 let _merchantAccount: MerchantAccount = clone(merchantAccount);
 let _merchantDishCounter = 0;
@@ -1352,6 +1353,7 @@ export const hungryService: HungryService = {
   auth: {
     async signUp(email, _password, name) {
       _isAuthenticated = true;
+      _authProvider = "email";
       _profile = {
         ...userProfile,
         id: mockUserIdFromEmail(email),
@@ -1376,18 +1378,21 @@ export const hungryService: HungryService = {
 
     async signIn(email, _password) {
       _isAuthenticated = true;
+      _authProvider = "email";
       _profile = { ...userProfile, email };
       return resolve(mockSession(_profile));
     },
 
     async signInWithGoogle() {
       _isAuthenticated = true;
+      _authProvider = "google";
       _profile = { ...userProfile };
       return resolve(mockSession(_profile));
     },
 
     async signInWithApple() {
       _isAuthenticated = true;
+      _authProvider = "apple";
       _profile = { ...userProfile };
       return resolve(mockSession(_profile));
     },
@@ -1426,6 +1431,19 @@ export const hungryService: HungryService = {
 
     async resetPassword(_token, _password) {
       // Mock: no-op — in production verifies token and updates password
+      return resolve(undefined);
+    },
+
+    async canChangePassword() {
+      return resolve(_isAuthenticated && _authProvider === "email");
+    },
+
+    async changePassword(currentPassword, _newPassword) {
+      if (!_isAuthenticated) throw new Error("You must be signed in to change your password.");
+      if (_authProvider !== "email") {
+        throw new Error("This account signs in with Google or Apple and has no password.");
+      }
+      if (!currentPassword) throw new Error("Current password is incorrect.");
       return resolve(undefined);
     },
 
