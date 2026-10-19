@@ -5,10 +5,11 @@ import { REVIEW_TEXT_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSa
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { createClientReviewId, createInitialReviewDraft } from "./reviewDraft";
 
-test("initial review draft defaults to not recommended", () => {
+test("initial review draft leaves recommend unanswered", () => {
   const draft = createInitialReviewDraft();
 
-  assert.equal(draft.recommend, false);
+  // null, not false: an untouched review must not be saved as "not recommended".
+  assert.equal(draft.recommend, null);
   assert.equal(draft.rating, 0);
   assert.equal(draft.text, "");
   assert.deepEqual(draft.selectedTags, []);

@@ -387,7 +387,8 @@ export interface ReviewDraft {
   selectedDishId?: string;
   rating: number;
   selectedTags: string[];
-  recommend: boolean;
+  /** null until the reviewer answers Yes or No. */
+  recommend: boolean | null;
   text: string;
   photos: string[];
   videoUri?: string;

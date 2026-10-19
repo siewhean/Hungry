@@ -6,10 +6,25 @@ export function createInitialReviewDraft(): ReviewDraft {
     selectedDishId: undefined,
     rating: 0,
     selectedTags: [],
-    recommend: false,
+    // Unanswered until the reviewer picks Yes or No.
+    recommend: null,
     text: "",
     photos: [],
   };
+}
+
+/** Error code when a review saved but its photos did not attach (retry attaches them). */
+export const REVIEW_PHOTOS_NOT_ATTACHED = "review_photos_not_attached";
+
+/**
+ * would_recommend sent by every review path: the reviewer's explicit Yes/No,
+ * otherwise derived from the rating (4+ stars) instead of a silent "No".
+ */
+export function resolveWouldRecommend(
+  recommend: boolean | null | undefined,
+  rating: number,
+): boolean {
+  return typeof recommend === "boolean" ? recommend : rating >= 4;
 }
 
 /**

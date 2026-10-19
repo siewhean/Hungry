@@ -81,7 +81,12 @@ const FILTER_OPTIONS: { id: FilterMode; label: string }[] = [
 function StarRow({ rating, size = 12 }: { rating: number; size?: number }) {
   const { palette } = useHungryTheme();
   return (
-    <View style={{ flexDirection: "row", gap: 2 }}>
+    <View
+      accessible
+      accessibilityRole="image"
+      accessibilityLabel={`Rated ${rating} out of 5 stars`}
+      style={{ flexDirection: "row", gap: 2 }}
+    >
       {[1, 2, 3, 4, 5].map((i) => (
         <Star
           key={i}

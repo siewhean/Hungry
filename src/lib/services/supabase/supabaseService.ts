@@ -40,6 +40,7 @@ import {
   uploadPostMediaFromUri,
 } from "@/lib/services/supabase/mediaUpload";
 import { validateMerchantProfileUpdates } from "@/features/merchant/profileValidation";
+import { REVIEW_PHOTOS_NOT_ATTACHED, createClientReviewId } from "@/features/review/reviewDraft";
 import { validateMerchantPromotionInput } from "@/features/merchant/promotionValidation";
 import type {
   Bite,
@@ -919,6 +920,17 @@ async function mapSupabaseReviewRows(
       .order("sort_order", { ascending: true });
 
     if (Array.isArray(photoRows)) {
+      // One signing request for the whole page instead of one per photo.
+      const signedUrlByPath = await createSignedStorageUrls(
+        client,
+        "review-media",
+        (photoRows as Row[])
+          .filter(
+            (photoRow) => (asString(photoRow.storage_bucket) || "review-media") === "review-media",
+          )
+          .map((photoRow) => asString(photoRow.storage_path))
+          .filter((path): path is string => Boolean(path)),
+      );
       for (const photoRow of photoRows as Row[]) {
         const reviewId = asString(photoRow.review_id);
         if (!reviewId) continue;
@@ -926,9 +938,7 @@ async function mapSupabaseReviewRows(
         const path = asString(photoRow.storage_path);
         const legacyUrl = asString(photoRow.url);
         const displayUrl =
-          path && bucket === "review-media"
-            ? ((await createSignedStorageUrl(client, bucket, path)) ?? legacyUrl)
-            : legacyUrl;
+          path && bucket === "review-media" ? (signedUrlByPath.get(path) ?? legacyUrl) : legacyUrl;
         if (!displayUrl) continue;
         photosByReviewId.set(reviewId, [...(photosByReviewId.get(reviewId) ?? []), displayUrl]);
       }
@@ -1025,6 +1035,28 @@ async function createSignedStorageUrl(
   } catch {
     return undefined;
   }
+}
+
+async function createSignedStorageUrls(
+  client: SupabaseClient,
+  bucket: string,
+  paths: string[],
+): Promise<Map<string, string>> {
+  const signed = new Map<string, string>();
+  const uniquePaths = Array.from(new Set(paths));
+  if (uniquePaths.length === 0) return signed;
+  try {
+    const { data, error } = await client.storage
+      .from(bucket)
+      .createSignedUrls(uniquePaths, 60 * 60);
+    if (error || !Array.isArray(data)) return signed;
+    data.forEach((entry) => {
+      if (entry.path && entry.signedUrl && !entry.error) signed.set(entry.path, entry.signedUrl);
+    });
+  } catch {
+    // Fall back to the stored urls.
+  }
+  return signed;
 }
 
 async function resolvePostMediaDisplayUrl(client: SupabaseClient, row: Row): Promise<string> {
@@ -3267,7 +3299,11 @@ export const supabaseService: HungryService = {
       const userId = await getCurrentSupabaseUserId();
       if (!userId) throw new Error("You must be signed in to submit reviews.");
 
+      // The id is fixed before any write so photos can upload first and a
+      // retry resumes the same review instead of duplicating it.
+      const reviewId = draft.clientReviewId ?? createClientReviewId();
       const reviewRow: Row = {
+        id: reviewId,
         user_id: userId,
         dish_id: draft.dishId,
         venue_id: draft.venueId,
@@ -3276,34 +3312,33 @@ export const supabaseService: HungryService = {
         tags: draft.tags,
         would_recommend: draft.wouldRecommend ?? true,
       };
-      if (draft.clientReviewId) {
-        reviewRow.id = draft.clientReviewId;
+
+      const { data: existing, error: existingError } = await client
+        .from("reviews")
+        .select("id")
+        .eq("id", reviewId)
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (existingError) throw existingError;
+      const isResumedSubmission = Boolean(asString(existing?.id));
+
+      let needsPhotos = draft.photos.length > 0;
+      if (isResumedSubmission && needsPhotos) {
+        const { count, error: photoCountError } = await client
+          .from("review_photos")
+          .select("id", { count: "exact", head: true })
+          .eq("review_id", reviewId);
+        if (photoCountError) throw photoCountError;
+        needsPhotos = (count ?? 0) === 0;
       }
 
-      const { data, error } = await client
-        .from("reviews")
-        .insert(reviewRow)
-        .select("id")
-        .maybeSingle();
-      let reviewId = asString(data?.id);
-      let isResumedSubmission = false;
-      if (error || !reviewId) {
-        // A retry reuses the client id, so a unique violation means an earlier attempt
-        // already created this review: resume with the remaining steps instead of duplicating it.
-        if (!draft.clientReviewId || error?.code !== "23505") {
-          throw error ?? new Error("Review insert failed.");
-        }
-        const { data: existing, error: existingError } = await client
-          .from("reviews")
-          .select("id")
-          .eq("id", draft.clientReviewId)
-          .eq("user_id", userId)
-          .maybeSingle();
-        if (existingError || !existing?.id) {
-          throw existingError ?? error;
-        }
-        reviewId = draft.clientReviewId;
-        isResumedSubmission = true;
+      // Upload before the review exists: reviews are public as soon as they are
+      // inserted, so a failed upload must not leave a live, photo-less review.
+      const uploadedPhotos = needsPhotos
+        ? await uploadReviewPhotos(client, userId, reviewId, draft.photos)
+        : [];
+
+      if (isResumedSubmission) {
         // Keep any edits made between attempts.
         const { error: updateError } = await client
           .from("reviews")
@@ -3316,18 +3351,13 @@ export const supabaseService: HungryService = {
           .eq("id", reviewId)
           .eq("user_id", userId);
         if (updateError) throw updateError;
+      } else {
+        const { error } = await client.from("reviews").insert(reviewRow);
+        // 23505: a parallel attempt already created this review; carry on and
+        // attach the photos to it.
+        if (error && error.code !== "23505") throw error;
       }
 
-      if (isResumedSubmission) {
-        const { count, error: photoCountError } = await client
-          .from("review_photos")
-          .select("id", { count: "exact", head: true })
-          .eq("review_id", reviewId);
-        if (photoCountError) throw photoCountError;
-        if ((count ?? 0) > 0) return;
-      }
-
-      const uploadedPhotos = await uploadReviewPhotos(client, userId, reviewId, draft.photos);
       if (uploadedPhotos.length > 0) {
         const { error: photoInsertError } = await client.from("review_photos").insert(
           uploadedPhotos.map((photo, index) => ({
@@ -3338,7 +3368,14 @@ export const supabaseService: HungryService = {
             sort_order: index,
           })),
         );
-        if (photoInsertError) throw photoInsertError;
+        if (photoInsertError) {
+          // The review itself is saved; only the photos are missing. A retry
+          // with the same clientReviewId attaches them.
+          throw Object.assign(new Error("Review saved, but its photos were not attached."), {
+            code: REVIEW_PHOTOS_NOT_ATTACHED,
+            cause: photoInsertError,
+          });
+        }
       }
     },
 

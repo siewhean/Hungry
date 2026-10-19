@@ -194,7 +194,8 @@ test("production Post route publishes through the canonical composer service pat
   assert.match(postScreen, /const \[selectedDishId, setSelectedDishId\]/);
   assert.match(postScreen, /const \[dishSearchQuery, setDishSearchQuery\]/);
   assert.match(postScreen, /repository\.getDishById\(selectedDishId\) \?\? null/);
-  assert.match(postScreen, /repository\.listDishesByVenue\(selectedVenueId\)\[0\] \?\? null/);
+  // A venue-only entry shows that stall's dishes; it never picks the first one.
+  assert.doesNotMatch(postScreen, /listDishesByVenue\(selectedVenueId\)\[0\]/);
   assert.match(postScreen, /label="Find dish"/);
   assert.match(postScreen, /placeholder="Search dishes, stalls, or tags"/);
   assert.match(postScreen, /setSelectedDishId\(item\.id\)/);

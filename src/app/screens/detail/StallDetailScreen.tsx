@@ -1170,25 +1170,11 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   </View>
                 ) : (
                   <Card style={{ padding: spacing[4], alignItems: "center" }}>
-                    <AppText
-                      variant="body"
-                      tone="secondary"
-                      style={{ textAlign: "center", marginBottom: spacing[2] }}
-                    >
+                    {/* No "Add a menu photo" here until a menu-photo upload flow exists:
+                        it used to open a review editor with no dishes to pick. */}
+                    <AppText variant="body" tone="secondary" style={{ textAlign: "center" }}>
                       No menu available for this stall yet.
                     </AppText>
-                    {isAuthenticated && (
-                      <Button
-                        label="Add a menu photo"
-                        variant="secondary"
-                        onPress={() =>
-                          navigation.navigate("ReviewStack", {
-                            screen: "ReviewMain",
-                            params: { venueId: venue.id },
-                          })
-                        }
-                      />
-                    )}
                   </Card>
                 )}
               </View>
