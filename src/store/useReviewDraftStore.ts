@@ -28,7 +28,6 @@ interface ReviewDraftState {
   resetDraft: () => void;
   setSubmitting: (isSubmitting: boolean) => void;
   setVideoUri: (uri?: string) => void;
-  setFilterId: (id?: string) => void;
   setMusicId: (id?: string) => void;
 }
 
@@ -140,10 +139,6 @@ export const useReviewDraftStore = create<ReviewDraftState>()(
       setVideoUri: (uri) =>
         set((state) => ({
           draft: { ...state.draft, videoUri: uri },
-        })),
-      setFilterId: (id) =>
-        set((state) => ({
-          draft: { ...state.draft, filterId: id },
         })),
       setMusicId: (id) =>
         set((state) => ({
