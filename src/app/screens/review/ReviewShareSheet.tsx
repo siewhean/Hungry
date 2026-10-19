@@ -117,6 +117,11 @@ export function ReviewShareSheet({
       showToast({ message: "Could not share review. Please try again.", tone: "error" });
       return;
     }
+    trackAnalyticsEvent("dish_shared", {
+      review_id: activeReview.reviewId,
+      channel: "in_app",
+      recipient_count: selectedChatIds.length,
+    });
     if (activeReview.postId) {
       onShared(activeReview.postId, "in_app");
     }

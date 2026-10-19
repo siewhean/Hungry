@@ -312,7 +312,8 @@ test("review tab covers loading state, review cards, and bite card icon/sheet bo
   assertSourceIncludes(
     reviewFeed,
     [
-      /useDelayedLoadingSkeleton\(\s*isInitialLoading/,
+      // The skeleton follows the real fetch, not a setTimeout(0) flag.
+      /useDelayedLoadingSkeleton\(isServiceFeedLoading, 0\)/,
       /ReviewFeedSkeleton/,
       /ReviewCommentsSheet/,
       /ReviewShareSheet/,

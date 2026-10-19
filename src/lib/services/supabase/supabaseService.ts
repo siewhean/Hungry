@@ -922,36 +922,52 @@ function toAppSessionFromAuthSession(
   };
 }
 
+/** Review photos uploaded at once; more in flight starves slow mobile links. */
+const REVIEW_PHOTO_UPLOAD_CONCURRENCY = 3;
+
 async function uploadReviewPhotos(
   client: SupabaseClient,
   userId: string,
   reviewId: string,
   photos: string[],
 ): Promise<Row[]> {
-  const uploaded: Row[] = [];
   // Uploads never overwrite, so a retried submission needs fresh object paths.
   const attempt = Date.now().toString(36);
-  for (let index = 0; index < photos.length; index += 1) {
-    const uri = photos[index];
-    if (!uri) continue;
+  const jobs = photos
+    .map((uri, index) => ({ uri, index }))
+    .filter((job): job is { uri: string; index: number } => Boolean(job.uri));
+  jobs.forEach(({ uri }) => {
     if (!isLocalUri(uri)) {
       throw new Error("Review photos must be uploaded from local device files.");
     }
-    const extension = uri.split(".").pop()?.toLowerCase() || "jpg";
-    const path = `${userId}/${reviewId}/photo-${index}-${attempt}.${extension}`;
-    const asset = await uploadImageFromUri({
-      client,
-      bucket: "review-media",
-      path,
-      uri,
-    });
-    uploaded.push({
-      url: asset.path,
-      storage_bucket: "review-media",
-      storage_path: asset.path,
-    });
-  }
-  return uploaded;
+  });
+  const uploaded: (Row | undefined)[] = new Array(jobs.length);
+  let nextJob = 0;
+  const worker = async () => {
+    while (nextJob < jobs.length) {
+      const jobIndex = nextJob;
+      nextJob += 1;
+      const { uri, index } = jobs[jobIndex]!;
+      const extension = uri.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${userId}/${reviewId}/photo-${index}-${attempt}.${extension}`;
+      const asset = await uploadImageFromUri({
+        client,
+        bucket: "review-media",
+        path,
+        uri,
+      });
+      uploaded[jobIndex] = {
+        url: asset.path,
+        storage_bucket: "review-media",
+        storage_path: asset.path,
+      };
+    }
+  };
+  await Promise.all(
+    Array.from({ length: Math.min(REVIEW_PHOTO_UPLOAD_CONCURRENCY, jobs.length) }, worker),
+  );
+  // Keep the picked order for sort_order.
+  return uploaded.filter((row): row is Row => Boolean(row));
 }
 
 async function mapSupabaseReviewRows(
@@ -3477,8 +3493,14 @@ export const supabaseService: HungryService = {
           "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend,merchant_reply_text,merchant_replied_at",
         )
         .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
         .limit(limit);
-      if (options?.before) {
+      if (options?.before && options.beforeId) {
+        // Keyset cursor (created_at, id): rows sharing the boundary timestamp are kept.
+        query = query.or(
+          `created_at.lt."${options.before}",and(created_at.eq."${options.before}",id.lt."${options.beforeId}")`,
+        );
+      } else if (options?.before) {
         query = query.lt("created_at", options.before);
       }
       if (options?.dishIds) {

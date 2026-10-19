@@ -1849,11 +1849,18 @@ export const hungryService: HungryService = {
               venueName: dish.venueName,
             })),
         )
-        .filter((entry) =>
-          before === undefined ? true : new Date(entry.review.createdAt).getTime() < before,
-        )
+        .filter((entry) => {
+          if (before === undefined) return true;
+          const createdAt = new Date(entry.review.createdAt).getTime();
+          if (createdAt < before) return true;
+          return Boolean(
+            options?.beforeId && createdAt === before && entry.review.id < options.beforeId,
+          );
+        })
         .sort(
-          (a, b) => new Date(b.review.createdAt).getTime() - new Date(a.review.createdAt).getTime(),
+          (a, b) =>
+            new Date(b.review.createdAt).getTime() - new Date(a.review.createdAt).getTime() ||
+            (b.review.id < a.review.id ? -1 : b.review.id > a.review.id ? 1 : 0),
         );
       return resolve(entries.slice(0, limit));
     },

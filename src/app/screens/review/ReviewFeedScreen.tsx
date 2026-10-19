@@ -4,9 +4,11 @@
  * Filter by dish, stall, rating, or recency.
  * No discovery or editorial content here.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  Alert,
   FlatList,
+  Keyboard,
   Pressable,
   RefreshControl,
   type TextInput,
@@ -14,9 +16,22 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { Bookmark, Heart, MessageCircle, MessageCircleMore, Send, Star } from "lucide-react-native";
+import {
+  Bookmark,
+  Heart,
+  MessageCircle,
+  MessageCircleMore,
+  MoreHorizontal,
+  Send,
+  Star,
+} from "lucide-react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
-import { useNavigation, useRoute, type CompositeNavigationProp } from "@react-navigation/native";
+import {
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+  type CompositeNavigationProp,
+} from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { MaterialTopTabNavigationProp } from "@react-navigation/material-top-tabs";
 
@@ -27,6 +42,7 @@ import {
   AccessibleImage,
   AppHeader,
   AppText,
+  Avatar,
   EmptyState,
   ExpandableSearchLauncher,
   FilterChipRail,
@@ -57,6 +73,8 @@ import {
 } from "@/features/review/reviewFeed";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { webShareUrl } from "@/constants/links";
+import { trackAnalyticsEvent } from "@/lib/analytics";
+import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -68,6 +86,23 @@ type RootNavigation = CompositeNavigationProp<
 type FilterMode = "recent" | "top_rated" | "dish" | "location";
 
 const REVIEW_FEED_PAGE_SIZE = 50;
+/** A focus refetch runs when the loaded page is older than this (e.g. after posting a review). */
+const REVIEW_FEED_STALE_MS = 15_000;
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** "3h ago" within a week; otherwise the date, with the year when it is not this year. */
+function formatReviewDate(createdAt: string): string {
+  const timestamp = new Date(createdAt).getTime();
+  if (!Number.isFinite(timestamp)) return "";
+  const ageMs = Date.now() - timestamp;
+  if (ageMs >= 0 && ageMs < WEEK_MS) return formatTimeAgo(createdAt);
+  const sameYear = new Date(timestamp).getFullYear() === new Date().getFullYear();
+  return new Date(timestamp).toLocaleDateString("en-SG", {
+    month: "short",
+    day: "numeric",
+    ...(sameYear ? {} : { year: "numeric" }),
+  });
+}
 
 const FILTER_OPTIONS: { id: FilterMode; label: string }[] = [
   { id: "recent", label: "Most Recent" },
@@ -144,9 +179,10 @@ function ReviewSearchQuerySummary({ query }: { query: string }) {
 
 // ─── ReviewCard ───────────────────────────────────────────────────────────────
 
-function ReviewCard({
+const ReviewCard = memo(function ReviewCard({
   item,
   interaction,
+  isOwnReview,
   commentsEnabled,
   onCommentPress,
   onPressDish,
@@ -158,6 +194,8 @@ function ReviewCard({
 }: {
   item: ReviewFeedItem;
   interaction: InteractionState;
+  /** The viewer wrote this review: no Report/Block on it. */
+  isOwnReview: boolean;
   commentsEnabled: boolean;
   onCommentPress: (item: ReviewFeedItem) => void;
   onPressDish: (dishId: string) => void;
@@ -172,10 +210,33 @@ function ReviewCard({
   const CommentIcon = MessageCircle ?? MessageCircleMore;
   const { width } = useWindowDimensions();
   const hasPhoto = item.review.photos.length > 0;
-  const reviewDate = new Date(item.review.createdAt).toLocaleDateString("en-SG", {
-    month: "short",
-    day: "numeric",
-  });
+  const reviewDate = formatReviewDate(item.review.createdAt);
+  const openSafetyActions = () => {
+    Alert.alert(`Review by ${item.review.authorName}`, undefined, [
+      {
+        text: "Report review",
+        onPress: () =>
+          promptReportReview({
+            reviewId: item.review.id,
+            authorName: item.review.authorName,
+            authorId: item.review.authorId,
+            onHidden: onSafetyHidden,
+          }),
+      },
+      {
+        text: `Block ${item.review.authorName}`,
+        style: "destructive",
+        onPress: () =>
+          promptBlockReviewAuthor({
+            reviewId: item.review.id,
+            authorName: item.review.authorName,
+            authorId: item.review.authorId,
+            onBlocked: onSafetyHidden,
+          }),
+      },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  };
 
   return (
     <View
@@ -215,20 +276,7 @@ function ReviewCard({
           style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}
         >
           <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-            <View
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: radii.pill,
-                backgroundColor: palette.orange,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <AppText variant="bodySmallBold" style={{ color: palette.white }}>
-                {item.review.authorName.charAt(0).toUpperCase()}
-              </AppText>
-            </View>
+            <Avatar uri={item.review.authorAvatarUrl} name={item.review.authorName} size={36} />
             <View>
               <AppText variant="bodySmallBold" style={{ color: palette.text }}>
                 {item.review.authorName}
@@ -243,6 +291,9 @@ function ReviewCard({
 
         {/* Dish link */}
         <Pressable
+          accessibilityRole="link"
+          accessibilityLabel={`Open ${item.dishName} at ${item.venueName}`}
+          hitSlop={8}
           onPress={() => onPressDish(item.dishId)}
           style={{
             flexDirection: "row",
@@ -255,7 +306,7 @@ function ReviewCard({
             alignSelf: "flex-start",
           }}
         >
-          <AppText variant="micro" style={{ color: palette.orange, fontWeight: "700" }}>
+          <AppText variant="micro" style={{ color: palette.orangeText, fontWeight: "700" }}>
             {item.dishName}
           </AppText>
           <AppText variant="micro" style={{ color: palette.textMuted }}>
@@ -273,6 +324,24 @@ function ReviewCard({
         >
           {item.review.text}
         </AppText>
+
+        {item.review.merchantReply?.text ? (
+          <View
+            accessible
+            accessibilityLabel={`Reply from the stall: ${item.review.merchantReply.text}`}
+            style={{
+              backgroundColor: palette.bgSoft,
+              borderRadius: radii.md,
+              gap: spacing[1],
+              padding: spacing[3],
+            }}
+          >
+            <AppText variant="micro" tone="secondary" style={{ fontWeight: "700" }}>
+              Reply from {item.venueName}
+            </AppText>
+            <AppText variant="bodySmall">{item.review.merchantReply.text}</AppText>
+          </View>
+        ) : null}
 
         {/* Tags (or date when no recommend) */}
         {item.review.tags.length > 0 || !item.review.wouldRecommend ? (
@@ -373,40 +442,19 @@ function ReviewCard({
             paddingTop: spacing[1],
           }}
         >
-          <View style={{ flexDirection: "row", gap: spacing[4] }}>
+          {isOwnReview ? (
+            <View />
+          ) : (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={`Report review by ${item.review.authorName}`}
-              onPress={() =>
-                promptReportReview({
-                  reviewId: item.review.id,
-                  authorName: item.review.authorName,
-                  authorId: item.review.authorId,
-                  onHidden: onSafetyHidden,
-                })
-              }
+              accessibilityLabel={`More options for ${item.review.authorName}'s review`}
+              accessibilityHint="Report this review or block its author"
+              onPress={openSafetyActions}
+              style={{ alignItems: "center", height: 44, justifyContent: "center", width: 44 }}
             >
-              <AppText variant="micro" tone="muted">
-                Report
-              </AppText>
+              <MoreHorizontal color={palette.textMuted} size={20} />
             </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Block ${item.review.authorName}`}
-              onPress={() =>
-                promptBlockReviewAuthor({
-                  reviewId: item.review.id,
-                  authorName: item.review.authorName,
-                  authorId: item.review.authorId,
-                  onBlocked: onSafetyHidden,
-                })
-              }
-            >
-              <AppText variant="micro" tone="muted">
-                Block user
-              </AppText>
-            </Pressable>
-          </View>
+          )}
 
           <View style={{ alignItems: "flex-end", gap: spacing[1.5] }}>
             <View
@@ -420,6 +468,7 @@ function ReviewCard({
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Share review"
+                hitSlop={8}
                 onPress={() => onSharePress(item)}
                 style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
               >
@@ -433,6 +482,7 @@ function ReviewCard({
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={interaction.saved ? "Remove saved dish" : "Save dish"}
+                hitSlop={8}
                 onPress={() => onSavePress(item)}
                 style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
               >
@@ -482,7 +532,7 @@ function ReviewCard({
       </View>
     </View>
   );
-}
+});
 
 // ─── ReviewFeedScreen ─────────────────────────────────────────────────────────
 
@@ -505,6 +555,7 @@ export function ReviewFeedScreen() {
   const toggleSave = useSocialStore((state) => state.toggleSave);
   const incrementShare = useSocialStore((state) => state.incrementShare);
   const favouriteDishIds = useProfileStore((state) => state.profile.favouriteDishIds);
+  const viewerId = useProfileStore((state) => state.profile.id);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
@@ -512,7 +563,6 @@ export function ReviewFeedScreen() {
 
   const [filterMode, setFilterMode] = useState<FilterMode>("recent");
   const [searchQuery, setSearchQuery] = useState("");
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [activeCommentReview, setActiveCommentReview] = useState<ActiveReviewCommentTarget | null>(
     null,
   );
@@ -529,6 +579,7 @@ export function ReviewFeedScreen() {
   const [safetyFilterVersion, setSafetyFilterVersion] = useState(0);
   const bumpSafetyFilter = useCallback(() => setSafetyFilterVersion((current) => current + 1), []);
   const serviceLoadIdRef = useRef(0);
+  const lastServiceLoadAtRef = useRef(0);
   const reviewReactionsEnabled = serviceProviderMode === "mock";
   const openCommentsSheet = useCallback(() => {
     const commentSheet = commentsSheetRef.current;
@@ -554,16 +605,15 @@ export function ReviewFeedScreen() {
   const headerActionSize = spacing[8] + spacing[2.5];
   const isServiceFeedLoading =
     serviceProviderMode !== "mock" && serviceReviewItems === null && !serviceLoadFailed;
-  const showInitialSkeleton = useDelayedLoadingSkeleton(
-    isInitialLoading || isServiceFeedLoading,
-    0,
-  );
+  const showInitialSkeleton = useDelayedLoadingSkeleton(isServiceFeedLoading, 0);
   const reviewHeaderTitle = "Reviews";
 
+  const trackedFilterModeRef = useRef<FilterMode>(filterMode);
   useEffect(() => {
-    const timeout = setTimeout(() => setIsInitialLoading(false), 0);
-    return () => clearTimeout(timeout);
-  }, []);
+    if (trackedFilterModeRef.current === filterMode) return;
+    trackedFilterModeRef.current = filterMode;
+    trackAnalyticsEvent("review_feed_filter_changed", { filter: filterMode });
+  }, [filterMode]);
 
   useEffect(() => {
     let isMounted = true;
@@ -592,26 +642,24 @@ export function ReviewFeedScreen() {
       dishName: entry.dishName,
       venueName: entry.venueName,
       venueId: entry.venueId,
-      interactionId: makeReviewInteractionId(
-        entry.dishId,
-        entry.review.id,
-        0,
-        `${entry.dishId}::${entry.review.createdAt}::${entry.review.text}`,
-      ),
+      // Keyed by the review id only: never embed the review text in an id.
+      interactionId: makeReviewInteractionId(entry.dishId, entry.review.id, 0),
     }),
     [repository],
   );
 
   // One paginated query for the newest reviews instead of one request per catalog dish.
   const loadServiceReviews = useCallback(
-    async (mode: "replace" | "append", before?: string) => {
+    async (mode: "replace" | "append", cursor?: { before: string; beforeId: string }) => {
       const loadId = ++serviceLoadIdRef.current;
       try {
         const entries = await getHungryService().reviews.listRecentReviews({
           limit: REVIEW_FEED_PAGE_SIZE,
-          before,
+          before: cursor?.before,
+          beforeId: cursor?.beforeId,
         });
         if (loadId !== serviceLoadIdRef.current) return;
+        lastServiceLoadAtRef.current = Date.now();
         const items = entries.map(toServiceFeedItem);
         setServiceReviewItems((current) =>
           mode === "append" && current ? [...current, ...items] : items,
@@ -630,16 +678,30 @@ export function ReviewFeedScreen() {
     [showToast, toServiceFeedItem],
   );
 
-  useEffect(() => {
-    if (serviceProviderMode === "mock") {
-      setServiceReviewItems(null);
-      return;
-    }
-    void loadServiceReviews("replace");
-    return () => {
+  // Loads on first focus and again when the tab comes back into focus with a
+  // stale page, so a review the user just posted shows without a pull-down.
+  useFocusEffect(
+    useCallback(() => {
+      if (serviceProviderMode === "mock") {
+        setServiceReviewItems(null);
+        return undefined;
+      }
+      if (
+        lastServiceLoadAtRef.current === 0 ||
+        Date.now() - lastServiceLoadAtRef.current > REVIEW_FEED_STALE_MS
+      ) {
+        void loadServiceReviews("replace");
+      }
+      return undefined;
+    }, [loadServiceReviews, serviceProviderMode]),
+  );
+
+  useEffect(
+    () => () => {
       serviceLoadIdRef.current += 1;
-    };
-  }, [loadServiceReviews, serviceProviderMode]);
+    },
+    [],
+  );
 
   const handleRefresh = useCallback(async () => {
     if (serviceProviderMode === "mock") return;
@@ -659,11 +721,11 @@ export function ReviewFeedScreen() {
 
   const handleLoadMore = useCallback(async () => {
     if (serviceProviderMode === "mock" || !hasMoreServiceReviews || isLoadingMore) return;
-    const oldest = serviceReviewItems?.[serviceReviewItems.length - 1]?.review.createdAt;
-    if (!oldest) return;
+    const oldest = serviceReviewItems?.[serviceReviewItems.length - 1]?.review;
+    if (!oldest?.createdAt) return;
     setIsLoadingMore(true);
     try {
-      await loadServiceReviews("append", oldest);
+      await loadServiceReviews("append", { before: oldest.createdAt, beforeId: oldest.id });
     } finally {
       setIsLoadingMore(false);
     }
@@ -809,6 +871,36 @@ export function ReviewFeedScreen() {
     ],
   );
 
+  // Comment + reply counts per review, computed once per store change instead of per row.
+  const threadCountByReviewId = useMemo(() => {
+    const reviewIdByCommentId = new Map<string, string>();
+    const counts = new Map<string, number>();
+    Object.entries(commentsByPostId).forEach(([reviewId, comments]) => {
+      comments.forEach((comment) => reviewIdByCommentId.set(comment.id, reviewId));
+      counts.set(reviewId, comments.length);
+    });
+    Object.values(repliesByCommentId).forEach((replies) => {
+      replies.forEach((reply) => {
+        const reviewId = reviewIdByCommentId.get(reply.parentCommentId);
+        if (reviewId) counts.set(reviewId, (counts.get(reviewId) ?? 0) + 1);
+      });
+    });
+    return counts;
+  }, [commentsByPostId, repliesByCommentId]);
+
+  const handleLikePress = useCallback(
+    (targetItem: ReviewFeedItem) => {
+      if (reviewReactionsEnabled) {
+        void toggleLike(targetItem.interactionId);
+      }
+    },
+    [reviewReactionsEnabled, toggleLike],
+  );
+  const handlePressDish = useCallback(
+    (dishId: string) => navigation.navigate("DishDetail", { dishId }),
+    [navigation],
+  );
+
   const renderItem = useCallback(
     ({ item }: { item: ReviewFeedItem }) => {
       const baseInteraction = interactions[item.interactionId] ?? {
@@ -829,29 +921,20 @@ export function ReviewFeedScreen() {
             saveCount: baseInteraction.saveCount,
             shareCount: 0,
           };
-      const postComments = commentsByPostId[item.review.id] ?? [];
-      const commentIds = new Set<string>(postComments.map((comment) => comment.id));
-      const replyCount = Object.values(repliesByCommentId).reduce((acc, replies) => {
-        const repliesForPost = replies.filter((reply) => commentIds.has(reply.parentCommentId));
-        return acc + repliesForPost.length;
-      }, 0);
       const computedCommentCount = Math.max(
         baseInteraction.commentCount,
-        commentIds.size + replyCount,
+        threadCountByReviewId.get(item.review.id) ?? 0,
       );
 
       return (
         <ReviewCard
           item={item}
           interaction={{ ...displayInteraction, commentCount: computedCommentCount }}
+          isOwnReview={Boolean(item.review.authorId && item.review.authorId === viewerId)}
           commentsEnabled={commentsEnabled}
           onCommentPress={openReviewComments}
-          onLikePress={(targetItem) => {
-            if (reviewReactionsEnabled) {
-              void toggleLike(targetItem.interactionId);
-            }
-          }}
-          onPressDish={(dishId) => navigation.navigate("DishDetail", { dishId })}
+          onLikePress={handleLikePress}
+          onPressDish={handlePressDish}
           onSavePress={handleSavePress}
           onSharePress={openShareReview}
           onSafetyHidden={bumpSafetyFilter}
@@ -862,16 +945,16 @@ export function ReviewFeedScreen() {
     [
       interactions,
       favouriteDishIds,
-      navigation,
+      handleLikePress,
+      handlePressDish,
       openReviewComments,
       openShareReview,
       bumpSafetyFilter,
       handleSavePress,
-      toggleLike,
-      commentsByPostId,
       commentsEnabled,
-      repliesByCommentId,
+      threadCountByReviewId,
       reviewReactionsEnabled,
+      viewerId,
     ],
   );
 
@@ -896,7 +979,15 @@ export function ReviewFeedScreen() {
               accessibilityLabel="Search reviews"
               query={searchQuery}
               onQueryChange={setSearchQuery}
-              onSubmit={() => undefined}
+              onSubmit={() => {
+                Keyboard.dismiss();
+                if (searchQuery.trim()) {
+                  trackAnalyticsEvent("review_feed_searched", {
+                    query_length: searchQuery.trim().length,
+                    result_count: filteredReviews.length,
+                  });
+                }
+              }}
               onClear={() => setSearchQuery("")}
               placeholder="Search Reviews"
               expandedWidth={searchBarWidth}
@@ -959,7 +1050,14 @@ export function ReviewFeedScreen() {
                 onPress={handleRetry}
               />
             ) : searchQuery ? (
-              <EmptyState title="No reviews found" body="Try a different search term." />
+              <EmptyState
+                title="No reviews found"
+                body={
+                  hasMoreServiceReviews
+                    ? "No match in the latest reviews. Try a dish or stall name."
+                    : "Try a different search term."
+                }
+              />
             ) : (
               <EmptyState
                 title="No reviews yet"
