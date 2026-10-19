@@ -779,6 +779,7 @@ function getFallbackDiscoveryFeed(request: {
       dish,
       score: dish.rating / 5,
     })),
+    isFallback: true,
   };
 }
 

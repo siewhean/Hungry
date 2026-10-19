@@ -159,4 +159,7 @@ test("rating stars and dark-on-orange CTA labels meet contrast targets", () => {
   assert.ok(
     contrast(colors.dark.textOnOrange as HexColor, colors.dark.statusFast as HexColor) >= 4.5,
   );
+  // Discover "VALUE" badge: white on the light-mode success fill, dark ink in dark mode.
+  assert.ok(contrast(colors.light.white as HexColor, colors.light.success as HexColor) >= 4.5);
+  assert.ok(contrast(colors.dark.textOnOrange as HexColor, colors.dark.success as HexColor) >= 4.5);
 });

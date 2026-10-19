@@ -490,6 +490,8 @@ export interface DiscoveryLocationFeedRequest {
 export interface DiscoveryLocationFeed {
   venues: VenueSummary[];
   results: SearchResult[];
+  /** True when the live read failed and these rows come from the local cache. */
+  isFallback?: boolean;
 }
 
 export interface VenueLocationSearchRequest extends DiscoveryLocationFeedRequest {
