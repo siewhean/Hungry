@@ -583,6 +583,14 @@ function recordMockReviewReport(reviewId: string) {
   }
 }
 
+/** Merchant inbox reviews hidden by the report threshold, like reviews RLS for the merchant. */
+function isMockInboxReviewModerationHidden(interaction: CustomerInteraction): boolean {
+  return (
+    interaction.type === "review" &&
+    _moderationHiddenReviewIds.has(interaction.sourceId ?? interaction.id)
+  );
+}
+
 /**
  * Mirrors the Supabase review read policies: hide report-threshold reviews from everyone but
  * their author, blocked authors, and reviews the viewer reported.
@@ -879,7 +887,12 @@ function getReviewBackedVisitorCandidates(outletId: string): PopularVisitorCandi
   );
 
   return _merchantInbox
-    .filter((interaction) => interaction.outletId === outlet.id && interaction.type === "review")
+    .filter(
+      (interaction) =>
+        interaction.outletId === outlet.id &&
+        interaction.type === "review" &&
+        !isMockInboxReviewModerationHidden(interaction),
+    )
     .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
     .map((interaction) => {
       const reviewId = interaction.sourceId ?? interaction.id;
@@ -2785,7 +2798,10 @@ export const hungryService: HungryService = {
 
     async getInbox(outletId, filters) {
       getMerchantOutlet(outletId);
-      let interactions = _merchantInbox.filter((interaction) => interaction.outletId === outletId);
+      let interactions = _merchantInbox.filter(
+        (interaction) =>
+          interaction.outletId === outletId && !isMockInboxReviewModerationHidden(interaction),
+      );
       if (filters?.type) {
         interactions = interactions.filter((i) => i.type === filters.type);
       }

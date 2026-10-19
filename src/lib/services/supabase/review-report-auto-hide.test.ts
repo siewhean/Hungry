@@ -118,3 +118,68 @@ test("mock service hides a review after 3 distinct reporters, except from its au
   assert.ok(dishAfter.reviews.every((review) => review.id !== reviewId));
   assert.equal(dishAfter.reviewCount, Math.max(0, dishBefore.reviewCount - 1));
 });
+
+function readFollowupMigration(): string {
+  const file = readdirSync(resolve(process.cwd(), "supabase/migrations")).find((name) =>
+    name.endsWith("_review_auto_hide_merchant_followup.sql"),
+  );
+  assert.ok(file, "review_auto_hide_merchant_followup migration is missing");
+  return readRepoFile(`supabase/migrations/${file}`);
+}
+
+test("merchants can still unpin or reorder a pin whose review was hidden", () => {
+  const migration = readFollowupMigration();
+
+  assert.match(
+    migration,
+    /create or replace function app_private\.review_belongs_to_venue\([\s\S]*?security definer/,
+  );
+  const policy = migration.match(
+    /create policy popular_visitor_pins_merchant_update[\s\S]*?\n\);/,
+  )?.[0];
+  assert.ok(policy);
+  // The review check must not read reviews through RLS (hidden reviews are invisible to merchants).
+  assert.doesNotMatch(policy, /from public\.reviews/);
+  assert.match(policy, /app_private\.review_belongs_to_venue\(/);
+  assert.match(policy, /public\.merchant_can_manage_outlet_v2\(outlet_id\)/);
+});
+
+test("merchant analytics leave hidden reviews out of counts, ratings and tags", () => {
+  const migration = readFollowupMigration();
+
+  assert.match(migration, /create or replace function public\.get_merchant_analytics\(/);
+  assert.equal(
+    migration.match(/and not app_private\.review_is_moderation_hidden\(r\.id\)/g)?.length,
+    3,
+  );
+  assert.match(
+    migration,
+    /grant execute on function public\.get_merchant_analytics\(uuid, timestamptz, timestamptz\)\s+to authenticated;/,
+  );
+  assert.match(
+    migration,
+    /alter function app_private\.report_content\(text, text, text, text\)\s+set search_path = public, pg_temp;/,
+  );
+});
+
+test("mock merchant inbox and pin candidates drop a report-hidden review", async () => {
+  const outletId = "outlet-wonton-mee";
+  const inboxBefore = await hungryService.merchant.getInbox(outletId);
+  const target = inboxBefore.find((item) => item.type === "review");
+  assert.ok(target, "mock inbox needs a review");
+  const reviewId = target.sourceId ?? target.id;
+
+  for (const email of ["inbox-r1@example.com", "inbox-r2@example.com", "inbox-r3@example.com"]) {
+    await hungryService.auth.signUp(email, "pw", email);
+    await hungryService.communitySafety.reportContent({
+      targetType: "review",
+      targetId: reviewId,
+      reason: "spam",
+    });
+  }
+
+  const inboxAfter = await hungryService.merchant.getInbox(outletId);
+  assert.ok(inboxAfter.every((item) => (item.sourceId ?? item.id) !== reviewId));
+  const candidates = await hungryService.merchant.listPopularVisitorCandidates(outletId);
+  assert.ok(candidates.every((candidate) => candidate.reviewId !== reviewId));
+});
