@@ -1097,6 +1097,12 @@ export function StallDetailScreen({ navigation, route }: Props) {
                       userId: profile.id,
                     })
                   }
+                  onAddToList={
+                    FEATURE_FLAGS.portfoliosEnabled
+                      ? () => void detailSaveActions.addToPortfolio()
+                      : undefined
+                  }
+                  isAddingToList={detailSaveActions.isAddingToPortfolio}
                 />
               )}
               {isAuthenticated && venue ? (

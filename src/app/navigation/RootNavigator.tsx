@@ -85,8 +85,6 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "AddStory",
   "PassportScreen",
   "MissionsScreen",
-  "CollectionList",
-  "CollectionDetail",
   "PortfolioPublicView",
   "AdminPortfolioFlags",
   "Offline",
@@ -304,14 +302,6 @@ const loadMissionsScreen = () =>
   (
     require("@/app/screens/profile/MissionsScreen") as typeof import("@/app/screens/profile/MissionsScreen")
   ).MissionsScreen;
-const loadCollectionListScreen = () =>
-  (
-    require("@/app/screens/discover/CollectionListScreen") as typeof import("@/app/screens/discover/CollectionListScreen")
-  ).CollectionListScreen;
-const loadCollectionDetailScreen = () =>
-  (
-    require("@/app/screens/discover/CollectionDetailScreen") as typeof import("@/app/screens/discover/CollectionDetailScreen")
-  ).CollectionDetailScreen;
 const loadPortfolioPublicViewScreen = () =>
   (
     require("@/app/screens/portfolio/PortfolioPublicViewScreen") as typeof import("@/app/screens/portfolio/PortfolioPublicViewScreen")
@@ -815,12 +805,6 @@ export function RootNavigator({ theme }: { theme: Theme }) {
             <>
               <RootStack.Screen getComponent={loadPassportScreen} name="PassportScreen" />
               <RootStack.Screen getComponent={loadMissionsScreen} name="MissionsScreen" />
-            </>
-          ) : null}
-          {FEATURE_FLAGS.collectionsEnabled ? (
-            <>
-              <RootStack.Screen getComponent={loadCollectionListScreen} name="CollectionList" />
-              <RootStack.Screen getComponent={loadCollectionDetailScreen} name="CollectionDetail" />
             </>
           ) : null}
           {FEATURE_FLAGS.portfoliosEnabled ? (

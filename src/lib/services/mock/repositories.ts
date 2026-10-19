@@ -3,8 +3,6 @@ import {
   buildings,
   dishes,
   guestProfile,
-  mockCollectionItems,
-  mockCollections,
   mockStallInteractions,
   mockUserFoodCred,
   mockUserMissionProgress,
@@ -18,10 +16,8 @@ import type { DecideForMeOptions } from "@/lib/services/types";
 import type {
   BlogPost,
   BuildingSummary,
-  CollectionItem,
   DietaryFlag,
   DishDetail,
-  FoodCollection,
   SearchFilters,
   StallInteraction,
   StallPost,
@@ -143,30 +139,6 @@ export const dataRepositoryMock = {
   },
 
   // ─── Gamification Repositories ─────────────────────────────────────────────
-
-  /** Returns all featured + public official collections */
-  listCollections(): Promise<FoodCollection[]> {
-    return Promise.resolve(mockCollections.filter((c) => c.visibility === "public"));
-  },
-
-  /** Returns featured collections only */
-  listFeaturedCollections(): Promise<FoodCollection[]> {
-    return Promise.resolve(mockCollections.filter((c) => c.isFeatured));
-  },
-
-  /** Returns a single collection by ID */
-  getCollectionById(collectionId: string): Promise<FoodCollection | null> {
-    return Promise.resolve(mockCollections.find((c) => c.id === collectionId) ?? null);
-  },
-
-  /** Returns all stall items for a collection, ordered by displayOrder */
-  listCollectionItems(collectionId: string): Promise<CollectionItem[]> {
-    return Promise.resolve(
-      mockCollectionItems
-        .filter((item) => item.collectionId === collectionId)
-        .sort((a, b) => a.displayOrder - b.displayOrder),
-    );
-  },
 
   /** Returns the stall interaction state for a user+stall pair */
   getStallInteraction(userId: string, stallId: string): Promise<StallInteraction | null> {

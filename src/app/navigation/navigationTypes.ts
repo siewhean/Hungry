@@ -168,8 +168,6 @@ export type RootStackParamList = {
   // Gamification
   PassportScreen: undefined;
   MissionsScreen: undefined;
-  CollectionList: undefined;
-  CollectionDetail: { collectionId: string };
   // Checklist & Portfolio (root-level access)
   ChecklistDetail: { checklistId: string };
   PortfolioDetail: { portfolioId: string };

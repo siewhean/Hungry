@@ -184,10 +184,52 @@ test("H32/H33/H34: list screens avoid render loops, show load errors and report 
   );
 });
 
-test("H36: collaborators can no longer be added by pasting a raw user id", () => {
+test("H36: collaborators are picked from people you follow and shown by name", async () => {
   const screen = read("src/app/screens/portfolio/PortfolioCollaboratorsScreen.tsx");
-  assert.doesNotMatch(screen, /Paste a Hungry user id/);
-  assert.match(screen, /Inviting collaborators isn't available yet/);
+  const row = read("src/components/portfolio/CollaboratorRow.tsx");
+  const supabaseService = read("src/lib/services/supabase/supabaseService.ts");
+  const migration = read("supabase/migrations/20261019180000_portfolio_collaborator_profiles.sql");
+
+  assert.doesNotMatch(screen, /Paste a Hungry user id|isn't available yet/);
+  assert.match(screen, /social\.listFollowing\(profileId,/);
+  assert.match(screen, /addCollaborator\(portfolioId, person\.userId, role\)/);
+  assert.match(screen, /removeCollaborator\(portfolioId, collaborator\.userId\)/);
+  assert.match(screen, /label="Viewer"[\s\S]*label="Editor"/);
+  // Ids are keys only: rows render names and avatars, never userId text.
+  assert.doesNotMatch(row, />\s*\{collaborator\.userId\}/);
+  assert.doesNotMatch(screen, />\s*\{(person|collaborator)\.userId\}/);
+  assert.match(row, /collaborator\.displayName\?\.trim\(\) \|\| "Hungry member"/);
+
+  assert.match(supabaseService, /client\.rpc\("list_portfolio_collaborators"/);
+  assert.doesNotMatch(supabaseService, /from\("portfolio_collaborators"\)\s*\.select/);
+  assert.match(
+    migration,
+    /function app_private\.list_portfolio_collaborators[\s\S]*security definer/,
+  );
+  assert.match(migration, /function public\.list_portfolio_collaborators[\s\S]*security invoker/);
+  assert.doesNotMatch(migration, /public\.list_portfolio_collaborators[^;]*security definer/);
+
+  // Mock: a followed person is listed by name, added, shown by name, then removed.
+  await hungryService.social.followUser("user-sarah-lim");
+  const me = await hungryService.profile.getProfile();
+  const following = await hungryService.social.listFollowing(me.id);
+  const sarah = following.find((person) => person.userId === "user-sarah-lim");
+  assert.equal(sarah?.displayName, "Sarah Lim");
+
+  const portfolio = await hungryService.portfolio.createPortfolio({
+    name: "Batch B collaborators",
+    type: "recommendation",
+    visibility: "public",
+  });
+  await hungryService.portfolio.addPortfolioCollaborator(portfolio.id, "user-sarah-lim", "editor");
+  const added = await hungryService.portfolio.getPortfolioCollaborators(portfolio.id);
+  assert.equal(added.length, 1);
+  assert.equal(added[0]?.displayName, "Sarah Lim");
+  assert.equal(added[0]?.role, "editor");
+
+  await hungryService.portfolio.removePortfolioCollaborator(portfolio.id, "user-sarah-lim");
+  assert.deepEqual(await hungryService.portfolio.getPortfolioCollaborators(portfolio.id), []);
+  await hungryService.social.unfollowUser("user-sarah-lim");
 });
 
 test("H37: wheel Browse tab matches the catalog's dish names and tags", () => {

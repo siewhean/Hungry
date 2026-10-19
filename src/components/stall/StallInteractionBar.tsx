@@ -1,5 +1,5 @@
 /**
- * StallInteractionBar — Save / Visited / Add to Collection actions for a stall.
+ * StallInteractionBar — Save / Visited / Add to List actions for a stall.
  *
  * Mounted inside StallDetailScreen. Uses useStallInteractionStore + useFoodCredStore.
  * Each action is idempotent (tried cannot be un-tried in Phase 1).
@@ -24,8 +24,9 @@ interface StallInteractionBarProps {
   onReviewRequired?: () => void;
   /** Called after the stall is saved (not when it is unsaved). */
   onSaved?: () => void;
-  /** Called when user taps "Add to Collection" — parent handles sheet/modal */
-  onAddToCollection?: () => void;
+  /** Called when user taps "Add to List" — saves the stall to the user's Lists (portfolios). */
+  onAddToList?: () => void;
+  isAddingToList?: boolean;
 }
 
 export function StallInteractionBar({
@@ -35,7 +36,8 @@ export function StallInteractionBar({
   hasReviewedDishAtVenue,
   onReviewRequired,
   onSaved,
-  onAddToCollection,
+  onAddToList,
+  isAddingToList = false,
 }: StallInteractionBarProps) {
   const { componentRadii, palette, spacing, typography } = useHungryTheme();
   const interactions = useStallInteractionStore((state) => state.interactions);
@@ -118,14 +120,15 @@ export function StallInteractionBar({
       onPress: handleTried,
       loading: tryingInProgress,
     },
-    ...(onAddToCollection
+    ...(onAddToList
       ? [
           {
-            id: "collection",
+            id: "list",
             label: "Add to List",
             icon: ListPlus,
             active: false,
-            onPress: onAddToCollection,
+            onPress: onAddToList,
+            loading: isAddingToList,
           },
         ]
       : []),
