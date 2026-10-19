@@ -80,7 +80,7 @@ test("Home social feed ranks followed authors before unfollowed authors", async 
   }
 });
 
-test("Home social feed refresh seed changes order without duplicating posts", async () => {
+test("Home social feed refresh keeps newest-first order without duplicating posts", async () => {
   usePublishedPostStore.getState().clearPostsForTest();
   setServiceProvider({
     mode: "mock",
@@ -93,7 +93,8 @@ test("Home social feed refresh seed changes order without duplicating posts", as
     const initialFeed = await getHomeSocialFeed(userProfile, { refreshSeed: 0 });
     const refreshedFeed = await getHomeSocialFeed(userProfile, { refreshSeed: 1 });
 
-    assert.notDeepEqual(
+    // Pull-to-refresh must not rotate the newest post down the feed.
+    assert.deepEqual(
       refreshedFeed.map((post) => post.id),
       initialFeed.map((post) => post.id),
     );
@@ -130,8 +131,8 @@ test("Home social feed refresh keeps followed posts above non-followed posts", a
       ...feed.map((post, index) => (followedIds.has(post.id) ? index : -1)),
     );
 
-    assert.equal(feed[0]?.id, "post-8");
-    assert.equal(feed[1]?.id, "post-3");
+    // Followed posts first (newest first among them; a refresh does not rotate them).
+    assert.deepEqual(new Set([feed[0]?.id, feed[1]?.id]), followedIds);
     assert.ok(firstUnfollowedIndex > lastFollowedIndex);
   } finally {
     usePublishedPostStore.getState().clearPostsForTest();

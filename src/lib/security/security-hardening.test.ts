@@ -544,7 +544,7 @@ test("UGC surfaces expose report, hide, and block safety actions", () => {
   assert.match(helper, /hiddenPostIds\.add\(postId\)/);
   assert.match(home, /promptPostSafetyActions/);
   assert.match(home, /promptCommentSafetyActions/);
-  assert.match(home, /\{commentsEnabled \? \(\s*<Pressable[\s\S]*Read comments for/);
+  assert.match(home, /accessibilityLabel=\{`Comment on \$\{actionTargetName\}`\}/);
   assert.match(activity, /promptPostSafetyActions/);
   assert.match(socialPost, /promptPostSafetyActions/);
   assert.match(comments, /promptCommentSafetyActions/);

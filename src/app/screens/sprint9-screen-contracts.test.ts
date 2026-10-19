@@ -364,13 +364,17 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
     /horizontal[\s\S]*pagingEnabled[\s\S]*showsHorizontalScrollIndicator=\{false\}/,
   );
   assert.match(source, /setCarouselIndexByPostId/);
-  assert.match(source, /numberOfLines=\{2\}/);
+  // " more" expands the caption in place; comments open from the comment button.
+  assert.match(source, /numberOfLines=\{isCaptionExpanded \? undefined : 2\}/);
   assert.match(source, /onTextLayout=\{\(event\) => handleCaptionTextLayout\(item\.id, event\)\}/);
-  assert.match(source, /accessibilityLabel=\{`Read comments for \$\{item\.authorName\}'s post`\}/);
+  assert.match(
+    source,
+    /setExpandedCaptionByPostId\(\(current\) => \(\{ \.\.\.current, \[item\.id\]: true \}\)\)/,
+  );
   assert.match(source, /onPress=\{\(\) => openComments\(item\)\}/);
   assert.match(
     source,
-    /\{captionOverflows \? formatCollapsedCaption\(item\.caption\) : item\.caption\}/,
+    /captionOverflows && !isCaptionExpanded\s*\? formatCollapsedCaption\(item\.caption\)\s*: item\.caption/,
   );
   assert.match(source, /\{" more"\}/);
   assert.doesNotMatch(source, /Read more comments for/);

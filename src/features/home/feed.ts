@@ -103,14 +103,6 @@ function isFollowedPost(item: HomeFeedItem, options?: HomeFeedOptions) {
   return Boolean(options?.followedAuthors?.[item.authorName]);
 }
 
-function rotateFeedGroup(items: HomeFeedItem[], refreshSeed = 0) {
-  if (refreshSeed <= 0 || items.length <= 1) {
-    return items;
-  }
-  const offset = refreshSeed % items.length;
-  return [...items.slice(offset), ...items.slice(0, offset)];
-}
-
 function orderHomeSocialFeed(
   items: HomeFeedItem[],
   now: number,
@@ -119,11 +111,32 @@ function orderHomeSocialFeed(
   const recencySorted = [...items].sort(
     (left, right) => getPostTime(right, now) - getPostTime(left, now),
   );
+  // Newest first within each group. A pull-to-refresh never moves the newest post down.
   const followed = recencySorted.filter((item) => isFollowedPost(item, options));
   const unfollowed = recencySorted.filter((item) => !isFollowedPost(item, options));
-  const refreshSeed = options?.refreshSeed ?? 0;
 
-  return [...rotateFeedGroup(followed, refreshSeed), ...rotateFeedGroup(unfollowed, refreshSeed)];
+  return [...followed, ...unfollowed];
+}
+
+/**
+ * A post at a venue the local catalog has not loaded (a new merchant, or a cold
+ * start) keeps its card: build the venue from the fields the feed read returned.
+ */
+function venueFromPost(post: StallPost): VenueSummary | undefined {
+  const name = post.venueName?.trim();
+  if (!post.venueId || !name) return undefined;
+  return {
+    id: post.venueId,
+    buildingId: post.buildingId,
+    name,
+    unitNumber: post.venueUnitNumber ?? "",
+    floor: "",
+    isOpen: true,
+    topDishId: post.dishIds[0] ?? "",
+    operatingHours: "",
+    deliveryLinks: [],
+    buildingName: post.buildingName,
+  };
 }
 
 async function buildHomeFeedItems(
@@ -136,7 +149,7 @@ async function buildHomeFeedItems(
   }
   const items = [...postsById.values()]
     .map((post) => {
-      const venue = repository.getVenueById(post.venueId);
+      const venue = repository.getVenueById(post.venueId) ?? venueFromPost(post);
       const dishes = post.dishIds
         .map((dishId) => repository.getDishById(dishId))
         .filter(Boolean) as DishDetail[];

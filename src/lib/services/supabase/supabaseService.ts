@@ -1130,12 +1130,52 @@ async function createSignedStorageUrls(
   return signed;
 }
 
+/** Signed post media URLs live 1 hour; reuse one until 5 minutes before it expires. */
+const POST_MEDIA_SIGNED_URL_REUSE_MS = 55 * 60 * 1000;
+/**
+ * Signed URL per storage path. A refetch reuses the same URL, so the image cache
+ * (keyed by URL) does not re-download or flicker on every feed load.
+ */
+const signedPostMediaUrlCache = new Map<string, { url: string; expiresAt: number }>();
+
+function cachedSignedPostMediaUrl(path: string): string | undefined {
+  const cached = signedPostMediaUrlCache.get(path);
+  if (!cached) return undefined;
+  if (cached.expiresAt <= Date.now()) {
+    signedPostMediaUrlCache.delete(path);
+    return undefined;
+  }
+  return cached.url;
+}
+
+function rememberSignedPostMediaUrl(path: string, url: string) {
+  signedPostMediaUrlCache.set(path, {
+    url,
+    expiresAt: Date.now() + POST_MEDIA_SIGNED_URL_REUSE_MS,
+  });
+}
+
+/** Sign every uncached post-media path in one request before rows are mapped. */
+async function presignPostMediaRows(client: SupabaseClient, mediaRows: Row[]): Promise<void> {
+  const paths = mediaRows
+    .filter((row) => asString(row.storage_bucket) === "post-media")
+    .map((row) => asString(row.storage_path))
+    .filter((path): path is string => Boolean(path) && !cachedSignedPostMediaUrl(path!));
+  if (paths.length === 0) return;
+  const signed = await createSignedStorageUrls(client, "post-media", paths);
+  signed.forEach((url, path) => rememberSignedPostMediaUrl(path, url));
+}
+
 async function resolvePostMediaDisplayUrl(client: SupabaseClient, row: Row): Promise<string> {
   const bucket = asString(row.storage_bucket);
   const path = asString(row.storage_path) ?? "";
   const publicUrl = asString(row.public_url);
   if (bucket === "post-media" && path) {
-    return (await createSignedStorageUrl(client, bucket, path)) ?? publicUrl ?? "";
+    const cached = cachedSignedPostMediaUrl(path);
+    if (cached) return cached;
+    const signed = await createSignedStorageUrl(client, bucket, path);
+    if (signed) rememberSignedPostMediaUrl(path, signed);
+    return signed ?? publicUrl ?? "";
   }
   return publicUrl ?? path;
 }
@@ -1249,9 +1289,9 @@ async function fetchPublishedPostBites(
     .order("published_at", { ascending: false })
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
-  // An author read throws so a failed load is not shown as "No posts yet".
-  if (error && options?.authorId) throw error;
-  if (error || !Array.isArray(data)) return [];
+  // A failed read throws so it is not shown as "No posts yet" (offline included).
+  if (error) throw error;
+  if (!Array.isArray(data)) return [];
 
   const postRows = data as Row[];
   const postIds = postRows.map((row) => asString(row.id)).filter((id): id is string => !!id);
@@ -1315,6 +1355,7 @@ async function fetchPublishedPostBites(
           )
       : [];
 
+  await presignPostMediaRows(client, mediaRows);
   const mediaByPostId = groupRowsByStringKey(mediaRows, "post_id");
   const dishById = new Map(dishRows.map((row) => [asString(row.id) ?? "", row]));
   const venueById = new Map(venueRows.map((row) => [asString(row.id) ?? "", row]));
@@ -1401,9 +1442,10 @@ async function mapFeedRpcRowToBite(client: SupabaseClient, row: Row): Promise<Bi
   return {
     id: asString(row.id) ?? `post-${Date.now()}`,
     authorId: asString(row.author_id) ?? "unknown-author",
+    // Live profile fields first: the publish-time snapshot goes stale after a rename.
     authorName:
-      asString(authorMeta.displayName) ?? asString(row.author_display_name) ?? "Hungry User",
-    authorAvatar: asString(authorMeta.avatarUrl) ?? asString(row.author_avatar_url),
+      asString(row.author_display_name) ?? asString(authorMeta.displayName) ?? "Hungry User",
+    authorAvatar: asString(row.author_avatar_url) ?? asString(authorMeta.avatarUrl),
     dishId: asString(row.dish_id) ?? asString(dishMeta.id) ?? "",
     dishName: asString(row.dish_name) ?? asString(dishMeta.name) ?? "Unknown dish",
     venueId: asString(row.venue_id) ?? asString(venueMeta.id) ?? "",
@@ -1466,6 +1508,10 @@ async function fetchHomeSocialFeedBitesViaRpc(
   if (!Array.isArray(legacyResult.data)) return undefined;
 
   const rows = legacyResult.data as Row[];
+  await presignPostMediaRows(
+    client,
+    rows.flatMap((row) => asRowArray(row.media)),
+  );
   return Promise.all(rows.map((row) => mapFeedRpcRowToBite(client, row)));
 }
 

@@ -18,6 +18,10 @@ interface ZoomableMediaProps {
   accessibilityLabel?: string;
   accessibilityHint?: string;
   onPress?: (event: GestureResponderEvent) => void;
+  /** Video only: plays while true (e.g. the most visible feed card). Defaults to true. */
+  isActive?: boolean;
+  /** Video only: double tap (e.g. like), with the tap point inside the video. */
+  onDoubleTap?: (origin: { x: number; y: number }) => void;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -27,10 +31,20 @@ export function ZoomableMedia({
   accessibilityLabel,
   accessibilityHint,
   onPress,
+  isActive,
+  onDoubleTap,
   style,
 }: ZoomableMediaProps) {
   if (type === "video") {
-    return <ZoomableVideoHost uri={uri} accessibilityLabel={accessibilityLabel} style={style} />;
+    return (
+      <ZoomableVideoHost
+        uri={uri}
+        accessibilityLabel={accessibilityLabel}
+        isActive={isActive}
+        onDoubleTap={onDoubleTap}
+        style={style}
+      />
+    );
   }
 
   return (
@@ -47,10 +61,20 @@ export function ZoomableMedia({
 function ZoomableVideoHost({
   uri,
   accessibilityLabel,
+  isActive,
+  onDoubleTap,
   style,
-}: Pick<ZoomableMediaProps, "uri" | "accessibilityLabel" | "style">) {
+}: Pick<ZoomableMediaProps, "uri" | "accessibilityLabel" | "isActive" | "onDoubleTap" | "style">) {
   const { ZoomableVideo } = require("./ZoomableVideo") as typeof import("./ZoomableVideo");
-  return <ZoomableVideo uri={uri} accessibilityLabel={accessibilityLabel} style={style} />;
+  return (
+    <ZoomableVideo
+      uri={uri}
+      accessibilityLabel={accessibilityLabel}
+      isActive={isActive}
+      onDoubleTap={onDoubleTap}
+      style={style}
+    />
+  );
 }
 
 function ZoomableImage({

@@ -24,7 +24,6 @@ import {
   MessageCircle,
   MessageCircleMore,
   MoreHorizontal,
-  PlayCircle,
   Copy,
   Share2,
   Send,
@@ -68,7 +67,6 @@ import { DishCard } from "@/components/dish/DishCard";
 import { WeeklyPicksRail } from "@/components/dish/WeeklyPicksRail";
 import { WelcomeBackCard } from "@/components/home/WelcomeBackCard";
 import {
-  BitesCarousel,
   CircleStoryCarousel,
   FloatingShareSendButton,
   InAppShareCard,
@@ -77,7 +75,8 @@ import {
 import { getHomeFeedBundle, type HomeFeedItem, type HomeFeedSection } from "@/features/home/feed";
 import { toChatShareRecipient, type ChatShareRecipient } from "@/features/home/chatShare";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
-import { getActivityUnreadCount } from "@/features/home/activity";
+import { getActivityUnreadCount, selectActivitySourceUpdates } from "@/features/home/activity";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import {
   prefetchDishDetail,
   prefetchImages,
@@ -149,6 +148,35 @@ function FeedSkeleton() {
     </View>
   );
 }
+
+/** Post-shaped placeholder: author row, square media, two caption lines. */
+function PostSkeleton() {
+  const { spacing, radii } = useHungryTheme();
+  const { width } = useWindowDimensions();
+  return (
+    <View style={{ gap: spacing[3], paddingVertical: spacing[3] }}>
+      <View
+        style={{
+          alignItems: "center",
+          flexDirection: "row",
+          gap: spacing[2],
+          paddingHorizontal: spacing[3],
+        }}
+      >
+        <Skeleton width={32} height={32} borderRadius={radii.pill} />
+        <Skeleton width="40%" height={14} />
+      </View>
+      <Skeleton width={width} height={width} borderRadius={0} />
+      <View style={{ gap: spacing[1.5], paddingHorizontal: spacing[3] }}>
+        <Skeleton width="90%" height={14} />
+        <Skeleton width="60%" height={14} />
+      </View>
+    </View>
+  );
+}
+
+/** A video plays once at least 60% of its card is on screen. */
+const VIDEO_VIEWABILITY_CONFIG = { itemVisiblePercentThreshold: 60 };
 
 const EMPTY_FEED_DISH_COUNT = 6;
 
@@ -295,13 +323,13 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const fetchActivityEvents = useActivityStore((state) => state.fetchActivityEvents);
   const updateUnreadCount = useMemo(
     () =>
+      // Same source and recipient filter as the Activity inbox, so the counts match.
       getActivityUnreadCount(
         readActivityIds,
-        serviceProviderMode === "mock"
-          ? activityUpdates
-          : [...dbActivityEvents, ...activityUpdates],
+        selectActivitySourceUpdates(serviceProviderMode, dbActivityEvents, activityUpdates),
+        profile.id,
       ),
-    [readActivityIds, activityUpdates, dbActivityEvents, serviceProviderMode],
+    [readActivityIds, activityUpdates, dbActivityEvents, profile.id, serviceProviderMode],
   );
   const directMessagesEnabled = FEATURE_FLAGS.directMessagesEnabled;
   const commentsEnabled = FEATURE_FLAGS.commentsEnabled;
@@ -323,7 +351,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       return true;
     }
     setReturnRoute({ name: "MainTabs", params: { screen: "Home" } });
-    showToast({ message: "Sign in to save or react to posts.", tone: "warning" });
+    showToast({ message: "Sign in to react, comment or follow.", tone: "warning" });
     navigation.navigate("AuthStack", { screen: "Login" });
     return false;
   }, [isAuthenticated, navigation, setReturnRoute, showToast]);
@@ -385,6 +413,11 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const [captionOverflowByPostId, setCaptionOverflowByPostId] = useState<Record<string, boolean>>(
     {},
   );
+  const [expandedCaptionByPostId, setExpandedCaptionByPostId] = useState<Record<string, boolean>>(
+    {},
+  );
+  // The one video that may play: the most visible video card.
+  const [activeVideoPostId, setActiveVideoPostId] = useState<string | null>(null);
   const [carouselIndexByPostId, setCarouselIndexByPostId] = useState<Record<string, number>>({});
   const [openingUnseenStoryId, setOpeningUnseenStoryId] = useState<string | null>(null);
   const [openingUnseenStoryDisplayName, setOpeningUnseenStoryDisplayName] = useState<string | null>(
@@ -422,6 +455,15 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const lastLoadedFeedAtRef = useRef(0);
   const lastLoadedFeedKeyRef = useRef<string | null>(null);
   const socialFeedListRef = useRef<FlashListRef<HomeFeedItem> | null>(null);
+  const handleViewableItemsChanged = useCallback(
+    ({ viewableItems }: { viewableItems: { item?: HomeFeedItem; isViewable: boolean }[] }) => {
+      const firstVideo = viewableItems.find(
+        (token) => token.isViewable && token.item?.mediaType === "video",
+      );
+      setActiveVideoPostId(firstVideo?.item?.id ?? null);
+    },
+    [],
+  );
   const reviewFeedScrollRef = useRef<ScrollView | null>(null);
   const profileFeedKey = useMemo(() => {
     const tasteSignature = Object.entries(profile.tasteVector)
@@ -493,6 +535,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         lastLoadedFeedAtRef.current = Date.now();
         setFeedError("");
         setFeedState("ready");
+        trackAnalyticsEvent("home_feed_viewed", { post_count: bundle.socialFeed.length });
       } catch (error) {
         setFeedError(error instanceof Error ? error.message : "Unable to load home feed.");
         if (activeFeedLoadIdRef.current !== loadId) {
@@ -689,20 +732,32 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     if (!FEATURE_FLAGS.directMessagesEnabled) return;
     if (!activeShareItem || selectedShareChatIds.length === 0) return;
 
-    try {
-      await Promise.all(
-        selectedShareChatIds.map((chatId) =>
-          sharePostToChat(chatId, {
-            postId: activeShareItem.id,
-            title: activeShareItem.dishes[0]?.name ?? activeShareItem.venue.name,
-            subtitle: `${activeShareItem.venue.name} · ${activeShareItem.authorName}`,
-            imageUrl: activeShareItem.mediaUrl,
-            authorName: activeShareItem.authorName,
-          }),
-        ),
-      );
-    } catch {
+    const results = await Promise.allSettled(
+      selectedShareChatIds.map((chatId) =>
+        sharePostToChat(chatId, {
+          postId: activeShareItem.id,
+          title: activeShareItem.dishes[0]?.name ?? activeShareItem.venue.name,
+          subtitle: `${activeShareItem.venue.name} · ${activeShareItem.authorName}`,
+          imageUrl: activeShareItem.mediaUrl,
+          authorName: activeShareItem.authorName,
+        }),
+      ),
+    );
+    const failedChatIds = selectedShareChatIds.filter(
+      (_chatId, index) => results[index]?.status === "rejected",
+    );
+    if (failedChatIds.length === selectedShareChatIds.length) {
       Alert.alert("Could not share post", "Please try again.");
+      return;
+    }
+    if (failedChatIds.length > 0) {
+      // Keep only the chats that failed selected, so a retry does not resend.
+      setSelectedShareChatIds(failedChatIds);
+      Alert.alert(
+        "Shared to some chats",
+        `Could not send to ${failedChatIds.length} chat${failedChatIds.length === 1 ? "" : "s"}. Try again for those.`,
+      );
+      incrementPostShare(activeShareItem.id, "in_app");
       return;
     }
     incrementPostShare(activeShareItem.id, "in_app");
@@ -822,9 +877,16 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const handlePostSave = useCallback(
     (item: HomeFeedItem) => {
       if (!requireAuthForPostAction()) return;
+      const wasSaved = Boolean(useSocialStore.getState().interactions[item.id]?.saved);
       void togglePostSave(item.id);
       const primaryDish = item.dishes?.[0];
-      if (primaryDish?.id) {
+      // Saving a post also saves its dish, but never un-saves a dish the user
+      // already had, and unsaving the post leaves the dish alone.
+      if (
+        !wasSaved &&
+        primaryDish?.id &&
+        !useProfileStore.getState().profile.favouriteDishIds.includes(primaryDish.id)
+      ) {
         requestAnimationFrame(() => {
           toggleFavourite(primaryDish);
         });
@@ -850,20 +912,11 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       return [];
     }
 
-    const seededComments: SocialComment[] = (activeCommentItem.dishes[0]?.reviews ?? []).map(
-      (review) => ({
-        id: review.id,
-        userId: review.authorId,
-        authorName: review.authorName,
-        authorAvatarUrl: undefined,
-        text: review.text,
-        createdAt: new Date().toISOString(),
-      }),
-    );
-
+    // Only the post's own comments: dish reviews are not comments (they read as
+    // "now" and cannot be replied to).
     const localComments = commentsByPostId[activeCommentItem.id] ?? [];
 
-    return [...seededComments, ...localComments]
+    return [...localComments]
       .filter((comment) => !isContentHiddenForSession({ id: comment.id, authorId: comment.userId }))
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     // blockedAuthorsVersion re-runs the session block filter after a block.
@@ -885,6 +938,10 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
 
   const handlePostCommentOrReply = useCallback(() => {
     if (!activeCommentItem || !draftComment.trim().length) return;
+    if (!requireAuthForPostAction()) {
+      commentsSheetRef.current?.dismiss();
+      return;
+    }
 
     if (activeReplyCommentId) {
       const newReply: SocialReply = {
@@ -922,6 +979,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     profile.id,
     profile.avatarUrl,
     profile.displayName,
+    requireAuthForPostAction,
   ]);
 
   const themeTints = useMemo(() => {
@@ -1247,7 +1305,11 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         );
         const postTags =
           (item.tags?.length ? item.tags : item.dishes[0]?.tasteTags)?.slice(0, 4) ?? [];
-        const captionOverflows = Boolean(captionOverflowByPostId[item.id]);
+        // onTextLayout may not report lines on Android: length is the fallback signal.
+        const captionOverflows =
+          Boolean(captionOverflowByPostId[item.id]) ||
+          item.caption.length > COLLAPSED_CAPTION_MAX_CHARS;
+        const isCaptionExpanded = Boolean(expandedCaptionByPostId[item.id]);
         const actionTargetName = item.dishes[0]?.name ?? item.venue.name;
         const shouldShowFoodContextOverlay = item.showFoodContextOverlay !== false;
 
@@ -1336,16 +1398,18 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                     accessibilityRole="button"
                     accessibilityLabel={`${isFollowRequested ? "Cancel follow request to" : isFollowingAuthor ? "Unfollow" : "Follow"} ${item.authorName}`}
                     hitSlop={8}
-                    onPress={() =>
-                      followTargetId
+                    onPress={() => {
+                      if (!requireAuthForPostAction()) return;
+                      void (followTargetId
                         ? toggleFollow(followTargetId)
-                        : toggleAuthorFollow(item.authorName)
-                    }
+                        : toggleAuthorFollow(item.authorName));
+                    }}
                     style={[
                       styles.followButton,
                       {
-                        backgroundColor: isFollowMuted ? themeTints.cardBg : palette.orange,
-                        borderColor: isFollowMuted ? palette.border : palette.orange,
+                        // orangeControl keeps the white micro label above 4.5:1.
+                        backgroundColor: isFollowMuted ? themeTints.cardBg : palette.orangeControl,
+                        borderColor: isFollowMuted ? palette.border : palette.orangeControl,
                       },
                     ]}
                   >
@@ -1453,6 +1517,15 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                   }`}
                   accessibilityHint="Opens this media and supports double tap to like"
                   onPress={(event) => handlePostImagePress(item, event)}
+                  isActive={activeVideoPostId === item.id}
+                  onDoubleTap={(origin) => {
+                    if (!interactions[item.id]?.liked) {
+                      handlePostLike(item);
+                    } else {
+                      void triggerDoubleTapHaptic();
+                    }
+                    runDoubleTapHeartAnimation(item.id, origin);
+                  }}
                   style={styles.heroImage}
                 />
               )}
@@ -1475,14 +1548,6 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                       />
                     );
                   })}
-                </View>
-              ) : null}
-
-              {item.mediaType === "video" ? (
-                <View pointerEvents="none" style={styles.playButtonContainer}>
-                  <View style={styles.playButtonBackdrop}>
-                    <PlayCircle color={palette.white} size={54} strokeWidth={1.4} />
-                  </View>
                 </View>
               ) : null}
 
@@ -1700,63 +1765,49 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
 
               {/* Row 2: Caption */}
               <View style={{ gap: spacing[1] }}>
-                {commentsEnabled ? (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Read comments for ${item.authorName}'s post`}
-                    onPress={() => openComments(item)}
-                    hitSlop={6}
+                {/* A collapsed caption expands in place; comments stay on the comment button. */}
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    captionOverflows && !isCaptionExpanded
+                      ? `Show the full caption of ${item.authorName}'s post`
+                      : `Open ${item.authorName}'s post`
+                  }
+                  accessibilityState={
+                    captionOverflows ? { expanded: isCaptionExpanded } : undefined
+                  }
+                  onPress={() => {
+                    if (captionOverflows && !isCaptionExpanded) {
+                      setExpandedCaptionByPostId((current) => ({ ...current, [item.id]: true }));
+                      return;
+                    }
+                    navigation.navigate("ActivityPostDetail", { postId: item.id });
+                  }}
+                  hitSlop={6}
+                >
+                  <AppText
+                    variant="bodySmall"
+                    numberOfLines={isCaptionExpanded ? undefined : 2}
+                    onTextLayout={(event) => handleCaptionTextLayout(item.id, event)}
+                    style={{
+                      color: themeTints.text,
+                      textAlign: profile.leftHandedMode ? "right" : "left",
+                      marginTop: spacing[1],
+                    }}
                   >
-                    <AppText
-                      variant="bodySmall"
-                      numberOfLines={2}
-                      onTextLayout={(event) => handleCaptionTextLayout(item.id, event)}
-                      style={{
-                        color: themeTints.text,
-                        textAlign: profile.leftHandedMode ? "right" : "left",
-                        marginTop: spacing[1],
-                      }}
-                    >
-                      {captionOverflows ? formatCollapsedCaption(item.caption) : item.caption}
-                      {captionOverflows ? (
-                        <AppText
-                          variant="bodySmall"
-                          style={{ color: palette.orange, fontWeight: "900" }}
-                        >
-                          {" more"}
-                        </AppText>
-                      ) : null}
-                    </AppText>
-                  </Pressable>
-                ) : (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Open ${item.authorName}'s post`}
-                    onPress={() => navigation.navigate("ActivityPostDetail", { postId: item.id })}
-                    hitSlop={6}
-                  >
-                    <AppText
-                      variant="bodySmall"
-                      numberOfLines={2}
-                      onTextLayout={(event) => handleCaptionTextLayout(item.id, event)}
-                      style={{
-                        color: themeTints.text,
-                        textAlign: profile.leftHandedMode ? "right" : "left",
-                        marginTop: spacing[1],
-                      }}
-                    >
-                      {captionOverflows ? formatCollapsedCaption(item.caption) : item.caption}
-                      {captionOverflows ? (
-                        <AppText
-                          variant="bodySmall"
-                          style={{ color: palette.orange, fontWeight: "900" }}
-                        >
-                          {" more"}
-                        </AppText>
-                      ) : null}
-                    </AppText>
-                  </Pressable>
-                )}
+                    {captionOverflows && !isCaptionExpanded
+                      ? formatCollapsedCaption(item.caption)
+                      : item.caption}
+                    {captionOverflows && !isCaptionExpanded ? (
+                      <AppText
+                        variant="bodySmall"
+                        style={{ color: palette.orangeText, fontWeight: "900" }}
+                      >
+                        {" more"}
+                      </AppText>
+                    ) : null}
+                  </AppText>
+                </Pressable>
                 <AppText
                   variant="micro"
                   tone="secondary"
@@ -2001,7 +2052,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                 </AppText>
               </View>
               {item.dishes[0]?.price && (
-                <AppText variant="price" style={{ color: palette.orange, fontSize: 14 }}>
+                <AppText variant="price" style={{ color: palette.orangeText, fontSize: 14 }}>
                   S${item.dishes[0].price.toFixed(2)}
                 </AppText>
               )}
@@ -2013,6 +2064,10 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     [
       interactions,
       captionOverflowByPostId,
+      expandedCaptionByPostId,
+      activeVideoPostId,
+      requireAuthForPostAction,
+      runDoubleTapHeartAnimation,
       handleCaptionTextLayout,
       handlePostImagePress,
       heartBurst,
@@ -2028,6 +2083,8 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       palette.error,
       palette.text,
       palette.orange,
+      palette.orangeControl,
+      palette.orangeText,
       palette.amber,
       palette.bgSoft,
       spacing,
@@ -2066,18 +2123,15 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
           }}
         >
           {mode === "social" ? (
-            <View
-              style={{
-                alignItems: "center",
-                flex: 1,
-                gap: spacing[3],
-                justifyContent: "center",
-                paddingHorizontal: spacing[3],
-              }}
+            <ScrollView
+              scrollEnabled={false}
+              accessibilityLabel="Loading your food feed"
+              accessibilityState={{ busy: true }}
             >
-              <ActivityIndicator color={palette.orange} />
-              <AppText tone="secondary">Loading your food feed...</AppText>
-            </View>
+              {listHeader}
+              <PostSkeleton />
+              <PostSkeleton />
+            </ScrollView>
           ) : (
             <ScrollView scrollEnabled={false}>
               {renderHeader()}
@@ -2139,8 +2193,8 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
               keyExtractor={keyExtractor}
               ListHeaderComponent={listHeader}
               renderItem={({ item, index }) => renderFeedCard(item, "social", index)}
-              // @ts-ignore
-              estimatedItemSize={500}
+              viewabilityConfig={VIDEO_VIEWABILITY_CONFIG}
+              onViewableItemsChanged={handleViewableItemsChanged}
               ListEmptyComponent={
                 <HomeEmptyFeed
                   title="No posts yet"
@@ -2295,6 +2349,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                       </AppText>
                       <Pressable
                         onPress={() => setActiveReplyCommentId(null)}
+                        hitSlop={15}
                         accessibilityRole="button"
                         accessibilityLabel="Cancel reply"
                         accessibilityHint="Stops replying to the selected comment"
@@ -2325,13 +2380,17 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                     <Pressable
                       onPress={handlePostCommentOrReply}
                       disabled={!draftComment.trim().length}
+                      accessibilityRole="button"
+                      accessibilityLabel={activeReplyCommentId ? "Post reply" : "Post comment"}
+                      accessibilityState={{ disabled: !draftComment.trim().length }}
                       style={{
+                        minHeight: 44,
                         paddingHorizontal: spacing[3],
                         paddingVertical: spacing[3],
                         opacity: draftComment.trim().length ? 1 : 0.5,
                       }}
                     >
-                      <AppText variant="bodyBold" style={{ color: palette.orange }}>
+                      <AppText variant="bodyBold" style={{ color: palette.orangeText }}>
                         Post
                       </AppText>
                     </Pressable>
@@ -2438,6 +2497,9 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                             setActiveReplyCommentId(comment.id);
                             commentInputRef.current?.focus();
                           }}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Reply to ${comment.authorName}`}
+                          hitSlop={12}
                           style={{ marginTop: 4 }}
                         >
                           <AppText
@@ -2680,16 +2742,16 @@ const createStyles = ({ palette, spacing, radii }: ReturnType<typeof useHungryTh
       borderRadius: radii.pill,
       borderWidth: 1,
       justifyContent: "center",
-      minHeight: 32,
+      minHeight: 44,
       minWidth: 78,
       paddingHorizontal: spacing[3],
     },
     moreAction: {
       alignItems: "center",
       borderRadius: radii.pill,
-      height: 32,
+      height: 44,
       justifyContent: "center",
-      width: 32,
+      width: 44,
     },
     carouselPage: {
       overflow: "hidden",
