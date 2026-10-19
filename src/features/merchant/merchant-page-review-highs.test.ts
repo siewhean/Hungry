@@ -58,7 +58,7 @@ test("H4/H5: editors open fresh and Back follows history in the merchant tabs", 
   for (const name of ["DishEditor", "PromotionBuilder"]) {
     assert.match(
       tabs,
-      new RegExp(`name="${name}"[\\s\\S]*?layout=\\{FreshEditorLayout\\}`),
+      new RegExp(`name="${name}"[\\s\\S]*?layout=\\{renderFreshEditorLayout\\}`),
       `${name} remounts on each open`,
     );
   }

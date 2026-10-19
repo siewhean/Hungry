@@ -329,6 +329,12 @@ function FreshEditorLayout({
   );
 }
 
+// Navigators call `layout` as a plain function during their own render, so wrap it in an
+// element; otherwise FreshEditorLayout's hooks would run inside the tab navigator.
+const renderFreshEditorLayout = (props: React.ComponentProps<typeof FreshEditorLayout>) => (
+  <FreshEditorLayout {...props} />
+);
+
 export function MerchantTabs() {
   const { palette, spacing } = useHungryTheme();
   const navigation = useNavigation<NavigationProp<MerchantTabParamList>>();
@@ -517,7 +523,7 @@ export function MerchantTabs() {
         name="DishEditor"
         getComponent={loadDishEditorScreen}
         options={{ tabBarStyle: { display: "none" } }}
-        layout={FreshEditorLayout}
+        layout={renderFreshEditorLayout}
       />
       <Tab.Screen
         name="OCRDrafts"
@@ -533,7 +539,7 @@ export function MerchantTabs() {
         name="PromotionBuilder"
         getComponent={loadPromotionBuilderScreen}
         options={{ tabBarStyle: { display: "none" } }}
-        layout={FreshEditorLayout}
+        layout={renderFreshEditorLayout}
       />
       <Tab.Screen
         name="AIAssistant"
