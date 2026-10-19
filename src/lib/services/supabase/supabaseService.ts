@@ -902,6 +902,7 @@ async function uploadReviewPhotos(
 async function mapSupabaseReviewRows(
   client: SupabaseClient,
   rows: Row[],
+  options: { includePhotos?: boolean } = {},
 ): Promise<DishDetail["reviews"]> {
   const reviewIds = rows.map((row) => asString(row.id)).filter((id): id is string => Boolean(id));
   const userIds = rows
@@ -911,7 +912,7 @@ async function mapSupabaseReviewRows(
   const namesByUserId = new Map<string, string>();
   const avatarsByUserId = new Map<string, string>();
 
-  if (reviewIds.length > 0) {
+  if (options.includePhotos !== false && reviewIds.length > 0) {
     const { data: photoRows } = await client
       .from("review_photos")
       .select("review_id,url,storage_bucket,storage_path,sort_order")
@@ -919,18 +920,27 @@ async function mapSupabaseReviewRows(
       .order("sort_order", { ascending: true });
 
     if (Array.isArray(photoRows)) {
-      for (const photoRow of photoRows as Row[]) {
-        const reviewId = asString(photoRow.review_id);
-        if (!reviewId) continue;
-        const bucket = asString(photoRow.storage_bucket) || "review-media";
-        const path = asString(photoRow.storage_path);
-        const legacyUrl = asString(photoRow.url);
-        const displayUrl =
-          path && bucket === "review-media"
-            ? ((await createSignedStorageUrl(client, bucket, path)) ?? legacyUrl)
-            : legacyUrl;
-        if (!displayUrl) continue;
-        photosByReviewId.set(reviewId, [...(photosByReviewId.get(reviewId) ?? []), displayUrl]);
+      // Sign every photo URL in parallel rather than one round trip at a time.
+      const signedPhotos = await Promise.all(
+        (photoRows as Row[]).map(async (photoRow) => {
+          const reviewId = asString(photoRow.review_id);
+          if (!reviewId) return undefined;
+          const bucket = asString(photoRow.storage_bucket) || "review-media";
+          const path = asString(photoRow.storage_path);
+          const legacyUrl = asString(photoRow.url);
+          const displayUrl =
+            path && bucket === "review-media"
+              ? ((await createSignedStorageUrl(client, bucket, path)) ?? legacyUrl)
+              : legacyUrl;
+          return displayUrl ? { reviewId, displayUrl } : undefined;
+        }),
+      );
+      for (const photo of signedPhotos) {
+        if (!photo) continue;
+        photosByReviewId.set(photo.reviewId, [
+          ...(photosByReviewId.get(photo.reviewId) ?? []),
+          photo.displayUrl,
+        ]);
       }
     }
   }
@@ -3339,6 +3349,7 @@ export const supabaseService: HungryService = {
     async listRecentReviews(options) {
       const client = requireSupabaseClient();
       const limit = Math.min(Math.max(Math.floor(options?.limit ?? 50), 1), 100);
+      if (options?.dishIds && options.dishIds.length === 0) return [];
       let query = client
         .from("reviews")
         .select(
@@ -3348,6 +3359,9 @@ export const supabaseService: HungryService = {
         .limit(limit);
       if (options?.before) {
         query = query.lt("created_at", options.before);
+      }
+      if (options?.dishIds) {
+        query = query.in("dish_id", options.dishIds);
       }
       const { data, error } = await query;
       if (error) throw error;
@@ -3393,7 +3407,10 @@ export const supabaseService: HungryService = {
         }
       }
 
-      const reviews = await mapSupabaseReviewRows(client, rows);
+      // A stall's review list (dishIds) never renders photos, so skip signing them.
+      const reviews = await mapSupabaseReviewRows(client, rows, {
+        includePhotos: !options?.dishIds,
+      });
       return reviews.flatMap((review): RecentReviewFeedEntry[] => {
         const dish = review.dishId ? dishById.get(review.dishId) : undefined;
         // Reviews of dishes the catalog cannot display are skipped.

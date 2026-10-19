@@ -143,7 +143,8 @@ test("full project audit P1: numeric trust surfaces disclose live or preview dat
   assert.match(disclosure, /Preview score/);
   assert.match(disclosure, /Live map status/);
   assert.match(disclosure, /Preview map status/);
-  assert.match(disclosure, /Live wait estimate/);
+  assert.match(disclosure, /Listed wait estimate/);
+  assert.doesNotMatch(disclosure, /Live wait estimate/);
   assert.match(disclosure, /Preview wait estimate/);
   assert.match(merchantAnalytics, /getDataTrustDisclosure\("merchantAnalytics"\)/);
   assert.match(merchantDashboard, /getDataTrustDisclosure\("merchantAnalytics"\)/);

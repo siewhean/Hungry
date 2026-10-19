@@ -22,11 +22,36 @@ test("buildDishGallery keeps hero first and removes duplicate URLs", () => {
   ]);
 });
 
-test("deriveStallCommunityReviews flattens dish reviews with deterministic metadata", () => {
-  const reviews = deriveStallCommunityReviews(dishes.slice(0, 2));
+test("deriveStallCommunityReviews keeps the newest reviews across dishes and names each dish", () => {
+  const entries = dishes.slice(0, 3).flatMap((dish) =>
+    dish.reviews.map((review) => ({
+      review,
+      dishId: dish.id,
+      dishName: dish.name,
+      venueId: dish.venueId,
+      venueName: dish.venueName,
+    })),
+  );
+  const reviews = deriveStallCommunityReviews(entries, 4);
 
   assert.ok(reviews.length > 0);
-  assert.ok(reviews.every((entry) => entry.avatarUrl.startsWith("https://images.unsplash.com/")));
-  assert.ok(reviews.every((entry) => entry.role.length > 0));
+  assert.ok(reviews.length <= 4);
+  for (let index = 1; index < reviews.length; index += 1) {
+    assert.ok(
+      new Date(reviews[index - 1].createdAt).getTime() >=
+        new Date(reviews[index].createdAt).getTime(),
+    );
+  }
   assert.ok(reviews.every((entry) => entry.dishName.length > 0));
+});
+
+test("deriveStallCommunityReviews never invents an avatar or a reviewer role", () => {
+  const [dish] = dishes;
+  const review = { ...dish.reviews[0], authorAvatarUrl: undefined };
+  const [entry] = deriveStallCommunityReviews([
+    { review, dishId: dish.id, dishName: dish.name, venueId: dish.venueId, venueName: "" },
+  ]);
+
+  assert.equal(entry.avatarUrl, undefined);
+  assert.equal("role" in entry, false);
 });

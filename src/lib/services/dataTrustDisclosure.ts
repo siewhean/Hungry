@@ -12,7 +12,8 @@ const LIVE_LABELS: Record<DataTrustSurface, string> = {
   missions: "Live mission progress",
   foodCred: "Live score",
   mapStatus: "Live map status",
-  waitEstimate: "Live wait estimate",
+  // venues.live_crowd is a stored listing value, not a live feed.
+  waitEstimate: "Listed wait estimate",
 };
 
 const PREVIEW_LABELS: Record<DataTrustSurface, string> = {
