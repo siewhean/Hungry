@@ -307,19 +307,27 @@ test("merchant inbox, promotions, AI assistant, and settings use service-backed 
       /merchant\.getMerchantNotifications\(/,
       /merchant\.getWeeklySummaryStats\(/,
       /merchant\.syncLowRatingNotifications\(/,
-      /Hungry does not send push or email alerts to merchants yet/,
+      // Low-rating push alerts are real (reviews trigger -> notification_jobs -> send-notifications).
+      /merchant\.getNotificationPreferences\(/,
+      /merchant\.updateNotificationPreferences\(account\.id, \{\s*lowRatingAlerts: enabled,/,
+      /label="Low-rating push alerts"/,
+      /registerForStallAlerts\(\{ askPermission: false \}\)/,
+      /Hungry sends low-rating push alerts/,
+      /Email alerts and weekly emails are not sent\./,
     ],
     "MerchantSettingsScreen",
   );
-  // Team invites, alert preferences and weekly emails are not delivered yet, so they are hidden.
+  // Team invites and weekly emails are not delivered, so they stay hidden.
   assertSourceExcludes(
     settings,
     [
       /merchant\.addTeamMember\(/,
       /merchant\.sendWeeklySummaryNotifications\(/,
-      /merchant\.updateNotificationPreferences\(/,
+      /Hungry does not send push or email alerts/,
+      /weeklyDigest/,
       /Immediate alert/,
       /Weekly email summary/,
+      /Send weekly summary/,
     ],
     "MerchantSettingsScreen hidden fake features",
   );

@@ -3,11 +3,13 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
 import { timingSafeEqual } from "../_shared/timingSafeEqual.ts";
 
-// Drains public.notification_jobs (filled by the dishes trigger and the weekly
-// picks cron) and sends Expo pushes. Each job is rechecked before sending: the
-// user still opted in, the dish (if any) still exists and is not sold out,
-// outside the user's quiet hours (Singapore time), under their weekly cap, and
-// not older than 48 hours.
+// Drains public.notification_jobs (filled by the dishes trigger, the weekly
+// picks cron and the merchant low-rating reviews trigger) and sends Expo
+// pushes. Each job is rechecked before sending: the user (or, for low-rating
+// alerts, the merchant account) still opted in, the dish (if any) still exists
+// and is not sold out, the review (if any) is not hidden by moderation, outside
+// the user's quiet hours (Singapore time), under their weekly cap (consumer
+// pushes only), and not older than 48 hours.
 
 type JsonObject = Record<string, unknown>;
 
@@ -27,6 +29,7 @@ const STALE_AFTER_MS = 48 * 60 * 60 * 1000;
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
 const ANDROID_CHANNEL_ID = "stall-updates";
+const MERCHANT_LOW_RATING = "merchant_low_rating";
 
 function toJson(status: number, body: JsonObject): Response {
   return new Response(JSON.stringify(body), {
@@ -98,23 +101,60 @@ Deno.serve(async (request) => {
 
   const now = new Date();
   const userIds = [...new Set(jobs.map((job) => job.user_id))];
-  const dishIds = [...new Set(jobs.map((job) => job.dish_id).filter(Boolean))];
+  const merchantJobs = jobs.filter((job) => job.category === MERCHANT_LOW_RATING);
+  const dishIds = [
+    ...new Set(
+      jobs
+        .filter((job) => job.category !== MERCHANT_LOW_RATING)
+        .map((job) => job.dish_id)
+        .filter(Boolean),
+    ),
+  ];
+  const reviewIds = [...new Set(merchantJobs.map((job) => job.review_id).filter(Boolean))];
+  const merchantAccountIds = [
+    ...new Set(merchantJobs.map((job) => job.merchant_account_id).filter(Boolean)),
+  ];
 
-  const [{ data: prefs }, { data: tokens }, { data: dishes }, { data: recentSent }] =
-    await Promise.all([
-      client.from("notification_preferences").select("*").in("user_id", userIds),
-      client.from("user_push_tokens").select("token, user_id").in("user_id", userIds),
-      client.from("dishes").select("id, availability_flags").in("id", dishIds),
-      client
-        .from("notification_jobs")
-        .select("user_id")
-        .eq("status", "sent")
-        .gte("sent_at", new Date(now.getTime() - WEEK_MS).toISOString())
-        .in("user_id", userIds),
-    ]);
+  const [
+    { data: prefs },
+    { data: tokens },
+    { data: dishes },
+    { data: recentSent },
+    { data: reviews },
+    { data: hiddenReviews },
+    { data: merchantPrefs },
+  ] = await Promise.all([
+    client.from("notification_preferences").select("*").in("user_id", userIds),
+    client.from("user_push_tokens").select("token, user_id").in("user_id", userIds),
+    client.from("dishes").select("id, availability_flags").in("id", dishIds),
+    client
+      .from("notification_jobs")
+      .select("user_id")
+      .eq("status", "sent")
+      .neq("category", MERCHANT_LOW_RATING)
+      .gte("sent_at", new Date(now.getTime() - WEEK_MS).toISOString())
+      .in("user_id", userIds),
+    client.from("reviews").select("id").in("id", reviewIds),
+    client
+      .from("review_moderation_states")
+      .select("review_id")
+      .in("state", ["hidden", "removed"])
+      .in("review_id", reviewIds),
+    client
+      .from("merchant_notification_preferences")
+      .select("merchant_account_id, low_rating_alerts")
+      .in("merchant_account_id", merchantAccountIds),
+  ]);
 
   const prefsByUser = new Map((prefs ?? []).map((row) => [row.user_id, row]));
   const dishesById = new Map((dishes ?? []).map((row) => [row.id, row]));
+  const liveReviewIds = new Set((reviews ?? []).map((row) => row.id));
+  for (const row of hiddenReviews ?? []) liveReviewIds.delete(row.review_id);
+  const lowRatingOffAccounts = new Set(
+    (merchantPrefs ?? [])
+      .filter((row) => row.low_rating_alerts === false)
+      .map((row) => row.merchant_account_id),
+  );
   const tokensByUser = new Map<string, string[]>();
   for (const row of tokens ?? []) {
     tokensByUser.set(row.user_id, [...(tokensByUser.get(row.user_id) ?? []), row.token]);
@@ -137,15 +177,28 @@ Deno.serve(async (request) => {
   for (const job of jobs) {
     const pref = { ...DEFAULT_PREFERENCES, ...(prefsByUser.get(job.user_id) ?? {}) };
     const isWeeklyPicks = job.category === "weekly_picks";
+    const isLowRating = job.category === MERCHANT_LOW_RATING;
     const dish = job.dish_id ? dishesById.get(job.dish_id) : null;
     let skipReason: string | null = null;
 
-    if (isWeeklyPicks ? !pref.weekly_picks : !pref.stall_updates) skipReason = "opted_out";
+    if (
+      isLowRating
+        ? lowRatingOffAccounts.has(job.merchant_account_id)
+        : isWeeklyPicks
+          ? !pref.weekly_picks
+          : !pref.stall_updates
+    )
+      skipReason = "opted_out";
     else if (now.getTime() - new Date(job.created_at).getTime() > STALE_AFTER_MS)
       skipReason = "stale";
-    else if (!isWeeklyPicks && (!dish || isSoldOut(dish.availability_flags)))
+    else if (
+      isLowRating
+        ? !liveReviewIds.has(job.review_id)
+        : !isWeeklyPicks && (!dish || isSoldOut(dish.availability_flags))
+    )
       skipReason = "no_longer_relevant";
-    else if ((sentThisWeek.get(job.user_id) ?? 0) >= pref.weekly_cap) skipReason = "weekly_cap";
+    else if (!isLowRating && (sentThisWeek.get(job.user_id) ?? 0) >= pref.weekly_cap)
+      skipReason = "weekly_cap";
     else if (!(tokensByUser.get(job.user_id) ?? []).length) skipReason = "no_device";
 
     if (skipReason) {
@@ -196,7 +249,7 @@ Deno.serve(async (request) => {
 
     if (delivered) {
       results.sent += 1;
-      sentThisWeek.set(job.user_id, (sentThisWeek.get(job.user_id) ?? 0) + 1);
+      if (!isLowRating) sentThisWeek.set(job.user_id, (sentThisWeek.get(job.user_id) ?? 0) + 1);
       await finish(job.id, { status: "sent", sent_at: new Date().toISOString() });
     } else {
       results.failed += 1;

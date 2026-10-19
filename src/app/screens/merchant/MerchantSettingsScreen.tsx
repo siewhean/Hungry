@@ -1,6 +1,6 @@
 import React, { useCallback, useState, useEffect } from "react";
 import { View, Alert } from "react-native";
-import { Shield, HelpCircle, LogOut, X } from "lucide-react-native";
+import { BellRing, Shield, HelpCircle, LogOut, X } from "lucide-react-native";
 import { CommonActions, useNavigation } from "@react-navigation/native";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
@@ -10,6 +10,7 @@ import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
+import { registerForStallAlerts } from "@/lib/notifications/push";
 import type { MerchantNotification, MerchantWeeklySummary } from "@/types/domain";
 import { WEB_LINKS } from "@/constants/links";
 
@@ -22,6 +23,9 @@ export function MerchantSettingsScreen() {
 
   const [merchantNotifications, setMerchantNotifications] = useState<MerchantNotification[]>([]);
   const [weeklySummary, setWeeklySummary] = useState<MerchantWeeklySummary | null>(null);
+  const [lowRatingAlerts, setLowRatingAlerts] = useState(true);
+  const [isDeviceRegistered, setIsDeviceRegistered] = useState(false);
+  const [isSavingAlerts, setIsSavingAlerts] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,16 +40,22 @@ export function MerchantSettingsScreen() {
 
     try {
       const service = getHungryService();
-      // Team invites, push/email alerts and notification preferences are not delivered yet,
-      // so this screen only shows the in-app alerts and the weekly numbers.
-      const [notes, summary] = await Promise.all([
+      // Low-rating push alerts are the only merchant alert Hungry delivers. Team invites,
+      // email alerts and the weekly email are not offered.
+      const [notes, summary, prefs] = await Promise.all([
         service.merchant.getMerchantNotifications(account.id),
         activeOutlet
           ? service.merchant.getWeeklySummaryStats(activeOutlet.id)
           : Promise.resolve(null),
+        service.merchant.getNotificationPreferences(account.id),
       ]);
       setMerchantNotifications(notes);
       setWeeklySummary(summary);
+      setLowRatingAlerts(prefs.lowRatingAlerts);
+      // Keeps this phone's push token current without prompting for permission.
+      void registerForStallAlerts({ askPermission: false })
+        .then(setIsDeviceRegistered)
+        .catch(() => setIsDeviceRegistered(false));
       if (activeOutlet) {
         void service.merchant.syncLowRatingNotifications(activeOutlet.id).then(async () => {
           setMerchantNotifications(await service.merchant.getMerchantNotifications(account.id));
@@ -110,6 +120,35 @@ export function MerchantSettingsScreen() {
     );
   };
 
+  const handleToggleLowRatingAlerts = async (enabled: boolean) => {
+    if (!account || isSavingAlerts) return;
+    setIsSavingAlerts(true);
+    try {
+      if (enabled) setIsDeviceRegistered(await registerForStallAlerts());
+      await getHungryService().merchant.updateNotificationPreferences(account.id, {
+        lowRatingAlerts: enabled,
+      });
+      setLowRatingAlerts(enabled);
+    } catch {
+      Alert.alert("Error", "Couldn't update low-rating alerts. Please try again.");
+    } finally {
+      setIsSavingAlerts(false);
+    }
+  };
+
+  const handleAllowNotifications = async () => {
+    const registered = await registerForStallAlerts().catch(() => false);
+    setIsDeviceRegistered(registered);
+    if (!registered) {
+      Alert.alert(
+        "Notifications are off",
+        "Allow notifications for Hungry in your phone settings to get low-rating alerts on this phone.",
+      );
+    }
+  };
+
+  const isOutletVerified = activeOutlet?.verification?.status === "verified";
+
   return (
     <Screen title="Settings" contentContainerStyle={{ paddingBottom: spacing[6] }}>
       <View style={{ gap: spacing[5], width: "100%" }}>
@@ -127,11 +166,39 @@ export function MerchantSettingsScreen() {
         </SettingsSection>
 
         <SettingsSection title="Alerts">
+          <SettingsRow
+            label="Low-rating push alerts"
+            description="A push to your phone when a review rated 2 stars or below is posted on your stall."
+            icon={<BellRing size={20} color={palette.textSecondary} />}
+            type="toggle"
+            isEnabled={lowRatingAlerts}
+            onToggle={(value) => void handleToggleLowRatingAlerts(value)}
+            busy={isSavingAlerts}
+          />
           <View style={{ gap: spacing[3], padding: spacing[4] }}>
+            {lowRatingAlerts && !isOutletVerified ? (
+              <AppText variant="bodySmall" tone="muted">
+                Push alerts start once your stall is verified.
+              </AppText>
+            ) : null}
+            {lowRatingAlerts && !isDeviceRegistered ? (
+              <View style={{ gap: spacing[2] }}>
+                <AppText variant="bodySmall" tone="muted">
+                  Notifications are off on this phone, so alerts cannot reach it.
+                </AppText>
+                <Button
+                  label="Allow notifications"
+                  variant="secondary"
+                  size="sm"
+                  onPress={() => void handleAllowNotifications()}
+                />
+              </View>
+            ) : null}
             <AppText variant="bodySmall" tone="muted">
-              Hungry does not send push or email alerts to merchants yet. Reviews rated 2 stars or
-              below are listed here when you open Merchant Centre. Team access is not available yet,
-              so only the account owner can manage this business.
+              Hungry sends low-rating push alerts to the account owner, held until your notification
+              quiet hours end. Email alerts and weekly emails are not sent. Reviews rated 2 stars or
+              below are also listed here. Team access is not available yet, so only the account
+              owner can manage this business.
             </AppText>
             {weeklySummary ? (
               <View style={{ gap: spacing[1] }}>
