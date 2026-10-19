@@ -33,3 +33,9 @@ test("getVenueLogoInitials builds a non-food stall identity fallback", () => {
   assert.equal(getVenueLogoInitials("STARBUCKS COFFEE SINGAPORE PTE. LTD."), "SC");
   assert.equal(getVenueLogoInitials("KFC"), "KF");
 });
+
+test("getVenueLogoCandidates skips favicon fallbacks for stored brand logos", () => {
+  const stored =
+    "https://yrlxjeovwslirseajomz.supabase.co/storage/v1/object/public/brand-logos/subway-1a2b3c4d.jpg";
+  assert.deepEqual(getVenueLogoCandidates(stored), [stored]);
+});
