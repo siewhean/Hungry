@@ -131,13 +131,13 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
   const tasteProfileResult = read("src/app/screens/onboarding/TasteProfileResultScreen.tsx");
   const tasteQuiz = read("src/app/screens/onboarding/TasteQuizScreen.tsx");
 
-  assert.match(locationPermission, /accessibilityLabel="Back to taste quiz"/);
-  assert.match(locationPermission, /accessibilityHint="Returns to the taste preference questions"/);
+  assert.match(locationPermission, /accessibilityLabel="Back to welcome"/);
+  assert.match(locationPermission, /accessibilityHint="Returns to the welcome screen"/);
   assert.match(manualLocation, /accessibilityLabel="Go back"/);
-  // From Settings (already onboarded) Continue saves and returns instead of re-completing onboarding.
+  // From Settings (already onboarded) Continue saves and returns; first run moves on to the quiz.
   assert.match(
     manualLocation,
-    /if \(isSettingsMode \|\| hasCompletedOnboarding\) \{[\s\S]*?navigation\.goBack\(\);[\s\S]*?return;[\s\S]*?completeOnboarding\(hasSkippedTasteQuiz\)/,
+    /if \(!isOnboarding\) \{[\s\S]*?navigation\.goBack\(\);[\s\S]*?return;[\s\S]*?navigation\.navigate\("TasteQuiz"\)/,
   );
   assert.match(manualLocation, /accessibilityLabel="Search Singapore location"/);
   assert.match(manualLocation, /accessibilityLabel=\{`Choose \$\{area\.name\}`\}/);

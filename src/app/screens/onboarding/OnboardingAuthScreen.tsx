@@ -93,10 +93,10 @@ export function OnboardingAuthScreen({ navigation }: Props) {
     loginForm.formState.isSubmitting ||
     providerInFlight !== null;
 
-  // Signing up here happens before the location step; continue onboarding there.
-  // LocationPermission marks onboarding complete like every other path.
+  // Opened just-in-time when an onboarding action needs an account (e.g. saving a
+  // dish on the last step). Return there; that step still completes onboarding.
   const finishOnboarding = () => {
-    navigation.navigate("LocationPermission");
+    navigation.goBack();
   };
 
   const applySessionProfile = async (

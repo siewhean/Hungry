@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import test from "node:test";
 
 import { createRootLinking } from "@/app/navigation/linking";
+import { completeVerifiedSignUp } from "@/features/auth/completeVerifiedSignUp";
 import { rememberShareAttribution, getShareAttribution } from "@/features/share/shareAttribution";
 import { clearTrackedAnalyticsEvents, getTrackedAnalyticsEvents } from "@/lib/analytics";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -143,10 +144,9 @@ test("H115/H116: quiz answers stay a draft until finish and a Profile retake sta
   assert.match(quiz, /flowMode === "profile" \? profile\.tasteVector : INITIAL/);
 });
 
-test("H117: picked cuisines are kept on the profile and sent with the quiz response", () => {
-  assert.match(
-    read("src/app/screens/onboarding/CuisineSelectionScreen.tsx"),
-    /setOnboardingCuisineIds\(selected\)/,
+test("H117: cuisines picked before the cuisine step was cut are still sent with the quiz response", () => {
+  assert.ok(
+    !existsSync(resolve(process.cwd(), "src/app/screens/onboarding/CuisineSelectionScreen.tsx")),
   );
   assert.match(
     read("src/app/screens/onboarding/TasteQuizScreen.tsx"),
@@ -158,6 +158,53 @@ test("H119: picking a location from Settings returns there instead of re-complet
   const picker = read("src/app/screens/onboarding/ManualLocationPickerScreen.tsx");
   assert.match(
     picker,
-    /if \(isSettingsMode \|\| hasCompletedOnboarding\) \{[\s\S]*?navigation\.goBack\(\);\s*return;\s*\}[\s\S]*?completeOnboarding\(hasSkippedTasteQuiz\);/,
+    /if \(!isOnboarding\) \{[\s\S]*?navigation\.goBack\(\);\s*return;\s*\}[\s\S]*?navigation\.navigate\("TasteQuiz"\);/,
+  );
+});
+
+test("H122: onboarding_completed fires once and a returning user's onboarding state is kept", () => {
+  clearTrackedAnalyticsEvents();
+  useSessionStore.setState({ hasCompletedOnboarding: false, hasSkippedTasteQuiz: false });
+  useSessionStore.getState().completeOnboarding(true);
+  useSessionStore.getState().completeOnboarding(false);
+
+  const completions = getTrackedAnalyticsEvents().filter(
+    (record) => record.event === "onboarding_completed",
+  );
+  assert.equal(completions.length, 1);
+  assert.equal(completions[0]?.properties.skipped_quiz, true);
+  assert.equal(useSessionStore.getState().hasCompletedOnboarding, true);
+  assert.equal(useSessionStore.getState().hasSkippedTasteQuiz, true);
+});
+
+test("H122: a guest who signs up from onboarding and confirms their email completes onboarding once", () => {
+  clearTrackedAnalyticsEvents();
+  useSessionStore.setState({
+    hasCompletedOnboarding: false,
+    hasSkippedTasteQuiz: true,
+    isAuthenticated: false,
+  });
+
+  // EmailVerification's confirm for a sign-up that started in OnboardingAuth.
+  completeVerifiedSignUp(true);
+
+  const completions = getTrackedAnalyticsEvents().filter(
+    (record) => record.event === "onboarding_completed",
+  );
+  assert.equal(completions.length, 1);
+  assert.equal(completions[0]?.properties.skipped_quiz, true);
+  const session = useSessionStore.getState();
+  assert.equal(session.hasCompletedOnboarding, true);
+  assert.equal(session.hasSkippedTasteQuiz, true);
+  assert.equal(session.isAuthenticated, true);
+
+  // A plain SignUp confirmation does not complete onboarding.
+  clearTrackedAnalyticsEvents();
+  useSessionStore.setState({ hasCompletedOnboarding: false, isAuthenticated: false });
+  completeVerifiedSignUp(false);
+  assert.equal(useSessionStore.getState().hasCompletedOnboarding, false);
+  assert.equal(
+    getTrackedAnalyticsEvents().filter((record) => record.event === "onboarding_completed").length,
+    0,
   );
 });

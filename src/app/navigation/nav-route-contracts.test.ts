@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 
@@ -9,38 +9,71 @@ function read(relativePath: string): string {
   return readFileSync(path.join(root, relativePath), "utf8");
 }
 
-test("onboarding typed routes are registered and flow through cuisine, taste, and dietary setup", () => {
+test("onboarding is about four steps: welcome, location, optional taste quiz, done", () => {
   const types = read("src/app/navigation/navigationTypes.ts");
   const stack = read("src/app/screens/onboarding/OnboardingStack.tsx");
+  const progress = read("src/app/screens/onboarding/OnboardingProgress.tsx");
   const welcome = read("src/app/screens/onboarding/WelcomeScreen.tsx");
-  const intro1 = read("src/app/screens/onboarding/OnboardingIntro1Screen.tsx");
-  const introTemplate = read("src/app/screens/onboarding/OnboardingIntroTemplate.tsx");
-  const cuisines = read("src/app/screens/onboarding/CuisineSelectionScreen.tsx");
+  const location = read("src/app/screens/onboarding/LocationPermissionScreen.tsx");
+  const picker = read("src/app/screens/onboarding/ManualLocationPickerScreen.tsx");
   const quiz = read("src/app/screens/onboarding/TasteQuizScreen.tsx");
-  const result = read("src/app/screens/onboarding/TasteProfileResultScreen.tsx");
+  const done = read("src/app/screens/onboarding/TasteProfileResultScreen.tsx");
+  const onboardingAuth = read("src/app/screens/onboarding/OnboardingAuthScreen.tsx");
 
-  for (const routeName of ["CuisineSelection", "DietaryPreferences"]) {
-    assert.match(types, new RegExp(`${routeName}:`));
+  for (const routeName of [
+    "OnboardingWelcome",
+    "LocationPermission",
+    "ManualLocationPicker",
+    "TasteQuiz",
+    "DietaryPreferences",
+    "TasteProfileResult",
+    "OnboardingAuth",
+  ]) {
+    assert.match(types, new RegExp(`\\b${routeName}:`));
     assert.match(stack, new RegExp(`name="${routeName}"`));
   }
-
-  // Short flow: Welcome -> Cuisine (+ optional dishes) -> quiz -> dietary -> result -> location.
+  // Intro, cuisine and other redundant screens are gone from the flow.
   for (const removed of [
+    "OnboardingIntro1",
     "OnboardingIntro2",
     "OnboardingIntro3",
+    "CuisineSelection",
     "FoodSelection",
     "TasteProfileLoading",
   ]) {
     assert.doesNotMatch(stack, new RegExp(`name="${removed}"`));
     assert.doesNotMatch(types, new RegExp(`\\b${removed}:`));
+    assert.doesNotMatch(
+      read("src/app/screens/dev/DeveloperLauncherScreen.tsx"),
+      new RegExp(`"${removed}"`),
+    );
   }
-  assert.match(welcome, /navigation\.navigate\("CuisineSelection"\)/);
-  assert.match(intro1, /nextScreen="CuisineSelection"/);
-  assert.match(introTemplate, /navigation\.navigate\("LocationPermission"\)/);
-  assert.doesNotMatch(introTemplate, /next step: \$\{nextScreen\}/);
-  assert.match(introTemplate, /paddingTop: insets\.top/);
-  assert.match(cuisines, /setOnboardingSelectedDishIds\(/);
-  assert.match(cuisines, /navigation\.navigate\("TasteQuiz"\)/);
+  for (const removedFile of [
+    "CuisineSelectionScreen.tsx",
+    "OnboardingIntro1Screen.tsx",
+    "OnboardingIntroTemplate.tsx",
+  ]) {
+    assert.ok(!existsSync(path.join(root, "src/app/screens/onboarding", removedFile)), removedFile);
+  }
+  assert.match(read("src/app/screens/auth/SignUpScreen.tsx"), /screen: "OnboardingWelcome"/);
+
+  // One progress component, "Step x of N", on every step.
+  assert.match(progress, /ONBOARDING_STEPS = \["welcome", "location", "taste", "done"\] as const/);
+  assert.match(progress, /Step \{current\} of \{total\}/);
+  assert.match(progress, /accessibilityRole="progressbar"/);
+  assert.match(welcome, /<OnboardingProgress step="welcome" \/>/);
+  assert.match(location, /<OnboardingProgress step="location" \/>/);
+  assert.match(picker, /\{isOnboarding \? <OnboardingProgress step="location" \/> : null\}/);
+  assert.match(quiz, /flowMode === "onboarding" \? <OnboardingProgress step="taste" \/> : null/);
+  assert.match(done, /<OnboardingProgress step="done" \/>/);
+  // The quiz no longer draws its own progress bar.
+  assert.doesNotMatch(quiz, /progressAnim|progressTrack/);
+
+  // Welcome -> Location (GPS or pick area) -> quiz -> done -> Home.
+  assert.match(welcome, /navigation\.navigate\("LocationPermission"\)/);
+  assert.match(location, /const next = \(\) => \{\s*navigation\.navigate\("TasteQuiz"\);/);
+  assert.match(location, /navigation\.navigate\("ManualLocationPicker"\)/);
+  assert.match(picker, /navigation\.navigate\("TasteQuiz"\)/);
   assert.match(
     quiz,
     /navigation\.navigate\("DietaryPreferences", \{[\s\S]*initialPhase: "dietary"[\s\S]*\}\)/,
@@ -61,13 +94,38 @@ test("onboarding typed routes are registered and flow through cuisine, taste, an
   assert.equal(quiz.match(/setTasteVector\(/g)?.length, 1);
   assert.match(types, /DietaryPreferences:[\s\S]*answers\?: TasteVector;/);
   assert.match(quiz, /navigation\.navigate\("TasteProfileResult"\)/);
-  assert.match(quiz, /setSkippedTasteQuiz\(true\);\s*navigation\.navigate\("LocationPermission"\)/);
-  assert.match(result, /navigation\.navigate\("LocationPermission"\)/);
-  // Signing up mid-onboarding continues to Location instead of finishing early.
-  const onboardingAuth = read("src/app/screens/onboarding/OnboardingAuthScreen.tsx");
-  assert.match(onboardingAuth, /navigation\.navigate\("LocationPermission"\)/);
-  assert.doesNotMatch(onboardingAuth, /completeOnboarding\(/);
-  assert.doesNotMatch(result, /completeOnboarding/);
+  // The quiz is optional: skipping goes straight to the done step.
+  assert.match(quiz, /setSkippedTasteQuiz\(true\);\s*navigation\.navigate\("TasteProfileResult"\)/);
+  assert.doesNotMatch(quiz, /navigation\.navigate\("LocationPermission"\)/);
+
+  // The done step completes onboarding, then resets to Home. The only other exit is
+  // a guest who signs up from OnboardingAuth and confirms their email: the stack is
+  // reset to EmailVerification, which completes onboarding (completeVerifiedSignUp).
+  for (const source of [welcome, location, picker, quiz, onboardingAuth]) {
+    assert.doesNotMatch(source, /completeOnboarding/);
+  }
+  assert.match(
+    done,
+    /completeOnboarding\(hasSkippedTasteQuiz\);\s*navigation\.getParent<NavigationProp<RootStackParamList>>\(\)\?\.reset\(\{\s*index: 0,\s*routes: \[\{ name: "MainTabs", params: \{ screen: "Home" \} \}\],/,
+  );
+  assert.match(
+    onboardingAuth,
+    /screen: "EmailVerification",\s*params: \{ email: values\.email, completedOnboarding: true \}/,
+  );
+  assert.match(
+    read("src/app/screens/auth/EmailVerificationScreen.tsx"),
+    /completeVerifiedSignUp\(shouldCompleteOnboarding\)/,
+  );
+
+  // Sign-in is not a step: OnboardingAuth opens just-in-time (saving a dish as a
+  // guest) and returns to where the user was; the dish is saved once they are back.
+  assert.match(done, /setPendingSaveDish\(dish\);\s*navigation\.navigate\("OnboardingAuth"\)/);
+  assert.match(
+    done,
+    /if \(!isAuthenticated \|\| !pendingSaveDish\) return;\s*setPendingSaveDish\(null\);[\s\S]*?toggleFavourite\(pendingSaveDish\);/,
+  );
+  assert.match(onboardingAuth, /const finishOnboarding = \(\) => \{\s*navigation\.goBack\(\);/);
+  assert.doesNotMatch(onboardingAuth, /navigation\.navigate\("LocationPermission"\)/);
 });
 
 test("root and nested route targets avoid stale or unregistered screens", () => {

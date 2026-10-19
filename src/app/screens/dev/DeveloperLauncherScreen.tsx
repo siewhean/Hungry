@@ -903,10 +903,10 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           </AppText>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
             {[
-              { label: "Intro 1", screen: "OnboardingIntro1" },
-              { label: "Cuisines", screen: "CuisineSelection" },
+              { label: "Welcome", screen: "OnboardingWelcome" },
+              { label: "Location", screen: "LocationPermission" },
               { label: "Quiz", screen: "TasteQuiz" },
-              { label: "Perms", screen: "LocationPermission" },
+              { label: "Done", screen: "TasteProfileResult" },
             ].map(({ label, screen }) => (
               <DevButton
                 key={label}
