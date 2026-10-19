@@ -151,8 +151,10 @@ test("Area picker returns already-onboarded users without re-completing onboardi
   assert.ok(submit, "handleSubmit should exist");
   assert.match(
     submit,
-    /if \(isSettingsMode \|\| hasCompletedOnboarding\) \{[\s\S]*?navigation\.goBack\(\);\s*return;\s*\}[\s\S]*?completeOnboarding/,
+    /if \(!isOnboarding\) \{[\s\S]*?navigation\.goBack\(\);\s*return;\s*\}[\s\S]*?navigation\.navigate\("TasteQuiz"\)/,
   );
+  assert.match(picker, /const isOnboarding = !isSettingsMode && !hasCompletedOnboarding;/);
+  assert.doesNotMatch(picker, /completeOnboarding/);
 });
 
 test("Home map recentres only when the chosen building changes", () => {

@@ -43,10 +43,11 @@ test("Settings location rows respect the OS permission and return from the picke
 
   const submit = segmentBetween(picker, "const handleSubmit", "return (");
   assert.ok(
-    submit.indexOf("navigation.goBack()") < submit.indexOf("completeOnboarding("),
-    "settings mode must go back before the onboarding completion path",
+    submit.indexOf("navigation.goBack()") < submit.indexOf('navigation.navigate("TasteQuiz")'),
+    "settings mode must go back before the onboarding path continues to the quiz",
   );
-  assert.match(submit, /if \(isSettingsMode \|\| hasCompletedOnboarding\)/);
+  assert.match(submit, /if \(!isOnboarding\)/);
+  assert.match(picker, /const isOnboarding = !isSettingsMode && !hasCompletedOnboarding;/);
 });
 
 test("Email edits go through the auth email-change flow, not the profile column", () => {

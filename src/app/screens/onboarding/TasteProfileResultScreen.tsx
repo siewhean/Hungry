@@ -1,3 +1,4 @@
+import type { NavigationProp } from "@react-navigation/native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
@@ -6,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import { AccessibleImage, AppText, Button, Card } from "@/components/ui";
+import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { getSearchResultsAsync } from "@/features/search/search";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import type { SearchFilters } from "@/types/domain";
@@ -13,6 +15,7 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
+import { OnboardingProgress } from "./OnboardingProgress";
 import type { OnboardingStackParamList } from "./OnboardingStack";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "TasteProfileResult">;
@@ -34,6 +37,8 @@ export function TasteProfileResultScreen({ navigation }: Props) {
   const { palette, radii, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const hasSkippedTasteQuiz = useSessionStore((state) => state.hasSkippedTasteQuiz);
+  const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
   const showToast = useUIStore((state) => state.showToast);
   const favouriteDishIds = useProfileStore((state) => state.profile.favouriteDishIds);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
@@ -75,12 +80,15 @@ export function TasteProfileResultScreen({ navigation }: Props) {
           paddingTop: insets.top + spacing[4],
         }}
       >
+        <OnboardingProgress step="done" />
         <View style={{ gap: spacing[1] }}>
-          <AppText variant="h1">Your taste profile is ready</AppText>
+          <AppText variant="h1">{"You're all set"}</AppText>
           <AppText variant="bodySmall" tone="secondary">
-            {dishes.length > 0
-              ? "Here are dishes aligned with your current preferences."
-              : "We'll use it to rank dishes for you on Home."}
+            {hasSkippedTasteQuiz
+              ? "Here are a few dishes to start with. Take the taste quiz anytime from Profile."
+              : dishes.length > 0
+                ? "Here are dishes aligned with your taste."
+                : "We'll use your taste to rank dishes for you on Home."}
           </AppText>
         </View>
 
@@ -138,6 +146,7 @@ export function TasteProfileResultScreen({ navigation }: Props) {
                           toggleFavourite(dish);
                           return;
                         }
+                        // Sign-in is asked for only when an action needs an account.
                         showToast({
                           message: "Create or sign in to an account before saving dishes.",
                           tone: "warning",
@@ -163,10 +172,15 @@ export function TasteProfileResultScreen({ navigation }: Props) {
 
       <View style={{ padding: spacing[4], paddingBottom: spacing[6] }}>
         <Button
-          label="Continue"
+          label="Start exploring"
           onPress={() => {
-            // Location finishes onboarding; completing here would skip it.
-            navigation.navigate("LocationPermission");
+            // Last step: the only place first-run onboarding completes. Guests and
+            // signed-in users both land on Home.
+            completeOnboarding(hasSkippedTasteQuiz);
+            navigation.getParent<NavigationProp<RootStackParamList>>()?.reset({
+              index: 0,
+              routes: [{ name: "MainTabs", params: { screen: "Home" } }],
+            });
           }}
         />
       </View>

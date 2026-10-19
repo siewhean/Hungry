@@ -377,8 +377,9 @@ export interface UserProfile {
   };
   recommendationSignals?: RecommendationSignalState;
   leftHandedMode?: boolean;
+  /** Legacy: dishes picked by the old cuisine step; kept for profiles saved before it was cut. */
   onboardingSelectedDishIds?: string[];
-  /** Cuisine card ids picked during onboarding (e.g. "local", "japanese"). */
+  /** Legacy: cuisine ids picked by the old cuisine step (e.g. "local", "japanese"). */
   onboardingCuisineIds?: string[];
   /** Usual max price per dish in SGD, set during onboarding. Undefined = no budget limit. */
   maxDishBudget?: number;

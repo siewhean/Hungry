@@ -296,6 +296,10 @@ export const useSessionStore = create<SessionState>()(
         );
       },
       completeOnboarding: (skippedQuiz = false) => {
+        // onboarding_completed fires once; a returning user's saved state is kept.
+        if (useSessionStore.getState().hasCompletedOnboarding) {
+          return;
+        }
         set({
           hasCompletedOnboarding: true,
           hasSkippedTasteQuiz: skippedQuiz,

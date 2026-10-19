@@ -96,18 +96,18 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
       /setTasteVector\(values\)/,
       /setDietaryPreferences\(dietaryPreferences\)/,
       /setSkippedTasteQuiz\(true\)/,
-      /navigation\.navigate\("LocationPermission"\)/,
+      /navigation\.navigate\("TasteProfileResult"\)/,
     ],
     "TasteQuizScreen",
   );
   assertSourceIncludes(
     locationPermission,
-    [/grantLocation\(\)/, /completeOnboarding\(hasSkippedTasteQuiz\)/, /ManualLocationPicker/],
+    [/grantLocation\(\)/, /navigation\.navigate\("TasteQuiz"\)/, /ManualLocationPicker/],
     "LocationPermissionScreen",
   );
   assertSourceIncludes(
     manualLocation,
-    [/setManualSelection/, /completeOnboarding\(hasSkippedTasteQuiz\)/],
+    [/setManualSelection/, /navigation\.navigate\("TasteQuiz"\)/],
     "ManualLocationPickerScreen",
   );
 });
