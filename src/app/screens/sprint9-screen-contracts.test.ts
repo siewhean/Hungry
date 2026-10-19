@@ -29,7 +29,7 @@ test("Sprint 9 screen contract: Login screen uses service auth + error boundary"
   // while a request runs every auth button is disabled and the submit shows loading.
   assert.match(
     source,
-    /\{oauthProvidersEnabled \? \([\s\S]*<AuthProviderButton[\s\S]*disabled=\{isBusy\}[\s\S]*intent="signIn"[\s\S]*provider="google"[\s\S]*provider="apple"[\s\S]*\) : null\}/,
+    /\{oauthProvidersEnabled \? \([\s\S]*<AuthProviderButton[\s\S]*disabled=\{isBusy\}[\s\S]*intent="continue"[\s\S]*provider="apple"[\s\S]*provider="google"[\s\S]*\) : null\}/,
   );
   assert.match(source, /loading=\{isSubmitting\}/);
   assert.doesNotMatch(source, /disabled=\{!oauthProvidersEnabled\}/);
@@ -37,7 +37,7 @@ test("Sprint 9 screen contract: Login screen uses service auth + error boundary"
   assert.match(signUpSource, /FEATURE_FLAGS\.oauthProvidersEnabled/);
   assert.match(
     signUpSource,
-    /\{oauthProvidersEnabled \? \([\s\S]*<AuthProviderButton[\s\S]*disabled=\{isBusy\}[\s\S]*intent="continue"[\s\S]*provider="google"[\s\S]*provider="apple"[\s\S]*\) : null\}/,
+    /\{oauthProvidersEnabled \? \([\s\S]*<AuthProviderButton[\s\S]*disabled=\{isBusy\}[\s\S]*intent="continue"[\s\S]*provider="apple"[\s\S]*provider="google"[\s\S]*\) : null\}/,
   );
   assert.match(signUpSource, /loading=\{isSubmitting\}/);
   assert.doesNotMatch(signUpSource, /disabled=\{!oauthProvidersEnabled\}/);
@@ -89,7 +89,7 @@ test("Sprint 9 screen contract: Login screen uses service auth + error boundary"
     /accessibilityLabel=\{AUTH_COPY\.forgotPassword\.backToLogin\}/,
   );
   assert.match(forgotPasswordSource, /accessibilityHint="Returns to the sign in screen"/);
-  assert.match(resetPasswordSource, /accessibilityLabel="Back to Sign In"/);
+  assert.match(resetPasswordSource, /accessibilityLabel="Back to sign in"/);
   assert.match(
     resetPasswordSource,
     /accessibilityLabel=\{showPassword \? "Hide password" : "Show password"\}/,
@@ -160,12 +160,9 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
   assert.doesNotMatch(tasteProfileResult, /generated food photo/);
   assert.match(
     tasteQuiz,
-    /accessibilityRole="button"[\s\S]*accessibilityLabel=\{`\$\{labels\[index\]\} \$\{QUESTIONS\[currentKey\]\}`\}/,
+    /accessibilityRole="button"[\s\S]*accessibilityLabel=\{`\$\{QUESTIONS\[currentKey\]\} \$\{labels\[index\]\}`\}/,
   );
-  assert.match(
-    tasteQuiz,
-    /accessibilityHint=\{`Selects \$\{choiceFoods\[index\]\.label\} as your answer for this taste question`\}/,
-  );
+  assert.match(tasteQuiz, /accessibilityHint=\{`For example, \$\{choiceFoods\[index\]\.label\}`\}/);
   assert.match(
     tasteQuiz,
     /accessibilityState=\{\{ selected: isSelected, disabled: isTransitioning \}\}/,
@@ -175,7 +172,7 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
     /accessibilityRole="checkbox"[\s\S]*accessibilityLabel=\{`Dietary preference \$\{option\.label\}`\}/,
   );
   assert.match(tasteQuiz, /accessibilityState=\{\{ checked: isSelected \}\}/);
-  assert.match(tasteQuiz, /const \{ fontScale, width \} = useWindowDimensions\(\)/);
+  assert.match(tasteQuiz, /const \{ fontScale, height, width \} = useWindowDimensions\(\)/);
   assert.match(
     tasteQuiz,
     /const accessibilityFooterReserve = Math\.ceil\(Math\.max\(fontScale - 1, 0\) \* 96\)/,

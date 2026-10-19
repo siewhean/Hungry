@@ -9,6 +9,7 @@ import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
 import { trackAuthFailed, trackAuthScreenViewed } from "@/features/auth/authAnalytics";
 import { getMockSignUpFailure } from "@/features/auth/mockAuth";
+import { reportError } from "@/lib/monitoring/reportError";
 import {
   PASSWORD_RULES,
   validateEmail,
@@ -26,7 +27,7 @@ import { AuthProviderButton } from "./AuthProviderButton";
 import { AuthScreenShell } from "./AuthScreenShell";
 import {
   AUTH_COPY,
-  getAuthProviderUnavailableMessage,
+  getProviderErrorMessage,
   getSignUpProviderSuccessMessage,
   type AuthProvider,
 } from "./authCopy";
@@ -36,7 +37,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, "SignUp">;
 type FormValues = { displayName: string; email: string; password: string };
 
 export function SignUpScreen({ navigation }: Props) {
-  const { colorScheme, palette, spacing } = useHungryTheme();
+  const { colorScheme, componentRadii, palette, spacing } = useHungryTheme();
   const oauthProvidersEnabled = FEATURE_FLAGS.oauthProvidersEnabled;
   const [showPassword, setShowPassword] = useState(false);
   const [providerInFlight, setProviderInFlight] = useState<AuthProvider | null>(null);
@@ -44,6 +45,8 @@ export function SignUpScreen({ navigation }: Props) {
   const passwordRef = useRef<TextInput>(null);
   const showToast = useUIStore((state) => state.showToast);
   const completeAuth = useSessionStore((state) => state.completeAuth);
+  // Inline copy of the last server error, so it is not only a passing toast.
+  const [formError, setFormError] = useState<string | null>(null);
   const {
     control,
     handleSubmit,
@@ -58,6 +61,7 @@ export function SignUpScreen({ navigation }: Props) {
   }, []);
 
   const handleSignUp = handleSubmit(async (values) => {
+    setFormError(null);
     try {
       const dataSource = getConfiguredDataSource();
       if (dataSource === "supabase") {
@@ -92,13 +96,10 @@ export function SignUpScreen({ navigation }: Props) {
       } else {
         const failure = getMockSignUpFailure(values.email);
         if (failure) {
+          setFormError(failure.message);
           showToast({ message: failure.message, tone: "error" });
           return;
         }
-        showToast({
-          message: AUTH_COPY.signUp.verificationUnavailableToast,
-          tone: "warning",
-        });
       }
       showToast({ message: AUTH_COPY.signUp.emailVerificationToast, tone: "success" });
       navigation.navigate("EmailVerification", { email: values.email });
@@ -107,51 +108,24 @@ export function SignUpScreen({ navigation }: Props) {
       const code =
         (err as { error_code?: string; code?: string })?.error_code ??
         (err as { error_code?: string; code?: string })?.code;
-      if (code === "over_email_send_rate_limit") {
-        showToast({
-          message: AUTH_COPY.signUp.tooManyAttemptsToast,
-          tone: "error",
-        });
-      } else if (code === "email_address_invalid") {
-        showToast({ message: AUTH_COPY.signUp.invalidEmailToast, tone: "error" });
-      } else {
-        showToast({ message: AUTH_COPY.signUp.genericErrorToast, tone: "error" });
-      }
+      const message =
+        code === "over_email_send_rate_limit"
+          ? AUTH_COPY.signUp.tooManyAttemptsToast
+          : code === "email_address_invalid"
+            ? AUTH_COPY.signUp.invalidEmailToast
+            : AUTH_COPY.signUp.genericErrorToast;
+      setFormError(message);
+      showToast({ message, tone: "error" });
     }
   });
 
   const handleProviderContinue = async (provider: AuthProvider) => {
-    const providerErrorMessage = (error: unknown) => {
-      const rawMessage =
-        (error as { message?: string })?.message ?? AUTH_COPY.signUp.genericErrorToast;
-      const message = rawMessage.toLowerCase();
-      if (message.includes("provider is not enabled")) {
-        return getAuthProviderUnavailableMessage(provider);
-      }
-      if (message.includes("cancelled")) {
-        return AUTH_COPY.signUp.providerCancelledToast;
-      }
-      if (message.includes("callback url was not trusted")) {
-        return message;
-      }
-      if (message.includes("state did not match")) {
-        return message;
-      }
-      if (message.includes("no active session") || message.includes("session credentials")) {
-        return rawMessage;
-      }
-
-      if (typeof __DEV__ !== "undefined" && __DEV__) {
-        return rawMessage;
-      }
-
-      return AUTH_COPY.signUp.genericErrorToast;
-    };
-
     if (isBusy) return;
+    setFormError(null);
     setProviderInFlight(provider);
+    const isSupabase = getConfiguredDataSource() === "supabase";
     try {
-      if (getConfiguredDataSource() === "supabase") {
+      if (isSupabase) {
         const service = getHungryService();
         let session;
         if (provider === "google") {
@@ -172,24 +146,24 @@ export function SignUpScreen({ navigation }: Props) {
         message: getSignUpProviderSuccessMessage(provider),
         tone: "success",
       });
+      // RootNavigator alone routes after auth: the auth listener decides from the
+      // account whether onboarding runs (new account) or not (returning one), and
+      // onboarding already finished on this device stays done.
       completeAuth({
         authProvider: provider,
         completedOnboarding: false,
         trackSignInEvent: false,
       });
-      // Guests who already finished onboarding on this device go straight home
-      // (RootNavigator handles that); everyone else runs the short onboarding flow.
-      if (!useSessionStore.getState().hasCompletedOnboarding) {
-        navigation.getParent()?.reset({
-          index: 0,
-          routes: [
-            { name: "OnboardingStack" as never, params: { screen: "OnboardingWelcome" } as never },
-          ],
-        });
-      }
     } catch (err) {
       trackAuthFailed("sign_up", provider, err);
-      const message = providerErrorMessage(err);
+      const message = getProviderErrorMessage(err, provider, {
+        cancelled: AUTH_COPY.signUp.providerCancelledToast,
+        failed: AUTH_COPY.signUp.genericErrorToast,
+      });
+      if (message !== AUTH_COPY.signUp.providerCancelledToast) {
+        reportError(err, { flow: "sign_up", provider });
+        setFormError(message);
+      }
       showToast({
         message,
         tone: message === AUTH_COPY.signUp.providerCancelledToast ? "warning" : "error",
@@ -208,33 +182,45 @@ export function SignUpScreen({ navigation }: Props) {
         wordmarkColor={colorScheme === "dark" ? palette.white : palette.navy}
         footer={
           <View style={{ alignItems: "center", gap: spacing[4] }}>
-            <View
-              style={{
-                alignItems: "center",
-                flexDirection: "row",
-                flexWrap: "wrap",
-                justifyContent: "center",
-              }}
-            >
-              <AppText variant="micro" tone="secondary" style={{ textAlign: "center" }}>
+            <View style={{ alignItems: "center" }}>
+              <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
                 {AUTH_COPY.signUp.termsPrefix}
-                <AppText
-                  variant="micro"
-                  tone="accent"
-                  onPress={() => void openTrustedExternalUrl(WEB_LINKS.terms)}
-                >
-                  {AUTH_COPY.signUp.termsLabel}
-                </AppText>
-                {AUTH_COPY.signUp.privacyJoiner}
-                <AppText
-                  variant="micro"
-                  tone="accent"
-                  onPress={() => void openTrustedExternalUrl(WEB_LINKS.privacy)}
-                >
-                  {AUTH_COPY.signUp.privacyLabel}
-                </AppText>
-                {AUTH_COPY.signUp.termsSuffix}
               </AppText>
+              {/* Separate links so each has its own 44pt target and link role. */}
+              <View
+                style={{
+                  alignItems: "center",
+                  flexDirection: "row",
+                  flexWrap: "wrap",
+                  justifyContent: "center",
+                }}
+              >
+                <Pressable
+                  accessibilityRole="link"
+                  accessibilityLabel={AUTH_COPY.signUp.termsLabel}
+                  accessibilityHint={AUTH_COPY.signUp.termsLinkHint}
+                  onPress={() => void openTrustedExternalUrl(WEB_LINKS.terms)}
+                  style={{ justifyContent: "center", minHeight: 44, paddingHorizontal: spacing[1] }}
+                >
+                  <AppText variant="bodySmall" tone="accent">
+                    {AUTH_COPY.signUp.termsLabel}
+                  </AppText>
+                </Pressable>
+                <AppText variant="bodySmall" tone="secondary">
+                  {AUTH_COPY.signUp.privacyJoiner}
+                </AppText>
+                <Pressable
+                  accessibilityRole="link"
+                  accessibilityLabel={AUTH_COPY.signUp.privacyLabel}
+                  accessibilityHint={AUTH_COPY.signUp.privacyLinkHint}
+                  onPress={() => void openTrustedExternalUrl(WEB_LINKS.privacy)}
+                  style={{ justifyContent: "center", minHeight: 44, paddingHorizontal: spacing[1] }}
+                >
+                  <AppText variant="bodySmall" tone="accent">
+                    {AUTH_COPY.signUp.privacyLabel}
+                  </AppText>
+                </Pressable>
+              </View>
             </View>
 
             <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "center" }}>
@@ -251,6 +237,8 @@ export function SignUpScreen({ navigation }: Props) {
                     navigation.navigate("Login");
                   }
                 }}
+                hitSlop={8}
+                style={{ justifyContent: "center", minHeight: 44 }}
               >
                 <AppText variant="bodyBold" tone="accent">
                   {AUTH_COPY.signUp.footerAction}
@@ -268,17 +256,17 @@ export function SignUpScreen({ navigation }: Props) {
                 <AuthProviderButton
                   disabled={isBusy}
                   intent="continue"
-                  provider="google"
+                  provider="apple"
                   onPress={() => {
-                    void handleProviderContinue("google");
+                    void handleProviderContinue("apple");
                   }}
                 />
                 <AuthProviderButton
                   disabled={isBusy}
                   intent="continue"
-                  provider="apple"
+                  provider="google"
                   onPress={() => {
-                    void handleProviderContinue("apple");
+                    void handleProviderContinue("google");
                   }}
                 />
               </View>
@@ -302,24 +290,19 @@ export function SignUpScreen({ navigation }: Props) {
                   validateRequired(value, AUTH_COPY.signUp.displayNameValidationLabel),
               }}
               render={({ field: { onChange, value } }) => (
-                <View style={{ gap: spacing[1] }}>
-                  <Input
-                    placeholder={AUTH_COPY.signUp.displayNamePlaceholder}
-                    value={value}
-                    onChangeText={onChange}
-                    textContentType="name"
-                    autoComplete="name"
-                    returnKeyType="next"
-                    submitBehavior="submit"
-                    onSubmitEditing={() => emailRef.current?.focus()}
-                    leftIcon={<User color={palette.textMuted} size={18} />}
-                  />
-                  {errors.displayName ? (
-                    <AppText variant="bodySmall" style={{ color: palette.error }}>
-                      {errors.displayName.message}
-                    </AppText>
-                  ) : null}
-                </View>
+                <Input
+                  placeholder={AUTH_COPY.signUp.displayNamePlaceholder}
+                  value={value}
+                  onChangeText={onChange}
+                  textContentType="name"
+                  autoComplete="name"
+                  returnKeyType="next"
+                  submitBehavior="submit"
+                  onSubmitEditing={() => emailRef.current?.focus()}
+                  leftIcon={<User color={palette.textMuted} size={18} />}
+                  error={!!errors.displayName}
+                  errorText={errors.displayName?.message}
+                />
               )}
             />
             <Controller
@@ -327,28 +310,23 @@ export function SignUpScreen({ navigation }: Props) {
               name="email"
               rules={{ validate: validateEmail }}
               render={({ field: { onChange, value } }) => (
-                <View style={{ gap: spacing[1] }}>
-                  <Input
-                    ref={emailRef}
-                    placeholder={AUTH_COPY.signUp.emailPlaceholder}
-                    value={value}
-                    onChangeText={onChange}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    keyboardType="email-address"
-                    textContentType="emailAddress"
-                    autoComplete="email"
-                    returnKeyType="next"
-                    submitBehavior="submit"
-                    onSubmitEditing={() => passwordRef.current?.focus()}
-                    leftIcon={<Mail color={palette.textMuted} size={18} />}
-                  />
-                  {errors.email ? (
-                    <AppText variant="bodySmall" style={{ color: palette.error }}>
-                      {errors.email.message}
-                    </AppText>
-                  ) : null}
-                </View>
+                <Input
+                  ref={emailRef}
+                  placeholder={AUTH_COPY.signUp.emailPlaceholder}
+                  value={value}
+                  onChangeText={onChange}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="email-address"
+                  textContentType="emailAddress"
+                  autoComplete="email"
+                  returnKeyType="next"
+                  submitBehavior="submit"
+                  onSubmitEditing={() => passwordRef.current?.focus()}
+                  leftIcon={<Mail color={palette.textMuted} size={18} />}
+                  error={!!errors.email}
+                  errorText={errors.email?.message}
+                />
               )}
             />
             <Controller
@@ -356,54 +334,63 @@ export function SignUpScreen({ navigation }: Props) {
               name="password"
               rules={{ validate: (value) => validatePassword(value) }}
               render={({ field: { onChange, value } }) => (
-                <View style={{ gap: spacing[1] }}>
-                  <Input
-                    ref={passwordRef}
-                    placeholder={AUTH_COPY.signUp.passwordPlaceholder}
-                    value={value}
-                    onChangeText={onChange}
-                    secureTextEntry={!showPassword}
-                    textContentType="newPassword"
-                    autoComplete="new-password"
-                    passwordRules={PASSWORD_RULES}
-                    returnKeyType="go"
-                    onSubmitEditing={() => void handleSignUp()}
-                    accessibilityHint={AUTH_COPY.signUp.passwordRules}
-                    leftIcon={<Lock color={palette.textMuted} size={18} />}
-                    rightIcon={
-                      <Pressable
-                        accessible
-                        accessibilityRole="button"
-                        accessibilityLabel={showPassword ? "Hide password" : "Show password"}
-                        accessibilityHint={
-                          showPassword
-                            ? "Hides the password characters"
-                            : "Shows the password characters"
-                        }
-                        onPress={() => setShowPassword((current) => !current)}
-                        hitSlop={8}
-                      >
-                        {showPassword ? (
-                          <EyeOff color={palette.textMuted} size={18} />
-                        ) : (
-                          <Eye color={palette.textMuted} size={18} />
-                        )}
-                      </Pressable>
-                    }
-                  />
-                  {errors.password ? (
-                    <AppText variant="bodySmall" style={{ color: palette.error }}>
-                      {errors.password.message}
-                    </AppText>
-                  ) : (
-                    <AppText variant="bodySmall" tone="secondary">
-                      {AUTH_COPY.signUp.passwordRules}
-                    </AppText>
-                  )}
-                </View>
+                <Input
+                  ref={passwordRef}
+                  placeholder={AUTH_COPY.signUp.passwordPlaceholder}
+                  value={value}
+                  onChangeText={onChange}
+                  secureTextEntry={!showPassword}
+                  textContentType="newPassword"
+                  autoComplete="new-password"
+                  passwordRules={PASSWORD_RULES}
+                  returnKeyType="go"
+                  onSubmitEditing={() => void handleSignUp()}
+                  accessibilityHint={AUTH_COPY.signUp.passwordRules}
+                  leftIcon={<Lock color={palette.textMuted} size={18} />}
+                  rightIcon={
+                    <Pressable
+                      accessible
+                      accessibilityRole="button"
+                      accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+                      accessibilityHint={
+                        showPassword
+                          ? "Hides the password characters"
+                          : "Shows the password characters"
+                      }
+                      onPress={() => setShowPassword((current) => !current)}
+                      hitSlop={8}
+                    >
+                      {showPassword ? (
+                        <EyeOff color={palette.textMuted} size={18} />
+                      ) : (
+                        <Eye color={palette.textMuted} size={18} />
+                      )}
+                    </Pressable>
+                  }
+                  error={!!errors.password}
+                  errorText={errors.password?.message}
+                  helperText={AUTH_COPY.signUp.passwordRules}
+                />
               )}
             />
           </View>
+
+          {formError ? (
+            <View
+              accessible
+              accessibilityRole="alert"
+              accessibilityLiveRegion="polite"
+              style={{
+                backgroundColor: palette.errorSoft,
+                borderRadius: componentRadii.card,
+                padding: spacing[3],
+              }}
+            >
+              <AppText variant="bodySmall" style={{ color: palette.error }}>
+                {formError}
+              </AppText>
+            </View>
+          ) : null}
 
           <Button
             label={AUTH_COPY.signUp.primaryButton}

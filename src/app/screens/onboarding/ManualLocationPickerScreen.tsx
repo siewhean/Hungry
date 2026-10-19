@@ -140,7 +140,6 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
       <View style={{ backgroundColor: palette.bg, flex: 1, paddingHorizontal: spacing[3] }}>
         <AppHeader
           title="Pick a location"
-          onBackPress={() => navigation.goBack()}
           left={
             <Pressable
               accessibilityRole="button"
@@ -169,13 +168,27 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
           accessibilityLabel="Search Singapore location"
         />
         {selectedArea ? (
-          <Button
-            label={`Selected: ${selectedArea.name}`}
-            variant="secondary"
-            size="sm"
-            disabled
-            style={{ marginTop: spacing[2] }}
-          />
+          // Status, not a control: a disabled button read as "dimmed" to screen readers.
+          <View
+            accessible
+            accessibilityLabel={`Selected location: ${selectedArea.name}`}
+            style={{
+              alignItems: "center",
+              alignSelf: "flex-start",
+              backgroundColor: palette.orangeLight,
+              borderRadius: radii.pill,
+              flexDirection: "row",
+              gap: spacing[1],
+              marginTop: spacing[2],
+              paddingHorizontal: spacing[3],
+              paddingVertical: spacing[1],
+            }}
+          >
+            <MapPin color={palette.orange} size={14} />
+            <AppText variant="bodySmall" style={{ color: palette.orange }}>
+              Selected: {selectedArea.name}
+            </AppText>
+          </View>
         ) : null}
 
         <View style={{ flex: 1, gap: spacing[2], paddingTop: spacing[3] }}>

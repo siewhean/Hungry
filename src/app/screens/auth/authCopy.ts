@@ -10,16 +10,20 @@ export const AUTH_COPY = {
     passwordPlaceholder: "Password",
     forgotPasswordLink: "Forgot password?",
     primaryButton: "Sign in",
-    divider: "OR CONTINUE WITH",
+    divider: "OR USE EMAIL",
     footerPrompt: "New to Hungry? ",
     footerAction: "Create account",
     continueAsGuest: "Continue without an account",
     successToast: "Welcome back.",
     providerSuccessToast: "Signed in successfully.",
     emailNotConfirmedToast: "Please verify your email before signing in.",
+    resendVerificationAction: "Resend verification email",
+    resendVerificationSentToast: "Verification email sent. Check your inbox.",
+    closeLabel: "Close sign in",
     invalidCredentialsToast: "Incorrect email or password.",
     genericErrorToast: "Sign in failed. Please try again.",
     providerCancelledToast: "Sign in was cancelled.",
+    providerFailedToast: "Sign in couldn't be completed. Please try again.",
     passwordValidationLabel: "Password",
   },
   signUp: {
@@ -32,19 +36,18 @@ export const AUTH_COPY = {
     passwordPlaceholder: "Create password",
     passwordRules:
       "Use at least 12 characters with an uppercase letter, a lowercase letter, a number and a symbol.",
+    termsLinkHint: "Opens the Terms of Service in your browser",
+    privacyLinkHint: "Opens the Privacy Policy in your browser",
     primaryButton: "Create account",
-    divider: "OR REGISTER WITH EMAIL",
+    divider: "OR USE EMAIL",
     footerPrompt: "Already have an account? ",
     footerAction: "Log in",
-    termsPrefix: "By creating an account, you agree to Hungry's ",
+    termsPrefix: "By creating an account, you agree to Hungry's",
     termsLabel: "Terms of Service",
-    privacyJoiner: " and ",
+    privacyJoiner: "and",
     privacyLabel: "Privacy Policy",
-    termsSuffix: ".",
     emailVerificationToast: "Account created. Please verify your email.",
     continueOnboardingToast: "Account created. Continue onboarding.",
-    verificationUnavailableToast:
-      "Verification email is currently unavailable. You can continue and verify later.",
     tooManyAttemptsToast: "Too many attempts. Please wait a moment and try again.",
     invalidEmailToast: "Please use a valid email address.",
     genericErrorToast: "Could not continue sign-up. Please try again.",
@@ -61,7 +64,12 @@ export const AUTH_COPY = {
     primaryButton: "Send reset link",
     backToLogin: "Back to login",
     helperText: "We keep this flow secure and simple so you can return to dish discovery quickly.",
-    sentToast: "If the email exists, a reset link was sent.",
+    sentTitle: "Check your inbox",
+    sentBody:
+      "If an account exists for {email}, we've sent a link to reset your password. Open it on this phone.",
+    sentSpamHint: "Can't find it? Check your spam or promotions folder.",
+    resendButton: "Send again",
+    useDifferentEmail: "Use a different email",
     genericErrorToast: "Could not send reset link. Please try again.",
   },
 } as const;
@@ -85,4 +93,27 @@ export function getAuthProviderUnavailableMessage(provider: AuthProvider): strin
 
 export function getSignUpProviderSuccessMessage(provider: AuthProvider): string {
   return `Continue with ${AUTH_PROVIDER_NAMES[provider]} successful. Continue onboarding.`;
+}
+
+/**
+ * Friendly copy for a failed Google/Apple sign-in. Raw OAuth errors (callback,
+ * state, session) are reported for debugging and never shown to users.
+ */
+export function getProviderErrorMessage(
+  error: unknown,
+  provider: AuthProvider,
+  copy: { cancelled: string; failed: string },
+): string {
+  const rawMessage = (error as { message?: string })?.message ?? "";
+  const message = rawMessage.toLowerCase();
+  if (message.includes("provider is not enabled")) {
+    return getAuthProviderUnavailableMessage(provider);
+  }
+  if (message.includes("cancelled")) {
+    return copy.cancelled;
+  }
+  if (typeof __DEV__ !== "undefined" && __DEV__ && rawMessage) {
+    return rawMessage;
+  }
+  return copy.failed;
 }

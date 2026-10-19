@@ -1,5 +1,12 @@
 import { forwardRef, useEffect, useState, type ReactNode } from "react";
-import { AccessibilityInfo, StyleSheet, TextInput, View, type TextInputProps } from "react-native";
+import {
+  AccessibilityInfo,
+  Platform,
+  StyleSheet,
+  TextInput,
+  View,
+  type TextInputProps,
+} from "react-native";
 
 import { useHungryTheme } from "@/theme";
 import { AppText } from "./AppText";
@@ -20,7 +27,8 @@ interface InputProps extends TextInputProps {
  * Accessibility contract:
  * - Prefer a visible `label`; otherwise the static placeholder becomes the accessible name.
  * - Moving search placeholders are disabled while a screen reader is enabled.
- * - Error text uses a polite live region so validation changes are announced.
+ * - Error text uses a polite live region (Android) and is announced on iOS, where
+ *   live regions are not supported, so validation changes reach VoiceOver too.
  */
 export const Input = forwardRef<TextInput, InputProps>(
   (
@@ -73,6 +81,12 @@ export const Input = forwardRef<TextInput, InputProps>(
         subscription.remove();
       };
     }, []);
+    const visibleErrorText = error && errorText ? errorText : undefined;
+    useEffect(() => {
+      if (visibleErrorText && Platform.OS === "ios") {
+        AccessibilityInfo.announceForAccessibility(visibleErrorText);
+      }
+    }, [visibleErrorText]);
     const staticPlaceholder = typeof placeholder === "string" ? placeholder : "";
     const shouldAnimatePlaceholder = !isScreenReaderEnabled && enableMovingPlaceholder === true;
     const animatedPlaceholder = useMovingSearchPlaceholder({
@@ -138,13 +152,13 @@ export const Input = forwardRef<TextInput, InputProps>(
             </View>
           ) : null}
         </View>
-        {error && errorText ? (
+        {visibleErrorText ? (
           <AppText
-            variant="micro"
+            variant="bodySmall"
             style={{ color: palette.error }}
             accessibilityLiveRegion="polite"
           >
-            {errorText}
+            {visibleErrorText}
           </AppText>
         ) : helperText ? (
           <AppText variant="bodySmall" tone="muted">

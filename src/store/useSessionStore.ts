@@ -452,8 +452,14 @@ export const useSessionStore = create<SessionState>()(
         hasCompletedOnboarding: state.hasCompletedOnboarding,
         hasSkippedTasteQuiz: state.hasSkippedTasteQuiz,
       }),
+      // A corrupt persisted value rehydrates with no state; mark hydrated anyway
+      // so bootstrap still runs and Splash cannot hang on isAuthReady.
       onRehydrateStorage: () => (state) => {
-        state?.markHydrated();
+        if (state) {
+          state.markHydrated();
+          return;
+        }
+        setTimeout(() => useSessionStore.getState().markHydrated(), 0);
       },
     },
   ),

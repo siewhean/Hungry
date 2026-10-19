@@ -1,7 +1,7 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Controller, useForm } from "react-hook-form";
 import { Pressable, View, type TextInput } from "react-native";
-import { ArrowLeft, CheckCircle2, Eye, EyeOff } from "lucide-react-native";
+import { ArrowLeft, CheckCircle2, Circle, Eye, EyeOff } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 
 import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
@@ -23,8 +23,19 @@ import { AuthScreenShell } from "./AuthScreenShell";
 type Props = NativeStackScreenProps<AuthStackParamList, "ResetPassword">;
 type FormValues = { password: string; confirmPassword: string };
 
+// Mirrors validatePassword so the checklist ticks as the user types.
+const PASSWORD_CHECKS = [
+  { label: "At least 12 characters", test: (value: string) => value.length >= 12 },
+  {
+    label: "Upper and lowercase letters",
+    test: (value: string) => /[A-Z]/.test(value) && /[a-z]/.test(value),
+  },
+  { label: "A number", test: (value: string) => /\d/.test(value) },
+  { label: "A symbol", test: (value: string) => /[^A-Za-z0-9]/.test(value) },
+] as const;
+
 export function ResetPasswordScreen({ navigation, route }: Props) {
-  const { colorScheme, componentRadii, palette, spacing, radii } = useHungryTheme();
+  const { colorScheme, componentRadii, palette, spacing } = useHungryTheme();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const showToast = useUIStore((state) => state.showToast);
@@ -35,6 +46,8 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
   // The reset link's code can be exchanged only once; a retry after a rejected
   // password must call updatePassword alone.
   const recoveryCodeExchangedRef = useRef(false);
+  // An expired or used link can never succeed on retry; offer a new one instead.
+  const [linkExpired, setLinkExpired] = useState(false);
   const {
     control,
     handleSubmit,
@@ -67,6 +80,7 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
           // No session was created, so nothing to hold.
           setPasswordRecoveryInProgress(false);
           trackAuthFailed("password_reset", "email", error);
+          setLinkExpired(true);
           showToast({
             message: "This reset link has expired or was already used. Request a new one.",
             tone: "error",
@@ -93,13 +107,13 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
       body="Couldn't load password reset right now. Please retry."
     >
       <AuthScreenShell
-        title=""
+        title="Set a new password"
         wordmarkColor={colorScheme === "dark" ? palette.white : palette.navy}
         footer={
           <Pressable
             accessible
             accessibilityRole="button"
-            accessibilityLabel="Back to Sign In"
+            accessibilityLabel="Back to sign in"
             accessibilityHint="Returns to the sign in screen"
             onPress={() => navigation.navigate("Login")}
             style={{
@@ -107,23 +121,45 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
               flexDirection: "row",
               gap: spacing[2],
               justifyContent: "center",
+              minHeight: 44,
             }}
           >
             <ArrowLeft color={palette.text} size={12} />
             <AppText tone="secondary" style={{ fontWeight: "600" }}>
-              Back to Sign In
+              Back to sign in
             </AppText>
           </Pressable>
         }
       >
         <View style={{ gap: spacing[4] }}>
+          {linkExpired ? (
+            <View
+              accessible
+              accessibilityRole="alert"
+              style={{
+                backgroundColor: palette.errorSoft,
+                borderRadius: componentRadii.card,
+                gap: spacing[2],
+                padding: spacing[3],
+              }}
+            >
+              <AppText variant="bodySmall" style={{ color: palette.error }}>
+                This reset link has expired or was already used.
+              </AppText>
+              <Button
+                label="Send a new link"
+                variant="secondary"
+                onPress={() => navigation.navigate("ForgotPassword")}
+              />
+            </View>
+          ) : null}
           <Controller
             control={control}
             name="password"
             rules={{ validate: (value) => validatePassword(value) }}
             render={({ field: { onChange, value } }) => (
               <Input
-                label="NEW PASSWORD"
+                label="New password"
                 secureTextEntry={!showPassword}
                 textContentType="newPassword"
                 autoComplete="new-password"
@@ -131,7 +167,6 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
                 returnKeyType="next"
                 submitBehavior="submit"
                 onSubmitEditing={() => confirmPasswordRef.current?.focus()}
-                placeholder="••••••••"
                 value={value}
                 onChangeText={onChange}
                 error={!!errors.password}
@@ -166,14 +201,13 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
             render={({ field: { onChange, value } }) => (
               <Input
                 ref={confirmPasswordRef}
-                label="CONFIRM NEW PASSWORD"
+                label="Confirm new password"
                 secureTextEntry={!showConfirmPassword}
                 textContentType="newPassword"
                 autoComplete="new-password"
                 passwordRules={PASSWORD_RULES}
                 returnKeyType="go"
                 onSubmitEditing={() => void handleReset()}
-                placeholder="••••••••"
                 value={value}
                 onChangeText={onChange}
                 error={!!errors.confirmPassword}
@@ -214,28 +248,30 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
               padding: spacing[4],
             }}
           >
-            <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-              <CheckCircle2 color={palette.orange} size={12} />
-              <AppText variant="bodySmall">At least 12 characters</AppText>
-            </View>
-            <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-              <View
-                style={{
-                  borderColor: palette.border,
-                  borderRadius: radii.pill,
-                  borderWidth: 1,
-                  height: 10,
-                  width: 10,
-                }}
-              />
-              <AppText variant="bodySmall" tone="muted">
-                Include uppercase, lowercase, number, and special character
-              </AppText>
-            </View>
+            {PASSWORD_CHECKS.map((check) => {
+              const met = check.test(passwordValue ?? "");
+              return (
+                <View
+                  key={check.label}
+                  accessible
+                  accessibilityLabel={`${check.label}, ${met ? "met" : "not met yet"}`}
+                  style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}
+                >
+                  {met ? (
+                    <CheckCircle2 color={palette.success} size={14} />
+                  ) : (
+                    <Circle color={palette.textMuted} size={14} />
+                  )}
+                  <AppText variant="bodySmall" tone={met ? "default" : "muted"}>
+                    {check.label}
+                  </AppText>
+                </View>
+              );
+            })}
           </View>
 
           <Button
-            label="Update Password"
+            label="Update password"
             onPress={handleReset}
             loading={isSubmitting}
             style={{ minHeight: 56 }}

@@ -8,6 +8,8 @@ export type AnalyticsEventName =
   | "password_reset_requested"
   | "sign_out"
   | "onboarding_completed"
+  | "onboarding_step_viewed"
+  | "onboarding_step_skipped"
   | "activated"
   | "taste_quiz_completed"
   | "dietary_preferences_set"
