@@ -79,6 +79,8 @@ export function UserProfileContent({
   const toggleAuthorFollow = useSocialStore((state) => state.toggleAuthorFollow);
   const toggleFollow = useSocialStore((state) => state.toggleFollow);
   const setFollowedUserId = useSocialStore((state) => state.setFollowedUserId);
+  const requestedUserIds = useSocialStore((state) => state.requestedUserIds);
+  const setFollowRequested = useSocialStore((state) => state.setFollowRequested);
   const serviceProviderMode = getServiceProvider().mode;
   const canUseAuthorFallbackFollow =
     serviceProviderMode === "mock" || (typeof __DEV__ !== "undefined" && __DEV__);
@@ -281,12 +283,17 @@ export function UserProfileContent({
 
     void Promise.all([
       service.getFollowCounts(resolvedAuthorId),
-      service.isFollowing(resolvedAuthorId).catch(() => null),
+      service.getFollowStatus(resolvedAuthorId).catch(() => null),
     ])
-      .then(([counts, serverIsFollowing]) => {
+      .then(([counts, serverFollowStatus]) => {
         if (!isActive) return;
+        const serverIsFollowing =
+          serverFollowStatus === null ? null : serverFollowStatus === "approved";
         // The server wins both ways, so a stale persisted follow is cleared too.
         if (serverIsFollowing !== null) setFollowedUserId(resolvedAuthorId, serverIsFollowing);
+        if (serverFollowStatus !== null) {
+          setFollowRequested(resolvedAuthorId, serverFollowStatus === "pending");
+        }
         const viewerIsFollowing =
           serverIsFollowing ?? Boolean(useSocialStore.getState().followedUserIds[resolvedAuthorId]);
         setServerFollowState({
@@ -310,7 +317,7 @@ export function UserProfileContent({
     return () => {
       isActive = false;
     };
-  }, [resolvedAuthorId, setFollowedUserId]);
+  }, [resolvedAuthorId, setFollowRequested, setFollowedUserId]);
 
   const reviewCount = userReviewItems.length;
   const stallsCount = useMemo(
@@ -321,6 +328,16 @@ export function UserProfileContent({
     ? Boolean(followedUserIds[resolvedAuthorId])
     : canUseAuthorFallbackFollow &&
       Boolean(followedAuthors[authorName] || followedAuthors[normalizedAuthorName]);
+  // Pending request to a private account: tapping again cancels it.
+  const isFollowRequested = Boolean(
+    resolvedAuthorId && !isFollowingAuthor && requestedUserIds[resolvedAuthorId],
+  );
+  const isFollowMuted = isFollowingAuthor || isFollowRequested;
+  const followButtonLabel = isFollowRequested
+    ? "Requested"
+    : isFollowingAuthor
+      ? "Following"
+      : "Follow";
   const canShowFollowButton = Boolean(resolvedAuthorId) || canUseAuthorFallbackFollow;
   const loadedFollowState =
     serverFollowState && serverFollowState.userId === resolvedAuthorId ? serverFollowState : null;
@@ -378,7 +395,12 @@ export function UserProfileContent({
             {canShowFollowButton ? (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`${isFollowingAuthor ? "Following" : "Follow"} ${authorName}`}
+                accessibilityLabel={
+                  isFollowRequested
+                    ? `Follow request sent to ${authorName}`
+                    : `${followButtonLabel} ${authorName}`
+                }
+                accessibilityHint={isFollowRequested ? "Cancels your follow request" : undefined}
                 hitSlop={8}
                 onPress={() =>
                   resolvedAuthorId ? toggleFollow(resolvedAuthorId) : toggleAuthorFollow(authorName)
@@ -393,18 +415,18 @@ export function UserProfileContent({
                   paddingHorizontal: spacing[3],
                   marginTop: spacing[1],
                   alignSelf: "flex-start",
-                  backgroundColor: isFollowingAuthor ? palette.surface : palette.orange,
-                  borderColor: isFollowingAuthor ? palette.border : palette.orange,
+                  backgroundColor: isFollowMuted ? palette.surface : palette.orange,
+                  borderColor: isFollowMuted ? palette.border : palette.orange,
                 }}
               >
                 <AppText
                   variant="micro"
                   style={{
-                    color: isFollowingAuthor ? palette.text : palette.white,
+                    color: isFollowMuted ? palette.text : palette.white,
                     fontWeight: "800",
                   }}
                 >
-                  {isFollowingAuthor ? "Following" : "Follow"}
+                  {followButtonLabel}
                 </AppText>
               </Pressable>
             ) : null}

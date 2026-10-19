@@ -282,6 +282,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const loadCommentsForPost = useSocialStore((state) => state.loadCommentsForPost);
   const followedAuthors = useSocialStore((state) => state.followedAuthors);
   const followedUserIds = useSocialStore((state) => state.followedUserIds);
+  const requestedUserIds = useSocialStore((state) => state.requestedUserIds);
   const toggleAuthorFollow = useSocialStore((state) => state.toggleAuthorFollow);
   const toggleFollow = useSocialStore((state) => state.toggleFollow);
   const serviceProviderMode = getServiceProvider().mode;
@@ -1207,6 +1208,11 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         const isFollowingAuthor = followTargetId
           ? Boolean(followedUserIds[followTargetId])
           : canUseAuthorFallbackFollow && Boolean(followedAuthors[item.authorName]);
+        // Pending request to a private account: tapping again cancels it.
+        const isFollowRequested = Boolean(
+          followTargetId && !isFollowingAuthor && requestedUserIds[followTargetId],
+        );
+        const isFollowMuted = isFollowingAuthor || isFollowRequested;
         const postAgeLabel = formatPostAge(item.createdAt);
         const mediaUrls =
           item.mediaType === "photo" && item.mediaUrls?.length ? item.mediaUrls : [item.mediaUrl];
@@ -1301,7 +1307,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                 {!isOwnAuthor && canShowFollowButton ? (
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={`${isFollowingAuthor ? "Unfollow" : "Follow"} ${item.authorName}`}
+                    accessibilityLabel={`${isFollowRequested ? "Cancel follow request to" : isFollowingAuthor ? "Unfollow" : "Follow"} ${item.authorName}`}
                     hitSlop={8}
                     onPress={() =>
                       followTargetId
@@ -1311,19 +1317,19 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                     style={[
                       styles.followButton,
                       {
-                        backgroundColor: isFollowingAuthor ? themeTints.cardBg : palette.orange,
-                        borderColor: isFollowingAuthor ? palette.border : palette.orange,
+                        backgroundColor: isFollowMuted ? themeTints.cardBg : palette.orange,
+                        borderColor: isFollowMuted ? palette.border : palette.orange,
                       },
                     ]}
                   >
                     <AppText
                       variant="micro"
                       style={{
-                        color: isFollowingAuthor ? themeTints.text : palette.white,
+                        color: isFollowMuted ? themeTints.text : palette.white,
                         fontWeight: "800",
                       }}
                     >
-                      {isFollowingAuthor ? "Following" : "Follow"}
+                      {isFollowRequested ? "Requested" : isFollowingAuthor ? "Following" : "Follow"}
                     </AppText>
                   </Pressable>
                 ) : null}
@@ -1977,6 +1983,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       heartBurstAnim,
       followedAuthors,
       followedUserIds,
+      requestedUserIds,
       navigateToDish,
       shadows.card,
       themeTints,

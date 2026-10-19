@@ -52,6 +52,7 @@ function ProfileConnectionsScreen({ navigation }: Props) {
   const route = useRoute<ProfileConnectionsRoute>();
   const rootNavigation = getRootNavigation(navigation as any);
   const followedUserIds = useSocialStore((state) => state.followedUserIds);
+  const requestedUserIds = useSocialStore((state) => state.requestedUserIds);
   const toggleFollow = useSocialStore((state) => state.toggleFollow);
   const markFollowedUserIds = useSocialStore((state) => state.markFollowedUserIds);
   const [searchQuery, setSearchQuery] = useState("");
@@ -213,18 +214,26 @@ function ProfileConnectionsScreen({ navigation }: Props) {
                   {(() => {
                     const canShowFollowButton = person.userId !== profile.id;
                     const isFollowing = Boolean(followedUserIds[person.userId]);
+                    const isRequested = !isFollowing && Boolean(requestedUserIds[person.userId]);
+                    const isMuted = isFollowing || isRequested;
+                    const label = isRequested ? "Requested" : isFollowing ? "Following" : "Follow";
                     if (!canShowFollowButton) return null;
                     return (
                       <Pressable
                         accessibilityRole="button"
-                        accessibilityLabel={`${isFollowing ? "Following" : "Follow"} ${person.name}`}
+                        accessibilityLabel={
+                          isRequested
+                            ? `Follow request sent to ${person.name}`
+                            : `${label} ${person.name}`
+                        }
+                        accessibilityHint={isRequested ? "Cancels your follow request" : undefined}
                         onPress={() => toggleFollow(person.userId)}
                         hitSlop={8}
                         style={[
                           styles.followButton,
                           {
-                            backgroundColor: isFollowing ? palette.surface : palette.orange,
-                            borderColor: isFollowing ? palette.border : palette.orange,
+                            backgroundColor: isMuted ? palette.surface : palette.orange,
+                            borderColor: isMuted ? palette.border : palette.orange,
                             borderRadius: componentRadii.button,
                           },
                         ]}
@@ -232,11 +241,11 @@ function ProfileConnectionsScreen({ navigation }: Props) {
                         <AppText
                           variant="micro"
                           style={{
-                            color: isFollowing ? palette.text : palette.white,
+                            color: isMuted ? palette.text : palette.white,
                             fontWeight: "800",
                           }}
                         >
-                          {isFollowing ? "Following" : "Follow"}
+                          {label}
                         </AppText>
                       </Pressable>
                     );

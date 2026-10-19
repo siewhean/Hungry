@@ -75,6 +75,8 @@ interface SocialState {
   interactions: Record<string, InteractionState>;
   followedAuthors: Record<string, boolean>;
   followedUserIds: Record<string, boolean>;
+  /** Users the viewer has a pending follow request to (private accounts). */
+  requestedUserIds: Record<string, boolean>;
   commentsByPostId: Record<string, SocialComment[]>;
   repliesByCommentId: Record<string, SocialReply[]>;
 
@@ -86,6 +88,8 @@ interface SocialState {
   markFollowedUserIds: (userIds: string[]) => void;
   /** Reconcile one user's follow state with the server (true or false). */
   setFollowedUserId: (userId: string, isFollowing: boolean) => void;
+  /** Reconcile one user's pending follow request state with the server. */
+  setFollowRequested: (userId: string, isRequested: boolean) => void;
   incrementShare: (postId: string, channel?: ShareChannel) => void;
   addComment: (postId: string, comment: SocialComment) => void;
   addReply: (postId: string, reply: SocialReply) => void;
@@ -116,6 +120,7 @@ export const useSocialStore = create<SocialState>()(
       interactions: {},
       followedAuthors: {},
       followedUserIds: {},
+      requestedUserIds: {},
       commentsByPostId: {},
       repliesByCommentId: {},
 
@@ -124,6 +129,7 @@ export const useSocialStore = create<SocialState>()(
           interactions: {},
           followedAuthors: {},
           followedUserIds: {},
+          requestedUserIds: {},
           commentsByPostId: {},
           repliesByCommentId: {},
         }),
@@ -302,20 +308,38 @@ export const useSocialStore = create<SocialState>()(
 
       toggleFollow: (userId: string) => {
         const isFollowing = get().followedUserIds[userId] ?? false;
+        const service = getHungryService();
+        const { useUIStore } = require("./useUIStore") as typeof import("./useUIStore");
+        // "Requested": tapping again withdraws the pending request.
+        if (!isFollowing && get().requestedUserIds[userId]) {
+          set((prev) => ({
+            requestedUserIds: { ...prev.requestedUserIds, [userId]: false },
+          }));
+          void service.social.cancelFollowRequest(userId).catch((error) => {
+            console.error("Failed to cancel follow request", error);
+            set((prev) => ({
+              requestedUserIds: { ...prev.requestedUserIds, [userId]: true },
+            }));
+            useUIStore.getState().showToast({
+              message: "Couldn't cancel the request. Please try again.",
+              tone: "error",
+            });
+          });
+          return;
+        }
         set((prev) => ({
           followedUserIds: {
             ...prev.followedUserIds,
             [userId]: !isFollowing,
           },
         }));
-        const service = getHungryService();
-        const { useUIStore } = require("./useUIStore") as typeof import("./useUIStore");
         void (isFollowing ? service.social.unfollowUser(userId) : service.social.followUser(userId))
           .then((result) => {
             // Private accounts must approve the request, so the viewer is not following yet.
             if (result !== "pending") return;
             set((prev) => ({
               followedUserIds: { ...prev.followedUserIds, [userId]: false },
+              requestedUserIds: { ...prev.requestedUserIds, [userId]: true },
             }));
             useUIStore.getState().showToast({
               message: "Follow request sent. You'll follow them once they approve.",
@@ -352,6 +376,14 @@ export const useSocialStore = create<SocialState>()(
         if (Boolean(get().followedUserIds[userId]) === isFollowing) return;
         set((prev) => ({
           followedUserIds: { ...prev.followedUserIds, [userId]: isFollowing },
+        }));
+      },
+
+      setFollowRequested: (userId, isRequested) => {
+        if (!userId) return;
+        if (Boolean(get().requestedUserIds[userId]) === isRequested) return;
+        set((prev) => ({
+          requestedUserIds: { ...prev.requestedUserIds, [userId]: isRequested },
         }));
       },
 

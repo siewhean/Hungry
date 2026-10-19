@@ -869,6 +869,21 @@ export interface HungryService {
       userId: string,
     ): Promise<{ followersCount: number; followingCount: number } | null>;
     isFollowing(userId: string): Promise<boolean>;
+    /** The viewer's follow toward this user: approved, a pending request, or none. */
+    getFollowStatus(userId: string): Promise<"approved" | "pending" | "none">;
+    /** Withdraw the viewer's pending request to follow this user; no-op when there is none. */
+    cancelFollowRequest(userId: string): Promise<void>;
+    /** One page of the viewer's incoming pending follow requests; `limit` defaults to 50 (max 200). */
+    listFollowRequests(page?: {
+      limit?: number;
+      offset?: number;
+    }): Promise<{ userId: string; displayName: string; avatarUrl?: string; requestedAt: string }[]>;
+    /** Number of incoming pending follow requests (blocked users excluded). */
+    getFollowRequestCount(): Promise<number>;
+    /** Approve a pending request: the requester becomes an approved follower. */
+    approveFollowRequest(requesterId: string): Promise<void>;
+    /** Decline a pending request: it is removed and the requester may ask again later. */
+    declineFollowRequest(requesterId: string): Promise<void>;
 
     // Comments
     createComment(
@@ -1186,7 +1201,7 @@ export interface HungryService {
         actorId: string;
         actorName: string;
         actorAvatarUrl?: string;
-        eventType: "new_like" | "new_comment" | "new_reply" | "new_follower";
+        eventType: "new_like" | "new_comment" | "new_reply" | "new_follower" | "follow_request";
         targetType: "post" | "comment" | "profile";
         targetId: string;
         readAt?: string;

@@ -65,6 +65,7 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "WheelStack",
   "ActivityInbox",
   "ActivityPostDetail",
+  "FollowRequests",
   "ChatDetail",
   "DirectMessages",
   "Crave",
@@ -99,6 +100,7 @@ const PROTECTED_ROOT_ROUTES = new Set<RootRouteName>([
   "PostComposerV2",
   "ActivityInbox",
   "ActivityPostDetail",
+  "FollowRequests",
   "ChatDetail",
   "DirectMessages",
   "EditProfile",
@@ -223,6 +225,10 @@ const loadActivityPostDetailScreen = () =>
   (
     require("@/app/screens/home/ActivityPostDetailScreen") as typeof import("@/app/screens/home/ActivityPostDetailScreen")
   ).ActivityPostDetailScreen;
+const loadFollowRequestsScreen = () =>
+  (
+    require("@/app/screens/profile/FollowRequestsScreen") as typeof import("@/app/screens/profile/FollowRequestsScreen")
+  ).FollowRequestsScreen;
 const loadChatDetailScreen = () =>
   (
     require("@/app/screens/home/ChatDetailScreen") as typeof import("@/app/screens/home/ChatDetailScreen")
@@ -717,6 +723,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen getComponent={loadWheelStack} name="WheelStack" />
           <RootStack.Screen getComponent={loadActivityInboxScreen} name="ActivityInbox" />
           <RootStack.Screen getComponent={loadActivityPostDetailScreen} name="ActivityPostDetail" />
+          <RootStack.Screen getComponent={loadFollowRequestsScreen} name="FollowRequests" />
           {FEATURE_FLAGS.directMessagesEnabled ? (
             <>
               <RootStack.Screen getComponent={loadChatDetailScreen} name="ChatDetail" />
