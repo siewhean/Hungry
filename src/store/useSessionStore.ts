@@ -110,9 +110,39 @@ function clearAccountScopedStores(): void {
   const { useStallFollowStore } =
     require("./useStallFollowStore") as typeof import("./useStallFollowStore");
   useStallFollowStore.getState()._reset();
+  // Lists hold private notes and collaborators: never show them to the next account.
+  const { useChecklistStore } =
+    require("./useChecklistStore") as typeof import("./useChecklistStore");
+  const { usePortfolioStore } =
+    require("./usePortfolioStore") as typeof import("./usePortfolioStore");
+  useChecklistStore.getState()._reset();
+  usePortfolioStore.getState()._reset();
   const { clearCommunitySafetySessionState } =
     require("@/lib/security/communitySafety") as typeof import("@/lib/security/communitySafety");
   clearCommunitySafetySessionState();
+}
+
+/** Account whose follow state was already loaded during this app launch. */
+let followStateSyncedUserId: string | null = null;
+
+/**
+ * Follow state lives on the server; load it on sign-in so a new device shows it, and once
+ * per launch for a restored session so follows changed on another device are picked up.
+ */
+function syncFollowStateFromServer(
+  userId: string | null | undefined,
+  options?: { oncePerLaunch?: boolean },
+): void {
+  if (!userId) return;
+  if (options?.oncePerLaunch && followStateSyncedUserId === userId) return;
+  followStateSyncedUserId = userId;
+  const { useSocialStore } = require("./useSocialStore") as typeof import("./useSocialStore");
+  void useSocialStore
+    .getState()
+    .syncFollowedUserIds(userId)
+    .catch((error) => {
+      console.error("Failed to load follow state", error);
+    });
 }
 
 function shouldEnablePostHogIdentity() {
@@ -220,6 +250,7 @@ export const useSessionStore = create<SessionState>()(
         scheduleIdleWork(
           () => {
             identifyPostHogUser(profileId, buildPostHogIdentityProperties());
+            syncFollowStateFromServer(nextUserId);
             if (options?.trackSignInEvent ?? true) {
               trackSignInCompletedOnce(profileId, {
                 method: options?.authProvider ?? "email",
@@ -327,6 +358,7 @@ export const useSessionStore = create<SessionState>()(
           scheduleIdleWork(
             () => {
               identifyPostHogUser(profileId, buildPostHogIdentityProperties());
+              syncFollowStateFromServer(nextUserId, { oncePerLaunch: true });
               if (!currentlyAuthenticated) {
                 trackSignInCompletedOnce(profileId, {
                   method: "email",

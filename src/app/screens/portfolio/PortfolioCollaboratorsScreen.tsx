@@ -1,42 +1,26 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ArrowLeft, UserPlus } from "lucide-react-native";
+import { ArrowLeft } from "lucide-react-native";
 
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import { CollaboratorRow } from "@/components/portfolio";
-import { AppText, Button, Card, Input } from "@/components/ui";
+import { AppText, Card } from "@/components/ui";
+import { runListMutation } from "@/features/checklistPortfolio/runListMutation";
 import { usePortfolioStore } from "@/store/usePortfolioStore";
 import { useHungryTheme } from "@/theme";
-import type { PortfolioCollaboratorRole } from "@/types/domain";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "PortfolioCollaborators">;
 
 export function PortfolioCollaboratorsScreen({ navigation, route }: Props) {
   const { palette, spacing } = useHungryTheme();
   const portfolioId = route.params.portfolioId;
-  const { collaborators, loadPortfolioCollaborators, addCollaborator, removeCollaborator } =
-    usePortfolioStore();
+  const { collaborators, loadPortfolioCollaborators, removeCollaborator } = usePortfolioStore();
   const portfolioCollaborators = collaborators[portfolioId] ?? [];
-  const [userId, setUserId] = useState("");
-  const [role, setRole] = useState<PortfolioCollaboratorRole>("viewer");
-  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     void loadPortfolioCollaborators(portfolioId);
   }, [loadPortfolioCollaborators, portfolioId]);
-
-  async function add() {
-    const normalizedUserId = userId.trim();
-    if (!normalizedUserId) return;
-    setIsSaving(true);
-    try {
-      await addCollaborator(portfolioId, normalizedUserId, role);
-      setUserId("");
-    } finally {
-      setIsSaving(false);
-    }
-  }
 
   return (
     <ScrollView
@@ -55,46 +39,18 @@ export function PortfolioCollaboratorsScreen({ navigation, route }: Props) {
         <View style={{ flex: 1 }}>
           <AppText variant="h1">Collaborators</AppText>
           <AppText variant="bodySmall" tone="secondary">
-            Add trusted people to view or edit this portfolio.
+            People who can view or edit this portfolio.
           </AppText>
         </View>
       </View>
 
+      {/* Adding people needs a user/follower picker or invite link (product decision);
+          a raw user id field was unusable because ids are shown nowhere in the app. */}
       <Card>
-        <Input
-          label="User id"
-          value={userId}
-          onChangeText={setUserId}
-          placeholder="Paste a Hungry user id"
-        />
-        <View style={styles.actionRow}>
-          {(["viewer", "editor"] as PortfolioCollaboratorRole[]).map((nextRole) => (
-            <Pressable
-              key={nextRole}
-              accessibilityRole="radio"
-              accessibilityState={{ checked: role === nextRole }}
-              onPress={() => setRole(nextRole)}
-              style={[
-                styles.roleChip,
-                {
-                  backgroundColor: role === nextRole ? palette.orangeLight : palette.surfaceRaised,
-                  borderColor: role === nextRole ? palette.orange : palette.border,
-                },
-              ]}
-            >
-              <AppText variant="bodySmallBold" tone={role === nextRole ? "accent" : "secondary"}>
-                {nextRole}
-              </AppText>
-            </Pressable>
-          ))}
-        </View>
-        <Button
-          label="Add collaborator"
-          loading={isSaving}
-          disabled={!userId.trim()}
-          leftIcon={<UserPlus color={palette.textOnOrange} size={18} />}
-          onPress={add}
-        />
+        <AppText variant="h3">{"Inviting collaborators isn't available yet"}</AppText>
+        <AppText variant="body" tone="secondary">
+          You can still remove people who already collaborate on this list.
+        </AppText>
       </Card>
 
       {portfolioCollaborators.length === 0 ? (
@@ -109,7 +65,12 @@ export function PortfolioCollaboratorsScreen({ navigation, route }: Props) {
           <CollaboratorRow
             key={collaborator.id}
             collaborator={collaborator}
-            onRemove={() => removeCollaborator(portfolioId, collaborator.userId)}
+            onRemove={() =>
+              void runListMutation(() => removeCollaborator(portfolioId, collaborator.userId), {
+                success: "Collaborator removed",
+                failure: "Couldn't remove the collaborator.",
+              })
+            }
           />
         ))
       )}
@@ -118,12 +79,6 @@ export function PortfolioCollaboratorsScreen({ navigation, route }: Props) {
 }
 
 const styles = StyleSheet.create({
-  actionRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
   content: {
     paddingBottom: 120,
   },
@@ -137,11 +92,5 @@ const styles = StyleSheet.create({
     minHeight: 44,
     minWidth: 44,
     justifyContent: "center",
-  },
-  roleChip: {
-    borderRadius: 999,
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
   },
 });

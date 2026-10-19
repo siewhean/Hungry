@@ -255,6 +255,32 @@ function mapPortfolioItem(row: Row): PortfolioItem {
   };
 }
 
+/**
+ * Readable portfolio_items columns. private_notes is not granted to clients
+ * (20261019111000); owners and collaborators read it via get_portfolio_private_notes.
+ */
+const PORTFOLIO_ITEM_COLUMNS =
+  "id,portfolio_id,item_type,dish_id,stall_id,score,public_notes,position,created_at,updated_at";
+
+async function attachPortfolioPrivateNotes(
+  client: SupabaseClient,
+  portfolioId: string,
+  items: PortfolioItem[],
+): Promise<PortfolioItem[]> {
+  if (!items.length) return items;
+  const { data, error } = await client.rpc("get_portfolio_private_notes", {
+    p_portfolio_id: portfolioId,
+  });
+  // Viewers who are not the owner or a collaborator get no rows; on error show no notes.
+  if (error || !Array.isArray(data)) return items;
+  const notesById = new Map(
+    (data as Row[]).map((row) => [String(row.item_id ?? ""), asString(row.private_notes)]),
+  );
+  return items.map((item) =>
+    notesById.has(item.id) ? { ...item, privateNotes: notesById.get(item.id) } : item,
+  );
+}
+
 function mapPortfolioCollaborator(row: Row): PortfolioCollaborator {
   return {
     id: String(row.id ?? ""),
@@ -1131,15 +1157,24 @@ function groupRowsByStringKey(rows: Row[], key: string): Map<string, Row[]> {
   return grouped;
 }
 
-async function fetchPublishedPostBites(client: SupabaseClient, limit = 40): Promise<Bite[]> {
-  const { data, error } = await client
-    .from("posts")
-    .select("*")
-    .eq("status", "published")
-    .is("deleted_at", null)
+/** Default page size for one user's profile post grid. */
+const USER_POSTS_PAGE_SIZE = 60;
+
+async function fetchPublishedPostBites(
+  client: SupabaseClient,
+  limit = 40,
+  options?: { authorId?: string; offset?: number },
+): Promise<Bite[]> {
+  let query = client.from("posts").select("*").eq("status", "published").is("deleted_at", null);
+  // One author's posts are filtered on the server so older posts are not cut off.
+  if (options?.authorId) query = query.eq("author_id", options.authorId);
+  const offset = options?.offset ?? 0;
+  const { data, error } = await query
     .order("published_at", { ascending: false })
     .order("created_at", { ascending: false })
-    .limit(limit);
+    .range(offset, offset + limit - 1);
+  // An author read throws so a failed load is not shown as "No posts yet".
+  if (error && options?.authorId) throw error;
   if (error || !Array.isArray(data)) return [];
 
   const postRows = data as Row[];
@@ -3262,9 +3297,9 @@ export const supabaseService: HungryService = {
         )
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
-      if (error || !Array.isArray(data)) {
-        return [];
-      }
+      // Thrown so a failed read is not shown as "No reviews yet".
+      if (error) throw error;
+      if (!Array.isArray(data)) return [];
       return mapSupabaseReviewRows(client, data as Row[]);
     },
 
@@ -3700,10 +3735,12 @@ export const supabaseService: HungryService = {
       return fetchPublishedPostBites(client);
     },
 
-    async listUserPosts(userId: string) {
+    async listUserPosts(userId: string, page?: { limit?: number; offset?: number }) {
       const client = requireSupabaseClient();
-      const bites = await fetchPublishedPostBites(client);
-      return bites.filter((bite) => bite.authorId === userId);
+      return fetchPublishedPostBites(client, page?.limit ?? USER_POSTS_PAGE_SIZE, {
+        authorId: userId,
+        offset: page?.offset ?? 0,
+      });
     },
 
     async postBite(draft: BiteDraft) {
@@ -4036,7 +4073,9 @@ export const supabaseService: HungryService = {
         p_limit: page?.limit ?? 100,
         p_offset: page?.offset ?? 0,
       });
-      if (error || !Array.isArray(data)) return [];
+      // Thrown so screens can tell a failed read from an empty list.
+      if (error) throw error;
+      if (!Array.isArray(data)) return [];
       return (data as Row[]).map((row) => ({
         userId: asString(row.user_id) ?? "",
         displayName: asString(row.display_name) ?? "",
@@ -4051,7 +4090,9 @@ export const supabaseService: HungryService = {
         p_limit: page?.limit ?? 100,
         p_offset: page?.offset ?? 0,
       });
-      if (error || !Array.isArray(data)) return [];
+      // Thrown so screens can tell a failed read from an empty list.
+      if (error) throw error;
+      if (!Array.isArray(data)) return [];
       return (data as Row[]).map((row) => ({
         userId: asString(row.user_id) ?? "",
         displayName: asString(row.display_name) ?? "",
@@ -6884,11 +6925,15 @@ export const supabaseService: HungryService = {
       const insertedId = String(data ?? "");
       const { data: row, error: fetchError } = await client
         .from("portfolio_items")
-        .select("*")
+        .select(PORTFOLIO_ITEM_COLUMNS)
         .eq("id", insertedId)
         .single();
       if (fetchError) throw fetchError;
-      return mapPortfolioItem(row as Row);
+      // The writer just saved these notes, so they are returned without another read.
+      return {
+        ...mapPortfolioItem(row as unknown as Row),
+        privateNotes: input.privateNotes?.trim() || undefined,
+      };
     },
 
     async getPortfolioItems(portfolioId: string) {
@@ -6896,11 +6941,12 @@ export const supabaseService: HungryService = {
       if (!client) throw new Error("Supabase client not initialized");
       const { data, error } = await client
         .from("portfolio_items")
-        .select("*")
+        .select(PORTFOLIO_ITEM_COLUMNS)
         .eq("portfolio_id", portfolioId)
         .order("position", { ascending: true });
       if (error) throw error;
-      return (data || []).map((row) => mapPortfolioItem(row as Row));
+      const items = (data || []).map((row) => mapPortfolioItem(row as unknown as Row));
+      return attachPortfolioPrivateNotes(client, portfolioId, items);
     },
 
     async updatePortfolioItem(id: string, updates: any, options?: PortfolioMutationOptions) {
@@ -7071,15 +7117,11 @@ export const supabaseService: HungryService = {
     async resolvePortfolioFlag(flagId: string, resolution: "dismissed" | "removed") {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
-      const userId = await getCurrentSupabaseUserId();
-      const { error } = await client
-        .from("portfolio_flags")
-        .update({
-          status: resolution,
-          reviewed_by: userId,
-          reviewed_at: new Date().toISOString(),
-        })
-        .eq("id", flagId);
+      // "removed" also takes the list down (unpublished and private), not just the flag.
+      const { error } = await client.rpc("resolve_portfolio_flag", {
+        p_flag_id: flagId,
+        p_resolution: resolution,
+      });
       if (error) throw error;
     },
 

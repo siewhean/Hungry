@@ -22,13 +22,14 @@ import {
   UserPlus,
 } from "lucide-react-native";
 
-import { AccessibleImage, AppText, Card, EmptyState, Skeleton } from "@/components/ui";
+import { AccessibleImage, AppText, Button, Card, EmptyState, Skeleton } from "@/components/ui";
 import { FloatingShareSendButton, InAppShareCard } from "@/components/social";
 import { MissionBanner } from "@/components/gamification/MissionBanner";
 import { PassportCard } from "@/components/gamification/PassportCard";
 import { toChatShareRecipient, type ChatShareRecipient } from "@/features/home/chatShare";
 import { prefetchMerchantTab, preloadRoute } from "@/features/navigation/prefetch";
-import { listSharedStallPosts } from "@/features/social/sharedStallPosts";
+import { listSharedStallPosts, mergeStallPosts } from "@/features/social/sharedStallPosts";
+import { biteToStallPost } from "@/lib/services/postTransforms";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -69,6 +70,9 @@ type ProfileRouteParams = {
 function normalizePersonName(name: string) {
   return name.trim().toLowerCase();
 }
+
+/** Own posts per server page; matches listUserPosts' default page size. */
+const OWN_POSTS_PAGE_SIZE = 60;
 
 function haveEqualPosts(left: StallPost[], right: StallPost[]) {
   if (left.length !== right.length) return false;
@@ -170,6 +174,11 @@ export function ProfileHomeScreen({
   const [isTasteShareSheetOpen, setIsTasteShareSheetOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [profilePosts, setProfilePosts] = useState<StallPost[]>([]);
+  // Server rows fetched so far (offset for the next page) and whether another page may exist.
+  const [loadedPostRows, setLoadedPostRows] = useState(0);
+  const [hasMorePosts, setHasMorePosts] = useState(false);
+  const [isLoadingMorePosts, setIsLoadingMorePosts] = useState(false);
+  const [postsLoadFailed, setPostsLoadFailed] = useState(false);
   const rootNavigation = getRootNavigation(navigation as any);
 
   const openProfileConnections = useCallback(
@@ -294,30 +303,49 @@ export function ProfileHomeScreen({
     profile.id,
   ]);
 
+  const loadOwnPostsPage = useCallback(
+    (offset: number) =>
+      getHungryService()
+        .social.listUserPosts(profile.id, { limit: OWN_POSTS_PAGE_SIZE, offset })
+        .then((bites) => ({
+          rowCount: bites.length,
+          nextPosts: bites.map((bite) =>
+            biteToStallPost(bite, { authorAvatarUrl: bite.authorAvatar }),
+          ),
+        })),
+    [profile.id],
+  );
+
   useEffect(() => {
     if (!isAuthenticated) {
       setProfilePosts([]);
+      setHasMorePosts(false);
+      setPostsLoadFailed(false);
       return;
     }
 
     let isMounted = true;
 
     const loadProfilePosts = async () => {
-      try {
-        const posts = await listSharedStallPosts();
-        if (!isMounted) return;
-        const nextPosts = posts.filter(
-          (post) =>
-            post.authorId === profile.id ||
-            post.authorName.toLowerCase() === profile.displayName.toLowerCase(),
-        );
-        setProfilePosts((current) => (haveEqualPosts(current, nextPosts) ? current : nextPosts));
-      } catch (error) {
-        console.error("Failed to load profile posts:", error);
-        if (isMounted) {
-          setProfilePosts([]);
-        }
-      }
+      // Own posts come from a server read filtered by author id, so older posts are not
+      // cut off by the feed window; matching is by id only (display names are not unique).
+      // Each source fails on its own, so a failed server read keeps the locally shared posts.
+      const [ownPage, sharedPosts] = await Promise.all([
+        loadOwnPostsPage(0).catch((error) => {
+          console.error("Failed to load profile posts:", error);
+          return null;
+        }),
+        listSharedStallPosts().catch(() => [] as StallPost[]),
+      ]);
+      if (!isMounted) return;
+      const nextPosts = mergeStallPosts(
+        ownPage?.nextPosts ?? [],
+        sharedPosts.filter((post) => post.authorId === profile.id),
+      );
+      setProfilePosts((current) => (haveEqualPosts(current, nextPosts) ? current : nextPosts));
+      setPostsLoadFailed(ownPage === null);
+      setLoadedPostRows(ownPage?.rowCount ?? 0);
+      setHasMorePosts(ownPage?.rowCount === OWN_POSTS_PAGE_SIZE);
     };
 
     void loadProfilePosts();
@@ -325,7 +353,22 @@ export function ProfileHomeScreen({
     return () => {
       isMounted = false;
     };
-  }, [isAuthenticated, profile.displayName, profile.id]);
+  }, [isAuthenticated, loadOwnPostsPage, profile.id]);
+
+  const loadMoreProfilePosts = () => {
+    if (isLoadingMorePosts || !hasMorePosts) return;
+    setIsLoadingMorePosts(true);
+    void loadOwnPostsPage(loadedPostRows)
+      .then(({ nextPosts, rowCount }) => {
+        setProfilePosts((current) => mergeStallPosts(current, nextPosts));
+        setLoadedPostRows((current) => current + rowCount);
+        setHasMorePosts(rowCount === OWN_POSTS_PAGE_SIZE);
+      })
+      .catch((error) => {
+        console.error("Failed to load more posts:", error);
+      })
+      .finally(() => setIsLoadingMorePosts(false));
+  };
 
   const sortedProfilePosts = useMemo(() => {
     return [...profilePosts].sort((a, b) => {
@@ -990,6 +1033,12 @@ export function ProfileHomeScreen({
                     </Pressable>
                   ))}
                 </View>
+              ) : postsLoadFailed ? (
+                <EmptyState
+                  title="Couldn't load posts"
+                  body="Check your connection and open your profile again."
+                  icon={<MessageCircleMore size={36} color={palette.textSecondary} />}
+                />
               ) : (
                 <EmptyState
                   title="No posts yet"
@@ -1014,6 +1063,15 @@ export function ProfileHomeScreen({
                 icon={<MessageCircleMore size={36} color={palette.textSecondary} />}
               />
             )}
+            {activeShareTab === "posts" && hasMorePosts ? (
+              <Button
+                label="Load more"
+                variant="ghost"
+                size="sm"
+                loading={isLoadingMorePosts}
+                onPress={loadMoreProfilePosts}
+              />
+            ) : null}
           </View>
         </View>
 

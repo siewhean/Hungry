@@ -66,6 +66,8 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "ActivityInbox",
   "ActivityPostDetail",
   "FollowRequests",
+  "UserFollowers",
+  "UserFollowing",
   "ChatDetail",
   "DirectMessages",
   "Crave",
@@ -101,6 +103,8 @@ const PROTECTED_ROOT_ROUTES = new Set<RootRouteName>([
   "ActivityInbox",
   "ActivityPostDetail",
   "FollowRequests",
+  "UserFollowers",
+  "UserFollowing",
   "ChatDetail",
   "DirectMessages",
   "EditProfile",
@@ -229,6 +233,14 @@ const loadFollowRequestsScreen = () =>
   (
     require("@/app/screens/profile/FollowRequestsScreen") as typeof import("@/app/screens/profile/FollowRequestsScreen")
   ).FollowRequestsScreen;
+const loadUserFollowersScreen = () =>
+  (
+    require("@/app/screens/profile/ProfileConnectionsScreen") as typeof import("@/app/screens/profile/ProfileConnectionsScreen")
+  ).FollowersScreen;
+const loadUserFollowingScreen = () =>
+  (
+    require("@/app/screens/profile/ProfileConnectionsScreen") as typeof import("@/app/screens/profile/ProfileConnectionsScreen")
+  ).FollowingScreen;
 const loadChatDetailScreen = () =>
   (
     require("@/app/screens/home/ChatDetailScreen") as typeof import("@/app/screens/home/ChatDetailScreen")
@@ -751,6 +763,8 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen getComponent={loadActivityInboxScreen} name="ActivityInbox" />
           <RootStack.Screen getComponent={loadActivityPostDetailScreen} name="ActivityPostDetail" />
           <RootStack.Screen getComponent={loadFollowRequestsScreen} name="FollowRequests" />
+          <RootStack.Screen getComponent={loadUserFollowersScreen} name="UserFollowers" />
+          <RootStack.Screen getComponent={loadUserFollowingScreen} name="UserFollowing" />
           {FEATURE_FLAGS.directMessagesEnabled ? (
             <>
               <RootStack.Screen getComponent={loadChatDetailScreen} name="ChatDetail" />

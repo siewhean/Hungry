@@ -92,6 +92,8 @@ interface SocialState {
   setFollowRequested: (userId: string, isRequested: boolean) => void;
   /** Re-check every locally "Requested" user with the server (approved, declined or cancelled). */
   reconcileRequestedFollows: () => Promise<void>;
+  /** Replace local follow state with the signed-in user's Following list from the server. */
+  syncFollowedUserIds: (userId: string) => Promise<void>;
   incrementShare: (postId: string, channel?: ShareChannel) => void;
   addComment: (postId: string, comment: SocialComment) => void;
   addReply: (postId: string, reply: SocialReply) => void;
@@ -115,6 +117,9 @@ function toSocialComment(row: ServiceComment, fallbackName: string, fallbackAvat
     createdAt: row.createdAt,
   } satisfies SocialComment;
 }
+
+const FOLLOW_SYNC_PAGE_SIZE = 500;
+const FOLLOW_SYNC_MAX_PAGES = 4;
 
 export const useSocialStore = create<SocialState>()(
   persist(
@@ -420,6 +425,48 @@ export const useSocialStore = create<SocialState>()(
           });
           return { followedUserIds: followed, requestedUserIds: requested };
         });
+      },
+
+      syncFollowedUserIds: async (userId) => {
+        if (!userId) return;
+        const social = getHungryService().social;
+        // Snapshot to keep any follow the user toggles while this request is in flight.
+        const startFollowed = get().followedUserIds;
+        const startRequested = get().requestedUserIds;
+        const followingIds: string[] = [];
+        // Bounded: a very large Following list keeps its first pages and falls back to
+        // per-profile checks (getFollowStatus) for the rest.
+        for (let page = 0; page < FOLLOW_SYNC_MAX_PAGES; page += 1) {
+          const rows = await social.listFollowing(userId, {
+            limit: FOLLOW_SYNC_PAGE_SIZE,
+            offset: page * FOLLOW_SYNC_PAGE_SIZE,
+          });
+          rows.forEach((row) => {
+            if (row.userId) followingIds.push(row.userId);
+          });
+          if (rows.length < FOLLOW_SYNC_PAGE_SIZE) {
+            // Complete list: the server wins both ways, so stale local follows are cleared.
+            const followed: Record<string, boolean> = {};
+            followingIds.forEach((id) => {
+              followed[id] = true;
+            });
+            set((prev) => {
+              Object.keys({ ...startFollowed, ...prev.followedUserIds }).forEach((id) => {
+                const current = Boolean(prev.followedUserIds[id]);
+                if (current !== Boolean(startFollowed[id])) followed[id] = current;
+              });
+              const requested = { ...prev.requestedUserIds };
+              followingIds.forEach((id) => {
+                if (Boolean(prev.requestedUserIds[id]) === Boolean(startRequested[id])) {
+                  requested[id] = false;
+                }
+              });
+              return { followedUserIds: followed, requestedUserIds: requested };
+            });
+            return;
+          }
+        }
+        get().markFollowedUserIds(followingIds);
       },
 
       loadCommentsForPost: async (postId) => {

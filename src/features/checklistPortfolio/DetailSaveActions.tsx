@@ -100,9 +100,10 @@ export function useDetailSaveActions({ navigation, target }: UseDetailSaveAction
         checklistState = useChecklistStore.getState();
       }
 
-      let checklist =
-        checklistState.checklists.find((entry) => entry.name === DEFAULT_CHECKLIST_NAME) ??
-        checklistState.checklists[0];
+      // Quick save only ever uses its own "Want to Try" list, never another checklist.
+      let checklist = checklistState.checklists.find(
+        (entry) => entry.name === DEFAULT_CHECKLIST_NAME,
+      );
       if (!checklist) {
         checklist = await checklistState.createChecklist(DEFAULT_CHECKLIST_NAME);
       }
@@ -152,10 +153,11 @@ export function useDetailSaveActions({ navigation, target }: UseDetailSaveAction
         portfolioState = usePortfolioStore.getState();
       }
 
-      let portfolio =
-        portfolioState.portfolios.find(
-          (entry) => entry.ownerId === profile.id && entry.name === DEFAULT_PORTFOLIO_NAME,
-        ) ?? portfolioState.portfolios.find((entry) => entry.ownerId === profile.id);
+      // Quick save only ever uses its own private "Hungry Picks" list: falling back to the
+      // first owned portfolio could add the item to a published public ranking.
+      let portfolio = portfolioState.portfolios.find(
+        (entry) => entry.ownerId === profile.id && entry.name === DEFAULT_PORTFOLIO_NAME,
+      );
       if (!portfolio) {
         portfolio = await portfolioState.createPortfolio({
           name: DEFAULT_PORTFOLIO_NAME,
@@ -181,8 +183,8 @@ export function useDetailSaveActions({ navigation, target }: UseDetailSaveAction
         .getState()
         .addItem(
           target.itemType === "dish"
-            ? { portfolioId: portfolio.id, itemType: "dish", dishId: target.id, score: 8 }
-            : { portfolioId: portfolio.id, itemType: "stall", stallId: target.id, score: 8 },
+            ? { portfolioId: portfolio.id, itemType: "dish", dishId: target.id }
+            : { portfolioId: portfolio.id, itemType: "stall", stallId: target.id },
         );
       showToast({ message: `Added to ${portfolio.name}.`, tone: "success" });
     } catch (error) {

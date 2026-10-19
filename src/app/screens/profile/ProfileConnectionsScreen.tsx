@@ -10,10 +10,15 @@ import { getHungryService } from "@/lib/services/serviceProvider";
 import { useSocialStore } from "@/store/useSocialStore";
 import { useHungryTheme } from "@/theme";
 import { useProfileStore } from "@/store/useProfileStore";
+import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import type { ProfileStackParamList } from "./ProfileStack";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 
-type ProfileConnectionsRoute = RouteProp<ProfileStackParamList, "Followers" | "Following">;
+// Also registered on the root stack (UserFollowers/UserFollowing) for other users' profiles.
+type ProfileConnectionsRoute = RouteProp<
+  ProfileStackParamList & Pick<RootStackParamList, "UserFollowers" | "UserFollowing">,
+  "Followers" | "Following" | "UserFollowers" | "UserFollowing"
+>;
 
 type UserProfileItem = {
   userId: string;
@@ -21,7 +26,9 @@ type UserProfileItem = {
   avatarUrl: string;
 };
 
-type Props = NativeStackScreenProps<ProfileStackParamList, "Followers" | "Following">;
+type Props =
+  | NativeStackScreenProps<ProfileStackParamList, "Followers" | "Following">
+  | NativeStackScreenProps<RootStackParamList, "UserFollowers" | "UserFollowing">;
 
 /** Rows per request; matches the list RPCs' default page size. */
 const CONNECTIONS_PAGE_SIZE = 100;
@@ -60,7 +67,7 @@ function ProfileConnectionsScreen({ navigation }: Props) {
   const targetUserId = route.params?.userId ?? profile.id;
   const targetDisplayName = route.params?.userDisplayName?.trim() || profile.displayName;
   const isOwnProfile = targetUserId === profile.id;
-  const isFollowingTab = route.name === "Following";
+  const isFollowingTab = route.name === "Following" || route.name === "UserFollowing";
   // Lists come only from the server for the profile being viewed; local follow state
   // only drives each row's Follow button.
   const [people, setPeople] = useState<UserProfileItem[]>([]);
@@ -71,6 +78,9 @@ function ProfileConnectionsScreen({ navigation }: Props) {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   // Private account (viewer not an approved follower) or blocked pair: the lists are hidden.
   const [listsHidden, setListsHidden] = useState(false);
+  // A failed read is shown as an error with Retry, never as an empty list.
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const normalizedQuery = searchQuery.toLowerCase().trim();
 
   const loadPage = useCallback(
@@ -105,6 +115,7 @@ function ProfileConnectionsScreen({ navigation }: Props) {
     const service = getHungryService().social;
     setIsLoadingConnections(true);
     setListsHidden(false);
+    setLoadFailed(false);
     setHasMore(false);
     setLoadedRowCount(0);
 
@@ -121,9 +132,11 @@ function ProfileConnectionsScreen({ navigation }: Props) {
         setLoadedRowCount(rowCount);
         setHasMore(rowCount === CONNECTIONS_PAGE_SIZE);
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error("Failed to load connections:", error);
         if (!isActive) return;
         setPeople([]);
+        setLoadFailed(true);
       })
       .finally(() => {
         if (!isActive) return;
@@ -133,7 +146,7 @@ function ProfileConnectionsScreen({ navigation }: Props) {
     return () => {
       isActive = false;
     };
-  }, [isOwnProfile, loadPage, targetUserId]);
+  }, [isOwnProfile, loadPage, reloadKey, targetUserId]);
 
   const loadMore = () => {
     if (isLoadingMore || !hasMore) return;
@@ -155,7 +168,7 @@ function ProfileConnectionsScreen({ navigation }: Props) {
     return people.filter((user) => user.name.toLowerCase().includes(normalizedQuery));
   }, [people, normalizedQuery]);
 
-  const title = route.name === "Followers" ? "Followers" : "Following";
+  const title = isFollowingTab ? "Following" : "Followers";
   const emptyTitle = listsHidden
     ? "This account is private"
     : isFollowingTab
@@ -193,10 +206,26 @@ function ProfileConnectionsScreen({ navigation }: Props) {
             <ActivityIndicator color={palette.orange} />
             <EmptyState title={loadingTitle} body={loadingBody} />
           </View>
+        ) : loadFailed ? (
+          <View style={{ gap: spacing[3] }}>
+            <EmptyState
+              title={`Couldn't load ${title.toLowerCase()}`}
+              body="Check your connection and try again."
+            />
+            <Button
+              label="Retry"
+              variant="secondary"
+              size="sm"
+              onPress={() => setReloadKey((current) => current + 1)}
+            />
+          </View>
         ) : visiblePeople.length ? (
           visiblePeople.map((person) => (
             <Pressable
               key={person.userId}
+              accessibilityRole="button"
+              accessibilityLabel={person.name}
+              accessibilityHint="Opens their profile"
               onPress={() =>
                 rootNavigation.navigate("UserProfile", {
                   authorName: person.name,

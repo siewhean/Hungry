@@ -28,7 +28,7 @@ export function PortfolioEditScreen({ navigation, route }: Props) {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    void loadPortfolios();
+    void loadPortfolios().catch((error) => console.error("Failed to load list:", error));
   }, [loadPortfolios]);
 
   useEffect(() => {

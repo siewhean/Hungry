@@ -8,6 +8,7 @@ import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { AppText, Button, Card, Input } from "@/components/ui";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { runListMutation } from "@/features/checklistPortfolio/runListMutation";
 import { useChecklistStore } from "@/store/useChecklistStore";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail, VenueSummary } from "@/types/domain";
@@ -139,8 +140,14 @@ export function ChecklistItemPickerScreen({ navigation, route }: Props) {
     if (hasScheduleError) return;
     setIsSaving(true);
     try {
-      await addItem({ checklistId, itemType: "dish", dishId: dish.id, ...getSchedulePayload() });
-      navigation.goBack();
+      const added = await runListMutation(
+        () => addItem({ checklistId, itemType: "dish", dishId: dish.id, ...getSchedulePayload() }),
+        {
+          success: "Added to checklist",
+          failure: "Couldn't add to checklist.",
+        },
+      );
+      if (added) navigation.goBack();
     } finally {
       setIsSaving(false);
     }
@@ -150,13 +157,20 @@ export function ChecklistItemPickerScreen({ navigation, route }: Props) {
     if (hasScheduleError) return;
     setIsSaving(true);
     try {
-      await addItem({
-        checklistId,
-        itemType: "stall",
-        stallId: venue.id,
-        ...getSchedulePayload(),
-      });
-      navigation.goBack();
+      const added = await runListMutation(
+        () =>
+          addItem({
+            checklistId,
+            itemType: "stall",
+            stallId: venue.id,
+            ...getSchedulePayload(),
+          }),
+        {
+          success: "Added to checklist",
+          failure: "Couldn't add to checklist.",
+        },
+      );
+      if (added) navigation.goBack();
     } finally {
       setIsSaving(false);
     }
@@ -166,8 +180,14 @@ export function ChecklistItemPickerScreen({ navigation, route }: Props) {
     if (!canSaveCustom || hasScheduleError) return;
     setIsSaving(true);
     try {
-      await addItem({ checklistId, itemType: "custom", customText, ...getSchedulePayload() });
-      navigation.goBack();
+      const added = await runListMutation(
+        () => addItem({ checklistId, itemType: "custom", customText, ...getSchedulePayload() }),
+        {
+          success: "Added to checklist",
+          failure: "Couldn't add to checklist.",
+        },
+      );
+      if (added) navigation.goBack();
     } finally {
       setIsSaving(false);
     }
