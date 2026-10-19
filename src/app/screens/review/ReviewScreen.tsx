@@ -23,7 +23,7 @@ import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
-import { useMerchantStore } from "@/store/useMerchantStore";
+import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
 import { useHungryTheme } from "@/theme";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { REVIEW_TEXT_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSanitization";
@@ -40,7 +40,7 @@ export function ReviewScreen({ navigation, route }: Props) {
   const repository = getDataRepository();
   const { palette, radii, spacing, shadows } = useHungryTheme();
   const rootNavigation = navigation.getParent()?.getParent();
-  const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
+  const isMerchantMode = useMerchantStore(isMerchantModeActive);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
   const isUserMode = !isMerchantMode && !isDeveloperMode;
 

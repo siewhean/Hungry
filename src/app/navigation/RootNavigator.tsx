@@ -22,7 +22,7 @@ import { isNetworkOffline } from "@/lib/network/connectivity";
 import { UserProfileScreen } from "@/app/screens/profile/UserProfileScreen";
 
 import { useSessionStore } from "@/store/useSessionStore";
-import { useMerchantStore } from "@/store/useMerchantStore";
+import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
@@ -468,7 +468,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
   const dismissSessionExpiry = useSessionStore((state) => state.dismissSessionExpiry);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
-  const isMerchantMode = useMerchantStore((state) => state.account !== null);
+  const isMerchantMode = useMerchantStore(isMerchantModeActive);
   const resetScrollBack = useUIStore((state) => state.resetScrollBack);
 
   const prefix = Linking.createURL("/");

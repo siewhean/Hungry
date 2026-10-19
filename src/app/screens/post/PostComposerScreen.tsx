@@ -22,7 +22,7 @@ import { POST_CAPTION_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputS
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
-import { useMerchantStore } from "@/store/useMerchantStore";
+import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
 import { useHungryTheme } from "@/theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Post">;
@@ -59,7 +59,7 @@ function PostComposerScreenInner({ navigation, route }: Props) {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const showToast = useUIStore((state) => state.showToast);
-  const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
+  const isMerchantMode = useMerchantStore(isMerchantModeActive);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
   const isUserMode = !isMerchantMode && !isDeveloperMode;
   const shouldShowComposerBusinessFeatures = !isUserMode;

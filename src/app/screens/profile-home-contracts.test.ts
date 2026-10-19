@@ -99,3 +99,44 @@ test("profile home contract: merchant entry loads on sign-in and switching mode 
     assert.doesNotMatch(merchantSource, /clearMerchant/);
   }
 });
+
+test("profile home contract: customer surfaces read the merchant mode flag, not account presence", () => {
+  const store = read("src/store/useMerchantStore.ts");
+  assert.match(store, /return state\.merchantModeActive && state\.account !== null;/);
+  // The mode flag must not survive a restart, or the customer app reopens in merchant mode.
+  assert.doesNotMatch(store, /merchantModeActive: state\.merchantModeActive/);
+
+  const tabs = read("src/app/navigation/MerchantTabs.tsx");
+  assert.match(
+    tabs,
+    /setMerchantModeActive\(true\);\s*return \(\) => setMerchantModeActive\(false\);/,
+  );
+
+  for (const file of [
+    "src/app/screens/merchant/MerchantProfileScreen.tsx",
+    "src/app/screens/merchant/MerchantSettingsScreen.tsx",
+  ]) {
+    assert.match(read(file), /setMerchantModeActive\(false\)/);
+  }
+
+  for (const file of [
+    "src/hooks/useAppBootstrap.ts",
+    "src/app/navigation/RootNavigator.tsx",
+    "src/app/screens/home/HomeFeedScreen.tsx",
+    "src/app/screens/discover/DiscoverHomeScreen.tsx",
+    "src/app/screens/review/ReviewScreen.tsx",
+    "src/app/screens/review/QuickReviewSheet.tsx",
+    "src/app/screens/review/ReviewSuccessModal.tsx",
+    "src/app/screens/post/PostComposerScreen.tsx",
+    "src/app/screens/post/PostComposerScreenV2.tsx",
+    "src/features/post/components/PostTab.tsx",
+    "src/features/post/components/SharedMetadata.tsx",
+    "src/features/post/components/StatusOverlay.tsx",
+    "src/features/post/components/ReviewTab.tsx",
+    "src/features/post/components/LivePreviewSheet.tsx",
+  ]) {
+    const source = read(file);
+    assert.match(source, /const isMerchantMode = useMerchantStore\(isMerchantModeActive\);/, file);
+    assert.doesNotMatch(source, /isMerchantMode = useMerchantStore\(\(state\) =>/, file);
+  }
+});

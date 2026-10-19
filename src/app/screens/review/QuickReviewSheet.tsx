@@ -14,7 +14,7 @@ import { TasteTagGrid } from "@/components/review/TasteTagGrid";
 import { ReviewProgressBar } from "@/components/review/ReviewProgressBar";
 import { ReviewSuccessCard } from "@/components/review/ReviewSuccessCard";
 import { useGamificationStore, POINTS_PER_ACTION } from "@/store/useGamificationStore";
-import { useMerchantStore } from "@/store/useMerchantStore";
+import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
 
 interface QuickReviewSheetProps {
   venueId: string;
@@ -42,7 +42,7 @@ export const QuickReviewSheet = ({
     tierName: tier().name,
     progress: levelProgress(),
   };
-  const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
+  const isMerchantMode = useMerchantStore(isMerchantModeActive);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
   const isUserMode = !isMerchantMode && !isDeveloperMode;
   const totalSteps = isUserMode ? 3 : 4;

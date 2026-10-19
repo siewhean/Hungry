@@ -137,6 +137,7 @@ export function MerchantProfileScreen() {
             variant="secondary"
             onPress={() => {
               // Leave merchant mode only; keep the account so Profile can switch back.
+              useMerchantStore.getState().setMerchantModeActive(false);
               rootNavigation.dispatch(
                 CommonActions.reset({
                   index: 0,

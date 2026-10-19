@@ -313,8 +313,15 @@ export function MerchantTabs() {
   const developerMerchantMode = useMerchantStore((state) => state.developerMerchantMode);
   const activeOutlet = useMerchantStore(getActiveOutlet);
   const setAccount = useMerchantStore((state) => state.setAccount);
+  const setMerchantModeActive = useMerchantStore((state) => state.setMerchantModeActive);
   const completeAuth = useSessionStore((state) => state.completeAuth);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+
+  // Merchant mode lasts only while the Merchant Centre is open; leaving it returns customer mode.
+  useEffect(() => {
+    setMerchantModeActive(true);
+    return () => setMerchantModeActive(false);
+  }, [setMerchantModeActive]);
 
   const [isSyncingAccount, setIsSyncingAccount] = useState(!account);
   const access = developerMerchantMode

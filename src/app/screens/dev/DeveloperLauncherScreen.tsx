@@ -27,7 +27,7 @@ import {
   setSupabaseServiceProvider,
 } from "@/lib/services/serviceProvider";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
-import { useMerchantStore } from "@/store/useMerchantStore";
+import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore, type PendingRoute } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -388,8 +388,9 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
   const applyProfile = useProfileStore((state) => state.applyProfile);
   const setMerchantAccount = useMerchantStore((state) => state.setAccount);
   const setDeveloperMerchantMode = useMerchantStore((state) => state.setDeveloperMerchantMode);
+  const setMerchantModeActive = useMerchantStore((state) => state.setMerchantModeActive);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
-  const isMerchantMode = useMerchantStore((state) => state.account !== null);
+  const isMerchantMode = useMerchantStore(isMerchantModeActive);
   const canAccessMaps = isDeveloperMode || isMerchantMode;
   const currentModeLabel = isDeveloperMode ? "Developer" : isMerchantMode ? "Merchant" : "User";
 
@@ -490,6 +491,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     setDeveloperMerchantMode(false);
     setMockServiceProvider();
     setMerchantAccount(JSON.parse(JSON.stringify(getMockData().merchantAccount)));
+    setMerchantModeActive(true);
     setReturnRoute(undefined);
     hideReviewSuccess();
     showToast({ message: "Mode → Merchant", tone: "success" });

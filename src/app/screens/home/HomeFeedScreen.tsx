@@ -96,7 +96,7 @@ import { getHungryService, getServiceProvider } from "@/lib/services/serviceProv
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useActivityStore } from "@/store/useActivityStore";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
-import { useMerchantStore } from "@/store/useMerchantStore";
+import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useStoryStore } from "@/store/useStoryStore";
@@ -309,7 +309,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const setSelectedFloor = useDiscoveryStore((state) => state.setSelectedFloor);
   const setHighlightedStallVenueId = useDiscoveryStore((state) => state.setHighlightedStallVenueId);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
-  const isMerchantMode = useMerchantStore((state) => state.account !== null);
+  const isMerchantMode = useMerchantStore(isMerchantModeActive);
   const canAccessMap = isDeveloperMode || isMerchantMode;
   const isUserMode = !isDeveloperMode && !isMerchantMode;
   const shouldShowStories = storiesEnabled && !isUserMode;
