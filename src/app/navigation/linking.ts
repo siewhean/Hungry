@@ -2,6 +2,7 @@ import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { WEB_BASE_URL } from "@/constants/links";
 import { parseShareSource, rememberShareAttribution } from "@/features/share/shareAttribution";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { sanitizeSearchQuery } from "@/lib/security/inputSanitization";
 
 const SAFE_DEEP_LINK_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const SAFE_JOIN_CODE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
@@ -138,6 +139,8 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
     return postId ? createState("ActivityPostDetail", { postId }) : undefined;
   }
   if (path === "order") return createState("Post", parseOrderDeepLinkQuery(rawPath));
+  // Shared searches: https://usehungry.com/search?q=laksa&filter=Halal&mode=stalls
+  if (path === "search") return createState("SearchResults", parseSearchDeepLinkQuery(rawPath));
   if (FEATURE_FLAGS.portfoliosEnabled && parts[0] === "portfolio") {
     return createState("PortfolioPublicView", { portfolioId: decodePathSegment(parts[1]) });
   }
@@ -221,6 +224,7 @@ export function createRootLinking(
         StallDetail: "venue/:id",
         ActivityPostDetail: "post/:postId",
         Post: "order",
+        SearchResults: "search",
         ...(FEATURE_FLAGS.portfoliosEnabled
           ? { PortfolioPublicView: "portfolio/:portfolioId" }
           : {}),
@@ -267,6 +271,32 @@ export function createRootLinking(
 
       return state;
     },
+  };
+}
+
+const SEARCH_LINK_FILTERS = new Set([
+  "All",
+  "Local",
+  "Halal",
+  "Japanese",
+  "Western",
+  "Noodles",
+  "Rice",
+  "Spicy",
+]);
+
+/** Reads q, filter and mode from a search link; anything unexpected is dropped. */
+export function parseSearchDeepLinkQuery(rawPath: string): Record<string, unknown> {
+  const queryIndex = rawPath.indexOf("?");
+  if (queryIndex < 0) return {};
+  const params = new URLSearchParams(rawPath.slice(queryIndex + 1).split("#")[0]);
+  const query = sanitizeSearchQuery(params.get("q") ?? "", 80);
+  const filter = params.get("filter") ?? "";
+  const mode = params.get("mode");
+  return {
+    ...(query ? { initialQuery: query } : {}),
+    ...(SEARCH_LINK_FILTERS.has(filter) ? { initialFilter: filter } : {}),
+    ...(mode === "stalls" || mode === "dishes" ? { browseMode: mode } : {}),
   };
 }
 
