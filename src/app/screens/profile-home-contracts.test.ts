@@ -117,7 +117,12 @@ test("profile home contract: customer surfaces read the merchant mode flag, not 
   const tabs = read("src/app/navigation/MerchantTabs.tsx");
   // Activated on focus, not mount, so a preloaded Merchant Centre never flips the customer app.
   assert.match(tabs, /navigation\.addListener\("focus", \(\) => setMerchantModeActive\(true\)\)/);
-  assert.match(tabs, /unsubscribe\(\);\s*setMerchantModeActive\(false\);/);
+  // Leaving the Merchant Centre (its route gone from the stack) ends the mode; an app teardown
+  // that unmounts it while still on the stack keeps the remembered mode.
+  assert.match(
+    tabs,
+    /const stillOnStack = navigation\.getState\(\)\.routes\.some\(\(route\) => route\.key === routeKey\);\s*if \(!stillOnStack\) setMerchantModeActive\(false\);/,
+  );
   assert.doesNotMatch(tabs, /useEffect\(\(\) => \{\s*setMerchantModeActive\(true\);/);
 
   for (const file of [
@@ -158,7 +163,15 @@ test("profile home contract: a remembered merchant mode reopens the Merchant Cen
   assert.match(bootstrap, /resolveMerchantModeRestore\(hasMerchantAccount\)/);
 
   const splash = read("src/app/screens/SplashScreen.tsx");
-  assert.match(splash, /if \(merchantModeRestore === "checking"\) \{\s*return;\s*\}/);
+  assert.match(
+    splash,
+    /if \(merchantModeRestore === "checking" && hasCompletedOnboarding\) \{\s*return;\s*\}/,
+  );
+  // Onboarding first: the remembered mode is cleared, not left pending.
+  assert.match(
+    splash,
+    /if \(!hasCompletedOnboarding\) \{[^}]*dismissMerchantModeRestore\(\);\s*navigation\.reset/,
+  );
   assert.match(
     splash,
     /if \(merchantModeRestore === "restore"\) \{\s*navigation\.reset\(\{\s*index: 0,\s*routes: \[\{ name: "MerchantTabs"/,
@@ -166,11 +179,23 @@ test("profile home contract: a remembered merchant mode reopens the Merchant Cen
 
   const root = read("src/app/navigation/RootNavigator.tsx");
   assert.match(root, /if \(merchantModeRestore === "restore"\) \{\s*navigationRef\.resetRoot/);
+  // A deep link or tapped notification opens past Splash: the remembered mode is cleared.
+  assert.match(
+    root,
+    /const launchRoute = navigationRef\.getRootState\(\)\?\.routes\[0\]\?\.name;\s*if \(launchRoute !== "Splash" && launchRoute !== "DeveloperLauncher"\) \{\s*setLaunchSkippedSplash\(true\);/,
+  );
+  assert.match(
+    root,
+    /if \(launchSkippedSplash && merchantModeRestore !== "none"\) \{\s*dismissMerchantModeRestore\(\);/,
+  );
 
   // Sign-out and account switch reset the whole merchant store, including the remembered mode.
   const session = read("src/store/useSessionStore.ts");
   assert.match(session, /getMerchantStoreState\(\)\.clearMerchant\(\);/);
   const store = read("src/store/useMerchantStore.ts");
-  assert.match(store, /clearMerchant: \(\) => set\(INITIAL_STATE\)/);
+  assert.match(
+    store,
+    /clearMerchant: \(\) => \{\s*if \(!useMerchantStore\.persist\.hasHydrated\(\)\) clearedBeforeHydration = true;\s*set\(INITIAL_STATE\);/,
+  );
   assert.match(store, /merchantModeActive: false,\s*merchantModeRestore: "none",\s*\};/);
 });

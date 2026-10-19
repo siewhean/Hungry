@@ -1,5 +1,5 @@
 import * as Linking from "expo-linking";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import {
   NavigationContainer,
@@ -476,6 +476,8 @@ export function RootNavigator({ theme }: { theme: Theme }) {
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
   const isMerchantMode = useMerchantStore(isMerchantModeActive);
   const merchantModeRestore = useMerchantStore((state) => state.merchantModeRestore);
+  const dismissMerchantModeRestore = useMerchantStore((state) => state.dismissMerchantModeRestore);
+  const [launchSkippedSplash, setLaunchSkippedSplash] = useState(false);
   const resetScrollBack = useUIStore((state) => state.resetScrollBack);
 
   const prefix = Linking.createURL("/");
@@ -557,6 +559,14 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       routes: [{ name: "AuthStack", params: { screen: "Login" } }],
     });
   });
+
+  // A deep link or tapped notification opens past Splash, so no launch route decides a remembered
+  // Merchant mode: the app opens where the link points (customer mode) and forgets it.
+  useEffect(() => {
+    if (launchSkippedSplash && merchantModeRestore !== "none") {
+      dismissMerchantModeRestore();
+    }
+  }, [dismissMerchantModeRestore, launchSkippedSplash, merchantModeRestore]);
 
   useEffect(() => {
     if (sessionExpired && navigationRef.isReady()) {
@@ -665,6 +675,12 @@ export function RootNavigator({ theme }: { theme: Theme }) {
         ref={navigationRef}
         theme={theme}
         linking={linking}
+        onReady={() => {
+          const launchRoute = navigationRef.getRootState()?.routes[0]?.name;
+          if (launchRoute !== "Splash" && launchRoute !== "DeveloperLauncher") {
+            setLaunchSkippedSplash(true);
+          }
+        }}
         onStateChange={() => {
           resetScrollBack();
         }}

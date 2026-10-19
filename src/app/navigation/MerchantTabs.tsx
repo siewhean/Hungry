@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, StyleSheet, ActivityIndicator } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NavigationProp } from "@react-navigation/native";
 import { LayoutDashboard, UtensilsCrossed, BarChart3, Store } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -308,6 +308,8 @@ export function MerchantTabs() {
   const { palette, spacing } = useHungryTheme();
   const navigation = useNavigation<NavigationProp<MerchantTabParamList>>();
   const rootNavigation = navigation.getParent<NavigationProp<RootStackParamList>>();
+  // This screen's own route in the root stack (useNavigation here is the root stack's navigation).
+  const routeKey = useRoute().key;
   const account = useMerchantStore((state) => state.account);
   const accountSyncedAt = useMerchantStore((state) => state.accountSyncedAt);
   const developerMerchantMode = useMerchantStore((state) => state.developerMerchantMode);
@@ -324,9 +326,12 @@ export function MerchantTabs() {
     const unsubscribe = navigation.addListener("focus", () => setMerchantModeActive(true));
     return () => {
       unsubscribe();
-      setMerchantModeActive(false);
+      // Leaving the Merchant Centre removes it from the stack and ends the mode. An app teardown
+      // (e.g. Android back finishing the activity) unmounts it still on the stack: keep the mode.
+      const stillOnStack = navigation.getState().routes.some((route) => route.key === routeKey);
+      if (!stillOnStack) setMerchantModeActive(false);
     };
-  }, [navigation, setMerchantModeActive]);
+  }, [navigation, routeKey, setMerchantModeActive]);
 
   const [isSyncingAccount, setIsSyncingAccount] = useState(!account);
   const access = developerMerchantMode

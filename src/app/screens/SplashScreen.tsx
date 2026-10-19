@@ -32,6 +32,7 @@ export function SplashScreen({ navigation }: Props) {
   const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
   const isAuthReady = useSessionStore((state) => state.isAuthReady);
   const merchantModeRestore = useMerchantStore((state) => state.merchantModeRestore);
+  const dismissMerchantModeRestore = useMerchantStore((state) => state.dismissMerchantModeRestore);
   const { palette, motion, spacing, radii, typography } = useHungryTheme();
   const appVersion = Constants.expoConfig?.version ?? "0.1.0";
   const styles = createStyles({ palette, typography, spacing, radii });
@@ -99,13 +100,15 @@ export function SplashScreen({ navigation }: Props) {
       return;
     }
     // A remembered Merchant mode waits for the session's merchant account check.
-    if (merchantModeRestore === "checking") {
+    if (merchantModeRestore === "checking" && hasCompletedOnboarding) {
       return;
     }
 
     const remaining = Math.max(0, motion.splashTotal - (Date.now() - mountedAt));
     const timer = setTimeout(() => {
       if (!hasCompletedOnboarding) {
+        // Onboarding comes first; a remembered Merchant mode is forgotten, not kept for later.
+        dismissMerchantModeRestore();
         navigation.reset({
           index: 0,
           routes: [{ name: "OnboardingStack", params: { screen: "OnboardingWelcome" } }],
@@ -134,6 +137,7 @@ export function SplashScreen({ navigation }: Props) {
 
     return () => clearTimeout(timer);
   }, [
+    dismissMerchantModeRestore,
     hasCompletedOnboarding,
     isAuthReady,
     merchantModeRestore,

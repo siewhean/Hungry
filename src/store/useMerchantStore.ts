@@ -50,6 +50,8 @@ interface MerchantActions {
   setDeveloperMerchantMode: (enabled: boolean) => void;
   setMerchantModeActive: (active: boolean) => void;
   resolveMerchantModeRestore: (hasMerchantAccount: boolean) => void;
+  /** Launch did not go through the restore route (deep link, onboarding): forget the remembered mode. */
+  dismissMerchantModeRestore: () => void;
   clearMerchant: () => void;
 }
 
@@ -74,6 +76,10 @@ const INITIAL_STATE: MerchantState = {
   merchantModeActive: false,
   merchantModeRestore: "none",
 };
+
+// Set when the store is cleared (sign-out, account switch) before the async rehydrate lands, so
+// the late merge cannot bring back the previous user's account or remembered Merchant mode.
+let clearedBeforeHydration = false;
 
 // ─── Store ────────────────────────────────────────────────────────────────────
 
@@ -148,7 +154,15 @@ export const useMerchantStore = create<MerchantState & MerchantActions>()(
             : state,
         ),
 
-      clearMerchant: () => set(INITIAL_STATE),
+      dismissMerchantModeRestore: () =>
+        set((state) =>
+          state.merchantModeRestore === "none" ? state : { merchantModeRestore: "none" },
+        ),
+
+      clearMerchant: () => {
+        if (!useMerchantStore.persist.hasHydrated()) clearedBeforeHydration = true;
+        set(INITIAL_STATE);
+      },
     }),
     {
       name: "hungry-merchant-v1",
@@ -164,6 +178,10 @@ export const useMerchantStore = create<MerchantState & MerchantActions>()(
       // A remembered Merchant mode is not active on launch: it waits for the session to confirm
       // the merchant account, then the launch route opens the Merchant Centre (which activates it).
       merge: (persistedState, currentState) => {
+        if (clearedBeforeHydration) {
+          clearedBeforeHydration = false;
+          return { ...currentState, merchantModeActive: false, merchantModeRestore: "none" };
+        }
         const { merchantModeActive: rememberedMerchantMode, ...persisted } = (persistedState ??
           {}) as Partial<MerchantState>;
         return {

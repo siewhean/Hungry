@@ -79,3 +79,62 @@ test("merchant mode persistence: switching to customer mode and signing out clea
   assert.equal(persisted?.account, null);
   assert.equal(useMerchantStore.getState().merchantModeRestore, "none");
 });
+
+test("merchant mode persistence: a launch that skips the restore route forgets the remembered mode", async () => {
+  await writePersisted({ account: merchantAccount, merchantModeActive: true });
+  await useMerchantStore.persist.rehydrate();
+  assert.equal(useMerchantStore.getState().merchantModeRestore, "checking");
+
+  // Deep link / notification launch or onboarding: dismissed while the account check is pending.
+  useMerchantStore.getState().dismissMerchantModeRestore();
+  assert.equal(useMerchantStore.getState().merchantModeRestore, "none");
+  assert.equal((await readPersisted())?.merchantModeActive, false);
+
+  // The late account check cannot bring it back.
+  useMerchantStore.getState().resolveMerchantModeRestore(true);
+  assert.equal(useMerchantStore.getState().merchantModeRestore, "none");
+
+  // Dismissed after the check resolved to a restore, too.
+  await writePersisted({ account: merchantAccount, merchantModeActive: true });
+  await useMerchantStore.persist.rehydrate();
+  useMerchantStore.getState().resolveMerchantModeRestore(true);
+  useMerchantStore.getState().dismissMerchantModeRestore();
+  assert.equal(useMerchantStore.getState().merchantModeRestore, "none");
+  assert.equal((await readPersisted())?.merchantModeActive, false);
+});
+
+test("merchant mode persistence: clearing before the async rehydrate lands keeps the store cleared", async () => {
+  await writePersisted({ account: merchantAccount, merchantModeActive: true });
+  const storage = useMerchantStore.persist.getOptions().storage;
+  assert.ok(storage);
+  let releaseRead: () => void = () => undefined;
+  const readGate = new Promise<void>((resolve) => {
+    releaseRead = resolve;
+  });
+  // AsyncStorage has already read the previous user's state; the answer arrives after the clear.
+  const previousUserState = await storage.getItem(STORAGE_NAME);
+  useMerchantStore.persist.setOptions({
+    storage: {
+      ...storage,
+      getItem: async () => {
+        await readGate;
+        return previousUserState;
+      },
+    },
+  });
+
+  try {
+    const hydration = useMerchantStore.persist.rehydrate();
+    // Account switch / sign-out at launch, before AsyncStorage has answered.
+    useMerchantStore.getState().clearMerchant();
+    releaseRead();
+    await hydration;
+
+    const state = useMerchantStore.getState();
+    assert.equal(state.account, null);
+    assert.equal(state.merchantModeRestore, "none");
+    assert.equal(state.merchantModeActive, false);
+  } finally {
+    useMerchantStore.persist.setOptions({ storage });
+  }
+});
