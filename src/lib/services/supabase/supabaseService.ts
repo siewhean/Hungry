@@ -1948,6 +1948,15 @@ function hasEmailPasswordIdentity(user: {
   return user.app_metadata?.provider === "email";
 }
 
+// Bump when the taste quiz questions or answer scale change, so stored answers
+// can be told apart. v2: the 4-step onboarding quiz (6 taste questions + diet).
+const TASTE_QUIZ_VERSION = "v2";
+
+// Keyboards (QuickType, autofill) often add a trailing space or a capital letter.
+function normalizeAuthEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
 async function exchangeRecoveryCodeIfPresent(client: SupabaseClient, token: string): Promise<void> {
   const trimmed = token.trim();
   if (!trimmed) return;
@@ -2993,7 +3002,7 @@ export const supabaseService: HungryService = {
     async signUp(email, password, name) {
       const client = requireSupabaseClient();
       const { error } = await client.auth.signUp({
-        email,
+        email: normalizeAuthEmail(email),
         password,
         options: {
           data: { display_name: name },
@@ -3010,7 +3019,7 @@ export const supabaseService: HungryService = {
       const client = requireSupabaseClient();
       const { error } = await client.auth.resend({
         type: "signup",
-        email,
+        email: normalizeAuthEmail(email),
         options: {
           emailRedirectTo: AUTH_REDIRECTS.emailConfirm,
         },
@@ -3029,7 +3038,10 @@ export const supabaseService: HungryService = {
 
     async signIn(email, password) {
       const client = requireSupabaseClient();
-      const { error } = await client.auth.signInWithPassword({ email, password });
+      const { error } = await client.auth.signInWithPassword({
+        email: normalizeAuthEmail(email),
+        password,
+      });
       if (error) throw error;
       const session = await toAppSession(client);
       if (!session) throw new Error("Sign-in succeeded but no active session.");
@@ -3094,7 +3106,7 @@ export const supabaseService: HungryService = {
 
     async forgotPassword(email) {
       const client = requireSupabaseClient();
-      const { error } = await client.auth.resetPasswordForEmail(email, {
+      const { error } = await client.auth.resetPasswordForEmail(normalizeAuthEmail(email), {
         redirectTo: AUTH_REDIRECTS.passwordReset,
       });
       if (error) throw error;
@@ -3751,6 +3763,7 @@ export const supabaseService: HungryService = {
       if (!client || !userId) return;
       const { error } = await client.from("quiz_responses").insert({
         user_id: userId,
+        quiz_version: TASTE_QUIZ_VERSION,
         responses,
         generated_taste_vector: tasteVectorToArray(tasteVector),
       });

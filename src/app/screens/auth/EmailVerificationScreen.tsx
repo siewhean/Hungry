@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Pressable, View } from "react-native";
-import { ArrowLeft, CircleAlert, MailCheck } from "lucide-react-native";
+import { CircleAlert, MailCheck } from "lucide-react-native";
 
 import { AppText, Button, FeedErrorBoundary } from "@/components/ui";
 import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
@@ -20,7 +20,13 @@ import { AuthScreenShell } from "./AuthScreenShell";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "EmailVerification">;
 
-const RESEND_COOLDOWN_SECONDS = 60;
+// Server limit is auth.email.max_frequency = 60s (supabase/config.toml); a few
+// seconds of margin keeps the first "Resend now" from hitting the rate limit.
+const RESEND_COOLDOWN_SECONDS = 65;
+
+function secondsUntil(endsAt: number): number {
+  return Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+}
 
 export function EmailVerificationScreen({ navigation, route }: Props) {
   const showToast = useUIStore((state) => state.showToast);
@@ -29,7 +35,12 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
   const email = route.params?.email;
   const confirmationCode = route.params?.code;
   const completedOnboarding = route.params?.completedOnboarding ?? false;
-  const [resendSeconds, setResendSeconds] = useState(RESEND_COOLDOWN_SECONDS);
+  // The countdown runs from an end time, so a backgrounded app or a slow timer
+  // cannot make it finish before the server allows another email.
+  const [resendEndsAt, setResendEndsAt] = useState(
+    () => Date.now() + RESEND_COOLDOWN_SECONDS * 1000,
+  );
+  const [resendSeconds, setResendSeconds] = useState(() => secondsUntil(resendEndsAt));
   const [isResending, setIsResending] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const exchangedCode = useRef<string | null>(null);
@@ -46,14 +57,14 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
   }, [completedOnboarding, email]);
 
   useEffect(() => {
-    if (resendSeconds <= 0) {
-      return;
-    }
+    setResendSeconds(secondsUntil(resendEndsAt));
     const timer = setInterval(() => {
-      setResendSeconds((current) => Math.max(0, current - 1));
+      const remaining = secondsUntil(resendEndsAt);
+      setResendSeconds(remaining);
+      if (remaining <= 0) clearInterval(timer);
     }, 1000);
     return () => clearInterval(timer);
-  }, [resendSeconds]);
+  }, [resendEndsAt]);
 
   // Exchanges the confirmation code (or, in mock mode, simulates the link) and
   // signs the new account in. RootNavigator then routes to onboarding or Home.
@@ -107,10 +118,22 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
         message: `Verification email resent to ${email}.`,
         tone: "success",
       });
-      setResendSeconds(RESEND_COOLDOWN_SECONDS);
-    } catch {
+      setResendEndsAt(Date.now() + RESEND_COOLDOWN_SECONDS * 1000);
+    } catch (error) {
+      trackAuthFailed("email_confirm", "email", error);
+      const code =
+        (error as { error_code?: string; code?: string })?.error_code ??
+        (error as { error_code?: string; code?: string })?.code;
+      const isRateLimited =
+        code === "over_email_send_rate_limit" || (error as { status?: number })?.status === 429;
+      if (isRateLimited) {
+        // Restart the wait instead of leaving a button that keeps failing.
+        setResendEndsAt(Date.now() + RESEND_COOLDOWN_SECONDS * 1000);
+      }
       showToast({
-        message: "Could not resend verification email. Please try again shortly.",
+        message: isRateLimited
+          ? "You've requested a few emails already. Please wait a minute, then try again."
+          : "Could not resend verification email. Please try again shortly.",
         tone: "error",
       });
     } finally {
@@ -143,24 +166,6 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
       <AuthScreenShell
         title="Verify your email"
         subtitle="Tap the link in the email we sent you on this phone to finish signing up."
-        footer={
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Back to sign up"
-            onPress={() => navigation.navigate("SignUp")}
-            style={{
-              alignItems: "center",
-              flexDirection: "row",
-              gap: spacing[2],
-              justifyContent: "center",
-            }}
-          >
-            <ArrowLeft color={palette.text} size={14} />
-            <AppText tone="accent" style={{ fontWeight: "700" }}>
-              Back to sign up
-            </AppText>
-          </Pressable>
-        }
       >
         <View style={{ gap: spacing[4] }}>
           <View
@@ -203,7 +208,11 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
               onPress={() => {
                 void handleResend();
               }}
-              style={{ opacity: resendSeconds > 0 ? 0.8 : 1 }}
+              style={{
+                justifyContent: "center",
+                minHeight: 44,
+                opacity: resendSeconds > 0 ? 0.8 : 1,
+              }}
             >
               <AppText style={{ color: palette.textSecondary, textAlign: "center" }}>
                 Didn&apos;t receive the email?{" "}

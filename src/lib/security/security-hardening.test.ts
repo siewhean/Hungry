@@ -512,7 +512,7 @@ test("password reset uses redirect URL and supports recovery code exchange", () 
   const forgotScreen = readRepoFile("src/app/screens/auth/ForgotPasswordScreen.tsx");
   const linking = readRepoFile("src/app/navigation/linking.ts");
 
-  assert.match(supabaseService, /resetPasswordForEmail\(email,\s*\{/);
+  assert.match(supabaseService, /resetPasswordForEmail\(normalizeAuthEmail\(email\),\s*\{/);
   assert.match(supabaseService, /redirectTo: AUTH_REDIRECTS\.passwordReset/);
   assert.match(supabaseService, /emailRedirectTo: AUTH_REDIRECTS\.emailConfirm/);
   assert.match(supabaseService, /const redirectTo = AUTH_REDIRECTS\.oauth/);

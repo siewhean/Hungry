@@ -63,7 +63,8 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
       /getHungryService\(\)\.auth\.signIn\(/,
       /service\.auth\.signInWithGoogle\(/,
       /service\.auth\.signInWithApple\(/,
-      /completeAuth\(\{ completedOnboarding: true, skippedTasteQuiz: true \}\)/,
+      // Email sign-in is an existing account; the quiz state is not overwritten.
+      /completeAuth\(\{ completedOnboarding: true \}\)/,
     ],
     "LoginScreen",
   );
@@ -73,10 +74,11 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
       /getHungryService\(\)\.auth\.signUp\(/,
       /navigation\.navigate\("EmailVerification"/,
       /completeAuth\(\{[\s\S]*completedOnboarding: false/,
-      /navigation\.getParent\(\)\?\.reset\(\{[\s\S]*OnboardingStack/,
     ],
     "SignUpScreen",
   );
+  // RootNavigator alone routes a signed-in user into onboarding.
+  assert.doesNotMatch(signUp, /navigation\.getParent\(\)\?\.reset\(\{[\s\S]*OnboardingStack/);
   assertSourceIncludes(
     settings,
     [

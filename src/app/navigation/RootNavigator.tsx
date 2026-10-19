@@ -136,6 +136,32 @@ function getMainTabScreen(params: unknown): MainTabRouteName {
   return "Home";
 }
 
+function toPendingRoute(route: { name: string; params?: unknown }) {
+  return {
+    name: route.name,
+    params:
+      typeof route.params === "object" && route.params
+        ? (route.params as Record<string, unknown>)
+        : undefined,
+  };
+}
+
+/** The current top route as a return route, or undefined on Splash/auth/onboarding. */
+function getActiveReturnRoute() {
+  const rootState = navigationRef.getRootState();
+  const activeRoute = rootState?.routes[rootState.index];
+  if (!activeRoute) return undefined;
+  if (
+    activeRoute.name === "Splash" ||
+    activeRoute.name === "AuthStack" ||
+    activeRoute.name === "OnboardingStack"
+  ) {
+    return undefined;
+  }
+  if (activeRoute.name === "MainTabs") return getMainTabScreen(activeRoute.params);
+  return toPendingRoute(activeRoute);
+}
+
 function isAuthRequiredRoute(route: { name: string; params?: unknown }): boolean {
   if (route.name === "MainTabs") {
     return PROTECTED_MAIN_TAB_ROUTES.has(getMainTabScreen(route.params));
@@ -533,6 +559,13 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           routes: [{ name: "MainTabs", params: { screen: "Home" } }],
         });
       }
+    } else if (returnRoute.name === "MainTabs") {
+      // A tab return route is a tab switch, not a second MainTabs on the stack.
+      const params = returnRoute.params as { screen?: unknown } | undefined;
+      navigationRef.resetRoot({
+        index: 0,
+        routes: [{ name: "MainTabs", params: { screen: getMainTabScreen(params) } }],
+      });
     } else if (isRootRouteName(returnRoute.name)) {
       navigationRef.resetRoot({
         index: 1,
@@ -567,7 +600,8 @@ export function RootNavigator({ theme }: { theme: Theme }) {
 
   useEffect(() => {
     if (sessionExpired && navigationRef.isReady()) {
-      setReturnRoute("Home");
+      // Keep the user's place (a dish, the composer) so sign-in returns there.
+      setReturnRoute(getActiveReturnRoute() ?? "Home");
       navigationRef.navigate("AuthStack", { screen: "Login" });
       dismissSessionExpiry();
     }
@@ -652,17 +686,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       const mainTabScreen =
         activeRoute.name === "MainTabs" ? getMainTabScreen(activeRoute.params) : "Home";
 
-      setReturnRoute(
-        activeRoute.name === "MainTabs"
-          ? mainTabScreen
-          : {
-              name: activeRoute.name,
-              params:
-                typeof activeRoute.params === "object" && activeRoute.params
-                  ? (activeRoute.params as Record<string, unknown>)
-                  : undefined,
-            },
-      );
+      setReturnRoute(activeRoute.name === "MainTabs" ? mainTabScreen : toPendingRoute(activeRoute));
 
       navigationRef.resetRoot({
         index: 0,

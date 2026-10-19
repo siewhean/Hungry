@@ -66,7 +66,7 @@ export function AuthProviderButton({
       >
         {icon}
       </View>
-      <AppText variant="h3" style={{ color: palette.text, textAlign: "center" }}>
+      <AppText variant="bodyBold" style={{ color: palette.text, textAlign: "center" }}>
         {label}
       </AppText>
     </Pressable>

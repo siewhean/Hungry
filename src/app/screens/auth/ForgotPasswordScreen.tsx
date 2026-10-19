@@ -1,8 +1,8 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Pressable, View } from "react-native";
-import { ArrowLeft, LockKeyhole, Mail } from "lucide-react-native";
+import { ArrowLeft, LockKeyhole, Mail, MailCheck } from "lucide-react-native";
 
 import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
 import { useUIStore } from "@/store/useUIStore";
@@ -25,6 +25,9 @@ type FormValues = { email: string };
 export function ForgotPasswordScreen({ navigation }: Props) {
   const { colorScheme, palette, radii, spacing } = useHungryTheme();
   const showToast = useUIStore((state) => state.showToast);
+  const isSupabaseMode = getConfiguredDataSource() === "supabase";
+  // After a send the screen becomes "Check your inbox" instead of bouncing to Login.
+  const [sentTo, setSentTo] = useState<string | null>(null);
   const {
     control,
     handleSubmit,
@@ -37,15 +40,11 @@ export function ForgotPasswordScreen({ navigation }: Props) {
 
   const handleSend = handleSubmit(async ({ email }) => {
     try {
-      if (getConfiguredDataSource() === "supabase") {
+      if (isSupabaseMode) {
         await getHungryService().auth.forgotPassword(email);
         trackPasswordResetRequested();
-        showToast({ message: AUTH_COPY.forgotPassword.sentToast, tone: "info" });
-        navigation.navigate("Login");
-        return;
       }
-      showToast({ message: AUTH_COPY.forgotPassword.sentToast, tone: "info" });
-      navigation.navigate("ResetPassword", { email });
+      setSentTo(email.trim().toLowerCase());
     } catch (error) {
       trackAuthFailed("password_reset", "email", error);
       showToast({ message: AUTH_COPY.forgotPassword.genericErrorToast, tone: "error" });
@@ -80,6 +79,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
               flexDirection: "row",
               gap: spacing[2],
               justifyContent: "center",
+              minHeight: 44,
             }}
           >
             <ArrowLeft color={palette.text} size={14} />
@@ -89,50 +89,98 @@ export function ForgotPasswordScreen({ navigation }: Props) {
           </Pressable>
         }
       >
-        <View style={{ gap: spacing[4] }}>
-          <View style={{ alignItems: "center" }}>
-            <View
-              style={{
-                alignItems: "center",
-                backgroundColor: palette.orangeLight,
-                borderRadius: radii.pill,
-                height: 80,
-                justifyContent: "center",
-                width: 80,
-              }}
-            >
-              <LockKeyhole color={palette.orange} size={30} />
+        {sentTo ? (
+          <View style={{ gap: spacing[4] }}>
+            <View style={{ alignItems: "center" }}>
+              <View
+                style={{
+                  alignItems: "center",
+                  backgroundColor: palette.orangeLight,
+                  borderRadius: radii.pill,
+                  height: 80,
+                  justifyContent: "center",
+                  width: 80,
+                }}
+              >
+                <MailCheck color={palette.orange} size={30} />
+              </View>
             </View>
-          </View>
-
-          <Controller
-            control={control}
-            name="email"
-            rules={{ validate: validateEmail }}
-            render={({ field: { onChange, value } }) => (
-              <Input
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                textContentType="emailAddress"
-                autoComplete="email"
-                returnKeyType="send"
-                onSubmitEditing={() => void handleSend()}
-                placeholder={AUTH_COPY.forgotPassword.emailPlaceholder}
-                value={value}
-                onChangeText={onChange}
-                leftIcon={<Mail color={palette.textMuted} size={16} />}
-                error={!!errors.email}
-                errorText={errors.email?.message}
+            <View accessible accessibilityLiveRegion="polite" style={{ gap: spacing[2] }}>
+              <AppText variant="h2" accessibilityRole="header" style={{ textAlign: "center" }}>
+                {AUTH_COPY.forgotPassword.sentTitle}
+              </AppText>
+              <AppText tone="secondary" style={{ textAlign: "center" }}>
+                {AUTH_COPY.forgotPassword.sentBody.replace("{email}", sentTo)}
+              </AppText>
+              <AppText variant="bodySmall" tone="muted" style={{ textAlign: "center" }}>
+                {AUTH_COPY.forgotPassword.sentSpamHint}
+              </AppText>
+            </View>
+            {isSupabaseMode ? null : (
+              // Mock mode has no email; open the reset screen as the link would.
+              <Button
+                label="Open reset link (demo)"
+                onPress={() => navigation.navigate("ResetPassword", { email: sentTo })}
               />
             )}
-          />
-          <Button
-            label={AUTH_COPY.forgotPassword.primaryButton}
-            onPress={handleSend}
-            loading={isSubmitting}
-          />
-        </View>
+            <Button
+              label={AUTH_COPY.forgotPassword.resendButton}
+              variant="secondary"
+              loading={isSubmitting}
+              onPress={handleSend}
+            />
+            <Button
+              label={AUTH_COPY.forgotPassword.useDifferentEmail}
+              variant="ghost"
+              onPress={() => setSentTo(null)}
+            />
+          </View>
+        ) : (
+          <View style={{ gap: spacing[4] }}>
+            <View style={{ alignItems: "center" }}>
+              <View
+                style={{
+                  alignItems: "center",
+                  backgroundColor: palette.orangeLight,
+                  borderRadius: radii.pill,
+                  height: 80,
+                  justifyContent: "center",
+                  width: 80,
+                }}
+              >
+                <LockKeyhole color={palette.orange} size={30} />
+              </View>
+            </View>
+
+            <Controller
+              control={control}
+              name="email"
+              rules={{ validate: validateEmail }}
+              render={({ field: { onChange, value } }) => (
+                <Input
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  textContentType="emailAddress"
+                  autoComplete="email"
+                  returnKeyType="send"
+                  onSubmitEditing={() => void handleSend()}
+                  placeholder={AUTH_COPY.forgotPassword.emailPlaceholder}
+                  value={value}
+                  onChangeText={onChange}
+                  leftIcon={<Mail color={palette.textMuted} size={16} />}
+                  error={!!errors.email}
+                  errorText={errors.email?.message}
+                />
+              )}
+            />
+            <Button
+              label={AUTH_COPY.forgotPassword.primaryButton}
+              onPress={handleSend}
+              loading={isSubmitting}
+            />
+          </View>
+        )}
       </AuthScreenShell>
     </FeedErrorBoundary>
   );
