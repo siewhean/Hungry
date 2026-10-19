@@ -583,7 +583,8 @@ export interface ContentReportRequest {
 }
 
 export interface BlockUserRequest {
-  blockedUserKey: string;
+  /** Auth user id (UUID) of the person being blocked. Never a display name. */
+  blockedUserId: string;
   reason?: string;
 }
 
@@ -899,7 +900,7 @@ export interface HungryService {
     blockUser(request: BlockUserRequest): Promise<void>;
     hidePost(postId: string, reason?: string): Promise<void>;
     unhidePost(postId: string): Promise<void>;
-    getBlockedUsers(): Promise<{ blockedUserKey: string; reason?: string; createdAt: string }[]>;
+    getBlockedUsers(): Promise<{ blockedUserId: string; reason?: string; createdAt: string }[]>;
   };
 
   contributions: {

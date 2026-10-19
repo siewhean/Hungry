@@ -88,9 +88,9 @@ import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { getBuildingById, toSummary } from "@/lib/geo/singaporeBuildings";
 import {
+  isContentHiddenForSession,
   promptCommentSafetyActions,
   promptPostSafetyActions,
-  targetAuthorKey,
 } from "@/lib/security/communitySafety";
 import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
@@ -512,9 +512,10 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     );
   }, []);
 
-  const hideAuthorFromCurrentFeed = useCallback((blockedAuthorKey: string) => {
-    const isAllowedPost = (item: HomeFeedItem) =>
-      targetAuthorKey(item.authorName) !== blockedAuthorKey;
+  // Bumped after a block so comment lists re-run the session block filter.
+  const [blockedAuthorsVersion, setBlockedAuthorsVersion] = useState(0);
+  const hideAuthorFromCurrentFeed = useCallback((blockedAuthorId: string) => {
+    const isAllowedPost = (item: HomeFeedItem) => item.authorId?.trim() !== blockedAuthorId;
     setSocialFeed((current) => current.filter(isAllowedPost));
     setSections((current) =>
       current.map((section) => ({
@@ -522,6 +523,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         items: section.items.filter(isAllowedPost),
       })),
     );
+    setBlockedAuthorsVersion((current) => current + 1);
   }, []);
 
   const refreshHomeFeed = useCallback(async () => {
@@ -837,6 +839,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     const seededComments: SocialComment[] = (activeCommentItem.dishes[0]?.reviews ?? []).map(
       (review) => ({
         id: review.id,
+        userId: review.authorId,
         authorName: review.authorName,
         authorAvatarUrl: undefined,
         text: review.text,
@@ -846,10 +849,20 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
 
     const localComments = commentsByPostId[activeCommentItem.id] ?? [];
 
-    return [...seededComments, ...localComments].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
-  }, [activeCommentItem, commentsByPostId]);
+    return [...seededComments, ...localComments]
+      .filter((comment) => !isContentHiddenForSession({ id: comment.id, authorId: comment.userId }))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    // blockedAuthorsVersion re-runs the session block filter after a block.
+  }, [activeCommentItem, blockedAuthorsVersion, commentsByPostId]);
+
+  const visibleRepliesFor = useCallback(
+    (commentId: string) =>
+      (repliesByCommentId[commentId] ?? []).filter(
+        (reply) => !isContentHiddenForSession({ id: reply.id, authorId: reply.userId }),
+      ),
+    // blockedAuthorsVersion re-runs the session block filter after a block.
+    [blockedAuthorsVersion, repliesByCommentId],
+  );
 
   useEffect(() => {
     if (!activeCommentItem?.id) return;
@@ -1322,6 +1335,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                     promptPostSafetyActions({
                       postId: item.id,
                       authorName: item.authorName,
+                      authorId: item.authorId,
                       label: "post",
                       onHidden: hidePostFromCurrentFeed,
                       onBlocked: hideAuthorFromCurrentFeed,
@@ -2363,8 +2377,10 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                               promptCommentSafetyActions({
                                 commentId: comment.id,
                                 authorName: comment.authorName,
+                                authorId: comment.userId,
                                 postId: activeCommentItem?.id,
                                 label: "comment",
+                                onBlocked: hideAuthorFromCurrentFeed,
                               })
                             }
                           >
@@ -2393,9 +2409,9 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                         </Pressable>
 
                         {/* Replies */}
-                        {(repliesByCommentId[comment.id] ?? []).length > 0 && (
+                        {visibleRepliesFor(comment.id).length > 0 && (
                           <View style={{ gap: spacing[3], marginTop: spacing[3] }}>
-                            {(repliesByCommentId[comment.id] ?? []).map((reply) => (
+                            {visibleRepliesFor(comment.id).map((reply) => (
                               <View
                                 key={reply.id}
                                 style={{
@@ -2439,8 +2455,10 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                                         promptCommentSafetyActions({
                                           commentId: reply.id,
                                           authorName: reply.authorName,
+                                          authorId: reply.userId,
                                           postId: activeCommentItem?.id,
                                           label: "reply",
+                                          onBlocked: hideAuthorFromCurrentFeed,
                                         })
                                       }
                                     >

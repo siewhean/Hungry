@@ -960,6 +960,7 @@ async function mapSupabaseReviewRows(
       id,
       dishId: asString(row.dish_id),
       venueId: asString(row.venue_id),
+      authorId: userId,
       authorName:
         (userId ? namesByUserId.get(userId) : undefined) ??
         asString(row.author_name) ??
@@ -4366,12 +4367,21 @@ export const supabaseService: HungryService = {
       const client = requireSupabaseClient();
       const userId = await getCurrentSupabaseUserId();
       if (!userId) throw new Error("You must be signed in to block users.");
+      // Server block checks compare blocked_user_key with the author's auth id.
+      if (!UUID_PATTERN.test(request.blockedUserId)) {
+        throw new Error("Blocking requires a valid user id.");
+      }
+      if (request.blockedUserId === userId) throw new Error("You cannot block yourself.");
 
-      const { error } = await client.from("user_blocks").upsert({
-        blocker_id: userId,
-        blocked_user_key: request.blockedUserKey,
-        reason: request.reason ?? "user_initiated_block",
-      });
+      const { error } = await client.from("user_blocks").upsert(
+        {
+          blocker_id: userId,
+          blocked_user_key: request.blockedUserId.toLowerCase(),
+          reason: request.reason ?? "user_initiated_block",
+        },
+        // There is no update policy on user_blocks, so re-blocking is a no-op.
+        { onConflict: "blocker_id,blocked_user_key", ignoreDuplicates: true },
+      );
       if (error) throw error;
     },
 
@@ -4408,7 +4418,7 @@ export const supabaseService: HungryService = {
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data || []).map((row: any) => ({
-        blockedUserKey: row.blocked_user_key as string,
+        blockedUserId: row.blocked_user_key as string,
         reason: row.reason as string | undefined,
         createdAt: row.created_at as string,
       }));

@@ -288,6 +288,7 @@ export function ReviewCommentsSheet({
                           promptCommentSafetyActions({
                             commentId: comment.id,
                             authorName: comment.authorName,
+                            authorId: comment.userId,
                             postId: activeReview?.id,
                             label: "comment",
                           })
@@ -353,6 +354,7 @@ export function ReviewCommentsSheet({
                                     promptCommentSafetyActions({
                                       commentId: reply.id,
                                       authorName: reply.authorName,
+                                      authorId: reply.userId,
                                       postId: activeReview?.id,
                                       label: "reply",
                                     })

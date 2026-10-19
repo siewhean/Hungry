@@ -233,6 +233,7 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
               promptPostSafetyActions({
                 postId: post.id,
                 authorName: post.authorName,
+                authorId: post.authorId,
                 label: "post",
               })
             }

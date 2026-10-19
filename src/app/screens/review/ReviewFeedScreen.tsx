@@ -32,7 +32,12 @@ import {
   FilterChipRail,
   Skeleton,
 } from "@/components/ui";
-import { promptBlockReviewAuthor, promptReportReview } from "@/lib/security/communitySafety";
+import {
+  isContentHiddenForSession,
+  loadBlockedAuthorsForSession,
+  promptBlockReviewAuthor,
+  promptReportReview,
+} from "@/lib/security/communitySafety";
 import {
   getDataRepository,
   getHungryService,
@@ -143,6 +148,7 @@ function ReviewCard({
   onSavePress,
   onSharePress,
   onLikePress,
+  onSafetyHidden,
   reviewReactionsEnabled,
 }: {
   item: ReviewFeedItem;
@@ -153,6 +159,8 @@ function ReviewCard({
   onSavePress: (item: ReviewFeedItem) => void;
   onSharePress: (item: ReviewFeedItem) => void;
   onLikePress: (item: ReviewFeedItem) => void;
+  /** Called after a report or block succeeds so the feed drops the hidden content. */
+  onSafetyHidden: () => void;
   reviewReactionsEnabled: boolean;
 }) {
   const { componentRadii, palette, radii, spacing, shadows, typography } = useHungryTheme();
@@ -368,6 +376,8 @@ function ReviewCard({
                 promptReportReview({
                   reviewId: item.review.id,
                   authorName: item.review.authorName,
+                  authorId: item.review.authorId,
+                  onHidden: onSafetyHidden,
                 })
               }
             >
@@ -382,6 +392,8 @@ function ReviewCard({
                 promptBlockReviewAuthor({
                   reviewId: item.review.id,
                   authorName: item.review.authorName,
+                  authorId: item.review.authorId,
+                  onBlocked: onSafetyHidden,
                 })
               }
             >
@@ -508,6 +520,9 @@ export function ReviewFeedScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMoreServiceReviews, setHasMoreServiceReviews] = useState(false);
+  // Bumped when saved blocks load or a report/block succeeds, so the feed re-filters.
+  const [safetyFilterVersion, setSafetyFilterVersion] = useState(0);
+  const bumpSafetyFilter = useCallback(() => setSafetyFilterVersion((current) => current + 1), []);
   const serviceLoadIdRef = useRef(0);
   const reviewReactionsEnabled = serviceProviderMode === "mock";
   const openCommentsSheet = useCallback(() => {
@@ -545,6 +560,16 @@ export function ReviewFeedScreen() {
     const timeout = setTimeout(() => setIsInitialLoading(false), 0);
     return () => clearTimeout(timeout);
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    void loadBlockedAuthorsForSession().then(() => {
+      if (isMounted) bumpSafetyFilter();
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [bumpSafetyFilter]);
 
   useEffect(
     () => () => {
@@ -652,8 +677,11 @@ export function ReviewFeedScreen() {
 
   // Gather reviews from all dishes
   const allReviews = useMemo<ReviewFeedItem[]>(() => {
-    const reviews =
-      serviceProviderMode === "mock" ? listReviewFeedItems(repository) : (serviceReviewItems ?? []);
+    const reviews = (
+      serviceProviderMode === "mock" ? listReviewFeedItems(repository) : (serviceReviewItems ?? [])
+    ).filter(
+      (item) => !isContentHiddenForSession({ id: item.review.id, authorId: item.review.authorId }),
+    );
 
     // Sort
     if (filterMode === "top_rated") {
@@ -669,7 +697,7 @@ export function ReviewFeedScreen() {
     return [...reviews].sort(
       (a, b) => new Date(b.review.createdAt).getTime() - new Date(a.review.createdAt).getTime(),
     );
-  }, [repository, filterMode, serviceProviderMode, serviceReviewItems]);
+  }, [repository, filterMode, safetyFilterVersion, serviceProviderMode, serviceReviewItems]);
 
   useEffect(() => {
     initializeInteractions(
@@ -823,6 +851,7 @@ export function ReviewFeedScreen() {
           onPressDish={(dishId) => navigation.navigate("DishDetail", { dishId })}
           onSavePress={handleSavePress}
           onSharePress={openShareReview}
+          onSafetyHidden={bumpSafetyFilter}
           reviewReactionsEnabled={reviewReactionsEnabled}
         />
       );
@@ -833,6 +862,7 @@ export function ReviewFeedScreen() {
       navigation,
       openReviewComments,
       openShareReview,
+      bumpSafetyFilter,
       handleSavePress,
       toggleLike,
       commentsByPostId,

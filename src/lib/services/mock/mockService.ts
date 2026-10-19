@@ -563,7 +563,19 @@ const _contentReports: {
   targetAuthorKey?: string;
   reason: string;
 }[] = [];
-const _blockedUserKeys = new Set<string>();
+/** Blocked author ids, keyed like the Supabase user_blocks.blocked_user_key column. */
+const _blockedUsers = new Map<string, { reason?: string; createdAt: string }>();
+
+/** Mirrors the Supabase review read policy: hide blocked authors and reviews the viewer reported. */
+function isMockReviewHiddenForViewer(review: { id: string; authorId?: string }): boolean {
+  if (review.authorId && _blockedUsers.has(review.authorId)) return true;
+  return _contentReports.some(
+    (report) =>
+      report.reporterId === _profile.id &&
+      report.targetType === "review" &&
+      report.targetId === review.id,
+  );
+}
 const _userFollows = new Set<string>(); // Set of followee userId strings (current user follows these)
 const _mockFollowersByUser: Record<
   string,
@@ -1610,7 +1622,9 @@ export const hungryService: HungryService = {
   reviews: {
     async getReviewsForDish(dishId) {
       const dish = dishes.find((d) => d.id === dishId);
-      return resolve(dish?.reviews ?? []);
+      return resolve(
+        (dish?.reviews ?? []).filter((review) => !isMockReviewHiddenForViewer(review)),
+      );
     },
 
     async getUserReviews(_userId) {
@@ -1647,13 +1661,15 @@ export const hungryService: HungryService = {
       const before = options?.before ? new Date(options.before).getTime() : undefined;
       const entries = dishes
         .flatMap((dish): RecentReviewFeedEntry[] =>
-          dish.reviews.map((review) => ({
-            review,
-            dishId: dish.id,
-            dishName: dish.name,
-            venueId: dish.venueId,
-            venueName: dish.venueName,
-          })),
+          dish.reviews
+            .filter((review) => !isMockReviewHiddenForViewer(review))
+            .map((review) => ({
+              review,
+              dishId: dish.id,
+              dishName: dish.name,
+              venueId: dish.venueId,
+              venueName: dish.venueName,
+            })),
         )
         .filter((entry) =>
           before === undefined ? true : new Date(entry.review.createdAt).getTime() < before,
@@ -1766,7 +1782,8 @@ export const hungryService: HungryService = {
   social: {
     async getBitesFeed(_lat?, _lng?) {
       await hydrateSocial();
-      return resolve([...MOCK_BITES_FEED]);
+      // Mirrors the Supabase feed read: blocked authors never reach the client.
+      return resolve(MOCK_BITES_FEED.filter((bite) => !_blockedUsers.has(bite.authorId)));
     },
 
     async listUserPosts(userId: string) {
@@ -2124,7 +2141,12 @@ export const hungryService: HungryService = {
     },
 
     async blockUser(request) {
-      _blockedUserKeys.add(request.blockedUserKey);
+      if (!request.blockedUserId.trim()) throw new Error("Blocking requires a valid user id.");
+      if (request.blockedUserId === _profile.id) throw new Error("You cannot block yourself.");
+      _blockedUsers.set(request.blockedUserId, {
+        reason: request.reason,
+        createdAt: new Date().toISOString(),
+      });
       return resolve(undefined);
     },
 
@@ -2149,7 +2171,13 @@ export const hungryService: HungryService = {
     },
 
     async getBlockedUsers() {
-      return resolve([]);
+      return resolve(
+        Array.from(_blockedUsers.entries()).map(([blockedUserId, entry]) => ({
+          blockedUserId,
+          reason: entry.reason,
+          createdAt: entry.createdAt,
+        })),
+      );
     },
   },
 
