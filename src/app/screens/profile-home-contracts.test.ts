@@ -107,10 +107,10 @@ test("profile home contract: customer surfaces read the merchant mode flag, not 
   assert.doesNotMatch(store, /merchantModeActive: state\.merchantModeActive/);
 
   const tabs = read("src/app/navigation/MerchantTabs.tsx");
-  assert.match(
-    tabs,
-    /setMerchantModeActive\(true\);\s*return \(\) => setMerchantModeActive\(false\);/,
-  );
+  // Activated on focus, not mount, so a preloaded Merchant Centre never flips the customer app.
+  assert.match(tabs, /navigation\.addListener\("focus", \(\) => setMerchantModeActive\(true\)\)/);
+  assert.match(tabs, /unsubscribe\(\);\s*setMerchantModeActive\(false\);/);
+  assert.doesNotMatch(tabs, /useEffect\(\(\) => \{\s*setMerchantModeActive\(true\);/);
 
   for (const file of [
     "src/app/screens/merchant/MerchantProfileScreen.tsx",

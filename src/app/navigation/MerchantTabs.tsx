@@ -318,10 +318,15 @@ export function MerchantTabs() {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
 
   // Merchant mode lasts only while the Merchant Centre is open; leaving it returns customer mode.
+  // Activate on first focus, not mount: a preloaded (never shown) Merchant Centre must not flip modes.
   useEffect(() => {
-    setMerchantModeActive(true);
-    return () => setMerchantModeActive(false);
-  }, [setMerchantModeActive]);
+    if (navigation.isFocused()) setMerchantModeActive(true);
+    const unsubscribe = navigation.addListener("focus", () => setMerchantModeActive(true));
+    return () => {
+      unsubscribe();
+      setMerchantModeActive(false);
+    };
+  }, [navigation, setMerchantModeActive]);
 
   const [isSyncingAccount, setIsSyncingAccount] = useState(!account);
   const access = developerMerchantMode
