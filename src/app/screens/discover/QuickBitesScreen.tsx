@@ -624,7 +624,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     width: 72,
   },
-  cardContent: { ...StyleSheet.absoluteFillObject, padding: 10, justifyContent: "flex-end" },
+  cardContent: { ...StyleSheet.absoluteFill, padding: 10, justifyContent: "flex-end" },
   authorBadge: {
     position: "absolute",
     top: 8,
