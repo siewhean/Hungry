@@ -93,6 +93,14 @@ function ProfileConnectionsScreen({ navigation }: Props) {
   );
 
   useEffect(() => {
+    // Rows may show "Requested" for requests approved or declined since they were sent.
+    void useSocialStore
+      .getState()
+      .reconcileRequestedFollows()
+      .catch(() => undefined);
+  }, [targetUserId, isFollowingTab]);
+
+  useEffect(() => {
     let isActive = true;
     const service = getHungryService().social;
     setIsLoadingConnections(true);

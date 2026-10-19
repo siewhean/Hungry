@@ -585,6 +585,11 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       const cancelIdle = scheduleIdleWork(() => {
         if (!cancelled) {
           void loadFeed();
+          // Requests may have been approved or declined since the last visit.
+          void useSocialStore
+            .getState()
+            .reconcileRequestedFollows()
+            .catch(() => undefined);
         }
       });
 

@@ -214,3 +214,19 @@ test("Follow Requests screen is a protected root route reached from Profile and 
     /if \(update\.kind === "follow_request"\) \{\s+navigation\.navigate\("FollowRequests"\);/,
   );
 });
+
+test("follows writes go only through the RPCs, and old pending follows get a follow_request item", () => {
+  const sql = read("supabase/migrations/20261019083000_follows_rpc_only_writes.sql");
+  const smoke = read("supabase/smoke/follows_rpc_only_writes.sql");
+
+  assert.match(sql, /drop policy if exists "follows_insert_requester" on public\.follows;/);
+  assert.match(sql, /drop policy if exists "follows_update_participant" on public\.follows;/);
+  assert.doesNotMatch(sql, /create policy/i);
+  assert.match(
+    sql,
+    /update public\.activity_events ae\s+set event_type = 'follow_request'\s+where ae\.event_type = 'new_follower'[\s\S]*f\.status = 'pending'/,
+  );
+  assert.match(smoke, /Direct UPDATE of follows should affect no rows/);
+  assert.match(smoke, /when insufficient_privilege then null;/);
+  assert.match(smoke, /rollback;\s*$/);
+});

@@ -90,6 +90,8 @@ interface SocialState {
   setFollowedUserId: (userId: string, isFollowing: boolean) => void;
   /** Reconcile one user's pending follow request state with the server. */
   setFollowRequested: (userId: string, isRequested: boolean) => void;
+  /** Re-check every locally "Requested" user with the server (approved, declined or cancelled). */
+  reconcileRequestedFollows: () => Promise<void>;
   incrementShare: (postId: string, channel?: ShareChannel) => void;
   addComment: (postId: string, comment: SocialComment) => void;
   addReply: (postId: string, reply: SocialReply) => void;
@@ -332,6 +334,7 @@ export const useSocialStore = create<SocialState>()(
             ...prev.followedUserIds,
             [userId]: !isFollowing,
           },
+          requestedUserIds: { ...prev.requestedUserIds, [userId]: false },
         }));
         void (isFollowing ? service.social.unfollowUser(userId) : service.social.followUser(userId))
           .then((result) => {
@@ -364,18 +367,26 @@ export const useSocialStore = create<SocialState>()(
         if (!userIds.length) return;
         set((prev) => {
           const next = { ...prev.followedUserIds };
+          const nextRequested = { ...prev.requestedUserIds };
           userIds.forEach((userId) => {
-            if (userId) next[userId] = true;
+            if (!userId) return;
+            next[userId] = true;
+            // An approved follow is no longer a pending request.
+            nextRequested[userId] = false;
           });
-          return { followedUserIds: next };
+          return { followedUserIds: next, requestedUserIds: nextRequested };
         });
       },
 
       setFollowedUserId: (userId, isFollowing) => {
         if (!userId) return;
-        if (Boolean(get().followedUserIds[userId]) === isFollowing) return;
+        const clearsRequest = isFollowing && Boolean(get().requestedUserIds[userId]);
+        if (Boolean(get().followedUserIds[userId]) === isFollowing && !clearsRequest) return;
         set((prev) => ({
           followedUserIds: { ...prev.followedUserIds, [userId]: isFollowing },
+          ...(clearsRequest
+            ? { requestedUserIds: { ...prev.requestedUserIds, [userId]: false } }
+            : {}),
         }));
       },
 
@@ -385,6 +396,30 @@ export const useSocialStore = create<SocialState>()(
         set((prev) => ({
           requestedUserIds: { ...prev.requestedUserIds, [userId]: isRequested },
         }));
+      },
+
+      reconcileRequestedFollows: async () => {
+        const pendingIds = Object.keys(get().requestedUserIds).filter(
+          (userId) => get().requestedUserIds[userId],
+        );
+        if (!pendingIds.length) return;
+        const social = getHungryService().social;
+        const statuses = await Promise.all(
+          pendingIds.map((userId) => social.getFollowStatus(userId).catch(() => null)),
+        );
+        set((prev) => {
+          const followed = { ...prev.followedUserIds };
+          const requested = { ...prev.requestedUserIds };
+          pendingIds.forEach((userId, index) => {
+            const status = statuses[index];
+            // Unknown (offline/error): keep the local state; and skip users the
+            // viewer re-tapped while the checks were in flight.
+            if (status === null || !requested[userId]) return;
+            requested[userId] = status === "pending";
+            followed[userId] = status === "approved";
+          });
+          return { followedUserIds: followed, requestedUserIds: requested };
+        });
       },
 
       loadCommentsForPost: async (postId) => {
