@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, FlatList, Modal, Pressable, View } from "react-native";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import type {
+  NativeStackNavigationProp,
+  NativeStackScreenProps,
+} from "@react-navigation/native-stack";
+import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Search, MapPin, ChevronRight, Check, Music } from "lucide-react-native";
 
@@ -24,7 +28,6 @@ import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
-import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
 import { useHungryTheme } from "@/theme";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { REVIEW_TEXT_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSanitization";
@@ -33,10 +36,17 @@ import {
   resolveWouldRecommend,
   reviewDraftHasContent,
 } from "@/features/review/reviewDraft";
-import type { ReviewStackParamList } from "@/app/navigation/navigationTypes";
+import type { ReviewStackParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
 import type { DishDetail } from "@/types/domain";
 
 type Props = NativeStackScreenProps<ReviewStackParamList, "ReviewMain">;
+
+/** Short, user-safe reason for a failed submit (the server's message when it has one). */
+function describeSubmitError(error: unknown): string {
+  const message = error instanceof Error ? error.message.trim() : "";
+  if (!message || message.length > 160) return "Please try again.";
+  return /[.!?]$/.test(message) ? message : `${message}.`;
+}
 
 // Music is never saved and video is never uploaded with a review, so both stay prototype-only.
 const reviewMusicEnabled = FEATURE_FLAGS.prototypeRoutesEnabled;
@@ -46,10 +56,9 @@ export function ReviewScreen({ navigation, route }: Props) {
   const repository = getDataRepository();
   const { palette, radii, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
-  const rootNavigation = navigation.getParent()?.getParent();
-  const isMerchantMode = useMerchantStore(isMerchantModeActive);
-  const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
-  const isUserMode = !isMerchantMode && !isDeveloperMode;
+  // The editor is mounted under the root stack and under the Profile stack;
+  // navigate() bubbles up to whichever navigator owns AuthStack.
+  const rootNavigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   // Store state
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
@@ -90,12 +99,20 @@ export function ReviewScreen({ navigation, route }: Props) {
     [repository, draft.selectedVenueId, selectedDish?.venueId],
   );
 
-  const venues = repository
-    .listBuildings()
-    .flatMap((building) => repository.listVenuesByBuilding(building.id))
-    .filter((venue) =>
-      `${venue.name} ${venue.unitNumber}`.toLowerCase().includes(query.trim().toLowerCase()),
+  const allVenues = useMemo(
+    () =>
+      repository
+        .listBuildings()
+        .flatMap((building) => repository.listVenuesByBuilding(building.id)),
+    [repository],
+  );
+  const venues = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    if (!normalizedQuery) return allVenues;
+    return allVenues.filter((venue) =>
+      `${venue.name} ${venue.unitNumber}`.toLowerCase().includes(normalizedQuery),
     );
+  }, [allVenues, query]);
 
   // The route says what to review. A saved draft for something else never
   // silently wins (or is silently wiped): ask when it has content.
@@ -166,10 +183,25 @@ export function ReviewScreen({ navigation, route }: Props) {
     };
   }, [repository, selectedDishId]);
 
+  // Leaving with an unpublished draft (it is kept, but the user walked away).
+  useEffect(
+    () =>
+      navigation.addListener("beforeRemove", () => {
+        const { draft: currentDraft, isSubmitting: submitting } = useReviewDraftStore.getState();
+        if (submitting || !reviewDraftHasContent(currentDraft)) return;
+        trackAnalyticsEvent("review_abandoned", {
+          dish_id: currentDraft.selectedDishId || undefined,
+          has_rating: currentDraft.rating > 0,
+          media_count: currentDraft.photos.length,
+        });
+      }),
+    [navigation],
+  );
+
   useEffect(() => {
     if (!isAuthenticated) {
       setReturnRoute("ReviewStack");
-      rootNavigation?.navigate("AuthStack", { screen: "Login" });
+      rootNavigation.navigate("AuthStack", { screen: "Login" });
     }
   }, [isAuthenticated, rootNavigation, setReturnRoute]);
 
@@ -239,13 +271,26 @@ export function ReviewScreen({ navigation, route }: Props) {
       // One confirmation: the success modal.
       useUIStore.getState().showReviewSuccess(successPayload);
       resetDraft();
-      navigation.popToTop();
+      // The editor is the only screen in its stack: leave the stack so the user
+      // lands back where they started (usually the dish they reviewed).
+      const parentNavigation = navigation.getParent();
+      if (parentNavigation?.canGoBack()) {
+        parentNavigation.goBack();
+      } else {
+        rootNavigation.navigate("MainTabs", { screen: "Review" });
+      }
     } catch (error) {
       const photosOnly = (error as { code?: string } | null)?.code === REVIEW_PHOTOS_NOT_ATTACHED;
+      trackAnalyticsEvent("review_submit_failed", {
+        dish_id: selectedDish.id,
+        venue_id: selectedDish.venueId,
+        media_count: draft.photos.length,
+        reason: photosOnly ? "photos_not_attached" : "submit_failed",
+      });
       useUIStore.getState().showToast({
         message: photosOnly
           ? "Your review is posted, but the photos didn't upload. Tap Publish again to add them."
-          : "Could not publish review. Please try again.",
+          : `Could not publish review. ${describeSubmitError(error)}`,
         tone: "warning",
       });
     } finally {
@@ -394,16 +439,15 @@ export function ReviewScreen({ navigation, route }: Props) {
             </View>
           ) : null}
 
-          {!isUserMode && (
-            <View style={{ gap: spacing[3] }}>
-              <AppText variant="h3">Taste Tags</AppText>
-              <ChipGroup
-                options={REVIEW_TAGS.map((tag) => ({ id: tag, label: tag }))}
-                selectedIds={draft.selectedTags}
-                onSelect={toggleTag}
-              />
-            </View>
-          )}
+          {/* Every reviewer can tag taste; the tags feed dish taste profiles. */}
+          <View style={{ gap: spacing[3] }}>
+            <AppText variant="h3">Taste Tags</AppText>
+            <ChipGroup
+              options={REVIEW_TAGS.map((tag) => ({ id: tag, label: tag }))}
+              selectedIds={draft.selectedTags}
+              onSelect={toggleTag}
+            />
+          </View>
 
           {/* 5. Recommend: unanswered until the reviewer picks one. */}
           <View style={{ gap: spacing[3] }}>

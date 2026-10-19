@@ -157,3 +157,29 @@ test("review tab loads one paginated page with refresh, error and empty states",
   assert.match(feed, /ctaLabel="Write a review"/);
   assert.match(feed, /const reviewReactionsEnabled = serviceProviderMode === "mock"/);
 });
+
+test("review medium/low fixes: sign-out clears the draft, feed pages by (created_at, id)", () => {
+  const session = read("src/store/useSessionStore.ts");
+  const service = read("src/lib/services/supabase/supabaseService.ts");
+  const feed = read("src/app/screens/review/ReviewFeedScreen.tsx");
+  const review = read("src/app/screens/review/ReviewScreen.tsx");
+  const migration = read("supabase/migrations/20261020030000_review_feed_index_and_integrity.sql");
+
+  assert.match(
+    session.slice(session.indexOf("function clearAccountScopedStores")),
+    /useReviewDraftStore\.getState\(\)\.resetDraft\(\)/,
+  );
+  assert.match(
+    service,
+    /created_at\.eq\."\$\{options\.before\}",id\.lt\."\$\{options\.beforeId\}"/,
+  );
+  assert.match(feed, /beforeId: oldest\.id/);
+  // Refetch on focus so a just-posted review shows without pull-to-refresh.
+  assert.match(feed, /useFocusEffect\(/);
+  assert.doesNotMatch(feed, /setTimeout\(\(\) => setIsInitialLoading\(false\), 0\)/);
+  // The editor leaves its one-screen stack instead of popToTop.
+  assert.doesNotMatch(review, /navigation\.popToTop\(\)/);
+  assert.doesNotMatch(review, /getParent\(\)\?\.getParent\(\)/);
+  assert.match(migration, /on public\.reviews \(created_at desc, id desc\)/);
+  assert.match(migration, /security definer\s+set search_path = ''/);
+});

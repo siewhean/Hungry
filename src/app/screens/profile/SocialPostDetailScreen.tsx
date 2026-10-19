@@ -80,11 +80,14 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
 
   useEffect(() => {
     let isMounted = true;
-    void listSharedStallPosts(repository).then((sharedPosts) => {
-      if (isMounted) {
-        setPosts(sharedPosts);
-      }
-    });
+    void listSharedStallPosts(repository)
+      .then((sharedPosts) => {
+        if (isMounted) {
+          setPosts(sharedPosts);
+        }
+      })
+      // Offline: keep the posts already shown.
+      .catch(() => undefined);
     return () => {
       isMounted = false;
     };

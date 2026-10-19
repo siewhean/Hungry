@@ -3,6 +3,13 @@ import { persist } from "zustand/middleware";
 import { hungryPersistStorage } from "./persistStorage";
 import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
+import { trackAnalyticsEvent } from "@/lib/analytics";
+
+/** Shows a toast without importing the UI store at module load. */
+function showSocialToast(message: string) {
+  const { useUIStore } = require("./useUIStore") as typeof import("./useUIStore");
+  useUIStore.getState().showToast({ message, tone: "error" });
+}
 
 export interface InteractionState {
   liked: boolean;
@@ -289,6 +296,7 @@ export const useSocialStore = create<SocialState>()(
             [postId]: nextState,
           },
         }));
+        if (isLiked) trackAnalyticsEvent("post_liked", { post_id: postId });
 
         if (isUuidPostId(postId)) {
           void (async () => {
@@ -341,6 +349,7 @@ export const useSocialStore = create<SocialState>()(
             [postId]: nextState,
           },
         }));
+        if (isSaved) trackAnalyticsEvent("post_saved", { post_id: postId });
 
         if (isUuidPostId(postId)) {
           void (async () => {
@@ -406,6 +415,9 @@ export const useSocialStore = create<SocialState>()(
           },
           requestedUserIds: { ...prev.requestedUserIds, [userId]: false },
         }));
+        trackAnalyticsEvent(isFollowing ? "user_unfollowed" : "user_followed", {
+          target_user_id: userId,
+        });
         void (isFollowing ? service.social.unfollowUser(userId) : service.social.followUser(userId))
           .then((result) => {
             // Private accounts must approve the request, so the viewer is not following yet.
@@ -612,6 +624,7 @@ export const useSocialStore = create<SocialState>()(
           ...current,
           shareCount: current.shareCount + 1,
         };
+        trackAnalyticsEvent("post_shared", { post_id: postId, channel });
 
         set((prev) => ({
           interactions: {
@@ -652,6 +665,7 @@ export const useSocialStore = create<SocialState>()(
           commentCount: 0,
         };
 
+        trackAnalyticsEvent("post_commented", { post_id: postId, is_reply: false });
         set((prev) => ({
           commentsByPostId: {
             ...prev.commentsByPostId,
@@ -692,6 +706,26 @@ export const useSocialStore = create<SocialState>()(
             })
             .catch((error) => {
               console.error("Failed to sync comment to backend", error);
+              // Never leave a comment on screen that was not saved.
+              set((prev) => ({
+                commentsByPostId: {
+                  ...prev.commentsByPostId,
+                  [postId]: (prev.commentsByPostId[postId] ?? []).filter(
+                    (candidate) => candidate.id !== comment.id,
+                  ),
+                },
+                interactions: {
+                  ...prev.interactions,
+                  [postId]: {
+                    ...(prev.interactions[postId] ?? current),
+                    commentCount: Math.max(
+                      0,
+                      (prev.interactions[postId]?.commentCount ?? current.commentCount + 1) - 1,
+                    ),
+                  },
+                },
+              }));
+              showSocialToast("Your comment was not posted. Please try again.");
             });
         }
       },
@@ -753,6 +787,25 @@ export const useSocialStore = create<SocialState>()(
             })
             .catch((error) => {
               console.error("Failed to sync reply to backend", error);
+              set((prev) => ({
+                repliesByCommentId: {
+                  ...prev.repliesByCommentId,
+                  [reply.parentCommentId]: (
+                    prev.repliesByCommentId[reply.parentCommentId] ?? []
+                  ).filter((candidate) => candidate.id !== reply.id),
+                },
+                interactions: {
+                  ...prev.interactions,
+                  [postId]: {
+                    ...(prev.interactions[postId] ?? current),
+                    commentCount: Math.max(
+                      0,
+                      (prev.interactions[postId]?.commentCount ?? current.commentCount + 1) - 1,
+                    ),
+                  },
+                },
+              }));
+              showSocialToast("Your reply was not posted. Please try again.");
             });
         }
       },

@@ -42,10 +42,9 @@ test("Review feed cards do not render bottom bites sections", () => {
   assert.match(reviewFeed, /const commentSheet = commentsSheetRef\.current/);
   assert.match(reviewFeed, /openCommentsSheet\(\)/);
   assert.match(reviewFeed, /shareSheetRef\.current\?\.present\(\)/);
-  assert.match(
-    reviewFeed,
-    /const reviewDate = new Date\(item\.review\.createdAt\)\.toLocaleDateString/,
-  );
+  // Relative within a week, then a date that carries the year when it is not this year.
+  assert.match(reviewFeed, /const reviewDate = formatReviewDate\(item\.review\.createdAt\)/);
+  assert.match(reviewFeed, /sameYear \? \{\} : \{ year: "numeric" \}/);
   assert.match(
     reviewFeed,
     /<AppText variant="micro" tone="muted" numberOfLines=\{1\}>\s*\{item\.venueName\}\s*<\/AppText>/,

@@ -217,13 +217,37 @@ export function mapActivityEventToUpdate(event: ActivityEventRecord): ActivityUp
   };
 }
 
+/** The updates the inbox lists: seeded demo updates in mock mode, server events otherwise. */
+export function selectActivitySourceUpdates(
+  mode: string,
+  dbActivityEvents: ActivityUpdate[],
+  localActivityUpdates: ActivityUpdate[],
+): ActivityUpdate[] {
+  return mode === "mock"
+    ? [...ACTIVITY_UPDATES, ...localActivityUpdates]
+    : [...dbActivityEvents, ...localActivityUpdates];
+}
+
+/** True when this update is addressed to the viewer (or to everyone). */
+export function isActivityUpdateForViewer(update: ActivityUpdate, viewerId?: string) {
+  return !update.recipientUserId || update.recipientUserId === viewerId;
+}
+
+/**
+ * Unread updates count. Pass the viewer id so the Home bell and the inbox
+ * count the same updates.
+ */
 export function getActivityUnreadCount(
   readActivityIds: string[] = [],
   activityUpdates: ActivityUpdate[] = ACTIVITY_UPDATES,
+  viewerId?: string,
 ) {
   const readIds = new Set(readActivityIds);
   return activityUpdates.filter(
-    (update) => update.unread && !readIds.has(getActivityReadKey("update", update.id)),
+    (update) =>
+      update.unread &&
+      (viewerId === undefined || isActivityUpdateForViewer(update, viewerId)) &&
+      !readIds.has(getActivityReadKey("update", update.id)),
   ).length;
 }
 

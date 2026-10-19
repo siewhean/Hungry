@@ -62,6 +62,18 @@ export type AnalyticsEventName =
   | "review_cta_tapped"
   | "review_started"
   | "review_submitted"
+  | "review_submit_failed"
+  | "review_abandoned"
+  | "review_feed_filter_changed"
+  | "review_feed_searched"
+  | "post_published"
+  | "home_feed_viewed"
+  | "post_liked"
+  | "post_saved"
+  | "post_shared"
+  | "post_commented"
+  | "user_followed"
+  | "user_unfollowed"
   | "claim_this_stall_tapped"
 
   // ─── Website Events ────────────────────────────────────────────────────────

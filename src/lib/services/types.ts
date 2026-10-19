@@ -544,6 +544,11 @@ export interface ListRecentReviewsOptions {
   limit?: number;
   /** Cursor: only return reviews created strictly before this ISO timestamp. */
   before?: string;
+  /**
+   * Keyset tie-breaker for `before`: also return reviews created at exactly
+   * `before` whose id sorts below this one, so rows sharing a timestamp are not skipped.
+   */
+  beforeId?: string;
   /** Only reviews of these dishes (for example one stall's menu). An empty list returns none. */
   dishIds?: string[];
 }

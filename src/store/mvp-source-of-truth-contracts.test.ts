@@ -188,7 +188,8 @@ test("production Post route publishes through the canonical composer service pat
   assert.match(postScreen, /import \{ publishComposerPost \}/);
   assert.match(postScreen, /useComposerStore\.getState\(\)/);
   assert.match(postScreen, /confirmGalleryAccess/);
-  assert.match(postScreen, /MediaTypeOptions: \{ All: string \}/);
+  assert.match(postScreen, /import \* as ImagePicker from "expo-image-picker"/);
+  assert.match(postScreen, /mediaTypes: \["images", "videos"\]/);
   assert.match(postScreen, /launchImageLibraryAsync/);
   assert.match(postScreen, /composer\.reset\(\)/);
   assert.match(postScreen, /composer\.setCaption\(/);

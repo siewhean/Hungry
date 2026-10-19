@@ -96,20 +96,27 @@ export function ReviewShareSheet({
   }, [activeReview, loadChatConversations]);
 
   const trackShare = useCallback(
-    (target: ReviewShareTarget, channel: ShareChannel) => {
+    (target: ReviewShareTarget, channel: ShareChannel, recipientCount?: number) => {
       const targetKind = target.kind ?? "review";
+      const recipients = recipientCount === undefined ? {} : { recipient_count: recipientCount };
       if (targetKind === "stall") {
         trackAnalyticsEvent("stall_shared", {
           stall_id: target.reviewId.replace(/^stall-/, ""),
           channel,
+          ...recipients,
         });
       } else if (targetKind === "dish") {
         trackAnalyticsEvent("dish_shared", {
           dish_id: target.reviewId.replace(/^dish-/, ""),
           channel,
+          ...recipients,
         });
       } else {
-        trackAnalyticsEvent("dish_shared", { review_id: target.reviewId, channel });
+        trackAnalyticsEvent("dish_shared", {
+          review_id: target.reviewId,
+          channel,
+          ...recipients,
+        });
       }
       if (target.postId) {
         onShared(target.postId, channel);
@@ -152,7 +159,7 @@ export function ReviewShareSheet({
       showToast({ message: "Could not share review. Please try again.", tone: "error" });
       return;
     }
-    trackShare(activeReview, "in_app");
+    trackShare(activeReview, "in_app", selectedChatIds.length);
     showToast({
       message: `${kindNoun === "review" ? "Review" : kindNoun === "dish" ? "Dish" : "Stall"} shared with ${selectedChatIds.length} ${
         selectedChatIds.length === 1 ? "person" : "people"

@@ -923,36 +923,52 @@ function toAppSessionFromAuthSession(
   };
 }
 
+/** Review photos uploaded at once; more in flight starves slow mobile links. */
+const REVIEW_PHOTO_UPLOAD_CONCURRENCY = 3;
+
 async function uploadReviewPhotos(
   client: SupabaseClient,
   userId: string,
   reviewId: string,
   photos: string[],
 ): Promise<Row[]> {
-  const uploaded: Row[] = [];
   // Uploads never overwrite, so a retried submission needs fresh object paths.
   const attempt = Date.now().toString(36);
-  for (let index = 0; index < photos.length; index += 1) {
-    const uri = photos[index];
-    if (!uri) continue;
+  const jobs = photos
+    .map((uri, index) => ({ uri, index }))
+    .filter((job): job is { uri: string; index: number } => Boolean(job.uri));
+  jobs.forEach(({ uri }) => {
     if (!isLocalUri(uri)) {
       throw new Error("Review photos must be uploaded from local device files.");
     }
-    const extension = uri.split(".").pop()?.toLowerCase() || "jpg";
-    const path = `${userId}/${reviewId}/photo-${index}-${attempt}.${extension}`;
-    const asset = await uploadImageFromUri({
-      client,
-      bucket: "review-media",
-      path,
-      uri,
-    });
-    uploaded.push({
-      url: asset.path,
-      storage_bucket: "review-media",
-      storage_path: asset.path,
-    });
-  }
-  return uploaded;
+  });
+  const uploaded: (Row | undefined)[] = new Array(jobs.length);
+  let nextJob = 0;
+  const worker = async () => {
+    while (nextJob < jobs.length) {
+      const jobIndex = nextJob;
+      nextJob += 1;
+      const { uri, index } = jobs[jobIndex]!;
+      const extension = uri.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${userId}/${reviewId}/photo-${index}-${attempt}.${extension}`;
+      const asset = await uploadImageFromUri({
+        client,
+        bucket: "review-media",
+        path,
+        uri,
+      });
+      uploaded[jobIndex] = {
+        url: asset.path,
+        storage_bucket: "review-media",
+        storage_path: asset.path,
+      };
+    }
+  };
+  await Promise.all(
+    Array.from({ length: Math.min(REVIEW_PHOTO_UPLOAD_CONCURRENCY, jobs.length) }, worker),
+  );
+  // Keep the picked order for sort_order.
+  return uploaded.filter((row): row is Row => Boolean(row));
 }
 
 async function mapSupabaseReviewRows(
@@ -1115,12 +1131,52 @@ async function createSignedStorageUrls(
   return signed;
 }
 
+/** Signed post media URLs live 1 hour; reuse one until 5 minutes before it expires. */
+const POST_MEDIA_SIGNED_URL_REUSE_MS = 55 * 60 * 1000;
+/**
+ * Signed URL per storage path. A refetch reuses the same URL, so the image cache
+ * (keyed by URL) does not re-download or flicker on every feed load.
+ */
+const signedPostMediaUrlCache = new Map<string, { url: string; expiresAt: number }>();
+
+function cachedSignedPostMediaUrl(path: string): string | undefined {
+  const cached = signedPostMediaUrlCache.get(path);
+  if (!cached) return undefined;
+  if (cached.expiresAt <= Date.now()) {
+    signedPostMediaUrlCache.delete(path);
+    return undefined;
+  }
+  return cached.url;
+}
+
+function rememberSignedPostMediaUrl(path: string, url: string) {
+  signedPostMediaUrlCache.set(path, {
+    url,
+    expiresAt: Date.now() + POST_MEDIA_SIGNED_URL_REUSE_MS,
+  });
+}
+
+/** Sign every uncached post-media path in one request before rows are mapped. */
+async function presignPostMediaRows(client: SupabaseClient, mediaRows: Row[]): Promise<void> {
+  const paths = mediaRows
+    .filter((row) => asString(row.storage_bucket) === "post-media")
+    .map((row) => asString(row.storage_path))
+    .filter((path): path is string => Boolean(path) && !cachedSignedPostMediaUrl(path!));
+  if (paths.length === 0) return;
+  const signed = await createSignedStorageUrls(client, "post-media", paths);
+  signed.forEach((url, path) => rememberSignedPostMediaUrl(path, url));
+}
+
 async function resolvePostMediaDisplayUrl(client: SupabaseClient, row: Row): Promise<string> {
   const bucket = asString(row.storage_bucket);
   const path = asString(row.storage_path) ?? "";
   const publicUrl = asString(row.public_url);
   if (bucket === "post-media" && path) {
-    return (await createSignedStorageUrl(client, bucket, path)) ?? publicUrl ?? "";
+    const cached = cachedSignedPostMediaUrl(path);
+    if (cached) return cached;
+    const signed = await createSignedStorageUrl(client, bucket, path);
+    if (signed) rememberSignedPostMediaUrl(path, signed);
+    return signed ?? publicUrl ?? "";
   }
   return publicUrl ?? path;
 }
@@ -1234,9 +1290,9 @@ async function fetchPublishedPostBites(
     .order("published_at", { ascending: false })
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
-  // An author read throws so a failed load is not shown as "No posts yet".
-  if (error && options?.authorId) throw error;
-  if (error || !Array.isArray(data)) return [];
+  // A failed read throws so it is not shown as "No posts yet" (offline included).
+  if (error) throw error;
+  if (!Array.isArray(data)) return [];
 
   const postRows = data as Row[];
   const postIds = postRows.map((row) => asString(row.id)).filter((id): id is string => !!id);
@@ -1300,6 +1356,7 @@ async function fetchPublishedPostBites(
           )
       : [];
 
+  await presignPostMediaRows(client, mediaRows);
   const mediaByPostId = groupRowsByStringKey(mediaRows, "post_id");
   const dishById = new Map(dishRows.map((row) => [asString(row.id) ?? "", row]));
   const venueById = new Map(venueRows.map((row) => [asString(row.id) ?? "", row]));
@@ -1386,9 +1443,10 @@ async function mapFeedRpcRowToBite(client: SupabaseClient, row: Row): Promise<Bi
   return {
     id: asString(row.id) ?? `post-${Date.now()}`,
     authorId: asString(row.author_id) ?? "unknown-author",
+    // Live profile fields first: the publish-time snapshot goes stale after a rename.
     authorName:
-      asString(authorMeta.displayName) ?? asString(row.author_display_name) ?? "Hungry User",
-    authorAvatar: asString(authorMeta.avatarUrl) ?? asString(row.author_avatar_url),
+      asString(row.author_display_name) ?? asString(authorMeta.displayName) ?? "Hungry User",
+    authorAvatar: asString(row.author_avatar_url) ?? asString(authorMeta.avatarUrl),
     dishId: asString(row.dish_id) ?? asString(dishMeta.id) ?? "",
     dishName: asString(row.dish_name) ?? asString(dishMeta.name) ?? "Unknown dish",
     venueId: asString(row.venue_id) ?? asString(venueMeta.id) ?? "",
@@ -1451,6 +1509,10 @@ async function fetchHomeSocialFeedBitesViaRpc(
   if (!Array.isArray(legacyResult.data)) return undefined;
 
   const rows = legacyResult.data as Row[];
+  await presignPostMediaRows(
+    client,
+    rows.flatMap((row) => asRowArray(row.media)),
+  );
   return Promise.all(rows.map((row) => mapFeedRpcRowToBite(client, row)));
 }
 
@@ -3497,8 +3559,14 @@ export const supabaseService: HungryService = {
           "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend,merchant_reply_text,merchant_replied_at",
         )
         .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
         .limit(limit);
-      if (options?.before) {
+      if (options?.before && options.beforeId) {
+        // Keyset cursor (created_at, id): rows sharing the boundary timestamp are kept.
+        query = query.or(
+          `created_at.lt."${options.before}",and(created_at.eq."${options.before}",id.lt."${options.beforeId}")`,
+        );
+      } else if (options?.before) {
         query = query.lt("created_at", options.before);
       }
       if (options?.dishIds) {

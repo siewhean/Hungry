@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Alert, Pressable, ScrollView, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Camera, Plus, Video } from "lucide-react-native";
+import * as ImagePicker from "expo-image-picker";
+import { Camera, Plus, Video, X } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
@@ -24,35 +25,12 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
 import { useHungryTheme } from "@/theme";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Post">;
 
-function loadImagePickerModule() {
-  try {
-    return require("expo-image-picker") as {
-      MediaTypeOptions: { All: string };
-      requestMediaLibraryPermissionsAsync: () => Promise<{ status: string }>;
-      launchImageLibraryAsync: (options: {
-        allowsMultipleSelection: boolean;
-        mediaTypes: string;
-        quality: number;
-        selectionLimit: number;
-        videoMaxDuration: number;
-      }) => Promise<{
-        canceled: boolean;
-        assets?: {
-          assetId?: string | null;
-          uri: string;
-          type?: "image" | "video" | string | null;
-          width?: number;
-          height?: number;
-        }[];
-      }>;
-    };
-  } catch {
-    return null;
-  }
-}
+/** Most media one post carries. */
+const POST_MAX_MEDIA = 5;
 
 function PostComposerScreenInner({ navigation, route }: Props) {
   const { componentRadii, palette, spacing } = useHungryTheme();
@@ -72,6 +50,8 @@ function PostComposerScreenInner({ navigation, route }: Props) {
   );
   const [dishSearchQuery, setDishSearchQuery] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
+  // Set once the post is published so leaving the screen skips the discard prompt.
+  const hasPublishedRef = useRef(false);
   const allDishes = useMemo(
     () =>
       repository
@@ -134,16 +114,13 @@ function PostComposerScreenInner({ navigation, route }: Props) {
       return;
     }
 
-    const imagePicker = loadImagePickerModule();
-    if (!imagePicker) {
-      showToast({
-        message: "Media picker unavailable right now.",
-        tone: "warning",
-      });
+    const remaining = POST_MAX_MEDIA - selectedMedia.length;
+    if (remaining <= 0) {
+      showToast({ message: `Up to ${POST_MAX_MEDIA} photos or videos.`, tone: "info" });
       return;
     }
 
-    const permission = await imagePicker.requestMediaLibraryPermissionsAsync();
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!isGalleryPermissionGranted(permission)) {
       showToast({
         message: "Photo permission is required to publish a post.",
@@ -152,11 +129,11 @@ function PostComposerScreenInner({ navigation, route }: Props) {
       return;
     }
 
-    const result = await imagePicker.launchImageLibraryAsync({
-      mediaTypes: imagePicker.MediaTypeOptions.All,
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images", "videos"],
       allowsMultipleSelection: true,
       quality: 0.92,
-      selectionLimit: 5,
+      selectionLimit: remaining,
       videoMaxDuration: 60,
     });
 
@@ -171,13 +148,35 @@ function PostComposerScreenInner({ navigation, route }: Props) {
       width: asset.width,
       height: asset.height,
     }));
-    setSelectedMedia(media);
+    // New picks are added after the earlier ones instead of replacing them.
+    setSelectedMedia((current) => {
+      const existingUris = new Set(current.map((item) => item.uri));
+      const added = media.filter((item) => !existingUris.has(item.uri));
+      return [...current, ...added].slice(0, POST_MAX_MEDIA);
+    });
     showToast({ message: "Media attached.", tone: "success" });
   };
 
   const handleRemoveMedia = (id: string) => {
     setSelectedMedia((current) => current.filter((item) => item.id !== id));
   };
+
+  const hasUnsavedWork = caption.trim().length > 0 || selectedMedia.length > 0;
+  useEffect(() => {
+    if (!hasUnsavedWork) return undefined;
+    return navigation.addListener("beforeRemove", (event) => {
+      if (hasPublishedRef.current) return;
+      event.preventDefault();
+      Alert.alert("Discard this post?", "Your photos and caption will not be saved.", [
+        { text: "Keep editing", style: "cancel" },
+        {
+          text: "Discard",
+          style: "destructive",
+          onPress: () => navigation.dispatch(event.data.action),
+        },
+      ]);
+    });
+  }, [hasUnsavedWork, navigation]);
 
   const handlePublish = () => {
     if (!isAuthenticated) {
@@ -218,8 +217,17 @@ function PostComposerScreenInner({ navigation, route }: Props) {
           tone: "success",
         });
         useComposerStore.getState().reset();
+        hasPublishedRef.current = true;
+        trackAnalyticsEvent("post_published", {
+          dish_id: targetDish.id,
+          venue_id: targetVenue?.id ?? targetDish.venueId,
+          media_count: selectedMedia.length,
+          has_video: selectedMedia.some((item) => item.type === "video"),
+        });
         navigation.navigate("MainTabs", { screen: "Home" });
       } catch (error) {
+        // The composer store is shared with the V2 composer: never leave this draft in it.
+        useComposerStore.getState().reset();
         showToast({
           message: error instanceof Error ? error.message : "Could not publish post right now.",
           tone: "warning",
@@ -330,11 +338,8 @@ function PostComposerScreenInner({ navigation, route }: Props) {
             contentContainerStyle={{ gap: spacing[2] }}
           >
             {selectedMedia.map((item) => (
-              <Pressable
+              <View
                 key={item.id}
-                accessibilityRole="button"
-                accessibilityLabel="Remove selected media"
-                onPress={() => handleRemoveMedia(item.id)}
                 style={{
                   width: 128,
                   height: 128,
@@ -360,11 +365,29 @@ function PostComposerScreenInner({ navigation, route }: Props) {
                     accessibilityLabel="Selected post image"
                   />
                 )}
-              </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Remove selected ${item.type === "video" ? "video" : "photo"}`}
+                  onPress={() => handleRemoveMedia(item.id)}
+                  style={{
+                    position: "absolute",
+                    top: 4,
+                    right: 4,
+                    width: 44,
+                    height: 44,
+                    borderRadius: 22,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: palette.mediaScrim,
+                  }}
+                >
+                  <X size={18} color={palette.white} />
+                </Pressable>
+              </View>
             ))}
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={selectedMedia.length ? "Replace post media" : "Add post media"}
+              accessibilityLabel={selectedMedia.length ? "Add more post media" : "Add post media"}
               onPress={() => {
                 void handlePickMedia();
               }}
@@ -386,7 +409,7 @@ function PostComposerScreenInner({ navigation, route }: Props) {
                 <Camera size={24} color={palette.orange} />
               )}
               <AppText variant="bodySmall" style={{ color: palette.orange, fontWeight: "800" }}>
-                {selectedMedia.length ? "Replace" : "Add media"}
+                {selectedMedia.length ? "Add more" : "Add media"}
               </AppText>
             </Pressable>
           </ScrollView>

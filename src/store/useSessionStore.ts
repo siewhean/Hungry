@@ -126,6 +126,10 @@ function clearAccountScopedStores(): void {
     require("./usePortfolioStore") as typeof import("./usePortfolioStore");
   useChecklistStore.getState()._reset();
   usePortfolioStore.getState()._reset();
+  // A half-written review (and its clientReviewId) belongs to the account that wrote it.
+  const { useReviewDraftStore } =
+    require("./useReviewDraftStore") as typeof import("./useReviewDraftStore");
+  useReviewDraftStore.getState().resetDraft();
   const { clearCommunitySafetySessionState } =
     require("@/lib/security/communitySafety") as typeof import("@/lib/security/communitySafety");
   clearCommunitySafetySessionState();

@@ -139,7 +139,9 @@ test("social store contract: real post shares sync to Supabase and unsupported i
   assert.match(source, /rolled back optimistic state/);
   // Every channel goes through one tracker; only real posts count toward post shares.
   assert.match(reviewShareSheet, /if \(target\.postId\) \{\s*onShared\(target\.postId, channel\)/);
-  assert.match(reviewShareSheet, /trackShare\(activeReview, "in_app"\)/);
+  // In-app shares also report how many chats received the item.
+  assert.match(reviewShareSheet, /trackShare\(activeReview, "in_app", selectedChatIds\.length\)/);
+  assert.match(reviewShareSheet, /recipient_count: recipientCount/);
   assert.match(reviewShareSheet, /trackShare\(activeReview, "copy_link"\)/);
   assert.match(reviewShareSheet, /trackShare\(activeReview, "system_share"\)/);
   // Cancelled system shares are not counted; messaging apps keep their channel.

@@ -9,6 +9,9 @@ import { hungryPersistStorage } from "./persistStorage";
 
 const initialDraft = createInitialReviewDraft();
 
+/** Most photos one review can carry; the picker and the store both enforce it. */
+export const REVIEW_MAX_PHOTOS = 5;
+
 interface ReviewDraftState {
   draft: ReviewDraft;
   isSubmitting: boolean;
@@ -108,12 +111,13 @@ export const useReviewDraftStore = create<ReviewDraftState>()(
           },
         })),
       addPhoto: (uri) =>
-        set((state) => ({
-          draft: {
-            ...state.draft,
-            photos: [...state.draft.photos, uri],
-          },
-        })),
+        set((state) => {
+          // Photos are keyed by uri, so a duplicate pick would make one remove tap drop both.
+          if (state.draft.photos.includes(uri) || state.draft.photos.length >= REVIEW_MAX_PHOTOS) {
+            return state;
+          }
+          return { draft: { ...state.draft, photos: [...state.draft.photos, uri] } };
+        }),
       removePhoto: (uri) =>
         set((state) => ({
           draft: {

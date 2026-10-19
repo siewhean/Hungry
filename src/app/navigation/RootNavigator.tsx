@@ -786,7 +786,10 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           {FEATURE_FLAGS.craveEnabled ? (
             <RootStack.Screen getComponent={loadCraveScreen} name="Crave" />
           ) : null}
-          <RootStack.Screen getComponent={loadMusicSelectionScreen} name="MusicSelection" />
+          {/* Music is never saved with a review: prototype builds only. */}
+          {FEATURE_FLAGS.prototypeRoutesEnabled ? (
+            <RootStack.Screen getComponent={loadMusicSelectionScreen} name="MusicSelection" />
+          ) : null}
           <RootStack.Screen getComponent={loadDecideForMeResultScreen} name="DecideForMeResult" />
           <RootStack.Screen getComponent={loadOfflineStateScreen} name="Offline" />
           <RootStack.Screen getComponent={loadNotFoundScreen} name="NotFound" />

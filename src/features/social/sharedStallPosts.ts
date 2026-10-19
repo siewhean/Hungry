@@ -47,7 +47,10 @@ export async function listSharedStallPosts(repository: DataRepository = getDataR
     bitePosts = (await service.social.getBitesFeed()).map((bite) =>
       biteToStallPost(bite, { authorAvatarUrl: bite.authorAvatar }),
     );
-  } catch {
+  } catch (error) {
+    // The live feed is the only source in Supabase mode: an offline or backend
+    // failure must reach the error state, not read as "No posts yet".
+    if (getServiceProvider().mode === "supabase") throw error;
     bitePosts = [];
   }
 

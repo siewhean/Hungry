@@ -132,7 +132,7 @@ test("home feed post cards cover carousel media, captions, comments, reactions, 
       /preserveReadyOnError: true, showLoading: false/,
       /const mediaUrls =\s*item\.mediaType === "photo" && item\.mediaUrls\?\.length/,
       /horizontal[\s\S]*pagingEnabled[\s\S]*showsHorizontalScrollIndicator=\{false\}/,
-      /numberOfLines=\{2\}/,
+      /numberOfLines=\{isCaptionExpanded \? undefined : 2\}/,
       /\{" more"\}/,
       /activeCommentItem\.caption/,
       /const openCommentSheet = useCallback/,
@@ -312,7 +312,8 @@ test("review tab covers loading state, review cards, and bite card icon/sheet bo
   assertSourceIncludes(
     reviewFeed,
     [
-      /useDelayedLoadingSkeleton\(\s*isInitialLoading/,
+      // The skeleton follows the real fetch, not a setTimeout(0) flag.
+      /useDelayedLoadingSkeleton\(isServiceFeedLoading, 0\)/,
       /ReviewFeedSkeleton/,
       /ReviewCommentsSheet/,
       /ReviewShareSheet/,

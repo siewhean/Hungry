@@ -456,6 +456,10 @@ export interface StallPost {
   isStallAccount?: boolean;
   /** Inline dish link references in caption — tap navigates to dish detail */
   dishLinks?: { name: string; dishId: string }[];
+  /** Venue fields from the feed read, used when the local catalog has not loaded this venue. */
+  venueName?: string;
+  venueUnitNumber?: string;
+  buildingName?: string;
 }
 
 export interface SearchHistoryEntry {
