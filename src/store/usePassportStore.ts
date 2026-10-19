@@ -42,6 +42,8 @@ interface PassportState {
   /** Map of categoryId → computed progress */
   progressMap: Record<string, UserPassportProgress>;
   celebratedStampIds: Record<string, boolean>;
+  /** Singapore weeks (YYYY-Www) whose weekly goal was already celebrated. */
+  celebratedGoalWeeks: Record<string, boolean>;
   /** Stamps already reported as passport_stamp_earned, so a cold start does not re-emit them. */
   reportedEarnedStampIds: Record<string, boolean>;
   /** User the persisted celebrated/reported ids belong to. */
@@ -70,6 +72,7 @@ interface PassportState {
    */
   computeProgress: (triedStallIds: string[]) => void;
   markStampCelebrated: (stampId: string) => void;
+  markGoalWeekCelebrated: (weekKey: string) => void;
 
   // Database-backed actions (new gamification features)
   loadStamps: () => Promise<void>;
@@ -180,7 +183,12 @@ export const usePassportStore = create<PassportState>()(
       const ensureOwner = () => {
         const userId = getCurrentProfileId();
         if (get().ownerUserId === userId) return;
-        set({ ownerUserId: userId, celebratedStampIds: {}, reportedEarnedStampIds: {} });
+        set({
+          ownerUserId: userId,
+          celebratedStampIds: {},
+          celebratedGoalWeeks: {},
+          reportedEarnedStampIds: {},
+        });
       };
       /** Latest input queued before the persisted ids finished loading. */
       let pendingTriedStallIds: string[] | null = null;
@@ -188,6 +196,7 @@ export const usePassportStore = create<PassportState>()(
       return {
         progressMap: {},
         celebratedStampIds: {},
+        celebratedGoalWeeks: {},
         reportedEarnedStampIds: {},
         ownerUserId: null,
         isComputed: false,
@@ -273,6 +282,13 @@ export const usePassportStore = create<PassportState>()(
           }));
         },
 
+        markGoalWeekCelebrated: (weekKey) => {
+          ensureOwner();
+          set((state) => ({
+            celebratedGoalWeeks: { ...state.celebratedGoalWeeks, [weekKey]: true },
+          }));
+        },
+
         loadStamps: async () => {
           const service = getHungryService();
           const stamps = await service.passport.getPassportStamps();
@@ -299,6 +315,7 @@ export const usePassportStore = create<PassportState>()(
           set({
             progressMap: {},
             celebratedStampIds: {},
+            celebratedGoalWeeks: {},
             reportedEarnedStampIds: {},
             ownerUserId: null,
             isComputed: false,
@@ -313,6 +330,7 @@ export const usePassportStore = create<PassportState>()(
       storage: hungryPersistStorage,
       partialize: (state) => ({
         celebratedStampIds: state.celebratedStampIds,
+        celebratedGoalWeeks: state.celebratedGoalWeeks,
         reportedEarnedStampIds: state.reportedEarnedStampIds,
         ownerUserId: state.ownerUserId,
       }),

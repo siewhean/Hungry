@@ -60,3 +60,17 @@ test("welcome back: only after more than a week away, behind welcome_back_v1", (
     /\.from\("stall_follows"\)[\s\S]*?\.gte\("created_at", `\$\{sinceDate\}T00:00:00\+08:00`\)/,
   );
 });
+
+test("passport weekly goal: counted from tried items, celebrated once per week", () => {
+  const screen = read("src/app/screens/profile/PassportScreen.tsx");
+  assert.match(screen, /computeWeeklyGoal\(\[\.\.\.triedAtByItem\.values\(\)\]\)/);
+  assert.match(screen, /celebratedGoalWeeks\[weeklyGoal\.weekKey\]/);
+  assert.match(screen, /markGoalWeekCelebrated\(weeklyGoal\.weekKey\)/);
+  assert.match(screen, /trackAnalyticsEvent\("weekly_goal_completed"/);
+  assert.match(screen, /<WeeklyGoalCard/);
+  const store = read("src/store/usePassportStore.ts");
+  assert.match(store, /celebratedGoalWeeks: state\.celebratedGoalWeeks/);
+  const card = read("src/components/gamification/WeeklyGoalCard.tsx");
+  assert.match(card, /if \(!celebrating \|\| reduceMotion\) return;/);
+  assert.match(card, /cancelAnimation\(pop\)/);
+});
