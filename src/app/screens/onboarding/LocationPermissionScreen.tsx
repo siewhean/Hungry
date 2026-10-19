@@ -1,8 +1,8 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Pressable, View } from "react-native";
+import { Linking, Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Clock3, Compass, UtensilsCrossed } from "lucide-react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { AppText, Button, Card } from "@/components/ui";
 import { WordmarkLogoV2 } from "@/components/icons/brand/WordmarkLogoV2";
@@ -11,7 +11,7 @@ import { HUNGRY_LOGO_STANDARD_WORDMARK_SIZE } from "@/constants/brandAssets";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
-import { OnboardingProgress } from "./OnboardingProgress";
+import { OnboardingProgress, trackOnboardingStepViewed } from "./OnboardingProgress";
 import type { OnboardingStackParamList } from "./OnboardingStack";
 import {
   ONBOARDING_ACTIONS_BOTTOM_PADDING,
@@ -34,16 +34,16 @@ const FEATURE_ROWS = [
   },
   {
     key: "navigation",
-    title: "Food Navigation",
-    description: "Get precise directions to the exact stall in busy food streets.",
+    title: "Directions",
+    description: "Open directions to a stall's centre or mall in your maps app.",
     icon: Compass,
     iconTone: "warning",
     iconBgTone: "amberLight",
   },
   {
     key: "wait",
-    title: "Local Favorites",
-    description: "Use timing cues to plan around busier nearby stalls and dishes.",
+    title: "Local Favourites",
+    description: "See what diners near you rate highly right now.",
     icon: Clock3,
     iconTone: "error",
     iconBgTone: "errorSoft",
@@ -56,30 +56,50 @@ export function LocationPermissionScreen({ navigation }: Props) {
   const manualLocation = useLocationStore((state) => state.manualLocation);
   const showToast = useUIStore((state) => state.showToast);
   const [isContinuing, setIsContinuing] = useState(false);
+  // The OS no longer shows the prompt after a permanent denial; offer Settings.
+  const [permissionBlocked, setPermissionBlocked] = useState(false);
+
+  useEffect(() => {
+    trackOnboardingStepViewed("location");
+  }, []);
 
   // Step 2 of onboarding; the optional taste quiz comes next.
   const next = () => {
     navigation.navigate("TasteQuiz");
   };
 
-  const pickAreaInstead = () => {
-    showToast({
-      message: "We couldn't find your location. Pick your area instead.",
-      tone: "warning",
-    });
+  const pickAreaInstead = (message: string) => {
+    showToast({ message, tone: "warning" });
     navigation.navigate("ManualLocationPicker");
+  };
+
+  const readPermission = async (): Promise<{ status?: string; canAskAgain?: boolean }> => {
+    try {
+      const Location = require("expo-location") as {
+        getForegroundPermissionsAsync?: () => Promise<{ status: string; canAskAgain?: boolean }>;
+      };
+      return (await Location.getForegroundPermissionsAsync?.()) ?? {};
+    } catch {
+      return {};
+    }
   };
 
   const allowDeviceLocation = async () => {
     try {
       const granted = await grantLocation();
-      if (!granted) {
-        pickAreaInstead();
+      if (granted) {
+        next();
         return;
       }
-      next();
+      const permission = await readPermission();
+      if (permission.status === "granted") {
+        pickAreaInstead("We couldn't get a GPS fix. Pick your area instead.");
+        return;
+      }
+      if (permission.canAskAgain === false) setPermissionBlocked(true);
+      pickAreaInstead("No problem. Pick your area instead; you can turn location on anytime.");
     } catch {
-      pickAreaInstead();
+      pickAreaInstead("We couldn't get your location. Pick your area instead.");
     }
   };
 
@@ -188,21 +208,32 @@ export function LocationPermissionScreen({ navigation }: Props) {
           }}
         >
           <Button
-            label="Continue"
+            label={manualLocation ? "Continue" : "Allow location"}
+            accessibilityHint={
+              manualLocation ? undefined : "Shows your phone's location permission prompt"
+            }
             onPress={onContinue}
             loading={isContinuing}
             style={shadows.floating}
           />
+          {permissionBlocked && !manualLocation ? (
+            <Button
+              label="Open Settings"
+              variant="ghost"
+              accessibilityHint="Opens Settings to turn on location for Hungry"
+              onPress={() => void Linking.openSettings().catch(() => undefined)}
+            />
+          ) : null}
           {manualLocation ? (
             <Button
-              label={`Selected Location: ${manualLocation}`}
+              label={`Selected location: ${manualLocation}`}
               variant="secondary"
               onPress={() => navigation.navigate("ManualLocationPicker")}
               accessibilityLabel={`Edit selected location, currently ${manualLocation}`}
             />
           ) : (
             <Button
-              label="Enter Manually"
+              label="Pick my area instead"
               variant="secondary"
               onPress={() => navigation.navigate("ManualLocationPicker")}
             />

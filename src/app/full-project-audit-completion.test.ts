@@ -157,7 +157,8 @@ test("full project audit P1: user-facing data trust copy avoids live-result over
   const promotionBuilder = read("src/app/screens/merchant/PromotionBuilderScreen.tsx");
 
   assert.doesNotMatch(locationPermission, /real-time queues/i);
-  assert.match(locationPermission, /Use timing cues/);
+  assert.doesNotMatch(locationPermission, /exact stall/);
+  assert.match(locationPermission, /Open directions to a stall/);
   assert.doesNotMatch(aiAssistant, /boost\s+sales/i);
   // Template summaries are not presented as AI, and unenforced audience targeting is not offered.
   assert.doesNotMatch(aiAssistant, /AI-assisted insights/);

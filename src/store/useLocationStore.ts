@@ -33,6 +33,7 @@ interface LocationState {
 const defaultLocation = { latitude: 1.2813, longitude: 103.8458 };
 
 export const LOCATION_REFRESH_MAX_AGE_MS = 10 * 60 * 1000;
+export const LOCATION_FIX_TIMEOUT_MS = 10 * 1000;
 
 // Manual picks go to analytics at ~1 km precision, not the exact point.
 function toCoarseCoordinate(value: number) {
@@ -128,9 +129,17 @@ export const useLocationStore = create<LocationState>()(
             return false;
           }
 
-          const result = await Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.Balanced,
-          });
+          // A fix that never arrives (indoors, no GPS) must not leave the caller waiting.
+          let fixTimeout: ReturnType<typeof setTimeout> | undefined;
+          const result = await Promise.race([
+            Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+            new Promise<never>((_, reject) => {
+              fixTimeout = setTimeout(
+                () => reject(new Error("Location fix timed out")),
+                LOCATION_FIX_TIMEOUT_MS,
+              );
+            }),
+          ]).finally(() => clearTimeout(fixTimeout));
 
           set({
             ...getGrantedLocationState({
