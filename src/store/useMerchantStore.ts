@@ -27,10 +27,18 @@ interface MerchantState {
   developerMerchantMode: boolean;
   /**
    * True only while the user is in the Merchant Centre. Having an account makes the user a
-   * merchant; this flag is the current mode. Not persisted, so the app reopens in customer mode.
+   * merchant; this flag is the current mode. Persisted so a merchant reopens where they left off,
+   * but on launch it only becomes `merchantModeRestore` until the session confirms the account.
    */
   merchantModeActive: boolean;
+  /**
+   * Launch-time restore of a remembered Merchant mode. "checking": waiting for the session and
+   * merchant account; "restore": open the Merchant Centre; "none": open customer mode.
+   */
+  merchantModeRestore: MerchantModeRestore;
 }
+
+export type MerchantModeRestore = "checking" | "restore" | "none";
 
 interface MerchantActions {
   setAccount: (account: MerchantAccount | null) => void;
@@ -41,6 +49,9 @@ interface MerchantActions {
   setNotificationPreferences: (prefs: Partial<MerchantNotificationPreferences>) => void;
   setDeveloperMerchantMode: (enabled: boolean) => void;
   setMerchantModeActive: (active: boolean) => void;
+  resolveMerchantModeRestore: (hasMerchantAccount: boolean) => void;
+  /** Launch did not go through the restore route (deep link, onboarding): forget the remembered mode. */
+  dismissMerchantModeRestore: () => void;
   clearMerchant: () => void;
 }
 
@@ -63,7 +74,12 @@ const INITIAL_STATE: MerchantState = {
   notificationPreferences: DEFAULT_NOTIFICATION_PREFS,
   developerMerchantMode: false,
   merchantModeActive: false,
+  merchantModeRestore: "none",
 };
+
+// Set when the store is cleared (sign-out, account switch) before the async rehydrate lands, so
+// the late merge cannot bring back the previous user's account or remembered Merchant mode.
+let clearedBeforeHydration = false;
 
 // ─── Store ────────────────────────────────────────────────────────────────────
 
@@ -71,6 +87,8 @@ export const useMerchantStore = create<MerchantState & MerchantActions>()(
   persist(
     (set) => ({
       ...INITIAL_STATE,
+      // Unknown until the persisted flag is read; launch waits rather than guessing.
+      merchantModeRestore: "checking",
 
       setAccount: (account) =>
         set((state) => {
@@ -125,9 +143,26 @@ export const useMerchantStore = create<MerchantState & MerchantActions>()(
 
       setDeveloperMerchantMode: (enabled) => set({ developerMerchantMode: enabled }),
 
-      setMerchantModeActive: (active) => set({ merchantModeActive: active }),
+      // Entering or leaving the Merchant Centre settles any pending launch restore.
+      setMerchantModeActive: (active) =>
+        set({ merchantModeActive: active, merchantModeRestore: "none" }),
 
-      clearMerchant: () => set(INITIAL_STATE),
+      resolveMerchantModeRestore: (hasMerchantAccount) =>
+        set((state) =>
+          state.merchantModeRestore === "checking"
+            ? { merchantModeRestore: hasMerchantAccount ? "restore" : "none" }
+            : state,
+        ),
+
+      dismissMerchantModeRestore: () =>
+        set((state) =>
+          state.merchantModeRestore === "none" ? state : { merchantModeRestore: "none" },
+        ),
+
+      clearMerchant: () => {
+        if (!useMerchantStore.persist.hasHydrated()) clearedBeforeHydration = true;
+        set(INITIAL_STATE);
+      },
     }),
     {
       name: "hungry-merchant-v1",
@@ -137,7 +172,28 @@ export const useMerchantStore = create<MerchantState & MerchantActions>()(
         accountSyncedAt: state.accountSyncedAt,
         activeOutletId: state.activeOutletId,
         notificationPreferences: state.notificationPreferences,
+        // Keep remembering Merchant mode until the launch route has opened the Merchant Centre.
+        merchantModeActive: state.merchantModeActive || state.merchantModeRestore === "restore",
       }),
+      // A remembered Merchant mode is not active on launch: it waits for the session to confirm
+      // the merchant account, then the launch route opens the Merchant Centre (which activates it).
+      merge: (persistedState, currentState) => {
+        if (clearedBeforeHydration) {
+          clearedBeforeHydration = false;
+          return { ...currentState, merchantModeActive: false, merchantModeRestore: "none" };
+        }
+        const { merchantModeActive: rememberedMerchantMode, ...persisted } = (persistedState ??
+          {}) as Partial<MerchantState>;
+        return {
+          ...currentState,
+          ...persisted,
+          merchantModeActive: false,
+          merchantModeRestore: rememberedMerchantMode === true ? "checking" : "none",
+        };
+      },
+      onRehydrateStorage: () => (_state, error) => {
+        if (error) useMerchantStore.setState({ merchantModeRestore: "none" });
+      },
     },
   ),
 );

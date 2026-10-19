@@ -1,5 +1,5 @@
 import * as Linking from "expo-linking";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import {
   NavigationContainer,
@@ -65,6 +65,7 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "WheelStack",
   "ActivityInbox",
   "ActivityPostDetail",
+  "FollowRequests",
   "ChatDetail",
   "DirectMessages",
   "Crave",
@@ -99,6 +100,7 @@ const PROTECTED_ROOT_ROUTES = new Set<RootRouteName>([
   "PostComposerV2",
   "ActivityInbox",
   "ActivityPostDetail",
+  "FollowRequests",
   "ChatDetail",
   "DirectMessages",
   "EditProfile",
@@ -223,6 +225,10 @@ const loadActivityPostDetailScreen = () =>
   (
     require("@/app/screens/home/ActivityPostDetailScreen") as typeof import("@/app/screens/home/ActivityPostDetailScreen")
   ).ActivityPostDetailScreen;
+const loadFollowRequestsScreen = () =>
+  (
+    require("@/app/screens/profile/FollowRequestsScreen") as typeof import("@/app/screens/profile/FollowRequestsScreen")
+  ).FollowRequestsScreen;
 const loadChatDetailScreen = () =>
   (
     require("@/app/screens/home/ChatDetailScreen") as typeof import("@/app/screens/home/ChatDetailScreen")
@@ -469,6 +475,9 @@ export function RootNavigator({ theme }: { theme: Theme }) {
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
   const isMerchantMode = useMerchantStore(isMerchantModeActive);
+  const merchantModeRestore = useMerchantStore((state) => state.merchantModeRestore);
+  const dismissMerchantModeRestore = useMerchantStore((state) => state.dismissMerchantModeRestore);
+  const [launchSkippedSplash, setLaunchSkippedSplash] = useState(false);
   const resetScrollBack = useUIStore((state) => state.resetScrollBack);
 
   const prefix = Linking.createURL("/");
@@ -551,6 +560,14 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     });
   });
 
+  // A deep link or tapped notification opens past Splash, so no launch route decides a remembered
+  // Merchant mode: the app opens where the link points (customer mode) and forgets it.
+  useEffect(() => {
+    if (launchSkippedSplash && merchantModeRestore !== "none") {
+      dismissMerchantModeRestore();
+    }
+  }, [dismissMerchantModeRestore, launchSkippedSplash, merchantModeRestore]);
+
   useEffect(() => {
     if (sessionExpired && navigationRef.isReady()) {
       setReturnRoute("Home");
@@ -578,6 +595,15 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       !isMerchantMode &&
       !isMockE2eDataSource
     ) {
+      // Same launch rule as Splash: a remembered Merchant mode reopens the Merchant Centre.
+      if (merchantModeRestore === "checking") return;
+      if (merchantModeRestore === "restore") {
+        navigationRef.resetRoot({
+          index: 0,
+          routes: [{ name: "MerchantTabs", params: { screen: "Dashboard" } }],
+        });
+        return;
+      }
       navigateHome();
       return;
     }
@@ -605,6 +631,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     isAuthReady,
     isDeveloperMode,
     isMerchantMode,
+    merchantModeRestore,
     navigateHome,
   ]);
 
@@ -648,6 +675,12 @@ export function RootNavigator({ theme }: { theme: Theme }) {
         ref={navigationRef}
         theme={theme}
         linking={linking}
+        onReady={() => {
+          const launchRoute = navigationRef.getRootState()?.routes[0]?.name;
+          if (launchRoute !== "Splash" && launchRoute !== "DeveloperLauncher") {
+            setLaunchSkippedSplash(true);
+          }
+        }}
         onStateChange={() => {
           resetScrollBack();
         }}
@@ -717,6 +750,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen getComponent={loadWheelStack} name="WheelStack" />
           <RootStack.Screen getComponent={loadActivityInboxScreen} name="ActivityInbox" />
           <RootStack.Screen getComponent={loadActivityPostDetailScreen} name="ActivityPostDetail" />
+          <RootStack.Screen getComponent={loadFollowRequestsScreen} name="FollowRequests" />
           {FEATURE_FLAGS.directMessagesEnabled ? (
             <>
               <RootStack.Screen getComponent={loadChatDetailScreen} name="ChatDetail" />
