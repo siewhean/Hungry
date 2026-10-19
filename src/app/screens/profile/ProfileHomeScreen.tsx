@@ -132,6 +132,7 @@ export function ProfileHomeScreen({
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const signOut = useSessionStore((state) => state.signOut);
   const merchantAccount = useMerchantStore((state) => state.account);
+  const setMerchantAccount = useMerchantStore((state) => state.setAccount);
   const reviewEntries = useProfileStore((state) => state.reviewEntries);
   const sharePostToChat = useActivityStore((state) => state.sharePostToChat);
   const { loadStories } = useStoryStore();
@@ -238,6 +239,27 @@ export function ProfileHomeScreen({
       routes: [{ name: "AuthStack", params: { screen: "Login" } }],
     });
   }, [isAuthenticated, isFocused, mode, rootNavigation, setReturnRoute]);
+
+  // Load merchant membership on sign-in so the Business entry shows without a deep link.
+  useEffect(() => {
+    if (mode !== "self" || !isAuthenticated || !FEATURE_FLAGS.merchantCentreEnabled) {
+      return;
+    }
+
+    let isMounted = true;
+    getHungryService()
+      .merchant.getMerchantAccount()
+      .then((account) => {
+        if (isMounted) setMerchantAccount(account);
+      })
+      .catch((error) => {
+        console.error("Failed to load merchant account", error);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated, mode, profile.id, setMerchantAccount]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -516,6 +538,18 @@ export function ProfileHomeScreen({
                   }}
                 />
               )}
+              {FEATURE_FLAGS.merchantCentreEnabled &&
+                isAuthenticated &&
+                merchantAccount === null && (
+                  <MenuRow
+                    label="Hungry for Business"
+                    icon={<Store size={20} color={palette.orange} />}
+                    onPress={() => {
+                      setMenuOpen(false);
+                      rootNavigation.navigate("MerchantClaimExplainer");
+                    }}
+                  />
+                )}
               {isAuthenticated && FEATURE_FLAGS.collectionsEnabled && (
                 <MenuRow
                   label="Liked Content"

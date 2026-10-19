@@ -82,3 +82,20 @@ test("profile home contract: a preloaded Profile tab never bounces guests to Log
   assert.match(source, /const isFocused = useIsFocused\(\);/);
   assert.match(source, /if \(mode !== "self" \|\| isAuthenticated \|\| !isFocused\) \{/);
 });
+
+test("profile home contract: merchant entry loads on sign-in and switching mode keeps the account", () => {
+  const source = read("src/app/screens/profile/ProfileHomeScreen.tsx");
+  assert.match(source, /\.merchant\.getMerchantAccount\(\)/);
+  assert.match(source, /setMerchantAccount\(account\)/);
+  assert.match(source, /label="Merchant Dashboard"/);
+  assert.match(source, /label="Hungry for Business"/);
+
+  for (const file of [
+    "src/app/screens/merchant/MerchantProfileScreen.tsx",
+    "src/app/screens/merchant/MerchantSettingsScreen.tsx",
+  ]) {
+    const merchantSource = read(file);
+    assert.match(merchantSource, /Switch to Customer Mode/);
+    assert.doesNotMatch(merchantSource, /clearMerchant/);
+  }
+});

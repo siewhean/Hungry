@@ -41,7 +41,6 @@ export function MerchantSettingsScreen() {
   const rootNavigation = getRootNavigation(navigation as any);
   const activeOutlet = useMerchantStore(getActiveOutlet);
   const account = useMerchantStore((state) => state.account);
-  const clearMerchant = useMerchantStore((state) => state.clearMerchant);
 
   const [teamMembers, setTeamMembers] = useState<MerchantTeamMember[]>([]);
   const [merchantNotifications, setMerchantNotifications] = useState<MerchantNotification[]>([]);
@@ -151,7 +150,7 @@ export function MerchantSettingsScreen() {
         {
           text: "Switch",
           onPress: () => {
-            clearMerchant();
+            // Leave merchant mode only; keep the account so Profile can switch back.
             rootNavigation.dispatch(
               CommonActions.reset({
                 index: 0,

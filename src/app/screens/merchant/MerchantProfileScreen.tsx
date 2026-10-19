@@ -26,7 +26,6 @@ export function MerchantProfileScreen() {
   const rootNavigation = getRootNavigation(navigation);
   const signOut = useSessionStore((state) => state.signOut);
   const account = useMerchantStore((state) => state.account);
-  const clearMerchant = useMerchantStore((state) => state.clearMerchant);
   const activeOutlet = useMerchantStore(getActiveOutlet);
   const repository = getDataRepository();
   const outletBuilding = activeOutlet?.buildingId
@@ -137,7 +136,7 @@ export function MerchantProfileScreen() {
             label="Switch to Customer Mode"
             variant="secondary"
             onPress={() => {
-              clearMerchant();
+              // Leave merchant mode only; keep the account so Profile can switch back.
               rootNavigation.dispatch(
                 CommonActions.reset({
                   index: 0,
