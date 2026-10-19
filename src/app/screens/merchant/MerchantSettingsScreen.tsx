@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useEffect } from "react";
-import { View, Alert } from "react-native";
+import { View, Alert, Platform } from "react-native";
 import { BellRing, Shield, HelpCircle, LogOut, X } from "lucide-react-native";
 import { CommonActions, useNavigation } from "@react-navigation/native";
 
@@ -47,11 +47,12 @@ export function MerchantSettingsScreen() {
         activeOutlet
           ? service.merchant.getWeeklySummaryStats(activeOutlet.id)
           : Promise.resolve(null),
-        service.merchant.getNotificationPreferences(account.id),
+        // A failed preferences read must not hide the alerts and numbers above.
+        service.merchant.getNotificationPreferences(account.id).catch(() => null),
       ]);
       setMerchantNotifications(notes);
       setWeeklySummary(summary);
-      setLowRatingAlerts(prefs.lowRatingAlerts);
+      if (prefs) setLowRatingAlerts(prefs.lowRatingAlerts);
       // Keeps this phone's push token current without prompting for permission.
       void registerForStallAlerts({ askPermission: false })
         .then(setIsDeviceRegistered)
@@ -124,7 +125,7 @@ export function MerchantSettingsScreen() {
     if (!account || isSavingAlerts) return;
     setIsSavingAlerts(true);
     try {
-      if (enabled) setIsDeviceRegistered(await registerForStallAlerts());
+      if (enabled) setIsDeviceRegistered(await registerForStallAlerts().catch(() => false));
       await getHungryService().merchant.updateNotificationPreferences(account.id, {
         lowRatingAlerts: enabled,
       });
@@ -181,7 +182,12 @@ export function MerchantSettingsScreen() {
                 Push alerts start once your stall is verified.
               </AppText>
             ) : null}
-            {lowRatingAlerts && !isDeviceRegistered ? (
+            {lowRatingAlerts && Platform.OS === "web" ? (
+              <AppText variant="bodySmall" tone="muted">
+                Low-rating alerts go to the Hungry app on your phone.
+              </AppText>
+            ) : null}
+            {lowRatingAlerts && Platform.OS !== "web" && !isDeviceRegistered ? (
               <View style={{ gap: spacing[2] }}>
                 <AppText variant="bodySmall" tone="muted">
                   Notifications are off on this phone, so alerts cannot reach it.
@@ -195,10 +201,10 @@ export function MerchantSettingsScreen() {
               </View>
             ) : null}
             <AppText variant="bodySmall" tone="muted">
-              Hungry sends low-rating push alerts to the account owner, held until your notification
-              quiet hours end. Email alerts and weekly emails are not sent. Reviews rated 2 stars or
-              below are also listed here. Team access is not available yet, so only the account
-              owner can manage this business.
+              Hungry sends low-rating push alerts to the account owner as soon as the review is
+              posted. Email alerts and weekly emails are not sent. Reviews rated 2 stars or below
+              are also listed here. Team access is not available yet, so only the account owner can
+              manage this business.
             </AppText>
             {weeklySummary ? (
               <View style={{ gap: spacing[1] }}>

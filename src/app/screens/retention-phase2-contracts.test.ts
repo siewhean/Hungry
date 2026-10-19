@@ -139,6 +139,13 @@ test("merchant low-rating push: reviews trigger enqueues, worker rechecks, setti
   // Merchant alerts neither use up nor are limited by the consumer weekly cap.
   assert.match(worker, /!isLowRating && \(sentThisWeek\.get\(job\.user_id\)/);
   assert.match(worker, /\.neq\("category", MERCHANT_LOW_RATING\)/);
+  // Off until Merchant Centre ships (the deep link needs it), and never held for quiet hours.
+  assert.match(worker, /Deno\.env\.get\("MERCHANT_ALERTS_ENABLED"\) === "true"/);
+  assert.match(
+    worker,
+    /isLowRating && !merchantAlertsEnabled\) skipReason = "merchant_alerts_disabled"/,
+  );
+  assert.match(worker, /!isLowRating && isQuietHour\(/);
 
   const push = read("src/lib/notifications/push.ts");
   assert.match(push, /if \(!existing\.granted && !askPermission\) return false;/);

@@ -8,8 +8,10 @@ import { timingSafeEqual } from "../_shared/timingSafeEqual.ts";
 // pushes. Each job is rechecked before sending: the user (or, for low-rating
 // alerts, the merchant account) still opted in, the dish (if any) still exists
 // and is not sold out, the review (if any) is not hidden by moderation, outside
-// the user's quiet hours (Singapore time), under their weekly cap (consumer
-// pushes only), and not older than 48 hours.
+// the user's quiet hours (Singapore time; consumer pushes only), under their
+// weekly cap (consumer pushes only), and not older than 48 hours. Low-rating
+// alerts open Merchant Centre, so they are only sent when the
+// MERCHANT_ALERTS_ENABLED secret is "true" (set it when Merchant Centre ships).
 
 type JsonObject = Record<string, unknown>;
 
@@ -83,6 +85,7 @@ Deno.serve(async (request) => {
     return toJson(500, { error: "missing_supabase_env" });
   }
   const expoAccessToken = Deno.env.get("EXPO_ACCESS_TOKEN") ?? "";
+  const merchantAlertsEnabled = Deno.env.get("MERCHANT_ALERTS_ENABLED") === "true";
 
   const payload = (await request.json().catch(() => ({}))) as JsonObject;
   const client = createClient(supabaseUrl, serviceRoleKey, {
@@ -181,7 +184,8 @@ Deno.serve(async (request) => {
     const dish = job.dish_id ? dishesById.get(job.dish_id) : null;
     let skipReason: string | null = null;
 
-    if (
+    if (isLowRating && !merchantAlertsEnabled) skipReason = "merchant_alerts_disabled";
+    else if (
       isLowRating
         ? lowRatingOffAccounts.has(job.merchant_account_id)
         : isWeeklyPicks
@@ -207,7 +211,8 @@ Deno.serve(async (request) => {
       continue;
     }
 
-    if (isQuietHour(hour, pref.quiet_start_hour, pref.quiet_end_hour)) {
+    // Merchant Centre has no quiet-hours setting, so low-rating alerts are sent right away.
+    if (!isLowRating && isQuietHour(hour, pref.quiet_start_hour, pref.quiet_end_hour)) {
       results.deferred += 1;
       await finish(job.id, { status: "pending", attempts: Math.max(0, job.attempts - 1) });
       continue;
