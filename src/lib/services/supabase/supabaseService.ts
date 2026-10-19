@@ -112,6 +112,7 @@ import type {
   UserProfile,
   VerificationEvidence,
   PushPreferences,
+  LifecycleSnapshot,
 } from "@/types/domain";
 import { DEFAULT_PUSH_PREFERENCES } from "@/types/domain";
 
@@ -611,6 +612,27 @@ async function ensureCurrentUserProfileRow(
   if (error) {
     throw error;
   }
+}
+
+const LIFECYCLE_STATES = new Set<LifecycleSnapshot["state"]>([
+  "new",
+  "current",
+  "reactivated",
+  "resurrected",
+  "at_risk_weekly",
+  "at_risk_monthly",
+  "dormant",
+]);
+
+function mapLifecycleSnapshot(data: unknown): LifecycleSnapshot | null {
+  const row = (data ?? {}) as Record<string, unknown>;
+  const state = row.state as LifecycleSnapshot["state"];
+  if (!LIFECYCLE_STATES.has(state)) return null;
+  return {
+    state,
+    previousActiveDate: typeof row.previousActiveDate === "string" ? row.previousActiveDate : null,
+    daysSincePrevious: typeof row.daysSincePrevious === "number" ? row.daysSincePrevious : null,
+  };
 }
 
 function mapPushPreferencesRow(row: {
@@ -3790,6 +3812,16 @@ export const supabaseService: HungryService = {
       const client = requireSupabaseClient();
       const { error } = await client.rpc("mark_notification_opened", { p_id: notificationId });
       if (error) throw error;
+    },
+  },
+
+  lifecycle: {
+    async recordAppOpen() {
+      const client = requireSupabaseClient();
+      if (!(await getCurrentSupabaseUserId())) return null;
+      const { data, error } = await client.rpc("record_app_open");
+      if (error) throw error;
+      return mapLifecycleSnapshot(data);
     },
   },
 

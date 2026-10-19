@@ -15,6 +15,7 @@ import type {
   DishDetail,
   DietaryFlag,
   PushPreferences,
+  LifecycleSnapshot,
   FoodCredAction,
   HawkerTasteTag,
   InteractionType,
@@ -839,6 +840,15 @@ export interface HungryService {
     /** Unbinds this device's registered push token from the signed-in user. Call before sign-out. */
     unregisterPushToken(): Promise<void>;
     markOpened(notificationId: string): Promise<void>;
+  };
+
+  // Lifecycle (new, current, at risk, dormant, ...)
+  lifecycle: {
+    /**
+     * Records today's visit (once per Singapore day; repeat calls are no-ops) and
+     * returns the user's lifecycle state. Null when nobody is signed in.
+     */
+    recordAppOpen(): Promise<LifecycleSnapshot | null>;
   };
 
   // Social (Bites)

@@ -1153,6 +1153,29 @@ export interface StallInteraction {
   reviewedAt?: string;
 }
 
+// ─── Lifecycle ────────────────────────────────────────────────────────────────
+
+/**
+ * Where a user is in their Hungry habit, from the Singapore days they opened the app.
+ * Active today: new, current (back within 7 days), reactivated (8-30), resurrected (31+).
+ * Not active today: at_risk_weekly (last visit within 7 days), at_risk_monthly (8-30), dormant.
+ */
+export type LifecycleState =
+  | "new"
+  | "current"
+  | "reactivated"
+  | "resurrected"
+  | "at_risk_weekly"
+  | "at_risk_monthly"
+  | "dormant";
+
+export interface LifecycleSnapshot {
+  state: LifecycleState;
+  /** Singapore date (YYYY-MM-DD) of the visit before today, if any. */
+  previousActiveDate: string | null;
+  daysSincePrevious: number | null;
+}
+
 // ─── Notifications ────────────────────────────────────────────────────────────
 
 /** Per-user push settings. Hours are Singapore time (0-23); quiet hours wrap past midnight. */
