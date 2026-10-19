@@ -49,9 +49,11 @@ test("every data source serves the catalog contract (no null service, no Supabas
   assert.doesNotMatch(detail, /getServiceProvider\(\)\.mode !== "supabase"/);
 });
 
-test("raw catalog service is authenticated, cursor-paged, and non-persistent", () => {
+test("raw catalog service is guest-readable, cursor-paged, and non-persistent", () => {
   const source = read("src/lib/services/catalog/index.ts");
-  assert.match(source, /client\.auth\.getSession\(\)/);
+  // Guests browse with the anon key; no signed-in session is required to read.
+  assert.doesNotMatch(source, /client\.auth\.getSession\(\)/);
+  assert.doesNotMatch(source, /Sign in to browse/);
   assert.match(source, /catalog_raw_dishes_page/);
   assert.match(source, /catalog_raw_venues_page/);
   assert.match(source, /catalog_raw_map_view/);
@@ -127,4 +129,49 @@ test("catalog release publisher fails when count validation does not activate a 
   const publisher = read("scripts/publish-catalog-raw-release.mjs");
   assert.match(publisher, /result\.rows\?\.\[0\]\?\.status !== "active"/);
   assert.match(publisher, /process\.exitCode = 1/);
+});
+
+test("guest catalog migration opens only the read RPCs to anon", () => {
+  const migration = read("supabase/migrations/20261019210000_guest_catalog_raw_reads.sql");
+  for (const rpc of [
+    "catalog_raw_dishes_page",
+    "catalog_raw_venue_menu_page",
+    "catalog_raw_venues_page",
+    "catalog_raw_dish_detail",
+    "catalog_raw_venue_detail",
+    "catalog_raw_map_view",
+  ]) {
+    assert.match(
+      migration,
+      new RegExp(`grant execute on function public\\.${rpc}\\([^;]*\\) to anon;`),
+    );
+  }
+  assert.match(migration, /auth\.role\(\), ''\) not in \('anon', 'authenticated'\)/);
+  assert.match(
+    migration,
+    /revoke all on function public\.catalog_raw_require_authenticated\(\) from public, anon, authenticated;/,
+  );
+  // No table grants and no write/admin RPC grants to anon.
+  assert.doesNotMatch(migration, /grant [^;]* on table/i);
+  assert.doesNotMatch(migration, /catalog_raw_publish_release|catalog_raw_refresh_venue/);
+
+  const smoke = read("supabase/smoke/guest_catalog_raw_reads.sql");
+  assert.match(smoke, /set local role anon;/);
+  assert.match(smoke, /has_table_privilege\('anon', v_table, 'select'\)/);
+  assert.match(smoke, /catalog_raw_publish_release/);
+  assert.match(smoke, /select 'guest_catalog_raw_reads_smoke_passed' as result;\s*rollback;\s*$/);
+});
+
+test("guests see map pins and open the read-only catalog detail", () => {
+  const map = read("src/app/screens/discover/HomeMapScreen.tsx");
+  assert.doesNotMatch(map, /GuestMapPrompt|isAuthenticated/);
+  assert.match(map, /catalogRawService\.getMapViewport\(/);
+  const navigator = read("src/app/navigation/RootNavigator.tsx");
+  const protectedRoutes = navigator.match(/const PROTECTED_ROOT_ROUTES[\s\S]*?\]\);/)?.[0] ?? "";
+  assert.ok(protectedRoutes);
+  assert.doesNotMatch(protectedRoutes, /"CatalogRawDetail"/);
+  const detail = read("src/app/screens/catalog/CatalogRawDetailScreen.tsx");
+  assert.doesNotMatch(detail, /isAuthenticated|Sign in to view/);
+  // The catalog detail is read-only; if a save action is added it must use the sign-in gate.
+  assert.doesNotMatch(detail, /toggleFavourite|toggleSave|toggleLike|addItem\(/);
 });

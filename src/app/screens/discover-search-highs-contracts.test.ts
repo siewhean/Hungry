@@ -210,14 +210,10 @@ test("Map is open to every diner from a List/Map toggle on Discover, guests incl
   assert.match(toggle, /accessibilityRole="tab"/);
   assert.match(toggle, /accessibilityState=\{\{ selected \}\}/);
 
-  // DiscoverMap is not an auth-required route; guests see the map and a sign-in prompt.
+  // DiscoverMap is not an auth-required route; guests see the map and its pins.
   const protectedRoutes = navigator.match(/const PROTECTED_ROOT_ROUTES[\s\S]*?\]\);/)?.[0] ?? "";
   assert.ok(protectedRoutes, "PROTECTED_ROOT_ROUTES should exist");
   assert.doesNotMatch(protectedRoutes, /"DiscoverMap"/);
-  assert.match(map, /if \(!isAuthenticated\) \{\s*setRawMapItems\(\[\]\);/);
-  assert.match(map, /\{isAuthenticated \? null : <GuestMapPrompt/);
-  assert.match(
-    map,
-    /setReturnRoute\(\{[\s\S]*navigation\.navigate\("AuthStack", \{ screen: "Login" \}\)/,
-  );
+  assert.doesNotMatch(map, /if \(!isAuthenticated\)/);
+  assert.doesNotMatch(map, /GuestMapPrompt/);
 });

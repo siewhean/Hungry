@@ -46,6 +46,7 @@ import {
 import { useDelayedLoadingSkeleton } from "@/hooks/useDelayedLoadingSkeleton";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSocialStore, type InteractionState } from "@/store/useSocialStore";
+import { useRequireAccount } from "@/features/auth/useRequireAccount";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -765,6 +766,17 @@ export function ReviewFeedScreen() {
     [repository],
   );
 
+  const requireAccount = useRequireAccount();
+  const requireAccountForReviewAction = useCallback(
+    (message: string) =>
+      requireAccount(message, { name: "MainTabs", params: { screen: "Review" } }),
+    [requireAccount],
+  );
+  const requireAccountForComment = useCallback(
+    () => requireAccountForReviewAction("Sign in to comment."),
+    [requireAccountForReviewAction],
+  );
+
   const handleSavePress = useCallback(
     (item: ReviewFeedItem) => {
       if (!isAuthenticated) {
@@ -847,7 +859,10 @@ export function ReviewFeedScreen() {
           commentsEnabled={commentsEnabled}
           onCommentPress={openReviewComments}
           onLikePress={(targetItem) => {
-            if (reviewReactionsEnabled) {
+            if (
+              reviewReactionsEnabled &&
+              requireAccountForReviewAction("Sign in to like reviews.")
+            ) {
               void toggleLike(targetItem.interactionId);
             }
           }}
@@ -867,6 +882,7 @@ export function ReviewFeedScreen() {
       openShareReview,
       bumpSafetyFilter,
       handleSavePress,
+      requireAccountForReviewAction,
       toggleLike,
       commentsByPostId,
       commentsEnabled,
@@ -977,6 +993,7 @@ export function ReviewFeedScreen() {
           inputRef={commentInputRef}
           innerRef={commentsSheetRef}
           onDismiss={() => setActiveCommentReview(null)}
+          onBeforeSend={requireAccountForComment}
         />
       ) : null}
       <ReviewShareSheet

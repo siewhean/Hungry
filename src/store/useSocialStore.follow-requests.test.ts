@@ -3,14 +3,16 @@ import test from "node:test";
 
 import { setConfiguredDataSource } from "@/lib/services/supabase/client";
 import { getHungryService, setMockServiceProvider } from "@/lib/services/serviceProvider";
+import { useSessionStore } from "@/store/useSessionStore";
 import { useSocialStore } from "@/store/useSocialStore";
 
 // Mock mode: "user-emma" is a private account, so following her is a pending request.
 const PRIVATE_USER_ID = "user-emma";
 
-function reset() {
+function reset(isAuthenticated = true) {
   setConfiguredDataSource("mock");
   setMockServiceProvider();
+  useSessionStore.setState({ isAuthenticated });
   useSocialStore.getState().clearAccountScopedState();
 }
 
@@ -60,4 +62,27 @@ test("reconcileRequestedFollows drops requests the server no longer has pending"
   await useSocialStore.getState().reconcileRequestedFollows();
   assert.equal(requested(), false);
   assert.equal(followed(), false);
+});
+
+test("a guest cannot follow, like, save, comment or count a share", async () => {
+  reset(false);
+  const store = useSocialStore.getState();
+  store.toggleFollow(PRIVATE_USER_ID);
+  store.toggleLike("post-1");
+  store.toggleSave("post-1");
+  store.incrementShare("post-1");
+  store.addComment("post-1", {
+    id: "comment-guest",
+    userId: "guest-user",
+    authorName: "Guest",
+    text: "hi",
+    createdAt: new Date().toISOString(),
+  });
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  const state = useSocialStore.getState();
+  assert.equal(requested(), false);
+  assert.equal(followed(), false);
+  assert.equal(state.interactions["post-1"], undefined);
+  assert.equal(state.commentsByPostId["post-1"], undefined);
+  reset();
 });

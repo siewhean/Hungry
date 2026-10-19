@@ -27,6 +27,13 @@ export interface SocialReply extends SocialComment {
   parentCommentId: string;
 }
 
+// Guests browse only: likes, saves, follows, comments and share counts need an account.
+// Screens prompt sign-in first; this keeps a guest tap from ever reaching the server.
+function isSignedIn() {
+  const { useSessionStore } = require("./useSessionStore") as typeof import("./useSessionStore");
+  return useSessionStore.getState().isAuthenticated;
+}
+
 type HapticsModule = typeof import("expo-haptics");
 
 let hapticsModule: HapticsModule | null | undefined;
@@ -254,6 +261,7 @@ export const useSocialStore = create<SocialState>()(
       },
 
       toggleLike: (postId) => {
+        if (!isSignedIn()) return;
         void triggerLightImpact();
         const { interactions } = get();
         const current = interactions[postId] ?? {
@@ -305,6 +313,7 @@ export const useSocialStore = create<SocialState>()(
       },
 
       toggleSave: (postId) => {
+        if (!isSignedIn()) return;
         void triggerLightImpact();
         const { interactions } = get();
         const now = new Date().toISOString();
@@ -369,6 +378,7 @@ export const useSocialStore = create<SocialState>()(
       },
 
       toggleFollow: (userId: string) => {
+        if (!isSignedIn()) return;
         const isFollowing = get().followedUserIds[userId] ?? false;
         const service = getHungryService();
         const { useUIStore } = require("./useUIStore") as typeof import("./useUIStore");
@@ -583,6 +593,7 @@ export const useSocialStore = create<SocialState>()(
       },
 
       incrementShare: (postId, channel = "in_app") => {
+        if (!isSignedIn()) return;
         if (getServiceProvider().mode !== "mock" && !isUuidPostId(postId)) {
           console.warn("Post share ignored because this post is not backed by Supabase.");
           return;
@@ -630,6 +641,7 @@ export const useSocialStore = create<SocialState>()(
       },
 
       addComment: (postId, comment) => {
+        if (!isSignedIn()) return;
         const { interactions } = get();
         const current = interactions[postId] ?? {
           liked: false,
@@ -685,6 +697,7 @@ export const useSocialStore = create<SocialState>()(
       },
 
       addReply: (postId, reply) => {
+        if (!isSignedIn()) return;
         const { interactions } = get();
         const current = interactions[postId] ?? {
           liked: false,
