@@ -3,7 +3,7 @@ import { persist } from "zustand/middleware";
 
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { createClientReviewId, createInitialReviewDraft } from "@/features/review/reviewDraft";
-import { REVIEW_TEXT_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSanitization";
+import { REVIEW_TEXT_MAX_LENGTH, clampFreeTextInput } from "@/lib/security/inputSanitization";
 import type { ReviewDraft } from "@/types/domain";
 import { hungryPersistStorage } from "./persistStorage";
 
@@ -97,7 +97,7 @@ export const useReviewDraftStore = create<ReviewDraftState>()(
         set((state) => ({
           draft: {
             ...state.draft,
-            text: sanitizeFreeText(text, REVIEW_TEXT_MAX_LENGTH),
+            text: clampFreeTextInput(text, REVIEW_TEXT_MAX_LENGTH),
           },
         })),
       addPhoto: (uri) =>

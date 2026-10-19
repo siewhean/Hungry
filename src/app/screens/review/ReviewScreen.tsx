@@ -26,7 +26,7 @@ import { useUIStore } from "@/store/useUIStore";
 import { useMerchantStore } from "@/store/useMerchantStore";
 import { useHungryTheme } from "@/theme";
 import { trackAnalyticsEvent } from "@/lib/analytics";
-import { REVIEW_TEXT_MAX_LENGTH } from "@/lib/security/inputSanitization";
+import { REVIEW_TEXT_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSanitization";
 import type { ReviewStackParamList } from "@/app/navigation/navigationTypes";
 import type { DishDetail } from "@/types/domain";
 
@@ -160,13 +160,14 @@ export function ReviewScreen({ navigation, route }: Props) {
       rating: draft.rating,
     };
 
+    const reviewText = sanitizeFreeText(draft.text, REVIEW_TEXT_MAX_LENGTH);
     setSubmitting(true);
     try {
       await getHungryService().reviews.submitReview({
         dishId: selectedDish.id,
         venueId: selectedDish.venueId,
         rating: draft.rating,
-        text: draft.text.trim(),
+        text: reviewText,
         tags: draft.selectedTags,
         photos: draft.photos,
         wouldRecommend: draft.recommend,
@@ -178,7 +179,7 @@ export function ReviewScreen({ navigation, route }: Props) {
       useProfileStore.getState().addReview(selectedDish);
       useProfileStore.getState().recordReviewEntry(selectedDish.id, {
         rating: draft.rating,
-        text: draft.text,
+        text: reviewText,
         tags: draft.selectedTags,
       });
 

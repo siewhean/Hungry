@@ -206,7 +206,7 @@ function PostComposerScreenInner({ navigation, route }: Props) {
         const composer = useComposerStore.getState();
         composer.reset();
         composer.setActiveTab("post");
-        composer.setCaption(caption.trim() || targetDish.name);
+        composer.setCaption(sanitizeFreeText(caption, POST_CAPTION_MAX_LENGTH) || targetDish.name);
         composer.addMedia(selectedMedia);
         await publishComposerPost({
           publishMode: "post",
@@ -373,7 +373,7 @@ function PostComposerScreenInner({ navigation, route }: Props) {
             placeholder="What makes this worth the queue?"
             value={caption}
             maxLength={POST_CAPTION_MAX_LENGTH}
-            onChangeText={(value) => setCaption(sanitizeFreeText(value, POST_CAPTION_MAX_LENGTH))}
+            onChangeText={setCaption}
           />
           {shouldShowComposerBusinessFeatures && (
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
