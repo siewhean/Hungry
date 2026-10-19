@@ -144,7 +144,11 @@ test("home bell opens activity inbox and gates messages by feature flag", () => 
   assert.match(activity, /getHungryService\(\)[\s\S]*\.chat[\s\S]*\.listConversations\(\)/);
   assert.match(activity, /type \{ ChatConversation \}/);
   assert.match(activity, /conversation\.unreadCount/);
-  assert.match(activity, /void getHungryService\(\)\.chat\.markConversationRead\(chatId\)/);
+  // A failed mark-read is caught, never an unhandled rejection.
+  assert.match(
+    activity,
+    /void getHungryService\(\)\s*\.chat\.markConversationRead\(chatId\)\s*\.catch\(/,
+  );
   assert.match(activity, /<UnreadCountBadge/);
   assert.match(activity, /accessibilityLabel=\{`\$\{unreadCount\} unread messages`\}/);
   assert.match(activity, /stylesInline\.unreadCountBadge/);
