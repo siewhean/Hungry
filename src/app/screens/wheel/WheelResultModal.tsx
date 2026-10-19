@@ -17,6 +17,7 @@ import { MapPin, Navigation, Trophy, RotateCcw, CheckCircle2 } from "lucide-reac
 import { LinearGradient } from "expo-linear-gradient";
 
 import { AccessibleImage, AppText, Button } from "@/components/ui";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
@@ -59,6 +60,15 @@ export function WheelResultModal({ navigation, route }: Props) {
       }),
     ]).start();
   }, [motion.modalEnter, opacityAnim, scaleAnim]);
+
+  useEffect(() => {
+    if (!winnerEntryId) return;
+    trackAnalyticsEvent("wheel_result_viewed", {
+      party_id: party?.id,
+      venue_id: winnerEntry?.venueId,
+    });
+    // Once per result shown.
+  }, [winnerEntryId]);
 
   function handleStallDetail() {
     if (!winnerEntry) return;

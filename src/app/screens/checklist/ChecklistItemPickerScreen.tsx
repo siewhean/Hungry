@@ -352,7 +352,7 @@ function ScheduleFields({
         helperText="Leave blank if you only want to save it for later."
       />
       <Input
-        label="Reminder"
+        label="Remind me on (note only)"
         placeholder="YYYY-MM-DD HH:mm"
         value={reminderDateTime}
         onChangeText={onReminderDateTimeChange}
@@ -360,7 +360,8 @@ function ScheduleFields({
         autoCorrect={false}
         error={Boolean(reminderDateTimeError)}
         errorText={reminderDateTimeError}
-        helperText="Singapore time. A date without time defaults to 09:00."
+        // Nothing schedules reminder_at yet, so don't promise a notification.
+        helperText="Saved on the item; Hungry doesn't send a notification yet. Singapore time, 09:00 if no time."
       />
     </View>
   );

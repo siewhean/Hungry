@@ -10,6 +10,7 @@ import { AppText, Button, Card, Input } from "@/components/ui";
 import { useShallow } from "zustand/react/shallow";
 
 import { resolveListItemCount } from "@/features/checklistPortfolio/listLabels";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { usePortfolioStore } from "@/store/usePortfolioStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
@@ -54,6 +55,7 @@ export function PortfoliosHomeScreen({ navigation }: Props) {
       await loadPortfolios();
     } catch (error) {
       console.error("Failed to load portfolios:", error);
+      trackAnalyticsEvent("list_load_failed", { list_kind: "portfolio" });
       setLoadFailed(true);
     }
   }, [loadFollowedPortfolios, loadPortfolios]);

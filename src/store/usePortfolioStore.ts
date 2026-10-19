@@ -418,6 +418,11 @@ export const usePortfolioStore = create<PortfolioState>()(
             [portfolioId]: (state.items[portfolioId] ?? []).filter((item) => item.id !== id),
           },
         }));
+        trackAnalyticsEvent(
+          "list_item_removed",
+          { list_kind: "portfolio", list_id: portfolioId },
+          { userId: getAnalyticsUserId() },
+        );
         await get().refreshPortfolio(portfolioId);
       },
 

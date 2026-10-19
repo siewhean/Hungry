@@ -65,7 +65,13 @@ function sanitizeRouteParams(name: string, params: unknown): Record<string, unkn
   }
 
   if (name === "WheelStack") {
-    if (next.code !== undefined && !isSafeJoinCode(next.code)) {
+    // The join code rides on the nested WheelHome route, which is where WheelHome reads it.
+    const nested =
+      next.params && typeof next.params === "object"
+        ? (next.params as Record<string, unknown>)
+        : undefined;
+    const code = nested?.code ?? next.code;
+    if (code !== undefined && !isSafeJoinCode(code)) {
       return undefined;
     }
   }
@@ -144,7 +150,13 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
   if (FEATURE_FLAGS.merchantCentreEnabled && parts[0] === "merchant") {
     return createState("MerchantTabs");
   }
-  if (parts[0] === "join") return createState("WheelStack", { code: decodePathSegment(parts[1]) });
+  if (parts[0] === "join") {
+    const code = decodePathSegment(parts[1]);
+    return createState(
+      "WheelStack",
+      code ? { screen: "WheelHome", params: { code } } : { screen: "WheelHome" },
+    );
+  }
   return undefined;
 }
 

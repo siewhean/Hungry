@@ -6,6 +6,7 @@ import { Users, ArrowRight, Compass } from "lucide-react-native";
 
 import { AppText, Button, Card, Input, Screen } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { useProfileStore } from "@/store/useProfileStore";
 import { useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
 import type { WheelStackParamList } from "./WheelStack";
@@ -35,7 +36,13 @@ export function WheelHomeScreen({ navigation, route }: Props) {
   async function handleCreate() {
     setCreating(true);
     try {
-      const party = await createParty("classic", "manual");
+      // Seed the host's dietary needs so the add sheet can warn about stalls that don't fit.
+      const party = await createParty(
+        "classic",
+        "manual",
+        undefined,
+        useProfileStore.getState().profile.dietaryPreferences,
+      );
       navigation.replace("WheelLobby", { partyId: party.id });
     } finally {
       setCreating(false);
@@ -63,7 +70,7 @@ export function WheelHomeScreen({ navigation, route }: Props) {
   }
 
   return (
-    <Screen title="Hungry Wheel" subtitle="">
+    <Screen title="Hungry Wheel">
       <View style={{ gap: spacing[6] }}>
         {/* Intro Illustration/Icon Section */}
         <View style={{ alignItems: "center", paddingVertical: spacing[4], gap: spacing[2] }}>

@@ -147,3 +147,12 @@ test("email confirm, password reset, and OAuth callbacks use separate paths", ()
   });
   assert.equal(linking.getStateFromPath(`auth/oauth?code=${code}`), undefined);
 });
+
+test("wheel /join/:code link puts the code on the WheelHome route", () => {
+  const linking = createRootLinking("exp://127.0.0.1:8081/--/");
+  assert.deepEqual(linking.getStateFromPath("join/ABC123")?.routes?.[0], {
+    name: "WheelStack",
+    params: { screen: "WheelHome", params: { code: "ABC123" } },
+  });
+  assert.equal(linking.getStateFromPath("join/%3Cscript%3E"), undefined);
+});

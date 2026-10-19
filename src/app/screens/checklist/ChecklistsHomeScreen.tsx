@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ChecklistCard } from "@/components/checklist";
 import { useShallow } from "zustand/react/shallow";
 import { resolveListItemCount } from "@/features/checklistPortfolio/listLabels";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { useChecklistStore } from "@/store/useChecklistStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { AppText, Button } from "@/components/ui";
@@ -40,6 +41,7 @@ export function ChecklistsHomeScreen() {
       await loadChecklists();
     } catch (error) {
       console.error("Failed to load checklists:", error);
+      trackAnalyticsEvent("list_load_failed", { list_kind: "checklist" });
       setLoadFailed(true);
     }
   }, [loadChecklists]);

@@ -8,6 +8,8 @@ import {
   isPortfolioLive,
   resolveListItemCount,
 } from "@/features/checklistPortfolio/listLabels";
+import { selectActiveWheelEntries } from "@/store/useWheelStore";
+import type { WheelEntry } from "@/types/domain";
 
 const root = process.cwd();
 
@@ -102,4 +104,79 @@ test("rows say Loading instead of Deleted while names load; screens use selector
   }
   assert.match(read("src/app/screens/portfolio/PortfoliosHomeScreen.tsx"), /useShallow\(/);
   assert.match(read("src/app/screens/checklist/ChecklistsHomeScreen.tsx"), /useShallow\(/);
+});
+
+test("wheel draws and spins the same deduped slices", () => {
+  const entry = { id: "a", isEliminated: false } as WheelEntry;
+  const out = { id: "b", isEliminated: true } as WheelEntry;
+  assert.deepEqual(
+    selectActiveWheelEntries([entry, entry, out]).map((e) => e.id),
+    ["a"],
+  );
+  for (const file of [
+    "src/components/wheel/WheelSvg.tsx",
+    "src/app/screens/wheel/WheelSpinScreen.tsx",
+    "src/app/screens/wheel/WheelLobbyScreen.tsx",
+  ]) {
+    assert.match(read(file), /selectActiveWheelEntries\(/, file);
+  }
+  assert.match(read("src/app/screens/wheel/WheelSpinScreen.tsx"), /activeEntriesRef\.current/);
+});
+
+test("leaving the wheel clears the party, and lost state offers a new wheel", () => {
+  assert.match(read("src/app/screens/wheel/WheelStack.tsx"), /leaveParty\(\)/);
+  assert.match(read("src/store/useWheelStore.ts"), /mockPartyStore\.delete\(party\.code\)/);
+  for (const file of [
+    "src/app/screens/wheel/WheelSpinScreen.tsx",
+    "src/app/screens/wheel/WheelLobbyScreen.tsx",
+  ]) {
+    const source = read(file);
+    assert.match(source, /Start a new wheel/, file);
+    assert.doesNotMatch(source, /if \(!party\) return null;/, file);
+  }
+});
+
+test("wheel accessibility: contrast, reduce motion, throttled haptics, labels, winner", () => {
+  const svg = read("src/components/wheel/WheelSvg.tsx");
+  assert.match(svg, /palette\.textOnOrange/);
+  assert.doesNotMatch(svg, /palette\.textOnDark/);
+  const spin = read("src/app/screens/wheel/WheelSpinScreen.tsx");
+  assert.match(spin, /useReduceMotion\(\)/);
+  assert.match(spin, /HAPTIC_MIN_INTERVAL_MS/);
+  assert.match(spin, /announceForAccessibility/);
+  assert.doesNotMatch(spin, /🎡|⏳/);
+  assert.match(
+    read("src/app/screens/wheel/WheelLobbyScreen.tsx"),
+    /accessibilityLabel=\{`Remove \$\{item\.label\} from the wheel`\}/,
+  );
+});
+
+test("surprise me is honest, checks every dish, and caps the wheel", () => {
+  const sheet = read("src/app/screens/wheel/WheelEntryAddSheet.tsx");
+  assert.doesNotMatch(sheet, /random nearby stall/);
+  assert.match(sheet, /dishes\.some\(\(dish\) => dish\.dietaryFlags\.includes\(pref\)\)/);
+  assert.match(sheet, /MAX_WHEEL_ENTRIES = 12/);
+  assert.match(sheet, /Every stall is already on the wheel/);
+  assert.match(read("src/app/screens/wheel/WheelHomeScreen.tsx"), /dietaryPreferences/);
+});
+
+test("wheel and list analytics fire", () => {
+  const store = read("src/store/useWheelStore.ts");
+  assert.match(store, /"wheel_option_added"/);
+  assert.match(store, /"wheel_spun"/);
+  assert.match(read("src/app/screens/wheel/WheelStack.tsx"), /"wheel_opened"/);
+  assert.match(read("src/app/screens/wheel/WheelResultModal.tsx"), /"wheel_result_viewed"/);
+  assert.match(read("src/store/useChecklistStore.ts"), /"list_item_removed"/);
+  assert.match(read("src/store/usePortfolioStore.ts"), /"list_item_removed"/);
+  assert.match(read("src/app/screens/portfolio/PortfoliosHomeScreen.tsx"), /"list_load_failed"/);
+});
+
+test("blog post has a not-found state and the reminder doesn't promise a notification", () => {
+  const blog = read("src/app/screens/reads/BlogPostWebViewScreen.tsx");
+  assert.match(blog, /Article not found/);
+  assert.doesNotMatch(blog, /\?\? posts\[0\]/);
+  assert.match(
+    read("src/app/screens/checklist/ChecklistItemPickerScreen.tsx"),
+    /doesn't send a notification yet/,
+  );
 });
