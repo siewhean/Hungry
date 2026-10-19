@@ -41,7 +41,13 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
   const commentsEnabled = FEATURE_FLAGS.commentsEnabled;
   const { postId, updateId } = route.params;
   const publishedPosts = usePublishedPostStore((state) => state.posts);
-  const posts = useMemo(() => listSharedStallPostsSync(repository), [publishedPosts, repository]);
+  // Bumped after Hide or Block so the post list re-reads the session safety filters.
+  const [safetyFilterVersion, setSafetyFilterVersion] = useState(0);
+  const onSafetyHidden = useCallback(() => setSafetyFilterVersion((version) => version + 1), []);
+  const posts = useMemo(
+    () => listSharedStallPostsSync(repository),
+    [publishedPosts, repository, safetyFilterVersion],
+  );
   const post = posts.find((candidate) => candidate.id === postId);
   const activityUpdates = useActivityStore((state) => state.activityUpdates);
   const dbActivityEvents = useActivityStore((state) => state.dbActivityEvents);
@@ -235,6 +241,8 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
                 authorName: post.authorName,
                 authorId: post.authorId,
                 label: "post",
+                onHidden: onSafetyHidden,
+                onBlocked: onSafetyHidden,
               })
             }
             style={[styles.imageMenuButton, { right: spacing[2], top: spacing[2] }]}

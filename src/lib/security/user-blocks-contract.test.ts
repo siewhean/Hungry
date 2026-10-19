@@ -79,6 +79,47 @@ test("migration makes server block checks match and filters review reads", () =>
   assert.match(smoke, /rollback;/);
 });
 
+test("review filter keeps dish totals complete and venue merchants able to reply", () => {
+  const file = readdirSync(resolve(process.cwd(), "supabase/migrations")).find((name) =>
+    name.endsWith("_review_block_policy_followup.sql"),
+  );
+  assert.ok(file, "review_block_policy_followup migration is missing");
+  const migration = readRepoFile(`supabase/migrations/${file}`);
+
+  // Dish totals read every review, not only the ones the caller may see.
+  assert.match(
+    migration,
+    /create or replace function app_private\.dish_review_stats\(p_dish_id text\)[\s\S]*?security definer/,
+  );
+  assert.match(migration, /from app_private\.dish_review_stats\(old\.dish_id\)/);
+  assert.match(migration, /from app_private\.dish_review_stats\(new\.dish_id\)/);
+  // Venue merchants keep read (and so reply) access to their own reviews.
+  assert.match(migration, /public\.merchant_can_manage_venue\(p_venue_id\)/);
+  assert.match(migration, /using \(app_private\.can_read_review\(id, user_id, venue_id\)\)/);
+});
+
+test("comment sheet and activity post react to blocks; sign-out clears local filters", () => {
+  const sheet = readRepoFile("src/components/social/ReviewCommentsSheet.tsx");
+  const activityPost = readRepoFile("src/app/screens/home/ActivityPostDetailScreen.tsx");
+  const session = readRepoFile("src/store/useSessionStore.ts");
+  const helper = readRepoFile("src/lib/security/communitySafety.ts");
+
+  assert.match(
+    sheet,
+    /isContentHiddenForSession\(\{ id: comment\.id, authorId: comment\.userId \}\)/,
+  );
+  assert.match(sheet, /isContentHiddenForSession\(\{ id: reply\.id, authorId: reply\.userId \}\)/);
+  assert.equal(sheet.match(/onBlocked: onAuthorBlocked/g)?.length, 2);
+  assert.match(activityPost, /onHidden: onSafetyHidden,\s*onBlocked: onSafetyHidden/);
+  assert.match(activityPost, /\[publishedPosts, repository, safetyFilterVersion\]/);
+
+  assert.match(helper, /export function clearCommunitySafetySessionState\(\)/);
+  assert.match(
+    session,
+    /function clearAccountScopedStores\(\)[\s\S]*?clearCommunitySafetySessionState\(\);/,
+  );
+});
+
 test("mock service hides blocked authors and reported reviews like the server", async () => {
   const feedBefore = await hungryService.social.getBitesFeed();
   const blockedAuthorId = feedBefore.find((bite) => bite.authorId)?.authorId;

@@ -42,6 +42,12 @@ export function getBlockedAuthorIdsForSession(): ReadonlySet<string> {
   return blockedAuthorIds;
 }
 
+/** Forgets this account's local hide/block filters, e.g. on sign-out or account switch. */
+export function clearCommunitySafetySessionState(): void {
+  hiddenPostIds.clear();
+  blockedAuthorIds.clear();
+}
+
 function normalizeAuthorId(authorId?: string | null): string | undefined {
   const trimmed = authorId?.trim();
   return trimmed ? trimmed : undefined;
