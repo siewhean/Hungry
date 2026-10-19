@@ -9,7 +9,7 @@ import {
   PanResponder,
 } from "react-native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import {
   LocateFixed,
   Map as MapIcon,
@@ -28,7 +28,6 @@ import { MapSurface, type MapSurfaceMarker, BuildingLegend } from "@/components/
 import {
   AccessibleImage,
   AppText,
-  Button,
   FilterChipRail,
   FeedErrorBoundary,
   ExpandableSearchLauncher,
@@ -44,7 +43,6 @@ import { DiscoverViewToggle } from "@/components/discover/DiscoverViewToggle";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useSearchStore } from "@/store/useSearchStore";
-import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
 
 const DEFAULT_BUILDING_ID = "hc-maxwell";
@@ -59,12 +57,8 @@ const HOME_MAP_FILTER_OPTIONS: readonly { id: HomeMapFilterId; label: string }[]
 
 export function HomeMapScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const route = useRoute();
   const catalogRawService = getCatalogRawService();
-  // The map is open to every diner. Catalog pins need a signed-in session, so a
-  // guest still gets the map, location and recentre, plus a prompt to sign in.
-  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
-  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
+  // The map and its catalog pins are open to every diner, guests included.
   const insets = useSafeAreaInsets();
   const { componentRadii, palette, radii, shadows, spacing, zIndex } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
@@ -132,12 +126,6 @@ export function HomeMapScreen() {
   }, [selectedBuilding?.name]);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      setRawMapItems([]);
-      setRawVenueCards([]);
-      setRawReleaseId(undefined);
-      return;
-    }
     let active = true;
     const span = currentZoom >= 15 ? 0.018 : currentZoom >= 13 ? 0.08 : 0.3;
     const buildingTypes = mapFilters.hawkerOnly ? ["hawker_centre"] : [];
@@ -178,7 +166,7 @@ export function HomeMapScreen() {
     return () => {
       active = false;
     };
-  }, [catalogRawService, currentLocation, currentZoom, isAuthenticated, mapCenter, mapFilters]);
+  }, [catalogRawService, currentLocation, currentZoom, mapCenter, mapFilters]);
 
   const snapTo = (height: number) => {
     Animated.spring(animatedHeight, {
@@ -279,15 +267,6 @@ export function HomeMapScreen() {
       ),
     [palette, rawMapItems],
   );
-
-  const promptSignIn = useCallback(() => {
-    // Bring the guest back to the map after signing in.
-    setReturnRoute({
-      name: route.name,
-      params: route.params as Record<string, unknown> | undefined,
-    });
-    navigation.navigate("AuthStack", { screen: "Login" });
-  }, [navigation, route.name, route.params, setReturnRoute]);
 
   // Always land on Discover: after sign-in or "open on map" the screen below may be Home.
   const backToList = useCallback(() => {
@@ -534,7 +513,6 @@ export function HomeMapScreen() {
             <AppText variant="h2" style={{ marginBottom: spacing[2] }}>
               Nearby Stalls
             </AppText>
-            {isAuthenticated ? null : <GuestMapPrompt onSignIn={promptSignIn} />}
             {rawVenueCards.map((venue) => (
               <Pressable
                 key={venue.id}
@@ -597,7 +575,6 @@ export function HomeMapScreen() {
                 paddingHorizontal: spacing[4],
               }}
             >
-              {isAuthenticated ? null : <GuestMapPrompt onSignIn={promptSignIn} width={320} />}
               {rawVenueCards.map((venue) => (
                 <Pressable
                   key={venue.id}
@@ -664,29 +641,6 @@ export function HomeMapScreen() {
           </Animated.View>
         )}
       </Animated.View>
-    </View>
-  );
-}
-
-function GuestMapPrompt({ onSignIn, width }: { onSignIn: () => void; width?: number }) {
-  const { componentRadii, palette, spacing } = useHungryTheme();
-  return (
-    <View
-      style={{
-        backgroundColor: palette.bgSoft,
-        borderColor: palette.border,
-        borderRadius: componentRadii.card,
-        borderWidth: 1,
-        gap: spacing[2],
-        padding: spacing[4],
-        width,
-      }}
-    >
-      <AppText variant="h3">Sign in to see places on the map</AppText>
-      <AppText variant="bodySmall" tone="secondary">
-        Stalls and hawker centres near you appear here once you sign in.
-      </AppText>
-      <Button label="Sign in" onPress={onSignIn} />
     </View>
   );
 }

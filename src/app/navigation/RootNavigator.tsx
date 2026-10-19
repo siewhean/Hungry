@@ -112,7 +112,6 @@ const PROTECTED_ROOT_ROUTES = new Set<RootRouteName>([
   "AddStory",
   "MusicSelection",
   "MerchantClaimExplainer",
-  "CatalogRawDetail",
   "PassportScreen",
   "MissionsScreen",
   "AdminPortfolioFlags",

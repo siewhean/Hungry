@@ -7,7 +7,6 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AccessibleImage, AppText, EmptyState, Screen, Skeleton } from "@/components/ui";
 import { getCatalogRawService } from "@/lib/services/serviceProvider";
 import type { CatalogRawDishDetail, CatalogRawVenueDetail } from "@/lib/services/catalog";
-import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "CatalogRawDetail">;
@@ -23,7 +22,7 @@ function statusLabel(status: Detail["verificationStatus"]) {
 
 export function CatalogRawDetailScreen({ navigation, route }: Props) {
   const { palette, spacing } = useHungryTheme();
-  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  // Read-only catalog record: open to guests. It has no save/like actions.
   const service = getCatalogRawService();
   const [detail, setDetail] = useState<Detail | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -31,11 +30,6 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
   const isDish = route.params.kind === "dish";
 
   const load = useCallback(async () => {
-    if (!isAuthenticated) {
-      setError("Sign in to view this catalog record.");
-      setIsLoading(false);
-      return;
-    }
     setIsLoading(true);
     setError(null);
     try {
@@ -50,7 +44,7 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthenticated, isDish, route.params.id, route.params.releaseId, service]);
+  }, [isDish, route.params.id, route.params.releaseId, service]);
 
   useEffect(() => {
     void load();
