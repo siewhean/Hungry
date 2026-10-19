@@ -16,6 +16,8 @@ function getLogoDomain(logoUrl?: string) {
   try {
     const url = new URL(logoUrl.trim());
     const host = normalizeHost(url.hostname);
+    // Stored brand logos share one host, so the file itself identifies the chain.
+    if (url.pathname.startsWith("/storage/v1/object/public/")) return `${host}${url.pathname}`;
     if (host === "logo.clearbit.com") {
       const [domain] = url.pathname.split("/").filter(Boolean);
       return domain ? normalizeHost(domain) : "";

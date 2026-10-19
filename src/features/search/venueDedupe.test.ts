@@ -71,3 +71,17 @@ test("dedupeNearestVenueCandidates groups exact normalized stall names without l
     ["chain-near"],
   );
 });
+
+test("getVenueChainKey keeps stored brand logos from merging different chains", () => {
+  const base = "https://yrlxjeovwslirseajomz.supabase.co/storage/v1/object/public/brand-logos";
+  const subway = venue({ id: "subway-1", name: "Subway", logoUrl: `${base}/subway-1a2b3c4d.jpg` });
+  const subwayToo = venue({
+    id: "subway-2",
+    name: "SUBWAY",
+    logoUrl: `${base}/subway-1a2b3c4d.jpg`,
+  });
+  const kfc = venue({ id: "kfc-1", name: "KFC", logoUrl: `${base}/kfc-5e6f7a8b.png` });
+
+  assert.equal(getVenueChainKey(subway), getVenueChainKey(subwayToo));
+  assert.notEqual(getVenueChainKey(subway), getVenueChainKey(kfc));
+});
