@@ -66,6 +66,7 @@ import {
 } from "@/components/ui";
 import { DishCard } from "@/components/dish/DishCard";
 import { WeeklyPicksRail } from "@/components/dish/WeeklyPicksRail";
+import { WelcomeBackCard } from "@/components/home/WelcomeBackCard";
 import {
   BitesCarousel,
   CircleStoryCarousel,
@@ -1154,6 +1155,11 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
           right={renderActivityButton()}
           horizontalPadding={semanticSpacing.screenEdge}
           style={{ minHeight: 68 }}
+        />
+        <WelcomeBackCard
+          horizontalPadding={semanticSpacing.screenEdge}
+          onOpenDish={(dishId) => navigation.navigate("DishDetail", { dishId })}
+          onOpenSaved={() => navigation.navigate("Favourites")}
         />
         <WeeklyPicksRail
           horizontalPadding={semanticSpacing.screenEdge}

@@ -105,3 +105,28 @@ export function resetPostHogUser(): void {
 
   client.reset();
 }
+
+/** Adds properties to every later event (for example lifecycle_state). */
+export function registerPostHogProperties(properties: Record<string, unknown>): void {
+  const client = getPostHogClient();
+  if (!client) {
+    return;
+  }
+
+  void client.register(toPostHogProperties(sanitizeAnalyticsProperties(properties)));
+}
+
+/** The flag's value for this user (PostHog keeps the assignment stable per user). */
+export function getPostHogFeatureFlag(key: string): boolean | string | undefined {
+  return getPostHogClient()?.getFeatureFlag(key);
+}
+
+/** Calls back whenever flags load or reload; returns an unsubscribe. */
+export function onPostHogFeatureFlags(callback: () => void): () => void {
+  const client = getPostHogClient();
+  if (!client) {
+    return () => undefined;
+  }
+
+  return client.onFeatureFlags(() => callback());
+}
