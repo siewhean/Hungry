@@ -31,9 +31,12 @@ export function canAccessDashboard(level: MerchantAccessLevel): boolean {
   return level === "verified";
 }
 
-/** Can the merchant edit their business profile? */
+/**
+ * Can the merchant edit their business profile? Unverified merchants can prepare it: outlet edits
+ * reach the diner venue only once the outlet is verified (app_private.sync_merchant_outlet_to_venue).
+ */
 export function canEditProfile(level: MerchantAccessLevel): boolean {
-  return level === "verified";
+  return level === "unverified" || level === "verified";
 }
 
 /** Can the merchant manage menu/dishes? */
@@ -75,8 +78,16 @@ export function canViewOnboarding(level: MerchantAccessLevel): boolean {
  * - View verification status
  * - Submit/resubmit evidence
  * - View limited onboarding instructions
+ * - Prepare the stall profile (hidden from diners until verified)
+ * - Open Profile and Settings, which hold the "Switch to Customer Mode" and "Sign Out" exits
  */
-export const UNVERIFIED_ALLOWED_SCREENS = ["VerificationCentre", "HomeBasedVerification"] as const;
+export const UNVERIFIED_ALLOWED_SCREENS = [
+  "VerificationCentre",
+  "HomeBasedVerification",
+  "Profile",
+  "BusinessProfileEditor",
+  "MerchantSettings",
+] as const;
 
 /**
  * Actions blocked for unverified merchants:
@@ -84,12 +95,10 @@ export const UNVERIFIED_ALLOWED_SCREENS = ["VerificationCentre", "HomeBasedVerif
  * - Publish promotions
  * - Reply publicly as the business
  * - Access full merchant analytics
- * - Access advanced merchant settings
  */
 export const VERIFIED_ONLY_SCREENS = [
   "Dashboard",
   "Menu",
-  "Profile",
   "DishEditor",
   "OCRDrafts",
   "CustomerInbox",
@@ -97,8 +106,6 @@ export const VERIFIED_ONLY_SCREENS = [
   "PromotionBuilder",
   "PromotionList",
   "AIAssistant",
-  "BusinessProfileEditor",
   "OrdersComingSoon",
-  "MerchantSettings",
   "Analytics",
 ] as const;

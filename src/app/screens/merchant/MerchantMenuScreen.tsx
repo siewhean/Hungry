@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { View, StyleSheet, Alert, Pressable, ScrollView } from "react-native";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { View, StyleSheet, Alert, Pressable, ScrollView, Switch } from "react-native";
 import { Plus, Search, MoreVertical, Camera, X } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -9,6 +9,7 @@ import {
   AccessibleImage,
   AppText,
   Button,
+  Dialog,
   IconButton,
   EmptyState,
   FAB,
@@ -27,6 +28,7 @@ import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { getDishSection, hasAvailabilityFlag } from "@/features/merchant/menuSections";
+import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
 import type { DishDetail } from "@/types/domain";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 
@@ -41,6 +43,11 @@ const MENU_FILTER_OPTIONS: { id: MenuFilter; label: string }[] = [
 
 function showError(title: string, error: unknown) {
   Alert.alert(title, error instanceof Error && error.message ? error.message : "Please try again.");
+}
+
+function withSoldOut(dish: DishDetail, soldOut: boolean): DishDetail {
+  const flags = (dish.availabilityFlags || []).filter((f) => !hasAvailabilityFlag([f], "sold_out"));
+  return { ...dish, availabilityFlags: soldOut ? [...flags, "sold_out"] : flags };
 }
 
 function formatDietaryFlag(flag: string): string {
@@ -63,6 +70,12 @@ export function MerchantMenuScreen() {
   const [filter, setFilter] = useState<MenuFilter>("all");
   const [showCreateOptions, setShowCreateOptions] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dishDialog, setDishDialog] = useState<{
+    dish: DishDetail;
+    confirmDelete: boolean;
+  } | null>(null);
+  // Dialog closes itself after a button press; "Delete Dish" switches to the confirm step instead.
+  const keepDishDialogOpen = useRef(false);
 
   const loadMenu = useCallback(async () => {
     if (!activeOutlet) return;
@@ -82,9 +95,10 @@ export function MerchantMenuScreen() {
   useEffect(() => {
     const unsubscribe = navigation.addListener("focus", () => {
       loadMenu();
+      trackMerchantEvent("merchant_menu_viewed", activeOutlet?.id);
     });
     return unsubscribe;
-  }, [navigation, loadMenu]);
+  }, [navigation, loadMenu, activeOutlet?.id]);
 
   const filteredMenu = useMemo(() => {
     let result = menu;
@@ -161,25 +175,49 @@ export function MerchantMenuScreen() {
     }
   }, [previewVenueId, repository, rootNavigation]);
 
-  const handleToggleSoldOut = async (dish: DishDetail) => {
+  // Optimistic: flip the row now, send the explicit target state, roll back on failure.
+  const handleToggleSoldOut = async (dish: DishDetail, soldOut?: boolean) => {
     if (!activeOutlet) return;
+    const nextSoldOut = soldOut ?? !hasAvailabilityFlag(dish.availabilityFlags, "sold_out");
+    setMenu((prev) => prev.map((d) => (d.id === dish.id ? withSoldOut(d, nextSoldOut) : d)));
     try {
-      await getHungryService().merchant.toggleSoldOut(activeOutlet.id, dish.id);
-      // Optimistic update
-      setMenu((prev) =>
-        prev.map((d) => {
-          if (d.id === dish.id) {
-            const isSoldOut = hasAvailabilityFlag(d.availabilityFlags, "sold_out");
-            const flags = isSoldOut
-              ? (d.availabilityFlags || []).filter((f) => !hasAvailabilityFlag([f], "sold_out"))
-              : [...(d.availabilityFlags || []), "sold_out"];
-            return { ...d, availabilityFlags: flags };
-          }
-          return d;
-        }),
-      );
+      await getHungryService().merchant.toggleSoldOut(activeOutlet.id, dish.id, nextSoldOut);
+      trackMerchantEvent("merchant_dish_sold_out_toggled", activeOutlet.id, {
+        sold_out: nextSoldOut,
+      });
     } catch (e) {
+      setMenu((prev) => prev.map((d) => (d.id === dish.id ? withSoldOut(d, !nextSoldOut) : d)));
       showError("Could not update availability", e);
+    }
+  };
+
+  const soldOutDishes = useMemo(
+    () => menu.filter((dish) => hasAvailabilityFlag(dish.availabilityFlags, "sold_out")),
+    [menu],
+  );
+
+  const handleMarkAllAvailable = async () => {
+    if (!activeOutlet || soldOutDishes.length === 0) return;
+    const ids = new Set(soldOutDishes.map((dish) => dish.id));
+    setMenu((prev) => prev.map((d) => (ids.has(d.id) ? withSoldOut(d, false) : d)));
+    const results = await Promise.allSettled(
+      soldOutDishes.map((dish) =>
+        getHungryService().merchant.toggleSoldOut(activeOutlet.id, dish.id, false),
+      ),
+    );
+    const failedIds = new Set(
+      soldOutDishes.filter((_, index) => results[index]?.status === "rejected").map((d) => d.id),
+    );
+    trackMerchantEvent("merchant_dish_sold_out_toggled", activeOutlet.id, {
+      sold_out: false,
+      bulk_count: ids.size - failedIds.size,
+    });
+    if (failedIds.size > 0) {
+      setMenu((prev) => prev.map((d) => (failedIds.has(d.id) ? withSoldOut(d, true) : d)));
+      Alert.alert(
+        "Some dishes were not updated",
+        `${failedIds.size} dish${failedIds.size === 1 ? " is" : "es are"} still sold out. Please try again.`,
+      );
     }
   };
 
@@ -187,6 +225,7 @@ export function MerchantMenuScreen() {
     if (!activeOutlet) return;
     try {
       const featured = await getHungryService().merchant.toggleFeatured(activeOutlet.id, dish.id);
+      trackMerchantEvent("merchant_dish_featured_toggled", activeOutlet.id, { featured });
       setMenu((prev) =>
         prev.map((d) =>
           d.id === dish.id
@@ -207,44 +246,64 @@ export function MerchantMenuScreen() {
     }
   };
 
-  const handleDelete = (dish: DishDetail) => {
+  const handleDelete = async (dish: DishDetail) => {
     if (!activeOutlet) return;
-    Alert.alert("Delete Dish", `Are you sure you want to delete ${dish.name}?`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await getHungryService().merchant.deleteDish(activeOutlet.id, dish.id);
-            setMenu((prev) => prev.filter((d) => d.id !== dish.id));
-          } catch (e) {
-            showError("Could not delete dish", e);
-          }
-        },
-      },
-    ]);
+    try {
+      await getHungryService().merchant.deleteDish(activeOutlet.id, dish.id);
+      trackMerchantEvent("merchant_dish_deleted", activeOutlet.id);
+      setMenu((prev) => prev.filter((d) => d.id !== dish.id));
+    } catch (e) {
+      showError("Could not delete dish", e);
+    }
   };
 
-  const showDishOptions = (dish: DishDetail) => {
-    Alert.alert("Dish Options", dish.name, [
-      { text: "Edit Dish", onPress: () => navigation.navigate("DishEditor", { dishId: dish.id }) },
-      {
-        text: hasAvailabilityFlag(dish.availabilityFlags, "sold_out")
-          ? "Mark Available"
-          : "Mark Sold Out",
-        onPress: () => handleToggleSoldOut(dish),
-      },
-      {
-        text: hasAvailabilityFlag(dish.availabilityFlags, "featured")
-          ? "Remove from Featured"
-          : "Feature Dish",
-        onPress: () => handleToggleFeatured(dish),
-      },
-      { text: "Delete", style: "destructive", onPress: () => handleDelete(dish) },
-      { text: "Cancel", style: "cancel" },
-    ]);
+  // A Dialog, not Alert.alert: Android alerts drop every button after the third.
+  const showDishOptions = (dish: DishDetail) => setDishDialog({ dish, confirmDelete: false });
+  const closeDishDialog = () => {
+    if (keepDishDialogOpen.current) {
+      keepDishDialogOpen.current = false;
+      return;
+    }
+    setDishDialog(null);
   };
+  const dishDialogButtons = !dishDialog
+    ? []
+    : dishDialog.confirmDelete
+      ? [
+          {
+            text: "Delete",
+            style: "destructive" as const,
+            onPress: () => void handleDelete(dishDialog.dish),
+          },
+          { text: "Cancel", style: "cancel" as const },
+        ]
+      : [
+          {
+            text: "Edit Dish",
+            onPress: () => navigation.navigate("DishEditor", { dishId: dishDialog.dish.id }),
+          },
+          {
+            text: hasAvailabilityFlag(dishDialog.dish.availabilityFlags, "sold_out")
+              ? "Mark Available"
+              : "Mark Sold Out",
+            onPress: () => void handleToggleSoldOut(dishDialog.dish),
+          },
+          {
+            text: hasAvailabilityFlag(dishDialog.dish.availabilityFlags, "featured")
+              ? "Remove from Featured"
+              : "Feature Dish",
+            onPress: () => void handleToggleFeatured(dishDialog.dish),
+          },
+          {
+            text: "Delete Dish",
+            style: "destructive" as const,
+            onPress: () => {
+              keepDishDialogOpen.current = true;
+              setDishDialog({ dish: dishDialog.dish, confirmDelete: true });
+            },
+          },
+          { text: "Cancel", style: "cancel" as const },
+        ];
 
   const handlePreviewMenuAsCustomer = () => {
     if (previewVenueId) {
@@ -298,6 +357,18 @@ export function MerchantMenuScreen() {
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
+
+            {soldOutDishes.length > 0 ? (
+              <View style={{ marginTop: spacing[3] }}>
+                <Button
+                  label={`Mark all available (${soldOutDishes.length})`}
+                  variant="secondary"
+                  size="sm"
+                  fullWidth={false}
+                  onPress={() => void handleMarkAllAvailable()}
+                />
+              </View>
+            ) : null}
 
             <View style={{ marginTop: spacing[3] }}>
               <FilterChipRail
@@ -434,6 +505,20 @@ export function MerchantMenuScreen() {
                         )}
                       </View>
                     </Pressable>
+                    <View style={{ alignItems: "center", gap: spacing[0.5] }}>
+                      <Switch
+                        accessibilityLabel={`${dish.name} available`}
+                        accessibilityState={{ checked: !isSoldOut }}
+                        value={!isSoldOut}
+                        onValueChange={(available) => void handleToggleSoldOut(dish, !available)}
+                        trackColor={{ false: palette.border, true: palette.orange }}
+                        thumbColor={palette.white}
+                        ios_backgroundColor={palette.border}
+                      />
+                      <AppText variant="micro" tone="muted">
+                        {isSoldOut ? "Sold out" : "Available"}
+                      </AppText>
+                    </View>
                     <IconButton
                       accessibilityLabel="Dish options"
                       icon={<MoreVertical size={20} color={palette.textSecondary} />}
@@ -504,6 +589,17 @@ export function MerchantMenuScreen() {
           </Pressable>
         </FAB>
       </View>
+      <Dialog
+        visible={Boolean(dishDialog)}
+        title={dishDialog?.confirmDelete ? "Delete Dish" : "Dish Options"}
+        message={
+          dishDialog?.confirmDelete
+            ? `Are you sure you want to delete ${dishDialog.dish.name}?`
+            : dishDialog?.dish.name
+        }
+        buttons={dishDialogButtons}
+        onClose={closeDishDialog}
+      />
     </Screen>
   );
 }

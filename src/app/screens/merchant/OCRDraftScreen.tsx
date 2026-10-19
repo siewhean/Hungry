@@ -219,11 +219,11 @@ export function OCRDraftScreen() {
               >
                 <View>
                   <AppText variant="bodyBold">{draft.name}</AppText>
-                  {draft.price && (
+                  {typeof draft.price === "number" && draft.price > 0 ? (
                     <AppText variant="body" style={{ color: palette.orange }}>
-                      ${draft.price.toFixed(2)}
+                      S${draft.price.toFixed(2)}
                     </AppText>
-                  )}
+                  ) : null}
                 </View>
                 <StatusChip
                   label={`${Math.round(draft.confidence * 100)}% Match`}
@@ -242,11 +242,11 @@ export function OCRDraftScreen() {
                 />
               ) : null}
 
-              {draft.suggestedDescription && (
+              {draft.suggestedDescription ? (
                 <AppText variant="bodySmall" tone="muted" style={{ marginBottom: spacing[3] }}>
                   {draft.suggestedDescription}
                 </AppText>
-              )}
+              ) : null}
 
               {draft.suggestedTasteTags && draft.suggestedTasteTags.length > 0 && (
                 <ChipGroup

@@ -10,17 +10,20 @@ import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import type { LocationPrivacy } from "@/types/domain";
+import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
 
 type Props = NativeStackScreenProps<MerchantTabParamList, "HomeBasedVerification">;
 type PickedEvidenceAsset = { uri?: string };
 type ImagePickerModule = {
-  MediaTypeOptions: { Images: unknown };
   requestMediaLibraryPermissionsAsync: () => Promise<{ granted?: boolean; status?: string }>;
   launchImageLibraryAsync: (options: Record<string, unknown>) => Promise<{
     canceled: boolean;
     assets?: PickedEvidenceAsset[];
   }>;
 };
+
+/** The copy asks for 2 food photos and 1 menu photo. */
+const MIN_HOME_BASED_PHOTOS = 3;
 
 function loadImagePickerModule(): ImagePickerModule | null {
   try {
@@ -41,7 +44,9 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [safetyChecked, setSafetyChecked] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const photosAttached = photoUris.length > 0;
+  const hasEnoughPhotos = photoUris.length >= MIN_HOME_BASED_PHOTOS;
 
   if (!activeOutlet) {
     return (
@@ -87,7 +92,7 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
       const result = await imagePicker.launchImageLibraryAsync({
         allowsEditing: false,
         allowsMultipleSelection: true,
-        mediaTypes: imagePicker.MediaTypeOptions.Images,
+        mediaTypes: ["images"],
         quality: 0.82,
         selectionLimit: 4,
       });
@@ -105,22 +110,29 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
   };
 
   const handleSubmit = async () => {
-    if (!displayName.trim() || !photosAttached || !safetyChecked) return;
+    if (!displayName.trim() || !hasEnoughPhotos || !safetyChecked) return;
 
+    setSubmitError(null);
     setIsSubmitting(true);
     try {
       // First update the profile with the specific home-based details
       await getHungryService().merchant.updateBusinessProfile(activeOutlet.id, {
         name: displayName,
+        businessType: "home_based",
         locationPrivacy: privacy,
       });
 
-      for (const fileUrl of photoUris) {
-        await getHungryService().merchant.submitVerification(activeOutlet.id, {
-          method: "home_based_declaration",
-          fileUrl,
-        });
-      }
+      // One submission: every photo is uploaded before any evidence row or status is written.
+      const [fileUrl, ...additionalFileUrls] = photoUris;
+      await getHungryService().merchant.submitVerification(activeOutlet.id, {
+        method: "home_based_declaration",
+        fileUrl,
+        additionalFileUrls,
+      });
+      trackMerchantEvent("merchant_verification_submitted", activeOutlet.id, {
+        method: "home_based_declaration",
+        photo_count: photoUris.length,
+      });
 
       const updatedAccount = await getHungryService().merchant.getMerchantAccount();
       if (updatedAccount) setAccount(updatedAccount);
@@ -129,6 +141,11 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
       navigation.goBack();
     } catch (e) {
       console.error(e);
+      setSubmitError(
+        e instanceof Error && e.message
+          ? e.message
+          : "Your verification could not be submitted. Please try again.",
+      );
       setIsSubmitting(false);
     }
   };
@@ -183,22 +200,17 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
           How should your location appear on the map?
         </AppText>
 
-        <View style={{ gap: spacing[2] }}>
+        <View accessibilityRole="radiogroup" style={{ gap: spacing[2] }}>
+          {/* Home-based businesses never show an exact address to diners. */}
           <PrivacyOption
             title="Approximate Area"
-            description="Shows a rough 500m radius"
+            description="Shows the building area only, never your unit or floor"
             selected={privacy === "approximate"}
             onSelect={() => setPrivacy("approximate")}
           />
           <PrivacyOption
-            title="Exact Address"
-            description="Shows full block and street"
-            selected={privacy === "exact"}
-            onSelect={() => setPrivacy("exact")}
-          />
-          <PrivacyOption
             title="Hidden"
-            description="Location is not shown at all"
+            description="Street address is not shown either"
             selected={privacy === "hidden"}
             onSelect={() => setPrivacy("hidden")}
           />
@@ -251,6 +263,9 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
               {photosAttached
                 ? `${photoUris.length} photo${photoUris.length === 1 ? "" : "s"} attached`
                 : "Attach photos"}
+              {photosAttached && !hasEnoughPhotos
+                ? ` (${MIN_HOME_BASED_PHOTOS - photoUris.length} more needed)`
+                : ""}
             </AppText>
             <AppText
               variant="micro"
@@ -291,23 +306,23 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
             { marginTop: spacing[6] },
           ]}
         >
-          <IconButton
-            icon={
-              safetyChecked ? (
-                <CheckSquare size={20} color={palette.orange} />
-              ) : (
-                <Square size={20} color={palette.textSecondary} />
-              )
-            }
-            size={24}
-            variant="ghost"
-            accessibilityLabel="Safety acknowledgement checkbox"
-            onPress={() => setSafetyChecked(!safetyChecked)}
-          />
-          <AppText variant="bodySmall" style={{ color: palette.text, flex: 1, marginLeft: 8 }}>
-            I acknowledge that my home-based business complies with the SFA food hygiene and safety
-            guidelines, and I do not provide catering services.
-          </AppText>
+          <Pressable
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: safetyChecked }}
+            accessibilityLabel="I acknowledge that my home-based business complies with the SFA food hygiene and safety guidelines, and I do not provide catering services."
+            onPress={() => setSafetyChecked((checked) => !checked)}
+            style={{ flexDirection: "row", alignItems: "flex-start", flex: 1, minHeight: 44 }}
+          >
+            {safetyChecked ? (
+              <CheckSquare size={24} color={palette.orange} />
+            ) : (
+              <Square size={24} color={palette.textSecondary} />
+            )}
+            <AppText variant="bodySmall" style={{ color: palette.text, flex: 1, marginLeft: 8 }}>
+              I acknowledge that my home-based business complies with the SFA food hygiene and
+              safety guidelines, and I do not provide catering services.
+            </AppText>
+          </Pressable>
         </View>
       </ScrollView>
 
@@ -317,11 +332,20 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
           { borderTopColor: palette.border, backgroundColor: palette.bg },
         ]}
       >
+        {submitError ? (
+          <AppText
+            variant="bodySmall"
+            accessibilityRole="alert"
+            style={{ color: palette.error, marginBottom: spacing[2] }}
+          >
+            {submitError}
+          </AppText>
+        ) : null}
         <Button
           label="Submit Verification"
           onPress={handleSubmit}
           loading={isSubmitting}
-          disabled={!displayName.trim() || !photosAttached || !safetyChecked || isSubmitting}
+          disabled={!displayName.trim() || !hasEnoughPhotos || !safetyChecked || isSubmitting}
           style={{ width: "100%" }}
         />
       </View>
@@ -344,7 +368,13 @@ function PrivacyOption({
   const { componentRadii, palette, spacing, radii } = useHungryTheme();
 
   return (
-    <Pressable onPress={onSelect}>
+    <Pressable
+      accessibilityRole="radio"
+      accessibilityState={{ checked: selected }}
+      accessibilityLabel={title}
+      accessibilityHint={description}
+      onPress={onSelect}
+    >
       <Card
         style={[
           { flexDirection: "row", alignItems: "center", padding: spacing[4], borderWidth: 1 },

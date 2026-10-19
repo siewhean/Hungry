@@ -43,12 +43,12 @@ export async function PATCH(request: NextRequest) {
     const accessToken = await requireMerchantAccessToken();
     const overview = await getMerchantPortalOverview(accessToken);
     const body = await readJsonObject(request, 32_768);
+    // Only the outlet is written: a verified outlet's name and hours sync to its venue in the
+    // database (merchants cannot write venues directly).
     const outletPayload: Record<string, unknown> = {};
-    const venuePayload: Record<string, unknown> = {};
 
     if (body.name !== undefined) {
       outletPayload.name = getStringField(body, "name", { max: 120 });
-      venuePayload.name = getStringField(body, "name", { max: 120 });
     }
     if (body.description !== undefined) {
       outletPayload.description = getStringField(body, "description", { max: 2_000 }) ?? "";
@@ -62,7 +62,6 @@ export async function PATCH(request: NextRequest) {
     }
     if (body.operatingHours !== undefined) {
       outletPayload.operating_hours = getStringField(body, "operatingHours", { max: 4_000 }) ?? "";
-      venuePayload.operating_hours = getStringField(body, "operatingHours", { max: 4_000 }) ?? "";
     }
     if (body.profilePhotoUrl !== undefined) {
       outletPayload.profile_photo_url = getStringField(body, "profilePhotoUrl", { max: 2_048 }) ?? null;
@@ -81,21 +80,10 @@ export async function PATCH(request: NextRequest) {
       });
     }
 
-    if (overview.outlet.venueId && Object.keys(venuePayload).length > 0) {
-      await supabaseFetch("rest/v1/venues", {
-        accessToken,
-        body: venuePayload,
-        method: "PATCH",
-        params: { id: `eq.${overview.outlet.venueId}` },
-        prefer: "return=minimal",
-      });
-    }
-
     await writeMerchantAuditLog({
       action: "merchant_profile_updated",
       metadata: {
         outletFields: Object.keys(outletPayload).sort(),
-        venueFields: Object.keys(venuePayload).sort(),
       },
       overview,
       targetId: overview.outlet.id,

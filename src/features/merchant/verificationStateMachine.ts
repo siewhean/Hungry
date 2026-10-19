@@ -82,17 +82,25 @@ export function buildVerificationEvidence(
 
 export function applyVerificationSubmission(
   verification: MerchantVerification,
-  evidenceInput: Omit<VerificationEvidence, "id" | "uploadedAt">,
+  evidenceInput: Omit<VerificationEvidence, "id" | "uploadedAt"> & {
+    additionalFileUrls?: string[];
+  },
 ): MerchantVerification {
   const nowIso = new Date().toISOString();
   const nextStatus = transitionVerificationStatus(verification.status, "submit");
-  const evidence = buildVerificationEvidence(evidenceInput.method, evidenceInput.fileUrl);
+  // Every file of one submission is recorded together, with a single status change.
+  const evidence = [evidenceInput.fileUrl, ...(evidenceInput.additionalFileUrls ?? [])].map(
+    (fileUrl, index) => ({
+      ...buildVerificationEvidence(evidenceInput.method, fileUrl),
+      id: `ev-${Date.now()}-${index}`,
+    }),
+  );
 
   return {
     ...verification,
     status: nextStatus,
     method: evidenceInput.method,
-    evidence: [...verification.evidence, evidence],
+    evidence: [...verification.evidence, ...evidence],
     submittedAt: nowIso,
     rejectionReason: undefined,
     rejectedAt: undefined,

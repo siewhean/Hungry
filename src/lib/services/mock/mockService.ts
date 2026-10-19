@@ -8,6 +8,7 @@
  */
 
 import { getFloorPlan } from "@/lib/geo/floorPlans";
+import { MERCHANT_DEEP_LINKS } from "@/features/merchant/merchantDeepLinks";
 import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { similarityScore } from "@/lib/ai/similarityScore";
@@ -836,12 +837,14 @@ function syncMerchantOutletToUserCatalog(
   const venueId = getMockMerchantVenueId(outlet.id);
   const menu = _merchantMenuByOutlet.get(outlet.id) ?? [];
   const topDishId = menu[0]?.id ?? outlet.signatureDishIds[0] ?? "";
+  // Same rule as the Supabase sync trigger: a home-based outlet never shows unit or floor.
+  const isHomeBased = outlet.businessType === "home_based";
   const venue: VenueSummary = {
     id: venueId,
     buildingId: outlet.buildingId ?? "building-maxwell",
     name: outlet.name,
-    unitNumber: outlet.unitNumber ?? "",
-    floor: outlet.floor ?? "",
+    unitNumber: isHomeBased ? "" : (outlet.unitNumber ?? ""),
+    floor: isHomeBased ? "" : (outlet.floor ?? ""),
     isOpen: outlet.isLive && !outlet.temporaryClosure,
     liveCrowd: "medium",
     topDishId,
@@ -1235,7 +1238,7 @@ function getLowRatingNotificationsForOutlet(outletId: string): MerchantNotificat
       body: `${review.rating?.toFixed(1)} stars: ${review.text.slice(0, 120)}`,
       status: "unread",
       dedupeKey: `low-rating:${review.id}`,
-      deepLink: "MerchantTabs/CustomerInbox",
+      deepLink: MERCHANT_DEEP_LINKS.inbox,
       metadata: {
         reviewId: review.id,
         rating: review.rating ?? null,
@@ -1656,8 +1659,12 @@ export const hungryService: HungryService = {
     },
 
     async listActivePromotionsForTarget(input) {
+      // Like list_customer_active_promotions: only outlets shown on Hungry (is_live).
       const promotions = _merchantPromotions.filter(
-        (promotion) => getPromotionOutletVenueId(promotion) === input.venueId,
+        (promotion) =>
+          getPromotionOutletVenueId(promotion) === input.venueId &&
+          _merchantAccount.outlets.find((outlet) => outlet.id === promotion.outletId)?.isLive !==
+            false,
       );
       return resolve(clone(filterCustomerVisiblePromotions(promotions, { dishId: input.dishId })));
     },
@@ -2851,7 +2858,15 @@ export const hungryService: HungryService = {
     async updateBusinessProfile(outletId, updates) {
       const outlet = getMerchantOutlet(outletId);
       const normalized = validateMerchantProfileUpdates(updates);
-      Object.assign(outlet, normalized);
+      // Partial update like Supabase: fields left out (undefined) keep their stored value.
+      Object.assign(
+        outlet,
+        Object.fromEntries(Object.entries(normalized).filter(([, value]) => value !== undefined)),
+      );
+      // Mirrors the DB trigger: home-based outlets are never 'exact'.
+      if (outlet.businessType === "home_based" && outlet.locationPrivacy === "exact") {
+        outlet.locationPrivacy = "approximate";
+      }
       syncMerchantOutletToUserCatalog(outlet);
       return resolve(outlet);
     },
@@ -2891,11 +2906,11 @@ export const hungryService: HungryService = {
       return resolve(undefined);
     },
 
-    async toggleSoldOut(outletId, dishId) {
+    async toggleSoldOut(outletId, dishId, soldOut) {
       const menu = getMerchantMenu(outletId);
       const dish = menu.find((menuDish) => menuDish.id === dishId);
       if (!dish) throw new Error(`Dish ${dishId} not found for outlet ${outletId}`);
-      const isSoldOut = !dish.availabilityFlags.includes("Sold out");
+      const isSoldOut = soldOut ?? !dish.availabilityFlags.includes("Sold out");
       dish.availabilityFlags = mergeAvailabilityFlag(dish.availabilityFlags, "Sold out", isSoldOut);
       syncMerchantDishToUserCatalog(outletId, dish);
       return resolve(isSoldOut);
@@ -2977,6 +2992,9 @@ export const hungryService: HungryService = {
       interactions = [...interactions].sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       );
+      if (filters?.limit !== undefined) {
+        interactions = interactions.slice(0, Math.max(1, filters.limit));
+      }
       return resolve(clone(interactions));
     },
 
@@ -3124,6 +3142,13 @@ export const hungryService: HungryService = {
       return resolve(clone(updatedPromotion));
     },
 
+    async deletePromotion(promoId) {
+      const promoIndex = _merchantPromotions.findIndex((p) => p.id === promoId);
+      if (promoIndex === -1) throw new Error(`Promotion ${promoId} not found`);
+      _merchantPromotions.splice(promoIndex, 1);
+      return resolve(undefined);
+    },
+
     async getPromotionAnalytics(promoId) {
       const promo = _merchantPromotions.find((p) => p.id === promoId);
       if (!promo) throw new Error(`Promotion ${promoId} not found`);
@@ -3134,6 +3159,36 @@ export const hungryService: HungryService = {
     async getAnalytics(outletId, dateRange) {
       getMerchantOutlet(outletId);
       return resolve(clone(buildMockMerchantAnalytics(outletId, dateRange)));
+    },
+
+    async getDashboardSummary(outletId) {
+      getMerchantOutlet(outletId);
+      const menu = getMerchantMenu(outletId);
+      const reviews = _merchantInbox
+        .filter(
+          (interaction) =>
+            interaction.outletId === outletId &&
+            interaction.type === "review" &&
+            !isMockInboxReviewModerationHidden(interaction),
+        )
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      const latest = reviews[0];
+      return resolve({
+        menuCount: menu.length,
+        dishesWithoutImages: menu.filter(
+          (dish) => !dish.imageUrl?.trim() && !(dish.gallery ?? []).some((url) => url.trim()),
+        ).length,
+        unrepliedReviews: reviews.filter((review) => !review.reply).length,
+        latestReview: latest
+          ? {
+              id: latest.id,
+              authorName: latest.authorName,
+              rating: latest.rating,
+              text: latest.text,
+              createdAt: latest.createdAt,
+            }
+          : undefined,
+      });
     },
 
     async getWeeklySummaryStats(outletId) {
@@ -3174,7 +3229,7 @@ export const hungryService: HungryService = {
           body: `${summary.totalViews.toLocaleString()} views, ${summary.newReviews} new reviews, ${summary.unrepliedReviews} unreplied reviews.`,
           status: "unread",
           dedupeKey: `weekly-summary:${summary.id}:${member.id}`,
-          deepLink: "MerchantTabs/MerchantAnalytics",
+          deepLink: MERCHANT_DEEP_LINKS.analytics,
           metadata: { summaryId: summary.id },
         }),
       );
@@ -3299,7 +3354,7 @@ export const hungryService: HungryService = {
         body: `${trimmedName}, open Hungry to accept your merchant team invite.`,
         status: "sent",
         dedupeKey: `team-invite:${merchantAccountId}:${normalizedEmail}`,
-        deepLink: "MerchantTabs/MerchantSettings",
+        deepLink: MERCHANT_DEEP_LINKS.settings,
         metadata: {
           memberId: newMember.id,
           role,

@@ -268,7 +268,11 @@ export function prefetchMerchantTab(
       try {
         const merchant = getHungryService().merchant;
         if (routeName === "Dashboard" && outletId) {
-          await merchant.getAnalytics(outletId, "7d");
+          // Same range the Dashboard opens on ("Today"), plus its action-card counts.
+          await Promise.all([
+            merchant.getAnalytics(outletId, "today"),
+            merchant.getDashboardSummary(outletId),
+          ]);
           return;
         }
         if (routeName === "Menu" && outletId) {

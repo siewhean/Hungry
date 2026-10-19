@@ -1,7 +1,6 @@
 import type {
   CustomerInteraction,
-  DishDetail,
-  MerchantAnalytics,
+  MerchantDashboardSummary,
   MerchantOutlet,
   MerchantPromotion,
 } from "@/types/domain";
@@ -37,13 +36,9 @@ function hasContact(outlet: MerchantOutlet): boolean {
   return hasText(outlet.contactEmail) || hasText(outlet.contactPhone);
 }
 
+/** A floor on its own does not tell diners where the stall is. */
 function hasLocation(outlet: MerchantOutlet): boolean {
-  return hasText(outlet.buildingId) || hasText(outlet.unitNumber) || hasText(outlet.floor);
-}
-
-function menuHasDishImages(menu: DishDetail[]): boolean {
-  if (menu.length === 0) return false;
-  return menu.every((dish) => hasText(dish.imageUrl) || (dish.gallery ?? []).some(hasText));
+  return hasText(outlet.buildingId) || hasText(outlet.unitNumber);
 }
 
 export function formatBusinessType(value: MerchantOutlet["businessType"]): string {
@@ -56,15 +51,19 @@ export function getMerchantOutletStatus(outlet?: MerchantOutlet | null): Merchan
   return "open";
 }
 
+/**
+ * "open" means live on Hungry with no closure notice. Opening hours are free text, so this cannot
+ * say whether the stall is trading right now: the label says "Live", not "Open".
+ */
 export function getMerchantOutletStatusLabel(status: MerchantOutletStatus): string {
-  if (status === "open") return "Open";
+  if (status === "open") return "Live on Hungry";
   if (status === "offline") return "Offline";
   return "Closed";
 }
 
 export function getMerchantProfileGaps(
   outlet: MerchantOutlet,
-  menu: DishDetail[],
+  menu: Pick<MerchantDashboardSummary, "menuCount" | "dishesWithoutImages">,
 ): MerchantProfileGap[] {
   const gaps: MerchantProfileGap[] = [];
 
@@ -77,8 +76,8 @@ export function getMerchantProfileGaps(
   if (!hasLocation(outlet)) gaps.push({ id: "location", label: "Location/address" });
   if (!hasContact(outlet)) gaps.push({ id: "contact", label: "Contact information" });
   if (!hasText(outlet.operatingHours)) gaps.push({ id: "opening-hours", label: "Opening hours" });
-  if (menu.length === 0) gaps.push({ id: "menu-items", label: "Menu items" });
-  if (menu.length > 0 && !menuHasDishImages(menu)) {
+  if (menu.menuCount === 0) gaps.push({ id: "menu-items", label: "Menu items" });
+  if (menu.menuCount > 0 && menu.dishesWithoutImages > 0) {
     gaps.push({ id: "dish-images", label: "Dish images" });
   }
 
@@ -98,23 +97,12 @@ export function getAverageRatingFromReviews(interactions: CustomerInteraction[])
   return ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length;
 }
 
-export function buildMerchantDashboardMetrics(
-  analytics: MerchantAnalytics,
-  interactions: CustomerInteraction[],
-): MerchantAnalytics {
-  const reviewRatings = interactions
-    .filter((interaction) => interaction.type === "review")
-    .map((interaction) => interaction.rating)
-    .filter((rating): rating is number => typeof rating === "number");
-
-  return {
-    ...analytics,
-    averageRating:
-      reviewRatings.length > 0
-        ? reviewRatings.reduce((sum, rating) => sum + rating, 0) / reviewRatings.length
-        : analytics.averageRating,
-    reviewCount: reviewRatings.length || analytics.reviewCount,
-  };
+/** Hour of day (0-23, Singapore time from the analytics RPC) as "12 AM", "9 AM", "12 PM", "3 PM". */
+export function formatPeakHour(hour: number): string {
+  const normalized = ((Math.trunc(hour) % 24) + 24) % 24;
+  const suffix = normalized < 12 ? "AM" : "PM";
+  const twelveHour = normalized % 12 === 0 ? 12 : normalized % 12;
+  return `${twelveHour} ${suffix}`;
 }
 
 export type MetricTrend = "up" | "down" | "flat";
@@ -165,7 +153,7 @@ export function getPromotionPricing(
       originalPrice,
       finalPrice,
       discountPercentage,
-      label: `S$${originalPrice.toFixed(2)} -> S$${finalPrice.toFixed(2)}`,
+      label: `S$${originalPrice.toFixed(2)} → S$${finalPrice.toFixed(2)}`,
     };
   }
 
@@ -173,5 +161,6 @@ export function getPromotionPricing(
     return { discountPercentage, label: `${discountPercentage}% off` };
   }
 
-  return { label: "No price change set" };
+  // No price row: callers hide it rather than show merchant-facing filler to diners.
+  return { label: "" };
 }

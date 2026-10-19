@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, StyleSheet, Pressable } from "react-native";
+import { Alert, View, StyleSheet, Pressable } from "react-native";
 import { Plus, Calendar, Target, BarChart2, X } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -9,6 +9,7 @@ import {
   Button,
   IconButton,
   FilterChipRail,
+  InlineBanner,
   Screen,
   EmptyState,
   StatusChip,
@@ -57,6 +58,27 @@ export function PromotionListScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<PromotionStatus>("active");
+  const updateOutletProfile = useMerchantStore((state) => state.updateOutletProfile);
+  const [isGoingLive, setIsGoingLive] = useState(false);
+
+  // Promotions only reach diners while the stall is shown on Hungry (is_live).
+  const handleGoLive = async () => {
+    if (!activeOutlet) return;
+    setIsGoingLive(true);
+    try {
+      const updated = await getHungryService().merchant.updateBusinessProfile(activeOutlet.id, {
+        isLive: true,
+      });
+      updateOutletProfile(activeOutlet.id, updated);
+    } catch (e) {
+      Alert.alert(
+        "Could not show your stall",
+        e instanceof Error ? e.message : "Please try again.",
+      );
+    } finally {
+      setIsGoingLive(false);
+    }
+  };
 
   const loadPromotions = useCallback(async () => {
     if (!activeOutlet) {
@@ -122,6 +144,21 @@ export function PromotionListScreen() {
       }
     >
       <View style={{ gap: spacing[4], width: "100%" }}>
+        {activeOutlet && !activeOutlet.isLive ? (
+          <View style={{ gap: spacing[2] }}>
+            <InlineBanner
+              tone="warning"
+              message="Not visible to diners: your stall is hidden, so no promotion shows until you turn on Show on Hungry."
+            />
+            <Button
+              label={isGoingLive ? "Turning on..." : "Show on Hungry"}
+              variant="secondary"
+              fullWidth
+              disabled={isGoingLive}
+              onPress={() => void handleGoLive()}
+            />
+          </View>
+        ) : null}
         {/* Filters */}
         <FilterChipRail
           options={PROMOTION_FILTER_OPTIONS}
@@ -169,6 +206,8 @@ export function PromotionListScreen() {
               return (
                 <Pressable
                   key={promo.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Edit promotion ${promo.title}, ${promo.status}`}
                   onPress={() => navigation.navigate("PromotionBuilder", { promotionId: promo.id })}
                   style={[
                     styles.promoCard,
@@ -230,9 +269,11 @@ export function PromotionListScreen() {
                     </View>
                   </View>
 
-                  <AppText variant="bodySmallBold" style={{ marginBottom: spacing[3] }}>
-                    {pricing.label}
-                  </AppText>
+                  {pricing.label ? (
+                    <AppText variant="bodySmallBold" style={{ marginBottom: spacing[3] }}>
+                      {pricing.label}
+                    </AppText>
+                  ) : null}
 
                   {promo.analytics && (
                     <View

@@ -1,5 +1,5 @@
-import React, { useCallback, useState, useEffect } from "react";
-import { View, StyleSheet, Alert, Pressable } from "react-native";
+import React, { useCallback, useState, useEffect, useMemo } from "react";
+import { View, Alert, Pressable } from "react-native";
 import { Camera, Sparkles, X } from "lucide-react-native";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 
@@ -12,6 +12,7 @@ import {
   FormSwitchRow,
   Input,
   Screen,
+  Skeleton,
 } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
@@ -23,9 +24,10 @@ import {
   withDishSection,
 } from "@/features/merchant/menuSections";
 import { ALLERGEN_CHECK_DISCLAIMER } from "@/features/merchant/allergenKeywords";
-import { NEUTRAL_TASTE_VECTOR, TASTE_DIMENSIONS } from "@/constants/taste";
+import { createMerchantDishId, trackMerchantEvent } from "@/features/merchant/merchantTracking";
+import { useUnsavedChangesGuard } from "@/features/merchant/useUnsavedChangesGuard";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
-import type { DietaryFlag, DishDetail, TasteVector } from "@/types/domain";
+import type { DietaryFlag, DishDetail } from "@/types/domain";
 
 type RouteProps = RouteProp<MerchantTabParamList, "DishEditor">;
 
@@ -65,14 +67,10 @@ function errorMessage(error: unknown, fallback: string): string {
   return error instanceof Error && error.message ? error.message : fallback;
 }
 
-function clampTasteValue(value: string): number {
-  const next = Number(value);
-  if (!Number.isFinite(next)) return 0;
-  return Math.min(10, Math.max(0, Math.round(next)));
-}
+const AI_LINK_HIT_SLOP = { top: 12, bottom: 12, left: 12, right: 12 };
 
 export function DishEditorScreen() {
-  const { palette, spacing } = useHungryTheme();
+  const { palette, spacing, radii } = useHungryTheme();
   const navigation = useNavigation();
   const route = useRoute<RouteProps>();
   const dishId = route.params?.dishId;
@@ -86,16 +84,19 @@ export function DishEditorScreen() {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
+  // Ingredients only feed the AI suggestions and the allergen check; they are never saved.
   const [ingredients, setIngredients] = useState("");
-  // Menu-scan taste tags are kept as tags, not shown or saved as ingredients.
-  const [draftTasteTags, setDraftTasteTags] = useState<string[]>([]);
+  // Diner-facing tags, saved as the dish's taste tags.
+  const [tags, setTags] = useState("");
+  // Made once per editor: a retried "Add" saves the dish the first attempt created.
+  const [newDishId] = useState(createMerchantDishId);
+  const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState("");
   const [originalImageUrl, setOriginalImageUrl] = useState("");
   const [section, setSection] = useState("");
   const [existingSections, setExistingSections] = useState<string[]>([]);
   const [otherFlags, setOtherFlags] = useState<string[]>([]);
   const [dietaryFlags, setDietaryFlags] = useState<DietaryFlag[]>([]);
-  const [tasteVector, setTasteVector] = useState<TasteVector>({ ...NEUTRAL_TASTE_VECTOR });
   const [isAvailable, setIsAvailable] = useState(true);
   const [isFeatured, setIsFeatured] = useState(false);
 
@@ -119,7 +120,7 @@ export function DishEditorScreen() {
           setName(draft.name);
           setPrice(draft.price ? draft.price.toFixed(2) : "");
           setDescription(draft.suggestedDescription ?? "");
-          setDraftTasteTags(draft.suggestedTasteTags ?? []);
+          setTags((draft.suggestedTasteTags ?? []).join(", "));
           setDietaryFlags(draft.suggestedDietaryTags ?? []);
         }
         return;
@@ -133,7 +134,7 @@ export function DishEditorScreen() {
         setName(dish.name);
         setPrice(dish.price ? dish.price.toFixed(2) : "");
         setDescription(dish.description ?? "");
-        setIngredients(dish.tasteTags.join(", "));
+        setTags(dish.tasteTags.join(", "));
         setImageUrl(dishImageUrl);
         setOriginalImageUrl(dishImageUrl);
         setSection(getDishSection(dish.availabilityFlags) ?? "");
@@ -144,7 +145,6 @@ export function DishEditorScreen() {
           ),
         );
         setDietaryFlags(dish.dietaryFlags ?? []);
-        setTasteVector(dish.tasteVector ?? { ...NEUTRAL_TASTE_VECTOR });
         setIsAvailable(!hasAvailabilityFlag(dish.availabilityFlags, "sold_out"));
         setIsFeatured(hasAvailabilityFlag(dish.availabilityFlags, "featured"));
       }
@@ -158,6 +158,29 @@ export function DishEditorScreen() {
   useEffect(() => {
     void loadDish();
   }, [loadDish]);
+
+  const formSnapshot = useMemo(
+    () =>
+      JSON.stringify([
+        name,
+        price,
+        description,
+        tags,
+        imageUrl,
+        section,
+        dietaryFlags,
+        isAvailable,
+        isFeatured,
+      ]),
+    [name, price, description, tags, imageUrl, section, dietaryFlags, isAvailable, isFeatured],
+  );
+  // The first snapshot after loading is the saved state; anything else is an unsaved edit.
+  useEffect(() => {
+    if (!isLoading && savedSnapshot === null) setSavedSnapshot(formSnapshot);
+  }, [formSnapshot, isLoading, savedSnapshot]);
+  const isDirty = savedSnapshot !== null && savedSnapshot !== formSnapshot && !isSaving;
+  const leaveEditor = useCallback(() => navigation.goBack(), [navigation]);
+  const confirmLeave = useUnsavedChangesGuard(isDirty, leaveEditor);
 
   const handleSave = async () => {
     if (!activeOutlet) return;
@@ -184,8 +207,7 @@ export function DishEditorScreen() {
         ...(imageChanged || !dishId
           ? { imageUrl: trimmedImageUrl, gallery: trimmedImageUrl ? [trimmedImageUrl] : [] }
           : {}),
-        tasteTags: Array.from(new Set([...draftTasteTags, ...parseCommaSeparated(ingredients)])),
-        tasteVector,
+        tasteTags: parseCommaSeparated(tags),
         dietaryFlags,
         availabilityFlags: withDishSection(
           [
@@ -199,11 +221,17 @@ export function DishEditorScreen() {
 
       if (dishId) {
         await getHungryService().merchant.editDish(activeOutlet.id, dishId, updates);
+        trackMerchantEvent("merchant_dish_updated", activeOutlet.id);
       } else if (ocrDraftId) {
         await getHungryService().merchant.acceptOCRDraft(ocrDraftId, updates);
+        trackMerchantEvent("merchant_ocr_draft_accepted", activeOutlet.id, { edited: true });
       } else {
-        await getHungryService().merchant.addDish(activeOutlet.id, updates);
+        await getHungryService().merchant.addDish(activeOutlet.id, { ...updates, id: newDishId });
+        trackMerchantEvent("merchant_dish_created", activeOutlet.id, {
+          has_photo: Boolean(trimmedImageUrl),
+        });
       }
+      setSavedSnapshot(formSnapshot);
 
       Alert.alert(
         dishId ? "Dish updated" : "Dish added",
@@ -219,6 +247,29 @@ export function DishEditorScreen() {
     }
   };
 
+  const handleDelete = () => {
+    if (!activeOutlet || !dishId) return;
+    Alert.alert("Delete Dish", `Are you sure you want to delete ${name || "this dish"}?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          setIsSaving(true);
+          try {
+            await getHungryService().merchant.deleteDish(activeOutlet.id, dishId);
+            trackMerchantEvent("merchant_dish_deleted", activeOutlet.id);
+            navigation.goBack();
+          } catch (e) {
+            Alert.alert("Could not delete dish", errorMessage(e, "Please try again."));
+          } finally {
+            setIsSaving(false);
+          }
+        },
+      },
+    ]);
+  };
+
   const handleGenerateDescription = async () => {
     if (!name) {
       Alert.alert("Notice", "Please enter a dish name first.");
@@ -230,6 +281,7 @@ export function DishEditorScreen() {
         parseCommaSeparated(ingredients),
       );
       setDescription(generated);
+      trackMerchantEvent("merchant_ai_suggestion_used", activeOutlet?.id, { kind: "description" });
     } catch (e) {
       Alert.alert("Suggestion unavailable", errorMessage(e, "Please try again."));
     }
@@ -245,6 +297,7 @@ export function DishEditorScreen() {
       setIngredients((current) =>
         Array.from(new Set([...parseCommaSeparated(current), ...suggestions])).join(", "),
       );
+      trackMerchantEvent("merchant_ai_suggestion_used", activeOutlet?.id, { kind: "ingredients" });
     } catch (e) {
       Alert.alert("Suggestion unavailable", errorMessage(e, "Please try again."));
     }
@@ -257,10 +310,11 @@ export function DishEditorScreen() {
     }
     try {
       const suggestions = await getHungryService().merchant.suggestTags(name, description);
-      // Merge rather than overwrite so typed ingredients are kept.
-      setIngredients((current) =>
+      // Merge rather than overwrite so typed tags are kept.
+      setTags((current) =>
         Array.from(new Set([...parseCommaSeparated(current), ...suggestions])).join(", "),
       );
+      trackMerchantEvent("merchant_ai_suggestion_used", activeOutlet?.id, { kind: "tags" });
     } catch (e) {
       Alert.alert("Suggestion unavailable", errorMessage(e, "Please try again."));
     }
@@ -293,14 +347,15 @@ export function DishEditorScreen() {
     );
   };
 
-  const handleTasteVectorChange = (key: keyof TasteVector, value: string) => {
-    setTasteVector((current) => ({ ...current, [key]: clampTasteValue(value) }));
-  };
-
   if (isLoading) {
     return (
-      <Screen title="Loading...">
-        <AppText>Fetching dish details...</AppText>
+      <Screen title={dishId ? "Edit Dish" : "Add Dish"}>
+        <View accessibilityLabel="Loading dish details" style={{ gap: spacing[4], width: "100%" }}>
+          <Skeleton height={56} borderRadius={radii.lg} />
+          <Skeleton height={56} borderRadius={radii.lg} />
+          <Skeleton height={160} borderRadius={radii.lg} />
+          <Skeleton height={56} borderRadius={radii.lg} />
+        </View>
       </Screen>
     );
   }
@@ -322,7 +377,7 @@ export function DishEditorScreen() {
   }
 
   return (
-    <Screen title={dishId ? "Edit Dish" : "Add Dish"}>
+    <Screen title={dishId ? "Edit Dish" : "Add Dish"} onBackPress={confirmLeave}>
       <View style={{ gap: spacing[5], width: "100%" }}>
         <View>
           <Input
@@ -345,6 +400,7 @@ export function DishEditorScreen() {
 
         <MerchantImageField
           label="Dish Photo"
+          rationale="Hungry needs access to your photo library to add a photo of this dish."
           value={imageUrl}
           onChange={setImageUrl}
           isSaving={isSaving}
@@ -371,26 +427,6 @@ export function DishEditorScreen() {
         </View>
 
         <View>
-          <AppText variant="bodyBold" style={{ marginBottom: spacing[2] }}>
-            Taste Profile
-          </AppText>
-          <View style={[styles.tasteGrid, { gap: spacing[2] }]}>
-            {TASTE_DIMENSIONS.map((dimension) => (
-              <View key={dimension.key} style={{ flexBasis: "31%", flexGrow: 1 }}>
-                <Input
-                  label={dimension.label}
-                  value={String(tasteVector[dimension.key])}
-                  onChangeText={(value) => handleTasteVectorChange(dimension.key, value)}
-                  keyboardType="number-pad"
-                  maxLength={2}
-                  placeholder="0-10"
-                />
-              </View>
-            ))}
-          </View>
-        </View>
-
-        <View>
           <View
             style={{
               flexDirection: "row",
@@ -399,10 +435,13 @@ export function DishEditorScreen() {
               marginBottom: spacing[2],
             }}
           >
-            <AppText variant="bodyBold">Ingredients & Tags</AppText>
+            <AppText variant="bodyBold">Ingredients</AppText>
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Suggest ingredients"
+              hitSlop={AI_LINK_HIT_SLOP}
               onPress={handleSuggestIngredients}
-              style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+              style={{ flexDirection: "row", alignItems: "center", gap: 4, minHeight: 44 }}
             >
               <Sparkles size={14} color={palette.orange} />
               <AppText variant="micro" style={{ color: palette.orange, fontWeight: "bold" }}>
@@ -410,7 +449,11 @@ export function DishEditorScreen() {
               </AppText>
             </Pressable>
           </View>
+          <AppText variant="bodySmall" tone="muted" style={{ marginBottom: spacing[2] }}>
+            Used for suggestions and the allergen check only. Not shown to diners.
+          </AppText>
           <Input
+            accessibilityLabel="Ingredients"
             value={ingredients}
             onChangeText={setIngredients}
             placeholder="Comma separated (e.g. noodles, pork, wonton)"
@@ -422,6 +465,22 @@ export function DishEditorScreen() {
             fullWidth={false}
             onPress={handleSuggestAllergens}
             style={{ marginTop: spacing[2] }}
+          />
+        </View>
+
+        <View>
+          <AppText variant="bodyBold" style={{ marginBottom: spacing[2] }}>
+            Tags
+          </AppText>
+          <AppText variant="bodySmall" tone="muted" style={{ marginBottom: spacing[2] }}>
+            Shown to diners on the dish, e.g. spicy, comfort food.
+          </AppText>
+          <Input
+            accessibilityLabel="Tags"
+            value={tags}
+            onChangeText={setTags}
+            placeholder="Comma separated (e.g. spicy, springy noodles)"
+            multiline
           />
           <Button
             label="Suggest taste tags"
@@ -460,8 +519,11 @@ export function DishEditorScreen() {
           >
             <AppText variant="bodyBold">Description</AppText>
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Draft description"
+              hitSlop={AI_LINK_HIT_SLOP}
               onPress={handleGenerateDescription}
-              style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+              style={{ flexDirection: "row", alignItems: "center", gap: 4, minHeight: 44 }}
             >
               <Sparkles size={14} color={palette.orange} />
               <AppText variant="micro" style={{ color: palette.orange, fontWeight: "bold" }}>
@@ -500,14 +562,16 @@ export function DishEditorScreen() {
           disabled={isSaving}
           style={{ marginTop: spacing[4] }}
         />
+        {dishId ? (
+          <Button
+            label="Delete Dish"
+            variant="destructive"
+            fullWidth
+            onPress={handleDelete}
+            disabled={isSaving}
+          />
+        ) : null}
       </View>
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  tasteGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
-});

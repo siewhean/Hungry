@@ -689,6 +689,20 @@ export interface MerchantAnalytics {
   };
 }
 
+/** Counts behind the merchant dashboard's action cards, from one call. */
+export interface MerchantDashboardSummary {
+  menuCount: number;
+  dishesWithoutImages: number;
+  unrepliedReviews: number;
+  latestReview?: {
+    id: string;
+    authorName: string;
+    rating?: number;
+    text: string;
+    createdAt: string;
+  };
+}
+
 export type PromotionStatus = "draft" | "scheduled" | "active" | "ended";
 
 // ─── Checklist Types ──────────────────────────────────────────────────────────

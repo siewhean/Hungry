@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { View, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { Camera, Image as ImageIcon } from "lucide-react-native";
 import { useForm, Controller } from "react-hook-form";
@@ -11,6 +11,7 @@ import {
   AccessibleImage,
   AppText,
   Button,
+  ChipGroup,
   EmptyState,
   FormSwitchRow,
   Input,
@@ -23,6 +24,8 @@ import { getDataRepository, getHungryService } from "@/lib/services/serviceProvi
 import type { MerchantOutlet, LocationPrivacy } from "@/types/domain";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { formatBusinessType } from "@/features/merchant/merchantReadiness";
+import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
+import { useUnsavedChangesGuard } from "@/features/merchant/useUnsavedChangesGuard";
 
 type NavigationProp = NativeStackNavigationProp<MerchantTabParamList, "BusinessProfileEditor">;
 
@@ -40,8 +43,6 @@ type FormData = {
   coverPhotoUrl: string;
   contactPhone: string;
   contactEmail: string;
-  dietaryLabels: string;
-  tasteTags: string;
   websiteUrl: string;
   instagramUrl: string;
   facebookUrl: string;
@@ -64,8 +65,39 @@ const LINK_FIELDS = [
   },
 ] as const;
 
+function toFormData(outlet: MerchantOutlet): FormData {
+  return {
+    name: outlet.name || "",
+    description: outlet.description || "",
+    businessType: outlet.businessType || "hawker_stall",
+    cuisineCategories: outlet.cuisineCategories?.join(", ") || "",
+    unitNumber: outlet.unitNumber || "",
+    floor: outlet.floor || "",
+    locationPrivacy: toHomeBasedPrivacy(outlet.locationPrivacy),
+    operatingHours: outlet.operatingHours || "",
+    temporaryClosure: outlet.temporaryClosure || "",
+    profilePhotoUrl: outlet.profilePhotoUrl || "",
+    coverPhotoUrl: outlet.coverPhotoUrl || "",
+    contactPhone: outlet.contactPhone || "",
+    contactEmail: outlet.contactEmail || "",
+    websiteUrl: findLink(outlet.socialLinks, "website"),
+    instagramUrl: findLink(outlet.socialLinks, "instagram"),
+    facebookUrl: findLink(outlet.socialLinks, "facebook"),
+    isLive: outlet.isLive,
+  };
+}
+
 function findLink(links: MerchantOutlet["socialLinks"] | undefined, platform: string): string {
   return links?.find((link) => link.platform.toLowerCase() === platform)?.url ?? "";
+}
+
+const HOME_BASED_PRIVACY_OPTIONS: { id: Exclude<LocationPrivacy, "exact">; label: string }[] = [
+  { id: "approximate", label: "Approximate area" },
+  { id: "hidden", label: "Hidden" },
+];
+
+function toHomeBasedPrivacy(value: LocationPrivacy | undefined): Exclude<LocationPrivacy, "exact"> {
+  return value === "hidden" ? "hidden" : "approximate";
 }
 
 const BUSINESS_TYPE_OPTIONS: MerchantOutlet["businessType"][] = [
@@ -110,8 +142,9 @@ export function BusinessProfileEditorScreen() {
   const {
     control,
     handleSubmit,
-    setValue,
-    formState: { isSubmitting, errors },
+    reset,
+    watch,
+    formState: { isSubmitting, isDirty, errors },
   } = useForm<FormData>({
     defaultValues: {
       name: "",
@@ -120,15 +153,13 @@ export function BusinessProfileEditorScreen() {
       cuisineCategories: "",
       unitNumber: "",
       floor: "",
-      locationPrivacy: "exact",
+      locationPrivacy: "approximate",
       operatingHours: "",
       temporaryClosure: "",
       profilePhotoUrl: "",
       coverPhotoUrl: "",
       contactPhone: "",
       contactEmail: "",
-      dietaryLabels: "",
-      tasteTags: "",
       websiteUrl: "",
       instagramUrl: "",
       facebookUrl: "",
@@ -136,29 +167,20 @@ export function BusinessProfileEditorScreen() {
     },
   });
 
+  const businessType = watch("businessType");
+
+  // Seed once per outlet. A background account sync hands back a new outlet object with the
+  // same id: re-seed only while the form is untouched, so it never wipes the merchant's edits.
+  const seededOutletId = useRef<string | null>(null);
   useEffect(() => {
-    if (activeOutlet) {
-      setValue("name", activeOutlet.name || "");
-      setValue("description", activeOutlet.description || "");
-      setValue("businessType", activeOutlet.businessType || "hawker_stall");
-      setValue("cuisineCategories", activeOutlet.cuisineCategories?.join(", ") || "");
-      setValue("unitNumber", activeOutlet.unitNumber || "");
-      setValue("floor", activeOutlet.floor || "");
-      setValue("locationPrivacy", activeOutlet.locationPrivacy || "exact");
-      setValue("operatingHours", activeOutlet.operatingHours || "");
-      setValue("temporaryClosure", activeOutlet.temporaryClosure || "");
-      setValue("profilePhotoUrl", activeOutlet.profilePhotoUrl || "");
-      setValue("coverPhotoUrl", activeOutlet.coverPhotoUrl || "");
-      setValue("contactPhone", activeOutlet.contactPhone || "");
-      setValue("contactEmail", activeOutlet.contactEmail || "");
-      setValue("dietaryLabels", activeOutlet.dietaryLabels?.join(", ") || "");
-      setValue("tasteTags", activeOutlet.tasteTags?.join(", ") || "");
-      LINK_FIELDS.forEach(({ field, platform }) =>
-        setValue(field, findLink(activeOutlet.socialLinks, platform)),
-      );
-      setValue("isLive", activeOutlet.isLive);
-    }
-  }, [activeOutlet, setValue]);
+    if (!activeOutlet) return;
+    if (seededOutletId.current === activeOutlet.id && isDirty) return;
+    seededOutletId.current = activeOutlet.id;
+    reset(toFormData(activeOutlet));
+  }, [activeOutlet, isDirty, reset]);
+
+  const leaveEditor = useCallback(() => navigation.goBack(), [navigation]);
+  const confirmLeave = useUnsavedChangesGuard(isDirty && !isSubmitting, leaveEditor);
 
   const onSubmit = async (data: FormData) => {
     if (!activeOutlet) return;
@@ -184,7 +206,10 @@ export function BusinessProfileEditorScreen() {
           .filter(Boolean),
         unitNumber: data.unitNumber,
         floor: data.floor,
-        locationPrivacy: data.locationPrivacy,
+        // Location privacy only applies to home-based businesses (never exact for them).
+        ...(data.businessType === "home_based"
+          ? { locationPrivacy: toHomeBasedPrivacy(data.locationPrivacy) }
+          : {}),
         operatingHours: data.operatingHours,
         temporaryClosure: data.temporaryClosure,
         profilePhotoUrl,
@@ -192,14 +217,6 @@ export function BusinessProfileEditorScreen() {
         galleryUrls,
         contactPhone: data.contactPhone,
         contactEmail: data.contactEmail,
-        dietaryLabels: data.dietaryLabels
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean) as any,
-        tasteTags: data.tasteTags
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
         socialLinks: [
           ...activeOutlet.socialLinks.filter(
             (link) => !LINK_FIELDS.some(({ platform }) => platform === link.platform.toLowerCase()),
@@ -216,14 +233,17 @@ export function BusinessProfileEditorScreen() {
         activeOutlet.id,
         updates,
       );
+      // Saved: the next outlet object re-seeds the form, clearing the unsaved-changes guard.
+      reset(data);
       updateOutletProfile(activeOutlet.id, updated);
+      trackMerchantEvent("merchant_profile_updated", activeOutlet.id, { is_live: data.isLive });
       Alert.alert(
         "Saved",
         !data.isLive
           ? 'Your profile is saved. Turn on "Show on Hungry" when you want diners to see it.'
           : activeOutlet.verification?.status === "verified"
             ? "Your changes are live for diners now."
-            : "Your profile is saved and visible. Photos appear once Hungry verifies your stall.",
+            : "Your profile is saved. Diners will see it once Hungry verifies your stall.",
       );
       navigation.goBack();
     } catch (error) {
@@ -271,6 +291,7 @@ export function BusinessProfileEditorScreen() {
   return (
     <Screen
       title="Business Profile"
+      onBackPress={confirmLeave}
       contentContainerStyle={{ paddingBottom: spacing[6] }}
       headerRight={
         <TouchableOpacity
@@ -376,6 +397,7 @@ export function BusinessProfileEditorScreen() {
               render={({ field: { onChange, value } }) => (
                 <MerchantImageField
                   label="Profile Image"
+                  rationale="Hungry needs access to your photo library to upload your stall's profile image."
                   value={value}
                   onChange={onChange}
                   isSaving={isUploadingImages}
@@ -390,6 +412,7 @@ export function BusinessProfileEditorScreen() {
               render={({ field: { onChange, value } }) => (
                 <MerchantImageField
                   label="Cover Image"
+                  rationale="Hungry needs access to your photo library to upload your stall's cover image."
                   value={value}
                   onChange={onChange}
                   isSaving={isUploadingImages}
@@ -416,38 +439,6 @@ export function BusinessProfileEditorScreen() {
                   onChangeText={onChange}
                   value={value}
                   placeholder="e.g. Chinese, Noodles (comma-separated)"
-                />
-              )}
-            />
-          </View>
-
-          <View>
-            <Controller
-              control={control}
-              name="dietaryLabels"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input
-                  label="Dietary Labels"
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  value={value}
-                  placeholder="e.g. halal, pork_free, vegetarian"
-                />
-              )}
-            />
-          </View>
-
-          <View>
-            <Controller
-              control={control}
-              name="tasteTags"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input
-                  label="Taste Tags"
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  value={value}
-                  placeholder="e.g. Spicy, Savoury, Wok Hei"
                 />
               )}
             />
@@ -524,18 +515,26 @@ export function BusinessProfileEditorScreen() {
             />
           </View>
 
-          <Controller
-            control={control}
-            name="locationPrivacy"
-            render={({ field: { onChange, value } }) => (
-              <FormSwitchRow
-                label="Exact Location Privacy"
-                description="Turn off to hide your exact unit number and floor (useful for home-based businesses)."
-                value={value === "exact"}
-                onValueChange={(val) => onChange(val ? "exact" : "hidden")}
+          {businessType === "home_based" ? (
+            <View style={{ gap: spacing[2] }}>
+              <AppText variant="bodySmallBold">Location shown to diners</AppText>
+              <Controller
+                control={control}
+                name="locationPrivacy"
+                render={({ field: { onChange, value } }) => (
+                  <ChipGroup
+                    options={HOME_BASED_PRIVACY_OPTIONS}
+                    selectedId={toHomeBasedPrivacy(value)}
+                    onSelect={onChange}
+                  />
+                )}
               />
-            )}
-          />
+              <AppText variant="bodySmall" tone="muted">
+                Home-based businesses never show a unit number, floor or exact pin. Hidden also
+                removes the street address.
+              </AppText>
+            </View>
+          ) : null}
         </View>
 
         <View style={{ gap: spacing[4] }}>

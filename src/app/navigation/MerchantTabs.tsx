@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, StyleSheet, ActivityIndicator } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { CommonActions, useNavigation, useRoute } from "@react-navigation/native";
 import type { NavigationProp } from "@react-navigation/native";
 import { LayoutDashboard, UtensilsCrossed, BarChart3, Store } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -23,6 +23,63 @@ const MERCHANT_ACCOUNT_SYNC_TTL_MS = 5 * 60 * 1000;
 
 type MerchantRouteName = keyof MerchantTabParamList;
 
+/** One access level for the navigator and every screen gate; honours the developer bypass. */
+function useMerchantAccessLevel() {
+  const account = useMerchantStore((state) => state.account);
+  const developerMerchantMode = useMerchantStore((state) => state.developerMerchantMode);
+  const activeOutlet = useMerchantStore(getActiveOutlet);
+  return developerMerchantMode
+    ? "verified"
+    : resolveMerchantAccess(Boolean(account), activeOutlet?.verification.status);
+}
+
+/** The single "not a merchant" screen, shared by the navigator and the per-screen gate. */
+function MerchantSignInGate({
+  rootNavigation,
+}: {
+  rootNavigation?: NavigationProp<RootStackParamList>;
+}) {
+  const { spacing } = useHungryTheme();
+  const setAccount = useMerchantStore((state) => state.setAccount);
+  const completeAuth = useSessionStore((state) => state.completeAuth);
+  const isMock = getServiceProvider().mode === "mock";
+
+  const handleMockLogin = async () => {
+    try {
+      const mockAccount = await getHungryService().merchant.getMerchantAccount();
+      setAccount(mockAccount);
+      completeAuth({ completedOnboarding: true, skippedTasteQuiz: true });
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  return (
+    <Screen title="Merchant Centre" subtitle="Business tools are not available for this account">
+      <View style={[styles.accessGate, { padding: spacing[5], gap: spacing[4] }]}>
+        <AppText variant="body" tone="muted" style={{ textAlign: "center" }}>
+          Sign in with a merchant account to manage your menu, promotions, and analytics.
+        </AppText>
+        <View style={{ width: "100%", gap: spacing[2] }}>
+          <Button
+            label="Sign In"
+            onPress={() => rootNavigation?.navigate("AuthStack", { screen: "Login" })}
+            fullWidth
+          />
+          {isMock && (
+            <Button
+              label="Sign In as Mock Merchant"
+              variant="secondary"
+              onPress={handleMockLogin}
+              fullWidth
+            />
+          )}
+        </View>
+      </View>
+    </Screen>
+  );
+}
+
 function MerchantAccessGate({
   routeName,
   children,
@@ -33,53 +90,11 @@ function MerchantAccessGate({
   const { spacing } = useHungryTheme();
   const navigation = useNavigation<NavigationProp<MerchantTabParamList>>();
   const rootNavigation = navigation.getParent<NavigationProp<RootStackParamList>>();
-  const account = useMerchantStore((state) => state.account);
-  const setAccount = useMerchantStore((state) => state.setAccount);
-  const activeOutlet = useMerchantStore(getActiveOutlet);
-  const access = resolveMerchantAccess(Boolean(account), activeOutlet?.verification.status);
-
-  const completeAuth = useSessionStore((state) => state.completeAuth);
-
-  const handleMockLogin = async () => {
-    try {
-      // 1. Fetch mock account
-      const mock = await getHungryService().merchant.getMerchantAccount();
-      setAccount(mock);
-
-      // 2. Set user session to authenticated
-      completeAuth({ completedOnboarding: true, skippedTasteQuiz: true });
-    } catch (e) {
-      console.error(e);
-    }
-  };
+  const access = useMerchantAccessLevel();
+  const signOut = useSessionStore((state) => state.signOut);
 
   if (access === "none") {
-    const isMock = getServiceProvider().mode === "mock";
-
-    return (
-      <Screen title="Merchant Centre" subtitle="Business tools are not available for this account">
-        <View style={[styles.accessGate, { padding: spacing[5], gap: spacing[4] }]}>
-          <AppText variant="body" tone="muted" style={{ textAlign: "center" }}>
-            Sign in with a merchant account to manage your menu, promotions, and analytics.
-          </AppText>
-          <View style={{ width: "100%", gap: spacing[2] }}>
-            <Button
-              label="Sign In"
-              onPress={() => rootNavigation?.navigate("AuthStack", { screen: "Login" })}
-              fullWidth
-            />
-            {isMock && (
-              <Button
-                label="Sign In as Mock Merchant"
-                variant="secondary"
-                onPress={handleMockLogin}
-                fullWidth
-              />
-            )}
-          </View>
-        </View>
-      </Screen>
-    );
+    return <MerchantSignInGate rootNavigation={rootNavigation} />;
   }
 
   if (access === "unverified" && verifiedOnlyScreens.has(routeName)) {
@@ -87,12 +102,49 @@ function MerchantAccessGate({
       <Screen title="Verification required" subtitle="Complete verification to use this section">
         <View style={[styles.accessGate, { padding: spacing[5], gap: spacing[3] }]}>
           <AppText variant="body" tone="muted" style={{ textAlign: "center" }}>
-            Verified merchants can manage menus, promotions, inbox replies, analytics, and settings.
+            Verified merchants can manage menus, promotions, inbox replies and analytics. You can
+            already set up your stall profile while Hungry reviews your verification.
           </AppText>
-          <Button
-            label="Open verification"
-            onPress={() => navigation.navigate("VerificationCentre")}
-          />
+          <View style={{ width: "100%", gap: spacing[2] }}>
+            <Button
+              label="Open verification"
+              onPress={() => navigation.navigate("VerificationCentre")}
+              fullWidth
+            />
+            <Button
+              label="Set up stall profile"
+              variant="secondary"
+              onPress={() => navigation.navigate("Profile")}
+              fullWidth
+            />
+            {/* Always-available exits: an unverified merchant is never trapped here. */}
+            <Button
+              label="Switch to Customer Mode"
+              variant="secondary"
+              onPress={() => {
+                useMerchantStore.getState().setMerchantModeActive(false);
+                rootNavigation?.dispatch(
+                  CommonActions.reset({
+                    index: 0,
+                    routes: [{ name: "MainTabs", params: { screen: "Home" } }],
+                  }),
+                );
+              }}
+              fullWidth
+            />
+            <Button
+              label="Sign Out"
+              variant="ghost"
+              onPress={() => {
+                signOut();
+                rootNavigation?.reset({
+                  index: 0,
+                  routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+                });
+              }}
+              fullWidth
+            />
+          </View>
         </View>
       </Screen>
     );
@@ -304,6 +356,37 @@ function MerchantTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   );
 }
 
+/**
+ * Editors are hidden tabs that stay mounted. Remount on every open (new params, or after
+ * leaving) so "Add dish" / "New promotion" never start with the last form's values.
+ */
+function FreshEditorLayout({
+  navigation,
+  route,
+  children,
+}: {
+  navigation: { addListener: (event: "blur", callback: () => void) => () => void };
+  route: { params?: object };
+  children: React.ReactElement;
+}) {
+  const [openCount, setOpenCount] = useState(0);
+  useEffect(
+    () => navigation.addListener("blur", () => setOpenCount((count) => count + 1)),
+    [navigation],
+  );
+  return (
+    <React.Fragment key={`${openCount}:${JSON.stringify(route.params ?? null)}`}>
+      {children}
+    </React.Fragment>
+  );
+}
+
+// Navigators call `layout` as a plain function during their own render, so wrap it in an
+// element; otherwise FreshEditorLayout's hooks would run inside the tab navigator.
+const renderFreshEditorLayout = (props: React.ComponentProps<typeof FreshEditorLayout>) => (
+  <FreshEditorLayout {...props} />
+);
+
 export function MerchantTabs() {
   const { palette, spacing } = useHungryTheme();
   const navigation = useNavigation<NavigationProp<MerchantTabParamList>>();
@@ -316,7 +399,6 @@ export function MerchantTabs() {
   const activeOutlet = useMerchantStore(getActiveOutlet);
   const setAccount = useMerchantStore((state) => state.setAccount);
   const setMerchantModeActive = useMerchantStore((state) => state.setMerchantModeActive);
-  const completeAuth = useSessionStore((state) => state.completeAuth);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
 
   // Merchant mode lasts only while the Merchant Centre is open; leaving it returns customer mode.
@@ -334,9 +416,7 @@ export function MerchantTabs() {
   }, [navigation, routeKey, setMerchantModeActive]);
 
   const [isSyncingAccount, setIsSyncingAccount] = useState(!account);
-  const access = developerMerchantMode
-    ? "verified"
-    : resolveMerchantAccess(Boolean(account), activeOutlet?.verification.status);
+  const access = useMerchantAccessLevel();
 
   useEffect(() => {
     let isMounted = true;
@@ -390,16 +470,6 @@ export function MerchantTabs() {
     };
   }, [account, accountSyncedAt, activeOutlet, developerMerchantMode, setAccount, isAuthenticated]);
 
-  const handleMockLogin = async () => {
-    try {
-      const mockAccount = await getHungryService().merchant.getMerchantAccount();
-      setAccount(mockAccount);
-      completeAuth({ completedOnboarding: true, skippedTasteQuiz: true });
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
   if (isSyncingAccount) {
     return (
       <Screen title="Merchant Centre">
@@ -420,32 +490,7 @@ export function MerchantTabs() {
   // ─── Access Gate ───────────────────────────────────────────────────────────
 
   if (access === "none") {
-    const isMock = getServiceProvider().mode === "mock";
-
-    return (
-      <Screen title="Merchant Centre" subtitle="Business tools are not available for this account">
-        <View style={[styles.accessGate, { padding: spacing[5], gap: spacing[4] }]}>
-          <AppText variant="body" tone="muted" style={{ textAlign: "center" }}>
-            Sign in with a merchant account to manage your menu, promotions, and analytics.
-          </AppText>
-          <View style={{ width: "100%", gap: spacing[2] }}>
-            <Button
-              label="Sign In"
-              onPress={() => rootNavigation?.navigate("AuthStack", { screen: "Login" })}
-              fullWidth
-            />
-            {isMock && (
-              <Button
-                label="Sign In as Mock Merchant"
-                variant="secondary"
-                onPress={handleMockLogin}
-                fullWidth
-              />
-            )}
-          </View>
-        </View>
-      </Screen>
-    );
+    return <MerchantSignInGate rootNavigation={rootNavigation} />;
   }
 
   // ─── Main Navigator ────────────────────────────────────────────────────────
@@ -456,6 +501,8 @@ export function MerchantTabs() {
       initialRouteName={access === "verified" ? "Dashboard" : "VerificationCentre"}
       tabBar={(props: BottomTabBarProps) => <MerchantTabBar {...props} />}
       screenOptions={{ headerShown: false }}
+      // Detail routes are hidden tabs: Back returns to the screen that opened them.
+      backBehavior="history"
     >
       <Tab.Screen name="Dashboard" getComponent={loadMerchantDashboardScreen} />
       <Tab.Screen name="Menu" getComponent={loadMerchantMenuScreen} />
@@ -490,6 +537,7 @@ export function MerchantTabs() {
         name="DishEditor"
         getComponent={loadDishEditorScreen}
         options={{ tabBarStyle: { display: "none" } }}
+        layout={renderFreshEditorLayout}
       />
       <Tab.Screen
         name="OCRDrafts"
@@ -505,6 +553,7 @@ export function MerchantTabs() {
         name="PromotionBuilder"
         getComponent={loadPromotionBuilderScreen}
         options={{ tabBarStyle: { display: "none" } }}
+        layout={renderFreshEditorLayout}
       />
       <Tab.Screen
         name="AIAssistant"

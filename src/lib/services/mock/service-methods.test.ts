@@ -535,7 +535,8 @@ test("merchant profile updates are visible from mock user venue reads", async ()
   await hungryService.merchant.updateBusinessProfile(outletId, {
     name: "Uncle Tan's Wonton Mee",
     operatingHours: "7:00 AM – 3:00 PM",
-    temporaryClosure: undefined,
+    // Empty clears the notice; undefined means "leave unchanged", as in Supabase.
+    temporaryClosure: "",
   });
 });
 
