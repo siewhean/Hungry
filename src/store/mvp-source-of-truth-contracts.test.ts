@@ -234,8 +234,7 @@ test("signed-in onboarding merges guest taste and dietary choices into the Supab
   assert.match(onboardingAuth, /completedOnboarding: true/);
   assert.match(emailVerification, /import \{ applySignedInProfile \}/);
   assert.match(emailVerification, /applySignedInProfile\(session\.profile/);
-  assert.match(emailVerification, /completedOnboarding: shouldCompleteOnboarding/);
-  assert.match(emailVerification, /completeOnboarding\(\)/);
+  assert.match(emailVerification, /completeVerifiedSignUp\(shouldCompleteOnboarding\)/);
   assert.match(login, /import \{ applySignedInProfile \}/);
   assert.match(signUp, /import \{ applySignedInProfile \}/);
   assert.match(mergeHelper, /function hasMeaningfulGuestTaste/);

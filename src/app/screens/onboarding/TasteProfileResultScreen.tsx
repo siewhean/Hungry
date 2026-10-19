@@ -70,6 +70,16 @@ export function TasteProfileResultScreen({ navigation }: Props) {
     };
   }, []);
 
+  // A guest's save tap opens sign-in; the dish is saved once they return signed in.
+  const [pendingSaveDish, setPendingSaveDish] = useState<(typeof dishes)[number] | null>(null);
+  useEffect(() => {
+    if (!isAuthenticated || !pendingSaveDish) return;
+    setPendingSaveDish(null);
+    if (!useProfileStore.getState().profile.favouriteDishIds.includes(pendingSaveDish.id)) {
+      toggleFavourite(pendingSaveDish);
+    }
+  }, [isAuthenticated, pendingSaveDish, toggleFavourite]);
+
   return (
     <View style={{ backgroundColor: palette.bg, flex: 1 }}>
       <ScrollView
@@ -151,6 +161,7 @@ export function TasteProfileResultScreen({ navigation }: Props) {
                           message: "Create or sign in to an account before saving dishes.",
                           tone: "warning",
                         });
+                        setPendingSaveDish(dish);
                         navigation.navigate("OnboardingAuth");
                       }}
                       hitSlop={8}

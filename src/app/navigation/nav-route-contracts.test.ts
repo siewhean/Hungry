@@ -98,7 +98,9 @@ test("onboarding is about four steps: welcome, location, optional taste quiz, do
   assert.match(quiz, /setSkippedTasteQuiz\(true\);\s*navigation\.navigate\("TasteProfileResult"\)/);
   assert.doesNotMatch(quiz, /navigation\.navigate\("LocationPermission"\)/);
 
-  // Only the done step completes onboarding, then resets to Home.
+  // The done step completes onboarding, then resets to Home. The only other exit is
+  // a guest who signs up from OnboardingAuth and confirms their email: the stack is
+  // reset to EmailVerification, which completes onboarding (completeVerifiedSignUp).
   for (const source of [welcome, location, picker, quiz, onboardingAuth]) {
     assert.doesNotMatch(source, /completeOnboarding/);
   }
@@ -106,10 +108,22 @@ test("onboarding is about four steps: welcome, location, optional taste quiz, do
     done,
     /completeOnboarding\(hasSkippedTasteQuiz\);\s*navigation\.getParent<NavigationProp<RootStackParamList>>\(\)\?\.reset\(\{\s*index: 0,\s*routes: \[\{ name: "MainTabs", params: \{ screen: "Home" \} \}\],/,
   );
+  assert.match(
+    onboardingAuth,
+    /screen: "EmailVerification",\s*params: \{ email: values\.email, completedOnboarding: true \}/,
+  );
+  assert.match(
+    read("src/app/screens/auth/EmailVerificationScreen.tsx"),
+    /completeVerifiedSignUp\(shouldCompleteOnboarding\)/,
+  );
 
   // Sign-in is not a step: OnboardingAuth opens just-in-time (saving a dish as a
-  // guest) and returns to where the user was.
-  assert.match(done, /navigation\.navigate\("OnboardingAuth"\)/);
+  // guest) and returns to where the user was; the dish is saved once they are back.
+  assert.match(done, /setPendingSaveDish\(dish\);\s*navigation\.navigate\("OnboardingAuth"\)/);
+  assert.match(
+    done,
+    /if \(!isAuthenticated \|\| !pendingSaveDish\) return;\s*setPendingSaveDish\(null\);[\s\S]*?toggleFavourite\(pendingSaveDish\);/,
+  );
   assert.match(onboardingAuth, /const finishOnboarding = \(\) => \{\s*navigation\.goBack\(\);/);
   assert.doesNotMatch(onboardingAuth, /navigation\.navigate\("LocationPermission"\)/);
 });
