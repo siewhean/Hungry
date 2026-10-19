@@ -40,8 +40,22 @@ test("H108/H110: a reset holds the signed-in redirect until the success screen c
     /if \(currentTopRoute === "AuthStack"\) \{[\s\S]*?if \(passwordRecoveryInProgress\) \{\s*return;/,
   );
   const reset = read("src/app/screens/auth/ResetPasswordScreen.tsx");
-  assert.match(reset, /setPasswordRecoveryInProgress\(true\);[\s\S]*resetPassword\(/);
-  assert.match(reset, /catch \(error\) \{\s*setPasswordRecoveryInProgress\(false\);/);
+  assert.match(
+    reset,
+    /setPasswordRecoveryInProgress\(true\);[\s\S]*exchangeRecoveryCode\([\s\S]*updatePassword\(/,
+  );
+  // Only a failed exchange (no session) releases the hold; a rejected password keeps it.
+  assert.match(
+    reset,
+    /exchangeRecoveryCode\([^)]*\);\s*recoveryCodeExchangedRef\.current = true;\s*\} catch \(error\) \{[\s\S]*?setPasswordRecoveryInProgress\(false\);/,
+  );
+  const updateCatch = reset.match(
+    /await auth\.updatePassword\(password\);\s*\} catch \(error\) \{([\s\S]*?)\n {6}\}/,
+  );
+  assert.ok(updateCatch, "updatePassword failure is handled");
+  assert.doesNotMatch(updateCatch[1], /setPasswordRecoveryInProgress\(false\)/);
+  assert.match(updateCatch[1], /getPasswordUpdateErrorMessage\(error\)/);
+  assert.match(reset, /if \(!recoveryCodeExchangedRef\.current\)/);
 
   const success = read("src/app/screens/auth/ResetPasswordSuccessScreen.tsx");
   assert.match(success, /title="Password updated"/);
@@ -71,6 +85,27 @@ test("H109: sign_up_completed is logged once from the session store with share a
 
   const bootstrap = read("src/hooks/useAppBootstrap.ts");
   assert.match(bootstrap, /isNewUser: event === "SIGNED_IN" && isFirstSignIn\(user\)/);
+});
+
+test("H109: a SIGNED_IN replayed for a restored session does not log sign_up_completed", async () => {
+  useSessionStore.getState().signOut();
+  await new Promise((done) => setTimeout(done, 20));
+  // Cold start: the persisted session is already authenticated, and the
+  // in-memory dedupe has been reset.
+  useSessionStore.setState({ isAuthenticated: true, authenticatedUserId: "restored-user" });
+  clearTrackedAnalyticsEvents();
+  useSessionStore.getState().applyAuthStateFromSession({
+    isAuthenticated: true,
+    userId: "restored-user",
+    authProvider: "email",
+    isNewUser: true,
+  });
+  await new Promise((done) => setTimeout(done, 20));
+  assert.equal(
+    getTrackedAnalyticsEvents().filter((record) => record.event === "sign_up_completed").length,
+    0,
+  );
+  useSessionStore.getState().signOut();
 });
 
 test("H111/H112/H113/H114/H120/H121: auth forms hide disabled OAuth, autofill, show loading and avoid the keyboard", () => {

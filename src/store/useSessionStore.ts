@@ -362,7 +362,9 @@ export const useSessionStore = create<SessionState>()(
           scheduleIdleWork(
             () => {
               identifyPostHogUser(profileId, buildPostHogIdentityProperties());
-              if (session.isNewUser) {
+              // Only a sign-in that starts a session counts: a SIGNED_IN replayed
+              // for a session restored from storage is never a new sign-up.
+              if (session.isNewUser && !currentlyAuthenticated) {
                 trackSignUpCompletedOnce(profileId, session.authProvider ?? "email");
               } else if (!currentlyAuthenticated) {
                 trackSignInCompletedOnce(profileId, {

@@ -2,6 +2,9 @@
 // session is signed in within moments of the account being confirmed (email
 // link, auto-confirm) or created (OAuth), so a SIGNED_IN whose last_sign_in_at
 // sits next to confirmed_at/created_at is that account's first sign-in.
+// The stored session keeps that last_sign_in_at, and auth-js re-emits SIGNED_IN
+// for it on every launch (and on web tab focus), so the sign-in must also be
+// recent; otherwise a new user would be counted as a sign-up on every launch.
 const FIRST_SIGN_IN_WINDOW_MS = 2 * 60 * 1000;
 
 export interface AuthUserTimestamps {
@@ -18,9 +21,10 @@ function toTime(value?: string | null): number | null {
   return Number.isFinite(time) ? time : null;
 }
 
-export function isFirstSignIn(user: AuthUserTimestamps): boolean {
+export function isFirstSignIn(user: AuthUserTimestamps, now: number = Date.now()): boolean {
   const lastSignIn = toTime(user.last_sign_in_at);
   if (lastSignIn === null) return false;
+  if (Math.abs(now - lastSignIn) > FIRST_SIGN_IN_WINDOW_MS) return false;
   const anchor =
     toTime(user.confirmed_at) ?? toTime(user.email_confirmed_at) ?? toTime(user.created_at);
   if (anchor === null) return false;

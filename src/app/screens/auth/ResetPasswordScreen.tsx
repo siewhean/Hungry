@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
 import { trackAuthFailed, trackAuthScreenViewed } from "@/features/auth/authAnalytics";
 import {
+  getPasswordUpdateErrorMessage,
   PASSWORD_RULES,
   validateConfirmPassword,
   validatePassword,
@@ -31,6 +32,9 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
     (state) => state.setPasswordRecoveryInProgress,
   );
   const confirmPasswordRef = useRef<TextInput>(null);
+  // The reset link's code can be exchanged only once; a retry after a rejected
+  // password must call updatePassword alone.
+  const recoveryCodeExchangedRef = useRef(false);
   const {
     control,
     handleSubmit,
@@ -45,21 +49,42 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
     trackAuthScreenViewed("reset_password");
   }, []);
 
+  // Leaving the reset flow releases the hold so RootNavigator can route onward.
+  useEffect(() => () => setPasswordRecoveryInProgress(false), [setPasswordRecoveryInProgress]);
+
   const handleReset = handleSubmit(async ({ password }) => {
     // Exchanging the recovery code signs the user in. Hold RootNavigator's
     // signed-in redirect until the new password is saved and confirmed on
     // ResetPasswordSuccess, which releases the hold.
     setPasswordRecoveryInProgress(true);
-    try {
-      if (getConfiguredDataSource() === "supabase") {
-        await getHungryService().auth.resetPassword(route.params?.code ?? "", password);
+    if (getConfiguredDataSource() === "supabase") {
+      const auth = getHungryService().auth;
+      if (!recoveryCodeExchangedRef.current) {
+        try {
+          await auth.exchangeRecoveryCode(route.params?.code ?? "");
+          recoveryCodeExchangedRef.current = true;
+        } catch (error) {
+          // No session was created, so nothing to hold.
+          setPasswordRecoveryInProgress(false);
+          trackAuthFailed("password_reset", "email", error);
+          showToast({
+            message: "This reset link has expired or was already used. Request a new one.",
+            tone: "error",
+          });
+          return;
+        }
       }
-      navigation.navigate("ResetPasswordSuccess");
-    } catch (error) {
-      setPasswordRecoveryInProgress(false);
-      trackAuthFailed("password_reset", "email", error);
-      showToast({ message: "Password reset failed. Please try again.", tone: "error" });
+      try {
+        await auth.updatePassword(password);
+      } catch (error) {
+        // The recovery session is signed in: keep the hold so the user stays
+        // here and can retry with a different password.
+        trackAuthFailed("password_reset", "email", error);
+        showToast({ message: getPasswordUpdateErrorMessage(error), tone: "error" });
+        return;
+      }
     }
+    navigation.navigate("ResetPasswordSuccess");
   });
 
   return (

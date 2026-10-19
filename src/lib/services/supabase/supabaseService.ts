@@ -2998,9 +2998,13 @@ export const supabaseService: HungryService = {
       if (error) throw error;
     },
 
-    async resetPassword(token, password) {
+    async exchangeRecoveryCode(token) {
       const client = requireSupabaseClient();
       await exchangeRecoveryCodeIfPresent(client, token);
+    },
+
+    async updatePassword(password) {
+      const client = requireSupabaseClient();
       const { error } = await client.auth.updateUser({ password });
       if (error) throw error;
     },

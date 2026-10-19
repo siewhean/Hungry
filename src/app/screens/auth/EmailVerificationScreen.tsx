@@ -6,6 +6,10 @@ import { ArrowLeft, CircleAlert, MailCheck } from "lucide-react-native";
 import { AppText, Button, FeedErrorBoundary } from "@/components/ui";
 import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
 import { trackAuthFailed, trackAuthScreenViewed } from "@/features/auth/authAnalytics";
+import {
+  rememberPendingEmailVerification,
+  takePendingEmailVerificationCompletesOnboarding,
+} from "@/features/auth/pendingEmailVerification";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -18,10 +22,6 @@ type Props = NativeStackScreenProps<AuthStackParamList, "EmailVerification">;
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
-// The confirmation link reopens this screen with only `?code=`, so remember
-// whether the sign-up that sent the email had already finished onboarding.
-let pendingVerificationCompletesOnboarding = false;
-
 export function EmailVerificationScreen({ navigation, route }: Props) {
   const completeAuth = useSessionStore((state) => state.completeAuth);
   const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
@@ -30,9 +30,7 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
   const isSupabaseMode = getConfiguredDataSource() === "supabase";
   const email = route.params?.email;
   const confirmationCode = route.params?.code;
-  if (route.params?.completedOnboarding !== undefined) {
-    pendingVerificationCompletesOnboarding = route.params.completedOnboarding;
-  }
+  const completedOnboarding = route.params?.completedOnboarding ?? false;
   const [resendSeconds, setResendSeconds] = useState(RESEND_COOLDOWN_SECONDS);
   const [isResending, setIsResending] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
@@ -41,6 +39,13 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
   useEffect(() => {
     trackAuthScreenViewed("email_verification");
   }, []);
+
+  // The confirmation link reopens this screen with only `?code=` (often after a
+  // cold start), so each sign-up that opens it records whether it had already
+  // finished onboarding. A plain SignUp passes no flag and resets it to false.
+  useEffect(() => {
+    if (email) rememberPendingEmailVerification(completedOnboarding);
+  }, [completedOnboarding, email]);
 
   useEffect(() => {
     if (resendSeconds <= 0) {
@@ -59,8 +64,7 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
       setIsConfirming(true);
       try {
         const session = await getHungryService().auth.confirmEmail(code);
-        const shouldCompleteOnboarding = pendingVerificationCompletesOnboarding;
-        pendingVerificationCompletesOnboarding = false;
+        const shouldCompleteOnboarding = await takePendingEmailVerificationCompletesOnboarding();
         await applySignedInProfile(session.profile, {
           profileReady: session.profileReady,
           onSyncWarning: () => {
