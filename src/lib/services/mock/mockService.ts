@@ -836,12 +836,14 @@ function syncMerchantOutletToUserCatalog(
   const venueId = getMockMerchantVenueId(outlet.id);
   const menu = _merchantMenuByOutlet.get(outlet.id) ?? [];
   const topDishId = menu[0]?.id ?? outlet.signatureDishIds[0] ?? "";
+  // Same rule as the Supabase sync trigger: a home-based outlet never shows unit or floor.
+  const isHomeBased = outlet.businessType === "home_based";
   const venue: VenueSummary = {
     id: venueId,
     buildingId: outlet.buildingId ?? "building-maxwell",
     name: outlet.name,
-    unitNumber: outlet.unitNumber ?? "",
-    floor: outlet.floor ?? "",
+    unitNumber: isHomeBased ? "" : (outlet.unitNumber ?? ""),
+    floor: isHomeBased ? "" : (outlet.floor ?? ""),
     isOpen: outlet.isLive && !outlet.temporaryClosure,
     liveCrowd: "medium",
     topDishId,
@@ -1656,8 +1658,12 @@ export const hungryService: HungryService = {
     },
 
     async listActivePromotionsForTarget(input) {
+      // Like list_customer_active_promotions: only outlets shown on Hungry (is_live).
       const promotions = _merchantPromotions.filter(
-        (promotion) => getPromotionOutletVenueId(promotion) === input.venueId,
+        (promotion) =>
+          getPromotionOutletVenueId(promotion) === input.venueId &&
+          _merchantAccount.outlets.find((outlet) => outlet.id === promotion.outletId)?.isLive !==
+            false,
       );
       return resolve(clone(filterCustomerVisiblePromotions(promotions, { dishId: input.dishId })));
     },
@@ -2844,7 +2850,15 @@ export const hungryService: HungryService = {
     async updateBusinessProfile(outletId, updates) {
       const outlet = getMerchantOutlet(outletId);
       const normalized = validateMerchantProfileUpdates(updates);
-      Object.assign(outlet, normalized);
+      // Partial update like Supabase: fields left out (undefined) keep their stored value.
+      Object.assign(
+        outlet,
+        Object.fromEntries(Object.entries(normalized).filter(([, value]) => value !== undefined)),
+      );
+      // Mirrors the DB trigger: home-based outlets are never 'exact'.
+      if (outlet.businessType === "home_based" && outlet.locationPrivacy === "exact") {
+        outlet.locationPrivacy = "approximate";
+      }
       syncMerchantOutletToUserCatalog(outlet);
       return resolve(outlet);
     },
