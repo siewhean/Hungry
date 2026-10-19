@@ -98,7 +98,10 @@ test("V2 discovery entry points do not warm the legacy browse index and map pass
   assert.match(map, /onViewportChange/);
   assert.match(map, /buildingTypes/);
   assert.match(map, /openOnly: mapFilters\.openNow/);
-  assert.match(map, /onMarkerPress=\{shouldUseCatalogReadV2 \? handleRawMarkerPress : undefined\}/);
+  assert.match(
+    map,
+    /onMarkerPress=\{shouldUseCatalogReadV2 \? handleRawMarkerPress : handleLegacyMarkerPress\}/,
+  );
   assert.match(map, /candidate\.kind === "venue" \? "stall" : candidate\.kind/);
 });
 

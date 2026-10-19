@@ -8,7 +8,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { View, FlatList, Pressable, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Bookmark, BookmarkCheck, ChevronLeft } from "lucide-react-native";
+import { ChevronLeft } from "lucide-react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
@@ -16,11 +16,9 @@ import { AccessibleImage } from "@/components/ui/AccessibleImage";
 import { AppText, EmptyState, IconButton, Skeleton } from "@/components/ui";
 import { useCollectionStore } from "@/store/useCollectionStore";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
-import { useProfileStore } from "@/store/useProfileStore";
-import { useSessionStore } from "@/store/useSessionStore";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useHungryTheme } from "@/theme";
-import { trackCollectionViewed, trackCollectionSaved } from "@/lib/analytics/gamificationEvents";
+import { trackCollectionViewed } from "@/lib/analytics/gamificationEvents";
 import type { CollectionItem, VenueSummary } from "@/types/domain";
 
 type Props = NativeStackScreenProps<RootStackParamList, "CollectionDetail">;
@@ -42,35 +40,38 @@ export function CollectionDetailScreen({ route, navigation }: Props) {
   );
   const loadCollections = useCollectionStore((s) => s.loadCollections);
   const loadItems = useCollectionStore((s) => s.loadCollectionItems);
-  const savedCollectionIds = useCollectionStore((state) => state.savedCollectionIds);
-  const isSaved = useMemo(
-    () => savedCollectionIds.has(collectionId),
-    [collectionId, savedCollectionIds],
-  );
-  const toggleSave = useCollectionStore((s) => s.toggleSaveCollection);
 
   const interactions = useStallInteractionStore((s) => s.interactions);
-  const profile = useProfileStore((s) => s.profile);
-  const isAuthenticated = useSessionStore((s) => s.isAuthenticated);
 
   const [rows, setRows] = useState<StallRow[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const userId = isAuthenticated ? profile.id : undefined;
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
+    let active = true;
     async function load() {
-      await loadCollections();
-      const items = await loadItems(collectionId);
-      const repo = getDataRepository();
-      const resolved: StallRow[] = items.map((item) => ({
-        item,
-        venue: repo.getVenueById(item.stallId),
-      }));
-      setRows(resolved);
-      setLoading(false);
+      setLoading(true);
+      setLoadError(null);
+      try {
+        await loadCollections();
+        const items = await loadItems(collectionId);
+        const repo = getDataRepository();
+        const resolved: StallRow[] = items.map((item) => ({
+          item,
+          venue: repo.getVenueById(item.stallId),
+        }));
+        if (active) setRows(resolved);
+      } catch (error) {
+        // A failed load must not leave the skeleton up forever.
+        if (active) setLoadError(error instanceof Error ? error.message : String(error));
+      } finally {
+        if (active) setLoading(false);
+      }
     }
     void load();
+    return () => {
+      active = false;
+    };
   }, [collectionId, loadCollections, loadItems]);
 
   // Track view after collection resolves
@@ -82,8 +83,6 @@ export function CollectionDetailScreen({ route, navigation }: Props) {
 
   const triedCount = rows.filter((r) => interactions[r.item.stallId]?.isTried).length;
 
-  const SaveIcon = isSaved ? BookmarkCheck : Bookmark;
-
   if (loading) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top"]}>
@@ -94,6 +93,21 @@ export function CollectionDetailScreen({ route, navigation }: Props) {
           <Skeleton width="100%" height={80} borderRadius={12} />
           <Skeleton width="100%" height={80} borderRadius={12} />
         </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top"]}>
+        <EmptyState
+          title="Couldn't load this collection"
+          body="Check your connection and try again."
+          errorMessage={loadError}
+          sendErrorContext={`Collection ${collectionId}`}
+          ctaLabel="Go back"
+          onPress={() => navigation.goBack()}
+        />
       </SafeAreaView>
     );
   }
@@ -130,23 +144,7 @@ export function CollectionDetailScreen({ route, navigation }: Props) {
           icon={<ChevronLeft color={palette.text} size={24} />}
         />
         <View style={{ flex: 1 }} />
-        {userId && (
-          <IconButton
-            variant="floating"
-            accessibilityLabel={isSaved ? "Unsave collection" : "Save collection"}
-            onPress={() => {
-              if (!isSaved) trackCollectionSaved(collectionId);
-              toggleSave(userId, collectionId);
-            }}
-            icon={
-              <SaveIcon
-                size={20}
-                color={isSaved ? palette.orange : palette.text}
-                fill={isSaved ? palette.orange : "none"}
-              />
-            }
-          />
-        )}
+        {/* Saving is hidden until saves persist to the account; it was memory-only. */}
       </View>
 
       <FlatList

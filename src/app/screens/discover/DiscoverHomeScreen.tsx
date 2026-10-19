@@ -29,7 +29,6 @@ import {
   Flame,
   Dices,
   Utensils,
-  Zap,
 } from "lucide-react-native";
 import { useNavigation, useRoute, type CompositeNavigationProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -53,6 +52,7 @@ import {
   getDishImageCandidates,
   type DiscoverCardImageCandidate,
 } from "@/features/discover/bites";
+import { getDiscoverAreaCountLabel } from "@/features/discover/areaCount";
 import { dedupeNearestVenueCandidates } from "@/features/search/venueDedupe";
 import {
   prefetchDishDetail,
@@ -63,7 +63,6 @@ import {
 } from "@/features/navigation/prefetch";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getNearestBuildings, getNearestSingaporeArea } from "@/lib/geo/singaporeBuildings";
-import { toRecommendationGeoCell } from "@/lib/geo/recommendationGeoCell";
 import {
   getDataRepository,
   getHungryService,
@@ -79,7 +78,7 @@ import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useDelayedLoadingSkeleton } from "@/hooks/useDelayedLoadingSkeleton";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
-import { useLocationStore } from "@/store/useLocationStore";
+import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
 import { useSearchStore } from "@/store/useSearchStore";
@@ -149,6 +148,7 @@ type DiscoverRepositoryLookup = Pick<
 const STALL_SHOWCASE_CARD_LIMIT = 30;
 const STALL_SHOWCASE_IMAGE_REPEAT_BUFFER = 2;
 const DISCOVER_AREA_RADIUS_METERS = 3000;
+const DISCOVER_FEED_LIMIT = 100;
 const STALL_SHOWCASE_FALLBACK_IMAGES = [
   POPULAR_LAKSA_GRAPHIC,
   POPULAR_CHICKEN_RICE_GRAPHIC,
@@ -1247,16 +1247,9 @@ export function DiscoverHomeScreen() {
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const manualLocation = useLocationStore((state) => state.manualLocation);
   const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
-  const grantLocation = useLocationStore((state) => state.grantLocation);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
   const isMerchantMode = useMerchantStore(isMerchantModeActive);
   const isUserMode = !isDeveloperMode && !isMerchantMode;
-
-  useEffect(() => {
-    if (locationPermission !== "granted" && !manualLocation) {
-      void grantLocation();
-    }
-  }, [locationPermission, manualLocation, grantLocation]);
 
   useEffect(() => {
     const cancelWarmup = scheduleIdleWork(
@@ -1281,13 +1274,6 @@ export function DiscoverHomeScreen() {
 
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
   const refreshPopularNearby = useDiscoveryStore((state) => state.refreshPopularNearby);
-  const cacheRecommendationSlate = useDiscoveryStore((state) => state.cacheRecommendationSlate);
-  const getCachedRecommendationSlate = useDiscoveryStore(
-    (state) => state.getCachedRecommendationSlate,
-  );
-  const pruneExpiredRecommendations = useDiscoveryStore(
-    (state) => state.pruneExpiredRecommendations,
-  );
 
   useEffect(() => {
     if (shouldUseCatalogReadV2) {
@@ -1340,8 +1326,17 @@ export function DiscoverHomeScreen() {
     );
   }, []);
 
-  const discoverLocationLatitude = manualCoordinate?.latitude ?? currentLocation.latitude;
-  const discoverLocationLongitude = manualCoordinate?.longitude ?? currentLocation.longitude;
+  const { coordinate: discoverCoordinate, isApproximate: isDiscoverLocationApproximate } =
+    getEffectiveLocation({
+      permission: locationPermission,
+      currentLocation,
+      manualCoordinate,
+    });
+  const discoverLocationLatitude = discoverCoordinate.latitude;
+  const discoverLocationLongitude = discoverCoordinate.longitude;
+  // Without a GPS fix or a manual pick the coordinate is only the built-in default,
+  // so the header asks the user to choose an area instead of asserting one.
+  const needsDiscoverAreaChoice = isDiscoverLocationApproximate && !manualLocation;
   const areaBuildings = useMemo(
     () => getNearestBuildings(discoverLocationLatitude, discoverLocationLongitude, 3, 14),
     [discoverLocationLatitude, discoverLocationLongitude],
@@ -1379,7 +1374,7 @@ export function DiscoverHomeScreen() {
         lat: discoverLocationLatitude,
         lng: discoverLocationLongitude,
         radiusMeters: DISCOVER_AREA_RADIUS_METERS,
-        limit: 100,
+        limit: DISCOVER_FEED_LIMIT,
       }),
     ])
       .then(([venueCount, discoveryFeed]) => {
@@ -1980,71 +1975,24 @@ export function DiscoverHomeScreen() {
 
     return extendStallShowcaseCards(filteredCards);
   }, [isDiscoverFiltering, matchesDiscoverChipSelection, unfilteredStallShowcaseCards]);
-  const discoverAreaCount = isSupabaseDataSource ? supabaseDiscoverAreaCount : areaVenues.length;
+  const discoverAreaCountLabel = isSupabaseDataSource
+    ? getDiscoverAreaCountLabel({
+        isFeedLoaded: supabaseDiscoveryFeed !== null,
+        feedVenueCount: supabaseFeedVenues.length,
+        feedLimit: DISCOVER_FEED_LIMIT,
+        rpcCount: supabaseDiscoverAreaCount,
+      })
+    : String(areaVenues.length);
   const handleDecideForMe = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const radiusMeters = 500;
     trackAnalyticsEvent("decide_for_me_triggered", {
       surface: "discover",
       location_granted: locationPermission === "granted",
-      radius_m: radiusMeters,
+      radius_m: 500,
     });
-
-    const geoCell = toRecommendationGeoCell(currentLocation.latitude, currentLocation.longitude);
-    pruneExpiredRecommendations();
-
-    const cachedDishIds = getCachedRecommendationSlate(geoCell);
-    const cachedDishes = (cachedDishIds ?? [])
-      .map((dishId) => repositoryLookup.getDishById(dishId))
-      .filter((dish): dish is DishDetail => Boolean(dish));
-
-    let picked = repository.getDecideForMe(profile.tasteVector, {
-      dietaryFlags: profile.dietaryPreferences,
-      neophiliaIndex: profile.tasteProfile?.neophiliaIndex ?? 5,
-      radiusMeters,
-      latitude: currentLocation.latitude,
-      longitude: currentLocation.longitude,
-      excludeDishIds: [],
-    });
-
-    if (!picked && cachedDishes.length) {
-      picked = cachedDishes[0];
-    }
-
-    if (!cachedDishes.length) {
-      const liveSlate = repository
-        .searchDishes(
-          {
-            query: "",
-            categories: [],
-            dietaryFlags: profile.dietaryPreferences,
-            tasteValues: profile.tasteVector,
-            radius: radiusMeters,
-          },
-          profile.tasteVector,
-        )
-        .slice(0, 20);
-
-      if (liveSlate.length) {
-        cacheRecommendationSlate(
-          geoCell,
-          liveSlate.map((dish) => dish.id),
-        );
-        if (!picked) {
-          picked = liveSlate[0];
-        }
-      }
-    }
-
-    if (picked) {
-      recordTasteInteraction({
-        type: "food_button_click",
-        surface: "decide",
-        dish: picked,
-        buttonId: "decide_for_me",
-      });
-      setDecideForMe(picked);
-    }
+    // The result screen is the single place that picks the dish and logs it, using the
+    // same effective location as this feed. Clear any earlier pick so it starts fresh.
+    setDecideForMe(undefined);
     navigation.navigate("DecideForMeResult", { surface: "discover" });
   };
 
@@ -2134,9 +2082,8 @@ export function DiscoverHomeScreen() {
         discoverBiteCollections[collection].map((bite) => bite.photoUrl),
         5,
       );
-      preloadRoute(navigation, "QuickBites", { collection });
     },
-    [discoverBiteCollections, navigation],
+    [discoverBiteCollections],
   );
 
   useEffect(() => {
@@ -2163,10 +2110,7 @@ export function DiscoverHomeScreen() {
       );
       if (isUserMode) {
         preloadRoute(navigation, "StallDetail", { venueId: card.venue.id });
-        return;
       }
-
-      preloadRoute(navigation, "MapZoomedIn", { buildingId: card.venue.buildingId });
     },
     [isUserMode, navigation, repository],
   );
@@ -2246,7 +2190,7 @@ export function DiscoverHomeScreen() {
               opacity: 0.8,
             }}
           >
-            YOU ARE AT
+            {needsDiscoverAreaChoice ? "WHERE ARE YOU?" : "YOU ARE AT"}
           </AppText>
           <View
             style={{
@@ -2256,15 +2200,37 @@ export function DiscoverHomeScreen() {
             }}
           >
             <View style={{ flex: 1 }}>
-              <AppText variant="h1" style={{ color: themeTints.text }} numberOfLines={1}>
-                {discoverLocationLabel}
-              </AppText>
-              {discoverAreaCount === null ? (
-                <Skeleton width={150} height={14} borderRadius={radii.sm} />
+              {needsDiscoverAreaChoice ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Choose your area"
+                  accessibilityHint="Pick the area to show food near you"
+                  onPress={() =>
+                    navigation.navigate("OnboardingStack", { screen: "ManualLocationPicker" })
+                  }
+                >
+                  <AppText variant="h1" style={{ color: themeTints.text }} numberOfLines={1}>
+                    Choose your area
+                  </AppText>
+                  <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
+                    {`Showing places near ${discoverLocationLabel} until you pick one`}
+                  </AppText>
+                </Pressable>
               ) : (
-                <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
-                  {`${discoverAreaCount} places to eat in this area`}
-                </AppText>
+                <>
+                  <AppText variant="h1" style={{ color: themeTints.text }} numberOfLines={1}>
+                    {discoverLocationLabel}
+                  </AppText>
+                  {discoverAreaCountLabel === null ? (
+                    isSupabaseDiscoveryFeedLoading ? (
+                      <Skeleton width={150} height={14} borderRadius={radii.sm} />
+                    ) : null
+                  ) : (
+                    <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
+                      {`${discoverAreaCountLabel} places to eat in this area`}
+                    </AppText>
+                  )}
+                </>
               )}
             </View>
             {isUserMode ? null : (
@@ -2396,7 +2362,6 @@ export function DiscoverHomeScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Decide for me"
-            onPressIn={() => preloadRoute(navigation, "DecideForMeResult")}
             onPress={handleDecideForMe}
             style={({ pressed }) => [
               shadows.card,
@@ -2699,26 +2664,10 @@ export function DiscoverHomeScreen() {
                 <AppText variant="h2" style={{ color: themeTints.text }}>
                   Quick Bites
                 </AppText>
-                <View
-                  style={{
-                    backgroundColor: palette.statusFast,
-                    paddingHorizontal: spacing[2],
-                    paddingVertical: spacing[0.5],
-                    borderRadius: radii.sm,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: spacing[1],
-                  }}
-                >
-                  <Zap color={palette.white} fill={palette.white} size={10} />
-                  <AppText variant="micro" style={{ color: palette.white, fontWeight: "800" }}>
-                    &lt; 15 MIN
-                  </AppText>
-                </View>
               </View>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="See all quick bites under 15 minutes"
+                accessibilityLabel="See all quick bites"
                 onPressIn={() => prefetchBiteCollectionRoute("quickBites")}
                 onPress={() => navigation.navigate("QuickBites", { collection: "quickBites" })}
               >
@@ -2823,10 +2772,10 @@ export function DiscoverHomeScreen() {
                 alignItems: "center",
               }}
             >
-              <AppText variant="h2">Trending in {discoverLocationLabel}</AppText>
+              <AppText variant="h2">Most reviewed in {discoverLocationLabel}</AppText>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`See all trending dishes in ${discoverLocationLabel}`}
+                accessibilityLabel={`See all most reviewed dishes in ${discoverLocationLabel}`}
                 onPressIn={() => prefetchBiteCollectionRoute("trending")}
                 onPress={() => navigation.navigate("QuickBites", { collection: "trending" })}
               >
@@ -2937,7 +2886,7 @@ export function DiscoverHomeScreen() {
             >
               <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
                 <AppText variant="h2" style={{ color: themeTints.text }}>
-                  Editor&apos;s Choice
+                  Top rated
                 </AppText>
                 <View
                   style={{
@@ -2948,13 +2897,13 @@ export function DiscoverHomeScreen() {
                   }}
                 >
                   <AppText variant="micro" style={{ color: palette.white, fontWeight: "800" }}>
-                    ★ CURATED
+                    ★ 4.4+
                   </AppText>
                 </View>
               </View>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="See all editor's choice dishes"
+                accessibilityLabel="See all top rated dishes"
                 onPressIn={() => prefetchBiteCollectionRoute("editorChoice")}
                 onPress={() => navigation.navigate("QuickBites", { collection: "editorChoice" })}
               >
@@ -2986,7 +2935,7 @@ export function DiscoverHomeScreen() {
                   <Pressable
                     key={`ec-${bite.id}`}
                     accessibilityRole="button"
-                    accessibilityLabel={`Editor's choice: ${bite.dishName}`}
+                    accessibilityLabel={`Top rated: ${bite.dishName}`}
                     onPressIn={() => prefetchBiteCard(bite)}
                     onPress={() => openBiteDish(bite, "editor_choice_bite_card")}
                     style={[
@@ -3002,7 +2951,7 @@ export function DiscoverHomeScreen() {
                     ]}
                   >
                     <DiscoverBiteImage bite={bite} height={discoverRailImageHeight} />
-                    {/* Editor badge overlay */}
+                    {/* Rating badge overlay: the rail is rating-based, not curated */}
                     <View
                       style={{
                         position: "absolute",
@@ -3015,7 +2964,7 @@ export function DiscoverHomeScreen() {
                       }}
                     >
                       <AppText variant="micro" style={{ color: palette.white, fontWeight: "800" }}>
-                        MUST ORDER
+                        {`★ ${bite.rating.toFixed(1)}`}
                       </AppText>
                     </View>
                     <View style={{ padding: spacing[3], gap: spacing[1] }}>
@@ -3189,20 +3138,8 @@ export function DiscoverHomeScreen() {
             >
               <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
                 <AppText variant="h2" style={{ color: themeTints.text }}>
-                  Late Night Makan
+                  Dinner favourites
                 </AppText>
-                <View
-                  style={{
-                    backgroundColor: palette.navy,
-                    paddingHorizontal: spacing[2],
-                    paddingVertical: spacing[0.5],
-                    borderRadius: radii.sm,
-                  }}
-                >
-                  <AppText variant="micro" style={{ color: palette.white, fontWeight: "800" }}>
-                    LATE NIGHT
-                  </AppText>
-                </View>
               </View>
               <Pressable
                 accessibilityRole="button"
@@ -3323,11 +3260,6 @@ export function DiscoverHomeScreen() {
                       prefetchStallDetail(venue.id, repository);
                       if (topDish?.id) {
                         prefetchDishDetail(topDish.id, repository);
-                      }
-                      if (!isUserMode) {
-                        preloadRoute(navigation, "MapZoomedIn", {
-                          buildingId: venue.buildingId,
-                        });
                       }
                     }}
                     onPress={() => {
