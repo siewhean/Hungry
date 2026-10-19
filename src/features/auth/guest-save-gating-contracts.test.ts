@@ -20,9 +20,10 @@ test("guest-reachable follow, like and comment taps prompt sign-in first", () =>
     homeFeed,
     /if \(!requireAuthForFollow\(\)\) return;[\s\S]*toggleFollow\(followTargetId\)/,
   );
+  // The comment sheet closes before sign-in opens, so it is not left on top.
   assert.match(
     homeFeed,
-    /handlePostCommentOrReply = useCallback\(\(\) => \{[\s\S]*?requireAccount\("Sign in to comment\."/,
+    /handlePostCommentOrReply = useCallback\(\(\) => \{[\s\S]*?commentsSheetRef\.current\?\.dismiss\(\);\s*requireAccount\("Sign in to comment\."/,
   );
 
   const reviewFeed = read("src/app/screens/review/ReviewFeedScreen.tsx");
@@ -31,6 +32,10 @@ test("guest-reachable follow, like and comment taps prompt sign-in first", () =>
     /reviewReactionsEnabled &&\s*requireAccountForReviewAction\("Sign in to like reviews\."\)/,
   );
   assert.match(reviewFeed, /onBeforeSend=\{requireAccountForComment\}/);
+  assert.match(
+    reviewFeed,
+    /requireAccountForComment = useCallback\(\(\) => \{[\s\S]*?commentsSheetRef\.current\?\.dismiss\(\);\s*return requireAccountForReviewAction\("Sign in to comment\."\)/,
+  );
   const commentsSheet = read("src/components/social/ReviewCommentsSheet.tsx");
   assert.match(commentsSheet, /if \(onBeforeSend && !onBeforeSend\(\)\) return;/);
 
@@ -88,4 +93,19 @@ test("a guest's taste quiz stays on the device and uploads on sign-in", () => {
   ]) {
     assert.match(read(screen), /applySignedInProfile\(/, `${screen} must merge guest taste`);
   }
+});
+
+test("guests can search and browse the catalog; only the search taste signal is skipped", () => {
+  const search = read("src/app/screens/search/SearchResultsScreen.tsx");
+  assert.doesNotMatch(search, /Sign in to browse the full directory/);
+  assert.doesNotMatch(search, /if \(!isAuthenticated\) return;\s*const version/);
+  assert.match(search, /if \(!isAuthenticated \|\| initialQueryRecordedRef\.current\) return;/);
+});
+
+test("a guest swipe-right on Crave asks to sign in instead of saving", () => {
+  const crave = read("src/app/screens/discover/CraveScreen.tsx");
+  assert.match(
+    crave,
+    /const swipeRight = \(\) => \{\s*if \(!isAuthenticated\) \{[\s\S]*?navigation\.navigate\("AuthStack", \{ screen: "Login" \}\);\s*return;/,
+  );
 });

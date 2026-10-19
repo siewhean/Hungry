@@ -772,10 +772,12 @@ export function ReviewFeedScreen() {
       requireAccount(message, { name: "MainTabs", params: { screen: "Review" } }),
     [requireAccount],
   );
-  const requireAccountForComment = useCallback(
-    () => requireAccountForReviewAction("Sign in to comment."),
-    [requireAccountForReviewAction],
-  );
+  const requireAccountForComment = useCallback(() => {
+    if (isAuthenticated) return true;
+    // Close the sheet first so it does not stay on top of the sign-in screen.
+    commentsSheetRef.current?.dismiss();
+    return requireAccountForReviewAction("Sign in to comment.");
+  }, [isAuthenticated, requireAccountForReviewAction]);
 
   const handleSavePress = useCallback(
     (item: ReviewFeedItem) => {

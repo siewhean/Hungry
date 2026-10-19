@@ -892,7 +892,10 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
 
   const handlePostCommentOrReply = useCallback(() => {
     if (!activeCommentItem || !draftComment.trim().length) return;
-    if (!requireAccount("Sign in to comment.", { name: "MainTabs", params: { screen: "Home" } })) {
+    if (!isAuthenticated) {
+      // Close the sheet first so it does not stay on top of the sign-in screen.
+      commentsSheetRef.current?.dismiss();
+      requireAccount("Sign in to comment.", { name: "MainTabs", params: { screen: "Home" } });
       return;
     }
 
@@ -929,6 +932,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     addPostReply,
     draftComment,
     activeReplyCommentId,
+    isAuthenticated,
     requireAccount,
     profile.id,
     profile.avatarUrl,

@@ -149,13 +149,11 @@ test("Search hides empty sections and controls the backend ignores", () => {
   );
 });
 
-test("Search browse: guests get a way out, chips never show everything, errors stay friendly", () => {
+test("Search browse: guests can browse, chips never show everything, errors stay friendly", () => {
   const results = readRepoFile("src/app/screens/search/SearchResultsScreen.tsx");
 
-  assert.match(
-    results,
-    /ctaLabel="Sign in"[\s\S]*setReturnRoute\(\{[\s\S]*navigation\.navigate\("AuthStack", \{ screen: "Login" \}\)/,
-  );
+  // The catalog is guest-readable, so there is no sign-in wall on browse.
+  assert.doesNotMatch(results, /Sign in to browse the full directory/);
   assert.match(results, /dietaryFlags: filter === "halal" \? \["halal"\] : \[\]/);
   assert.doesNotMatch(results, /body=\{error\}/);
   assert.match(results, /errorMessage=\{error\}/);
