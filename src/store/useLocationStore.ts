@@ -218,7 +218,12 @@ export const useLocationStore = create<LocationState>()(
           gpsBadgeState: granted ? "live" : "denied",
           ...(granted ? {} : { currentLocation: defaultLocation, lastLocationFixAt: undefined }),
         });
-        if (granted) await get().refreshLocation({ force: true });
+        if (!granted) return;
+        const refreshed = await get().refreshLocation({ force: true });
+        // No fresh fix: do not keep showing the old pick as a live GPS location.
+        if (!refreshed && !get().manualCoordinate) {
+          set({ currentLocation: defaultLocation, lastLocationFixAt: undefined });
+        }
       },
       syncLocationPermission: async () => {
         const getPermission = loadExpoLocationModule()?.getForegroundPermissionsAsync;
@@ -234,6 +239,9 @@ export const useLocationStore = create<LocationState>()(
             await get().refreshLocation({ force: true });
           } else if (status === "denied" && state.permission !== "denied") {
             set(getDeniedLocationState(state.manualLocation));
+          } else if (status === "undetermined" && state.permission !== "unknown") {
+            // Never asked by the OS (e.g. an area picked at onboarding): offer the prompt.
+            set({ permission: "unknown" });
           }
         } catch {
           // Keep the last known state when the OS cannot be queried.

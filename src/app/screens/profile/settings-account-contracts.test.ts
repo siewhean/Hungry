@@ -34,6 +34,9 @@ test("Settings location rows respect the OS permission and return from the picke
   assert.match(settings, /params: \{ mode: "settings" \}/);
   assert.match(settings, /AppState\.addEventListener\("change"/);
   assert.match(settings, /syncLocationPermission\(\)/);
+  const store = read("src/store/useLocationStore.ts");
+  // An OS that never asked must offer the prompt, not "Not allowed".
+  assert.match(store, /status === "undetermined"[\s\S]{0,200}permission: "unknown"/);
   assert.match(settings, /clearManualLocation\(\)/);
   assert.doesNotMatch(settings, /denyLocation\(\)/);
   assert.doesNotMatch(settings, /label="Location permission"[\s\S]{0,120}type="toggle"/);
@@ -60,7 +63,11 @@ test("Email edits go through the auth email-change flow, not the profile column"
   assert.doesNotMatch(editProfile, /updateProfile\(\{[^}]*\bemail,/);
   assert.ok(updateProfile);
   assert.doesNotMatch(updateProfile, /payload\.email/);
-  assert.match(supabase, /auth\.updateUser\(\{ email: newEmail\.trim\(\)\.toLowerCase\(\) \}\)/);
+  assert.match(
+    supabase,
+    /auth\.updateUser\(\s*\{ email: newEmail\.trim\(\)\.toLowerCase\(\) \},\s*\{ emailRedirectTo: AUTH_REDIRECTS\.emailConfirm \},?\s*\)/,
+  );
+  assert.match(editProfile, /current and new addresses/);
   assert.match(
     supabase,
     /email \?\? \(await getSessionEmailForUser\(client, userId\)\) \?\? asString\(row\.email\)/,
@@ -77,4 +84,20 @@ test("SettingsRow exposes role, state and label to assistive tech", () => {
   // Value-only rows are not pressable buttons.
   assert.match(row, /if \(!isInteractive\) \{\s*return \(\s*<View/);
   assert.match(read("src/app/screens/profile/SettingsScreen.tsx"), /busy=\{isExportingData\}/);
+});
+
+test("iOS data export is shared as a .json file, not a text message", () => {
+  const settings = read("src/app/screens/profile/SettingsScreen.tsx");
+  const exportHandler = segmentBetween(
+    settings,
+    "const handleExportData",
+    "const handleDeleteAccount",
+  );
+
+  assert.match(exportHandler, /new File\(Paths\.cache, "hungry-data-export\.json"\)/);
+  assert.match(
+    exportHandler,
+    /Share\.share\(\{ title: "My Hungry data", url: exportFile\.uri \}\)/,
+  );
+  assert.match(read("package.json"), /"expo-file-system": "~55\.0\.26"/);
 });

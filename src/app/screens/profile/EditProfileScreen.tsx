@@ -195,8 +195,8 @@ export function EditProfileScreen({ navigation }: Props) {
             onChangeText={setEmail}
           />
           <AppText variant="micro" tone="muted">
-            Changing your email sends a confirmation link to the new address. Your sign-in email
-            stays the same until you open it.
+            Changing your email sends confirmation links to your current and new addresses. Your
+            sign-in email stays the same until both are opened.
           </AppText>
           {canChangePassword ? (
             <Pressable
@@ -241,7 +241,7 @@ export function EditProfileScreen({ navigation }: Props) {
                 try {
                   await getHungryService().auth.requestEmailChange(nextEmail);
                   showToast({
-                    message: `Check ${nextEmail} for a link to confirm your new email.`,
+                    message: `Check your current inbox and ${nextEmail} for links to confirm the change.`,
                     tone: "success",
                   });
                 } catch {

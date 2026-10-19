@@ -16,6 +16,21 @@ export function toSingaporeDateOnly(value: Date | string = new Date()): string {
   return new Date(instant.getTime() + SINGAPORE_OFFSET_MS).toISOString().slice(0, 10);
 }
 
+const LEGACY_UTC_BOUNDARY = {
+  start: /T00:00:00(\.0+)?(Z|\+00(:?00)?)$/,
+  end: /T23:59:59(\.\d+)?(Z|\+00(:?00)?)$/,
+} as const;
+
+/**
+ * Calendar day for a stored promotion boundary. Promotions saved before the
+ * Singapore-day change used UTC day boundaries; read those as their UTC date so
+ * an edit does not shift the range by a day.
+ */
+export function promotionBoundaryToDateOnly(value: string, boundary: "start" | "end"): string {
+  if (LEGACY_UTC_BOUNDARY[boundary].test(value)) return value.slice(0, 10);
+  return toSingaporeDateOnly(value);
+}
+
 /** Inclusive Singapore-day boundary for a YYYY-MM-DD promotion date. */
 export function toSingaporePromotionBoundary(date: string, boundary: "start" | "end"): string {
   return `${date}T${boundary === "start" ? "00:00:00" : "23:59:59"}${SINGAPORE_OFFSET}`;

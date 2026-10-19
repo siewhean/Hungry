@@ -595,6 +595,13 @@ test("merchant OCR draft methods filter drafts and publish accepted dishes", asy
     assert.equal(edited.description, "Merchant written description");
     assert.deepEqual(edited.dietaryFlags, ["halal"]);
     assert.equal(edited.id, `dish-from-${pendingDrafts[2].id}`);
+
+    // Saving the editor after the draft was already added applies the edits instead of dropping them.
+    const reEdited = await hungryService.merchant.acceptOCRDraft(pendingDrafts[2].id, {
+      name: "Renamed scan dish",
+    });
+    assert.equal(reEdited.id, edited.id);
+    assert.equal(reEdited.name, "Renamed scan dish");
   }
 });
 

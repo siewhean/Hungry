@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  promotionBoundaryToDateOnly,
   toSingaporeDateOnly,
   toSingaporePromotionBoundary,
   validateMerchantPromotionInput,
@@ -49,6 +50,19 @@ test("Singapore date helpers keep the local calendar day before 8am SGT", () => 
   assert.equal(toSingaporeDateOnly("2026-05-24T16:00:00.000Z"), "2026-05-25");
   assert.equal(toSingaporePromotionBoundary("2026-05-25", "start"), "2026-05-25T00:00:00+08:00");
   assert.equal(toSingaporePromotionBoundary("2026-05-25", "end"), "2026-05-25T23:59:59+08:00");
+});
+
+test("promotionBoundaryToDateOnly keeps legacy UTC day boundaries on their day", () => {
+  assert.equal(promotionBoundaryToDateOnly("2026-05-31T23:59:59.000Z", "end"), "2026-05-31");
+  assert.equal(promotionBoundaryToDateOnly("2026-05-31T23:59:59+00:00", "end"), "2026-05-31");
+  assert.equal(promotionBoundaryToDateOnly("2026-05-25T00:00:00Z", "start"), "2026-05-25");
+  // New Singapore boundaries, as Postgres returns them in UTC.
+  assert.equal(promotionBoundaryToDateOnly("2026-05-31T15:59:59+00:00", "end"), "2026-05-31");
+  assert.equal(promotionBoundaryToDateOnly("2026-05-24T16:00:00+00:00", "start"), "2026-05-25");
+  assert.equal(
+    promotionBoundaryToDateOnly(toSingaporePromotionBoundary("2026-05-31", "end"), "end"),
+    "2026-05-31",
+  );
 });
 
 test("validateMerchantPromotionInput accepts timezone-qualified datetimes only", () => {

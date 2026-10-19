@@ -3026,8 +3026,12 @@ export const supabaseService: HungryService = {
 
     async requestEmailChange(newEmail) {
       const client = requireSupabaseClient();
-      // Supabase emails a confirmation link; auth.users.email changes only after it is opened.
-      const { error } = await client.auth.updateUser({ email: newEmail.trim().toLowerCase() });
+      // Supabase (secure email change) emails links to both the current and new address;
+      // auth.users.email changes only after they are opened.
+      const { error } = await client.auth.updateUser(
+        { email: newEmail.trim().toLowerCase() },
+        { emailRedirectTo: AUTH_REDIRECTS.emailConfirm },
+      );
       if (error) throw error;
     },
 
@@ -5546,11 +5550,16 @@ export const supabaseService: HungryService = {
       const dishId = asString(draft.promoted_dish_id) ?? `dish-from-${draftId}`;
       const findExistingDish = async () =>
         (await this.getMenu(outletId)).find((menuDish) => menuDish.id === dishId);
+      // Already added (another device or a list tap): apply the editor's changes, not drop them.
+      const withEdits = (existing: DishDetail) =>
+        edits && Object.keys(edits).length > 0
+          ? this.editDish(outletId, existing.id, edits)
+          : existing;
       const reviewStatus = asString(draft.review_status);
       if (reviewStatus === "rejected") throw new Error("This draft was already rejected.");
       if (reviewStatus === "accepted" || reviewStatus === "promoted") {
         const existing = await findExistingDish();
-        if (existing) return existing;
+        if (existing) return withEdits(existing);
       }
       let dish: DishDetail;
       try {
@@ -5565,7 +5574,7 @@ export const supabaseService: HungryService = {
         // A repeated tap races the first insert; return the dish it created.
         const existing = await findExistingDish();
         if (!existing) throw insertError;
-        dish = existing;
+        dish = await withEdits(existing);
       }
       const { error: updateError } = await client
         .from("dishes_draft")

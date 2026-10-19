@@ -1,6 +1,7 @@
 import Constants from "expo-constants";
+import { File, Paths } from "expo-file-system";
 import { useEffect, useState } from "react";
-import { Alert, AppState, Linking, Share, View } from "react-native";
+import { Alert, AppState, Linking, Platform, Share, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
@@ -111,10 +112,16 @@ export function SettingsScreen() {
       setIsExportingData(true);
       try {
         const exportData = await buildMyDataExport(getHungryService());
-        await Share.share({
-          title: "My Hungry data",
-          message: JSON.stringify(exportData, null, 2),
-        });
+        const exportJson = JSON.stringify(exportData, null, 2);
+        if (Platform.OS === "ios") {
+          // Share a .json file; Android keeps the text share until expo-sharing ships natively.
+          const exportFile = new File(Paths.cache, "hungry-data-export.json");
+          exportFile.create({ overwrite: true });
+          exportFile.write(exportJson);
+          await Share.share({ title: "My Hungry data", url: exportFile.uri });
+        } else {
+          await Share.share({ title: "My Hungry data", message: exportJson });
+        }
       } catch {
         Alert.alert(
           "Export failed",

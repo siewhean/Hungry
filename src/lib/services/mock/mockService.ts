@@ -2822,7 +2822,12 @@ export const hungryService: HungryService = {
       const dishId = `dish-from-${draftId}`;
       if (draft.status === "accepted") {
         const existing = getMerchantMenu(draft.outletId).find((dish) => dish.id === dishId);
-        if (existing) return resolve(clone(existing));
+        if (existing) {
+          // Already added (another device or a list tap): apply the editor's changes, not drop them.
+          return edits && Object.keys(edits).length > 0
+            ? this.editDish(draft.outletId, existing.id, edits)
+            : resolve(clone(existing));
+        }
       }
       if (draft.status !== "pending")
         throw new Error(`OCR draft ${draftId} is already ${draft.status}`);

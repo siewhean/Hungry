@@ -27,6 +27,7 @@ import {
   resolvePromotionRuntimeStatus,
 } from "@/features/merchant/merchantReadiness";
 import {
+  promotionBoundaryToDateOnly,
   toSingaporeDateOnly,
   toSingaporePromotionBoundary,
   validateMerchantPromotionInput,
@@ -94,8 +95,8 @@ export function PromotionBuilderScreen() {
         setTitle(promo.title);
         setDescription(promo.description);
         setTargetDishId(promo.targetDishId);
-        setStartDate(toSingaporeDateOnly(promo.startDate));
-        setEndDate(toSingaporeDateOnly(promo.endDate));
+        setStartDate(promotionBoundaryToDateOnly(promo.startDate, "start"));
+        setEndDate(promotionBoundaryToDateOnly(promo.endDate, "end"));
         setStatus(promo.status);
         setTargetAudiences(new Set(promo.targetAudience));
         setPromotionItemType(promo.promotionItemType ?? "new_item");

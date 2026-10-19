@@ -87,6 +87,8 @@ export function DishEditorScreen() {
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [ingredients, setIngredients] = useState("");
+  // Menu-scan taste tags are kept as tags, not shown or saved as ingredients.
+  const [draftTasteTags, setDraftTasteTags] = useState<string[]>([]);
   const [imageUrl, setImageUrl] = useState("");
   const [originalImageUrl, setOriginalImageUrl] = useState("");
   const [section, setSection] = useState("");
@@ -117,7 +119,7 @@ export function DishEditorScreen() {
           setName(draft.name);
           setPrice(draft.price ? draft.price.toFixed(2) : "");
           setDescription(draft.suggestedDescription ?? "");
-          setIngredients((draft.suggestedTasteTags ?? []).join(", "));
+          setDraftTasteTags(draft.suggestedTasteTags ?? []);
           setDietaryFlags(draft.suggestedDietaryTags ?? []);
         }
         return;
@@ -182,7 +184,7 @@ export function DishEditorScreen() {
         ...(imageChanged || !dishId
           ? { imageUrl: trimmedImageUrl, gallery: trimmedImageUrl ? [trimmedImageUrl] : [] }
           : {}),
-        tasteTags: parseCommaSeparated(ingredients),
+        tasteTags: Array.from(new Set([...draftTasteTags, ...parseCommaSeparated(ingredients)])),
         tasteVector,
         dietaryFlags,
         availabilityFlags: withDishSection(

@@ -238,6 +238,8 @@ test("Merchant screen contract: menu management screens are wired to merchant se
   assert.match(dishEditor, /ALLERGEN_CHECK_DISCLAIMER/);
   assert.doesNotMatch(dishEditor, /AI Suggest|AI Generate|No common allergens detected/);
   assert.match(dishEditor, /acceptOCRDraft\(ocrDraftId, updates\)/);
+  // Scan taste tags stay tags; they are not pre-filled as ingredients for the allergen check.
+  assert.doesNotMatch(dishEditor, /setIngredients\(\(draft\.suggestedTasteTags/);
   assert.doesNotMatch(
     ocrDrafts,
     /acceptOCRDraft\(draftId\);\s*setDrafts[\s\S]{0,120}navigate\("DishEditor"/,

@@ -58,6 +58,12 @@ test("manual selection keeps the OS permission and clearing it returns to device
   assert.equal(useLocationStore.getState().manualCoordinate, undefined);
   assert.equal(useLocationStore.getState().permission, "granted");
   assert.equal(useLocationStore.getState().gpsBadgeState, "live");
+  // The GPS refresh fails here (no location module), so the old pick must not stay as the "live" fix.
+  assert.notDeepEqual(useLocationStore.getState().currentLocation, {
+    latitude: 1.352083,
+    longitude: 103.940612,
+  });
+  assert.equal(useLocationStore.getState().lastLocationFixAt, undefined);
 
   // Without permission, clearing falls back to the default area instead of the old pick.
   useLocationStore.setState({ permission: "denied" });
