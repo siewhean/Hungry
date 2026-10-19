@@ -41,7 +41,7 @@ test("merchant FeaturedVisitors screen manages review-backed pins through servic
     [
       /merchant\.listPopularVisitorPins\(activeOutlet\.id\)/,
       /merchant\.listPopularVisitorCandidates\(activeOutlet\.id\)/,
-      /merchant\.pinPopularVisitor\(activeOutlet\.id, candidate\.reviewId\)/,
+      /merchant\.pinPopularVisitor\(\s*activeOutlet\.id,\s*candidate\.reviewId,?\s*\)/,
       /merchant\.unpinPopularVisitor\(pinId\)/,
       /merchant\.reorderPopularVisitorPins\(/,
       /pins\.length >= 6/,
