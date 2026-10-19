@@ -8,21 +8,18 @@ import { SORTED_SINGAPORE_AREAS, sortAreasByName } from "./singaporeAreas";
 const read = (relativePath: string) =>
   readFileSync(path.join(process.cwd(), "src/app/screens/onboarding", relativePath), "utf8");
 
-test("manual location picker continues like LocationPermission (shared finish step)", () => {
+test("location steps continue to the optional taste quiz without completing onboarding", () => {
   const manual = read("ManualLocationPickerScreen.tsx");
   const permission = read("LocationPermissionScreen.tsx");
-  const finish = read("finishLocationStep.ts");
 
-  assert.match(manual, /const finishLocationStep = useFinishLocationStep\(navigation\)/);
   assert.match(
     manual,
-    /setManualSelection\(selectedArea\.name, selectedArea\.coordinate\);[\s\S]*?finishLocationStep\(\);/,
+    /setManualSelection\(selectedArea\.name, selectedArea\.coordinate\);[\s\S]*?navigation\.navigate\("TasteQuiz"\);/,
   );
-  assert.doesNotMatch(manual, /completeOnboarding\(/);
-  assert.match(permission, /const finish = useFinishLocationStep\(navigation\)/);
-  assert.match(finish, /completeOnboarding\(hasSkippedTasteQuiz\)/);
-  assert.match(finish, /navigation\.navigate\("OnboardingAuth"\)/);
-  assert.match(finish, /routes: \[\{ name: "MainTabs", params: \{ screen: "Home" \} \}\]/);
+  for (const source of [manual, permission]) {
+    assert.doesNotMatch(source, /completeOnboarding\(/);
+  }
+  assert.match(permission, /navigation\.navigate\("TasteQuiz"\)/);
 });
 
 test("manual location list is alphabetical", () => {
@@ -48,13 +45,7 @@ test("taste profile result respects safe area and hides the grid when no dishes"
 });
 
 test("onboarding copy stays within Release 0.1 MVP scope", () => {
-  const copy = [
-    "OnboardingIntro1Screen.tsx",
-    "LocationPermissionScreen.tsx",
-    "CuisineSelectionScreen.tsx",
-  ]
-    .map(read)
-    .join("\n");
+  const copy = ["WelcomeScreen.tsx", "LocationPermissionScreen.tsx"].map(read).join("\n");
   for (const outOfScope of [
     /Home feed/,
     /Bites/,
@@ -65,10 +56,4 @@ test("onboarding copy stays within Release 0.1 MVP scope", () => {
   ]) {
     assert.doesNotMatch(copy, outOfScope);
   }
-});
-
-test("cuisine selection (with optional dish picks) requires a cuisine and tiles show a placeholder", () => {
-  const cuisine = read("CuisineSelectionScreen.tsx");
-  assert.match(cuisine, /disabled=\{selected\.length === 0\}/);
-  assert.match(cuisine, /backgroundColor: palette\.surfaceRaised/);
 });

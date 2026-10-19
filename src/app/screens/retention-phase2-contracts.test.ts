@@ -100,8 +100,53 @@ test("weekly picks push is a separate opt-out that reuses the outbox, cap and qu
   assert.match(worker, /weekly_picks: true/);
   assert.match(
     worker,
-    /isWeeklyPicks \? !pref\.weekly_picks : !pref\.stall_updates\) skipReason = "opted_out"/,
+    /isWeeklyPicks\s*\? !pref\.weekly_picks\s*: !pref\.stall_updates\s*\)\s*skipReason = "opted_out"/,
   );
   assert.match(worker, /!isWeeklyPicks && \(!dish \|\| isSoldOut/);
   assert.match(worker, /sentThisWeek\.get\(job\.user_id\) \?\? 0\) >= pref\.weekly_cap/);
+});
+
+test("merchant low-rating push: reviews trigger enqueues, worker rechecks, settings toggle", () => {
+  const migration = read("supabase/migrations/20261019170000_merchant_low_rating_push.sql");
+  // Threshold is 2 stars or below, on insert only.
+  assert.match(migration, /if new\.rating is null or new\.rating > 2 then/);
+  assert.match(migration, /after insert on public\.reviews/);
+  // Definer body in app_private, not callable by clients.
+  assert.match(
+    migration,
+    /function app_private\.enqueue_merchant_low_rating_alert\(\)[\s\S]*?security definer\s+set search_path = ''/,
+  );
+  assert.match(
+    migration,
+    /revoke all on function app_private\.enqueue_merchant_low_rating_alert\(\) from public, anon, authenticated/,
+  );
+  assert.doesNotMatch(migration, /create or replace function public\./);
+  // Verified outlets only, account toggle defaults on, reviewer/blockers skipped.
+  assert.match(migration, /mv\.status = 'verified'/);
+  assert.match(migration, /coalesce\(mnp\.low_rating_alerts, true\)/);
+  assert.match(migration, /recipient\.user_id is distinct from new\.user_id/);
+  assert.match(migration, /ub\.blocked_user_key = new\.user_id::text/);
+  assert.match(migration, /'merchant_low_rating',\s*'low_rating'/);
+  assert.match(migration, /'low-rating:' \|\| new\.id::text/);
+  assert.match(migration, /perform public\.invoke_notification_worker\(\)/);
+  assert.doesNotMatch(migration, /merchant_email_outbox\s*\(/);
+  assert.ok(read("supabase/smoke/merchant_low_rating_push.sql").includes("rollback;"));
+
+  const worker = read("supabase/functions/send-notifications/index.ts");
+  assert.match(worker, /lowRatingOffAccounts\.has\(job\.merchant_account_id\)/);
+  assert.match(worker, /isLowRating\s*\? !liveReviewIds\.has\(job\.review_id\)/);
+  assert.match(worker, /\.in\("state", \["hidden", "removed"\]\)/);
+  // Merchant alerts neither use up nor are limited by the consumer weekly cap.
+  assert.match(worker, /!isLowRating && \(sentThisWeek\.get\(job\.user_id\)/);
+  assert.match(worker, /\.neq\("category", MERCHANT_LOW_RATING\)/);
+  // Off until Merchant Centre ships (the deep link needs it), and never held for quiet hours.
+  assert.match(worker, /Deno\.env\.get\("MERCHANT_ALERTS_ENABLED"\) === "true"/);
+  assert.match(
+    worker,
+    /isLowRating && !merchantAlertsEnabled\) skipReason = "merchant_alerts_disabled"/,
+  );
+  assert.match(worker, /!isLowRating && isQuietHour\(/);
+
+  const push = read("src/lib/notifications/push.ts");
+  assert.match(push, /if \(!existing\.granted && !askPermission\) return false;/);
 });

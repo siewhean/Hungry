@@ -11,8 +11,8 @@ import { HUNGRY_LOGO_STANDARD_WORDMARK_SIZE } from "@/constants/brandAssets";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
+import { OnboardingProgress } from "./OnboardingProgress";
 import type { OnboardingStackParamList } from "./OnboardingStack";
-import { useFinishLocationStep } from "./finishLocationStep";
 import {
   ONBOARDING_ACTIONS_BOTTOM_PADDING,
   ONBOARDING_ACTIONS_GAP,
@@ -56,9 +56,11 @@ export function LocationPermissionScreen({ navigation }: Props) {
   const manualLocation = useLocationStore((state) => state.manualLocation);
   const showToast = useUIStore((state) => state.showToast);
   const [isContinuing, setIsContinuing] = useState(false);
-  // Last onboarding step: signed-in users land on Home; signed-out users
-  // continue to the mandatory account step (no guest access).
-  const finish = useFinishLocationStep(navigation);
+
+  // Step 2 of onboarding; the optional taste quiz comes next.
+  const next = () => {
+    navigation.navigate("TasteQuiz");
+  };
 
   const pickAreaInstead = () => {
     showToast({
@@ -75,7 +77,7 @@ export function LocationPermissionScreen({ navigation }: Props) {
         pickAreaInstead();
         return;
       }
-      finish();
+      next();
     } catch {
       pickAreaInstead();
     }
@@ -88,7 +90,7 @@ export function LocationPermissionScreen({ navigation }: Props) {
 
     setIsContinuing(true);
     if (manualLocation) {
-      finish();
+      next();
       setIsContinuing(false);
       return;
     }
@@ -116,13 +118,13 @@ export function LocationPermissionScreen({ navigation }: Props) {
         >
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Back to taste quiz"
-            accessibilityHint="Returns to the taste preference questions"
+            accessibilityLabel="Back to welcome"
+            accessibilityHint="Returns to the welcome screen"
             onPress={() => {
               if (navigation.canGoBack()) {
                 navigation.goBack();
               } else {
-                navigation.navigate("TasteQuiz");
+                navigation.navigate("OnboardingWelcome");
               }
             }}
             style={{
@@ -148,6 +150,7 @@ export function LocationPermissionScreen({ navigation }: Props) {
             paddingBottom: 16,
           }}
         >
+          <OnboardingProgress step="location" />
           <View style={{ gap: spacing[2] }}>
             <AccessibleImage
               source={locationPermissionsGraphic}

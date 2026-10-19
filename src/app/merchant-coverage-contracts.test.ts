@@ -307,19 +307,33 @@ test("merchant inbox, promotions, AI assistant, and settings use service-backed 
       /merchant\.getMerchantNotifications\(/,
       /merchant\.getWeeklySummaryStats\(/,
       /merchant\.syncLowRatingNotifications\(/,
-      /Hungry does not send push or email alerts to merchants yet/,
+      // Low-rating push alerts are real (reviews trigger -> notification_jobs -> send-notifications).
+      /merchant\.getNotificationPreferences\(/,
+      /merchant\.updateNotificationPreferences\(account\.id, \{\s*lowRatingAlerts: enabled,/,
+      /label="Low-rating push alerts"/,
+      /registerForStallAlerts\(\{ askPermission: false \}\)/,
+      /Hungry sends low-rating push alerts to the account owner as soon as the review is/,
+      // Preferences failing to load must not take the alerts list down with them.
+      /\.getNotificationPreferences\(account\.id\)\s*\.catch\(\(\) => null\)/,
+      /registerForStallAlerts\(\)\.catch\(\(\) => false\)/,
+      // Web cannot register for push, so it never offers "Allow notifications".
+      /Platform\.OS !== "web" && !isDeviceRegistered/,
+      /Low-rating alerts go to the Hungry app on your phone\./,
+      /Email alerts and weekly emails are not sent\./,
     ],
     "MerchantSettingsScreen",
   );
-  // Team invites, alert preferences and weekly emails are not delivered yet, so they are hidden.
+  // Team invites and weekly emails are not delivered, so they stay hidden.
   assertSourceExcludes(
     settings,
     [
       /merchant\.addTeamMember\(/,
       /merchant\.sendWeeklySummaryNotifications\(/,
-      /merchant\.updateNotificationPreferences\(/,
+      /Hungry does not send push or email alerts/,
+      /weeklyDigest/,
       /Immediate alert/,
       /Weekly email summary/,
+      /Send weekly summary/,
     ],
     "MerchantSettingsScreen hidden fake features",
   );

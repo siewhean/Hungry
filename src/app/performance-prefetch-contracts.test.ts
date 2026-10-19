@@ -135,7 +135,6 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   const homeScreen = read("src/app/screens/home/HomeFeedScreen.tsx");
   const discover = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
   const search = read("src/app/screens/search/SearchResultsScreen.tsx");
-  const searchResultsView = read("src/components/discover/SearchResultsView.tsx");
   const quickBites = read("src/app/screens/discover/QuickBitesScreen.tsx");
   const merchantTabs = read("src/app/navigation/MerchantTabs.tsx");
   const zoomableMedia = read("src/components/social/ZoomableMedia.tsx");
@@ -153,15 +152,17 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   assert.match(prefetch, /const MAX_IDLE_PREFETCH_WORK_PER_TICK = 8/);
   assert.match(prefetch, /pendingIdlePrefetchWorkCount/);
   assert.match(prefetch, /const scheduledRoutePreloads = new Set<string>\(\)/);
-  assert.match(prefetch, /const scheduledBrowseResultPrefetches = new Set<string>\(\)/);
   assert.match(prefetch, /export function prefetchDishDetail/);
   assert.match(prefetch, /export function prefetchStallDetail/);
   assert.match(prefetch, /export function prefetchPostDetail/);
   assert.match(prefetch, /export function preloadRoute/);
   assert.match(prefetch, /export function prefetchBrowseResults/);
-  assert.match(prefetch, /getBrowseIndex\(repository\)/);
-  assert.match(prefetch, /searchBrowseDishes\(browseIndex/);
-  assert.match(prefetch, /finally \{[\s\S]*scheduledBrowseResultPrefetches\.delete\(key\)/);
+  // The catalog is server-paged: browse prefetch only preloads the results route.
+  assert.doesNotMatch(prefetch, /getBrowseIndex|searchBrowseDishes/);
+  assert.match(
+    prefetch,
+    /export function prefetchBrowseResults[\s\S]*preloadRoute\(navigation, "SearchResults"/,
+  );
   assert.doesNotMatch(prefetch, /repository: DataRepository = getDataRepository\(\)/);
   assert.match(prefetch, /schedulePrefetchWork\(\(\) => \{[\s\S]*"preload" in navigation/);
   assert.match(prefetch, /"preload" in navigation/);
@@ -173,8 +174,6 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   assert.match(discover, /prefetchBrowseResults\(item\.query, navigation/);
   assert.match(discover, /scheduleIdleWork\([\s\S]*preloadRoute\(navigation, "BrowseDishes"\)/);
   assert.match(discover, /<PopularFoodStyleItem/);
-  assert.match(searchResultsView, /const SearchResultRow = memo/);
-  assert.match(searchResultsView, /<SearchResultRow dish=\{dish\}/);
   assert.doesNotMatch(discover, /preloadRoute\(navigation, "SearchResults"/);
   assert.match(discover, /scheduleIdleWork\([\s\S]*recordTasteInteraction[\s\S]*popular_right_now/);
   assert.match(
@@ -189,29 +188,8 @@ test("prefetch layer warms images, data, and route modules without blocking navi
     quickBites,
     /navigation\.navigate\("SearchHome"\);[\s\S]*scheduleIdleWork\([\s\S]*rememberSearch\(trimmed\)/,
   );
-  assert.match(search, /onPressIn=\{\(\) =>/);
   assert.match(search, /function BrowseGridLoadingState/);
-  assert.match(search, /getCachedBrowseIndex\(repository\)/);
-  assert.match(search, /getBrowseIndex\(repository\)/);
-  assert.match(search, /isBrowseDataReady \? \(/);
-  assert.match(
-    search,
-    /navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dish\.id \}\);[\s\S]*scheduleIdleWork\([\s\S]*dish_result_click/,
-  );
-  assert.match(
-    search,
-    /navigation\.navigate\("DishDetail", \{ dishId: dish\.id \}\);[\s\S]*scheduleIdleWork\([\s\S]*rememberSearch\(filters\.query\)/,
-  );
-  assert.match(search, /const browsePostIndexes = useMemo/);
-  assert.match(search, /postByDishId\.get\(dish\.id\)/);
-  assert.match(search, /postByVenueId\.get\(venue\.id\)/);
-  assert.doesNotMatch(search, /stallPosts\.find/);
-  assert.doesNotMatch(search, /results\.slice\(0, 8\)\.forEach/);
-  assert.doesNotMatch(search, /filteredFeedItems\.slice\(0, 8\)\.forEach/);
-  assert.match(searchResultsView, /import \{ FlashList \} from "@shopify\/flash-list"/);
-  assert.match(searchResultsView, /function SearchResultsSkeletonList/);
-  assert.match(searchResultsView, /renderItem=\{renderResult\}/);
-  assert.doesNotMatch(searchResultsView, /results\.map/);
+  assert.doesNotMatch(search, /getCachedBrowseIndex|getBrowseIndex/);
   assert.match(merchantTabs, /prefetchMerchantTab\(route\.name/);
   assert.doesNotMatch(zoomableMedia, /from "expo-video"/);
   assert.match(zoomableMedia, /require\("\.\/ZoomableVideo"\)/);

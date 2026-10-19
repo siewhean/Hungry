@@ -33,13 +33,8 @@ test("P2-2: search clear works on the first tap with the keyboard up and keeps f
   assert.match(dishSearch, /searchInputRef\.current\?\.focus\(\)/);
   assert.match(read("src/components/ui/Screen.tsx"), /keyboardShouldPersistTaps="handled"/);
 
-  const resultsView = read("src/components/discover/SearchResultsView.tsx");
-  assert.match(resultsView, /onPress=\{handleClear\}/);
-  assert.match(resultsView, /searchInputRef\.current\?\.focus\(\)/);
-  assert.match(resultsView, /keyboardShouldPersistTaps="handled"/);
-
   const resultsScreen = read("src/app/screens/search/SearchResultsScreen.tsx");
-  assert.equal(resultsScreen.match(/keyboardShouldPersistTaps="handled"/g)?.length, 2);
+  assert.match(resultsScreen, /keyboardShouldPersistTaps="handled"/);
   assert.match(resultsScreen, /rawSearchInputRef\.current\?\.focus\(\)/);
 });
 

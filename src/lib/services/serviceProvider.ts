@@ -12,6 +12,7 @@ import {
 import { getConfiguredDataSource, setConfiguredDataSource } from "@/lib/services/supabase/client";
 import type { DataRepository, HungryService } from "@/lib/services/types";
 import type { TasteVector } from "@/types/domain";
+import type { CatalogRawService } from "@/lib/services/catalog";
 
 export interface ServiceProvider {
   mode: "mock" | "supabase" | "excel";
@@ -442,20 +443,30 @@ export function getHungryService(): HungryService {
   return getActiveProvider().service;
 }
 
+let localCatalog: { provider: ServiceProvider; service: CatalogRawService } | null = null;
+
 /**
- * Supabase remains the authentication/write authority. Excel is reachable only
- * through this authenticated, read-only catalog wrapper after a classified
- * online availability failure.
+ * The paged catalog behind Search, Browse, the map and catalog detail. Supabase
+ * serves authenticated, release-versioned RPCs (with the strictly classified
+ * Excel fallback); Excel is reachable only through the authenticated, read-only
+ * catalog wrapper; mock serves the same contract from its local repository.
  */
-export function getCatalogRawService(): CatalogReadService | null {
-  const providerMode = getActiveProvider().mode;
-  if (providerMode === "mock") return null;
-  if (providerMode === "excel") {
+export function getCatalogRawService(): CatalogRawService {
+  const provider = getActiveProvider();
+  if (provider.mode === "supabase") {
+    if (!cachedCatalogReadService) cachedCatalogReadService = createResilientCatalogReadService();
+    return cachedCatalogReadService;
+  }
+  if (provider.mode === "excel") {
     requireAuthenticatedCatalogFallbackSession();
     return getExcelCatalogFallbackService();
   }
-  if (!cachedCatalogReadService) cachedCatalogReadService = createResilientCatalogReadService();
-  return cachedCatalogReadService;
+  if (localCatalog?.provider !== provider) {
+    const { createLocalCatalogService } =
+      require("@/lib/services/mock/catalogMockService") as typeof import("@/lib/services/mock/catalogMockService");
+    localCatalog = { provider, service: createLocalCatalogService(provider.repository) };
+  }
+  return localCatalog.service;
 }
 
 export function getDataRepository(): DataRepository {

@@ -72,15 +72,10 @@ test("D5: Settings support/legal links use the live site constants", () => {
 });
 
 test("D6: release search inputs expose an accessible clear button and results header renders back + field", () => {
-  const view = read("src/components/discover/SearchResultsView.tsx");
   const results = read("src/app/screens/search/SearchResultsScreen.tsx");
   const dishSearch = read("src/app/screens/search/DishSearchScreen.tsx");
 
-  assert.doesNotMatch(view, /isSearchExpanded/);
-  assert.match(view, /accessibilityLabel="Go back"/);
-  assert.match(view, /accessibilityLabel="Search dishes"/);
-  assert.match(view, /accessibilityLabel="Clear search"/);
-  assert.match(results, /onBack=\{\(\) =>/);
+  assert.match(results, /accessibilityLabel="Clear search"/);
   assert.match(results, /onPress=\{\(\) => \{\s*setSearchQuery\(""\);/);
   assert.match(dishSearch, /accessibilityLabel="Clear search"/);
 });

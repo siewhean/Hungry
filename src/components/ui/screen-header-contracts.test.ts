@@ -880,53 +880,17 @@ test("Discover V1 contract: browse cards open the image-feed browse mode", () =>
   assert.match(navigationTypes, /BrowseStalls: undefined/);
   assert.match(searchResults, /export function BrowseDishesScreen/);
   assert.match(searchResults, /export function BrowseStallsScreen/);
-  assert.match(
-    searchResults,
-    /const BROWSE_FILTERS = \[[\s\S]*"All",[\s\S]*"Local",[\s\S]*"Halal"/,
-  );
+  assert.match(searchResults, /const RAW_BROWSE_FILTER_OPTIONS = \[[\s\S]*"All",[\s\S]*"Halal"/);
   assert.match(searchResults, /<Screen scroll=\{false\} fullWidth/);
   assert.match(
     searchResults,
-    /const browseTitle = isDishGrid \? "Dishes" : "Stalls & Restaurants"/,
+    /placeholder=\{mode === "dishes" \? "Search all dishes" : "Search all stalls"\}/,
   );
-  assert.match(searchResults, /<View style=\{\[browseStyles\.titleRow/);
-  assert.match(searchResults, /<AppText[\s\S]*variant="h1"[\s\S]*\{browseTitle\}/);
-  assert.match(searchResults, /titleRow: \{ alignItems: "center", flexDirection: "row"/);
-  assert.match(
-    searchResults,
-    /style=\{\[browseStyles\.inlineSearchLauncher[\s\S]*\{isSearchExpanded \? \([\s\S]*<Animated\.View/,
-  );
-  assert.match(searchResults, /<TextInput[\s\S]*placeholder=\{searchPlaceholder\}/);
   assert.doesNotMatch(searchResults, /useMovingSearchPlaceholder|movingSearchPlaceholder/);
-  assert.match(
-    searchResults,
-    /const searchPlaceholder = isDishGrid \? "Find dishes\.\.\." : "Find stalls\.\.\."/,
-  );
-  assert.match(searchResults, /<FlashList[\s\S]*numColumns=\{numColumns\}/);
-  assert.match(searchResults, /const numColumns = 2/);
-  assert.match(searchResults, /const itemWidth = screenWidth \/ numColumns/);
-  assert.match(
-    searchResults,
-    /<LinearGradient[\s\S]*palette\.mediaGradientMid[\s\S]*palette\.detailImageOverlay/,
-  );
-  assert.match(searchResults, /<Avatar uri=\{activeSlide\.authorAvatarUrl\}/);
-  assert.match(
-    searchResults,
-    /navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dish\.id \}\)/,
-  );
+  assert.match(searchResults, /<FlashList[\s\S]*numColumns=\{2\}/);
+  assert.match(searchResults, /const itemWidth = width \/ 2/);
+  assert.match(searchResults, /navigation\.navigate\("CatalogRawDetail"/);
   assert.doesNotMatch(searchResults, /navigation\.navigate\("StallDetail"/);
-  assert.doesNotMatch(searchResults, /Dishes in \$\{areaLabel\}/);
-  assert.doesNotMatch(searchResults, /Stalls & restaurants in \$\{areaLabel\}/);
-  assert.doesNotMatch(searchResults, /Dishes, stalls, or hawker centres…/);
-  assert.doesNotMatch(
-    searchResults,
-    /const browseCardWidth = \(screenWidth - gridPadding - gridGap \* 2\) \/ 3/,
-  );
-  assert.match(searchResults, /const allDishes = useMemo/);
-  assert.match(searchResults, /const browseVenues = useMemo/);
-  assert.match(searchResults, /topDish,\s*minDistanceMeters/s);
-  assert.doesNotMatch(searchResults, /groupResultsByVenue/);
-  assert.match(searchResults, /const browseMode = route\.params\?\.browseMode/);
   assert.doesNotMatch(searchResults, /Dishes nearby/);
   assert.doesNotMatch(searchResults, /Stalls & restaurants nearby/);
   assert.match(searchResults, /function BrowseGridLoadingState/);

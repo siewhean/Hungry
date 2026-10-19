@@ -6,7 +6,6 @@ import { Heart, Star } from "lucide-react-native";
 import { AccessibleImage, AppText, Button, Card, Chip, EmptyState } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { prefetchDishDetail, preloadRoute } from "@/features/navigation/prefetch";
-import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import type { CatalogRawDishDetail } from "@/lib/services/catalog";
 import { loadCatalogFavourites } from "@/lib/services/catalog/favourites";
 import {
@@ -184,7 +183,7 @@ function CatalogFavouritesScreen({ navigation }: Props) {
 }
 
 export function FavouritesScreen(props: Props) {
-  const useCatalog = FEATURE_FLAGS.catalogReadV2 && getServiceProvider().mode === "supabase";
+  const useCatalog = getServiceProvider().mode === "supabase";
   return useCatalog ? (
     <CatalogFavouritesScreen {...props} />
   ) : (

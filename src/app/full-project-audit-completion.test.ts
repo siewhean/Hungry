@@ -131,7 +131,6 @@ test("full project audit P1: numeric trust surfaces disclose live or preview dat
   const foodCredBadge = read("src/components/gamification/FoodCredBadge.tsx");
   const missionBanner = read("src/components/gamification/MissionBanner.tsx");
   const missionsScreen = read("src/app/screens/profile/MissionsScreen.tsx");
-  const homeMap = read("src/app/screens/discover/HomeMapScreen.tsx");
   const dishDetail = read("src/app/screens/detail/DishDetailScreenV2.tsx");
 
   assert.match(disclosure, /getServiceProvider\(\)\.mode === "supabase"/);
@@ -141,8 +140,6 @@ test("full project audit P1: numeric trust surfaces disclose live or preview dat
   assert.match(disclosure, /Preview mission progress/);
   assert.match(disclosure, /Live score/);
   assert.match(disclosure, /Preview score/);
-  assert.match(disclosure, /Live map status/);
-  assert.match(disclosure, /Preview map status/);
   assert.match(disclosure, /Listed wait estimate/);
   assert.doesNotMatch(disclosure, /Live wait estimate/);
   assert.match(disclosure, /Preview wait estimate/);
@@ -151,7 +148,6 @@ test("full project audit P1: numeric trust surfaces disclose live or preview dat
   assert.match(foodCredBadge, /getDataTrustDisclosure\("foodCred"\)/);
   assert.match(missionBanner, /getDataTrustDisclosure\("missions"\)/);
   assert.match(missionsScreen, /getDataTrustDisclosure\("missions"\)/);
-  assert.match(homeMap, /getDataTrustDisclosure\("mapStatus"\)/);
   assert.match(dishDetail, /getDataTrustDisclosure\("waitEstimate"\)/);
 });
 

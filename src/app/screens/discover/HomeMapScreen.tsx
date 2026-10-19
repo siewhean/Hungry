@@ -8,9 +8,8 @@ import {
   Animated,
   PanResponder,
 } from "react-native";
-import AnimatedReanimated, { FadeInUp, FadeOutDown } from "react-native-reanimated";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import {
   LocateFixed,
   Map as MapIcon,
@@ -20,8 +19,6 @@ import {
   Utensils,
   Heart,
   X,
-  Flame,
-  Zap,
 } from "lucide-react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -40,21 +37,15 @@ import {
   getBuildingById,
   getNearestBuildings,
   singaporeBuildings,
-  toSummary,
 } from "@/lib/geo/singaporeBuildings";
-import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
-import {
-  getCatalogRawService,
-  getDataRepository,
-  getServiceProvider,
-} from "@/lib/services/serviceProvider";
+import { getCatalogRawService } from "@/lib/services/serviceProvider";
 import type { CatalogMapItem, CatalogRawVenueCard } from "@/lib/services/catalog";
-import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { DiscoverViewToggle } from "@/components/discover/DiscoverViewToggle";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useSearchStore } from "@/store/useSearchStore";
+import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
-import type { DishDetail } from "@/types/domain";
 
 const DEFAULT_BUILDING_ID = "hc-maxwell";
 type HomeMapFilterId = "nearMe" | "hawkerOnly" | "topRated" | "openNow";
@@ -66,73 +57,17 @@ const HOME_MAP_FILTER_OPTIONS: readonly { id: HomeMapFilterId; label: string }[]
   { id: "openNow", label: "Open Now" },
 ];
 
-function CrowdIndicator({ level }: { level?: "low" | "medium" | "high" }) {
-  const { palette, spacing, radii } = useHungryTheme();
-  if (!level) return null;
-
-  const config = {
-    low: {
-      color: palette.statusFast,
-      label: "Fast",
-      icon: <Zap size={10} color={palette.statusFast} fill={palette.statusFast} />,
-    },
-    medium: { color: palette.statusModerate, label: "Moderate", icon: null },
-    high: {
-      color: palette.statusBusy,
-      label: "Trending",
-      icon: <Flame size={10} color={palette.statusBusy} fill={palette.statusBusy} />,
-    },
-  };
-
-  const { color, label, icon } = config[level];
-
-  return (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        gap: spacing[1],
-        backgroundColor: `${color}15`,
-        paddingHorizontal: spacing[2],
-        paddingVertical: spacing[1],
-        borderRadius: radii.sm,
-      }}
-    >
-      {icon}
-      {!icon && (
-        <View
-          style={{
-            width: 6,
-            height: 6,
-            borderRadius: 3,
-            backgroundColor: color,
-          }}
-        />
-      )}
-      <AppText
-        style={{
-          color,
-          fontSize: 10,
-          fontWeight: "800",
-          textTransform: "uppercase",
-        }}
-      >
-        {label}
-      </AppText>
-    </View>
-  );
-}
-
 export function HomeMapScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const repository = getDataRepository();
+  const route = useRoute();
   const catalogRawService = getCatalogRawService();
-  const shouldUseCatalogReadV2 =
-    FEATURE_FLAGS.catalogReadV2 && getServiceProvider().mode === "supabase";
+  // The map is open to every diner. Catalog pins need a signed-in session, so a
+  // guest still gets the map, location and recentre, plus a prompt to sign in.
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const insets = useSafeAreaInsets();
   const { componentRadii, palette, radii, shadows, spacing, zIndex } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
-  const mapStatusDisclosure = getDataTrustDisclosure("mapStatus");
   const searchQuery = useSearchStore((state) => state.filters.query);
   const updateSearchQuery = useSearchStore((state) => state.updateQuery);
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
@@ -152,7 +87,6 @@ export function HomeMapScreen() {
       manualCoordinate,
     });
   const selectedBuilding = useDiscoveryStore((state) => state.selectedBuilding);
-  const setSelectedBuilding = useDiscoveryStore((state) => state.setSelectedBuilding);
   const highlightedStallVenueId = useDiscoveryStore((state) => state.highlightedStallVenueId);
   const mapFilters = useDiscoveryStore((state) => state.mapFilters);
   const toggleMapFilter = useDiscoveryStore((state) => state.toggleMapFilter);
@@ -168,26 +102,6 @@ export function HomeMapScreen() {
       getBuildingById(DEFAULT_BUILDING_ID)!
     );
   }, [currentLocation, selectedBuilding]);
-
-  const visibleBuildings = useMemo(() => {
-    const nearest = getNearestBuildings(currentLocation.latitude, currentLocation.longitude, 5, 8);
-    const combined = [activeBuildingRecord, ...nearest];
-    const seen = new Set<string>();
-    return combined.filter((b) => {
-      if (seen.has(b.id)) return false;
-      seen.add(b.id);
-      return true;
-    });
-  }, [activeBuildingRecord, currentLocation]);
-
-  const areaPopularDishes = useMemo(() => {
-    if (shouldUseCatalogReadV2) return [];
-    const allVenues = visibleBuildings.flatMap((b) => repository.listVenuesByBuilding(b.id));
-    return allVenues
-      .map((v) => repository.getDishById(v.topDishId))
-      .filter((d): d is DishDetail => !!d)
-      .slice(0, 10);
-  }, [repository, shouldUseCatalogReadV2, visibleBuildings]);
 
   const [currentZoom, setCurrentZoom] = useState(highlightedStallVenueId ? 17.1 : 15.5);
   const [mapCenter, setMapCenter] = useState(activeBuildingRecord.coordinate);
@@ -218,7 +132,7 @@ export function HomeMapScreen() {
   }, [selectedBuilding?.name]);
 
   useEffect(() => {
-    if (!shouldUseCatalogReadV2 || !catalogRawService) {
+    if (!isAuthenticated) {
       setRawMapItems([]);
       setRawVenueCards([]);
       setRawReleaseId(undefined);
@@ -264,14 +178,7 @@ export function HomeMapScreen() {
     return () => {
       active = false;
     };
-  }, [
-    catalogRawService,
-    currentLocation,
-    currentZoom,
-    mapCenter,
-    mapFilters,
-    shouldUseCatalogReadV2,
-  ]);
+  }, [catalogRawService, currentLocation, currentZoom, isAuthenticated, mapCenter, mapFilters]);
 
   const snapTo = (height: number) => {
     Animated.spring(animatedHeight, {
@@ -280,12 +187,6 @@ export function HomeMapScreen() {
       tension: 50,
       friction: 8,
     }).start();
-  };
-
-  const handleCardPress = (dish: DishDetail) => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Continuity Transition: Navigate to full detail screen
-    navigation.navigate("DishDetail", { dishId: dish.id });
   };
 
   const handleRawMarkerPress = useCallback(
@@ -307,22 +208,6 @@ export function HomeMapScreen() {
       });
     },
     [navigation, rawMapItems, rawReleaseId],
-  );
-
-  const handleLegacyMarkerPress = useCallback(
-    (markerId: string) => {
-      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      if (markerId.startsWith("stall-")) {
-        navigation.navigate("StallDetail", { venueId: markerId.slice("stall-".length) });
-        return;
-      }
-      const building = getBuildingById(markerId);
-      if (!building) return;
-      setSelectedBuilding(toSummary(building));
-      setMapCenter(building.coordinate);
-      setCurrentZoom((zoom) => Math.max(zoom, 17));
-    },
-    [navigation, setSelectedBuilding],
   );
 
   const submitSearch = useCallback(() => {
@@ -375,9 +260,9 @@ export function HomeMapScreen() {
     snapTo(CAROUSEL_HEIGHT);
   }, [displayMode]);
 
-  const markers = useMemo<MapSurfaceMarker[]>(() => {
-    if (shouldUseCatalogReadV2) {
-      return rawMapItems.map((item) =>
+  const markers = useMemo<MapSurfaceMarker[]>(
+    () =>
+      rawMapItems.map((item) =>
         item.kind === "cluster"
           ? {
               id: `cluster-${item.id}`,
@@ -391,44 +276,23 @@ export function HomeMapScreen() {
               coordinate: { latitude: item.latitude, longitude: item.longitude },
               accent: item.verificationStatus === "approved" ? palette.orange : palette.teal,
             },
-      );
-    }
-    const bMarkers = visibleBuildings.map((b) => ({
-      id: b.id,
-      label: b.name.replace(" Food Centre", ""),
-      coordinate: b.coordinate,
-      accent: b.type === "hawker_centre" ? palette.orange : palette.teal,
-      type: b.type,
-    }));
-    if (currentZoom > 16.5) {
-      const venues = repository.listVenuesByBuilding(activeBuildingRecord.id);
-      const stallMarkers = venues.map((v, index) => {
-        const latitudeOffset = ((index % 7) - 3) * 0.00007;
-        const longitudeOffset = ((Math.floor(index / 7) % 7) - 3) * 0.00007;
-        return {
-          id: `stall-${v.id}`,
-          label: v.name,
-          coordinate: {
-            latitude: activeBuildingRecord.coordinate.latitude + latitudeOffset,
-            longitude: activeBuildingRecord.coordinate.longitude + longitudeOffset,
-          },
-          accent: v.id === highlightedStallVenueId ? palette.error : palette.orange,
-          isTrending: v.id === highlightedStallVenueId,
-        };
-      });
-      return [...bMarkers, ...stallMarkers];
-    }
-    return bMarkers;
-  }, [
-    palette,
-    repository,
-    visibleBuildings,
-    currentZoom,
-    activeBuildingRecord,
-    highlightedStallVenueId,
-    rawMapItems,
-    shouldUseCatalogReadV2,
-  ]);
+      ),
+    [palette, rawMapItems],
+  );
+
+  const promptSignIn = useCallback(() => {
+    // Bring the guest back to the map after signing in.
+    setReturnRoute({
+      name: route.name,
+      params: route.params as Record<string, unknown> | undefined,
+    });
+    navigation.navigate("AuthStack", { screen: "Login" });
+  }, [navigation, route.name, route.params, setReturnRoute]);
+
+  // Always land on Discover: after sign-in or "open on map" the screen below may be Home.
+  const backToList = useCallback(() => {
+    navigation.popTo("MainTabs", { screen: "Discover" });
+  }, [navigation]);
 
   const cameraPadding = useMemo(
     () => ({
@@ -451,9 +315,7 @@ export function HomeMapScreen() {
           markers={markers}
           cameraPadding={cameraPadding}
           onMapPress={(coordinate) => {
-            if (shouldUseCatalogReadV2) {
-              setMapCenter(coordinate);
-            }
+            setMapCenter(coordinate);
             if (displayMode === "carousel") {
               snapTo(isMinimized.current ? CAROUSEL_HEIGHT : MINIMIZED_HEIGHT);
               isMinimized.current = !isMinimized.current;
@@ -469,7 +331,7 @@ export function HomeMapScreen() {
                 : centerCoordinate,
             );
           }}
-          onMarkerPress={shouldUseCatalogReadV2 ? handleRawMarkerPress : handleLegacyMarkerPress}
+          onMarkerPress={handleRawMarkerPress}
           selectedMarkerId={
             highlightedStallVenueId ? `stall-${highlightedStallVenueId}` : undefined
           }
@@ -556,21 +418,19 @@ export function HomeMapScreen() {
               )}
             </Pressable>
           </View>
-          {shouldUseCatalogReadV2 ? (
-            <FilterChipRail
-              options={HOME_MAP_FILTER_OPTIONS}
-              selectedIds={HOME_MAP_FILTER_OPTIONS.filter((option) => mapFilters[option.id]).map(
-                (option) => option.id,
-              )}
-              onSelect={toggleMapFilter}
-              gap={spacing[2]}
-              renderLeftIcon={(option, selected) =>
-                option.id === "nearMe" ? (
-                  <LocateFixed size={14} color={selected ? palette.orange : palette.textMuted} />
-                ) : null
-              }
-            />
-          ) : null}
+          <FilterChipRail
+            options={HOME_MAP_FILTER_OPTIONS}
+            selectedIds={HOME_MAP_FILTER_OPTIONS.filter((option) => mapFilters[option.id]).map(
+              (option) => option.id,
+            )}
+            onSelect={toggleMapFilter}
+            gap={spacing[2]}
+            renderLeftIcon={(option, selected) =>
+              option.id === "nearMe" ? (
+                <LocateFixed size={14} color={selected ? palette.orange : palette.textMuted} />
+              ) : null
+            }
+          />
         </View>
       </SafeAreaView>
 
@@ -610,6 +470,8 @@ export function HomeMapScreen() {
             <MapIcon color={palette.orange} size={20} />
           </Pressable>
         </View>
+
+        <DiscoverViewToggle value="map" onChange={backToList} />
 
         <Pressable
           accessibilityRole="button"
@@ -672,84 +534,44 @@ export function HomeMapScreen() {
             <AppText variant="h2" style={{ marginBottom: spacing[2] }}>
               Nearby Stalls
             </AppText>
-            {shouldUseCatalogReadV2
-              ? rawVenueCards.map((venue) => (
-                  <Pressable
-                    key={venue.id}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Open ${venue.name} catalog details`}
-                    onPress={() =>
-                      navigation.navigate("CatalogRawDetail", {
-                        kind: "venue",
-                        id: venue.id,
-                        releaseId: rawReleaseId,
-                      })
-                    }
-                    style={{
-                      backgroundColor: palette.bgSoft,
-                      borderRadius: radii.md,
-                      padding: spacing[3],
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: spacing[3],
-                      borderWidth: 1,
-                      borderColor: palette.border,
-                    }}
-                  >
-                    <View style={{ flex: 1, gap: spacing[1] }}>
-                      <AppText variant="h3">{venue.name}</AppText>
-                      <AppText variant="micro" tone="secondary">
-                        {venue.representativeDish?.name ?? `${venue.menuCount} listed dishes`}
-                      </AppText>
-                      <AppText variant="micro" tone="muted">
-                        {venue.verificationStatus === "approved"
-                          ? "Approved source"
-                          : "Raw catalog record"}
-                      </AppText>
-                    </View>
-                    <ChevronRight size={16} color={palette.orange} />
-                  </Pressable>
-                ))
-              : visibleBuildings
-                  .flatMap((b) => repository.listVenuesByBuilding(b.id))
-                  .map((venue) => (
-                    <Pressable
-                      key={venue.id}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Open ${venue.name} stall details`}
-                      onPress={() => navigation.navigate("StallDetail", { venueId: venue.id })}
-                      style={{
-                        backgroundColor: palette.bgSoft,
-                        borderRadius: radii.md,
-                        padding: spacing[3],
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: spacing[3],
-                        borderWidth: 1,
-                        borderColor: palette.border,
-                      }}
-                    >
-                      <View style={{ flex: 1, gap: spacing[1] }}>
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                          }}
-                        >
-                          <AppText variant="h3">{venue.name}</AppText>
-                          <CrowdIndicator level={venue.liveCrowd} />
-                        </View>
-                        <AppText variant="micro" tone="secondary">
-                          {venue.floor} {venue.unitNumber} · {venue.operatingHours}
-                        </AppText>
-                        <AppText variant="micro" tone="muted">
-                          {mapStatusDisclosure}
-                        </AppText>
-                      </View>
-                      <ChevronRight size={16} color={palette.orange} />
-                    </Pressable>
-                  ))}
+            {isAuthenticated ? null : <GuestMapPrompt onSignIn={promptSignIn} />}
+            {rawVenueCards.map((venue) => (
+              <Pressable
+                key={venue.id}
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${venue.name} catalog details`}
+                onPress={() =>
+                  navigation.navigate("CatalogRawDetail", {
+                    kind: "venue",
+                    id: venue.id,
+                    releaseId: rawReleaseId,
+                  })
+                }
+                style={{
+                  backgroundColor: palette.bgSoft,
+                  borderRadius: radii.md,
+                  padding: spacing[3],
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: spacing[3],
+                  borderWidth: 1,
+                  borderColor: palette.border,
+                }}
+              >
+                <View style={{ flex: 1, gap: spacing[1] }}>
+                  <AppText variant="h3">{venue.name}</AppText>
+                  <AppText variant="micro" tone="secondary">
+                    {venue.representativeDish?.name ?? `${venue.menuCount} listed dishes`}
+                  </AppText>
+                  <AppText variant="micro" tone="muted">
+                    {venue.verificationStatus === "approved"
+                      ? "Approved source"
+                      : "Raw catalog record"}
+                  </AppText>
+                </View>
+                <ChevronRight size={16} color={palette.orange} />
+              </Pressable>
+            ))}
           </ScrollView>
         ) : (
           <Animated.View
@@ -775,127 +597,96 @@ export function HomeMapScreen() {
                 paddingHorizontal: spacing[4],
               }}
             >
-              {shouldUseCatalogReadV2
-                ? rawVenueCards.map((venue) => (
-                    <Pressable
-                      key={venue.id}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Preview ${venue.name}`}
-                      onPress={() =>
-                        navigation.navigate("CatalogRawDetail", {
-                          kind: "venue",
-                          id: venue.id,
-                          releaseId: rawReleaseId,
-                        })
-                      }
-                      style={[
-                        {
-                          backgroundColor: palette.surface,
-                          borderRadius: componentRadii.card,
-                          overflow: "hidden",
-                          width: 320,
-                        },
-                        shadows.floating,
-                      ]}
-                    >
-                      <View style={{ height: 160 }}>
-                        {venue.imageUrl || venue.representativeDish?.imageUrl ? (
-                          <AccessibleImage
-                            source={{
-                              uri: venue.imageUrl ?? venue.representativeDish?.imageUrl ?? "",
-                            }}
-                            style={StyleSheet.absoluteFill}
-                            contentFit="cover"
-                            accessibilityLabel={`${venue.name} image`}
-                          />
-                        ) : (
-                          <View
-                            style={[
-                              StyleSheet.absoluteFill,
-                              {
-                                alignItems: "center",
-                                backgroundColor: palette.bgSoft,
-                                justifyContent: "center",
-                              },
-                            ]}
-                          >
-                            <AppText tone="muted">Image unavailable</AppText>
-                          </View>
-                        )}
+              {isAuthenticated ? null : <GuestMapPrompt onSignIn={promptSignIn} width={320} />}
+              {rawVenueCards.map((venue) => (
+                <Pressable
+                  key={venue.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Preview ${venue.name}`}
+                  onPress={() =>
+                    navigation.navigate("CatalogRawDetail", {
+                      kind: "venue",
+                      id: venue.id,
+                      releaseId: rawReleaseId,
+                    })
+                  }
+                  style={[
+                    {
+                      backgroundColor: palette.surface,
+                      borderRadius: componentRadii.card,
+                      overflow: "hidden",
+                      width: 320,
+                    },
+                    shadows.floating,
+                  ]}
+                >
+                  <View style={{ height: 160 }}>
+                    {venue.imageUrl || venue.representativeDish?.imageUrl ? (
+                      <AccessibleImage
+                        source={{
+                          uri: venue.imageUrl ?? venue.representativeDish?.imageUrl ?? "",
+                        }}
+                        style={StyleSheet.absoluteFill}
+                        contentFit="cover"
+                        accessibilityLabel={`${venue.name} image`}
+                      />
+                    ) : (
+                      <View
+                        style={[
+                          StyleSheet.absoluteFill,
+                          {
+                            alignItems: "center",
+                            backgroundColor: palette.bgSoft,
+                            justifyContent: "center",
+                          },
+                        ]}
+                      >
+                        <AppText tone="muted">Image unavailable</AppText>
                       </View>
-                      <View style={{ padding: spacing[3], gap: spacing[1] }}>
-                        <AppText style={{ fontWeight: "800" }} numberOfLines={1}>
-                          {venue.name}
-                        </AppText>
-                        <AppText variant="micro" tone="secondary">
-                          {venue.representativeDish?.name ?? `${venue.menuCount} listed dishes`}
-                        </AppText>
-                        <AppText variant="micro" tone="muted">
-                          {venue.verificationStatus === "approved"
-                            ? "Approved source"
-                            : "Raw catalog record"}
-                        </AppText>
-                      </View>
-                    </Pressable>
-                  ))
-                : areaPopularDishes.map((dish) => (
-                    <Pressable
-                      key={dish.id}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Preview ${dish.name} at ${dish.venueName}`}
-                      onPress={() => handleCardPress(dish)}
-                      style={[
-                        {
-                          backgroundColor: palette.surface,
-                          borderRadius: componentRadii.card,
-                          overflow: "hidden",
-                          width: 320,
-                        },
-                        shadows.floating,
-                      ]}
-                    >
-                      <View style={{ height: 160 }}>
-                        <AnimatedReanimated.View style={StyleSheet.absoluteFill}>
-                          <AccessibleImage
-                            source={{ uri: dish.imageUrl }}
-                            style={StyleSheet.absoluteFill}
-                            contentFit="cover"
-                            accessibilityLabel={`${dish.name} photo`}
-                          />
-                        </AnimatedReanimated.View>
-                        {dish.liveCrowd && (
-                          <View style={{ position: "absolute", top: 12, right: 12 }}>
-                            <CrowdIndicator level={dish.liveCrowd} />
-                          </View>
-                        )}
-                      </View>
-                      <View style={{ padding: spacing[3], gap: spacing[1] }}>
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            justifyContent: "space-between",
-                          }}
-                        >
-                          <AppText style={{ fontWeight: "800", flex: 1 }} numberOfLines={1}>
-                            {dish.name}
-                          </AppText>
-                          <AppText style={{ color: palette.orange, fontWeight: "800" }}>
-                            S${Math.round(dish.price)}
-                          </AppText>
-                        </View>
-                        <AppText variant="micro" tone="secondary">
-                          {dish.venueName}
-                        </AppText>
-                        <AppText variant="micro" tone="muted">
-                          {mapStatusDisclosure}
-                        </AppText>
-                      </View>
-                    </Pressable>
-                  ))}
+                    )}
+                  </View>
+                  <View style={{ padding: spacing[3], gap: spacing[1] }}>
+                    <AppText style={{ fontWeight: "800" }} numberOfLines={1}>
+                      {venue.name}
+                    </AppText>
+                    <AppText variant="micro" tone="secondary">
+                      {venue.representativeDish?.name ?? `${venue.menuCount} listed dishes`}
+                    </AppText>
+                    <AppText variant="micro" tone="muted">
+                      {venue.verificationStatus === "approved"
+                        ? "Approved source"
+                        : "Raw catalog record"}
+                    </AppText>
+                  </View>
+                </Pressable>
+              ))}
             </ScrollView>
           </Animated.View>
         )}
       </Animated.View>
+    </View>
+  );
+}
+
+function GuestMapPrompt({ onSignIn, width }: { onSignIn: () => void; width?: number }) {
+  const { componentRadii, palette, spacing } = useHungryTheme();
+  return (
+    <View
+      style={{
+        backgroundColor: palette.bgSoft,
+        borderColor: palette.border,
+        borderRadius: componentRadii.card,
+        borderWidth: 1,
+        gap: spacing[2],
+        padding: spacing[4],
+        width,
+      }}
+    >
+      <AppText variant="h3">Sign in to see places on the map</AppText>
+      <AppText variant="bodySmall" tone="secondary">
+        Stalls and hawker centres near you appear here once you sign in.
+      </AppText>
+      <Button label="Sign in" onPress={onSignIn} />
     </View>
   );
 }

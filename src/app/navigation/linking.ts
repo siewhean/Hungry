@@ -114,12 +114,11 @@ function createAuthState(screen: string, params?: Record<string, unknown>): Link
 }
 
 /**
- * Released catalog reads (catalogReadV2 on the Supabase provider) render dish and
- * venue detail from catalog rows, whose ids copy public.dishes/venues ids.
+ * The Supabase provider renders dish and venue detail from released catalog rows,
+ * whose ids copy public.dishes/venues ids.
  * Required lazily so linking stays importable without the service graph.
  */
 function isCatalogDeepLinkMode(): boolean {
-  if (!FEATURE_FLAGS.catalogReadV2) return false;
   try {
     const { getServiceProvider } =
       require("@/lib/services/serviceProvider") as typeof import("@/lib/services/serviceProvider");

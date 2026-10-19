@@ -183,6 +183,6 @@ test("catalog detail deep links validate kind and id", () => {
   // Mock provider: legacy dish/venue routes stay on the classic detail screens.
   assert.equal(linking.getStateFromPath("dish/dish-1")?.routes?.[0]?.name, "DishDetail");
   const source = readFileSync(path.join(process.cwd(), "src/app/navigation/linking.ts"), "utf8");
-  assert.match(source, /FEATURE_FLAGS\.catalogReadV2/);
+  assert.doesNotMatch(source, /catalogReadV2/);
   assert.match(source, /getServiceProvider\(\)\.mode === "supabase"/);
 });

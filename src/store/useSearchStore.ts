@@ -8,7 +8,6 @@ import type {
   DietaryFlag,
   SearchCategory,
   SearchFilters,
-  TasteVector,
   SearchHistoryEntry,
 } from "@/types/domain";
 import { hungryPersistStorage } from "./persistStorage";
@@ -32,8 +31,6 @@ interface SearchState {
   updateQuery: (query: string) => void;
   toggleCategory: (category: SearchCategory) => void;
   toggleDietary: (flag: DietaryFlag) => void;
-  setTasteValues: (tasteValues: TasteVector) => void;
-  resetToProfile: (tasteValues: TasteVector) => void;
   rememberSearch: (query: string) => void;
   addHistoryEntry: (entry: Omit<SearchHistoryEntry, "id" | "timestamp">) => void;
   removeHistoryEntry: (id: string) => void;
@@ -91,30 +88,6 @@ export const useSearchStore = create<SearchState>()(
               dietaryFlags: state.filters.dietaryFlags.includes(flag)
                 ? state.filters.dietaryFlags.filter((value) => value !== flag)
                 : [...state.filters.dietaryFlags, flag],
-            },
-          };
-        }),
-      setTasteValues: (tasteValues) =>
-        set((state) => {
-          trackAnalyticsEvent("taste_filter_applied", {
-            source: "set_taste_values",
-          });
-          return {
-            filters: {
-              ...state.filters,
-              tasteValues,
-            },
-          };
-        }),
-      resetToProfile: (tasteValues) =>
-        set((state) => {
-          trackAnalyticsEvent("taste_filter_applied", {
-            source: "reset_to_profile",
-          });
-          return {
-            filters: {
-              ...state.filters,
-              tasteValues,
             },
           };
         }),

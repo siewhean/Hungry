@@ -6,7 +6,7 @@ import { ArrowLeft, ExternalLink, Heart, MapPin } from "lucide-react-native";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AccessibleImage, AppText, Button, EmptyState, Screen, Skeleton } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
-import { getCatalogRawService, getServiceProvider } from "@/lib/services/serviceProvider";
+import { getCatalogRawService } from "@/lib/services/serviceProvider";
 import {
   CatalogAccessError,
   type CatalogPage,
@@ -171,8 +171,8 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
 
   const load = useCallback(async () => {
     const startedAt = Date.now();
-    if (!service || !isAuthenticated || getServiceProvider().mode === "mock") {
-      setError("Sign in with the live Hungry data source to view this catalog record.");
+    if (!isAuthenticated) {
+      setError("Sign in to view this catalog record.");
       setIsLoading(false);
       recordCatalogDiagnostic({
         operation: isDish ? "dish-detail" : "stall-detail",

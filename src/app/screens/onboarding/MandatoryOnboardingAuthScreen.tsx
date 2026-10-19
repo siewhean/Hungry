@@ -13,10 +13,11 @@ type Props = ComponentProps<typeof OnboardingAuthScreen>;
 export function MandatoryOnboardingAuthScreen(props: Props) {
   const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
   const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
+  const hasSkippedTasteQuiz = useSessionStore((state) => state.hasSkippedTasteQuiz);
 
   useEffect(() => {
-    if (!hasCompletedOnboarding) completeOnboarding();
-  }, [completeOnboarding, hasCompletedOnboarding]);
+    if (!hasCompletedOnboarding) completeOnboarding(hasSkippedTasteQuiz);
+  }, [completeOnboarding, hasCompletedOnboarding, hasSkippedTasteQuiz]);
 
   return <OnboardingAuthScreen {...props} />;
 }

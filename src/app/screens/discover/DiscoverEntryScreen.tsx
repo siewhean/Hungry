@@ -1,13 +1,12 @@
-import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { getServiceProvider } from "@/lib/services/serviceProvider";
 import { CatalogDiscoverHome } from "./CatalogDiscoverHome";
 import { DiscoverHomeScreen } from "./DiscoverHomeScreen";
 
 /**
- * Production/staging use the release-versioned catalog. Development can keep
- * the richer legacy prototype surface when the raw catalog flag is disabled.
+ * The Supabase provider (production/staging) uses the release-versioned catalog
+ * Discover; mock and Excel keep the local Discover surface.
  */
 export function DiscoverEntryScreen() {
-  const useCatalog = FEATURE_FLAGS.catalogReadV2 && getServiceProvider().mode === "supabase";
+  const useCatalog = getServiceProvider().mode === "supabase";
   return useCatalog ? <CatalogDiscoverHome /> : <DiscoverHomeScreen />;
 }

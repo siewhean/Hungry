@@ -36,8 +36,6 @@ test("production ships main's core surfaces and keeps advanced surfaces closed",
   const flags = resolveFeatureFlags("production", "production", {});
 
   assert.equal(flags.release01CoreOnly, false);
-  // Enabled only once the release-versioned catalog migration is published.
-  assert.equal(flags.catalogReadV2, false);
   for (const flag of SHIPPED_SURFACE_FLAGS) {
     assert.equal(flags[flag], true, `${flag} must ship in production`);
   }
@@ -67,14 +65,12 @@ test("build profiles can narrow surfaces one at a time and opt into core-only mo
     EXPO_PUBLIC_ENABLE_MAP: "0",
     EXPO_PUBLIC_ENABLE_REVIEWS: "0",
     EXPO_PUBLIC_RELEASE_01_CORE_ONLY: "1",
-    EXPO_PUBLIC_CATALOG_READ_V2: "1",
   });
 
   assert.equal(flags.mapEnabled, false);
   assert.equal(flags.reviewCreationEnabled, false);
   assert.equal(flags.socialFeedEnabled, true);
   assert.equal(flags.release01CoreOnly, true);
-  assert.equal(flags.catalogReadV2, true);
   assert.equal(flags.favouritesEnabled, true);
 });
 

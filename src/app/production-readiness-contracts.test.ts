@@ -68,7 +68,6 @@ test("root navigation keeps production-disabled routes behind feature flags", ()
       /FEATURE_FLAGS\.merchantCentreEnabled \? \(/,
       /FEATURE_FLAGS\.storiesEnabled \? \(/,
       /FEATURE_FLAGS\.gamificationEnabled \? \(/,
-      /FEATURE_FLAGS\.collectionsEnabled \? \(/,
     ],
     "RootNavigator feature gates",
   );

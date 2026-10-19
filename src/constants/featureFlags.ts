@@ -69,9 +69,6 @@ export function resolveFeatureFlags(
     favouritesEnabled: true,
     notificationsEnabled: false,
     catalogDiagnosticsEnabled: appEnv !== "production",
-    // Enable only after the release-versioned catalog migration is published.
-    // Production never falls back to a partial client-side catalog cache.
-    catalogReadV2: enabled(env, "EXPO_PUBLIC_CATALOG_READ_V2"),
     mockMapboxEnabled: enabled(env, "EXPO_PUBLIC_MOCK_MAPBOX_ENABLED"),
     directMessagesEnabled: nonProductionSurfaceEnabled,
     commentsEnabled: nonProductionSurfaceEnabled,

@@ -34,7 +34,6 @@ const SAFE_ROOT_RETURNS = new Set<keyof RootStackParamList>([
   "SearchResults",
   "BrowseDishes",
   "BrowseStalls",
-  "TasteFilter",
   "DiscoverMap",
   "DecideForMeResult",
   "MapZoomedIn",

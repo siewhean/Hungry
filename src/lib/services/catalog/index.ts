@@ -714,3 +714,5 @@ export const catalogRawService = {
     );
   },
 };
+
+export type CatalogRawService = typeof catalogRawService;

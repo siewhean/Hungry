@@ -35,7 +35,6 @@ test.describe("production route gating", () => {
     expect(rootNavigator).toContain("FEATURE_FLAGS.directMessagesEnabled ? (");
     expect(rootNavigator).toContain("FEATURE_FLAGS.storiesEnabled ? (");
     expect(rootNavigator).toContain("FEATURE_FLAGS.gamificationEnabled ? (");
-    expect(rootNavigator).toContain("FEATURE_FLAGS.collectionsEnabled ? (");
 
     for (const routeName of [
       "DesignGallery",
@@ -47,8 +46,6 @@ test.describe("production route gating", () => {
       "AddStory",
       "PassportScreen",
       "MissionsScreen",
-      "CollectionList",
-      "CollectionDetail",
       "PortfolioPublicView",
       "AdminPortfolioFlags",
     ]) {

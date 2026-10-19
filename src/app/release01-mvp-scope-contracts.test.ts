@@ -23,12 +23,8 @@ test("R01-SCOPE-01: favourites ship default-on in every eas release profile", ()
     const flags = resolveFeatureFlags(env.EXPO_PUBLIC_APP_ENV, "production", env);
 
     assert.equal(flags.favouritesEnabled, true, `${name} must expose favourites`);
-    // eas.json and flags must agree on the versioned catalog read path.
-    assert.equal(
-      flags.catalogReadV2,
-      env.EXPO_PUBLIC_CATALOG_READ_V2 === "1",
-      `${name} env must not contradict flags`,
-    );
+    // The catalog read path has no flag: eas.json must not carry the removed toggle.
+    assert.equal(env.EXPO_PUBLIC_CATALOG_READ_V2, undefined, `${name} env must not set it`);
   }
 
   // The internal-alpha profile keeps the narrow Release 0.1 core-only surface.
@@ -146,8 +142,8 @@ test("release-reachable screens hide controls for cut features behind their flag
     /label=\{FEATURE_FLAGS\.socialFeedEnabled \? "Back to Feed" : "Back to Discover"\}/,
   );
 
-  // Catalog v2 has no local suggestion, so the card hides with no data.
-  assert.match(search, /\{suggestedDish \? \(\s*<Pressable[\s\S]*?SUGGESTED FOR TONIGHT/);
+  // Search home has no local suggestion card (the paged catalog owns results).
+  assert.doesNotMatch(search, /SUGGESTED FOR TONIGHT/);
 
   // DishDetailV2 is a prototype-only route; release detail links must use DishDetail.
   assert.doesNotMatch(dishDetail, /navigate\("DishDetailV2"/);

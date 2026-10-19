@@ -171,11 +171,10 @@ test("EAS release profiles set explicit MVP feature-flag environments", () => {
   assert.equal(eas.build.development?.env?.EXPO_PUBLIC_HUNGRY_DATA_SOURCE, "supabase");
   assert.equal(eas.build.preview?.env?.EXPO_PUBLIC_HUNGRY_DATA_SOURCE, "supabase");
   assert.equal(eas.build.production?.env?.EXPO_PUBLIC_HUNGRY_DATA_SOURCE, "supabase");
-  // Staging QA must test the same catalog/search path that production ships.
-  assert.equal(
-    eas.build.preview?.env?.EXPO_PUBLIC_CATALOG_READ_V2,
-    eas.build.production?.env?.EXPO_PUBLIC_CATALOG_READ_V2,
-  );
+  // Every profile runs the one paged catalog path; there is no flag to diverge on.
+  for (const profile of ["development", "preview", "production"]) {
+    assert.equal(eas.build[profile]?.env?.EXPO_PUBLIC_CATALOG_READ_V2, undefined);
+  }
 });
 
 test("post composer remains isolated behind the Release 0.1 post flag", () => {
@@ -235,8 +234,7 @@ test("signed-in onboarding persists and awaits provisional preference migration"
   assert.match(onboardingAuth, /completedOnboarding: true/);
   assert.match(emailVerification, /import \{ applySignedInProfile \}/);
   assert.match(emailVerification, /applySignedInProfile\(session\.profile/);
-  assert.match(emailVerification, /completedOnboarding: shouldCompleteOnboarding/);
-  assert.match(emailVerification, /completeOnboarding\(\)/);
+  assert.match(emailVerification, /completeVerifiedSignUp\(shouldCompleteOnboarding\)/);
   assert.match(login, /import \{ applySignedInProfile \}/);
   assert.match(signUp, /import \{ applySignedInProfile \}/);
   for (const caller of [onboardingAuth, emailVerification, login, signUp]) {
@@ -366,17 +364,11 @@ test("advanced liked-content social collection is gated out of MVP production", 
   assert.match(profileHome, /label="Liked Content"/);
 });
 
-test("Search results route hydrates through the service before trusting repository cache", () => {
-  const searchFeature = read("src/features/search/search.ts");
+test("Search results route reads the paged catalog service, never the repository cache", () => {
   const searchScreen = read("src/app/screens/search/SearchResultsScreen.tsx");
 
-  assert.match(searchFeature, /getHungryService\(\)\.discovery\.searchDishes/);
-  assert.match(searchFeature, /export async function getSearchResultsAsync/);
-  assert.match(searchScreen, /getSearchResultsAsync\(filters, profile\.tasteVector\)/);
-  assert.match(
-    searchScreen,
-    /serviceResults \?\? getSearchResults\(filters, profile\.tasteVector\)/,
-  );
+  assert.match(searchScreen, /const service = getCatalogRawService\(\)/);
+  assert.doesNotMatch(searchScreen, /getDataRepository|getSearchResults|getHungryService/);
 });
 
 test("Supabase app readiness keeps the legacy cache opt-in and bounded away from public routes", () => {
@@ -422,8 +414,11 @@ test("MVP browse surfaces do not show obvious fake trust claims", () => {
 
   assert.match(feed, /title: "Nearby picks"/);
   assert.doesNotMatch(feed, /Fastest Near You|Mock distance logic/);
-  assert.match(searchScreen, /MessageCircle/);
   assert.doesNotMatch(searchScreen, /fallbackPost|Heart\b|likeCount/);
+  assert.match(
+    searchScreen,
+    /item\.verificationStatus === "verified" \? "Source verified" : "Unverified"/,
+  );
   assert.match(supabaseRepository, /isOpen: toBool\(row\.is_open, false\)/);
 });
 

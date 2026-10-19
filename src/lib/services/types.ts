@@ -11,13 +11,11 @@ import type {
   BuildingSummary,
   Checklist,
   ChecklistItem,
-  CollectionItem,
   CustomerInteraction,
   DishDetail,
   DietaryFlag,
   PushPreferences,
   FoodCredAction,
-  FoodCollection,
   HawkerTasteTag,
   InteractionType,
   MerchantAccount,
@@ -123,10 +121,6 @@ export interface DataRepository {
   listStallPosts(): StallPost[];
 
   // ─── Gamification (optional — not all implementations required at launch) ────
-  listCollections?(): Promise<FoodCollection[]>;
-  listFeaturedCollections?(): Promise<FoodCollection[]>;
-  getCollectionById?(collectionId: string): Promise<FoodCollection | null>;
-  listCollectionItems?(collectionId: string): Promise<CollectionItem[]>;
   getStallInteraction?(userId: string, stallId: string): Promise<StallInteraction | null>;
   listStallInteractions?(userId: string): Promise<StallInteraction[]>;
   getUserFoodCred?(userId: string): Promise<UserFoodCred | null>;
@@ -1014,7 +1008,10 @@ export interface HungryService {
     getTagSuggestions(dishId: string): Promise<HawkerTasteTag[]>;
     submitCommunityTags(dishId: string, tags: HawkerTasteTag[]): Promise<void>;
 
-    /** Plain-language search: Claude turns the text into a taste tweak and filters. Null when unavailable. */
+    /**
+     * Plain-language search: Claude turns the text into a taste tweak and filters. Null when unavailable.
+     * No client caller since the legacy search was removed; kept until mood search is wired into v2 search.
+     */
     parseMoodQuery(query: string): Promise<MoodSearchIntent | null>;
   };
 

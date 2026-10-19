@@ -55,7 +55,6 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "SearchResults",
   "BrowseDishes",
   "BrowseStalls",
-  "TasteFilter",
   "DiscoverMap",
   "DecideForMeResult",
   "MapZoomedIn",
@@ -85,8 +84,6 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "AddStory",
   "PassportScreen",
   "MissionsScreen",
-  "CollectionList",
-  "CollectionDetail",
   "PortfolioPublicView",
   "AdminPortfolioFlags",
   "Offline",
@@ -194,10 +191,6 @@ const loadBrowseStallsScreen = () =>
   (
     require("@/app/screens/search/SearchResultsScreen") as typeof import("@/app/screens/search/SearchResultsScreen")
   ).BrowseStallsScreen;
-const loadTasteFilterScreen = () =>
-  (
-    require("@/app/screens/search/TasteFilterScreen") as typeof import("@/app/screens/search/TasteFilterScreen")
-  ).TasteFilterScreen;
 const loadHomeMapScreen = () =>
   (
     require("@/app/screens/discover/HomeMapScreen") as typeof import("@/app/screens/discover/HomeMapScreen")
@@ -336,14 +329,6 @@ const loadMissionsScreen = () =>
   (
     require("@/app/screens/profile/MissionsScreen") as typeof import("@/app/screens/profile/MissionsScreen")
   ).MissionsScreen;
-const loadCollectionListScreen = () =>
-  (
-    require("@/app/screens/discover/CollectionListScreen") as typeof import("@/app/screens/discover/CollectionListScreen")
-  ).CollectionListScreen;
-const loadCollectionDetailScreen = () =>
-  (
-    require("@/app/screens/discover/CollectionDetailScreen") as typeof import("@/app/screens/discover/CollectionDetailScreen")
-  ).CollectionDetailScreen;
 const loadPortfolioPublicViewScreen = () =>
   (
     require("@/app/screens/portfolio/PortfolioPublicViewScreen") as typeof import("@/app/screens/portfolio/PortfolioPublicViewScreen")
@@ -517,7 +502,6 @@ export function RootNavigator({ theme }: { theme: Theme }) {
   const authDataSource = useSessionStore((state) => state.authDataSource);
   const sessionExpired = useSessionStore((state) => state.sessionExpired);
   const passwordRecoveryInProgress = useSessionStore((state) => state.passwordRecoveryInProgress);
-  const dismissSessionExpiry = useSessionStore((state) => state.dismissSessionExpiry);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
   const isMerchantMode = useMerchantStore(isMerchantModeActive);
@@ -781,7 +765,6 @@ export function RootNavigator({ theme }: { theme: Theme }) {
             name="BrowseStalls"
             options={{ animation: "none" }}
           />
-          <RootStack.Screen getComponent={loadTasteFilterScreen} name="TasteFilter" />
           {FEATURE_FLAGS.mapEnabled ? (
             <>
               <RootStack.Screen
@@ -889,12 +872,6 @@ export function RootNavigator({ theme }: { theme: Theme }) {
             <>
               <RootStack.Screen getComponent={loadPassportScreen} name="PassportScreen" />
               <RootStack.Screen getComponent={loadMissionsScreen} name="MissionsScreen" />
-            </>
-          ) : null}
-          {FEATURE_FLAGS.collectionsEnabled ? (
-            <>
-              <RootStack.Screen getComponent={loadCollectionListScreen} name="CollectionList" />
-              <RootStack.Screen getComponent={loadCollectionDetailScreen} name="CollectionDetail" />
             </>
           ) : null}
           {FEATURE_FLAGS.portfoliosEnabled ? (

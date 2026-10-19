@@ -24,6 +24,7 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { DietaryFlag, TasteVector } from "@/types/domain";
+import { OnboardingProgress } from "./OnboardingProgress";
 import type { OnboardingStackParamList } from "./OnboardingStack";
 import {
   ONBOARDING_ACTIONS_BOTTOM_PADDING,
@@ -165,7 +166,6 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   const [snappedIndex, setSnappedIndex] = useState(1);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const optionsSlideAnim = useRef(new Animated.Value(0)).current;
-  const progressAnim = useRef(new Animated.Value(1)).current;
   const quizScrollX = useRef(new Animated.Value(0)).current;
   const carouselRef = useRef<FlatList<number> | null>(null);
 
@@ -258,7 +258,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
       navigation.goBack();
       return;
     }
-    // Finishing the quiz means it was not skipped; go straight to the result.
+    // Finishing the quiz means it was not skipped; on to the last step.
     setSkippedTasteQuiz(false);
     navigation.navigate("TasteProfileResult");
   };
@@ -298,31 +298,14 @@ export function TasteQuizScreen({ navigation, route }: Props) {
     }
   };
 
-  useEffect(() => {
-    Animated.timing(progressAnim, {
-      toValue: inDietaryStep ? totalSteps : step + 1,
-      duration: motion.onboardingProgress,
-      useNativeDriver: false,
-    }).start();
-  }, [inDietaryStep, motion.onboardingProgress, progressAnim, step, totalSteps]);
-
   return (
     <SafeAreaView
       style={{ backgroundColor: palette.bg, flex: 1, overflow: "hidden" }}
       edges={["top", "left", "right", "bottom"]}
     >
       <View style={{ flex: 1, overflow: "hidden", paddingTop: spacing[4] }}>
-        <View
-          style={{
-            alignItems: "center",
-            flexDirection: "row",
-            justifyContent: "space-between",
-            minHeight: 36,
-            paddingHorizontal: spacing[3],
-          }}
-        >
-          <View style={{ width: 36 }} />
-          <View style={{ width: 52 }} />
+        <View style={{ justifyContent: "center", minHeight: 36, paddingHorizontal: spacing[3] }}>
+          {flowMode === "onboarding" ? <OnboardingProgress step="taste" /> : null}
         </View>
         <View style={{ gap: spacing[2] }}>
           {inDietaryStep ? (
@@ -347,31 +330,6 @@ export function TasteQuizScreen({ navigation, route }: Props) {
           <AppText variant="bodySmall" tone="muted" style={{ textAlign: "center" }}>
             Question {inDietaryStep ? totalSteps : step + 1} of {totalSteps}
           </AppText>
-          <View
-            style={[
-              styles.progressTrack,
-              {
-                backgroundColor: palette.border,
-                borderRadius: radii.pill,
-                marginHorizontal: spacing[6],
-              },
-            ]}
-          >
-            <Animated.View
-              style={[
-                styles.progressFill,
-                {
-                  backgroundColor: palette.orange,
-                  borderRadius: radii.pill,
-                  width: progressAnim.interpolate({
-                    inputRange: [1, totalSteps],
-                    outputRange: [`${100 / totalSteps}%`, "100%"],
-                    extrapolate: "clamp",
-                  }),
-                },
-              ]}
-            />
-          </View>
 
           {inDietaryStep ? (
             <View
@@ -743,9 +701,10 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                         navigation.goBack();
                         return;
                       }
-                      // Skipping the quiz goes straight to location; dietary stays editable later.
+                      // The quiz is optional: skipping goes straight to the last step.
+                      // Taste and dietary stay editable later from Profile.
                       setSkippedTasteQuiz(true);
-                      navigation.navigate("LocationPermission");
+                      navigation.navigate("TasteProfileResult");
                     }}
                     style={{ width: BACK_BUTTON_WIDTH }}
                   />
@@ -767,13 +726,6 @@ export function TasteQuizScreen({ navigation, route }: Props) {
 }
 
 const styles = StyleSheet.create({
-  progressTrack: {
-    height: 6,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-  },
   whiteGlow: {
     shadowOpacity: 0.95,
     shadowRadius: 22,

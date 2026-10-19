@@ -71,9 +71,8 @@ test("production route gates keep advanced surfaces behind MVP-safe flags", () =
   assert.match(rootNavigator, /FEATURE_FLAGS\.gamificationEnabled \? \(/);
   assert.match(rootNavigator, /name="PassportScreen"/);
   assert.match(rootNavigator, /name="MissionsScreen"/);
-  assert.match(rootNavigator, /FEATURE_FLAGS\.collectionsEnabled \? \(/);
-  assert.match(rootNavigator, /name="CollectionList"/);
-  assert.match(rootNavigator, /name="CollectionDetail"/);
+  // Collections were folded into Lists (portfolios): no separate Collection routes.
+  assert.doesNotMatch(rootNavigator, /name="Collection(List|Detail)"/);
   assert.match(
     rootNavigator,
     /FEATURE_FLAGS\.portfoliosEnabled \? \([\s\S]*name="PortfolioPublicView"/,
@@ -133,7 +132,8 @@ test("signed-out app entry requires an account (no guest mode)", () => {
     "SearchResults",
     "BrowseDishes",
     "BrowseStalls",
-    "TasteFilter",
+    "DiscoverMap",
+    "MapZoomedIn",
     "DishDetail",
     "StallDetail",
   ]) {

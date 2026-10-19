@@ -9,6 +9,7 @@ import { HUNGRY_LOGO_ICON, HUNGRY_LOGO_STANDARD_SIZE } from "@/constants/brandAs
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
+import { OnboardingProgress } from "./OnboardingProgress";
 import type { OnboardingStackParamList } from "./OnboardingStack";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "OnboardingWelcome">;
@@ -48,7 +49,7 @@ export function WelcomeScreen({ navigation }: Props) {
 
   const handleStart = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    navigation.navigate("CuisineSelection");
+    navigation.navigate("LocationPermission");
   };
 
   const handleExistingAccountSignIn = () => {
@@ -69,6 +70,8 @@ export function WelcomeScreen({ navigation }: Props) {
         paddingHorizontal: 28,
       }}
     >
+      <OnboardingProgress step="welcome" />
+
       {/* Logo + wordmark */}
       <Animated.View
         style={{

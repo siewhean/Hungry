@@ -57,6 +57,67 @@ test("native Maestro smoke scripts are skip-safe and target the Hungry app id", 
   assert.match(metroConfig, /config\.resolver\.useWatchman = false/);
 });
 
+test("native interaction smoke covers discovery search, chips, and browse search controls", () => {
+  const flow = read(".maestro/ios-discovery-search-smoke.yaml");
+  const quickBites = read("src/app/screens/discover/QuickBitesScreen.tsx");
+  const searchResults = read("src/app/screens/search/SearchResultsScreen.tsx");
+
+  assert.match(flow, /id: "dev-button-discover"/);
+  assert.match(flow, /text: "Search dishes, stalls, or hawker centres"/);
+  assert.match(flow, /tapOn: "Noodles"/);
+  assert.match(flow, /inputText: "Laksa"/);
+  assert.match(flow, /tapOn: "See all results"/);
+  assert.match(flow, /id: "browse-results-search-input"/);
+  assert.match(flow, /eraseText/);
+  assert.match(flow, /tapOn: "Halal"/);
+  assert.match(quickBites, /accessibilityLabel="Go back"/);
+  assert.match(searchResults, /accessibilityLabel=\{`Search \$\{mode\}`\}/);
+  assert.match(searchResults, /testID="browse-results-search-input"/);
+});
+
+test("native activity smoke exposes the audited direct-message tab", () => {
+  const flow = read(".maestro/ios-chat-smoke.yaml");
+  const activity = read("src/app/screens/home/ActivityInboxScreen.tsx");
+  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
+
+  assert.match(flow, /appId: \$\{APP_ID\}/);
+  assert.match(flow, /text: "Hungry, http:\/\/\.\*:8081"/);
+  assert.match(flow, /text: "Hungry"\n\s+optional: true/);
+  assert.match(flow, /text: "Continue"/);
+  assert.match(flow, /text: "Close"/);
+  assert.match(flow, /visible: "Enter URL manually"/);
+  assert.match(flow, /point: "50%,34%"/);
+  assert.match(flow, /inputText: "\$\{METRO_URL\}"/);
+  assert.match(flow, /tapOn: "Connect"/);
+  assert.match(flow, /text: "Close"[\s\S]*optional: true[\s\S]*extendedWaitUntil/);
+  assert.match(flow, /extendedWaitUntil:\n\s+visible: "Developer Launcher"\n\s+timeout: 60000/);
+  assert.match(flow, /id: "dev-button-activity"/);
+  assert.match(flow, /waitForAnimationToEnd:\n\s+timeout: 3000/);
+  assert.match(
+    flow,
+    /extendedWaitUntil:\n\s+visible:\n\s+id: "activity-tab-messages"\n\s+timeout: 30000/,
+  );
+  assert.match(home, /testID="home-activity-inbox-button"/);
+  const developerLauncher = read("src/app/screens/dev/DeveloperLauncherScreen.tsx");
+  assert.match(developerLauncher, /label="Activity"[\s\S]*onPress=\{openActivityInboxSmoke\}/);
+  assert.match(
+    developerLauncher,
+    /openActivityInboxSmoke[\s\S]*navigation\.navigate\("ActivityInbox", \{ initialTab: "messages" \}\)/,
+  );
+  assert.match(flow, /assertVisible:\n\s+id: "activity-tab-messages"/);
+  assert.match(flow, /activity-tab-messages/);
+  assert.doesNotMatch(flow, /activity-chat-row-1/);
+  assert.doesNotMatch(flow, /chat-detail-screen/);
+  assert.doesNotMatch(flow, /chat-message-input/);
+  assert.doesNotMatch(flow, /chat-send-message/);
+
+  assert.match(activity, /testID=\{`activity-tab-\$\{tab\}`\}/);
+  assert.match(
+    activity,
+    /FEATURE_FLAGS\.directMessagesEnabled\s+\?\s+\["messages", "updates"\]\s+:\s+\["updates"\]/,
+  );
+});
+
 test("mandatory-auth native flows reject guest entry and protected deep-link bypasses", () => {
   for (const flowPath of [
     ".maestro/ios-mandatory-auth-smoke.yaml",

@@ -37,14 +37,8 @@ test.describe("buttons and interactions", () => {
   test("composer rich controls are clickable and update visible state", async ({ page }) => {
     await openComposerFromLauncher(page, { seedMedia: true, businessMode: true });
 
-    await page.getByRole("button", { name: "Edit with AI" }).first().click();
-    await expect(page.getByText("Edit Media", { exact: true }).first()).toBeVisible();
-    await page.getByRole("button", { name: "Auto-Enhance media" }).first().click();
-    await expect(page.getByText("Auto-enhance applied", { exact: true }).first()).toBeVisible();
-    await page.getByRole("dialog").getByRole("button", { name: "OK" }).click();
-    await expect(page.getByRole("dialog")).toHaveCount(0);
-    await page.getByRole("button", { name: /^Save$/ }).click();
-    await expect(page.getByText("Edit Media", { exact: true })).toHaveCount(0);
+    // Preview-only photo filters were removed, so there is no media editor to open.
+    await expect(page.getByRole("button", { name: "Edit with AI" })).toHaveCount(0);
 
     await page.getByRole("button", { name: "Add CTA Button" }).first().click();
     await page.getByRole("button", { name: "View Menu" }).first().click();
@@ -61,7 +55,10 @@ test.describe("buttons and interactions", () => {
     await openComposerFromLauncher(page, { seedMedia: true });
 
     await page.getByRole("tab", { name: "Review tab" }).click();
-    await page.getByPlaceholder("What did you think of the food?").first().fill("Runtime review only.");
+    await page
+      .getByPlaceholder("What did you think of the food?")
+      .first()
+      .fill("Runtime review only.");
     await page.getByTestId("star-4").first().click();
     await page.getByRole("button", { name: "Open publish options" }).click();
     await page.getByRole("button", { name: "Select Review Only publish mode" }).click();

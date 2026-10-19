@@ -36,7 +36,7 @@ test("fresh users complete onboarding before the mandatory account step", () => 
   const authIndex = splash.indexOf('name: "AuthStack"');
   assert.ok(onboardingIndex >= 0 && authIndex > onboardingIndex);
   assert.match(onboarding, /name="OnboardingAuth" component=\{MandatoryOnboardingAuthScreen\}/);
-  assert.match(mandatoryStep, /completeOnboarding\(\)/);
+  assert.match(mandatoryStep, /completeOnboarding\(hasSkippedTasteQuiz\)/);
   assert.match(mandatoryStep, /<OnboardingAuthScreen/);
   assert.doesNotMatch(welcome, /Continue as Guest|Skip Login|Skip login/);
 });

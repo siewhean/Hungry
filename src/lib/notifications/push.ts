@@ -26,8 +26,11 @@ Notifications.setNotificationHandler({
   }),
 });
 
-/** Asks for permission and registers this device's Expo push token. Returns false if declined. */
-export async function registerForStallAlerts(): Promise<boolean> {
+/**
+ * Asks for permission and registers this device's Expo push token. Returns false if declined.
+ * With `askPermission: false` it registers only when permission is already granted.
+ */
+export async function registerForStallAlerts({ askPermission = true } = {}): Promise<boolean> {
   if (!Device.isDevice) return false;
 
   if (Platform.OS === "android") {
@@ -38,6 +41,7 @@ export async function registerForStallAlerts(): Promise<boolean> {
   }
 
   const existing = await Notifications.getPermissionsAsync();
+  if (!existing.granted && !askPermission) return false;
   const status = existing.granted
     ? existing.status
     : (await Notifications.requestPermissionsAsync()).status;
