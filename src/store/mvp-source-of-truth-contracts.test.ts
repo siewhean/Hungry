@@ -171,6 +171,11 @@ test("EAS release profiles set explicit MVP feature-flag environments", () => {
   assert.equal(eas.build.development?.env?.EXPO_PUBLIC_HUNGRY_DATA_SOURCE, "supabase");
   assert.equal(eas.build.preview?.env?.EXPO_PUBLIC_HUNGRY_DATA_SOURCE, "supabase");
   assert.equal(eas.build.production?.env?.EXPO_PUBLIC_HUNGRY_DATA_SOURCE, "supabase");
+  // Staging QA must test the same catalog/search path that production ships.
+  assert.equal(
+    eas.build.preview?.env?.EXPO_PUBLIC_CATALOG_READ_V2,
+    eas.build.production?.env?.EXPO_PUBLIC_CATALOG_READ_V2,
+  );
 });
 
 test("production Post route publishes through the canonical composer service path", () => {

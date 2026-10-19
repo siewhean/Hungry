@@ -118,7 +118,10 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
   const handleSubmit = () => {
     if (!selectedArea) return;
     setManualSelection(selectedArea.name, selectedArea.coordinate);
-    if (isSettingsMode) {
+    // Already-onboarded users reach this picker from Discover, the map or
+    // Settings; completing onboarding again would not change any state (so
+    // nothing navigates home) and would re-fire onboarding_completed.
+    if (isSettingsMode || useSessionStore.getState().hasCompletedOnboarding) {
       navigation.goBack();
       return;
     }

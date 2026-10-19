@@ -30,7 +30,7 @@ import { blendedMatchScore, TASTE_LABELS } from "@/lib/ai/tasteEngine";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import type { DataRepository } from "@/lib/services/types";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
-import { useLocationStore } from "@/store/useLocationStore";
+import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -248,6 +248,11 @@ export function DecideForMeResultScreen() {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const currentLocation = useLocationStore((state) => state.currentLocation);
+  const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
+  const locationPermission = useLocationStore((state) => state.permission);
+  // Same effective location as the Discover feed: a manual pick wins over GPS.
+  const { coordinate: effectiveLocation, isApproximate: isLocationApproximate } =
+    getEffectiveLocation({ permission: locationPermission, currentLocation, manualCoordinate });
   const [searchRadius, setSearchRadius] = useState(500);
   const [resultIndex, setResultIndex] = useState(0);
   const route = useRoute<RouteProp<RootStackParamList, "DecideForMeResult">>();
@@ -272,11 +277,11 @@ export function DecideForMeResultScreen() {
         profile.tasteVector,
         profile.dietaryPreferences,
         searchRadius,
-        currentLocation,
+        effectiveLocation,
         profile.maxDishBudget,
       ),
     [
-      currentLocation,
+      effectiveLocation,
       profile.dietaryPreferences,
       profile.maxDishBudget,
       profile.tasteVector,
@@ -336,6 +341,20 @@ export function DecideForMeResultScreen() {
       .catch(() => undefined);
   }, [dish?.id]);
   const shownDishId = dish?.id;
+
+  // This screen is the single place that picks the dish, so the first pick shown is
+  // the one logged to the taste profile (Discover used to log a different dish).
+  const loggedFirstPickRef = useRef(false);
+  useEffect(() => {
+    if (!dish || loggedFirstPickRef.current) return;
+    loggedFirstPickRef.current = true;
+    recordTasteInteraction({
+      type: "food_button_click",
+      surface: "decide",
+      dish,
+      buttonId: "decide_for_me",
+    });
+  }, [dish, recordTasteInteraction]);
 
   useEffect(() => {
     if (!shownDishId) return;
@@ -462,7 +481,8 @@ export function DecideForMeResultScreen() {
         postalCode: venue.postalCode,
       })
     : "";
-  const distanceLabel = formatDistance(dish.distanceMeters);
+  // Distance from the built-in default point is not distance from the user.
+  const distanceLabel = isLocationApproximate ? undefined : formatDistance(dish.distanceMeters);
   const isSaved = profile.favouriteDishIds.includes(dish.id);
 
   const handleDirections = () => {

@@ -198,7 +198,20 @@ export function prefetchPostDetail(
   });
 }
 
+/**
+ * Routes whose mount effects send analytics, write store state or run a search.
+ * A preload mounts the screen, so a mere touch would fire those effects (H60).
+ */
+export const NON_PRELOADABLE_ROUTES: ReadonlySet<string> = new Set([
+  "DecideForMeResult",
+  "MapZoomedIn",
+  "QuickBites",
+]);
+
 export function preloadRoute(navigation: unknown, routeName: string, params?: object) {
+  if (NON_PRELOADABLE_ROUTES.has(routeName)) {
+    return;
+  }
   const preloadKey = getRoutePreloadKey(routeName, params);
   if (scheduledRoutePreloads.has(preloadKey)) {
     return;

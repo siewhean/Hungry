@@ -911,11 +911,16 @@ export async function searchDishesViaRpc(
   filters: SearchFilters,
   tasteProfile: TasteVector,
 ): Promise<SearchResult[] | undefined> {
+  const hasLocation = typeof filters.latitude === "number" && typeof filters.longitude === "number";
+  const query = filters.query.trim();
   const rows = await rpcRows("search_dishes", {
-    p_query: filters.query.trim() || null,
+    p_query: query || null,
     p_lat: filters.latitude ?? null,
     p_lng: filters.longitude ?? null,
-    p_radius_meters: filters.radius || null,
+    // Without a location the RPC would compare the radius against the stored
+    // dishes.distance_meters column, which is not the distance from the user.
+    // Text queries search everywhere; only location browsing is radius-bound.
+    p_radius_meters: hasLocation && !query ? filters.radius || null : null,
     p_dietary_flags: filters.dietaryFlags,
     p_limit: 20,
     p_cursor_score: null,

@@ -86,6 +86,20 @@ export function getDeniedLocationState(manualLocation?: string) {
   };
 }
 
+/**
+ * The location every "nearby" surface should use: a manual pick wins over GPS.
+ * `isApproximate` is true when there is neither a GPS fix nor a manual pick, so
+ * the coordinate is only the built-in default and must not be shown as "you".
+ */
+export function getEffectiveLocation(
+  state: Pick<LocationState, "permission" | "currentLocation" | "manualCoordinate">,
+) {
+  if (state.manualCoordinate) {
+    return { coordinate: state.manualCoordinate, isApproximate: false };
+  }
+  return { coordinate: state.currentLocation, isApproximate: state.permission !== "granted" };
+}
+
 let refreshInFlight: Promise<boolean> | null = null;
 
 export const useLocationStore = create<LocationState>()(
