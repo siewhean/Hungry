@@ -3959,8 +3959,13 @@ export const hungryService: HungryService = {
         portfolio.ownerId === _profile.id ||
         collaborators.some((entry) => entry.userId === _profile.id);
       if (!isMember) return resolve([]);
+      // Non-owners don't see collaborators they blocked (mock blocks are one-way).
+      const visible =
+        portfolio.ownerId === _profile.id
+          ? collaborators
+          : collaborators.filter((entry) => !_blockedUsers.has(entry.userId));
       return resolve(
-        clone(collaborators.map((entry) => ({ ...entry, ...findMockPerson(entry.userId) }))),
+        clone(visible.map((entry) => ({ ...entry, ...findMockPerson(entry.userId) }))),
       );
     },
 

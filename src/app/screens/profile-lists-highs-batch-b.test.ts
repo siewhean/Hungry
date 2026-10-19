@@ -232,6 +232,52 @@ test("H36: collaborators are picked from people you follow and shown by name", a
   await hungryService.social.unfollowUser("user-sarah-lim");
 });
 
+test("H36: collaborator picker waits for collaborators and hides blocked collaborators", () => {
+  const screen = read("src/app/screens/portfolio/PortfolioCollaboratorsScreen.tsx");
+  const mock = read("src/lib/services/mock/mockService.ts");
+  const migration = read(
+    "supabase/migrations/20261019181000_portfolio_collaborators_hide_blocked.sql",
+  );
+  const smoke = read("supabase/smoke/portfolio_collaborators_hide_blocked.sql");
+
+  // A failed collaborator load shows Retry, and the picker only renders once loaded,
+  // so existing collaborators are always marked "Added".
+  assert.doesNotMatch(screen, /void loadPortfolioCollaborators\(portfolioId\)/);
+  assert.match(screen, /setCollaboratorsState\("error"\)/);
+  assert.match(screen, /Couldn't load this list's collaborators\./);
+  assert.match(screen, /onPress=\{\(\) => void loadCollaborators\(\)\}/);
+  assert.match(screen, /collaboratorsState === "ready" \?[\s\S]*Add people you follow/);
+
+  assert.match(
+    migration,
+    /pc\.user_id = auth\.uid\(\)\s+or p\.owner_id = auth\.uid\(\)\s+or not app_private\.app_user_block_exists\(auth\.uid\(\), pc\.user_id\)/,
+  );
+  assert.match(
+    migration,
+    /function app_private\.list_portfolio_collaborators[\s\S]*security definer/,
+  );
+  assert.doesNotMatch(migration, /function public\./);
+  assert.match(smoke, /^begin;/m);
+  assert.match(smoke, /^rollback;/m);
+  assert.match(smoke, /blocker can see the collaborator they blocked/);
+  assert.match(mock, /collaborators\.filter\(\(entry\) => !_blockedUsers\.has\(entry\.userId\)\)/);
+});
+
+test("H59: stalls save to Lists once and count toward the add-to-list mission", () => {
+  const saveActions = read("src/features/checklistPortfolio/DetailSaveActions.tsx");
+  const stallDetail = read("src/app/screens/detail/StallDetailScreen.tsx");
+
+  assert.match(
+    saveActions,
+    /target\.itemType === "stall"[\s\S]*incrementProgress\(profile\.id, "add_to_collection"\)/,
+  );
+  assert.match(saveActions, /onAddToPortfolio\?: \(\) => void/);
+  assert.match(saveActions, /\{onAddToPortfolio \? \(/);
+  const card = stallDetail.slice(stallDetail.indexOf("<DetailSaveActionsCard"));
+  assert.doesNotMatch(card.slice(0, card.indexOf("/>")), /onAddToPortfolio/);
+  assert.match(stallDetail, /onAddToList=\{/);
+});
+
 test("H37: wheel Browse tab matches the catalog's dish names and tags", () => {
   const sheet = read("src/app/screens/wheel/WheelEntryAddSheet.tsx");
   assert.match(sheet, /label: "Browse"/);

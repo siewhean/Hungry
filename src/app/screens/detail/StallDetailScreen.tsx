@@ -1112,11 +1112,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
               {FEATURE_FLAGS.collectionsEnabled ? (
                 <DetailSaveActionsCard
                   title="Save this stall"
-                  body="Add this stall to your trying list or keep it in a private Hungry Portfolio."
+                  body="Add this stall to your trying list."
                   onAddToChecklist={detailSaveActions.addToChecklist}
-                  onAddToPortfolio={detailSaveActions.addToPortfolio}
                   isAddingToChecklist={detailSaveActions.isAddingToChecklist}
-                  isAddingToPortfolio={detailSaveActions.isAddingToPortfolio}
                 />
               ) : null}
 

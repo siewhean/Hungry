@@ -28,15 +28,28 @@ export function PortfolioCollaboratorsScreen({ navigation, route }: Props) {
     usePortfolioStore();
   const portfolioCollaborators = collaborators[portfolioId] ?? [];
 
+  const [collaboratorsState, setCollaboratorsState] = useState<"loading" | "ready" | "error">(
+    "loading",
+  );
   const [following, setFollowing] = useState<FollowedPerson[]>([]);
   const [followingState, setFollowingState] = useState<"loading" | "ready" | "error">("loading");
   const [query, setQuery] = useState("");
   const [role, setRole] = useState<PortfolioCollaboratorRole>("viewer");
   const [addingUserId, setAddingUserId] = useState<string | null>(null);
 
-  useEffect(() => {
-    void loadPortfolioCollaborators(portfolioId);
+  const loadCollaborators = useCallback(async () => {
+    setCollaboratorsState("loading");
+    try {
+      await loadPortfolioCollaborators(portfolioId);
+      setCollaboratorsState("ready");
+    } catch {
+      setCollaboratorsState("error");
+    }
   }, [loadPortfolioCollaborators, portfolioId]);
+
+  useEffect(() => {
+    void loadCollaborators();
+  }, [loadCollaborators]);
 
   const loadFollowing = useCallback(async () => {
     setFollowingState("loading");
@@ -100,7 +113,21 @@ export function PortfolioCollaboratorsScreen({ navigation, route }: Props) {
         </View>
       </View>
 
-      {portfolioCollaborators.length === 0 ? (
+      {collaboratorsState === "loading" ? (
+        <ActivityIndicator color={palette.orange} />
+      ) : collaboratorsState === "error" ? (
+        <Card style={{ gap: spacing[2] }}>
+          <AppText variant="body" tone="secondary">
+            {"Couldn't load this list's collaborators."}
+          </AppText>
+          <Button
+            label="Retry"
+            variant="secondary"
+            size="sm"
+            onPress={() => void loadCollaborators()}
+          />
+        </Card>
+      ) : portfolioCollaborators.length === 0 ? (
         <Card>
           <AppText variant="h3">No collaborators yet</AppText>
           <AppText variant="body" tone="secondary">
@@ -122,89 +149,91 @@ export function PortfolioCollaboratorsScreen({ navigation, route }: Props) {
         ))
       )}
 
-      <View style={{ gap: spacing[3] }}>
-        <AppText variant="h3">Add people you follow</AppText>
-        <View style={styles.roleRow}>
-          <AppText variant="bodySmall" tone="secondary">
-            Add as
-          </AppText>
-          <Chip
-            label="Viewer"
-            accessibilityLabel="Add people as viewers"
-            selected={role === "viewer"}
-            onPress={() => setRole("viewer")}
-          />
-          <Chip
-            label="Editor"
-            accessibilityLabel="Add people as editors"
-            selected={role === "editor"}
-            onPress={() => setRole("editor")}
-          />
-        </View>
-        <Input
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Search people you follow"
-          leftIcon={<Search size={18} color={palette.textMuted} />}
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-
-        {followingState === "loading" ? (
-          <ActivityIndicator color={palette.orange} />
-        ) : followingState === "error" ? (
-          <Card style={{ gap: spacing[2] }}>
-            <AppText variant="body" tone="secondary">
-              {"Couldn't load the people you follow."}
+      {collaboratorsState === "ready" ? (
+        <View style={{ gap: spacing[3] }}>
+          <AppText variant="h3">Add people you follow</AppText>
+          <View style={styles.roleRow}>
+            <AppText variant="bodySmall" tone="secondary">
+              Add as
             </AppText>
-            <Button
-              label="Retry"
-              variant="secondary"
-              size="sm"
-              onPress={() => void loadFollowing()}
+            <Chip
+              label="Viewer"
+              accessibilityLabel="Add people as viewers"
+              selected={role === "viewer"}
+              onPress={() => setRole("viewer")}
             />
-          </Card>
-        ) : matches.length === 0 ? (
-          <Card>
-            <AppText variant="body" tone="secondary">
-              {following.length === 0
-                ? "Follow people to add them as collaborators."
-                : "No one you follow matches that name."}
-            </AppText>
-          </Card>
-        ) : (
-          matches.map((person) => {
-            const name = collaboratorName(person);
-            const isAdded = collaboratorIds.has(person.userId);
-            return (
-              <Card key={person.userId}>
-                <View style={styles.personRow}>
-                  <Avatar name={name} uri={person.avatarUrl} size={40} />
-                  <AppText variant="bodyBold" style={{ flex: 1 }} numberOfLines={1}>
-                    {name}
-                  </AppText>
-                  {isAdded ? (
-                    <AppText variant="bodySmall" tone="secondary">
-                      Added
+            <Chip
+              label="Editor"
+              accessibilityLabel="Add people as editors"
+              selected={role === "editor"}
+              onPress={() => setRole("editor")}
+            />
+          </View>
+          <Input
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search people you follow"
+            leftIcon={<Search size={18} color={palette.textMuted} />}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+
+          {followingState === "loading" ? (
+            <ActivityIndicator color={palette.orange} />
+          ) : followingState === "error" ? (
+            <Card style={{ gap: spacing[2] }}>
+              <AppText variant="body" tone="secondary">
+                {"Couldn't load the people you follow."}
+              </AppText>
+              <Button
+                label="Retry"
+                variant="secondary"
+                size="sm"
+                onPress={() => void loadFollowing()}
+              />
+            </Card>
+          ) : matches.length === 0 ? (
+            <Card>
+              <AppText variant="body" tone="secondary">
+                {following.length === 0
+                  ? "Follow people to add them as collaborators."
+                  : "No one you follow matches that name."}
+              </AppText>
+            </Card>
+          ) : (
+            matches.map((person) => {
+              const name = collaboratorName(person);
+              const isAdded = collaboratorIds.has(person.userId);
+              return (
+                <Card key={person.userId}>
+                  <View style={styles.personRow}>
+                    <Avatar name={name} uri={person.avatarUrl} size={40} />
+                    <AppText variant="bodyBold" style={{ flex: 1 }} numberOfLines={1}>
+                      {name}
                     </AppText>
-                  ) : (
-                    <Button
-                      label="Add"
-                      accessibilityLabel={`Add ${name} as ${role}`}
-                      variant="secondary"
-                      size="sm"
-                      fullWidth={false}
-                      loading={addingUserId === person.userId}
-                      disabled={addingUserId !== null}
-                      onPress={() => void handleAdd(person)}
-                    />
-                  )}
-                </View>
-              </Card>
-            );
-          })
-        )}
-      </View>
+                    {isAdded ? (
+                      <AppText variant="bodySmall" tone="secondary">
+                        Added
+                      </AppText>
+                    ) : (
+                      <Button
+                        label="Add"
+                        accessibilityLabel={`Add ${name} as ${role}`}
+                        variant="secondary"
+                        size="sm"
+                        fullWidth={false}
+                        loading={addingUserId === person.userId}
+                        disabled={addingUserId !== null}
+                        onPress={() => void handleAdd(person)}
+                      />
+                    )}
+                  </View>
+                </Card>
+              );
+            })
+          )}
+        </View>
+      ) : null}
     </ScrollView>
   );
 }
