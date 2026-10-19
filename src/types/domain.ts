@@ -697,6 +697,8 @@ export interface Checklist {
   name: string;
   createdAt: string;
   updatedAt: string;
+  /** Server item count from the list query; undefined when the read did not include it. */
+  itemCount?: number;
 }
 
 export interface ChecklistItem {
@@ -733,6 +735,10 @@ export interface Portfolio {
   publishedAt?: string;
   createdAt: string;
   updatedAt: string;
+  /** Server item count from the list query; undefined when the read did not include it. */
+  itemCount?: number;
+  /** Server follower count (search_portfolios); undefined when not returned. */
+  followerCount?: number;
 }
 
 export interface PortfolioItem {

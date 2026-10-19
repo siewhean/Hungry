@@ -115,9 +115,13 @@ export function ChecklistItemPickerScreen({ navigation, route }: Props) {
       if (mounted) setVenues(nextVenues);
     }
 
-    void loadChoices();
+    // Debounce typing; `mounted` drops results from a superseded search.
+    const timer = setTimeout(() => {
+      void loadChoices().catch((error) => console.error("Failed to search:", error));
+    }, 250);
     return () => {
       mounted = false;
+      clearTimeout(timer);
     };
   }, [mode, query]);
 

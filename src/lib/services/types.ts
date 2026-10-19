@@ -1215,6 +1215,8 @@ export interface HungryService {
     unfollowPortfolio(portfolioId: string): Promise<void>;
     getPortfolioFollows(portfolioId: string): Promise<PortfolioFollow[]>;
     isFollowingPortfolio(portfolioId: string): Promise<boolean>;
+    /** Ids of the lists the signed-in user follows (empty when signed out). */
+    getFollowedPortfolioIds(): Promise<string[]>;
 
     flagPortfolio(portfolioId: string, reason: string, details?: string): Promise<void>;
     getPortfolioFlags(filters?: { status?: string }): Promise<PortfolioFlag[]>;

@@ -3360,7 +3360,11 @@ export const hungryService: HungryService = {
         clone(
           _checklists
             .filter((checklist) => checklist.userId === _profile.id)
-            .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)),
+            .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
+            .map((checklist) => ({
+              ...checklist,
+              itemCount: _checklistItems.filter((item) => item.checklistId === checklist.id).length,
+            })),
         ),
       );
     },
@@ -3625,7 +3629,12 @@ export const hungryService: HungryService = {
       });
       return resolve(
         clone(
-          visiblePortfolios.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)),
+          visiblePortfolios
+            .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
+            .map((portfolio) => ({
+              ...portfolio,
+              itemCount: _portfolioItems.filter((item) => item.portfolioId === portfolio.id).length,
+            })),
         ),
       );
     },
@@ -4061,6 +4070,14 @@ export const hungryService: HungryService = {
         _portfolioFollows.some(
           (follow) => follow.portfolioId === portfolioId && follow.userId === _profile.id,
         ),
+      );
+    },
+
+    async getFollowedPortfolioIds() {
+      return resolve(
+        _portfolioFollows
+          .filter((follow) => follow.userId === _profile.id)
+          .map((follow) => follow.portfolioId),
       );
     },
 
