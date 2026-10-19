@@ -1,6 +1,7 @@
 import NetInfo from "@react-native-community/netinfo";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { hydrateShareAttribution } from "@/features/share/shareAttribution";
 import { setAnalyticsSink, trackAnalyticsEvent } from "@/lib/analytics";
 import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
@@ -37,6 +38,42 @@ function syncProfile(isAuthenticated: boolean, userId?: string | null) {
   getProfileStoreState().syncProfile(isAuthenticated, userId);
 }
 
+// A remembered Merchant mode holds the splash until the account check settles; past this, use
+// the cached account so a slow network does not keep the app on the splash.
+const MERCHANT_LAUNCH_CHECK_TIMEOUT_MS = 5000;
+
+function runAfterMerchantStoreHydration(callback: () => void): () => void {
+  if (useMerchantStore.persist.hasHydrated()) {
+    callback();
+    return () => undefined;
+  }
+  return useMerchantStore.persist.onFinishHydration(() => callback());
+}
+
+// Loads the signed-in user's merchant account with the session (not only when Profile mounts).
+// Resolves whether the user still has one; on failure or timeout, falls back to the cached account.
+async function syncMerchantAccountForSession(isCurrent: () => boolean): Promise<boolean> {
+  const cachedAccount = useMerchantStore.getState().account;
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const account = await Promise.race([
+      getHungryService().merchant.getMerchantAccount(),
+      new Promise<never>((_, reject) => {
+        timeout = setTimeout(
+          () => reject(new Error("Merchant account check timed out")),
+          MERCHANT_LAUNCH_CHECK_TIMEOUT_MS,
+        );
+      }),
+    ]);
+    if (isCurrent()) useMerchantStore.getState().setAccount(account);
+    return account !== null;
+  } catch {
+    return cachedAccount !== null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 type BrowserIdleHandle = number;
 
 function isUuidLikeAuthUserId(value?: string | null): value is string {
@@ -68,6 +105,7 @@ export function useAppBootstrap() {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const authenticatedUserId = useSessionStore((state) => state.authenticatedUserId);
   const authDataSource = useSessionStore((state) => state.authDataSource);
+  const isAuthReady = useSessionStore((state) => state.isAuthReady);
   const applyAuthStateFromSession = useSessionStore((state) => state.applyAuthStateFromSession);
   const markAuthReady = useSessionStore((state) => state.markAuthReady);
   const setOffline = useUIStore((state) => state.setOffline);
@@ -78,6 +116,7 @@ export function useAppBootstrap() {
   const [isDataSourceReady, setIsDataSourceReady] = useState(false);
   const hasTrackedLaunch = useRef(false);
   const hasConfiguredAnalyticsSink = useRef(false);
+  const merchantAccountSyncedFor = useRef<string | null>(null);
 
   useEffect(() => {
     if (hasConfiguredAnalyticsSink.current) return;
@@ -279,6 +318,42 @@ export function useAppBootstrap() {
       subscription.subscription.unsubscribe();
     };
   }, [applyAuthStateFromSession, hasHydrated, markAuthReady]);
+
+  // Settle a remembered Merchant mode once auth is known: restore it only for a signed-in user who
+  // still has a merchant account; otherwise clear it so the app opens in customer mode.
+  useEffect(() => {
+    if (!isAuthReady || !isDataSourceReady) {
+      return;
+    }
+
+    let active = true;
+    const cancelHydrationWait = runAfterMerchantStoreHydration(() => {
+      if (!active) return;
+      const merchantStore = useMerchantStore.getState();
+      if (!isAuthenticated || !FEATURE_FLAGS.merchantCentreEnabled) {
+        merchantAccountSyncedFor.current = null;
+        merchantStore.resolveMerchantModeRestore(false);
+        return;
+      }
+
+      const userKey = authenticatedUserId ?? "signed-in";
+      if (merchantAccountSyncedFor.current === userKey) {
+        merchantStore.resolveMerchantModeRestore(merchantStore.account !== null);
+        return;
+      }
+
+      void syncMerchantAccountForSession(() => active).then((hasMerchantAccount) => {
+        if (!active) return;
+        merchantAccountSyncedFor.current = userKey;
+        useMerchantStore.getState().resolveMerchantModeRestore(hasMerchantAccount);
+      });
+    });
+
+    return () => {
+      active = false;
+      cancelHydrationWait();
+    };
+  }, [authenticatedUserId, isAuthReady, isAuthenticated, isDataSourceReady]);
 
   useEffect(() => {
     const profileNeedsRepair =

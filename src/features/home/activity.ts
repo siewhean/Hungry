@@ -35,7 +35,7 @@ export type SharedPostPayload = {
   authorName: string;
 };
 
-export type ActivityUpdateKind = "comment" | "like" | "share" | "submission";
+export type ActivityUpdateKind = "comment" | "like" | "share" | "submission" | "follow_request";
 export type ActivityItemType = "message" | "update";
 
 export type ActivityUpdate = {

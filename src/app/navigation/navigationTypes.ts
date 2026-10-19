@@ -141,6 +141,7 @@ export type RootStackParamList = {
   WheelStack: NavigatorScreenParams<WheelStackParamList>;
   ActivityInbox: { initialTab?: "messages" | "updates" } | undefined;
   ActivityPostDetail: { postId: string; updateId?: string };
+  FollowRequests: undefined;
   DirectMessages: undefined;
   ChatDetail: { chatId: string; name: string; avatar: string; isOnline?: boolean };
   Crave: undefined;

@@ -2,7 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ChevronLeft, Heart, MessageCircleMore, Share2, Store } from "lucide-react-native";
+import {
+  ChevronLeft,
+  Heart,
+  MessageCircleMore,
+  Share2,
+  Store,
+  UserPlus,
+} from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
@@ -402,9 +409,17 @@ function UpdatesTab({
           <Pressable
             key={update.id}
             accessibilityRole="button"
-            accessibilityLabel={`Open update for ${update.target}`}
+            accessibilityLabel={
+              update.kind === "follow_request"
+                ? `${update.actorName} requested to follow you. Open follow requests`
+                : `Open update for ${update.target}`
+            }
             onPress={() => {
               markActivityRead("update", update.id);
+              if (update.kind === "follow_request") {
+                navigation.navigate("FollowRequests");
+                return;
+              }
               if (post) {
                 navigation.navigate("ActivityPostDetail", {
                   postId: update.postId,
@@ -421,6 +436,8 @@ function UpdatesTab({
                 <Share2 color={kindColor} size={20} />
               ) : update.kind === "submission" ? (
                 <Store color={kindColor} size={20} />
+              ) : update.kind === "follow_request" ? (
+                <UserPlus color={kindColor} size={20} />
               ) : (
                 <MessageCircleMore color={kindColor} size={20} />
               )}

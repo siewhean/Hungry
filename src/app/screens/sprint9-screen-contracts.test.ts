@@ -346,10 +346,13 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
   );
   assert.match(
     source,
-    /accessibilityLabel=\{`\$\{isFollowingAuthor \? "Unfollow" : "Follow"\} \$\{item\.authorName\}`\}/,
+    /accessibilityLabel=\{`\$\{isFollowRequested \? "Cancel follow request to" : isFollowingAuthor \? "Unfollow" : "Follow"\} \$\{item\.authorName\}`\}/,
   );
   assert.match(source, /style=\{\[\s*styles\.followButton/);
-  assert.match(source, /\{isFollowingAuthor \? "Following" : "Follow"\}/);
+  assert.match(
+    source,
+    /\{isFollowRequested \? "Requested" : isFollowingAuthor \? "Following" : "Follow"\}/,
+  );
   assert.match(source, /function formatPostAge\(createdAt: string\)/);
   assert.match(source, /const COLLAPSED_CAPTION_MAX_CHARS = 118/);
   assert.match(source, /function formatCollapsedCaption\(caption: string\)/);

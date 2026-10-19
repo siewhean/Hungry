@@ -4077,6 +4077,67 @@ export const supabaseService: HungryService = {
       return data !== null;
     },
 
+    async getFollowStatus(userId: string) {
+      const client = requireSupabaseClient();
+      const currentUserId = await getCurrentSupabaseUserId();
+      if (!currentUserId) return "none" as const;
+      // The follows SELECT policy lets the follower read their own row.
+      const { data, error } = await client
+        .from("follows")
+        .select("status")
+        .eq("follower_id", currentUserId)
+        .eq("followee_id", userId)
+        .maybeSingle();
+      if (error) throw error;
+      const status = asString((data as Row | null)?.status);
+      return status === "approved" ? "approved" : status === "pending" ? "pending" : "none";
+    },
+
+    async cancelFollowRequest(userId: string) {
+      const client = requireSupabaseClient();
+      const { error } = await client.rpc("cancel_follow_request", { p_target_user_id: userId });
+      if (error) throw error;
+    },
+
+    async listFollowRequests(page?: { limit?: number; offset?: number }) {
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("list_incoming_follow_requests", {
+        p_limit: page?.limit ?? 50,
+        p_offset: page?.offset ?? 0,
+      });
+      if (error) throw error;
+      if (!Array.isArray(data)) return [];
+      return (data as Row[]).map((row) => ({
+        userId: asString(row.user_id) ?? "",
+        displayName: asString(row.display_name) ?? "",
+        avatarUrl: asString(row.avatar_url),
+        requestedAt: asString(row.requested_at) ?? "",
+      }));
+    },
+
+    async getFollowRequestCount() {
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("count_incoming_follow_requests");
+      if (error) throw error;
+      return asNumber(data) ?? 0;
+    },
+
+    async approveFollowRequest(requesterId: string) {
+      const client = requireSupabaseClient();
+      const { error } = await client.rpc("approve_follow_request", {
+        p_requester_id: requesterId,
+      });
+      if (error) throw error;
+    },
+
+    async declineFollowRequest(requesterId: string) {
+      const client = requireSupabaseClient();
+      const { error } = await client.rpc("decline_follow_request", {
+        p_requester_id: requesterId,
+      });
+      if (error) throw error;
+    },
+
     async createComment(postId: string, body: string, parentCommentId?: string) {
       const client = requireSupabaseClient();
       const userId = await getCurrentSupabaseUserId();
@@ -7073,7 +7134,12 @@ export const supabaseService: HungryService = {
         actorId: row.actor?.id as string,
         actorName: (row.actor?.display_name as string) ?? "Unknown",
         actorAvatarUrl: row.actor?.avatar_url as string | undefined,
-        eventType: row.event_type as "new_like" | "new_comment" | "new_reply" | "new_follower",
+        eventType: row.event_type as
+          | "new_like"
+          | "new_comment"
+          | "new_reply"
+          | "new_follower"
+          | "follow_request",
         targetType: row.target_type as "post" | "comment" | "profile",
         targetId: row.target_id as string,
         readAt: row.read_at as string | undefined,

@@ -5,6 +5,7 @@
  * minimum (motion.splashTotal) so the logo animation does not flash.
  * New users go to onboarding (which ends at sign-up/sign-in); signed-out
  * returning users go to Login. Main app screens never mount without a session.
+ * A signed-in merchant who left the app in Merchant mode reopens in the Merchant Centre.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -14,6 +15,7 @@ import Constants from "expo-constants";
 
 import type { MainTabParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
 import { HUNGRY_LOGO_ICON, HUNGRY_LOGO_STANDARD_SIZE } from "@/constants/brandAssets";
+import { useMerchantStore } from "@/store/useMerchantStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme, type HungryTheme } from "@/theme";
 import { AppText } from "@/components/ui";
@@ -60,6 +62,8 @@ export function SplashScreen({ navigation }: Props) {
   const isAuthReady = useSessionStore((state) => state.isAuthReady);
   const returnRoute = useSessionStore((state) => state.returnRoute);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
+  const merchantModeRestore = useMerchantStore((state) => state.merchantModeRestore);
+  const dismissMerchantModeRestore = useMerchantStore((state) => state.dismissMerchantModeRestore);
   const { palette, motion, spacing, radii, typography } = useHungryTheme();
   const appVersion = Constants.expoConfig?.version ?? "0.1.0";
   const styles = createStyles({ palette, typography, spacing, radii });
@@ -126,12 +130,18 @@ export function SplashScreen({ navigation }: Props) {
     if (!isAuthReady) {
       return;
     }
+    // A remembered Merchant mode waits for the session's merchant account check.
+    if (merchantModeRestore === "checking" && hasCompletedOnboarding) {
+      return;
+    }
 
     const remaining = Math.max(0, motion.splashTotal - (Date.now() - mountedAt));
     const timer = setTimeout(() => {
       // Fresh users complete local onboarding before they are offered account
       // creation/sign-in. Main app screens never mount during either step.
       if (!hasCompletedOnboarding) {
+        // Onboarding comes first; a remembered Merchant mode is forgotten, not kept for later.
+        dismissMerchantModeRestore();
         navigation.reset({
           index: 0,
           routes: [{ name: "OnboardingStack", params: { screen: "OnboardingWelcome" } }],
@@ -149,6 +159,14 @@ export function SplashScreen({ navigation }: Props) {
 
       const pending = returnRoute;
       setReturnRoute(undefined);
+      if (merchantModeRestore === "restore") {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "MerchantTabs", params: { screen: "Dashboard" } }],
+        });
+        return;
+      }
+
       if (
         typeof pending === "string" &&
         SAFE_MAIN_TAB_RETURNS.has(pending as keyof MainTabParamList)
@@ -191,9 +209,11 @@ export function SplashScreen({ navigation }: Props) {
 
     return () => clearTimeout(timer);
   }, [
+    dismissMerchantModeRestore,
     hasCompletedOnboarding,
     isAuthenticated,
     isAuthReady,
+    merchantModeRestore,
     motion.splashTotal,
     mountedAt,
     navigation,

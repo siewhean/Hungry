@@ -19,6 +19,7 @@ import {
   MessageCircleMore,
   ImagePlus,
   Trophy,
+  UserPlus,
 } from "lucide-react-native";
 
 import { AccessibleImage, AppText, Card, EmptyState, Skeleton } from "@/components/ui";
@@ -151,6 +152,8 @@ export function ProfileHomeScreen({
     followersCount: number;
     followingCount: number;
   } | null>(null);
+  /** Incoming pending follow requests; null until loaded. */
+  const [followRequestCount, setFollowRequestCount] = useState<number | null>(null);
   const triedStallIds = useMemo(
     () =>
       Object.values(stallInteractions)
@@ -397,6 +400,26 @@ export function ProfileHomeScreen({
     profile.stats.followersCount,
     profile.stats.followingCount,
   ]);
+
+  useEffect(() => {
+    // Refetch on focus so approving/declining on Follow Requests updates the row.
+    if (!isAuthenticated || isOtherUserProfile || !isFocused) return;
+
+    let isActive = true;
+
+    void getHungryService()
+      .social.getFollowRequestCount()
+      .then((count) => {
+        if (isActive) setFollowRequestCount(count);
+      })
+      .catch((error) => {
+        console.error("Failed to load follow request count:", error);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [isAuthenticated, isFocused, isOtherUserProfile, profile.id]);
 
   const handleShareTaste = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -752,6 +775,13 @@ export function ProfileHomeScreen({
               }
             />
           </View>
+          {!isOtherUserProfile &&
+          ((followRequestCount ?? 0) > 0 || profile.profileVisibility === "private") ? (
+            <FollowRequestsRow
+              count={followRequestCount}
+              onPress={() => rootNavigation.navigate("FollowRequests")}
+            />
+          ) : null}
           <View style={{ flexDirection: "row", gap: spacing[2] }}>
             {FEATURE_FLAGS.reviewCreationEnabled ? (
               <StatBlock
@@ -1302,6 +1332,65 @@ function StatBlock({
       }}
     >
       {row}
+    </Pressable>
+  );
+}
+
+function FollowRequestsRow({
+  count,
+  onPress,
+}: {
+  /** null while loading. */
+  count: number | null;
+  onPress: () => void;
+}) {
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
+  const pendingCount = count ?? 0;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={
+        pendingCount === 1
+          ? "Follow requests, 1 pending"
+          : `Follow requests, ${pendingCount} pending`
+      }
+      accessibilityHint="Opens follow requests to approve or decline"
+      onPress={onPress}
+      style={({ pressed }) => ({
+        flexDirection: "row",
+        alignItems: "center",
+        gap: spacing[3],
+        padding: spacing[4],
+        borderRadius: componentRadii.button,
+        borderWidth: 1,
+        borderColor: palette.border,
+        backgroundColor: pressed ? palette.bgSoft : palette.surface,
+      })}
+    >
+      <UserPlus color={palette.orange} size={18} />
+      <AppText
+        numberOfLines={1}
+        style={{ flex: 1, minWidth: 0, fontWeight: "600", color: palette.text }}
+      >
+        Follow requests
+      </AppText>
+      {pendingCount > 0 ? (
+        <View
+          style={{
+            minWidth: spacing[6],
+            paddingHorizontal: spacing[2],
+            paddingVertical: spacing[0.5],
+            borderRadius: radii.pill,
+            backgroundColor: palette.orange,
+            alignItems: "center",
+          }}
+        >
+          <AppText variant="micro" style={{ color: palette.white, fontWeight: "800" }}>
+            {pendingCount > 99 ? "99+" : pendingCount}
+          </AppText>
+        </View>
+      ) : null}
+      <ChevronRight color={palette.textMuted} size={18} />
     </Pressable>
   );
 }

@@ -91,7 +91,9 @@ export const useActivityStore = create<ActivityState>()(
                 ? "like"
                 : e.eventType === "new_follower"
                   ? "share"
-                  : "comment",
+                  : e.eventType === "follow_request"
+                    ? "follow_request"
+                    : "comment",
             postId: e.targetType === "post" ? e.targetId : "",
             actorId: e.actorId,
             actorName: e.actorName,
@@ -102,8 +104,10 @@ export const useActivityStore = create<ActivityState>()(
                   ? "commented on your post"
                   : e.eventType === "new_reply"
                     ? "replied to your comment"
-                    : "started following you",
-            target: e.targetId,
+                    : e.eventType === "follow_request"
+                      ? "requested to follow you"
+                      : "started following you",
+            target: e.eventType === "follow_request" ? "Review follow requests" : e.targetId,
             time: e.createdAt,
             unread: !e.readAt,
           }));

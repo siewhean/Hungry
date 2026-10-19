@@ -567,8 +567,36 @@ const _contentReports: {
 /** Blocked author ids, keyed like the Supabase user_blocks.blocked_user_key column. */
 const _blockedUsers = new Map<string, { reason?: string; createdAt: string }>();
 
-/** Mirrors the Supabase review read policy: hide blocked authors and reviews the viewer reported. */
+/** Distinct reporters that auto-hide a review, like report_content on the server. */
+const REVIEW_REPORT_AUTO_HIDE_THRESHOLD = 3;
+/** Reviews hidden by the report threshold: only their author still sees them. */
+const _moderationHiddenReviewIds = new Set<string>();
+
+function recordMockReviewReport(reviewId: string) {
+  const reporters = new Set(
+    _contentReports
+      .filter((report) => report.targetType === "review" && report.targetId === reviewId)
+      .map((report) => report.reporterId),
+  );
+  if (reporters.size >= REVIEW_REPORT_AUTO_HIDE_THRESHOLD) {
+    _moderationHiddenReviewIds.add(reviewId);
+  }
+}
+
+/** Merchant inbox reviews hidden by the report threshold, like reviews RLS for the merchant. */
+function isMockInboxReviewModerationHidden(interaction: CustomerInteraction): boolean {
+  return (
+    interaction.type === "review" &&
+    _moderationHiddenReviewIds.has(interaction.sourceId ?? interaction.id)
+  );
+}
+
+/**
+ * Mirrors the Supabase review read policies: hide report-threshold reviews from everyone but
+ * their author, blocked authors, and reviews the viewer reported.
+ */
 function isMockReviewHiddenForViewer(review: { id: string; authorId?: string }): boolean {
+  if (_moderationHiddenReviewIds.has(review.id) && review.authorId !== _profile.id) return true;
   if (review.authorId && _blockedUsers.has(review.authorId)) return true;
   return _contentReports.some(
     (report) =>
@@ -578,6 +606,33 @@ function isMockReviewHiddenForViewer(review: { id: string; authorId?: string }):
   );
 }
 const _userFollows = new Set<string>(); // Set of followee userId strings (current user follows these)
+/** Mock private accounts: following them creates a pending request, like follow_user in SQL. */
+const _mockPrivateUserIds = new Set<string>(["user-emma"]);
+/** Pending requests the current user sent (followee ids). */
+const _userFollowRequests = new Set<string>();
+/** Pending requests other users sent to the current user, newest first. */
+let _incomingFollowRequests: {
+  userId: string;
+  displayName: string;
+  avatarUrl?: string;
+  requestedAt: string;
+}[] = [
+  {
+    userId: "user-jia-hui",
+    displayName: "Jia Hui",
+    avatarUrl: "https://i.pravatar.cc/64?img=32",
+    requestedAt: "2026-10-18T09:30:00.000Z",
+  },
+  {
+    userId: "user-marcus-tan",
+    displayName: "Marcus Tan",
+    avatarUrl: "https://i.pravatar.cc/64?img=13",
+    requestedAt: "2026-10-17T14:05:00.000Z",
+  },
+];
+function listMockIncomingFollowRequests() {
+  return _incomingFollowRequests.filter((request) => !_blockedUsers.has(request.userId));
+}
 const _mockFollowersByUser: Record<
   string,
   { userId: string; displayName: string; avatarUrl?: string }[]
@@ -832,7 +887,12 @@ function getReviewBackedVisitorCandidates(outletId: string): PopularVisitorCandi
   );
 
   return _merchantInbox
-    .filter((interaction) => interaction.outletId === outlet.id && interaction.type === "review")
+    .filter(
+      (interaction) =>
+        interaction.outletId === outlet.id &&
+        interaction.type === "review" &&
+        !isMockInboxReviewModerationHidden(interaction),
+    )
     .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
     .map((interaction) => {
       const reviewId = interaction.sourceId ?? interaction.id;
@@ -1089,7 +1149,10 @@ function buildMockMerchantAnalytics(
     .slice(0, 5);
 
   const reviews = _merchantInbox.filter(
-    (interaction) => interaction.outletId === outletId && interaction.type === "review",
+    (interaction) =>
+      interaction.outletId === outletId &&
+      interaction.type === "review" &&
+      !isMockInboxReviewModerationHidden(interaction),
   );
   const ratings = reviews
     .map((interaction) => interaction.rating)
@@ -1529,7 +1592,19 @@ export const hungryService: HungryService = {
     },
 
     async getDish(id) {
-      return resolve(dishes.find((d) => d.id === id));
+      const dish = dishes.find((d) => d.id === id);
+      if (!dish) return resolve(undefined);
+      const reviews = dish.reviews.filter((review) => !isMockReviewHiddenForViewer(review));
+      // Report-threshold reviews also leave the dish total for everyone, like dish_review_stats.
+      const moderationHidden = dish.reviews.filter((review) =>
+        _moderationHiddenReviewIds.has(review.id),
+      ).length;
+      if (reviews.length === dish.reviews.length && moderationHidden === 0) return resolve(dish);
+      return resolve({
+        ...dish,
+        reviews,
+        reviewCount: Math.max(0, dish.reviewCount - moderationHidden),
+      });
     },
 
     async listActivePromotionsForTarget(input) {
@@ -1673,7 +1748,9 @@ export const hungryService: HungryService = {
       const reviewedDishes = _profile.reviewedDishIds
         .map((id) => dishes.find((d) => d.id === id))
         .filter(Boolean);
-      const reviews = reviewedDishes.flatMap((d) => (d?.reviews ?? []).slice(0, 1));
+      const reviews = reviewedDishes
+        .flatMap((d) => (d?.reviews ?? []).slice(0, 1))
+        .filter((review) => !isMockReviewHiddenForViewer(review));
       return resolve(reviews);
     },
 
@@ -2009,6 +2086,10 @@ export const hungryService: HungryService = {
 
     async followUser(userId: string) {
       if (userId === _profile.id) throw new Error("You can't follow yourself.");
+      if (!_userFollows.has(userId) && _mockPrivateUserIds.has(userId)) {
+        _userFollowRequests.add(userId);
+        return resolve("pending" as const);
+      }
       _userFollows.add(userId);
       return resolve("approved" as const);
     },
@@ -2050,6 +2131,58 @@ export const hungryService: HungryService = {
 
     async isFollowing(userId: string) {
       return resolve(_userFollows.has(userId));
+    },
+
+    async getFollowStatus(userId: string) {
+      const status = _userFollows.has(userId)
+        ? "approved"
+        : _userFollowRequests.has(userId)
+          ? "pending"
+          : "none";
+      return resolve(status as "approved" | "pending" | "none");
+    },
+
+    async cancelFollowRequest(userId: string) {
+      _userFollowRequests.delete(userId);
+      return resolve(undefined as void);
+    },
+
+    async listFollowRequests(page?: { limit?: number; offset?: number }) {
+      // Same paging rules as list_incoming_follow_requests (default 50, max 200).
+      const limit = Math.min(Math.max(page?.limit ?? 50, 1), 200);
+      const offset = Math.max(page?.offset ?? 0, 0);
+      return resolve(listMockIncomingFollowRequests().slice(offset, offset + limit));
+    },
+
+    async getFollowRequestCount() {
+      return resolve(listMockIncomingFollowRequests().length);
+    },
+
+    async approveFollowRequest(requesterId: string) {
+      const request = _incomingFollowRequests.find((item) => item.userId === requesterId);
+      if (!request) throw new Error("Follow request not found.");
+      if (_blockedUsers.has(requesterId)) {
+        throw new Error("You cannot approve this follow request.");
+      }
+      _incomingFollowRequests = _incomingFollowRequests.filter(
+        (item) => item.userId !== requesterId,
+      );
+      const followersKey = _mockFollowersByUser[_profile.id] ? _profile.id : userProfile.id;
+      _mockFollowersByUser[followersKey] = [
+        { userId: request.userId, displayName: request.displayName, avatarUrl: request.avatarUrl },
+        ...(_mockFollowersByUser[followersKey] ?? []),
+      ];
+      return resolve(undefined as void);
+    },
+
+    async declineFollowRequest(requesterId: string) {
+      if (!_incomingFollowRequests.some((item) => item.userId === requesterId)) {
+        throw new Error("Follow request not found.");
+      }
+      _incomingFollowRequests = _incomingFollowRequests.filter(
+        (item) => item.userId !== requesterId,
+      );
+      return resolve(undefined as void);
     },
 
     async createComment(postId: string, body: string, parentCommentId?: string) {
@@ -2189,6 +2322,7 @@ export const hungryService: HungryService = {
         targetAuthorKey: request.targetAuthorKey,
         reason: request.reason,
       });
+      if (request.targetType === "review") recordMockReviewReport(request.targetId);
       return resolve(undefined);
     },
 
@@ -2274,7 +2408,12 @@ export const hungryService: HungryService = {
 
     async listPopularVisitorPinsByVenue(venueId) {
       const pins = sortPopularVisitorPins(
-        _popularVisitorPins.filter((pin) => pin.venueId === venueId && pin.isActive),
+        _popularVisitorPins.filter(
+          (pin) =>
+            pin.venueId === venueId &&
+            pin.isActive &&
+            !_moderationHiddenReviewIds.has(pin.reviewId),
+        ),
       ).slice(0, 6);
       return resolve(clone(pins));
     },
@@ -2667,7 +2806,10 @@ export const hungryService: HungryService = {
 
     async getInbox(outletId, filters) {
       getMerchantOutlet(outletId);
-      let interactions = _merchantInbox.filter((interaction) => interaction.outletId === outletId);
+      let interactions = _merchantInbox.filter(
+        (interaction) =>
+          interaction.outletId === outletId && !isMockInboxReviewModerationHidden(interaction),
+      );
       if (filters?.type) {
         interactions = interactions.filter((i) => i.type === filters.type);
       }
