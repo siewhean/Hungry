@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import { Pressable, View } from "react-native";
 import { Heart, MessageCircleMore, PencilLine, Send, Utensils } from "lucide-react-native";
 
-import { AccessibleImage, AppText, Avatar, Card, EmptyState } from "@/components/ui";
+import { AccessibleImage, AppText, Avatar, Card, EmptyState, Skeleton } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { listSharedStallPosts, mergeStallPosts } from "@/features/social/sharedStallPosts";
 import { biteToStallPost } from "@/lib/services/postTransforms";
@@ -78,12 +78,21 @@ export function UserProfileContent({
   const followedUserIds = useSocialStore((state) => state.followedUserIds);
   const toggleAuthorFollow = useSocialStore((state) => state.toggleAuthorFollow);
   const toggleFollow = useSocialStore((state) => state.toggleFollow);
+  const markFollowedUserIds = useSocialStore((state) => state.markFollowedUserIds);
   const serviceProviderMode = getServiceProvider().mode;
   const canUseAuthorFallbackFollow =
     serviceProviderMode === "mock" || (typeof __DEV__ !== "undefined" && __DEV__);
   const [activeTab, setActiveTab] = useState<"posts" | "reviews">("posts");
   const [posts, setPosts] = useState<StallPost[]>([]);
   const [chatProfilesByName, setChatProfilesByName] = useState<Record<string, UserProfileItem>>({});
+  // Server follow counts plus whether the server already had the viewer following this user,
+  // so a local follow/unfollow afterwards can adjust the follower count without refetching.
+  const [serverFollowState, setServerFollowState] = useState<{
+    userId: string;
+    followersCount: number;
+    followingCount: number;
+    viewerIsFollowing: boolean;
+  } | null>(null);
 
   const normalizedAuthorId = authorId?.trim();
   const resolvedAuthorId = useMemo(
@@ -264,6 +273,42 @@ export function UserProfileContent({
     return items.sort((a, b) => toEpochMs(b.createdAt) - toEpochMs(a.createdAt));
   }, [commentsByPostId, normalizedAuthorName, repliesByCommentId]);
 
+  useEffect(() => {
+    if (!resolvedAuthorId) return;
+    let isActive = true;
+    const service = getHungryService().social;
+    setServerFollowState(null);
+
+    void Promise.all([
+      service.getFollowCounts(resolvedAuthorId),
+      service.isFollowing(resolvedAuthorId).catch(() => false),
+    ])
+      .then(([counts, viewerIsFollowing]) => {
+        if (!isActive) return;
+        if (viewerIsFollowing) markFollowedUserIds([resolvedAuthorId]);
+        setServerFollowState({
+          userId: resolvedAuthorId,
+          followersCount: counts?.followersCount ?? 0,
+          followingCount: counts?.followingCount ?? 0,
+          viewerIsFollowing,
+        });
+      })
+      .catch((error) => {
+        console.error("Failed to load follow counts:", error);
+        if (!isActive) return;
+        setServerFollowState({
+          userId: resolvedAuthorId,
+          followersCount: 0,
+          followingCount: 0,
+          viewerIsFollowing: false,
+        });
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [markFollowedUserIds, resolvedAuthorId]);
+
   const reviewCount = userReviewItems.length;
   const stallsCount = useMemo(
     () => new Set(posts.map((post) => post.venueId).filter(Boolean)).size,
@@ -274,6 +319,23 @@ export function UserProfileContent({
     : canUseAuthorFallbackFollow &&
       Boolean(followedAuthors[authorName] || followedAuthors[normalizedAuthorName]);
   const canShowFollowButton = Boolean(resolvedAuthorId) || canUseAuthorFallbackFollow;
+  const loadedFollowState =
+    serverFollowState && serverFollowState.userId === resolvedAuthorId ? serverFollowState : null;
+  // No account id (name-only author): there is no server follow data to show.
+  const followersCount = !resolvedAuthorId
+    ? 0
+    : loadedFollowState
+      ? Math.max(
+          0,
+          loadedFollowState.followersCount +
+            (isFollowingAuthor === loadedFollowState.viewerIsFollowing
+              ? 0
+              : isFollowingAuthor
+                ? 1
+                : -1),
+        )
+      : null;
+  const followingCount = !resolvedAuthorId ? 0 : (loadedFollowState?.followingCount ?? null);
 
   const activeTitle = activeTab === "posts" ? "Post" : "Review";
   const activeItemsCount = activeTab === "posts" ? posts.length : userReviewItems.length;
@@ -351,13 +413,13 @@ export function UserProfileContent({
             <StatBlock
               icon={<Heart color={palette.orange} size={14} />}
               label="Followers"
-              value={isFollowingAuthor ? 1 : 0}
+              value={followersCount}
               onPress={() => openProfileConnections("Followers", resolvedAuthorId)}
             />
             <StatBlock
               icon={<Send color={palette.orange} size={14} />}
               label="Following"
-              value={0}
+              value={followingCount}
               onPress={() => openProfileConnections("Following", resolvedAuthorId)}
             />
           </View>
@@ -516,7 +578,8 @@ function StatBlock({
 }: {
   icon: ReactNode;
   label: string;
-  value: number;
+  /** null while loading. */
+  value: number | null;
   onPress?: () => void;
   onPressIn?: () => void;
 }) {
@@ -537,9 +600,13 @@ function StatBlock({
     >
       <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
         {icon}
-        <AppText variant="h3" style={{ color: palette.text }}>
-          {value}
-        </AppText>
+        {value === null ? (
+          <Skeleton width={spacing[6]} height={spacing[5]} borderRadius={4} />
+        ) : (
+          <AppText variant="h3" style={{ color: palette.text }}>
+            {value}
+          </AppText>
+        )}
       </View>
       <AppText
         variant="micro"

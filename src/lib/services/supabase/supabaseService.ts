@@ -3944,13 +3944,11 @@ export const supabaseService: HungryService = {
       const client = requireSupabaseClient();
       const currentUserId = await getCurrentSupabaseUserId();
       if (!currentUserId) throw new Error("You must be signed in to follow users.");
-      const { error } = await client
-        .from("follows")
-        .upsert(
-          { follower_id: currentUserId, followee_id: userId, status: "approved" },
-          { onConflict: "follower_id,followee_id" },
-        );
+      // follow_user writes "approved" for public accounts and "pending" for private ones;
+      // a direct insert can only be "pending" under the follows RLS policy.
+      const { data, error } = await client.rpc("follow_user", { p_target_user_id: userId });
       if (error) throw error;
+      return data === "pending" ? "pending" : "approved";
     },
 
     async unfollowUser(userId: string) {
@@ -3967,38 +3965,35 @@ export const supabaseService: HungryService = {
 
     async listFollowers(userId: string) {
       const client = requireSupabaseClient();
-      const { data, error } = await client
-        .from("follows")
-        .select("follower_id, user_profiles!follows_follower_id_fkey(id, display_name, avatar_url)")
-        .eq("followee_id", userId)
-        .eq("status", "approved");
-      if (error || !data) return [];
-      return (data as Row[]).map((row) => {
-        const p = row.user_profiles as Row | null;
-        return {
-          userId: asString(row.follower_id) ?? "",
-          displayName: asString(p?.display_name) ?? "",
-          avatarUrl: asString(p?.avatar_url),
-        };
-      });
+      const { data, error } = await client.rpc("list_user_followers", { p_user_id: userId });
+      if (error || !Array.isArray(data)) return [];
+      return (data as Row[]).map((row) => ({
+        userId: asString(row.user_id) ?? "",
+        displayName: asString(row.display_name) ?? "",
+        avatarUrl: asString(row.avatar_url),
+      }));
     },
 
     async listFollowing(userId: string) {
       const client = requireSupabaseClient();
-      const { data, error } = await client
-        .from("follows")
-        .select("followee_id, user_profiles!follows_followee_id_fkey(id, display_name, avatar_url)")
-        .eq("follower_id", userId)
-        .eq("status", "approved");
-      if (error || !data) return [];
-      return (data as Row[]).map((row) => {
-        const p = row.user_profiles as Row | null;
-        return {
-          userId: asString(row.followee_id) ?? "",
-          displayName: asString(p?.display_name) ?? "",
-          avatarUrl: asString(p?.avatar_url),
-        };
-      });
+      const { data, error } = await client.rpc("list_user_following", { p_user_id: userId });
+      if (error || !Array.isArray(data)) return [];
+      return (data as Row[]).map((row) => ({
+        userId: asString(row.user_id) ?? "",
+        displayName: asString(row.display_name) ?? "",
+        avatarUrl: asString(row.avatar_url),
+      }));
+    },
+
+    async getFollowCounts(userId: string) {
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("get_follow_counts", { p_user_id: userId });
+      if (error || !Array.isArray(data) || data.length === 0) return null;
+      const row = data[0] as Row;
+      return {
+        followersCount: asNumber(row.followers_count) ?? 0,
+        followingCount: asNumber(row.following_count) ?? 0,
+      };
     },
 
     async isFollowing(userId: string) {

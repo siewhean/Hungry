@@ -32,12 +32,12 @@ test("profile home contract: profile stats use dynamic profile and social store 
 
   assert.match(domainSource, /followersCount: number/);
   assert.match(domainSource, /followingCount: number/);
-  assert.match(
-    source,
-    /const followedAuthors = useSocialStore\(\(state\) => state\.followedAuthors\)/,
-  );
-  assert.match(source, /followers: profile\.stats\.followersCount/);
-  assert.match(source, /following: profile\.stats\.followingCount \+ followedCount/);
+  // Follow counts come only from the server; never invented from feed/comment authors
+  // or inflated with local follow maps.
+  assert.match(source, /\.social\.getFollowCounts\(profile\.id\)/);
+  assert.match(source, /value=\{profileFollowCounts\?\.followersCount \?\? null\}/);
+  assert.match(source, /value=\{profileFollowCounts\?\.followingCount \?\? null\}/);
+  assert.doesNotMatch(source, /mergeFollowerNames|localFollowerCount|localFollowingCount/);
   assert.match(source, /value=\{profile\.stats\.dishesReviewed\}/);
   assert.match(source, /label="Followers"/);
   assert.match(source, /label="Following"/);
@@ -51,7 +51,7 @@ test("profile home contract: profile stats use dynamic profile and social store 
   );
   assert.match(
     source,
-    /<AppText variant="h3" style=\{\{ color: palette\.text \}\}>\s*\{value\}\s*<\/AppText>/,
+    /value === null \? \(\s*<Skeleton[\s\S]*?<AppText variant="h3" style=\{\{ color: palette\.text \}\}>\s*\{value\}\s*<\/AppText>/,
   );
   assert.match(source, /const headerActionSize = spacing\[8\] \+ spacing\[2\.5\]/);
   assert.match(source, /height: headerActionSize/);

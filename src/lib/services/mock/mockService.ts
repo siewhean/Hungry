@@ -630,6 +630,18 @@ function dedupeMockFollowers(
     return true;
   });
 }
+/** Only the signed-in mock profile has seeded followers; other users get their real mock follows. */
+function listMockFollowers(userId: string) {
+  const seeded =
+    _mockFollowersByUser[userId] ??
+    (userId === _profile.id ? _mockFollowersByUser[userProfile.id] : undefined) ??
+    [];
+  const viewerFollows =
+    userId !== _profile.id && _userFollows.has(userId)
+      ? [{ userId: _profile.id, displayName: _profile.displayName, avatarUrl: _profile.avatarUrl }]
+      : [];
+  return dedupeMockFollowers([...seeded.filter(Boolean), ...viewerFollows]);
+}
 const _mockComments: Record<
   string,
   {
@@ -1968,7 +1980,7 @@ export const hungryService: HungryService = {
 
     async followUser(userId: string) {
       _userFollows.add(userId);
-      return resolve(undefined as void);
+      return resolve("approved" as const);
     },
 
     async unfollowUser(userId: string) {
@@ -1976,17 +1988,12 @@ export const hungryService: HungryService = {
       return resolve(undefined as void);
     },
 
-    async listFollowers(_userId: string) {
-      return resolve(
-        dedupeMockFollowers(
-          _mockFollowersByUser[_userId]?.filter(Boolean) ??
-            _mockFollowersByUser[userProfile.id] ??
-            [],
-        ),
-      );
+    async listFollowers(userId: string) {
+      return resolve(listMockFollowers(userId));
     },
 
-    async listFollowing(_userId: string) {
+    async listFollowing(userId: string) {
+      if (userId !== _profile.id) return resolve([]);
       return resolve(
         Array.from(_userFollows).map((id) => ({
           userId: id,
@@ -1994,6 +2001,14 @@ export const hungryService: HungryService = {
           avatarUrl: undefined,
         })),
       );
+    },
+
+    async getFollowCounts(userId: string) {
+      const isOwnProfile = userId === _profile.id;
+      return resolve({
+        followersCount: listMockFollowers(userId).length,
+        followingCount: isOwnProfile ? _userFollows.size : 0,
+      });
     },
 
     async isFollowing(userId: string) {

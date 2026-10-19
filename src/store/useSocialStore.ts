@@ -82,6 +82,8 @@ interface SocialState {
   toggleSave: (postId: string) => void;
   toggleAuthorFollow: (authorName: string) => void;
   toggleFollow: (userId: string) => void;
+  /** Record server-confirmed follows (e.g. from the viewer's own Following list). */
+  markFollowedUserIds: (userIds: string[]) => void;
   incrementShare: (postId: string, channel?: ShareChannel) => void;
   addComment: (postId: string, comment: SocialComment) => void;
   addReply: (postId: string, reply: SocialReply) => void;
@@ -304,17 +306,43 @@ export const useSocialStore = create<SocialState>()(
             [userId]: !isFollowing,
           },
         }));
-        if (getServiceProvider().mode !== "mock") {
-          const service = getHungryService();
-          void (
-            isFollowing ? service.social.unfollowUser(userId) : service.social.followUser(userId)
-          ).catch((error) => {
+        const service = getHungryService();
+        const { useUIStore } = require("./useUIStore") as typeof import("./useUIStore");
+        void (isFollowing ? service.social.unfollowUser(userId) : service.social.followUser(userId))
+          .then((result) => {
+            // Private accounts must approve the request, so the viewer is not following yet.
+            if (result !== "pending") return;
+            set((prev) => ({
+              followedUserIds: { ...prev.followedUserIds, [userId]: false },
+            }));
+            useUIStore.getState().showToast({
+              message: "Follow request sent. You'll follow them once they approve.",
+              tone: "info",
+            });
+          })
+          .catch((error) => {
             console.error("Failed to sync follow state", error);
             set((prev) => ({
               followedUserIds: { ...prev.followedUserIds, [userId]: isFollowing },
             }));
+            useUIStore.getState().showToast({
+              message: isFollowing
+                ? "Couldn't unfollow. Please try again."
+                : "Couldn't follow. Please try again.",
+              tone: "error",
+            });
           });
-        }
+      },
+
+      markFollowedUserIds: (userIds) => {
+        if (!userIds.length) return;
+        set((prev) => {
+          const next = { ...prev.followedUserIds };
+          userIds.forEach((userId) => {
+            if (userId) next[userId] = true;
+          });
+          return { followedUserIds: next };
+        });
       },
 
       loadCommentsForPost: async (postId) => {

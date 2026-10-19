@@ -845,7 +845,8 @@ export interface HungryService {
     getLikedBites(): Promise<Bite[]>;
 
     // Follows
-    followUser(userId: string): Promise<void>;
+    /** "pending" when the target's account is private and must approve the request. */
+    followUser(userId: string): Promise<"approved" | "pending">;
     unfollowUser(userId: string): Promise<void>;
     listFollowers(
       userId: string,
@@ -853,6 +854,10 @@ export interface HungryService {
     listFollowing(
       userId: string,
     ): Promise<{ userId: string; displayName: string; avatarUrl?: string }[]>;
+    /** Approved follower/following counts; null when hidden from the viewer or unavailable. */
+    getFollowCounts(
+      userId: string,
+    ): Promise<{ followersCount: number; followingCount: number } | null>;
     isFollowing(userId: string): Promise<boolean>;
 
     // Comments

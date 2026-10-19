@@ -21,7 +21,7 @@ import {
   Trophy,
 } from "lucide-react-native";
 
-import { AccessibleImage, AppText, Card, EmptyState } from "@/components/ui";
+import { AccessibleImage, AppText, Card, EmptyState, Skeleton } from "@/components/ui";
 import { FloatingShareSendButton, InAppShareCard } from "@/components/social";
 import { MissionBanner } from "@/components/gamification/MissionBanner";
 import { PassportCard } from "@/components/gamification/PassportCard";
@@ -67,22 +67,6 @@ type ProfileRouteParams = {
 
 function normalizePersonName(name: string) {
   return name.trim().toLowerCase();
-}
-
-function mergeFollowerNames(
-  users: { name: string; userId?: string }[],
-  targetName: string,
-): Set<string> {
-  const normalizedTarget = normalizePersonName(targetName);
-  const names = new Set<string>();
-
-  users.forEach((user) => {
-    const normalized = normalizePersonName(user.name);
-    if (!normalized || normalized === normalizedTarget) return;
-    names.add(normalized);
-  });
-
-  return names;
 }
 
 function haveEqualPosts(left: StallPost[], right: StallPost[]) {
@@ -148,8 +132,6 @@ export function ProfileHomeScreen({
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const signOut = useSessionStore((state) => state.signOut);
   const merchantAccount = useMerchantStore((state) => state.account);
-  const followedAuthors = useSocialStore((state) => state.followedAuthors);
-  const followedUserIds = useSocialStore((state) => state.followedUserIds);
   const reviewEntries = useProfileStore((state) => state.reviewEntries);
   const sharePostToChat = useActivityStore((state) => state.sharePostToChat);
   const { loadStories } = useStoryStore();
@@ -163,12 +145,11 @@ export function ProfileHomeScreen({
   const insets = useSafeAreaInsets();
   const shareSheetRef = useRef<BottomSheetModal>(null);
   const shareSnapPoints = useMemo(() => ["45%"], []);
-  const [profileFollowerCount, setProfileFollowerCount] = useState<number>(
-    profile.stats.followersCount,
-  );
-  const [profileFollowingCount, setProfileFollowingCount] = useState<number>(
-    profile.stats.followingCount,
-  );
+  // Server counts only; null while loading (shows a skeleton).
+  const [profileFollowCounts, setProfileFollowCounts] = useState<{
+    followersCount: number;
+    followingCount: number;
+  } | null>(null);
   const triedStallIds = useMemo(
     () =>
       Object.values(stallInteractions)
@@ -176,8 +157,6 @@ export function ProfileHomeScreen({
         .map((interaction) => interaction.stallId),
     [stallInteractions],
   );
-  const commentsByPostId = useSocialStore((state) => state.commentsByPostId);
-  const repliesByCommentId = useSocialStore((state) => state.repliesByCommentId);
 
   const [selectedShareChatIds, setSelectedShareChatIds] = useState<string[]>([]);
   const [shareRecipients, setShareRecipients] = useState<ChatShareRecipient[]>([]);
@@ -354,76 +333,36 @@ export function ProfileHomeScreen({
     });
   }, [profile.reviewedDishIds, reviewEntries]);
 
-  const localFollowingCount = useMemo(
-    () =>
-      Object.values(followedUserIds).filter((isFollowing) => isFollowing).length +
-      Object.values(followedAuthors).filter((isFollowing) => isFollowing).length,
-    [followedAuthors, followedUserIds],
-  );
-  const followedCount = localFollowingCount;
   const profileStatSummary = useMemo(
     () => ({
-      followers: profile.stats.followersCount,
-      following: profile.stats.followingCount + followedCount,
       saved: profile.stats.favouritesCount,
     }),
-    [
-      followedCount,
-      profile.stats.favouritesCount,
-      profile.stats.followersCount,
-      profile.stats.followingCount,
-    ],
+    [profile.stats.favouritesCount],
   );
-  const localFollowerCount = useMemo(() => {
-    const candidates = [
-      ...profilePosts.map((post) => ({ name: post.authorName, userId: post.authorId })),
-      ...Object.values(commentsByPostId)
-        .flat()
-        .map((comment) => ({ name: comment.authorName, userId: comment.userId })),
-      ...Object.values(repliesByCommentId)
-        .flat()
-        .map((reply) => ({ name: reply.authorName, userId: reply.userId })),
-      ...getDataRepository()
-        .listStallPosts()
-        .map((post) => ({ name: post.authorName, userId: post.authorId })),
-    ];
-
-    return mergeFollowerNames(candidates, profile.displayName).size;
-  }, [commentsByPostId, profile.displayName, profilePosts, repliesByCommentId]);
 
   useEffect(() => {
     if (!isAuthenticated) {
-      setProfileFollowerCount(Math.max(profile.stats.followersCount, localFollowerCount));
-      setProfileFollowingCount(profile.stats.followingCount + localFollowingCount);
+      setProfileFollowCounts({
+        followersCount: profile.stats.followersCount,
+        followingCount: profile.stats.followingCount,
+      });
       return;
     }
+    // Refetch on focus so follows made on other screens show up here.
+    if (!isFocused) return;
 
     let isActive = true;
 
-    void Promise.all([
-      getHungryService().social.listFollowers(profile.id),
-      getHungryService().social.listFollowing(profile.id),
-    ])
-      .then(([followersList, followingList]) => {
+    void getHungryService()
+      .social.getFollowCounts(profile.id)
+      .then((counts) => {
         if (!isActive) return;
-
-        const followersFromService = mergeFollowerNames(
-          followersList.map((user) => ({ name: user.displayName, userId: user.userId })),
-          profile.displayName,
-        );
-
-        const fallbackFollowingCount = Math.max(profile.stats.followingCount, followingList.length);
-
-        setProfileFollowerCount(
-          Math.max(profile.stats.followersCount, followersFromService.size, localFollowerCount),
-        );
-        setProfileFollowingCount(fallbackFollowingCount + localFollowingCount);
+        setProfileFollowCounts(counts ?? { followersCount: 0, followingCount: 0 });
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error("Failed to load follow counts:", error);
         if (!isActive) return;
-
-        setProfileFollowerCount(Math.max(profile.stats.followersCount, localFollowerCount));
-        setProfileFollowingCount(profile.stats.followingCount + localFollowingCount);
+        setProfileFollowCounts((current) => current ?? { followersCount: 0, followingCount: 0 });
       });
 
     return () => {
@@ -431,11 +370,10 @@ export function ProfileHomeScreen({
     };
   }, [
     isAuthenticated,
-    localFollowingCount,
+    isFocused,
     profile.id,
     profile.stats.followersCount,
     profile.stats.followingCount,
-    localFollowerCount,
   ]);
 
   const handleShareTaste = useCallback(async () => {
@@ -757,7 +695,7 @@ export function ProfileHomeScreen({
           <View style={{ flexDirection: "row", gap: spacing[2] }}>
             <StatBlock
               label="Followers"
-              value={profileFollowerCount}
+              value={profileFollowCounts?.followersCount ?? null}
               icon={<Heart size={14} color={palette.orange} />}
               onPress={() =>
                 openProfileConnections("Followers", {
@@ -768,7 +706,7 @@ export function ProfileHomeScreen({
             />
             <StatBlock
               label="Following"
-              value={profileFollowingCount}
+              value={profileFollowCounts?.followingCount ?? null}
               icon={<Send size={14} color={palette.orange} />}
               onPress={() =>
                 openProfileConnections("Following", {
@@ -1266,7 +1204,8 @@ function StatBlock({
   onPress,
 }: {
   label: string;
-  value: number;
+  /** null while loading. */
+  value: number | null;
   icon: ReactNode;
   onPressIn?: () => void;
   onPress?: () => void;
@@ -1277,9 +1216,13 @@ function StatBlock({
     <>
       <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
         {icon}
-        <AppText variant="h3" style={{ color: palette.text }}>
-          {value}
-        </AppText>
+        {value === null ? (
+          <Skeleton width={spacing[6]} height={spacing[5]} borderRadius={4} />
+        ) : (
+          <AppText variant="h3" style={{ color: palette.text }}>
+            {value}
+          </AppText>
+        )}
       </View>
       <AppText
         variant="micro"
@@ -1308,7 +1251,7 @@ function StatBlock({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${label} ${value}`}
+      accessibilityLabel={value === null ? `${label}, loading` : `${label} ${value}`}
       onPressIn={onPressIn}
       onPress={onPress}
       style={({ pressed }) => {

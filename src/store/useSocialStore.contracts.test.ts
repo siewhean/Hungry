@@ -39,6 +39,11 @@ test("social store contract: UUID follows sync to service while local-name fallb
   assert.match(source, /\[authorName\]: !prev\.followedAuthors\[authorName\]/);
   assert.match(source, /service\.social\.unfollowUser\(userId\)/);
   assert.match(source, /service\.social\.followUser\(userId\)/);
+  // Failed follows roll back with a visible error; private accounts get a request notice.
+  assert.match(source, /Couldn't follow\. Please try again\./);
+  assert.match(source, /if \(result !== "pending"\) return;/);
+  assert.match(source, /Follow request sent/);
+  assert.match(source, /markFollowedUserIds: \(userIds\) =>/);
   assert.match(homeSource, /state\.followedAuthors/);
   assert.match(homeSource, /state\.followedUserIds/);
   assert.match(homeSource, /const followTargetId = item\.authorId/);
@@ -55,22 +60,24 @@ test("social store contract: UUID follows sync to service while local-name fallb
     homeSource,
     /followTargetId[\s\S]*\? toggleFollow\(followTargetId\)[\s\S]*: toggleAuthorFollow\(item\.authorName\)/,
   );
-  assert.match(profileSource, /Object\.values\(followedUserIds\)\.filter/);
-  assert.match(profileSource, /Object\.values\(followedAuthors\)\.filter/);
+  // Own counts are server-only; local follow maps must not be added on top.
+  assert.doesNotMatch(profileSource, /Object\.values\(followedUserIds\)\.filter/);
+  assert.doesNotMatch(profileSource, /Object\.values\(followedAuthors\)\.filter/);
   assert.match(connectionsSource, /const targetUserId = route\.params\?\.userId \?\? profile\.id/);
   assert.match(connectionsSource, /service\.listFollowers\(targetUserId\)/);
   assert.match(connectionsSource, /service\.listFollowing\(targetUserId\)/);
-  assert.match(connectionsSource, /const canUseAuthorFallbackFollow =/);
-  assert.match(connectionsSource, /const followedNames = canUseAuthorFallbackFollow/);
-  assert.match(
-    connectionsSource,
-    /const canShowFollowButton =\s*Boolean\(person\.userId\) \|\| canUseAuthorFallbackFollow/,
-  );
-  assert.match(
-    connectionsSource,
-    /person\.userId[\s\S]*\? toggleFollow\(person\.userId\)[\s\S]*: toggleAuthorFollow\(person\.name\)/,
-  );
+  // Lists are the viewed profile's server lists; the viewer's local follows only drive buttons.
+  assert.doesNotMatch(connectionsSource, /Object\.entries\(followedUserIds\)/);
+  assert.doesNotMatch(connectionsSource, /followedAuthors/);
+  assert.match(connectionsSource, /const canShowFollowButton = person\.userId !== profile\.id/);
+  assert.match(connectionsSource, /onPress=\{\(\) => toggleFollow\(person\.userId\)\}/);
+  assert.match(connectionsSource, /`\$\{targetDisplayName\} doesn't have any followers yet\.`/);
   assert.match(profileContentSource, /const canUseAuthorFallbackFollow =/);
+  // Other users' stats come from the server, not hard-coded values.
+  assert.match(profileContentSource, /service\.getFollowCounts\(resolvedAuthorId\)/);
+  assert.match(profileContentSource, /value=\{followersCount\}/);
+  assert.match(profileContentSource, /value=\{followingCount\}/);
+  assert.doesNotMatch(profileContentSource, /value=\{isFollowingAuthor \? 1 : 0\}/);
   assert.match(
     profileContentSource,
     /const canShowFollowButton = Boolean\(resolvedAuthorId\) \|\| canUseAuthorFallbackFollow/,
