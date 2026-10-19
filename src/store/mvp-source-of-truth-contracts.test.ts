@@ -63,9 +63,11 @@ test("MVP settings split keeps device-only preferences in local UI storage", () 
     assert.match(uiStore, new RegExp(`${key}: state\\.${key}`));
   }
 
-  assert.match(settingsScreen, /useUIStore\(\(state\) => state\.hapticFeedbackEnabled\)/);
-  assert.match(settingsScreen, /useUIStore\(\(state\) => state\.reducedMotionEnabled\)/);
-  assert.match(settingsScreen, /setProfileVisibility\("private"\)/);
+  assert.match(uiStore, /leftHandedMode: state\.leftHandedMode/);
+  assert.match(settingsScreen, /hapticFeedbackEnabled: state\.hapticFeedbackEnabled/);
+  assert.match(settingsScreen, /reducedMotionEnabled: state\.reducedMotionEnabled/);
+  assert.match(settingsScreen, /leftHandedMode: state\.leftHandedMode/);
+  assert.match(settingsScreen, /changeProfileVisibility\("private"\)/);
   assert.match(settingsScreen, /label="Reduce motion"/);
   assert.doesNotMatch(settingsScreen, /label="Analytics sharing"/);
 });
@@ -74,16 +76,19 @@ test("every Settings switch backed by useUIStore has a consumer outside Settings
   const uiStore = read("src/store/useUIStore.ts");
   const settingsScreen = read("src/app/screens/profile/SettingsScreen.tsx");
   const consumers: Record<string, string> = {
-    hapticFeedbackEnabled: "src/store/useSocialStore.ts",
+    // Every haptic goes through the wrapper (expo-haptics is lint-banned elsewhere).
+    hapticFeedbackEnabled: "src/lib/haptics.ts",
+    leftHandedMode: "src/components/ui/FAB.tsx",
     reducedMotionEnabled: "src/hooks/useReduceMotion.ts",
     allowSearchHistory: "src/store/useSearchStore.ts",
   };
 
   const settingsKeys = [
     ...settingsScreen.matchAll(
-      /useUIStore\(\(state\) => state\.(?!set)([A-Za-z]+Enabled|allow[A-Za-z]+|show[A-Za-z]+)\)/g,
+      /\b(?!set)([A-Za-z]+Enabled|allow[A-Za-z]+|leftHandedMode): state\.\1\b/g,
     ),
   ].map((match) => match[1]);
+  assert.ok(settingsKeys.length >= 4, "Settings switches were not found");
   for (const key of settingsKeys) {
     const consumer = consumers[key];
     assert.ok(consumer, `${key} is shown in Settings without a known consumer`);
@@ -415,10 +420,12 @@ test("MVP browse surfaces do not show obvious fake trust claims", () => {
   assert.match(feed, /title: "Nearby picks"/);
   assert.doesNotMatch(feed, /Fastest Near You|Mock distance logic/);
   assert.doesNotMatch(searchScreen, /fallbackPost|Heart\b|likeCount/);
+  // Only positive verification is badged; unverified rows carry no pill.
   assert.match(
     searchScreen,
-    /item\.verificationStatus === "verified" \? "Source verified" : "Unverified"/,
+    /item\.verificationStatus === "approved" \? "Verified" : "Source verified"/,
   );
+  assert.doesNotMatch(searchScreen, /"Unverified"/);
   assert.match(supabaseRepository, /isOpen: toBool\(row\.is_open, false\)/);
 });
 

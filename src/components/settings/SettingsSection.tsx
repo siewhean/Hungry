@@ -19,8 +19,8 @@ export function SettingsSection({
   return (
     <View style={{ marginBottom: spacing[6] }}>
       {title ? (
-        <AppText variant="micro" tone="secondary" style={styles.title}>
-          {title.toUpperCase()}
+        <AppText variant="micro" tone="secondary" accessibilityRole="header" style={styles.title}>
+          {title}
         </AppText>
       ) : null}
 
@@ -45,6 +45,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     letterSpacing: 1,
     fontWeight: "700",
+    // Visual only: screen readers read the title as written, not letter by letter.
+    textTransform: "uppercase",
   },
   content: {
     borderRadius: componentRadii.card,

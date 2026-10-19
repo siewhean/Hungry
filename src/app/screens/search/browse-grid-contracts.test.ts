@@ -24,7 +24,7 @@ test("Browse Dishes and Stalls page the active catalog service with a loading st
   assert.match(source, /accessibilityLabel=\{loadingLabel\}/);
   assert.match(
     source,
-    /onEndReached=\{\(\) => \{\s*if \(nextCursor && !isLoadingMore && !isLoading\)/,
+    /onEndReached=\{\(\) => \{\s*if \(nextCursor && !isLoadingMore && !isLoading && !loadMoreFailed\)/,
   );
 });
 

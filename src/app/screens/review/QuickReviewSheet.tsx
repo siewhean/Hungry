@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { View, StyleSheet, Pressable, ScrollView } from "react-native";
 import { BottomSheetTextInput } from "@gorhom/bottom-sheet";
 import { Star } from "lucide-react-native";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 import * as ImagePicker from "expo-image-picker";
 
 import { useHungryTheme } from "@/theme";

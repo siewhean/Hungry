@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
 import { Pressable, StyleSheet, type StyleProp, View, type ViewStyle } from "react-native";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 
 import { useHungryTheme } from "@/theme";
 import { AppText } from "./AppText";

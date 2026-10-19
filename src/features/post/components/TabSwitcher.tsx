@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Pressable, StyleSheet } from "react-native";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 import Animated, { useAnimatedStyle, withSpring } from "react-native-reanimated";
 import { AppText } from "@/components/ui";
 import { useHungryTheme } from "@/theme";

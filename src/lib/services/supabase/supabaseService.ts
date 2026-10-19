@@ -1099,6 +1099,24 @@ async function uploadAvatarIfNeeded(
   return uploaded.publicUrl;
 }
 
+/** Removes the user's older avatar files once the new avatar_url is saved. Best effort. */
+async function removePreviousAvatars(
+  client: SupabaseClient,
+  userId: string,
+  currentAvatarUrl: string,
+): Promise<void> {
+  try {
+    const { data, error } = await client.storage.from("avatars").list(userId, { limit: 100 });
+    if (error || !Array.isArray(data)) return;
+    const stalePaths = data
+      .filter((entry) => entry.id && !currentAvatarUrl.includes(`${userId}/${entry.name}`))
+      .map((entry) => `${userId}/${entry.name}`);
+    if (stalePaths.length > 0) await client.storage.from("avatars").remove(stalePaths);
+  } catch {
+    // A leftover file is harmless; the profile already points at the new avatar.
+  }
+}
+
 function isVideoUri(value: string): boolean {
   const normalized = value.split("?")[0]?.toLowerCase() ?? "";
   return normalized.endsWith(".mp4") || normalized.endsWith(".mov") || normalized.endsWith(".webm");
@@ -3144,16 +3162,20 @@ export const supabaseService: HungryService = {
       const userId = await getCurrentSupabaseUserId();
       if (!userId) throw new Error("You must be signed in to request account deletion.");
 
-      const { error } = await client.from("account_deletion_requests").insert({
-        user_id: userId,
-        reason: request?.reason ?? "user_initiated_settings_flow",
+      // The server sets scheduled_for and status; a repeat request returns the pending date
+      // (20261020050000_request_my_account_deletion.sql).
+      const { data, error } = await client.rpc("request_my_account_deletion", {
+        p_reason: request?.reason ?? "user_initiated_settings_flow",
       });
       if (error) throw error;
+      const scheduledFor = asString(data);
+      if (!scheduledFor) throw new Error("The deletion request did not return a date.");
 
       // The request is queued; a failed token unbind or sign-out must not report
       // the deletion itself as failed. The caller clears the local session.
       await unregisterStoredPushToken(client).catch(() => undefined);
       await this.signOut().catch(() => undefined);
+      return { scheduledFor };
     },
 
     async getPendingAccountDeletion() {
@@ -3682,6 +3704,9 @@ export const supabaseService: HungryService = {
       if (Object.keys(payload).length > 1) {
         const { error } = await client.from("user_profiles").upsert(payload, { onConflict: "id" });
         if (error) throw error;
+        if (typeof payload.avatar_url === "string") {
+          await removePreviousAvatars(client, userId, payload.avatar_url);
+        }
       }
       if (updates.profileVisibility !== undefined) {
         const { error } = await client.from("privacy_settings").upsert(

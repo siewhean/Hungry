@@ -49,7 +49,8 @@ test("profile home shows real reviews, loading skeletons, retry, and a confirmed
   assert.doesNotMatch(source, /You reviewed this dish\./);
   assert.match(source, /!postsLoaded \? \(\s*<ProfileGridSkeleton \/>/);
   assert.match(source, /ctaLabel="Retry"/);
-  assert.match(source, /Alert\.alert\("Sign out\?"/);
+  // Same confirmation copy as Settings > Sign out.
+  assert.match(source, /Alert\.alert\("Sign out", "You will be signed out from Hungry on this device\."/);
   assert.match(source, /accessibilityViewIsModal/);
   assert.doesNotMatch(source, /Guest User/);
   assert.match(source, /label="Edit profile"/);

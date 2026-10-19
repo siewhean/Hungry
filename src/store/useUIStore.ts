@@ -60,6 +60,9 @@ interface UIState {
   setReducedMotionEnabled: (enabled: boolean) => void;
   allowSearchHistory: boolean;
   setAllowSearchHistory: (enabled: boolean) => void;
+  /** Device setting: kept across sign-outs and never overwritten by a server profile. */
+  leftHandedMode: boolean;
+  setLeftHandedMode: (enabled: boolean) => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -97,6 +100,8 @@ export const useUIStore = create<UIState>()(
       setReducedMotionEnabled: (reducedMotionEnabled) => set({ reducedMotionEnabled }),
       allowSearchHistory: true,
       setAllowSearchHistory: (allowSearchHistory) => set({ allowSearchHistory }),
+      leftHandedMode: false,
+      setLeftHandedMode: (leftHandedMode) => set({ leftHandedMode }),
     }),
     {
       name: "hungry-ui-v1",
@@ -106,6 +111,7 @@ export const useUIStore = create<UIState>()(
         hapticFeedbackEnabled: state.hapticFeedbackEnabled,
         reducedMotionEnabled: state.reducedMotionEnabled,
         allowSearchHistory: state.allowSearchHistory,
+        leftHandedMode: state.leftHandedMode,
       }),
     },
   ),

@@ -11,7 +11,7 @@
 import { useDeferredValue, useMemo, useState } from "react";
 import { FlatList, Modal, Pressable, ScrollView, View, Alert } from "react-native";
 import { X, Search, Compass, Heart, Plus, ShieldAlert, Sparkles } from "lucide-react-native";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 
 import { AccessibleImage, AppText, Badge, Card, EmptyState, Input } from "@/components/ui";
 import { dishMatchesSearchCategory } from "@/lib/services/searchCategoryMatch";

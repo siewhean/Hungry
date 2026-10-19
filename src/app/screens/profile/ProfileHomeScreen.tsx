@@ -723,10 +723,10 @@ export function ProfileHomeScreen({
                   icon={<LogOut size={20} color={palette.error} />}
                   onPress={() => {
                     setMenuOpen(false);
-                    Alert.alert("Sign out?", "You can sign back in at any time.", [
+                    Alert.alert("Sign out", "You will be signed out from Hungry on this device.", [
                       { text: "Cancel", style: "cancel" },
                       {
-                        text: "Sign Out",
+                        text: "Sign out",
                         style: "destructive",
                         onPress: () => {
                           signOut();

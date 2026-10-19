@@ -621,5 +621,8 @@ test("search home hands every query to the paged results and keeps a see-all act
 
   assert.doesNotMatch(search, /getSearchResultsAsync|inlineResults/);
   assert.match(search, /"See all results"/);
-  assert.match(search, /navigation\.navigate\("SearchResults"\)/);
+  assert.match(
+    search,
+    /navigation\.navigate\("SearchResults", \{\s*initialQuery: trimmedQuery \|\| undefined,/,
+  );
 });
