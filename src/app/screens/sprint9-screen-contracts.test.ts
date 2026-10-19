@@ -186,7 +186,7 @@ test("Sprint 9 screen contract: stall menu cards expose dish actions", () => {
 
   assert.match(
     stallDetail,
-    /accessibilityRole="button"[\s\S]*accessibilityLabel=\{`Open \$\{activeDish\.name\}`\}/,
+    /accessibilityRole="button"[\s\S]*accessibilityLabel=\{`Open \$\{dish\.name\}`\}/,
   );
   assert.match(stallDetail, /accessibilityHint="Opens this dish detail page"/);
 });
