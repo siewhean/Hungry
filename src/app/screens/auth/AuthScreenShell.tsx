@@ -11,8 +11,6 @@ interface AuthScreenShellProps {
   footer?: ReactNode;
   wordmarkColor?: string;
   compact?: boolean;
-  scroll?: boolean;
-  contentOffsetTop?: number;
 }
 
 export function AuthScreenShell({
@@ -22,8 +20,6 @@ export function AuthScreenShell({
   footer,
   wordmarkColor,
   compact = false,
-  scroll = true,
-  contentOffsetTop = 0,
 }: PropsWithChildren<AuthScreenShellProps>) {
   const { palette, spacing } = useHungryTheme();
   const gap = compact ? spacing[3] : spacing[6];
@@ -34,8 +30,9 @@ export function AuthScreenShell({
   const effectiveWordmarkColor = wordmarkColor ?? palette.navy;
 
   return (
-    <Screen scroll={scroll}>
-      <View style={{ gap, paddingVertical: spacing[3], marginTop: spacing[3] + contentOffsetTop }}>
+    // Auth forms always scroll and lift above the keyboard so the submit button stays reachable.
+    <Screen keyboardAvoiding>
+      <View style={{ gap, paddingVertical: spacing[3], marginTop: spacing[3] }}>
         <View style={{ alignItems: "center", gap: titleGap, marginBottom: innerGap }}>
           <HungryLogo size={logoSize} showWordmark wordmarkColor={effectiveWordmarkColor} />
           <View style={{ alignItems: "center", gap: spacing[1] }}>

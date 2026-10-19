@@ -2916,6 +2916,15 @@ export const supabaseService: HungryService = {
       if (error) throw error;
     },
 
+    async confirmEmail(code) {
+      const client = requireSupabaseClient();
+      const { error } = await client.auth.exchangeCodeForSession(code);
+      if (error) throw error;
+      const session = await toAppSession(client);
+      if (!session) throw new Error("Email confirmed but no active session.");
+      return session;
+    },
+
     async signIn(email, password) {
       const client = requireSupabaseClient();
       const { error } = await client.auth.signInWithPassword({ email, password });

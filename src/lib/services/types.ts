@@ -704,6 +704,8 @@ export interface HungryService {
   auth: {
     signUp(email: string, password: string, name: string): Promise<Session | null>;
     resendVerificationEmail(email: string): Promise<void>;
+    /** Exchanges the `?code` from the signup confirmation link for a session. */
+    confirmEmail(code: string): Promise<Session>;
     signIn(email: string, password: string): Promise<Session>;
     signInWithGoogle(): Promise<Session>;
     signInWithApple(): Promise<Session>;

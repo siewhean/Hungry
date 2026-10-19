@@ -471,6 +471,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
   const isAuthReady = useSessionStore((state) => state.isAuthReady);
   const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
   const sessionExpired = useSessionStore((state) => state.sessionExpired);
+  const passwordRecoveryInProgress = useSessionStore((state) => state.passwordRecoveryInProgress);
   const dismissSessionExpiry = useSessionStore((state) => state.dismissSessionExpiry);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
@@ -609,6 +610,10 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     }
 
     if (currentTopRoute === "AuthStack") {
+      // The recovery code exchange signs the user in mid-reset; stay on the reset flow.
+      if (passwordRecoveryInProgress) {
+        return;
+      }
       if (isAuthenticated && !hasCompletedOnboarding) {
         navigationRef.resetRoot({
           index: 0,
@@ -633,6 +638,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     isMerchantMode,
     merchantModeRestore,
     navigateHome,
+    passwordRecoveryInProgress,
   ]);
 
   useEffect(() => {

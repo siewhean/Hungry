@@ -6,6 +6,7 @@ import { ArrowLeft, MapPin } from "lucide-react-native";
 import { AppHeader, AppText, Button, Card, Input } from "@/components/ui";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useSessionStore } from "@/store/useSessionStore";
+import { useUIStore } from "@/store/useUIStore";
 import type { Coordinate } from "@/types/domain";
 import { useHungryTheme } from "@/theme";
 import type { OnboardingStackParamList } from "./OnboardingStack";
@@ -97,6 +98,8 @@ export function ManualLocationPickerScreen({ navigation }: Props) {
   const storedManualLocation = useLocationStore((state) => state.manualLocation);
   const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
   const hasSkippedTasteQuiz = useSessionStore((state) => state.hasSkippedTasteQuiz);
+  const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
+  const showToast = useUIStore((state) => state.showToast);
   const [query, setQuery] = useState("");
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(
     SINGAPORE_AREAS.find((area) => area.name.toLowerCase() === storedManualLocation?.toLowerCase())
@@ -117,6 +120,13 @@ export function ManualLocationPickerScreen({ navigation }: Props) {
   const handleSubmit = () => {
     if (!selectedArea) return;
     setManualSelection(selectedArea.name, selectedArea.coordinate);
+    // Opened from Settings: onboarding is already done, so just return there.
+    if (hasCompletedOnboarding) {
+      showToast({ message: `Location set to ${selectedArea.name}.`, tone: "success" });
+      navigation.goBack();
+      return;
+    }
+    // First run: RootNavigator moves on to Home once onboarding is complete.
     completeOnboarding(hasSkippedTasteQuiz);
   };
 
@@ -132,8 +142,8 @@ export function ManualLocationPickerScreen({ navigation }: Props) {
           left={
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Back to location permission"
-              accessibilityHint="Returns to the previous location setup screen"
+              accessibilityLabel="Go back"
+              accessibilityHint="Returns to the previous screen without changing your location"
               onPress={() => navigation.goBack()}
               style={{
                 alignItems: "center",

@@ -4,6 +4,10 @@ const LOWERCASE_REGEX = /[a-z]/;
 const DIGIT_REGEX = /\d/;
 const SYMBOL_REGEX = /[^A-Za-z0-9]/;
 
+/** iOS strong-password rules matching validatePassword, so suggested passwords pass. */
+export const PASSWORD_RULES =
+  "minlength: 12; required: lower; required: upper; required: digit; required: special;";
+
 export function validateRequired(value: string, label: string): true | string {
   if (value.trim().length > 0) {
     return true;

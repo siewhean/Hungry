@@ -378,6 +378,8 @@ export interface UserProfile {
   recommendationSignals?: RecommendationSignalState;
   leftHandedMode?: boolean;
   onboardingSelectedDishIds?: string[];
+  /** Cuisine card ids picked during onboarding (e.g. "local", "japanese"). */
+  onboardingCuisineIds?: string[];
   /** Usual max price per dish in SGD, set during onboarding. Undefined = no budget limit. */
   maxDishBudget?: number;
 }

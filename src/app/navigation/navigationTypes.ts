@@ -4,7 +4,7 @@ import type { TasteVector } from "@/types/domain";
 export type AuthStackParamList = {
   Login: undefined;
   SignUp: undefined;
-  EmailVerification: { email: string; completedOnboarding?: boolean } | undefined;
+  EmailVerification: { email?: string; completedOnboarding?: boolean; code?: string } | undefined;
   ForgotPassword: undefined;
   ResetPassword: { email?: string; code?: string } | undefined;
   ResetPasswordSuccess: undefined;

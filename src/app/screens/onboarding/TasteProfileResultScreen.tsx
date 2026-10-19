@@ -4,6 +4,7 @@ import { Pressable, ScrollView, View } from "react-native";
 import { Heart } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import { AccessibleImage, AppText, Button, Card } from "@/components/ui";
 import { getSearchResultsAsync } from "@/features/search/search";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
@@ -13,7 +14,6 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { OnboardingStackParamList } from "./OnboardingStack";
-import { getOnboardingDishImageSource } from "./onboardingFoodImages";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "TasteProfileResult">;
 
@@ -99,12 +99,17 @@ export function TasteProfileResultScreen({ navigation }: Props) {
                 key={dish.id}
                 style={{ borderRadius: radii.md, overflow: "hidden", padding: 0, width: "48%" }}
               >
-                <AccessibleImage
-                  source={getOnboardingDishImageSource(dish.id)}
-                  contentFit="cover"
-                  style={{ height: 120, width: "100%" }}
-                  accessibilityLabel={`Photo of ${dish.name}`}
-                />
+                {/* The dish's own photo, or the shared no-photo tile; never a stand-in dish. */}
+                {dish.imageUrl ? (
+                  <AccessibleImage
+                    source={{ uri: dish.imageUrl }}
+                    contentFit="cover"
+                    style={{ height: 120, width: "100%" }}
+                    accessibilityLabel={`Photo of ${dish.name}`}
+                  />
+                ) : (
+                  <NoDishPhoto dishName={dish.name} style={{ height: 120, width: "100%" }} />
+                )}
                 <View style={{ gap: spacing[1], padding: spacing[2] }}>
                   <AppText variant="bodyBold" numberOfLines={1}>
                     {dish.name}
