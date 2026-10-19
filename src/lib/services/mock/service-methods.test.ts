@@ -367,12 +367,14 @@ test("data export collects the signed-in user's profile and activity", async () 
   await hungryService.auth.signIn("export-me@hungry.sg", "password");
   try {
     const exported = await buildMyDataExport(hungryService);
-    assert.equal(exported.exportVersion, 1);
+    assert.equal(exported.exportVersion, 2);
     assert.match(exported.otherDataRequests, /usehungrysingapore@gmail\.com/);
-    assert.ok(exported.profile.id);
-    assert.equal(exported.reviews.ok, true);
-    assert.equal(exported.posts.ok, true);
-    assert.equal(exported.favouriteDishIds.ok, true);
+    assert.ok((exported.data.profile as { id?: string }).id);
+    for (const category of ["reviews", "posts", "favouriteDishIds", "savedPosts", "followers"]) {
+      assert.ok(exported.categories.includes(category), category);
+      assert.ok(Array.isArray(exported.data[category]), category);
+    }
+    assert.deepEqual(exported.categories, Object.keys(exported.data));
     assert.doesNotThrow(() => JSON.stringify(exported));
   } finally {
     await hungryService.auth.signOut();
@@ -574,6 +576,26 @@ test("merchant OCR draft methods filter drafts and publish accepted dishes", asy
     (draft) => draft.id === pendingDrafts[1].id,
   );
   assert.equal(afterRejectDraft?.status, "rejected");
+
+  // A repeated accept (double tap) returns the same dish instead of failing or duplicating it.
+  const repeated = await hungryService.merchant.acceptOCRDraft(pendingDrafts[0].id);
+  assert.equal(repeated.id, acceptedDish.id);
+  assert.equal((await hungryService.merchant.getMenu(outletId)).length, afterAcceptMenu.length);
+
+  // "Edit before adding" publishes only on save, with the merchant's edits.
+  if (pendingDrafts[2]) {
+    const edited = await hungryService.merchant.acceptOCRDraft(pendingDrafts[2].id, {
+      name: "Edited scan dish",
+      price: 7.5,
+      description: "Merchant written description",
+      dietaryFlags: ["halal"],
+    });
+    assert.equal(edited.name, "Edited scan dish");
+    assert.equal(edited.price, 7.5);
+    assert.equal(edited.description, "Merchant written description");
+    assert.deepEqual(edited.dietaryFlags, ["halal"]);
+    assert.equal(edited.id, `dish-from-${pendingDrafts[2].id}`);
+  }
 });
 
 test("merchant AI dish tool methods return canned suggestions without publishing", async () => {

@@ -26,7 +26,11 @@ import {
   getPromotionPricing,
   resolvePromotionRuntimeStatus,
 } from "@/features/merchant/merchantReadiness";
-import { validateMerchantPromotionInput } from "@/features/merchant/promotionValidation";
+import {
+  toSingaporeDateOnly,
+  toSingaporePromotionBoundary,
+  validateMerchantPromotionInput,
+} from "@/features/merchant/promotionValidation";
 
 type RouteProps = RouteProp<MerchantTabParamList, "PromotionBuilder">;
 type PromotionItemType = NonNullable<MerchantPromotion["promotionItemType"]>;
@@ -55,12 +59,14 @@ export function PromotionBuilderScreen() {
   const [promotionalPrice, setPromotionalPrice] = useState("");
   const [discountPercentage, setDiscountPercentage] = useState("");
   const [isAvailable, setIsAvailable] = useState(true);
-  const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
-  const [endDate, setEndDate] = useState(
-    new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0],
+  const [startDate, setStartDate] = useState(() => toSingaporeDateOnly());
+  const [endDate, setEndDate] = useState(() =>
+    toSingaporeDateOnly(new Date(Date.now() + 7 * 86400000)),
   );
   const [status, setStatus] = useState<PromotionStatus>("draft");
   const [error, setError] = useState<string | null>(null);
+  // Audience targeting is not enforced anywhere yet, so the builder no longer offers it;
+  // existing values are preserved on edit.
   const [targetAudiences, setTargetAudiences] = useState<Set<PromotionTargetAudience>>(
     new Set(["nearby_users"]),
   );
@@ -88,8 +94,8 @@ export function PromotionBuilderScreen() {
         setTitle(promo.title);
         setDescription(promo.description);
         setTargetDishId(promo.targetDishId);
-        setStartDate(promo.startDate.split("T")[0]);
-        setEndDate(promo.endDate.split("T")[0]);
+        setStartDate(toSingaporeDateOnly(promo.startDate));
+        setEndDate(toSingaporeDateOnly(promo.endDate));
         setStatus(promo.status);
         setTargetAudiences(new Set(promo.targetAudience));
         setPromotionItemType(promo.promotionItemType ?? "new_item");
@@ -110,18 +116,6 @@ export function PromotionBuilderScreen() {
   useEffect(() => {
     void loadPromotion();
   }, [loadPromotion]);
-
-  const setAudienceSelected = (audience: PromotionTargetAudience, selected: boolean) => {
-    setTargetAudiences((prev) => {
-      const next = new Set(prev);
-      if (selected) {
-        next.add(audience);
-      } else {
-        next.delete(audience);
-      }
-      return next;
-    });
-  };
 
   const handleSave = async (publish: boolean) => {
     if (!activeOutlet) return;
@@ -156,8 +150,8 @@ export function PromotionBuilderScreen() {
       }
       const newStatus = publish
         ? resolvePromotionRuntimeStatus({
-            startDate: `${startDate}T00:00:00Z`,
-            endDate: `${endDate}T23:59:59Z`,
+            startDate: toSingaporePromotionBoundary(startDate, "start"),
+            endDate: toSingaporePromotionBoundary(endDate, "end"),
             status: "active",
           })
         : "draft";
@@ -166,8 +160,8 @@ export function PromotionBuilderScreen() {
         title,
         description,
         targetDishId,
-        startDate: `${startDate}T00:00:00Z`,
-        endDate: `${endDate}T23:59:59Z`,
+        startDate: toSingaporePromotionBoundary(startDate, "start"),
+        endDate: toSingaporePromotionBoundary(endDate, "end"),
         status: newStatus,
         targetAudience: Array.from(targetAudiences),
         promotionItemType,
@@ -218,20 +212,6 @@ export function PromotionBuilderScreen() {
     );
   }
 
-  const renderAudienceToggle = (id: PromotionTargetAudience, label: string, desc: string) => {
-    const isSelected = targetAudiences.has(id);
-    return (
-      <Pressable onPress={() => setAudienceSelected(id, !isSelected)}>
-        <FormSwitchRow
-          label={label}
-          description={desc}
-          value={isSelected}
-          onValueChange={(value) => setAudienceSelected(id, value)}
-        />
-      </Pressable>
-    );
-  };
-
   const selectedDish = menu.find((dish) => dish.id === targetDishId);
   const previewPromotion: MerchantPromotion = {
     id: promotionId ?? "preview",
@@ -239,8 +219,8 @@ export function PromotionBuilderScreen() {
     title,
     description,
     targetDishId,
-    startDate: `${startDate}T00:00:00Z`,
-    endDate: `${endDate}T23:59:59Z`,
+    startDate: toSingaporePromotionBoundary(startDate, "start"),
+    endDate: toSingaporePromotionBoundary(endDate, "end"),
     targetAudience: Array.from(targetAudiences),
     status,
     createdAt: new Date().toISOString(),
@@ -331,7 +311,7 @@ export function PromotionBuilderScreen() {
             value={description}
             onChangeText={setDescription}
             multiline
-            placeholder="e.g. Show this post to get 20% off your total bill when you order any noodle dish between 2pm-5pm."
+            placeholder="e.g. Show this post to get 20% off your total bill when you order any noodle dish."
             style={{ minHeight: 80, textAlignVertical: "top" }}
           />
         </View>
@@ -449,33 +429,10 @@ export function PromotionBuilderScreen() {
           </View>
         </View>
 
-        <View>
-          <AppText variant="bodyBold" style={{ marginBottom: spacing[1] }}>
-            Target Audience
-          </AppText>
-          <AppText variant="bodySmall" tone="muted" style={{ marginBottom: spacing[3] }}>
-            Who should see this promotion in their feed?
-          </AppText>
-
-          <View style={{ gap: spacing[2] }}>
-            {renderAudienceToggle(
-              "nearby_users",
-              "Nearby Users",
-              "People currently within 2km of your stall",
-            )}
-            {renderAudienceToggle("followers", "Followers", "Users who have followed your profile")}
-            {renderAudienceToggle(
-              "saved_stall_users",
-              "Saved Stall Users",
-              "People who have bookmarked your stall or dishes",
-            )}
-            {renderAudienceToggle(
-              "taste_match_users",
-              "Taste Match",
-              "Users whose taste profile matches your menu",
-            )}
-          </View>
-        </View>
+        <AppText variant="bodySmall" tone="muted">
+          Runs all day on Singapore time, from 00:00 on the start date to 23:59 on the end date.
+          Live promotions are shown to everyone who views your stall or the promoted dish.
+        </AppText>
 
         <View style={{ flexDirection: "row", gap: spacing[3], marginTop: spacing[4] }}>
           <Button

@@ -162,7 +162,10 @@ test("full project audit P1: user-facing data trust copy avoids live-result over
   assert.doesNotMatch(locationPermission, /real-time queues/i);
   assert.match(locationPermission, /Use timing cues/);
   assert.doesNotMatch(aiAssistant, /boost\s+sales/i);
-  assert.match(aiAssistant, /AI-assisted insights/);
+  // Template summaries are not presented as AI, and unenforced audience targeting is not offered.
+  assert.doesNotMatch(aiAssistant, /AI-assisted insights/);
+  assert.match(aiAssistant, /Summaries are counted from your stall&apos;s own data/);
   assert.doesNotMatch(promotionBuilder, /AI-targeted users/i);
-  assert.match(promotionBuilder, /Users whose taste profile matches your menu/);
+  assert.doesNotMatch(promotionBuilder, /Target Audience/);
+  assert.match(promotionBuilder, /shown to everyone who views your stall/);
 });

@@ -37,6 +37,42 @@ test("manual location selection sends only coarse coordinates to analytics", () 
   });
 });
 
+test("manual selection keeps the OS permission and clearing it returns to device location", async () => {
+  useLocationStore.getState().resetLocationState();
+  useLocationStore.setState({ permission: "granted", lastLocationFixAt: 0 });
+
+  useLocationStore
+    .getState()
+    .setManualSelection("Tampines Hub", { latitude: 1.352083, longitude: 103.940612 });
+  assert.equal(useLocationStore.getState().permission, "granted");
+  assert.equal(useLocationStore.getState().gpsBadgeState, "manual");
+  // GPS refresh must not overwrite a manual pick.
+  assert.equal(await useLocationStore.getState().refreshLocation({ force: true }), false);
+  assert.deepEqual(useLocationStore.getState().currentLocation, {
+    latitude: 1.352083,
+    longitude: 103.940612,
+  });
+
+  await useLocationStore.getState().clearManualLocation();
+  assert.equal(useLocationStore.getState().manualLocation, undefined);
+  assert.equal(useLocationStore.getState().manualCoordinate, undefined);
+  assert.equal(useLocationStore.getState().permission, "granted");
+  assert.equal(useLocationStore.getState().gpsBadgeState, "live");
+
+  // Without permission, clearing falls back to the default area instead of the old pick.
+  useLocationStore.setState({ permission: "denied" });
+  useLocationStore
+    .getState()
+    .setManualSelection("Tampines Hub", { latitude: 1.352083, longitude: 103.940612 });
+  await useLocationStore.getState().clearManualLocation();
+  assert.notDeepEqual(useLocationStore.getState().currentLocation, {
+    latitude: 1.352083,
+    longitude: 103.940612,
+  });
+  assert.equal(useLocationStore.getState().permission, "denied");
+  useLocationStore.getState().resetLocationState();
+});
+
 test("refreshLocation never prompts and skips when permission is not granted", async () => {
   useLocationStore.getState().resetLocationState();
   assert.equal(await useLocationStore.getState().refreshLocation(), false);

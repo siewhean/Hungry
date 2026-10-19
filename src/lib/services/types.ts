@@ -552,6 +552,15 @@ export interface SubmitMenuPhotoInput {
   reviewText?: string;
 }
 
+/** PDPA access export. `categories` lists every key in `data`; nothing is silently skipped. */
+export interface MyDataExport {
+  exportVersion: number;
+  generatedAt: string;
+  categories: string[];
+  notIncluded: string[];
+  data: Record<string, unknown>;
+}
+
 export interface AccountDeletionRequest {
   userId?: string;
   reason?: string;
@@ -717,6 +726,11 @@ export interface HungryService {
     canChangePassword(): Promise<boolean>;
     /** Re-authenticates with the current password, then sets a new one. No recovery code involved. */
     changePassword(currentPassword: string, newPassword: string): Promise<void>;
+    /**
+     * Starts a sign-in email change. The address only changes after the user confirms the link
+     * sent to the new inbox; until then the current email stays in effect.
+     */
+    requestEmailChange(newEmail: string): Promise<void>;
     getCurrentSession(): Promise<Session | null>;
     refreshSession(): Promise<Session | null>;
   };
@@ -798,6 +812,8 @@ export interface HungryService {
   profile: {
     getProfile(): Promise<UserProfile>;
     updateProfile(updates: Partial<UserProfile>): Promise<UserProfile>;
+    /** Every category of the signed-in user's own data. Throws instead of returning partial data. */
+    exportMyData(): Promise<MyDataExport>;
     updateDietaryPreferences(flags: DietaryFlag[]): Promise<void>;
     getGuestProfile(): Promise<UserProfile>;
     toggleFavourite(dishId: string): Promise<boolean>;
@@ -1017,7 +1033,11 @@ export interface HungryService {
 
     // OCR Drafts
     getOCRDrafts(outletId: string): Promise<OCRDishDraft[]>;
-    acceptOCRDraft(draftId: string): Promise<DishDetail>;
+    /**
+     * Publishes a pending draft as a dish, applying optional merchant edits. Idempotent: a draft
+     * that was already accepted returns its existing dish instead of inserting again.
+     */
+    acceptOCRDraft(draftId: string, edits?: Partial<DishDetail>): Promise<DishDetail>;
     rejectOCRDraft(draftId: string): Promise<void>;
 
     // Customer Inbox

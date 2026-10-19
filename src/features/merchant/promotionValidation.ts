@@ -6,6 +6,20 @@ const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const ISO_DATE_TIME_WITH_ZONE_PATTERN =
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/;
 const DISCOUNT_TOLERANCE_PERCENT = 1;
+// Promotions run on Singapore calendar days (UTC+8, no DST).
+const SINGAPORE_OFFSET = "+08:00";
+const SINGAPORE_OFFSET_MS = 8 * 60 * 60 * 1000;
+
+/** YYYY-MM-DD of the given instant in Asia/Singapore. */
+export function toSingaporeDateOnly(value: Date | string = new Date()): string {
+  const instant = typeof value === "string" ? new Date(value) : value;
+  return new Date(instant.getTime() + SINGAPORE_OFFSET_MS).toISOString().slice(0, 10);
+}
+
+/** Inclusive Singapore-day boundary for a YYYY-MM-DD promotion date. */
+export function toSingaporePromotionBoundary(date: string, boundary: "start" | "end"): string {
+  return `${date}T${boundary === "start" ? "00:00:00" : "23:59:59"}${SINGAPORE_OFFSET}`;
+}
 
 type PromotionDraft = Omit<MerchantPromotion, "id" | "outletId" | "createdAt" | "analytics">;
 
@@ -35,8 +49,7 @@ function assertValidCalendarDate(value: string): void {
 function parsePromotionDate(value: string, boundary: "start" | "end"): Date {
   if (DATE_ONLY_PATTERN.test(value)) {
     assertValidCalendarDate(value);
-    const isoValue = `${value}T${boundary === "start" ? "00:00:00" : "23:59:59"}Z`;
-    return new Date(isoValue);
+    return new Date(toSingaporePromotionBoundary(value, boundary));
   }
 
   if (!ISO_DATE_TIME_WITH_ZONE_PATTERN.test(value)) {

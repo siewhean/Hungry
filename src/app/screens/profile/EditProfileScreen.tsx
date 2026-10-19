@@ -5,6 +5,7 @@ import { ChevronRight, Camera } from "lucide-react-native";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { AccessibleImage, AppText, Button, Card, Input } from "@/components/ui";
+import { validateEmail } from "@/features/auth/validation";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -193,6 +194,10 @@ export function EditProfileScreen({ navigation }: Props) {
             value={email}
             onChangeText={setEmail}
           />
+          <AppText variant="micro" tone="muted">
+            Changing your email sends a confirmation link to the new address. Your sign-in email
+            stays the same until you open it.
+          </AppText>
           {canChangePassword ? (
             <Pressable
               accessibilityRole="button"
@@ -215,16 +220,40 @@ export function EditProfileScreen({ navigation }: Props) {
         loading={isSaving}
         onPress={() => {
           void (async () => {
+            const nextEmail = email.trim().toLowerCase();
+            const emailChanged = nextEmail !== (profile.email ?? "").trim().toLowerCase();
+            if (emailChanged) {
+              const emailCheck = validateEmail(nextEmail);
+              if (emailCheck !== true) {
+                showToast({ message: emailCheck, tone: "warning" });
+                return;
+              }
+            }
             setIsSaving(true);
             try {
               const savedProfile = await getHungryService().profile.updateProfile({
                 displayName,
-                email,
                 avatarUrl: avatarUri,
                 dietaryPreferences: profile.dietaryPreferences,
               });
               applyProfile(savedProfile);
-              showToast({ message: "Profile updated.", tone: "success" });
+              if (emailChanged) {
+                try {
+                  await getHungryService().auth.requestEmailChange(nextEmail);
+                  showToast({
+                    message: `Check ${nextEmail} for a link to confirm your new email.`,
+                    tone: "success",
+                  });
+                } catch {
+                  showToast({
+                    message: "Profile saved, but we could not start the email change.",
+                    tone: "warning",
+                  });
+                  return;
+                }
+              } else {
+                showToast({ message: "Profile updated.", tone: "success" });
+              }
               navigation.goBack();
             } catch {
               showToast({

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { View, StyleSheet, Pressable } from "react-native";
-import { Plus, Calendar, Users, Target, BarChart2, X } from "lucide-react-native";
+import { Plus, Calendar, Target, BarChart2, X } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
@@ -218,12 +218,6 @@ export function PromotionListScreen() {
                       <AppText variant="micro" tone="muted">
                         {new Date(promo.startDate).toLocaleDateString()} -{" "}
                         {new Date(promo.endDate).toLocaleDateString()}
-                      </AppText>
-                    </View>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                      <Users size={14} color={palette.textSecondary} />
-                      <AppText variant="micro" tone="muted">
-                        {promo.targetAudience.length} segments
                       </AppText>
                     </View>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>

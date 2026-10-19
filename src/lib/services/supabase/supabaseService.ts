@@ -39,6 +39,7 @@ import {
   uploadImageFromUri,
   uploadPostMediaFromUri,
 } from "@/lib/services/supabase/mediaUpload";
+import { suggestAllergensFromIngredients } from "@/features/merchant/allergenKeywords";
 import { validateMerchantProfileUpdates } from "@/features/merchant/profileValidation";
 import { validateMerchantPromotionInput } from "@/features/merchant/promotionValidation";
 import type {
@@ -635,10 +636,10 @@ async function fetchUserProfile(client: SupabaseClient, userId: string, email?: 
     .maybeSingle();
   const row = (data ?? {}) as Row;
   const privacyRow = (privacyData ?? {}) as Row;
-  // user_profiles.email is often null (OAuth/new sign-ups), so fall back to the
-  // auth session's address; otherwise Edit Profile reopens with an empty email.
+  // The sign-in (auth) address is the source of truth; user_profiles.email is only a fallback
+  // because it can be null (OAuth/new sign-ups) or stale.
   const resolvedEmail =
-    asString(row.email) ?? email ?? (await getSessionEmailForUser(client, userId));
+    email ?? (await getSessionEmailForUser(client, userId)) ?? asString(row.email);
   const favouriteDishIds = await fetchFavouriteDishIdsForUser(client, userId);
   const reviewedDishIds = asStringArray(row.reviewed_dish_ids);
   const accountVisibility = asString(privacyRow.account_visibility);
@@ -3023,6 +3024,13 @@ export const supabaseService: HungryService = {
       if (error) throw error;
     },
 
+    async requestEmailChange(newEmail) {
+      const client = requireSupabaseClient();
+      // Supabase emails a confirmation link; auth.users.email changes only after it is opened.
+      const { error } = await client.auth.updateUser({ email: newEmail.trim().toLowerCase() });
+      if (error) throw error;
+    },
+
     async getCurrentSession() {
       const client = getSupabaseClient();
       if (!client) return null;
@@ -3427,7 +3435,7 @@ export const supabaseService: HungryService = {
       if (!userId) throw new Error("You must be signed in to update your profile.");
       const payload: Record<string, unknown> = { id: userId };
       if (updates.displayName !== undefined) payload.display_name = updates.displayName;
-      if (updates.email !== undefined) payload.email = updates.email;
+      // Email is not written here: it changes only through auth.requestEmailChange.
       if (updates.dietaryPreferences !== undefined) {
         payload.dietary_preferences = updates.dietaryPreferences;
       }
@@ -3455,7 +3463,24 @@ export const supabaseService: HungryService = {
         if (error) throw error;
       }
 
-      return fetchUserProfile(client, userId, updates.email);
+      return fetchUserProfile(client, userId);
+    },
+
+    async exportMyData() {
+      // One server-side read scoped to auth.uid(); errors throw instead of dropping sections.
+      const { data, error } = await requireSupabaseClient().rpc("export_my_data");
+      if (error) throw error;
+      const row = (data ?? null) as Row | null;
+      if (!row || typeof row.data !== "object" || row.data === null) {
+        throw new Error("The data export came back empty.");
+      }
+      return {
+        exportVersion: asNumber(row.exportVersion) ?? 2,
+        generatedAt: asString(row.generatedAt) ?? new Date().toISOString(),
+        categories: asStringArray(row.categories),
+        notIncluded: asStringArray(row.notIncluded),
+        data: row.data as Record<string, unknown>,
+      };
     },
 
     async updateDietaryPreferences(flags: DietaryFlag[]) {
@@ -5487,7 +5512,8 @@ export const supabaseService: HungryService = {
         price: asNumber(row.price_cents) ? (asNumber(row.price_cents) ?? 0) / 100 : undefined,
         confidence: asNumber(row.extraction_confidence) ?? 0,
         sourcePhotoUrl: asString(row.source_photo_url) ?? "",
-        suggestedDescription: asString(row.ocr_raw_text),
+        // ocr_raw_text is the raw OCR line, not a customer-facing description.
+        suggestedDescription: undefined,
         suggestedDietaryTags: [],
         suggestedTasteTags: [],
         status: (asString(row.review_status) === "rejected"
@@ -5499,7 +5525,7 @@ export const supabaseService: HungryService = {
       }));
     },
 
-    async acceptOCRDraft(draftId) {
+    async acceptOCRDraft(draftId, edits) {
       const client = requireSupabaseClient();
       const { data, error } = await client
         .from("dishes_draft")
@@ -5516,12 +5542,31 @@ export const supabaseService: HungryService = {
         .limit(1)
         .single();
       if (outletError) throw outletError;
-      const dish = await this.addDish(asString((outletData as Row).id) ?? "", {
-        id: `dish-from-${draftId}`,
-        name: asString(draft.name) ?? "New dish",
-        price: asNumber(draft.price_cents) ? (asNumber(draft.price_cents) ?? 0) / 100 : 0,
-        tasteTags: [],
-      });
+      const outletId = asString((outletData as Row).id) ?? "";
+      const dishId = asString(draft.promoted_dish_id) ?? `dish-from-${draftId}`;
+      const findExistingDish = async () =>
+        (await this.getMenu(outletId)).find((menuDish) => menuDish.id === dishId);
+      const reviewStatus = asString(draft.review_status);
+      if (reviewStatus === "rejected") throw new Error("This draft was already rejected.");
+      if (reviewStatus === "accepted" || reviewStatus === "promoted") {
+        const existing = await findExistingDish();
+        if (existing) return existing;
+      }
+      let dish: DishDetail;
+      try {
+        dish = await this.addDish(outletId, {
+          name: asString(draft.name) ?? "New dish",
+          price: asNumber(draft.price_cents) ? (asNumber(draft.price_cents) ?? 0) / 100 : 0,
+          tasteTags: [],
+          ...edits,
+          id: dishId,
+        });
+      } catch (insertError) {
+        // A repeated tap races the first insert; return the dish it created.
+        const existing = await findExistingDish();
+        if (!existing) throw insertError;
+        dish = existing;
+      }
       const { error: updateError } = await client
         .from("dishes_draft")
         .update({ review_status: "accepted", promoted_dish_id: dish.id })
@@ -6082,12 +6127,7 @@ export const supabaseService: HungryService = {
     },
 
     async suggestAllergens(ingredients) {
-      const lower = ingredients.map((ingredient) => ingredient.toLowerCase());
-      return [
-        ...(lower.some((ingredient) => ingredient.includes("egg")) ? ["Eggs"] : []),
-        ...(lower.some((ingredient) => ingredient.includes("soy")) ? ["Soy"] : []),
-        ...(lower.some((ingredient) => ingredient.includes("noodle")) ? ["Gluten"] : []),
-      ];
+      return suggestAllergensFromIngredients(ingredients);
     },
 
     async suggestTags(dishName) {
@@ -6116,8 +6156,8 @@ export const supabaseService: HungryService = {
           id: `weekly-${outletId}`,
           outletId,
           type: "weekly_summary",
-          title: "Weekly summary",
-          body: `${analytics.reviewCount} customer reviews and ${analytics.topDishes.length} menu items are linked to this outlet.`,
+          title: "Last 7 days",
+          body: `${analytics.reviewCount} customer ${analytics.reviewCount === 1 ? "review" : "reviews"} in the last 7 days.`,
           actionLabel: "Open analytics",
           actionTarget: "Analytics",
           createdAt: new Date().toISOString(),

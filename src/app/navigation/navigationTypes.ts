@@ -25,7 +25,8 @@ export type OnboardingStackParamList = {
     | undefined;
   TasteProfileResult: undefined;
   LocationPermission: undefined;
-  ManualLocationPicker: undefined;
+  /** mode "settings": change the location from Settings and go back, without onboarding. */
+  ManualLocationPicker: { mode?: "settings" } | undefined;
   OnboardingAuth: undefined;
 };
 export type ProfileStackParamList = {
@@ -83,7 +84,7 @@ export type MerchantTabParamList = {
   VerificationCentre: undefined;
   HomeBasedVerification: undefined;
   BusinessProfileEditor: undefined;
-  DishEditor: { dishId?: string } | undefined;
+  DishEditor: { dishId?: string; ocrDraftId?: string } | undefined;
   OCRDrafts: undefined;
   CustomerInbox: undefined;
   FeaturedVisitors: undefined;

@@ -32,7 +32,7 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
       /ResetPassword: \{ email\?: string; code\?: string \} \| undefined/,
       /TasteQuiz: \{ mode\?: "onboarding" \| "profile"; initialPhase\?: "taste" \| "dietary" \} \| undefined/,
       /LocationPermission: undefined/,
-      /ManualLocationPicker: undefined/,
+      /ManualLocationPicker: \{ mode\?: "settings" \} \| undefined/,
     ],
     "navigation auth/onboarding types",
   );

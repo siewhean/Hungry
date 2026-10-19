@@ -91,7 +91,8 @@ const SINGAPORE_AREAS = [...SINGAPORE_AREA_LIST].sort((left, right) =>
   left.name.localeCompare(right.name),
 );
 
-export function ManualLocationPickerScreen({ navigation }: Props) {
+export function ManualLocationPickerScreen({ navigation, route }: Props) {
+  const isSettingsMode = route.params?.mode === "settings";
   const { palette, radii, shadows, spacing } = useHungryTheme();
   const setManualSelection = useLocationStore((state) => state.setManualSelection);
   const storedManualLocation = useLocationStore((state) => state.manualLocation);
@@ -117,6 +118,10 @@ export function ManualLocationPickerScreen({ navigation }: Props) {
   const handleSubmit = () => {
     if (!selectedArea) return;
     setManualSelection(selectedArea.name, selectedArea.coordinate);
+    if (isSettingsMode) {
+      navigation.goBack();
+      return;
+    }
     completeOnboarding(hasSkippedTasteQuiz);
   };
 

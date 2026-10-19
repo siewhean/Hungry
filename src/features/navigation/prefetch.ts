@@ -102,6 +102,15 @@ export function prefetchImage(uri?: string | null) {
   imagePrefetches.set(uri, prefetch);
 }
 
+/** Clears expo-image's memory and disk caches (Settings > Clear local cache). */
+export async function clearImageCache() {
+  prefetchedImages.clear();
+  await Promise.all([
+    ExpoImage.clearDiskCache().catch(() => false),
+    ExpoImage.clearMemoryCache().catch(() => false),
+  ]);
+}
+
 export function prefetchImages(uris: (string | null | undefined)[], limit = 6) {
   uris
     .filter(Boolean)

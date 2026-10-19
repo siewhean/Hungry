@@ -1,5 +1,14 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { View, StyleSheet, Pressable, ActivityIndicator, Alert } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Pressable,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+} from "react-native";
 import {
   MessageSquare,
   Star,
@@ -28,13 +37,21 @@ import type { CustomerInteraction, InteractionType } from "@/types/domain";
 
 type InboxFilter = InteractionType | "all" | "unreplied";
 
+// The inbox is fed by reviews only; comments and mentions are not collected yet.
 const INBOX_FILTER_OPTIONS: { id: InboxFilter; label: string }[] = [
   { id: "all", label: "All" },
   { id: "unreplied", label: "Unreplied" },
   { id: "review", label: "Reviews" },
-  { id: "comment", label: "Comments" },
-  { id: "post_mention", label: "Mentions" },
 ];
+
+const INBOX_EMPTY_LABELS: Record<InboxFilter, string> = {
+  all: "No customer reviews to show yet.",
+  unreplied: "No unreplied reviews.",
+  review: "No reviews to show yet.",
+  comment: "No comments to show.",
+  post_mention: "No mentions to show.",
+  question: "No questions to show.",
+};
 
 export function CustomerInboxScreen() {
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
@@ -71,14 +88,6 @@ export function CustomerInboxScreen() {
   useEffect(() => {
     void fetchInteractions();
   }, [fetchInteractions]);
-
-  const handleViewOriginal = useCallback((interaction: CustomerInteraction) => {
-    if (!interaction.sourceId) {
-      Alert.alert("Original unavailable", "This interaction is not linked to a source post.");
-      return;
-    }
-    Alert.alert("Original source", `Source ID: ${interaction.sourceId}`);
-  }, []);
 
   const handleReportInteraction = useCallback((interaction: CustomerInteraction) => {
     Alert.alert("Report Interaction", "Flag this interaction for moderation review?", [
@@ -140,7 +149,7 @@ export function CustomerInboxScreen() {
                 All caught up!
               </AppText>
               <AppText variant="bodySmall" tone="muted">
-                No {filter !== "all" ? filter : ""} interactions to show.
+                {INBOX_EMPTY_LABELS[filter]}
               </AppText>
             </View>
           ) : (
@@ -149,7 +158,6 @@ export function CustomerInboxScreen() {
                 key={item.id}
                 interaction={item}
                 onReply={setReplyingTo}
-                onViewOriginal={handleViewOriginal}
                 onReport={handleReportInteraction}
               />
             ))
@@ -157,7 +165,7 @@ export function CustomerInboxScreen() {
         </View>
       </View>
 
-      {/* Reply Composer Modal (Simulated) */}
+      {/* Reply composer */}
       {replyingTo && (
         <ReplyComposer
           interaction={replyingTo}
@@ -247,12 +255,10 @@ function SentimentSummary({ interactions }: { interactions: CustomerInteraction[
 function InteractionCard({
   interaction,
   onReply,
-  onViewOriginal,
   onReport,
 }: {
   interaction: CustomerInteraction;
   onReply: (item: CustomerInteraction) => void;
-  onViewOriginal: (item: CustomerInteraction) => void;
   onReport: (item: CustomerInteraction) => void;
 }) {
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
@@ -260,9 +266,6 @@ function InteractionCard({
   const typeLabel = interaction.type.charAt(0).toUpperCase() + interaction.type.slice(1);
   const showMoreActions = () => {
     Alert.alert("Interaction Actions", interaction.authorName, [
-      ...(interaction.sourceId
-        ? [{ text: "View original", onPress: () => onViewOriginal(interaction) }]
-        : []),
       { text: "Report", style: "destructive" as const, onPress: () => onReport(interaction) },
       { text: "Cancel", style: "cancel" as const },
     ]);
@@ -355,15 +358,6 @@ function InteractionCard({
             onPress={() => onReply(interaction)}
             leftIcon={<MessageSquare size={16} color={palette.orange} />}
           />
-          {interaction.sourceId ? (
-            <Button
-              label="View original"
-              variant="ghost"
-              size="sm"
-              fullWidth={false}
-              onPress={() => onViewOriginal(interaction)}
-            />
-          ) : null}
         </View>
       )}
     </View>
@@ -408,89 +402,99 @@ function ReplyComposer({
   };
 
   return (
-    <View
-      style={[
-        StyleSheet.absoluteFill,
-        { backgroundColor: palette.mediaScrim, justifyContent: "flex-end" },
-      ]}
-    >
-      <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-      <View
-        style={[
-          styles.composer,
-          {
-            backgroundColor: palette.surface,
-            borderTopLeftRadius: componentRadii.card,
-            borderTopRightRadius: componentRadii.card,
-            padding: spacing[5],
-            paddingBottom: 40,
-          },
-        ]}
+    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={[styles.composerBackdrop, { backgroundColor: palette.mediaScrim }]}
       >
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Close reply composer"
+        />
         <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: spacing[4],
-          }}
+          accessibilityViewIsModal
+          style={[
+            styles.composer,
+            {
+              backgroundColor: palette.surface,
+              borderTopLeftRadius: componentRadii.card,
+              borderTopRightRadius: componentRadii.card,
+              padding: spacing[5],
+              paddingBottom: 40,
+            },
+          ]}
         >
-          <AppText variant="h3" style={{ fontWeight: "bold" }}>
-            Reply to {interaction.authorName}
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: spacing[4],
+            }}
+          >
+            <AppText variant="h3" style={{ fontWeight: "bold" }}>
+              Reply to {interaction.authorName}
+            </AppText>
+            <IconButton
+              accessibilityLabel="Close reply composer"
+              icon={<X size={24} color={palette.text} />}
+              onPress={onClose}
+            />
+          </View>
+
+          {suggestion && (
+            <Pressable
+              onPress={() => setText(suggestion)}
+              style={[
+                styles.aiChip,
+                {
+                  backgroundColor: palette.orangeLight,
+                  borderColor: palette.orange,
+                  borderRadius: componentRadii.card,
+                  padding: spacing[3],
+                  marginBottom: spacing[4],
+                },
+              ]}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                <Sparkles size={14} color={palette.orange} />
+                <AppText variant="bodySmallBold" style={{ color: palette.orange }}>
+                  Suggested reply
+                </AppText>
+              </View>
+              <AppText variant="bodySmall" numberOfLines={2}>
+                {suggestion}
+              </AppText>
+            </Pressable>
+          )}
+
+          <Input
+            placeholder="Type your message..."
+            multiline
+            value={text}
+            onChangeText={setText}
+            autoFocus
+            style={{ minHeight: 120, textAlignVertical: "top" }}
+          />
+
+          <AppText variant="micro" tone="muted" style={{ marginTop: spacing[2] }}>
+            Your reply is public. Diners see it under this review.
           </AppText>
-          <IconButton
-            accessibilityLabel="Close reply composer"
-            icon={<X size={24} color={palette.text} />}
-            onPress={onClose}
+
+          <Button
+            label={isSending ? "Sending..." : "Send Reply"}
+            variant="primary"
+            fullWidth
+            disabled={!text.trim() || isSending}
+            onPress={handleSend}
+            style={{ marginTop: spacing[4] }}
+            rightIcon={<Send size={18} color={palette.white} />}
           />
         </View>
-
-        {suggestion && (
-          <Pressable
-            onPress={() => setText(suggestion)}
-            style={[
-              styles.aiChip,
-              {
-                backgroundColor: palette.orangeLight,
-                borderColor: palette.orange,
-                borderRadius: componentRadii.card,
-                padding: spacing[3],
-                marginBottom: spacing[4],
-              },
-            ]}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 }}>
-              <Sparkles size={14} color={palette.orange} />
-              <AppText variant="bodySmallBold" style={{ color: palette.orange }}>
-                AI Suggestion
-              </AppText>
-            </View>
-            <AppText variant="bodySmall" numberOfLines={2}>
-              {suggestion}
-            </AppText>
-          </Pressable>
-        )}
-
-        <Input
-          placeholder="Type your message..."
-          multiline
-          value={text}
-          onChangeText={setText}
-          autoFocus
-          style={{ minHeight: 120, textAlignVertical: "top" }}
-        />
-
-        <Button
-          label={isSending ? "Sending..." : "Send Reply"}
-          variant="primary"
-          fullWidth
-          disabled={!text.trim() || isSending}
-          onPress={handleSend}
-          style={{ marginTop: spacing[4] }}
-          rightIcon={<Send size={18} color={palette.white} />}
-        />
-      </View>
-    </View>
+      </KeyboardAvoidingView>
+    </Modal>
   );
 }
 
@@ -505,6 +509,10 @@ const styles = StyleSheet.create({
   },
   replyBox: {},
   composer: {},
+  composerBackdrop: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
   aiChip: {
     borderWidth: 1,
   },

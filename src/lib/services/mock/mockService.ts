@@ -109,6 +109,7 @@ import {
   processExplicitFeedback as processExplicitFeedbackCore,
 } from "@/lib/ai/tasteEngine";
 import type { ExplicitFeedbackEvent } from "@/lib/ai/tasteEngine";
+import { suggestAllergensFromIngredients } from "@/features/merchant/allergenKeywords";
 import { applyVerificationSubmission } from "@/features/merchant/verificationStateMachine";
 import { validateMerchantProfileUpdates } from "@/features/merchant/profileValidation";
 import { filterCustomerVisiblePromotions } from "@/features/merchant/customerPromotions";
@@ -1516,6 +1517,13 @@ export const hungryService: HungryService = {
       return resolve(undefined);
     },
 
+    async requestEmailChange(newEmail) {
+      if (!_isAuthenticated) throw new Error("You must be signed in to change your email.");
+      if (!newEmail.trim()) throw new Error("Enter a new email address.");
+      // Like Supabase, nothing changes until the user confirms from the new inbox.
+      return resolve(undefined);
+    },
+
     async getCurrentSession() {
       if (!_isAuthenticated) return resolve(null);
       return resolve(mockSession(_profile));
@@ -1802,13 +1810,52 @@ export const hungryService: HungryService = {
     },
 
     async updateProfile(updates) {
-      _profile = { ..._profile, ...updates } as UserProfile;
+      // The sign-in email changes only through auth.requestEmailChange.
+      const { email: _ignoredEmail, ...profileUpdates } = updates;
+      _profile = { ..._profile, ...profileUpdates } as UserProfile;
       return resolve({ ..._profile });
     },
 
     async updateDietaryPreferences(flags: DietaryFlag[]) {
       _profile = { ..._profile, dietaryPreferences: flags };
       return resolve(undefined);
+    },
+
+    async exportMyData() {
+      const userId = _profile.id;
+      const loadAllFollowRows = async <T>(
+        loadPage: (page: { limit: number; offset: number }) => Promise<T[]>,
+      ) => {
+        const rows: T[] = [];
+        for (;;) {
+          const page = await loadPage({ limit: 500, offset: rows.length });
+          rows.push(...page);
+          if (page.length < 500) return rows;
+        }
+      };
+      const [reviews, posts, savedPosts, followers, following] = await Promise.all([
+        hungryService.reviews.getUserReviews(userId),
+        hungryService.social.listUserPosts(userId),
+        hungryService.social.getSavedBites(),
+        loadAllFollowRows((page) => hungryService.social.listFollowers(userId, page)),
+        loadAllFollowRows((page) => hungryService.social.listFollowing(userId, page)),
+      ]);
+      const data: Record<string, unknown> = {
+        profile: clone(_profile),
+        reviews,
+        posts,
+        favouriteDishIds: [..._profile.favouriteDishIds],
+        savedPosts,
+        followers,
+        following,
+      };
+      return resolve({
+        exportVersion: 2,
+        generatedAt: new Date().toISOString(),
+        categories: Object.keys(data),
+        notIncluded: ["Mock data source: only in-memory demo data is included."],
+        data,
+      });
     },
 
     async getGuestProfile() {
@@ -2769,22 +2816,29 @@ export const hungryService: HungryService = {
       return resolve(clone(_merchantOCRDrafts.filter((draft) => draft.outletId === outletId)));
     },
 
-    async acceptOCRDraft(draftId) {
+    async acceptOCRDraft(draftId, edits) {
       const draft = _merchantOCRDrafts.find((d) => d.id === draftId);
       if (!draft) throw new Error(`OCR draft ${draftId} not found`);
+      const dishId = `dish-from-${draftId}`;
+      if (draft.status === "accepted") {
+        const existing = getMerchantMenu(draft.outletId).find((dish) => dish.id === dishId);
+        if (existing) return resolve(clone(existing));
+      }
       if (draft.status !== "pending")
         throw new Error(`OCR draft ${draftId} is already ${draft.status}`);
 
+      const price = edits?.price ?? draft.price ?? 5;
       const acceptedDish = buildMerchantDish(draft.outletId, {
-        id: `dish-from-${draftId}`,
         name: draft.name,
-        price: draft.price ?? 5,
-        priceRange: `S$${(draft.price ?? 5).toFixed(2)}`,
+        price,
+        priceRange: `S$${price.toFixed(2)}`,
         imageUrl: draft.sourcePhotoUrl,
         gallery: [draft.sourcePhotoUrl],
         description: draft.suggestedDescription,
         tasteTags: draft.suggestedTasteTags ?? [],
         dietaryFlags: draft.suggestedDietaryTags ?? [],
+        ...edits,
+        id: dishId,
       });
       getMerchantMenu(draft.outletId).push(acceptedDish);
       syncMerchantDishToUserCatalog(draft.outletId, acceptedDish);
@@ -3042,16 +3096,7 @@ export const hungryService: HungryService = {
     },
 
     async suggestAllergens(ingredients) {
-      const allergens: string[] = [];
-      const lower = ingredients.map((i) => i.toLowerCase());
-      if (lower.some((i) => i.includes("egg"))) allergens.push("Eggs");
-      if (lower.some((i) => i.includes("soy"))) allergens.push("Soy");
-      if (lower.some((i) => i.includes("wheat") || i.includes("noodle"))) allergens.push("Gluten");
-      if (lower.some((i) => i.includes("peanut"))) allergens.push("Peanuts");
-      if (lower.some((i) => i.includes("sesame"))) allergens.push("Sesame");
-      if (lower.some((i) => i.includes("shrimp") || i.includes("prawn")))
-        allergens.push("Shellfish");
-      return resolve(allergens);
+      return resolve(suggestAllergensFromIngredients(ingredients));
     },
 
     async suggestTags(dishName, _description) {
