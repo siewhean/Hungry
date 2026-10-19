@@ -3,7 +3,7 @@
  *
  * Bottom-sheet with 4 tabs for adding wheel entries:
  *   1. Search — text search → venue results
- *   2. Random — "Surprise me" from nearby popular venues
+ *   2. Random — "Surprise me" picks any stall not already on the wheel
  *   3. Browse — browse by SearchCategory chips
  *   4. Favourites — from profile favourite dish IDs
  */
@@ -30,6 +30,9 @@ const CATEGORIES: SearchCategory[] = [
 ];
 
 type Tab = "search" | "random" | "category" | "favourites";
+
+/** More slices than this makes labels unreadable on the wheel. */
+const MAX_WHEEL_ENTRIES = 12;
 
 interface Props {
   visible: boolean;
@@ -181,14 +184,20 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
 
   const addedVenueIds = new Set(entries.map((e) => e.venueId));
 
+  const atEntryCap = entries.filter((e) => !e.isEliminated).length >= MAX_WHEEL_ENTRIES;
+
   function addVenue(venue: VenueSummary) {
+    if (atEntryCap) {
+      Alert.alert("The wheel is full", `Remove an option first (up to ${MAX_WHEEL_ENTRIES}).`);
+      return;
+    }
     const dishes = repository.listDishesByVenue(venue.id);
     const venueDish = dishes[0];
 
-    // Conflict detection
-    if (groupDietaryRestrictions.length > 0 && venueDish) {
+    // Conflict detection: a need is a conflict only if no dish at the stall meets it.
+    if (groupDietaryRestrictions.length > 0 && dishes.length > 0) {
       const conflicts = groupDietaryRestrictions.filter(
-        (pref) => !venueDish.dietaryFlags.includes(pref),
+        (pref) => !dishes.some((dish) => dish.dietaryFlags.includes(pref)),
       );
 
       if (conflicts.length > 0) {
@@ -201,7 +210,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
               text: "Add Anyway",
               onPress: () => {
                 void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                addEntry(venue.id, venue.buildingId, venue.name, venueDish.imageUrl ?? "");
+                addEntry(venue.id, venue.buildingId, venue.name, venueDish?.imageUrl ?? "");
                 onClose();
               },
             },
@@ -222,7 +231,10 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
       .listBuildings()
       .flatMap((b) => repository.listVenuesByBuilding(b.id))
       .filter((v) => !addedVenueIds.has(v.id));
-    if (all.length === 0) return;
+    if (all.length === 0) {
+      Alert.alert("Nothing left to add", "Every stall is already on the wheel.");
+      return;
+    }
     const pick = all[Math.floor(Math.random() * all.length)];
     addVenue(pick);
   }
@@ -503,7 +515,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                   style={{ textAlign: "center", paddingHorizontal: spacing[3] }}
                   tone="secondary"
                 >
-                  Can&apos;t decide? Let us pick a random nearby stall for your group.
+                  Can&apos;t decide? Let us add a random stall to the wheel.
                 </AppText>
               </View>
               <Pressable

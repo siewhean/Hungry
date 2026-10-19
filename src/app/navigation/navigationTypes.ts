@@ -30,7 +30,6 @@ export type OnboardingStackParamList = {
 };
 export type ProfileStackParamList = {
   ProfileHome: undefined;
-  ProfilePremium: undefined;
   Favourites: undefined;
   ReviewHistory: undefined;
   Followers: { userId?: string; userDisplayName?: string } | undefined;

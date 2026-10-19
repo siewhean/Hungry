@@ -2,13 +2,13 @@
  * CredEarnedToast — ephemeral overlay that slides up to confirm a cred award.
  *
  * Usage: mount once in the root layout (alongside FloatingToast).
- * It observes `lastEarnedPoints` from useFoodCredStore and auto-dismisses.
+ * It subscribes to cred awards in useFoodCredStore and auto-dismisses after each one.
  *
  * Deliberately understated — no confetti, no fireworks, just a brief confirmation.
  */
 
-import { useEffect, useRef } from "react";
-import { StyleSheet, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { AccessibilityInfo, StyleSheet, View } from "react-native";
 import Animated, {
   FadeInDown,
   FadeOutUp,
@@ -30,20 +30,36 @@ const AUTO_DISMISS_MS = 2500;
 
 export function CredEarnedToast() {
   const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
-  const lastEarnedPoints = useFoodCredStore((s) => s.lastEarnedPoints);
   const reduceMotion = useReduceMotion();
   const totalPoints = useFoodCredStore((s) => s.totalPoints);
   const currentLevel = resolveFoodCredLevel(totalPoints);
 
-  // Track which "version" of the toast we're showing — a new non-zero value triggers show
-  const lastShownRef = useRef(0);
-  const visible = lastEarnedPoints > 0 && lastEarnedPoints !== lastShownRef.current;
+  // Each award is its own event (id), so two awards of the same amount both show,
+  // and a timer hides the toast instead of relying on a re-render.
+  const [award, setAward] = useState<{ id: number; points: number } | null>(null);
+  const awardIdRef = useRef(0);
+  useEffect(
+    () =>
+      useFoodCredStore.subscribe((state, previous) => {
+        if (state.lastEarnedPoints <= 0 || state.totalPoints === previous.totalPoints) return;
+        awardIdRef.current += 1;
+        setAward({ id: awardIdRef.current, points: state.lastEarnedPoints });
+      }),
+    [],
+  );
+  useEffect(() => {
+    if (!award) return;
+    AccessibilityInfo.announceForAccessibility(`Plus ${award.points} Food Cred`);
+    const timer = setTimeout(() => {
+      setAward((current) => (current?.id === award.id ? null : current));
+    }, AUTO_DISMISS_MS);
+    return () => clearTimeout(timer);
+  }, [award]);
 
-  // Animated scale pop on mount
+  // Animated scale pop on each award
   const scale = useSharedValue(0.85);
   useEffect(() => {
-    if (!visible) return;
-    lastShownRef.current = lastEarnedPoints;
+    if (!award) return;
     if (reduceMotion) {
       scale.value = 1;
       return;
@@ -53,17 +69,19 @@ export function CredEarnedToast() {
       withDelay(100, withSpring(1, { damping: 14, stiffness: 180 })),
     );
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  }, [visible, lastEarnedPoints, reduceMotion, scale]);
+  }, [award, reduceMotion, scale]);
 
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
-  if (!visible) return null;
+  if (!award) return null;
+  const lastEarnedPoints = award.points;
 
   return (
     <View pointerEvents="none" style={[styles.wrapper, { zIndex: zIndex.toast + 1 }]}>
       <Animated.View
+        key={award.id}
         entering={reduceMotion ? undefined : FadeInDown.duration(200).springify()}
-        exiting={reduceMotion ? undefined : FadeOutUp.duration(180).delay(AUTO_DISMISS_MS - 180)}
+        exiting={reduceMotion ? undefined : FadeOutUp.duration(180)}
       >
         <Animated.View style={animStyle}>
           <View

@@ -109,7 +109,7 @@ test("Phase 5 screens handle deleted references and invalid portfolio scores", (
 
   assert.match(portfolioItemPicker, /parsePortfolioScore/);
   assert.match(portfolioItemPicker, /Latest version loaded/);
-  assert.match(portfolioItemPicker, /Use a score from 1 to 10\./);
+  assert.match(portfolioItemPicker, /Use a whole number from 1 to 10\./);
   assert.match(portfolioItemPicker, /disabled=\{!canAddItem\}/);
 
   assert.doesNotMatch(

@@ -115,9 +115,13 @@ export function ChecklistItemPickerScreen({ navigation, route }: Props) {
       if (mounted) setVenues(nextVenues);
     }
 
-    void loadChoices();
+    // Debounce typing; `mounted` drops results from a superseded search.
+    const timer = setTimeout(() => {
+      void loadChoices().catch((error) => console.error("Failed to search:", error));
+    }, 250);
     return () => {
       mounted = false;
+      clearTimeout(timer);
     };
   }, [mode, query]);
 
@@ -348,7 +352,7 @@ function ScheduleFields({
         helperText="Leave blank if you only want to save it for later."
       />
       <Input
-        label="Reminder"
+        label="Remind me on (note only)"
         placeholder="YYYY-MM-DD HH:mm"
         value={reminderDateTime}
         onChangeText={onReminderDateTimeChange}
@@ -356,7 +360,8 @@ function ScheduleFields({
         autoCorrect={false}
         error={Boolean(reminderDateTimeError)}
         errorText={reminderDateTimeError}
-        helperText="Singapore time. A date without time defaults to 09:00."
+        // Nothing schedules reminder_at yet, so don't promise a notification.
+        helperText="Saved on the item; Hungry doesn't send a notification yet. Singapore time, 09:00 if no time."
       />
     </View>
   );

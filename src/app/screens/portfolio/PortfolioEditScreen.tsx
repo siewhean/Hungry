@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ArrowLeft } from "lucide-react-native";
 
@@ -14,6 +15,7 @@ type Props = NativeStackScreenProps<ProfileStackParamList, "PortfolioEdit">;
 
 export function PortfolioEditScreen({ navigation, route }: Props) {
   const { palette, spacing } = useHungryTheme();
+  const insets = useSafeAreaInsets();
   const portfolioId = route.params.portfolioId;
   const { portfolios, loadPortfolios, updatePortfolio, conflicts, clearConflict } =
     usePortfolioStore();
@@ -62,7 +64,7 @@ export function PortfolioEditScreen({ navigation, route }: Props) {
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: palette.bg }}
+      style={{ flex: 1, backgroundColor: palette.bg, paddingTop: Math.max(insets.top, spacing[4]) }}
       contentContainerStyle={[styles.content, { gap: spacing[4], padding: spacing[4] }]}
     >
       <View style={styles.header}>

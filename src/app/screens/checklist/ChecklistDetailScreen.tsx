@@ -8,7 +8,8 @@ import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import { ChecklistItemRow } from "@/components/checklist";
 import { AppText, Button, Card, Input } from "@/components/ui";
 import { runListMutation } from "@/features/checklistPortfolio/runListMutation";
-import { useItemLabels } from "@/features/checklistPortfolio/useItemLabels";
+import { useItemLabelsState } from "@/features/checklistPortfolio/useItemLabels";
+import { useShallow } from "zustand/react/shallow";
 import { useChecklistStore } from "@/store/useChecklistStore";
 import { useHungryTheme } from "@/theme";
 import type { ChecklistItem } from "@/types/domain";
@@ -17,10 +18,15 @@ type Props = NativeStackScreenProps<ProfileStackParamList, "ChecklistDetail">;
 
 const EMPTY_CHECKLIST_ITEMS: ChecklistItem[] = [];
 
-function formatChecklistItemLabel(item: ChecklistItem, labels: Record<string, string>) {
+function formatChecklistItemLabel(
+  item: ChecklistItem,
+  labels: Record<string, string>,
+  labelsLoaded: boolean,
+) {
   if (item.customText) return item.customText;
-  if (item.dishId) return labels[item.dishId] ?? "Deleted dish";
-  if (item.stallId) return labels[item.stallId] ?? "Deleted stall";
+  // Until the name lookup finishes, say so instead of flashing "Deleted dish".
+  if (item.dishId) return labels[item.dishId] ?? (labelsLoaded ? "Deleted dish" : "Loading…");
+  if (item.stallId) return labels[item.stallId] ?? (labelsLoaded ? "Deleted stall" : "Loading…");
   return "Checklist item";
 }
 
@@ -36,7 +42,18 @@ export function ChecklistDetailScreen({ navigation, route }: Props) {
     markItemTried,
     deleteItem,
     reorderItems,
-  } = useChecklistStore();
+  } = useChecklistStore(
+    useShallow((state) => ({
+      checklists: state.checklists,
+      items: state.items,
+      loadChecklists: state.loadChecklists,
+      loadChecklistItems: state.loadChecklistItems,
+      updateChecklist: state.updateChecklist,
+      markItemTried: state.markItemTried,
+      deleteItem: state.deleteItem,
+      reorderItems: state.reorderItems,
+    })),
+  );
   const checklist = checklists.find((entry) => entry.id === checklistId);
   // Stable fallback: a new [] each render re-ran effects keyed on the items (render loop).
   const checklistItems = items[checklistId] ?? EMPTY_CHECKLIST_ITEMS;
@@ -55,7 +72,7 @@ export function ChecklistDetailScreen({ navigation, route }: Props) {
     setDraftName(checklist?.name ?? "");
   }, [checklist?.name]);
 
-  const labels = useItemLabels(checklistItems);
+  const { labels, isLoaded: labelsLoaded } = useItemLabelsState(checklistItems);
 
   const triedCount = useMemo(
     () => checklistItems.filter((item) => Boolean(item.triedAt)).length,
@@ -179,7 +196,7 @@ export function ChecklistDetailScreen({ navigation, route }: Props) {
           <ChecklistItemRow
             key={item.id}
             item={item}
-            label={formatChecklistItemLabel(item, labels)}
+            label={formatChecklistItemLabel(item, labels, labelsLoaded)}
             index={index}
             totalCount={checklistItems.length}
             onMarkTried={() =>

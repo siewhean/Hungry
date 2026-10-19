@@ -15,7 +15,8 @@ export function BlogPostWebViewScreen({ postId, onOpenVenue }: BlogPostWebViewSc
   const { spacing } = useHungryTheme();
   const repository = getDataRepository();
   const posts = repository.listBlogPosts();
-  const post = posts.find((item) => item.id === postId) ?? posts[0];
+  // An unknown id shows "not found" rather than silently opening a different article.
+  const post = postId ? posts.find((item) => item.id === postId) : posts[0];
 
   useEffect(() => {
     if (!post) {
@@ -24,6 +25,17 @@ export function BlogPostWebViewScreen({ postId, onOpenVenue }: BlogPostWebViewSc
 
     void openTrustedBlogUrl(post.url);
   }, [post]);
+
+  if (!post) {
+    return (
+      <Screen title="Article view">
+        <Card>
+          <AppText variant="h3">Article not found</AppText>
+          <AppText tone="secondary">It may have been removed.</AppText>
+        </Card>
+      </Screen>
+    );
+  }
 
   return (
     <Screen title="Article view" subtitle="The original article opens in your system browser.">

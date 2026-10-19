@@ -208,6 +208,7 @@ function mapChecklist(row: Row): Checklist {
     name: String(row.name ?? "Untitled checklist"),
     createdAt: String(row.created_at ?? row.createdAt ?? ""),
     updatedAt: String(row.updated_at ?? row.updatedAt ?? ""),
+    itemCount: readEmbeddedCount(row.checklist_items),
   };
 }
 
@@ -228,6 +229,9 @@ function mapChecklistItem(row: Row): ChecklistItem {
   };
 }
 
+/** Most lists one getPortfolios read returns (matches the search_portfolios cap). */
+const PORTFOLIO_LIST_LIMIT = 100;
+
 function mapPortfolio(row: Row): Portfolio {
   return {
     id: String(row.id ?? ""),
@@ -239,7 +243,17 @@ function mapPortfolio(row: Row): Portfolio {
     publishedAt: asString(row.published_at ?? row.publishedAt),
     createdAt: String(row.created_at ?? row.createdAt ?? ""),
     updatedAt: String(row.updated_at ?? row.updatedAt ?? ""),
+    itemCount: readEmbeddedCount(row.item_count ?? row.portfolio_items),
+    followerCount: readEmbeddedCount(row.follower_count),
   };
+}
+
+/** Count from an RPC column (number/bigint string) or a PostgREST `rel(count)` embed. */
+function readEmbeddedCount(value: unknown): number | undefined {
+  if (Array.isArray(value)) return readEmbeddedCount((value[0] as Row | undefined)?.count);
+  if (value === null || value === undefined || value === "") return undefined;
+  const count = Number(value);
+  return Number.isFinite(count) ? count : undefined;
 }
 
 function mapPortfolioItem(row: Row): PortfolioItem {
@@ -6927,7 +6941,7 @@ export const supabaseService: HungryService = {
       if (!client) throw new Error("Supabase client not initialized");
       const { data, error } = await client
         .from("checklists")
-        .select("*")
+        .select("*, checklist_items(count)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data || []).map((row) => mapChecklist(row as Row));
@@ -7057,7 +7071,8 @@ export const supabaseService: HungryService = {
     async getPortfolios(filters?: any) {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
-      let query = client.from("portfolios").select("*");
+      // Item counts ride along, so list cards show real counts without opening each list.
+      let query = client.from("portfolios").select("*, portfolio_items(count)");
 
       if (filters?.userId) {
         query = query.eq("owner_id", filters.userId);
@@ -7069,7 +7084,8 @@ export const supabaseService: HungryService = {
         query = query.eq("type", filters.type);
       }
 
-      query = query.order("created_at", { ascending: false });
+      // Bounded: an unfiltered read must not pull every public list on the platform.
+      query = query.order("created_at", { ascending: false }).limit(PORTFOLIO_LIST_LIMIT);
 
       const { data, error } = await query;
       if (error) throw error;
@@ -7079,7 +7095,11 @@ export const supabaseService: HungryService = {
     async getPortfolio(id: string) {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
-      const { data, error } = await client.from("portfolios").select("*").eq("id", id).single();
+      const { data, error } = await client
+        .from("portfolios")
+        .select("*, portfolio_items(count)")
+        .eq("id", id)
+        .single();
       if (error) throw error;
       return mapPortfolio(data as Row);
     },
@@ -7311,6 +7331,19 @@ export const supabaseService: HungryService = {
         .eq("portfolio_id", portfolioId);
       if (error) throw error;
       return (data || []).map((row) => mapPortfolioFollow(row as Row));
+    },
+
+    async getFollowedPortfolioIds() {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) return [];
+      const { data, error } = await client
+        .from("portfolio_follows")
+        .select("portfolio_id")
+        .eq("user_id", userId);
+      if (error) throw error;
+      return (data || []).map((row) => String((row as Row).portfolio_id ?? ""));
     },
 
     async isFollowingPortfolio(portfolioId: string) {

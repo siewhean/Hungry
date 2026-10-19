@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, StyleSheet, TextInput, View, useWindowDimensions } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -60,6 +67,8 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
     null,
   );
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
+  /** Visible photo per carousel post, for the "n / N" badge. */
+  const [mediaIndexByPost, setMediaIndexByPost] = useState<Record<string, number>>({});
   const openCommentsSheet = useCallback(() => {
     const commentSheet = commentsSheetRef.current;
     if (!commentSheet) return;
@@ -192,14 +201,42 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
             }}
             style={StyleSheet.absoluteFill}
           >
-            <ZoomableMedia
-              uri={mediaUrls[0]}
-              type={feedPost.mediaType === "video" ? "video" : "image"}
-              accessibilityLabel={`${primaryDish?.name ?? venue?.name ?? "Post"} ${
-                feedPost.mediaType === "video" ? "video" : "image"
-              }`}
-              style={styles.heroImage}
-            />
+            {isCarousel ? (
+              // Every photo is reachable: swipe through them, and the badge follows the page.
+              <ScrollView
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onMomentumScrollEnd={(event) => {
+                  const page = Math.round(event.nativeEvent.contentOffset.x / screenWidth);
+                  setMediaIndexByPost((current) =>
+                    current[feedPost.id] === page ? current : { ...current, [feedPost.id]: page },
+                  );
+                }}
+              >
+                {mediaUrls.map((uri, index) => (
+                  <View key={`${uri}-${index}`} style={{ width: screenWidth, height: imageHeight }}>
+                    <ZoomableMedia
+                      uri={uri}
+                      type="image"
+                      accessibilityLabel={`${primaryDish?.name ?? venue?.name ?? "Post"} photo ${
+                        index + 1
+                      } of ${mediaUrls.length}`}
+                      style={styles.heroImage}
+                    />
+                  </View>
+                ))}
+              </ScrollView>
+            ) : (
+              <ZoomableMedia
+                uri={mediaUrls[0]}
+                type={feedPost.mediaType === "video" ? "video" : "image"}
+                accessibilityLabel={`${primaryDish?.name ?? venue?.name ?? "Post"} ${
+                  feedPost.mediaType === "video" ? "video" : "image"
+                }`}
+                style={styles.heroImage}
+              />
+            )}
           </Pressable>
 
           {isCarousel ? (
@@ -208,7 +245,7 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
               style={[styles.carouselBadge, { backgroundColor: palette.mediaScrimSoft }]}
             >
               <AppText variant="micro" style={{ color: palette.white, fontWeight: "800" }}>
-                1 / {mediaUrls.length}
+                {(mediaIndexByPost[feedPost.id] ?? 0) + 1} / {mediaUrls.length}
               </AppText>
             </View>
           ) : null}
@@ -254,7 +291,20 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
           style={{ paddingHorizontal: spacing[3], paddingVertical: spacing[3], gap: spacing[2] }}
         >
           <View style={styles.detailRow}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], flex: 1 }}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${feedPost.authorName}'s profile`}
+              accessibilityHint="Opens their profile"
+              disabled={!feedPost.authorId?.trim()}
+              onPress={() =>
+                rootNavigation.navigate("UserProfile", {
+                  authorName: feedPost.authorName,
+                  authorAvatarUrl: feedPost.authorAvatarUrl,
+                  authorId: feedPost.authorId,
+                })
+              }
+              style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], flex: 1 }}
+            >
               <Avatar uri={feedPost.authorAvatarUrl} name={feedPost.authorName} size={32} />
               <View>
                 <AppText variant="bodySmallBold" style={{ color: palette.text }}>
@@ -264,7 +314,7 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
                   {feedPost.authorLocation}
                 </AppText>
               </View>
-            </View>
+            </Pressable>
 
             <View style={styles.inlineActionsRow}>
               <Pressable
@@ -292,17 +342,21 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
                 }`}
                 hitSlop={10}
                 onPress={() => {
-                  if (!primaryDish) return;
+                  // Posts without a tagged dish still share, using the venue or author instead.
+                  const shareTitle =
+                    primaryDish?.name ?? venue?.name ?? `${feedPost.authorName}'s post`;
                   setActiveShareReview({
                     reviewId: feedPost.id,
                     postId: feedPost.id,
-                    title: primaryDish.name,
+                    title: shareTitle,
                     subtitle: `${venue?.name ?? feedPost.authorLocation} · ${feedPost.authorName}`,
-                    imageUrl: primaryDish.imageUrl,
+                    imageUrl: primaryDish?.imageUrl ?? mediaUrls[0] ?? feedPost.mediaUrl,
                     authorName: feedPost.authorName,
-                    message: `Check out ${primaryDish.name} at ${
-                      venue?.name ?? feedPost.authorLocation
-                    } on Hungry.`,
+                    message: primaryDish
+                      ? `Check out ${primaryDish.name} at ${
+                          venue?.name ?? feedPost.authorLocation
+                        } on Hungry.`
+                      : `Check out ${shareTitle} on Hungry.`,
                     link: webShareUrl("post", feedPost.id),
                   });
                   requestAnimationFrame(() => {
