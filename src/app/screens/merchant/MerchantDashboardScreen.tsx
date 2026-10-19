@@ -138,9 +138,9 @@ function MetricCard({
           {icon}
         </View>
         {trend === "up" ? (
-          <TrendingUp size={16} color={palette.success} accessibilityElementsHidden />
+          <TrendingUp size={16} color={palette.success} />
         ) : trend === "down" ? (
-          <TrendingDown size={16} color={palette.error} accessibilityElementsHidden />
+          <TrendingDown size={16} color={palette.error} />
         ) : null}
       </View>
       <View style={{ marginTop: spacing[3] }}>
