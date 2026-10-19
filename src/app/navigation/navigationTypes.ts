@@ -1,4 +1,5 @@
 import type { NavigatorScreenParams } from "@react-navigation/native";
+import type { TasteVector } from "@/types/domain";
 
 export type AuthStackParamList = {
   Login: undefined;
@@ -15,7 +16,12 @@ export type OnboardingStackParamList = {
   CuisineSelection: undefined;
   TasteQuiz: { mode?: "onboarding" | "profile"; initialPhase?: "taste" | "dietary" } | undefined;
   DietaryPreferences:
-    | { mode?: "onboarding" | "profile"; initialPhase?: "taste" | "dietary" }
+    | {
+        mode?: "onboarding" | "profile";
+        initialPhase?: "taste" | "dietary";
+        /** Taste answers carried over from the TasteQuiz route. */
+        answers?: TasteVector;
+      }
     | undefined;
   TasteProfileResult: undefined;
   LocationPermission: undefined;
