@@ -207,9 +207,15 @@ export function HomeMapScreen() {
   const displayModeRef = useRef(displayMode);
   displayModeRef.current = displayMode;
 
+  // Recentre only when the chosen building changes. A GPS refresh or manual
+  // pick that moves the nearest building must not yank the map mid-pan; the
+  // locate button handles recentring on the user.
+  const centeredBuildingNameRef = useRef(selectedBuilding?.name);
   useEffect(() => {
+    if (centeredBuildingNameRef.current === selectedBuilding?.name) return;
+    centeredBuildingNameRef.current = selectedBuilding?.name;
     setMapCenter(activeBuildingRecord.coordinate);
-  }, [activeBuildingRecord.coordinate.latitude, activeBuildingRecord.coordinate.longitude]);
+  }, [selectedBuilding?.name]);
 
   useEffect(() => {
     if (!shouldUseCatalogReadV2 || !catalogRawService) {

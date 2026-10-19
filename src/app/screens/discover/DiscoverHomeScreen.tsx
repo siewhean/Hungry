@@ -1775,18 +1775,12 @@ export function DiscoverHomeScreen() {
     () => discoverBiteCollections.trending.slice(0, 6),
     [discoverBiteCollections.trending],
   );
-  const unfilteredEditorChoiceCards = useMemo(() => {
-    const editorChoice = discoverBiteCollections.editorChoice.slice(0, 6);
-    if (editorChoice.length || !isSupabaseDataSource) {
-      return editorChoice;
-    }
-
-    return discoverBiteCollections.trending.slice(0, 6);
-  }, [
-    discoverBiteCollections.editorChoice,
-    discoverBiteCollections.trending,
-    isSupabaseDataSource,
-  ]);
+  // Top rated only shows dishes that really are 4.4+; no fallback to trending,
+  // so the rail hides instead of labelling lower-rated dishes as 4.4+.
+  const unfilteredEditorChoiceCards = useMemo(
+    () => discoverBiteCollections.editorChoice.slice(0, 6),
+    [discoverBiteCollections.editorChoice],
+  );
   const unfilteredBudgetCards = useMemo(
     () => discoverBiteCollections.budget.slice(0, 6),
     [discoverBiteCollections.budget],
@@ -2952,21 +2946,26 @@ export function DiscoverHomeScreen() {
                   >
                     <DiscoverBiteImage bite={bite} height={discoverRailImageHeight} />
                     {/* Rating badge overlay: the rail is rating-based, not curated */}
-                    <View
-                      style={{
-                        position: "absolute",
-                        top: spacing[2],
-                        left: spacing[2],
-                        backgroundColor: palette.orange,
-                        paddingHorizontal: spacing[2],
-                        paddingVertical: spacing[0.5],
-                        borderRadius: radii.sm,
-                      }}
-                    >
-                      <AppText variant="micro" style={{ color: palette.white, fontWeight: "800" }}>
-                        {`★ ${bite.rating.toFixed(1)}`}
-                      </AppText>
-                    </View>
+                    {bite.rating > 0 ? (
+                      <View
+                        style={{
+                          position: "absolute",
+                          top: spacing[2],
+                          left: spacing[2],
+                          backgroundColor: palette.orange,
+                          paddingHorizontal: spacing[2],
+                          paddingVertical: spacing[0.5],
+                          borderRadius: radii.sm,
+                        }}
+                      >
+                        <AppText
+                          variant="micro"
+                          style={{ color: palette.white, fontWeight: "800" }}
+                        >
+                          {`★ ${bite.rating.toFixed(1)}`}
+                        </AppText>
+                      </View>
+                    ) : null}
                     <View style={{ padding: spacing[3], gap: spacing[1] }}>
                       <AppText
                         variant="bodySmallBold"

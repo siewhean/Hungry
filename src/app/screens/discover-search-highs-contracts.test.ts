@@ -55,6 +55,16 @@ test("Discover rails no longer claim prep times or curation they do not have", (
   assert.match(screen, /Top rated/);
 });
 
+test("Top rated rail never falls back to trending dishes under its 4.4+ label", () => {
+  const screen = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const editorChoice =
+    screen.match(/const unfilteredEditorChoiceCards = useMemo\([\s\S]*?\n {2}\);/)?.[0] ?? "";
+
+  assert.ok(editorChoice, "unfilteredEditorChoiceCards should exist");
+  assert.doesNotMatch(editorChoice, /trending/);
+  assert.match(screen, /bite\.rating > 0 \? \(/);
+});
+
 test("Crave swipes act on the current card and record taste signals", () => {
   const crave = readRepoFile("src/app/screens/discover/CraveScreen.tsx");
 
@@ -132,4 +142,26 @@ test("Search browse: guests get a way out, chips never show everything, errors s
   assert.doesNotMatch(results, /body=\{error\}/);
   assert.match(results, /errorMessage=\{error\}/);
   assert.match(results, /reportError\(loadError/);
+});
+
+test("Area picker returns already-onboarded users without re-completing onboarding", () => {
+  const picker = readRepoFile("src/app/screens/onboarding/ManualLocationPickerScreen.tsx");
+  const submit = picker.match(/const handleSubmit = \(\) => \{[\s\S]*?\n {2}\};/)?.[0] ?? "";
+
+  assert.ok(submit, "handleSubmit should exist");
+  assert.match(
+    submit,
+    /if \(useSessionStore\.getState\(\)\.hasCompletedOnboarding\) \{\s*navigation\.goBack\(\);\s*return;\s*\}\s*completeOnboarding/,
+  );
+});
+
+test("Home map recentres only when the chosen building changes", () => {
+  const map = readRepoFile("src/app/screens/discover/HomeMapScreen.tsx");
+
+  assert.match(map, /centeredBuildingNameRef\.current === selectedBuilding\?\.name\) return;/);
+  assert.match(map, /\}, \[selectedBuilding\?\.name\]\);/);
+  assert.doesNotMatch(
+    map,
+    /\}, \[activeBuildingRecord\.coordinate\.latitude, activeBuildingRecord\.coordinate\.longitude\]\);/,
+  );
 });
