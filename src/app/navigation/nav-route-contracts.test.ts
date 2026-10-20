@@ -9,7 +9,7 @@ function read(relativePath: string): string {
   return readFileSync(path.join(root, relativePath), "utf8");
 }
 
-test("onboarding is about four steps: welcome, location, optional taste quiz, done", () => {
+test("onboarding is five short steps: welcome, location, optional taste quiz, food openness, done", () => {
   const types = read("src/app/navigation/navigationTypes.ts");
   const stack = read("src/app/screens/onboarding/OnboardingStack.tsx");
   const progress = read("src/app/screens/onboarding/OnboardingProgress.tsx");
@@ -18,6 +18,7 @@ test("onboarding is about four steps: welcome, location, optional taste quiz, do
   const picker = read("src/app/screens/onboarding/ManualLocationPickerScreen.tsx");
   const quiz = read("src/app/screens/onboarding/TasteQuizScreen.tsx");
   const done = read("src/app/screens/onboarding/TasteProfileResultScreen.tsx");
+  const openness = read("src/app/screens/onboarding/FoodOpennessScreen.tsx");
   const onboardingAuth = read("src/app/screens/onboarding/OnboardingAuthScreen.tsx");
 
   for (const routeName of [
@@ -26,6 +27,7 @@ test("onboarding is about four steps: welcome, location, optional taste quiz, do
     "ManualLocationPicker",
     "TasteQuiz",
     "DietaryPreferences",
+    "FoodOpenness",
     "TasteProfileResult",
     "OnboardingAuth",
   ]) {
@@ -65,7 +67,10 @@ test("onboarding is about four steps: welcome, location, optional taste quiz, do
   );
 
   // One progress component, "Step x of N", on every step.
-  assert.match(progress, /ONBOARDING_STEPS = \["welcome", "location", "taste", "done"\] as const/);
+  assert.match(
+    progress,
+    /ONBOARDING_STEPS = \["welcome", "location", "taste", "openness", "done"\] as const/,
+  );
   assert.match(progress, /Step \{current\} of \{total\}/);
   assert.match(progress, /accessibilityRole="progressbar"/);
   assert.match(welcome, /<OnboardingProgress step="welcome" \/>/);
@@ -73,6 +78,7 @@ test("onboarding is about four steps: welcome, location, optional taste quiz, do
   assert.match(picker, /\{isOnboarding \? <OnboardingProgress step="location" \/> : null\}/);
   assert.match(quiz, /flowMode === "onboarding" \? \([\s\S]*?<OnboardingProgress step="taste" \/>/);
   assert.match(done, /<OnboardingProgress step="done" \/>/);
+  assert.match(openness, /\{isSettings \? null : <OnboardingProgress step="openness" \/>\}/);
   // The quiz no longer draws its own progress bar.
   assert.doesNotMatch(quiz, /progressAnim|progressTrack/);
 
@@ -100,7 +106,10 @@ test("onboarding is about four steps: welcome, location, optional taste quiz, do
   // Swipes only change the local draft; the vector is committed once in handleFinish.
   assert.equal(quiz.match(/setTasteVector\(/g)?.length, 1);
   assert.match(types, /DietaryPreferences:[\s\S]*answers\?: TasteVector;/);
-  assert.match(quiz, /navigation\.navigate\("TasteProfileResult"\)/);
+  assert.match(quiz, /navigation\.navigate\("FoodOpenness", \{ mode: "onboarding" \}\)/);
+  // Openness: Continue saves the choice, Skip saves the default "mix"; both go to done.
+  assert.match(openness, /navigation\.navigate\("TasteProfileResult"\)/);
+  assert.match(openness, /finish\(DEFAULT_FOOD_OPENNESS\)/);
   // The taste questions are optional, but Skip still asks about dietary needs
   // (without taste answers), and the quiz stays marked as skipped.
   assert.match(
@@ -109,14 +118,14 @@ test("onboarding is about four steps: welcome, location, optional taste quiz, do
   );
   assert.match(
     quiz,
-    /setSkippedTasteQuiz\(!hasTasteAnswers\);\s*navigation\.navigate\("TasteProfileResult"\)/,
+    /setSkippedTasteQuiz\(!hasTasteAnswers\);\s*navigation\.navigate\("FoodOpenness", \{ mode: "onboarding" \}\)/,
   );
   assert.doesNotMatch(quiz, /navigation\.navigate\("LocationPermission"\)/);
 
   // Sign-in is required. The done step completes onboarding and resets to Home for a
   // signed-in user; a signed-out user goes to the account step, whose mandatory
   // wrapper completes onboarding (with the quiz-skip choice) before auth.
-  for (const source of [location, picker, quiz]) {
+  for (const source of [location, picker, quiz, openness]) {
     assert.doesNotMatch(source, /completeOnboarding/);
   }
   // Welcome completes onboarding only for an existing account going to Login.

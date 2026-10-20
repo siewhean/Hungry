@@ -80,3 +80,18 @@ test("diet restrictions and allergies are unioned and never dropped", () => {
   assert.deepEqual(mergeDietaryPreferences(["gluten_free"], []), ["gluten_free"]);
   assert.deepEqual(mergeDietaryPreferences([], ["nut_free"]), ["nut_free"]);
 });
+
+test("a new food-openness answer wins and its neophilia index follows it", () => {
+  const result = recalibrateTasteProfile(
+    { ...saved, foodOpenness: "favourites" },
+    { ...fresh, foodOpenness: "adventurous", neophiliaIndex: 9 },
+  );
+  assert.equal(result.foodOpenness, "adventurous");
+  assert.equal(result.neophiliaIndex, 9);
+});
+
+test("a saved food openness is kept when the new answers skip that step", () => {
+  const result = recalibrateTasteProfile({ ...saved, foodOpenness: "mix" }, fresh);
+  assert.equal(result.foodOpenness, "mix");
+  assertClose(result.neophiliaIndex, 5, "neophiliaIndex is blended without a new choice");
+});

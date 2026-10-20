@@ -267,6 +267,7 @@ function mapDish(row: Row, venue?: VenueSummary, presentation?: DishPresentation
     unitNumber: venue?.unitNumber ?? "",
     floor: venue?.floor ?? "",
     name: toString(row.name),
+    foodTypeTag: toString(row.food_type) || undefined,
     imageUrl,
     blurhash: toString(row.blurhash) || undefined,
     distanceMeters: toNumber(row.distance_meters),
