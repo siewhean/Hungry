@@ -21,7 +21,7 @@ test("root navigation keeps heavy routes lazy-loaded", () => {
   assert.match(rootNavigator, /FEATURE_FLAGS\.prototypeRoutesEnabled \? \(/);
   assert.match(rootNavigator, /getComponent=\{loadPostComposerScreenV2\}/);
   assert.match(rootNavigator, /getComponent=\{loadDeveloperLauncherScreen\}/);
-  assert.match(rootNavigator, /QuickReviewModalHost/);
+  assert.doesNotMatch(rootNavigator, /QuickReview/);
   assert.match(rootNavigator, /ReviewSuccessModalHost/);
   assert.doesNotMatch(rootNavigator, /import \* as CredEarnedToastModule/);
   assert.match(rootNavigator, /function CredEarnedToastHost/);

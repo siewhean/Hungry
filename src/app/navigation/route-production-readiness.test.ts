@@ -58,6 +58,7 @@ test("production route gates keep advanced surfaces behind MVP-safe flags", () =
   ]) {
     assert.doesNotMatch(rootNavigator, new RegExp(`name="${removedRouteName}"`));
   }
+  assert.doesNotMatch(rootNavigator, /QuickReview/);
   assert.match(rootNavigator, /FEATURE_FLAGS\.merchantCentreEnabled \? \(/);
   assert.match(rootNavigator, /name="MerchantTabs"/);
   assert.match(rootNavigator, /FEATURE_FLAGS\.merchantClaimCtaEnabled \? \(/);

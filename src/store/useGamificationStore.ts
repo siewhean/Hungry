@@ -64,7 +64,6 @@ export function resolveLevelProgress(totalPoints: number): number {
 // ---------------------------------------------------------------------------
 
 export const POINTS_PER_ACTION = {
-  quickReview: 25,
   photoAttached: 10,
   firstVisitOfVenue: 15,
   shareStall: 5,
