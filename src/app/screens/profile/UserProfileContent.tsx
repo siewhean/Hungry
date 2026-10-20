@@ -4,6 +4,7 @@ import {
   MessageCircleMore,
   MoreHorizontal,
   PencilLine,
+  Share2,
   UserCheck,
   Users,
   Utensils,
@@ -20,6 +21,7 @@ import {
 } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { listSharedStallPosts, mergeStallPosts } from "@/features/social/sharedStallPosts";
+import { shareProfileLink } from "@/features/share/profileShare";
 import { biteToStallPost } from "@/lib/services/postTransforms";
 import { promptContentSafetyActions } from "@/lib/security/communitySafety";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -27,11 +29,12 @@ import { getDataRepository, getHungryService } from "@/lib/services/serviceProvi
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
 import { useSocialStore } from "@/store/useSocialStore";
 import { useHungryTheme } from "@/theme";
-import type { Review, StallPost } from "@/types/domain";
+import type { PublicUserProfile, Review, StallPost } from "@/types/domain";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 
 type UserProfileContentProps = {
   navigation: any;
+  /** Empty when opened from a user/:id link; the public profile fills it in. */
   authorName: string;
   authorAvatarUrl?: string;
   authorId?: string;
@@ -59,7 +62,7 @@ function haveSamePosts(left: StallPost[], right: StallPost[]) {
 
 export function UserProfileContent({
   navigation,
-  authorName,
+  authorName: authorNameParam,
   authorAvatarUrl,
   authorId,
 }: UserProfileContentProps) {
@@ -92,6 +95,24 @@ export function UserProfileContent({
 
   // Posts, reviews and follows are matched only by account id: display names are not unique.
   const normalizedAuthorId = authorId?.trim() || undefined;
+  // Name, avatar and bio from public_profiles (RLS hides private accounts from non-followers).
+  const [publicProfile, setPublicProfile] = useState<PublicUserProfile | null>(null);
+  useEffect(() => {
+    if (!normalizedAuthorId) return;
+    let isMounted = true;
+    void getHungryService()
+      .profile.getPublicProfile(normalizedAuthorId)
+      .then((row) => {
+        if (isMounted) setPublicProfile(row ?? null);
+      })
+      .catch((error) => console.error("Failed to load public profile:", error));
+    return () => {
+      isMounted = false;
+    };
+  }, [normalizedAuthorId]);
+  const authorName =
+    authorNameParam.trim() || publicProfile?.displayName?.trim() || "Hungry member";
+  const authorBio = publicProfile?.id === normalizedAuthorId ? publicProfile?.bio : undefined;
   const resolvedAuthorId = normalizedAuthorId;
   const viewerId = useProfileStore((state) => state.profile.id);
   // Your own posts can link here: never offer Follow, Report or Block on yourself.
@@ -184,8 +205,9 @@ export function UserProfileContent({
 
   const resolvedAuthorAvatarUrl = useMemo(() => {
     if (authorAvatarUrl?.trim()) return authorAvatarUrl.trim();
+    if (publicProfile?.avatarUrl?.trim()) return publicProfile.avatarUrl.trim();
     return posts.find((post) => post.authorAvatarUrl?.trim())?.authorAvatarUrl?.trim() ?? "";
-  }, [authorAvatarUrl, posts]);
+  }, [authorAvatarUrl, posts, publicProfile]);
 
   useEffect(() => {
     if (!resolvedAuthorId) return;
@@ -312,16 +334,32 @@ export function UserProfileContent({
       title={authorName}
       headerRight={
         resolvedAuthorId && !isSelf ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`More options for ${authorName}`}
-            accessibilityHint="Report or block this user"
-            hitSlop={8}
-            onPress={openProfileSafetyActions}
-            style={{ alignItems: "center", height: 44, justifyContent: "center", width: 44 }}
-          >
-            <MoreHorizontal color={palette.text} size={22} />
-          </Pressable>
+          <View style={{ flexDirection: "row" }}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Share ${authorName}'s profile`}
+              accessibilityHint="Shares a link to this Hungry profile"
+              hitSlop={8}
+              onPress={() =>
+                void shareProfileLink(resolvedAuthorId, authorName).catch((error) =>
+                  console.error("Error sharing profile:", error),
+                )
+              }
+              style={{ alignItems: "center", height: 44, justifyContent: "center", width: 44 }}
+            >
+              <Share2 color={palette.text} size={20} />
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`More options for ${authorName}`}
+              accessibilityHint="Report or block this user"
+              hitSlop={8}
+              onPress={openProfileSafetyActions}
+              style={{ alignItems: "center", height: 44, justifyContent: "center", width: 44 }}
+            >
+              <MoreHorizontal color={palette.text} size={22} />
+            </Pressable>
+          </View>
         ) : undefined
       }
     >
@@ -355,6 +393,11 @@ export function UserProfileContent({
 
           <View style={{ flex: 1, gap: spacing[1] }}>
             <AppText variant="h1">{authorName}</AppText>
+            {authorBio ? (
+              <AppText variant="bodySmall" tone="secondary">
+                {authorBio}
+              </AppText>
+            ) : null}
             {canShowFollowButton ? (
               <Pressable
                 accessibilityRole="button"

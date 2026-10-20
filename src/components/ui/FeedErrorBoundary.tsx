@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
-import { Clipboard, Share, Alert } from "react-native";
+import { Share, Alert } from "react-native";
+import * as Clipboard from "expo-clipboard";
 
 import { FeedStateView } from "./FeedStateView";
 
@@ -53,7 +54,7 @@ export class FeedErrorBoundary extends Component<FeedErrorBoundaryProps, FeedErr
   private handleSendError = async () => {
     const payload = this.reportMessage;
     try {
-      Clipboard.setString(payload);
+      await Clipboard.setStringAsync(payload);
     } catch {
       // no-op: fallback to share-only behavior below if clipboard fails
     }

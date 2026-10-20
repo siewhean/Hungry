@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type RefObject } from "react";
-import { Clipboard, Share } from "react-native";
+import { Share } from "react-native";
+import * as Clipboard from "expo-clipboard";
 import {
   BottomSheetBackdrop,
   BottomSheetFooter,
@@ -178,9 +179,9 @@ export function ReviewShareSheet({
     trackShare,
   ]);
 
-  const copyLink = useCallback(() => {
+  const copyLink = useCallback(async () => {
     if (!activeReview) return;
-    Clipboard.setString(withShareSource(activeReview.link, "copy_link"));
+    await Clipboard.setStringAsync(withShareSource(activeReview.link, "copy_link"));
     trackShare(activeReview, "copy_link");
     showToast({ message: "Link copied.", tone: "success" });
   }, [activeReview, showToast, trackShare]);

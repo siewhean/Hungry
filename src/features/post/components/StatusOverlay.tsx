@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
-import { Alert, Clipboard, Share, StyleSheet, View, ActivityIndicator } from "react-native";
+import { Alert, Share, StyleSheet, View, ActivityIndicator } from "react-native";
+import * as Clipboard from "expo-clipboard";
 import { CheckCircle2, AlertCircle, X, Calendar, Save } from "lucide-react-native";
 import { AppText, Button, IconButton } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
@@ -49,7 +50,7 @@ export function StatusOverlay({ onFinish }: StatusOverlayProps) {
       publishingError || "Unable to publish post."
     }`;
     try {
-      await Clipboard.setString(report);
+      await Clipboard.setStringAsync(report);
       await Share.share({ message: report, title: "Hungry Post Composer Error" });
     } catch {
       Alert.alert(

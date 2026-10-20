@@ -8,6 +8,7 @@
  */
 
 import { getFloorPlan } from "@/lib/geo/floorPlans";
+import { PROFILE_BIO_MAX_LENGTH } from "@/features/profile/profileBio";
 import { MERCHANT_DEEP_LINKS } from "@/features/merchant/merchantDeepLinks";
 import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
@@ -1883,8 +1884,29 @@ export const hungryService: HungryService = {
     async updateProfile(updates) {
       // The sign-in email changes only through auth.requestEmailChange.
       const { email: _ignoredEmail, ...profileUpdates } = updates;
+      // Mirrors the user_profiles_bio_length check constraint.
+      if (profileUpdates.bio !== undefined) {
+        const bio = profileUpdates.bio.trim();
+        if (bio.length > PROFILE_BIO_MAX_LENGTH) {
+          throw new Error(`Bio must be ${PROFILE_BIO_MAX_LENGTH} characters or fewer.`);
+        }
+        profileUpdates.bio = bio || undefined;
+      }
       _profile = { ..._profile, ...profileUpdates } as UserProfile;
       return resolve({ ..._profile });
+    },
+
+    async getPublicProfile(userId: string) {
+      if (userId === _profile.id) {
+        return resolve({
+          id: _profile.id,
+          displayName: _profile.displayName,
+          avatarUrl: _profile.avatarUrl,
+          bio: _profile.bio,
+        });
+      }
+      const person = findMockPerson(userId);
+      return resolve({ id: userId, ...person });
     },
 
     async updateDietaryPreferences(flags: DietaryFlag[]) {

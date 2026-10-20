@@ -24,7 +24,7 @@ export function UserProfileScreen({ navigation, route }: UserProfileScreenRouteP
   return (
     <UserProfileContent
       navigation={navigation}
-      authorName={route.params.authorName}
+      authorName={route.params.authorName ?? ""}
       authorAvatarUrl={route.params.authorAvatarUrl}
       authorId={route.params.authorId}
     />

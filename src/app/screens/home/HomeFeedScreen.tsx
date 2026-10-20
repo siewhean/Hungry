@@ -4,7 +4,6 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
-  Clipboard,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -16,6 +15,7 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
+import * as Clipboard from "expo-clipboard";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   Bookmark,
@@ -780,9 +780,11 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     setActiveShareItem(null);
   }, []);
 
-  const copySharePostLink = useCallback(() => {
+  const copySharePostLink = useCallback(async () => {
     if (!activeShareItem) return;
-    Clipboard.setString(withShareSource(webShareUrl("post", activeShareItem.id), "copy_link"));
+    await Clipboard.setStringAsync(
+      withShareSource(webShareUrl("post", activeShareItem.id), "copy_link"),
+    );
     incrementPostShare(activeShareItem.id, "copy_link");
     showToast({ message: "Link copied", tone: "success" });
   }, [activeShareItem, incrementPostShare, showToast]);

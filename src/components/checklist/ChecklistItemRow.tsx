@@ -41,26 +41,10 @@ function formatDateOnly(value: string): string {
   });
 }
 
-function formatReminder(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString("en-SG", {
-    day: "numeric",
-    hour: "numeric",
-    hour12: true,
-    minute: "2-digit",
-    month: "short",
-    timeZone: "Asia/Singapore",
-  });
-}
-
 function getScheduleLabel(item: ChecklistItem): string {
   const parts = [];
   if (item.plannedVisitDate) {
     parts.push(`Planned ${formatDateOnly(item.plannedVisitDate)}`);
-  }
-  if (item.reminderAt) {
-    parts.push(`Reminder ${formatReminder(item.reminderAt)}`);
   }
   return parts.join(" · ");
 }
@@ -108,7 +92,7 @@ export function ChecklistItemRow({
         </View>
         {item.triedAt ? <CheckCircle2 color={palette.successText} size={22} /> : null}
       </View>
-      {item.plannedVisitDate || item.reminderAt ? (
+      {item.plannedVisitDate ? (
         <View style={styles.metaRow}>
           <CalendarDays color={palette.textMuted} size={15} />
           <AppText variant="bodySmall" tone="secondary">
