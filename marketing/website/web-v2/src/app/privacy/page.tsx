@@ -34,7 +34,7 @@ const sections = [
   },
   {
     title: "8. Contact",
-    body: "For privacy, deletion, access, correction, or safety requests, email usehungrysingapore@gmail.com. Include the email address used for your Hungry account when relevant so we can verify and process the request.",
+    body: "Hungry's privacy contact (Data Protection Officer) can be reached at usehungrysingapore@gmail.com. For privacy, deletion, access, correction, or safety requests, email usehungrysingapore@gmail.com. Include the email address used for your Hungry account when relevant so we can verify and process the request.",
   },
 ];
 

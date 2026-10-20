@@ -73,6 +73,14 @@ for (const [file, source] of [
   requireMarker(source, "usehungrysingapore@gmail.com", file, "Legal support email contract failed");
 }
 
+for (const [file, source] of [
+  ["privacy/page.tsx", privacy],
+  ["terms/page.tsx", terms],
+]) {
+  requireMarker(source, "privacy contact (Data Protection Officer)", file, "Named privacy contact contract failed");
+  rejectMatch(source, /hungry\.sg|support@usehungry\.com/, file, "Legal page contact domain contract failed");
+}
+
 requireMarker(contact, "routeMetadata(", "contact/page.tsx", "Legal page metadata contract failed");
 requireMarker(contact, "siteConfig.contactEmail", "contact/page.tsx", "Legal support email contract failed");
 
