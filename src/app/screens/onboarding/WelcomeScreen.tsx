@@ -1,21 +1,20 @@
 import { useEffect, useRef } from "react";
-import { View, Animated, Pressable, Dimensions } from "react-native";
+import { View, Animated, Pressable, useWindowDimensions } from "react-native";
 import type { NavigationProp } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 
 import { AppText, Button } from "@/components/ui";
 import { HUNGRY_LOGO_ICON, HUNGRY_LOGO_STANDARD_SIZE } from "@/constants/brandAssets";
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
-import { OnboardingProgress } from "./OnboardingProgress";
+import { OnboardingProgress, trackOnboardingStepViewed } from "./OnboardingProgress";
 import type { OnboardingStackParamList } from "./OnboardingStack";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "OnboardingWelcome">;
-
-const { height: SCREEN_H } = Dimensions.get("window");
 
 const VALUE_PROPS = [
   { emoji: "🍜", text: "Discover dishes, not just restaurants" },
@@ -26,14 +25,27 @@ const VALUE_PROPS = [
 export function WelcomeScreen({ navigation }: Props) {
   const { palette } = useHungryTheme();
   const insets = useSafeAreaInsets();
+  const { height: SCREEN_H } = useWindowDimensions();
+  const reduceMotion = useReduceMotion();
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
 
   const logoAnim = useRef(new Animated.Value(0)).current;
   const headlineAnim = useRef(new Animated.Value(0)).current;
   const pillsAnim = useRef(VALUE_PROPS.map(() => new Animated.Value(0))).current;
-  const ctaAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    trackOnboardingStepViewed("welcome");
+  }, []);
+
+  // The CTA is never animated, so it is usable at once; the rest of the entrance
+  // is skipped under Reduce Motion.
+  useEffect(() => {
+    if (reduceMotion) {
+      logoAnim.setValue(1);
+      headlineAnim.setValue(1);
+      pillsAnim.forEach((anim) => anim.setValue(1));
+      return;
+    }
     Animated.sequence([
       Animated.timing(logoAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
       Animated.timing(headlineAnim, { toValue: 1, duration: 320, useNativeDriver: true }),
@@ -43,9 +55,8 @@ export function WelcomeScreen({ navigation }: Props) {
           Animated.timing(a, { toValue: 1, duration: 260, useNativeDriver: true }),
         ),
       ),
-      Animated.timing(ctaAnim, { toValue: 1, duration: 240, useNativeDriver: true }),
     ]).start();
-  }, [ctaAnim, headlineAnim, logoAnim, pillsAnim]);
+  }, [headlineAnim, logoAnim, pillsAnim, reduceMotion]);
 
   const handleStart = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -98,24 +109,10 @@ export function WelcomeScreen({ navigation }: Props) {
             marginBottom: 12,
           }}
         />
-        <AppText
-          style={{
-            fontFamily: "Fraunces_900Black",
-            fontSize: 28,
-            color: palette.text,
-            letterSpacing: -0.5,
-          }}
-        >
+        <AppText variant="displaySm" style={{ letterSpacing: -0.5 }}>
           Hungry
         </AppText>
-        <AppText
-          style={{
-            fontFamily: "Nunito_400Regular",
-            fontSize: 14,
-            color: palette.textSecondary,
-            marginTop: 4,
-          }}
-        >
+        <AppText variant="bodySmall" tone="secondary" style={{ marginTop: 4 }}>
           {"Singapore's dish-first food app"}
         </AppText>
       </Animated.View>
@@ -135,15 +132,7 @@ export function WelcomeScreen({ navigation }: Props) {
           ],
         }}
       >
-        <AppText
-          style={{
-            fontFamily: "Fraunces_700Bold",
-            fontSize: 36,
-            lineHeight: 42,
-            color: palette.text,
-            marginBottom: 10,
-          }}
-        >
+        <AppText variant="display" accessibilityRole="header" style={{ marginBottom: 10 }}>
           {"Find the dish.\nNot just the\nrestaurant."}
         </AppText>
       </Animated.View>
@@ -168,7 +157,10 @@ export function WelcomeScreen({ navigation }: Props) {
               ],
             }}
           >
+            {/* Decorative emoji: screen readers read the text beside it only. */}
             <View
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
               style={{
                 width: 40,
                 height: 40,
@@ -180,60 +172,32 @@ export function WelcomeScreen({ navigation }: Props) {
             >
               <AppText style={{ fontSize: 20 }}>{item.emoji}</AppText>
             </View>
-            <AppText
-              style={{
-                flex: 1,
-                fontFamily: "Nunito_600SemiBold",
-                fontSize: 15,
-                color: palette.text,
-                lineHeight: 22,
-              }}
-            >
+            <AppText variant="bodyBold" style={{ flex: 1 }}>
               {item.text}
             </AppText>
           </Animated.View>
         ))}
       </View>
 
-      {/* CTA */}
-      <Animated.View
-        style={{
-          marginTop: "auto",
-          paddingTop: 32,
-          opacity: ctaAnim,
-          transform: [
-            {
-              translateY: ctaAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [16, 0],
-              }),
-            },
-          ],
-        }}
-      >
+      {/* CTA: visible and tappable immediately. */}
+      <View style={{ marginTop: "auto", paddingTop: 32 }}>
         <Button label="Get started" onPress={handleStart} variant="primary" />
         {isAuthenticated ? null : (
           <Pressable
             onPress={handleSignIn}
             accessibilityRole="button"
             accessibilityLabel="Sign in to existing account"
-            style={{ alignItems: "center", marginTop: 16, paddingVertical: 8 }}
+            style={{ alignItems: "center", justifyContent: "center", marginTop: 8, minHeight: 44 }}
           >
-            <AppText style={{ color: palette.textSecondary, fontSize: 14 }}>
+            <AppText variant="bodySmall" tone="secondary">
               Already have an account?{" "}
-              <AppText
-                style={{
-                  color: palette.orange,
-                  fontFamily: "Nunito_700Bold",
-                  fontSize: 14,
-                }}
-              >
+              <AppText variant="bodySmall" style={{ color: palette.orange, fontWeight: "700" }}>
                 Sign in
               </AppText>
             </AppText>
           </Pressable>
         )}
-      </Animated.View>
+      </View>
     </View>
   );
 }

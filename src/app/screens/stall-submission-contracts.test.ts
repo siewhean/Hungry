@@ -31,7 +31,7 @@ test("AddStall form requires stall name and image while preserving optional deta
   assert.match(screen, /import \* as ImagePicker from "expo-image-picker"/);
   assert.match(screen, /requestMediaLibraryPermissionsAsync/);
   assert.match(screen, /launchImageLibraryAsync/);
-  assert.match(screen, /mediaTypes: ImagePicker\.MediaTypeOptions\.Images/);
+  assert.match(screen, /mediaTypes: \["images"\]/);
   assert.match(screen, /allowsMultipleSelection: true/);
   assert.match(screen, /selectionLimit: MAX_STALL_IMAGES/);
   assert.match(screen, /selectedImages\.map/);

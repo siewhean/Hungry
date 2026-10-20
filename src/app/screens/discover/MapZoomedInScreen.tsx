@@ -9,6 +9,9 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { MapSurface, type MapSurfaceMarker } from "@/components/map/MapSurface";
 import { AppText, Card, Badge } from "@/components/ui";
 import { getBuildingVenues } from "@/features/discovery/discovery";
+import { buildMapsSearchUrl } from "@/features/detail/stallLocation";
+import { trackAnalyticsEvent } from "@/lib/analytics";
+import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
 import { getBuildingById, singaporeBuildings, toSummary } from "@/lib/geo/singaporeBuildings";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useLocationStore } from "@/store/useLocationStore";
@@ -51,36 +54,20 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
     setSelectedFloor(building.floors[0]);
   }, [building, setSelectedBuilding, setSelectedFloor]);
 
-  const markers = useMemo((): MapSurfaceMarker[] => {
-    const buildingMarker = {
-      id: building.id,
-      label: building.name.replace(" Food Centre", ""),
-      coordinate: building.coordinate,
-      accent: building.type === "hawker_centre" ? palette.orange : palette.teal,
-      type: building.type,
-    };
-
-    if (currentZoom > 17.0) {
-      const stallMarkers = getBuildingVenues(building.id).map((v, index) => {
-        // Keep marker placement deterministic to avoid visual jitter on rerenders.
-        // This is a temporary spread strategy until exact stall geometry is used.
-        const latitudeOffset = ((index % 7) - 3) * 0.00007;
-        const longitudeOffset = ((Math.floor(index / 7) % 7) - 3) * 0.00007;
-        return {
-          id: `stall-${v.id}`,
-          label: v.name,
-          coordinate: {
-            latitude: building.coordinate.latitude + latitudeOffset,
-            longitude: building.coordinate.longitude + longitudeOffset,
-          },
-          accent: palette.orange,
-        };
-      });
-      return [buildingMarker, ...stallMarkers];
-    }
-
-    return [buildingMarker];
-  }, [building, palette, currentZoom]);
+  // Stalls have no coordinates of their own, so only the building is plotted;
+  // the sheet below lists its stalls.
+  const markers = useMemo(
+    (): MapSurfaceMarker[] => [
+      {
+        id: building.id,
+        label: building.name.replace(" Food Centre", ""),
+        coordinate: building.coordinate,
+        accent: building.type === "hawker_centre" ? palette.orange : palette.teal,
+        type: building.type,
+      },
+    ],
+    [building, palette],
+  );
 
   const featuredStallsWithStatus = useMemo(() => {
     return getBuildingVenues(building.id).map((venue) => ({
@@ -90,10 +77,14 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
   }, [building.id]);
 
   const openVenueCount = featuredStallsWithStatus.filter((entry) => entry.isOpen).length;
-  const featuredStalls = featuredStallsWithStatus
-    .filter((entry) => entry.isOpen)
-    .map((entry) => entry.venue)
-    .slice(0, 3);
+  // Every stall, open ones first, so a closed centre is not a dead end.
+  const featuredStalls = [...featuredStallsWithStatus].sort(
+    (left, right) => Number(right.isOpen) - Number(left.isOpen),
+  );
+  const openDirections = useCallback(() => {
+    trackAnalyticsEvent("directions_opened", { building_id: building.id, source: "MapZoomedIn" });
+    void openTrustedMapsUrl(buildMapsSearchUrl(building.address || building.name));
+  }, [building.address, building.id, building.name]);
   const bottomSheetRef = useRef<BottomSheet>(null);
 
   useEffect(() => {
@@ -101,6 +92,7 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
   }, []);
 
   const handleMarkerPress = (id: string) => {
+    trackAnalyticsEvent("map_pin_tapped", { pin_kind: "building", pin_id: id });
     if (id.startsWith("stall-")) {
       const venueId = id.replace("stall-", "");
       navigation.navigate("StallDetail", { venueId });
@@ -124,6 +116,8 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
       />
 
       <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
         onPress={() => navigation.goBack()}
         style={[
           {
@@ -182,10 +176,34 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
               />
             </View>
 
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Directions to ${building.name}`}
+              onPress={openDirections}
+              style={{
+                alignItems: "center",
+                alignSelf: "flex-start",
+                borderColor: palette.border,
+                borderRadius: radii.pill,
+                borderWidth: 1,
+                flexDirection: "row",
+                gap: spacing[1.5],
+                minHeight: 44,
+                paddingHorizontal: spacing[3],
+              }}
+            >
+              <Navigation size={16} color={palette.orange} />
+              <AppText variant="bodySmall" style={{ fontWeight: "800" }}>
+                Directions
+              </AppText>
+            </Pressable>
+
             <View style={{ gap: spacing[2] }}>
-              {featuredStalls.map((venue) => (
+              {featuredStalls.map(({ venue, isOpen }) => (
                 <Pressable
                   key={venue.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${venue.name}, ${isOpen ? "open now" : "closed now"}`}
                   onPress={() => navigation.navigate("StallDetail", { venueId: venue.id })}
                   style={{
                     backgroundColor: palette.bgSoft,
@@ -201,7 +219,9 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
                   <View style={{ flex: 1, gap: spacing[1] }}>
                     <AppText variant="h3">{venue.name}</AppText>
                     <AppText variant="micro" tone="secondary">
-                      {venue.unitNumber} · {venue.operatingHours}
+                      {[isOpen ? "Open" : "Closed", venue.unitNumber, venue.operatingHours]
+                        .filter(Boolean)
+                        .join(" · ")}
                     </AppText>
                   </View>
                   <Store size={16} color={palette.orange} />

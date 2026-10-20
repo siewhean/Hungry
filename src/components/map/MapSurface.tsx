@@ -32,6 +32,8 @@ export interface MapSurfaceMarker {
   accent?: string;
   type?: BuildingType;
   isTrending?: boolean;
+  /** The pin's own photo; a trending pin without one draws as a normal marker. */
+  imageUrl?: string;
 }
 
 interface MapSurfaceProps extends PropsWithChildren {
@@ -105,6 +107,7 @@ function MarkerVisual({
   type,
   zoomLevel = 15,
   isTrending,
+  imageUrl,
 }: {
   label: string;
   accent: string;
@@ -112,11 +115,12 @@ function MarkerVisual({
   type?: BuildingType;
   zoomLevel?: number;
   isTrending?: boolean;
+  imageUrl?: string;
 }) {
   const { componentRadii, palette, radii, spacing, shadows } = useHungryTheme();
   const showLabel = selected || zoomLevel >= 15.5;
 
-  if (isTrending) {
+  if (isTrending && imageUrl) {
     return (
       <View style={{ alignItems: "center", gap: spacing[1] }}>
         <View
@@ -133,12 +137,7 @@ function MarkerVisual({
             shadows.floating,
           ]}
         >
-          <AccessibleImage
-            source="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=120&q=80"
-            style={{ flex: 1 }}
-            contentFit="cover"
-            decorative
-          />
+          <AccessibleImage source={imageUrl} style={{ flex: 1 }} contentFit="cover" decorative />
         </View>
         {showLabel && (
           <View
@@ -393,6 +392,7 @@ function FallbackMap({
               selected={marker.id === selectedMarkerId}
               type={marker.type}
               isTrending={marker.isTrending}
+              imageUrl={marker.imageUrl}
             />
           </Pressable>
         );
@@ -538,6 +538,7 @@ export function MapSurface({
                 type={marker.type}
                 zoomLevel={zoomLevel}
                 isTrending={marker.isTrending}
+                imageUrl={marker.imageUrl}
               />
             </Pressable>
           </MapboxGL.MarkerView>

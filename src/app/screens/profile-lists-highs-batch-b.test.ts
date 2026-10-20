@@ -171,7 +171,7 @@ test("H32/H33/H34: list screens avoid render loops, show load errors and report 
   const checklistDetail = read("src/app/screens/checklist/ChecklistDetailScreen.tsx");
   const portfolioDetail = read("src/app/screens/portfolio/PortfolioDetailScreen.tsx");
   for (const source of [checklistDetail, portfolioDetail]) {
-    assert.match(source, /useItemLabels\(/);
+    assert.match(source, /useItemLabels(State)?\(/);
     assert.doesNotMatch(source, /items\[(checklistId|portfolioId)\] \?\? \[\]/);
   }
   assert.match(read("src/app/screens/checklist/ChecklistsHomeScreen.tsx"), /label="Retry"/);

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { View, StyleSheet, Pressable, ActivityIndicator, Dimensions } from "react-native";
+import { View, StyleSheet, Pressable, ActivityIndicator, useWindowDimensions } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 
@@ -24,9 +24,7 @@ import { FEATURE_FLAGS } from "@/constants/featureFlags";
 
 type SocialGridRouteProp = RouteProp<ProfileStackParamList, "SocialGrid">;
 
-const { width } = Dimensions.get("window");
 const COLUMN_COUNT = 3;
-const ITEM_WIDTH = width / COLUMN_COUNT;
 
 export function SocialGridScreen() {
   const { palette } = useHungryTheme();
@@ -43,6 +41,11 @@ export function SocialGridScreen() {
 
   const [stallPosts, setStallPosts] = useState<StallPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  // Follows rotation and split-screen resizes instead of the width at module load.
+  const { width: windowWidth } = useWindowDimensions();
+  const itemWidth = windowWidth / COLUMN_COUNT;
 
   const getSavedSortKey = useCallback((timestamp?: string) => {
     if (!timestamp) return 0;
@@ -52,8 +55,13 @@ export function SocialGridScreen() {
 
   useEffect(() => {
     async function loadData() {
-      if (!isAuthenticated) return;
+      // Signed out there is nothing to load, so the spinner must not run forever.
+      if (!isAuthenticated) {
+        setIsLoading(false);
+        return;
+      }
       setIsLoading(true);
+      setLoadFailed(false);
       try {
         const repository = getDataRepository();
         const posts = await listSharedStallPosts(repository);
@@ -66,12 +74,20 @@ export function SocialGridScreen() {
         initializeInteractions(posts);
       } catch (e) {
         console.error("Failed to load grid data", e);
+        setLoadFailed(true);
       } finally {
         setIsLoading(false);
       }
     }
     void loadData();
-  }, [isAuthenticated, loadStories, initializeInteractions, publishedPosts, storiesEnabled]);
+  }, [
+    isAuthenticated,
+    loadStories,
+    initializeInteractions,
+    publishedPosts,
+    reloadKey,
+    storiesEnabled,
+  ]);
 
   const items = useMemo(() => {
     const filteredStories = storiesEnabled
@@ -154,7 +170,7 @@ export function SocialGridScreen() {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={itemLabel}
-        style={styles.gridItem}
+        style={[styles.gridItem, { width: itemWidth, height: itemWidth * 1.5 }]}
         onPressIn={() => {
           if (isStory) {
             if (!storiesEnabled) return;
@@ -219,6 +235,13 @@ export function SocialGridScreen() {
         <View style={styles.center}>
           <ActivityIndicator color={palette.orange} size="large" />
         </View>
+      ) : loadFailed && items.length === 0 ? (
+        <EmptyState
+          title="Couldn't load this content"
+          body="Check your connection and try again."
+          ctaLabel="Retry"
+          onPress={() => setReloadKey((key) => key + 1)}
+        />
       ) : items.length === 0 ? (
         <EmptyState
           title={`No ${type} content found`}
@@ -229,7 +252,7 @@ export function SocialGridScreen() {
           data={items}
           renderItem={renderItem}
           // @ts-ignore
-          estimatedItemSize={ITEM_WIDTH * 1.5}
+          estimatedItemSize={itemWidth * 1.5}
           numColumns={COLUMN_COUNT}
           contentContainerStyle={{ paddingBottom: 40 }}
         />
@@ -246,8 +269,6 @@ const styles = StyleSheet.create({
     paddingTop: 100,
   },
   gridItem: {
-    width: ITEM_WIDTH,
-    height: ITEM_WIDTH * 1.5,
     padding: 1,
   },
   image: {

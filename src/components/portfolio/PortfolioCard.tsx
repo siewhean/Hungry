@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { AppText, Card } from "@/components/ui";
+import { formatPortfolioSummary, isPortfolioLive } from "@/features/checklistPortfolio/listLabels";
 import type { Portfolio } from "@/types/domain";
 
 interface PortfolioCardProps {
@@ -10,8 +11,7 @@ interface PortfolioCardProps {
 }
 
 function getPortfolioSubtitle(portfolio: Portfolio, itemCount: number): string {
-  const visibility = portfolio.visibility === "followers_only" ? "Followers" : portfolio.visibility;
-  return `${portfolio.type} · ${visibility} · ${itemCount} item${itemCount === 1 ? "" : "s"}`;
+  return formatPortfolioSummary(portfolio, itemCount);
 }
 
 export function PortfolioCard({ portfolio, itemCount = 0, onPress }: PortfolioCardProps) {
@@ -29,7 +29,7 @@ export function PortfolioCard({ portfolio, itemCount = 0, onPress }: PortfolioCa
               {getPortfolioSubtitle(portfolio, itemCount)}
             </AppText>
           </View>
-          {portfolio.publishedAt ? (
+          {isPortfolioLive(portfolio) ? (
             <AppText variant="micro" tone="success">
               Published
             </AppText>

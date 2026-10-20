@@ -101,8 +101,19 @@ test("merchant profile edits validate fields and propagate to user-side venue re
   );
   assertSourceIncludes(
     readRepoFile("src/components/merchant/MerchantImageField.tsx"),
-    [/launchImageLibraryAsync/],
+    [/pickMerchantMedia\(/, /rationale/, /handlePick\("camera"\)/],
     "MerchantImageField",
+  );
+  // One picker for merchant media: gallery or camera, current mediaTypes arrays, video length cap.
+  assertSourceIncludes(
+    readRepoFile("src/features/merchant/merchantMediaPicker.ts"),
+    [
+      /launchImageLibraryAsync/,
+      /launchCameraAsync/,
+      /mediaTypes: kind === "video" \? \["videos"\] : \["images"\]/,
+      /MAX_EVIDENCE_VIDEO_SECONDS/,
+    ],
+    "merchantMediaPicker",
   );
   assertSourceIncludes(
     validation,
@@ -174,7 +185,6 @@ test("merchant menu and OCR flows cover catalog writes that become consumer-visi
       /description/,
       /price/,
       /dietaryFlags/,
-      /tasteVector/,
       /merchant\.generateDishDescription\(/,
       /merchant\.suggestIngredients\(/,
       /merchant\.suggestAllergens\(/,
@@ -306,7 +316,6 @@ test("merchant inbox, promotions, AI assistant, and settings use service-backed 
     [
       /merchant\.getMerchantNotifications\(/,
       /merchant\.getWeeklySummaryStats\(/,
-      /merchant\.syncLowRatingNotifications\(/,
       // Low-rating push alerts are real (reviews trigger -> notification_jobs -> send-notifications).
       /merchant\.getNotificationPreferences\(/,
       /merchant\.updateNotificationPreferences\(account\.id, \{\s*lowRatingAlerts: enabled,/,

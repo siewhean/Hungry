@@ -16,8 +16,8 @@ const Stack = createNativeStackNavigator<AuthStackParamList>();
 export function AuthStack() {
   return (
     <FeedErrorBoundary
-      title="Authentication is currently unavailable"
-      body="We're having trouble connecting to our security services. Please check your connection or try again in a moment."
+      title="Sign in is unavailable right now"
+      body="Please check your connection and try again in a moment."
     >
       <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Login" component={LoginScreen} />

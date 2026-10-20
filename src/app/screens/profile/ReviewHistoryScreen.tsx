@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useEffect, useMemo, useState } from "react";
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 
 import { AppText, Button, Card, EmptyState } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
@@ -88,34 +88,61 @@ export function ReviewHistoryScreen({ navigation }: Props) {
     rootNavigation.navigate("ReviewStack", { screen: "ReviewMain" });
   };
 
+  const openDish = (dishId: string) => {
+    getRootNavigation(navigation as any).navigate("DishDetail", { dishId });
+  };
+
   return (
     <ProfileScreenShell
       title="Review history"
       subtitle="Submitted reviews stay visible in your profile."
     >
       {hasHistory ? (
-        historyItems.map(({ review, dish }) => {
-          const entry = dish ? reviewEntries[dish.id] : undefined;
-          const tags = review?.tags ?? entry?.tags ?? [];
-          const tagSummary = tags.length ? tags.join(" · ") : "";
-          const rating = review?.rating ?? entry?.rating ?? dish?.rating ?? 0;
-          const reviewText =
-            review?.text || entry?.text || "You submitted a quick review for this dish.";
+        <>
+          <Button label="Write another review" variant="secondary" onPress={openReviewFlow} />
+          {historyItems.map(({ review, dish }, index) => {
+            const entry = dish ? reviewEntries[dish.id] : undefined;
+            const tags = review?.tags ?? entry?.tags ?? [];
+            const tagSummary = tags.length ? tags.join(" · ") : "";
+            // Only the user's own rating: the dish average is never shown as theirs.
+            const rating = review?.rating ?? entry?.rating;
+            const reviewText =
+              review?.text || entry?.text || "You submitted a quick review for this dish.";
+            const dishId = review?.dishId ?? dish?.id;
+            const dishName = dish?.name ?? "Reviewed dish";
+            const ratingLine = [rating ? `Rated ${rating}/5` : "", tagSummary]
+              .filter(Boolean)
+              .join(" · ");
+            const card = (
+              <Card>
+                <View style={{ gap: 12 }}>
+                  <AppText variant="h3">{dishName}</AppText>
+                  <AppText tone="secondary">{reviewText}</AppText>
+                  {ratingLine ? (
+                    <AppText variant="bodySmall" tone="secondary">
+                      {ratingLine}
+                    </AppText>
+                  ) : null}
+                </View>
+              </Card>
+            );
+            const key = review?.id ?? dish?.id ?? `review-history-entry-${index}`;
 
-          return (
-            <Card key={review?.id ?? dish?.id ?? "review-history-entry"}>
-              <View style={{ gap: 12 }}>
-                <AppText variant="h3">{dish?.name ?? "Reviewed dish"}</AppText>
-                <AppText tone="secondary">{reviewText}</AppText>
-                <AppText variant="bodySmall" tone="secondary">
-                  Rated {rating}/5
-                  {tagSummary ? ` · ${tagSummary}` : ""}
-                </AppText>
-                <Button label="Write another review" variant="secondary" onPress={openReviewFlow} />
-              </View>
-            </Card>
-          );
-        })
+            return dishId ? (
+              <Pressable
+                key={key}
+                accessibilityRole="button"
+                accessibilityLabel={`Review of ${dishName}${rating ? `, rated ${rating} out of 5` : ""}`}
+                accessibilityHint="Opens the dish"
+                onPress={() => openDish(dishId)}
+              >
+                {card}
+              </Pressable>
+            ) : (
+              <View key={key}>{card}</View>
+            );
+          })}
+        </>
       ) : (
         <EmptyState
           title={remoteLoadFailed ? "Review history unavailable" : "No reviews yet"}

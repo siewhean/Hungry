@@ -5,22 +5,32 @@ import { Alert, AppState, Linking, Platform, Share, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
+  Accessibility,
   AtSign,
-  CircleHelp,
   Database,
   Download,
-  HandMetal,
-  Globe,
+  Eraser,
+  Eye,
+  FileText,
+  Hand,
+  History,
+  Info,
+  LocateFixed,
   Lock,
   LogOut,
+  Mail,
   MapPin,
-  Moon,
-  RefreshCw,
+  MessageCircle,
+  RotateCcw,
+  Scale,
+  Settings2,
   Shield,
-  Smartphone,
-  User,
+  SunMoon,
   Trash2,
+  User,
+  Vibrate,
 } from "lucide-react-native";
+import { useShallow } from "zustand/react/shallow";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
@@ -28,6 +38,7 @@ import { Button } from "@/components/ui";
 import { SettingsSection, SettingsRow } from "@/components/settings";
 import { StallAlertsSettings } from "@/components/settings/StallAlertsSettings";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { ACCOUNT_DELETION_GRACE_DAYS } from "@/lib/services/types";
@@ -44,37 +55,89 @@ import { useHungryTheme } from "@/theme";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import { SUPPORT_EMAIL, WEB_LINKS } from "@/constants/links";
 
+const THEME_LABELS: Record<ThemePreference, string> = {
+  system: "Automatic",
+  light: "Light",
+  dark: "Dark",
+};
+
+function formatDeletionDate(scheduledFor: string): string {
+  const date = new Date(scheduledFor);
+  if (Number.isNaN(date.getTime())) return `in ${ACCOUNT_DELETION_GRACE_DAYS} days`;
+  return `on ${date.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" })}`;
+}
+
 export function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const rootNavigation = getRootNavigation(navigation);
   const { palette, spacing } = useHungryTheme();
 
-  const clearSession = useSessionStore((state) => state.clearSession);
-  const clearProfile = useProfileStore((state) => state.clearProfile);
+  const { clearSession, signOut, isAuthenticated } = useSessionStore(
+    useShallow((state) => ({
+      clearSession: state.clearSession,
+      signOut: state.signOut,
+      isAuthenticated: state.isAuthenticated,
+    })),
+  );
+  const { clearProfile, setProfileVisibility, profile } = useProfileStore(
+    useShallow((state) => ({
+      clearProfile: state.clearProfile,
+      setProfileVisibility: state.setProfileVisibility,
+      profile: state.profile,
+    })),
+  );
   const resetDraft = useReviewDraftStore((state) => state.resetDraft);
-  const clearSearchState = useSearchStore((state) => state.clearSearchState);
-  const clearSearchHistory = useSearchStore((state) => state.clearSearchHistory);
-  const resetLocationState = useLocationStore((state) => state.resetLocationState);
-  const signOut = useSessionStore((state) => state.signOut);
-  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
-  const grantLocation = useLocationStore((state) => state.grantLocation);
-  const clearManualLocation = useLocationStore((state) => state.clearManualLocation);
-  const syncLocationPermission = useLocationStore((state) => state.syncLocationPermission);
-  const setProfileVisibility = useProfileStore((state) => state.setProfileVisibility);
-  const setLeftHandedMode = useProfileStore((state) => state.setLeftHandedMode);
+  const { clearSearchState, clearSearchHistory } = useSearchStore(
+    useShallow((state) => ({
+      clearSearchState: state.clearSearchState,
+      clearSearchHistory: state.clearSearchHistory,
+    })),
+  );
+  const {
+    resetLocationState,
+    grantLocation,
+    clearManualLocation,
+    syncLocationPermission,
+    location,
+    locationPermission,
+  } = useLocationStore(
+    useShallow((state) => ({
+      resetLocationState: state.resetLocationState,
+      grantLocation: state.grantLocation,
+      clearManualLocation: state.clearManualLocation,
+      syncLocationPermission: state.syncLocationPermission,
+      location: state.manualLocation,
+      locationPermission: state.permission,
+    })),
+  );
+  const {
+    themePreference,
+    setThemePreference,
+    hapticFeedbackEnabled,
+    setHapticFeedbackEnabled,
+    reducedMotionEnabled,
+    setReducedMotionEnabled,
+    allowSearchHistory,
+    setAllowSearchHistory,
+    leftHandedMode,
+    setLeftHandedMode,
+    showToast,
+  } = useUIStore(
+    useShallow((state) => ({
+      themePreference: state.themePreference,
+      setThemePreference: state.setThemePreference,
+      hapticFeedbackEnabled: state.hapticFeedbackEnabled,
+      setHapticFeedbackEnabled: state.setHapticFeedbackEnabled,
+      reducedMotionEnabled: state.reducedMotionEnabled,
+      setReducedMotionEnabled: state.setReducedMotionEnabled,
+      allowSearchHistory: state.allowSearchHistory,
+      setAllowSearchHistory: state.setAllowSearchHistory,
+      leftHandedMode: state.leftHandedMode,
+      setLeftHandedMode: state.setLeftHandedMode,
+      showToast: state.showToast,
+    })),
+  );
 
-  const themePreference = useUIStore((state) => state.themePreference);
-  const setThemePreference = useUIStore((state) => state.setThemePreference);
-  const hapticFeedbackEnabled = useUIStore((state) => state.hapticFeedbackEnabled);
-  const setHapticFeedbackEnabled = useUIStore((state) => state.setHapticFeedbackEnabled);
-  const reducedMotionEnabled = useUIStore((state) => state.reducedMotionEnabled);
-  const setReducedMotionEnabled = useUIStore((state) => state.setReducedMotionEnabled);
-  const allowSearchHistory = useUIStore((state) => state.allowSearchHistory);
-  const setAllowSearchHistory = useUIStore((state) => state.setAllowSearchHistory);
-
-  const profile = useProfileStore((state) => state.profile);
-  const location = useLocationStore((state) => state.manualLocation);
-  const locationPermission = useLocationStore((state) => state.permission);
   const isProfilePrivate = profile.profileVisibility === "private";
 
   const normalizedThemePreference: ThemePreference =
@@ -84,6 +147,7 @@ export function SettingsScreen() {
 
   const [deletionRequested, setDeletionRequested] = useState(false);
   const [isExportingData, setIsExportingData] = useState(false);
+  const [isSavingVisibility, setIsSavingVisibility] = useState(false);
 
   const appVersion = Constants.expoConfig?.version ?? "0.1.0";
 
@@ -110,6 +174,7 @@ export function SettingsScreen() {
   const handleExportData = () => {
     void (async () => {
       setIsExportingData(true);
+      trackAnalyticsEvent("settings_data_export_requested", { platform: Platform.OS });
       try {
         const exportData = await buildMyDataExport(getHungryService());
         const exportJson = JSON.stringify(exportData, null, 2);
@@ -123,6 +188,7 @@ export function SettingsScreen() {
           await Share.share({ title: "My Hungry data", message: exportJson });
         }
       } catch {
+        trackAnalyticsEvent("settings_data_export_failed", {});
         Alert.alert(
           "Export failed",
           `We could not prepare your data right now. Please try again or email ${SUPPORT_EMAIL}.`,
@@ -146,16 +212,25 @@ export function SettingsScreen() {
             void (async () => {
               try {
                 setDeletionRequested(true);
-                await getHungryService().auth.requestAccountDeletion({
+                const { scheduledFor } = await getHungryService().auth.requestAccountDeletion({
                   reason: "user_initiated_settings_flow",
                 });
+                trackAnalyticsEvent("account_deletion_requested", { surface: "settings" });
                 await purgePersistedAccountData();
                 clearSession();
                 clearProfile();
                 clearSearchState();
                 resetDraft();
                 resetLocationState();
-                rootNavigation.navigate("AuthStack", { screen: "SignUp" });
+                // Replace the whole stack so Back cannot return to the signed-in screens.
+                rootNavigation.reset({
+                  index: 0,
+                  routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+                });
+                Alert.alert(
+                  "Deletion scheduled",
+                  `Your account will be deleted ${formatDeletionDate(scheduledFor)}. Sign in before then to keep it.`,
+                );
               } catch {
                 setDeletionRequested(false);
                 Alert.alert(
@@ -170,22 +245,63 @@ export function SettingsScreen() {
     );
   };
 
-  const cycleTheme = () => {
-    const cycle: ThemePreference[] = ["system", "light", "dark"];
-    const currentIndex = cycle.indexOf(normalizedThemePreference);
-    const nextIndex = (currentIndex + 1) % cycle.length;
-    setThemePreference(cycle[nextIndex] ?? "system");
+  const selectTheme = (preference: ThemePreference) => {
+    setThemePreference(preference);
+    trackAnalyticsEvent("settings_changed", { setting: "theme", value: preference });
+  };
+
+  // Three choices fit Android's three-button limit; tapping outside keeps the current theme.
+  const showThemePicker = () => {
+    Alert.alert(
+      "Theme",
+      "Automatic follows your phone's setting.",
+      (["system", "light", "dark"] as const).map((preference) => ({
+        text:
+          preference === normalizedThemePreference
+            ? `${THEME_LABELS[preference]} ✓`
+            : THEME_LABELS[preference],
+        onPress: () => selectTheme(preference),
+      })),
+      { cancelable: true },
+    );
+  };
+
+  const changeProfileVisibility = async (visibility: "public" | "private") => {
+    if (visibility === profile.profileVisibility) return;
+    setIsSavingVisibility(true);
+    const saved = await setProfileVisibility(visibility);
+    setIsSavingVisibility(false);
+    trackAnalyticsEvent("settings_changed", {
+      setting: "profile_visibility",
+      value: visibility,
+      saved,
+    });
+    if (saved) {
+      showToast({
+        message: visibility === "private" ? "Your profile is private." : "Your profile is public.",
+        tone: "success",
+      });
+      return;
+    }
+    Alert.alert(
+      "Couldn't change visibility",
+      `Your profile is still ${visibility === "private" ? "public" : "private"}. Check your connection and try again.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Retry", onPress: () => void changeProfileVisibility(visibility) },
+      ],
+    );
   };
 
   const showProfileVisibilityDialog = () => {
     Alert.alert("Profile visibility", "Choose who can see your Hungry profile.", [
       {
         text: "Public",
-        onPress: () => setProfileVisibility("public"),
+        onPress: () => void changeProfileVisibility("public"),
       },
       {
         text: "Private",
-        onPress: () => setProfileVisibility("private"),
+        onPress: () => void changeProfileVisibility("private"),
       },
       {
         text: "Cancel",
@@ -226,10 +342,17 @@ export function SettingsScreen() {
 
   const handleSearchHistoryToggle = (enabled: boolean) => {
     setAllowSearchHistory(enabled);
+    trackAnalyticsEvent("settings_changed", { setting: "search_history", value: enabled });
     if (!enabled) {
       clearSearchHistory();
     }
   };
+
+  const handleDeviceToggle =
+    (setting: string, setter: (enabled: boolean) => void) => (enabled: boolean) => {
+      setter(enabled);
+      trackAnalyticsEvent("settings_changed", { setting, value: enabled });
+    };
 
   const handleResetLocation = () => {
     Alert.alert(
@@ -268,6 +391,7 @@ export function SettingsScreen() {
               resetDraft();
               clearSearchState();
               clearSearchHistory();
+              trackAnalyticsEvent("settings_local_cache_cleared", {});
               Alert.alert(
                 "Local cache cleared",
                 "Recent searches, drafts and cached images were removed from this device.",
@@ -287,8 +411,6 @@ export function SettingsScreen() {
         style: "destructive",
         onPress: () => {
           signOut();
-          clearSearchState();
-          resetDraft();
           rootNavigation.reset({
             index: 0,
             routes: [{ name: "AuthStack", params: { screen: "Login" } }],
@@ -302,16 +424,9 @@ export function SettingsScreen() {
     <ProfileScreenShell title="Settings">
       <SettingsSection title="Account">
         <SettingsRow
-          label="Edit Profile"
+          label="Edit profile"
           icon={<User size={20} color={palette.orange} />}
           onPress={() => navigation.navigate("EditProfile")}
-          value={profile.displayName}
-          isLast={false}
-        />
-        <SettingsRow
-          label="Display name"
-          icon={<User size={20} color={palette.orange} />}
-          type="value"
           value={profile.displayName}
           isLast={false}
         />
@@ -320,35 +435,68 @@ export function SettingsScreen() {
           icon={<AtSign size={20} color={palette.orange} />}
           type="value"
           value={profile.email?.trim() || "Not linked"}
-          isLast={false}
-        />
-        <SettingsRow
-          label="Profile ID"
-          icon={<CircleHelp size={20} color={palette.orange} />}
-          type="value"
-          value={profile.id}
           isLast
         />
       </SettingsSection>
 
-      <SettingsSection title="Privacy">
+      <SettingsSection title="Privacy and data">
         <SettingsRow
           label="Profile visibility"
           icon={
             isProfilePrivate ? (
               <Lock size={20} color={palette.orange} />
             ) : (
-              <Globe size={20} color={palette.orange} />
+              <Eye size={20} color={palette.orange} />
             )
           }
           type="navigation"
-          value={isProfilePrivate ? "Private" : "Public"}
+          value={isSavingVisibility ? "Saving…" : isProfilePrivate ? "Private" : "Public"}
           onPress={showProfileVisibilityDialog}
+          busy={isSavingVisibility}
+          isLast={false}
+        />
+        <SettingsRow
+          label="Allow search history"
+          icon={<History size={20} color={palette.orange} />}
+          type="toggle"
+          isEnabled={allowSearchHistory}
+          onToggle={handleSearchHistoryToggle}
+          isLast={false}
+        />
+        <SettingsRow
+          label="Clear local cache"
+          icon={<Eraser size={20} color={palette.orange} />}
+          onPress={handleClearLocalData}
+          isLast={false}
+        />
+        <SettingsRow
+          label={isExportingData ? "Preparing your data…" : "Download my data"}
+          icon={<Download size={20} color={palette.orange} />}
+          onPress={handleExportData}
+          busy={isExportingData}
+          isLast={false}
+        />
+        <SettingsRow
+          label="How account deletion works"
+          icon={<Shield size={20} color={palette.orange} />}
+          onPress={() => void openTrustedExternalUrl(WEB_LINKS.accountDeletion)}
           isLast
         />
       </SettingsSection>
 
-      <SettingsSection title="Location & Discovery">
+      {FEATURE_FLAGS.stallAlertsEnabled && isAuthenticated ? (
+        <StallAlertsSettings
+          onOpenFollowedStalls={() =>
+            // Settings is also a root route, where FollowedStalls is not a sibling.
+            rootNavigation.navigate("MainTabs", {
+              screen: "Profile",
+              params: { screen: "FollowedStalls" },
+            })
+          }
+        />
+      ) : null}
+
+      <SettingsSection title="Location">
         <SettingsRow
           label="Location"
           icon={<MapPin size={20} color={palette.orange} />}
@@ -363,7 +511,7 @@ export function SettingsScreen() {
         />
         <SettingsRow
           label="Location permission"
-          icon={<MapPin size={20} color={palette.orange} />}
+          icon={<LocateFixed size={20} color={palette.orange} />}
           type="navigation"
           value={
             locationPermission === "granted"
@@ -382,143 +530,110 @@ export function SettingsScreen() {
         />
         <SettingsRow
           label="Reset selected location"
-          icon={<RefreshCw size={20} color={palette.orange} />}
+          icon={<RotateCcw size={20} color={palette.orange} />}
           onPress={handleResetLocation}
-          isLast
+          isLast={false}
         />
-      </SettingsSection>
-
-      <SettingsSection title="Feed and discovery settings">
         <SettingsRow
-          label="Left-handed mode"
-          icon={<HandMetal size={20} color={palette.orange} />}
-          type="toggle"
-          isEnabled={profile.leftHandedMode}
-          onToggle={setLeftHandedMode}
+          label="Phone permissions"
+          icon={<Settings2 size={20} color={palette.orange} />}
+          onPress={openAppSettings}
+          value="Open settings"
           isLast
         />
       </SettingsSection>
 
-      {FEATURE_FLAGS.stallAlertsEnabled && isAuthenticated ? (
-        <StallAlertsSettings
-          onOpenFollowedStalls={() =>
-            // Settings is also a root route, where FollowedStalls is not a sibling.
-            rootNavigation.navigate("MainTabs", {
-              screen: "Profile",
-              params: { screen: "FollowedStalls" },
-            })
-          }
-        />
-      ) : null}
-
-      <SettingsSection title="App settings">
+      <SettingsSection title="Accessibility and display">
         <SettingsRow
           label="Theme"
-          icon={<Moon size={20} color={palette.orange} />}
+          icon={<SunMoon size={20} color={palette.orange} />}
           type="navigation"
-          value={
-            normalizedThemePreference === "system"
-              ? "Automatic"
-              : normalizedThemePreference.charAt(0).toUpperCase() +
-                normalizedThemePreference.slice(1)
-          }
-          onPress={cycleTheme}
+          value={THEME_LABELS[normalizedThemePreference]}
+          onPress={showThemePicker}
           isLast={false}
         />
         <SettingsRow
           label="Reduce motion"
-          icon={<Smartphone size={20} color={palette.orange} />}
+          icon={<Accessibility size={20} color={palette.orange} />}
           type="toggle"
           isEnabled={reducedMotionEnabled}
-          onToggle={setReducedMotionEnabled}
+          onToggle={handleDeviceToggle("reduce_motion", setReducedMotionEnabled)}
           isLast={false}
         />
         <SettingsRow
           label="Haptic feedback"
-          icon={<HandMetal size={20} color={palette.orange} />}
+          icon={<Vibrate size={20} color={palette.orange} />}
           type="toggle"
           isEnabled={hapticFeedbackEnabled}
-          onToggle={setHapticFeedbackEnabled}
+          onToggle={handleDeviceToggle("haptic_feedback", setHapticFeedbackEnabled)}
           isLast={false}
         />
         <SettingsRow
-          label="Open app settings"
-          icon={<Smartphone size={20} color={palette.orange} />}
-          onPress={openAppSettings}
-          value="Permissions"
-          isLast
-        />
-      </SettingsSection>
-
-      <SettingsSection title="Data & account">
-        <SettingsRow
-          label="Allow search history"
-          icon={<Database size={20} color={palette.orange} />}
+          label="Left-handed mode"
+          description="Moves floating buttons to the left side."
+          icon={<Hand size={20} color={palette.orange} />}
           type="toggle"
-          isEnabled={allowSearchHistory}
-          onToggle={handleSearchHistoryToggle}
-          isLast={false}
-        />
-        <SettingsRow
-          label="Clear local cache"
-          icon={<Database size={20} color={palette.orange} />}
-          onPress={handleClearLocalData}
-          isLast={false}
-        />
-        <SettingsRow
-          label={isExportingData ? "Preparing your data…" : "Download my data"}
-          icon={<Download size={20} color={palette.orange} />}
-          onPress={handleExportData}
-          busy={isExportingData}
-          isLast={false}
-        />
-        <SettingsRow
-          label="Data controls"
-          icon={<Shield size={20} color={palette.orange} />}
-          onPress={() => void openTrustedExternalUrl(WEB_LINKS.accountDeletion)}
-          isLast={false}
-        />
-        <SettingsRow
-          label="Sign out"
-          icon={<LogOut size={20} color={palette.orange} />}
-          onPress={handleSignOut}
+          isEnabled={leftHandedMode}
+          onToggle={handleDeviceToggle("left_handed_mode", setLeftHandedMode)}
           isLast
         />
       </SettingsSection>
 
       <SettingsSection title="Support">
         <SettingsRow
-          label="Help Center"
+          label="Contact us"
+          icon={<MessageCircle size={20} color={palette.orange} />}
           onPress={() => void openTrustedExternalUrl(WEB_LINKS.help)}
           isLast={false}
         />
         <SettingsRow
+          label="Email support"
+          icon={<Mail size={20} color={palette.orange} />}
+          onPress={() => void openTrustedExternalUrl(`mailto:${SUPPORT_EMAIL}`)}
+          isLast={false}
+        />
+        <SettingsRow
           label="Privacy Policy"
+          icon={<FileText size={20} color={palette.orange} />}
           onPress={() => void openTrustedExternalUrl(WEB_LINKS.privacy)}
           isLast={false}
         />
         <SettingsRow
           label="Terms of Service"
+          icon={<Scale size={20} color={palette.orange} />}
           onPress={() => void openTrustedExternalUrl(WEB_LINKS.terms)}
           isLast
         />
       </SettingsSection>
 
       <SettingsSection title="About">
-        <SettingsRow label="Version" type="value" value={appVersion} isLast={false} />
         <SettingsRow
-          label="Hungry support"
-          icon={<CircleHelp size={20} color={palette.orange} />}
-          onPress={() => void openTrustedExternalUrl(`mailto:${SUPPORT_EMAIL}`)}
+          label="Version"
+          icon={<Info size={20} color={palette.orange} />}
+          type="value"
+          value={appVersion}
           isLast={false}
         />
         <SettingsRow
           label="Data sources"
+          icon={<Database size={20} color={palette.orange} />}
           type="value"
           description="Venue details include data © OpenStreetMap contributors (ODbL), Overture Maps Foundation and Foursquare Open Source Places."
           isLast
         />
       </SettingsSection>
+
+      {isAuthenticated ? (
+        <SettingsSection>
+          <SettingsRow
+            label="Sign out"
+            icon={<LogOut size={20} color={palette.error} />}
+            onPress={handleSignOut}
+            destructive
+            isLast
+          />
+        </SettingsSection>
+      ) : null}
 
       <View style={{ gap: spacing[3], marginBottom: spacing[4], marginTop: spacing[1] }}>
         <Button

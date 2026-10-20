@@ -1,7 +1,9 @@
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { WEB_BASE_URL } from "@/constants/links";
+import { MERCHANT_LINK_SCREENS } from "@/features/merchant/merchantDeepLinks";
 import { parseShareSource, rememberShareAttribution } from "@/features/share/shareAttribution";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { sanitizeSearchQuery } from "@/lib/security/inputSanitization";
 
 const SAFE_DEEP_LINK_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const SAFE_JOIN_CODE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
@@ -65,7 +67,13 @@ function sanitizeRouteParams(name: string, params: unknown): Record<string, unkn
   }
 
   if (name === "WheelStack") {
-    if (next.code !== undefined && !isSafeJoinCode(next.code)) {
+    // The join code rides on the nested WheelHome route, which is where WheelHome reads it.
+    const nested =
+      next.params && typeof next.params === "object"
+        ? (next.params as Record<string, unknown>)
+        : undefined;
+    const code = nested?.code ?? next.code;
+    if (code !== undefined && !isSafeJoinCode(code)) {
       return undefined;
     }
   }
@@ -138,13 +146,26 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
     return postId ? createState("ActivityPostDetail", { postId }) : undefined;
   }
   if (path === "order") return createState("Post", parseOrderDeepLinkQuery(rawPath));
+  // Shared searches: https://usehungry.com/search?q=laksa&filter=Halal&mode=stalls
+  if (path === "search") return createState("SearchResults", parseSearchDeepLinkQuery(rawPath));
   if (FEATURE_FLAGS.portfoliosEnabled && parts[0] === "portfolio") {
     return createState("PortfolioPublicView", { portfolioId: decodePathSegment(parts[1]) });
   }
   if (FEATURE_FLAGS.merchantCentreEnabled && parts[0] === "merchant") {
-    return createState("MerchantTabs");
+    // Merchant notifications link to hungry://merchant/inbox, /analytics and so on.
+    const screen =
+      parts[1] && Object.prototype.hasOwnProperty.call(MERCHANT_LINK_SCREENS, parts[1])
+        ? MERCHANT_LINK_SCREENS[parts[1]]
+        : undefined;
+    return screen ? createState("MerchantTabs", { screen }) : createState("MerchantTabs");
   }
-  if (parts[0] === "join") return createState("WheelStack", { code: decodePathSegment(parts[1]) });
+  if (parts[0] === "join") {
+    const code = decodePathSegment(parts[1]);
+    return createState(
+      "WheelStack",
+      code ? { screen: "WheelHome", params: { code } } : { screen: "WheelHome" },
+    );
+  }
   return undefined;
 }
 
@@ -221,6 +242,7 @@ export function createRootLinking(
         StallDetail: "venue/:id",
         ActivityPostDetail: "post/:postId",
         Post: "order",
+        SearchResults: "search",
         ...(FEATURE_FLAGS.portfoliosEnabled
           ? { PortfolioPublicView: "portfolio/:portfolioId" }
           : {}),
@@ -235,6 +257,7 @@ export function createRootLinking(
                   Profile: "profile",
                   VerificationCentre: "verification",
                   MerchantSettings: "settings",
+                  CustomerInbox: "inbox",
                 },
               },
             }
@@ -267,6 +290,32 @@ export function createRootLinking(
 
       return state;
     },
+  };
+}
+
+const SEARCH_LINK_FILTERS = new Set([
+  "All",
+  "Local",
+  "Halal",
+  "Japanese",
+  "Western",
+  "Noodles",
+  "Rice",
+  "Spicy",
+]);
+
+/** Reads q, filter and mode from a search link; anything unexpected is dropped. */
+export function parseSearchDeepLinkQuery(rawPath: string): Record<string, unknown> {
+  const queryIndex = rawPath.indexOf("?");
+  if (queryIndex < 0) return {};
+  const params = new URLSearchParams(rawPath.slice(queryIndex + 1).split("#")[0]);
+  const query = sanitizeSearchQuery(params.get("q") ?? "", 80);
+  const filter = params.get("filter") ?? "";
+  const mode = params.get("mode");
+  return {
+    ...(query ? { initialQuery: query } : {}),
+    ...(SEARCH_LINK_FILTERS.has(filter) ? { initialFilter: filter } : {}),
+    ...(mode === "stalls" || mode === "dishes" ? { browseMode: mode } : {}),
   };
 }
 

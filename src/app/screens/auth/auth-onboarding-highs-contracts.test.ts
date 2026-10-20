@@ -85,7 +85,9 @@ test("H109: sign_up_completed is logged once from the session store with share a
   useSessionStore.getState().signOut();
 
   const bootstrap = read("src/hooks/useAppBootstrap.ts");
-  assert.match(bootstrap, /isNewUser: event === "SIGNED_IN" && isFirstSignIn\(user\)/);
+  assert.match(bootstrap, /const isNewUser = event === "SIGNED_IN" && isFirstSignIn\(user\)/);
+  // An existing account that signs in skips first-run onboarding; a new one runs it.
+  assert.match(bootstrap, /completedOnboarding: isFreshSignIn && !isNewUser \? true : undefined/);
 });
 
 test("H109: a SIGNED_IN replayed for a restored session does not log sign_up_completed", async () => {

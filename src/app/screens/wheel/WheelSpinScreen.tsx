@@ -14,23 +14,28 @@
  *   totalRotation = 5 * 360 + (360 - winnerAngle)  // 5 full spins + correction
  */
 
-import { useEffect, useRef } from "react";
-import { Animated, Easing, Pressable, View, StyleSheet } from "react-native";
+import { useEffect, useMemo, useRef } from "react";
+import { AccessibilityInfo, Animated, Easing, Pressable, View, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Play, X } from "lucide-react-native";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 import { LinearGradient } from "expo-linear-gradient";
 
-import { AppText, Badge, Card } from "@/components/ui";
+import { AppText, Badge, Button, Card } from "@/components/ui";
 import { MemberAvatarRow } from "@/components/wheel/MemberAvatarRow";
 import { WheelSvg } from "@/components/wheel/WheelSvg";
-import { getSpinWinnerIndex, useWheelStore } from "@/store/useWheelStore";
+import { useReduceMotion } from "@/hooks/useReduceMotion";
+import { getSpinWinnerIndex, selectActiveWheelEntries, useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
 import type { WheelStackParamList } from "./WheelStack";
 
 type Props = NativeStackScreenProps<WheelStackParamList, "WheelSpin">;
 
 const WHEEL_SIZE = 300;
+/** Minimum gap between segment-crossing haptics, so a fast spin isn't one long buzz. */
+const HAPTIC_MIN_INTERVAL_MS = 90;
+/** With Reduce Motion on, the wheel settles in one short turn instead of a 4s spin. */
+const REDUCED_MOTION_SPIN_MS = 400;
 
 export function WheelSpinScreen({ navigation }: Props) {
   const { motion, palette, radii, spacing, zIndex, shadows } = useHungryTheme();
@@ -46,8 +51,16 @@ export function WheelSpinScreen({ navigation }: Props) {
   const spinAnim = useRef(new Animated.Value(0)).current;
   const isSpinning = useRef(false);
   const lastHapticAngle = useRef(0);
+  const lastHapticAt = useRef(0);
+  const reduceMotion = useReduceMotion();
 
-  const activeEntries = entries.filter((e) => !e.isEliminated);
+  // Same deduped list WheelSvg draws, so the landed slice index matches the drawing.
+  const activeEntries = useMemo(() => selectActiveWheelEntries(entries), [entries]);
+  // Latest values for the spin-completion callback, which outlives the render that started it.
+  const activeEntriesRef = useRef(activeEntries);
+  activeEntriesRef.current = activeEntries;
+  const navigationRef = useRef(navigation);
+  navigationRef.current = navigation;
   const isHost = members.find((m) => m.id === myMemberId)?.isHost ?? false;
 
   // Track animation for haptics
@@ -58,11 +71,15 @@ export function WheelSpinScreen({ navigation }: Props) {
     // The animation is Easing.out(Easing.cubic), so speed is high at first.
 
     const listenerId = spinAnim.addListener(({ value }) => {
+      if (reduceMotion) return;
       const currentSegment = Math.floor(value / segmentAngle);
       const lastSegment = Math.floor(lastHapticAngle.current / segmentAngle);
 
       if (currentSegment !== lastSegment) {
         lastHapticAngle.current = value;
+        const now = Date.now();
+        if (now - lastHapticAt.current < HAPTIC_MIN_INTERVAL_MS) return;
+        lastHapticAt.current = now;
 
         // Intensity logic:
         // 1. Initial burst (first 2 full rotations): Heavy
@@ -82,21 +99,24 @@ export function WheelSpinScreen({ navigation }: Props) {
     return () => {
       spinAnim.removeListener(listenerId);
     };
-  }, [activeEntries.length]);
+  }, [activeEntries.length, reduceMotion, spinAnim]);
 
   // Watch for spin_triggered event — party.spinSeed is set when it fires.
   useEffect(() => {
     if (party?.status !== "spinning" || party.spinSeed == null || !party.spinStartedAt) return;
     if (isSpinning.current) return;
-    if (activeEntries.length < 2) return;
+    const spinEntries = activeEntriesRef.current;
+    if (spinEntries.length < 2) return;
 
     const seed = party.spinSeed;
     const startedAt = party.spinStartedAt;
+    const partyId = party.id;
 
-    const segmentAngle = 360 / activeEntries.length;
-    const winnerIndex = getSpinWinnerIndex(seed, activeEntries.length);
+    const segmentAngle = 360 / spinEntries.length;
+    const winnerIndex = getSpinWinnerIndex(seed, spinEntries.length);
     const winnerAngle = winnerIndex * segmentAngle + segmentAngle / 2;
-    const totalRotation = 5 * 360 + (360 - winnerAngle);
+    const fullTurns = reduceMotion ? 0 : 5;
+    const totalRotation = fullTurns * 360 + (360 - winnerAngle);
 
     // Sync delay: all clients start at the same moment
     const delay = Math.max(0, startedAt - Date.now());
@@ -108,43 +128,70 @@ export function WheelSpinScreen({ navigation }: Props) {
 
       Animated.timing(spinAnim, {
         toValue: totalRotation,
-        duration: motion.wheelSpin,
+        duration: reduceMotion ? REDUCED_MOTION_SPIN_MS : motion.wheelSpin,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }).start(({ finished }) => {
         if (!finished) return;
         isSpinning.current = false;
 
-        const winnerEntry = activeEntries[winnerIndex];
+        const winnerEntry = spinEntries[winnerIndex];
         if (!winnerEntry) return;
+        AccessibilityInfo.announceForAccessibility(`The wheel landed on ${winnerEntry.label}`);
 
         // Settle the spin locally (solo has no server to broadcast party_resolved),
         // then route on the resolved state.
         completeSpin(winnerEntry.id);
         const currentParty = useWheelStore.getState().party;
         if (currentParty?.status === "resolved" && currentParty.winnerEntryId) {
-          navigation.replace("WheelResult", {
+          navigationRef.current.replace("WheelResult", {
             partyId: currentParty.id,
             winnerEntryId: currentParty.winnerEntryId,
           });
         } else {
           // Elimination mode: go back to lobby for next round.
-          navigation.replace("WheelLobby", {
-            partyId: currentParty?.id ?? party.id,
+          navigationRef.current.replace("WheelLobby", {
+            partyId: currentParty?.id ?? partyId,
           });
         }
       });
     }, delay);
 
     return () => clearTimeout(timer);
-  }, [motion.wheelSpin, party?.spinSeed, party?.spinStartedAt]);
+  }, [
+    completeSpin,
+    motion.wheelSpin,
+    party?.id,
+    party?.spinSeed,
+    party?.spinStartedAt,
+    party?.status,
+    reduceMotion,
+    spinAnim,
+  ]);
 
   const rotation = spinAnim.interpolate({
     inputRange: [0, 360],
     outputRange: ["0deg", "360deg"],
   });
 
-  if (!party) return null;
+  if (!party) {
+    // Restored or deep-linked without a live party: offer a way back instead of a blank screen.
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: palette.bg,
+          padding: spacing[5],
+          gap: spacing[4],
+        }}
+      >
+        <AppText variant="h2">This wheel has ended</AppText>
+        <Button label="Start a new wheel" onPress={() => navigation.popTo("WheelHome")} />
+      </View>
+    );
+  }
 
   const spinning = party.status === "spinning";
   const canSpin = isHost && !spinning && activeEntries.length >= 2;
@@ -350,7 +397,7 @@ export function WheelSpinScreen({ navigation }: Props) {
                 fontWeight: "800",
               }}
             >
-              {spinning ? "SPINNING…" : "SPIN NOW"}
+              {spinning ? "Spinning…" : "Spin"}
             </AppText>
           </Pressable>
         ) : (
@@ -362,7 +409,7 @@ export function WheelSpinScreen({ navigation }: Props) {
             }}
           >
             <AppText tone="secondary" style={{ textAlign: "center", fontWeight: "600" }}>
-              {spinning ? "🎡 The wheel is turning..." : "⏳ Waiting for host to spin"}
+              {spinning ? "The wheel is turning…" : "Waiting for the host to spin"}
             </AppText>
           </Card>
         )}

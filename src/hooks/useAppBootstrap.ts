@@ -359,11 +359,18 @@ export function useAppBootstrap() {
         return;
       }
 
+      const isNewUser = event === "SIGNED_IN" && isFirstSignIn(user);
+      // Whether onboarding runs is decided here from the account, not by the
+      // screen that started the sign-in: an existing account that signs in
+      // skips first-run onboarding, a brand-new one goes through it. Only a
+      // fresh sign-in counts, not a SIGNED_IN replayed for a restored session.
+      const isFreshSignIn = event === "SIGNED_IN" && !useSessionStore.getState().isAuthenticated;
       applyAuthStateFromSession({
         isAuthenticated: true,
         userId: user.id,
         authProvider: getAuthUserProvider(user),
-        isNewUser: event === "SIGNED_IN" && isFirstSignIn(user),
+        isNewUser,
+        completedOnboarding: isFreshSignIn && !isNewUser ? true : undefined,
       });
       // Interactive sign-in already applies the session profile (and may be
       // merging guest preferences). Do not race that merge with a second

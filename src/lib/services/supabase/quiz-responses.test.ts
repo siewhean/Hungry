@@ -15,10 +15,23 @@ test("supabase saves taste quiz answers to quiz_responses for signed-in users on
     method,
     /from\("quiz_responses"\)\.insert\(\{[\s\S]*generated_taste_vector: tasteVectorToArray/,
   );
+  // Each row says which version of the quiz produced it.
+  assert.match(method, /quiz_version: TASTE_QUIZ_VERSION/);
 });
 
 test("taste quiz finish records its answers without blocking navigation", () => {
   const screen = read("src/app/screens/onboarding/TasteQuizScreen.tsx");
-  assert.match(screen, /void getHungryService\(\)\s*\.profile\.recordQuizResponse\(/);
-  assert.match(screen, /\.catch\(\(\) => undefined\)/);
+  const helper = read("src/features/profile/pendingQuizResponse.ts");
+  assert.match(screen, /recordQuizResponse\(\s*\{/);
+  assert.doesNotMatch(screen, /await [\s\S]*recordQuizResponse/);
+  // Signed in: saved now, fire-and-forget. Guest: kept on the device until sign-in.
+  assert.match(
+    helper,
+    /isAuthenticated\) \{\s*void getHungryService\(\)\s*\.profile\.recordQuizResponse\(responses, tasteVector\)\s*\.catch\(\(\) => undefined\)/,
+  );
+  assert.match(helper, /hungryPersistStorage\?\.setItem\(STORAGE_KEY/);
+  assert.match(
+    read("src/features/auth/applySignedInProfile.ts"),
+    /void flushPendingQuizResponse\(\)/,
+  );
 });

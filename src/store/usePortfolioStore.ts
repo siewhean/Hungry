@@ -35,6 +35,8 @@ interface PortfolioState {
   loadPortfolioItems: (portfolioId: string) => Promise<void>;
   loadPortfolioCollaborators: (portfolioId: string) => Promise<void>;
   checkFollowStatus: (portfolioId: string) => Promise<void>;
+  /** Loads which lists the user follows, so the Following tab is right on a fresh install. */
+  loadFollowedPortfolios: () => Promise<void>;
 
   createPortfolio: (input: PortfolioCreateInput) => Promise<Portfolio>;
   updatePortfolio: (id: string, updates: Partial<PortfolioCreateInput>) => Promise<void>;
@@ -85,7 +87,8 @@ function normalizeScore(score: PortfolioItemCreateInput["score"]): number | unde
   if (!Number.isFinite(score) || score < 1 || score > 10) {
     throw new Error("Portfolio item score must be between 1 and 10");
   }
-  return Math.round(score * 10) / 10;
+  // The column and RPC parameter are integers: 7.5 would be rejected by the server.
+  return Math.round(score);
 }
 
 function isSamePortfolioTarget(item: PortfolioItem, input: PortfolioItemCreateInput): boolean {
@@ -261,6 +264,11 @@ export const usePortfolioStore = create<PortfolioState>()(
         }
       },
 
+      loadFollowedPortfolios: async () => {
+        const ids = await getHungryService().portfolio.getFollowedPortfolioIds();
+        set({ follows: Object.fromEntries(ids.map((id) => [id, true])) });
+      },
+
       createPortfolio: async (input: PortfolioCreateInput) => {
         const service = getHungryService();
         const portfolio = await service.portfolio.createPortfolio(input);
@@ -410,6 +418,11 @@ export const usePortfolioStore = create<PortfolioState>()(
             [portfolioId]: (state.items[portfolioId] ?? []).filter((item) => item.id !== id),
           },
         }));
+        trackAnalyticsEvent(
+          "list_item_removed",
+          { list_kind: "portfolio", list_id: portfolioId },
+          { userId: getAnalyticsUserId() },
+        );
         await get().refreshPortfolio(portfolioId);
       },
 

@@ -9,35 +9,31 @@ import {
   Home,
   ChevronRight,
   AlertCircle,
+  Camera,
 } from "lucide-react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { useHungryTheme } from "@/theme";
-import { AppText, Button, EmptyState, Screen } from "@/components/ui";
-import { confirmGalleryAccess, isGalleryPermissionGranted } from "@/lib/permissions/gallery";
+import { AccessibleImage, AppText, Button, EmptyState, Screen } from "@/components/ui";
+import {
+  MAX_EVIDENCE_VIDEO_SECONDS,
+  pickMerchantMedia,
+  type MerchantMediaKind,
+  type MerchantMediaSource,
+} from "@/features/merchant/merchantMediaPicker";
+import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
 
 type Props = NativeStackScreenProps<MerchantTabParamList, "VerificationCentre">;
-type EvidenceMediaKind = "image" | "video";
-type PickedEvidenceAsset = { uri?: string };
-type ImagePickerModule = {
-  MediaTypeOptions: { Images: unknown; Videos: unknown };
-  requestMediaLibraryPermissionsAsync: () => Promise<{ granted?: boolean; status?: string }>;
-  launchImageLibraryAsync: (options: Record<string, unknown>) => Promise<{
-    canceled: boolean;
-    assets?: PickedEvidenceAsset[];
-  }>;
-};
+type EvidenceMethod = "video_walkaround" | "licence_upload";
+type PendingEvidence = { method: EvidenceMethod; kind: MerchantMediaKind; uri: string };
 
-function loadImagePickerModule(): ImagePickerModule | null {
-  try {
-    return require("expo-image-picker") as ImagePickerModule;
-  } catch {
-    return null;
-  }
-}
+const METHOD_LABELS: Record<EvidenceMethod, string> = {
+  video_walkaround: "Video walkaround",
+  licence_upload: "Document photo",
+};
 
 export function VerificationCentreScreen({ navigation }: Props) {
   const { componentRadii, palette, spacing, radii } = useHungryTheme();
@@ -46,6 +42,8 @@ export function VerificationCentreScreen({ navigation }: Props) {
 
   const [isUploadingEvidence, setIsUploadingEvidence] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  // Picking only stages the file; nothing is uploaded until the merchant reviews and submits.
+  const [pendingEvidence, setPendingEvidence] = useState<PendingEvidence | null>(null);
 
   if (!activeOutlet) {
     return (
@@ -63,62 +61,43 @@ export function VerificationCentreScreen({ navigation }: Props) {
 
   const status = activeOutlet.verification.status;
 
-  const pickVerificationEvidence = async (kind: EvidenceMediaKind): Promise<string | null> => {
-    const imagePicker = loadImagePickerModule();
-    if (!imagePicker) {
-      throw new Error("Media picker is unavailable in this app build.");
+  const handlePickEvidence = async (
+    method: EvidenceMethod,
+    kind: MerchantMediaKind,
+    source: MerchantMediaSource = "library",
+  ) => {
+    setUploadError(null);
+    try {
+      const uri = await pickMerchantMedia({
+        kind,
+        source,
+        rationale:
+          "Hungry needs access to your gallery to attach verification evidence for this outlet.",
+      });
+      if (!uri) return;
+      setPendingEvidence({ method, kind, uri });
+      trackMerchantEvent("merchant_verification_started", activeOutlet.id, { method, source });
+    } catch (e) {
+      setUploadError(e instanceof Error ? e.message : "Unable to open the photo picker.");
     }
-
-    const shouldRequestPermission = await confirmGalleryAccess({
-      title: "Allow gallery access",
-      message:
-        "Hungry needs access to your gallery to attach verification evidence for this outlet.",
-      confirmLabel: "Allow",
-      cancelLabel: "Not now",
-    });
-
-    if (!shouldRequestPermission) {
-      return null;
-    }
-
-    const permission = await imagePicker.requestMediaLibraryPermissionsAsync();
-    if (!isGalleryPermissionGranted(permission)) {
-      throw new Error("Photos permission is required to attach verification evidence.");
-    }
-
-    const result = await imagePicker.launchImageLibraryAsync({
-      allowsEditing: kind === "image",
-      mediaTypes:
-        kind === "video"
-          ? imagePicker.MediaTypeOptions.Videos
-          : imagePicker.MediaTypeOptions.Images,
-      quality: 0.82,
-      selectionLimit: 1,
-    });
-
-    if (result.canceled || !result.assets?.length) {
-      return null;
-    }
-
-    return result.assets[0]?.uri ?? null;
   };
 
-  const handleEvidenceUpload = async (
-    method: "video_walkaround" | "licence_upload" | "singpass_myinfo",
-    kind: EvidenceMediaKind,
-  ) => {
+  const handleSubmitEvidence = async () => {
+    if (!pendingEvidence) return;
     setUploadError(null);
     setIsUploadingEvidence(true);
     try {
-      const fileUrl = await pickVerificationEvidence(kind);
-      if (!fileUrl) {
-        return;
+      const evidence = { method: pendingEvidence.method, fileUrl: pendingEvidence.uri };
+      if (status === "rejected") {
+        await getHungryService().merchant.resubmitVerification(activeOutlet.id, evidence);
+      } else {
+        await getHungryService().merchant.submitVerification(activeOutlet.id, evidence);
       }
-
-      await getHungryService().merchant.submitVerification(activeOutlet.id, {
-        method,
-        fileUrl,
+      trackMerchantEvent("merchant_verification_submitted", activeOutlet.id, {
+        method: pendingEvidence.method,
+        resubmission: status === "rejected",
       });
+      setPendingEvidence(null);
       const updatedAccount = await getHungryService().merchant.getMerchantAccount();
       if (updatedAccount) setAccount(updatedAccount);
     } catch (e) {
@@ -179,7 +158,15 @@ export function VerificationCentreScreen({ navigation }: Props) {
               Verification Rejected
             </AppText>
             <AppText style={{ color: palette.text, marginTop: spacing[1], textAlign: "center" }}>
-              We could not verify your business with the provided information. Please try again.
+              {activeOutlet.verification.rejectionReason?.trim()
+                ? `Reason: ${activeOutlet.verification.rejectionReason.trim()}`
+                : "We could not verify your business with the provided information."}
+            </AppText>
+            <AppText
+              variant="bodySmall"
+              style={{ color: palette.textSecondary, marginTop: spacing[2], textAlign: "center" }}
+            >
+              Choose a method below to resubmit.
             </AppText>
           </View>
         );
@@ -206,10 +193,59 @@ export function VerificationCentreScreen({ navigation }: Props) {
     }
   };
 
+  const renderPendingEvidence = () => {
+    if (!pendingEvidence) return null;
+    return (
+      <View
+        style={{
+          backgroundColor: palette.surface,
+          borderColor: palette.border,
+          borderRadius: componentRadii.card,
+          borderWidth: 1,
+          gap: spacing[3],
+          padding: spacing[4],
+        }}
+      >
+        <AppText variant="bodyBold" accessibilityRole="header">
+          Review before submitting
+        </AppText>
+        {pendingEvidence.kind === "image" ? (
+          <AccessibleImage
+            source={{ uri: pendingEvidence.uri }}
+            style={{ width: "100%", height: 180, borderRadius: componentRadii.input }}
+            accessibilityLabel={`${METHOD_LABELS[pendingEvidence.method]} preview`}
+          />
+        ) : (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+            <Video size={20} color={palette.orange} />
+            <AppText variant="body">Video selected</AppText>
+          </View>
+        )}
+        <AppText variant="bodySmall" tone="muted">
+          {METHOD_LABELS[pendingEvidence.method]}. Check it is clear and shows your business, then
+          submit it for review.
+        </AppText>
+        <Button
+          label={status === "rejected" ? "Resubmit for review" : "Submit for review"}
+          onPress={() => void handleSubmitEvidence()}
+          loading={isUploadingEvidence}
+          disabled={isUploadingEvidence}
+        />
+        <Button
+          label="Choose a different file"
+          variant="ghost"
+          onPress={() => setPendingEvidence(null)}
+          disabled={isUploadingEvidence}
+        />
+      </View>
+    );
+  };
+
   const renderVerificationMethods = () => {
     if (status === "verified" || status === "submitted" || status === "in_review") {
       return null;
     }
+    if (pendingEvidence) return null;
 
     return (
       <View style={{ gap: spacing[4] }}>
@@ -220,8 +256,8 @@ export function VerificationCentreScreen({ navigation }: Props) {
         <MethodCard
           icon={<Video size={24} color={palette.orange} />}
           title="Video Walkaround"
-          description="Attach a short video showing your stall front, menu, and kitchen."
-          onPress={() => handleEvidenceUpload("video_walkaround", "video")}
+          description={`Attach a video of up to ${MAX_EVIDENCE_VIDEO_SECONDS / 60} minutes showing your stall front, menu, and kitchen.`}
+          onPress={() => void handlePickEvidence("video_walkaround", "video")}
           isLoading={isUploadingEvidence}
         />
 
@@ -229,7 +265,15 @@ export function VerificationCentreScreen({ navigation }: Props) {
           icon={<FileText size={24} color={palette.orange} />}
           title="Document Photo"
           description="Attach a photo of your SFA licence or ACRA business profile."
-          onPress={() => handleEvidenceUpload("licence_upload", "image")}
+          onPress={() => void handlePickEvidence("licence_upload", "image")}
+          isLoading={isUploadingEvidence}
+        />
+
+        <MethodCard
+          icon={<Camera size={24} color={palette.orange} />}
+          title="Take Document Photo"
+          description="Use your camera to photograph your SFA licence or ACRA business profile."
+          onPress={() => void handlePickEvidence("licence_upload", "image", "camera")}
           isLoading={isUploadingEvidence}
         />
 
@@ -253,6 +297,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
             {uploadError}
           </AppText>
         ) : null}
+        {renderPendingEvidence()}
         {renderVerificationMethods()}
       </View>
     </Screen>
@@ -275,6 +320,10 @@ function MethodCard({
   const { componentRadii, palette, spacing, radii } = useHungryTheme();
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityHint={description}
+      accessibilityState={{ disabled: isLoading, busy: isLoading }}
       onPress={onPress}
       disabled={isLoading}
       style={[

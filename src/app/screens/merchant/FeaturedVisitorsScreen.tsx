@@ -55,32 +55,33 @@ export function FeaturedVisitorsScreen() {
       setBusyId(candidate.reviewId);
       setError(null);
       try {
-        await getHungryService().merchant.pinPopularVisitor(activeOutlet.id, candidate.reviewId);
-        await loadVisitors();
+        const pin = await getHungryService().merchant.pinPopularVisitor(
+          activeOutlet.id,
+          candidate.reviewId,
+        );
+        // Update from the mutation result instead of refetching both lists.
+        setPins((current) => [...current.filter((item) => item.id !== pin.id), pin]);
       } catch (caughtError) {
         setError(caughtError instanceof Error ? caughtError.message : "Unable to pin visitor.");
       } finally {
         setBusyId(null);
       }
     },
-    [activeOutlet, loadVisitors, pins.length],
+    [activeOutlet, pins.length],
   );
 
-  const handleUnpin = useCallback(
-    async (pinId: string) => {
-      setBusyId(pinId);
-      setError(null);
-      try {
-        await getHungryService().merchant.unpinPopularVisitor(pinId);
-        await loadVisitors();
-      } catch (caughtError) {
-        setError(caughtError instanceof Error ? caughtError.message : "Unable to unpin visitor.");
-      } finally {
-        setBusyId(null);
-      }
-    },
-    [loadVisitors],
-  );
+  const handleUnpin = useCallback(async (pinId: string) => {
+    setBusyId(pinId);
+    setError(null);
+    try {
+      await getHungryService().merchant.unpinPopularVisitor(pinId);
+      setPins((current) => current.filter((pin) => pin.id !== pinId));
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : "Unable to unpin visitor.");
+    } finally {
+      setBusyId(null);
+    }
+  }, []);
 
   const handleMove = useCallback(
     async (pinId: string, direction: -1 | 1) => {

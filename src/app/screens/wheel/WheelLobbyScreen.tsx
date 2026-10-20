@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
 import { FlatList, Pressable, Share, View, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Copy, Trash2, Users, Settings2, Plus } from "lucide-react-native";
+import { Copy, List, Trash2, Users, Plus } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { MemberAvatarRow } from "@/components/wheel/MemberAvatarRow";
-import { useWheelStore } from "@/store/useWheelStore";
+import { selectActiveWheelEntries, useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
 import type { WheelEntry } from "@/types/domain";
 import type { WheelStackParamList } from "./WheelStack";
@@ -30,17 +30,16 @@ export function WheelLobbyScreen({ navigation }: Props) {
   const [addSheetOpen, setAddSheetOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const activeEntries = useMemo(() => {
-    const deduped = new Map<string, WheelEntry>();
-    entries.forEach((entry) => {
-      if (!entry.isEliminated) {
-        deduped.set(entry.id, entry);
-      }
-    });
-    return Array.from(deduped.values());
-  }, [entries]);
+  const activeEntries = useMemo(() => selectActiveWheelEntries(entries), [entries]);
 
-  if (!party) return null;
+  if (!party) {
+    // Restored or deep-linked without a live party: offer a way back instead of a blank screen.
+    return (
+      <Screen title="Your wheel" subtitle="This wheel has ended" scroll={false}>
+        <Button label="Start a new wheel" onPress={() => navigation.popTo("WheelHome")} />
+      </Screen>
+    );
+  }
 
   const isHost = members.find((m) => m.id === myMemberId)?.isHost ?? false;
   const canSpin = activeEntries.length >= 2;
@@ -90,6 +89,8 @@ export function WheelLobbyScreen({ navigation }: Props) {
         </AppText>
         {canRemove && (
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Remove ${item.label} from the wheel`}
             onPress={() => removeEntry(item.id)}
             hitSlop={8}
             style={{
@@ -223,13 +224,16 @@ export function WheelLobbyScreen({ navigation }: Props) {
                 gap: spacing[2],
               }}
             >
-              <Settings2 size={18} color={palette.orange} />
+              <List size={18} color={palette.orange} />
               <AppText variant="h3">Options</AppText>
             </View>
-            <Badge
-              label={party.spinMode === "classic" ? "Classic Mode" : "Elimination Mode"}
-              tone="orange"
-            />
+            {/* Solo wheels are always classic, so the mode badge only shows when it says something. */}
+            {PARTY_ENABLED || party.spinMode !== "classic" ? (
+              <Badge
+                label={party.spinMode === "classic" ? "Classic mode" : "Elimination mode"}
+                tone="orange"
+              />
+            ) : null}
           </View>
 
           <Card
@@ -293,7 +297,11 @@ export function WheelLobbyScreen({ navigation }: Props) {
             </View>
           )}
 
-          <Pressable onPress={handleLeave} style={{ padding: spacing[2] }}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={handleLeave}
+            style={{ padding: spacing[2] }}
+          >
             <AppText
               variant="bodySmallBold"
               tone="muted"

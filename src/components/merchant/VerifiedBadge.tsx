@@ -35,9 +35,12 @@ export const VerifiedBadge: React.FC<VerifiedBadgeProps> = ({ status, size = "md
 
   return (
     <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityLabel="Verified by Hungry"
+      accessibilityHint="Explains what the verified badge means"
       activeOpacity={0.7}
       onPress={handlePress}
-      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
       style={styles.container}
     >
       <BadgeCheck size={iconSize} color={palette.orange} fill={palette.surface} />

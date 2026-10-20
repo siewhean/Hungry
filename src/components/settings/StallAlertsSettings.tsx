@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
-import { BellRing, Sparkles, Store, UtensilsCrossed } from "lucide-react-native";
+import { useCallback, useEffect, useState } from "react";
+import { Alert, Linking } from "react-native";
+import { BellRing, RefreshCw, Sparkles, Store, UtensilsCrossed } from "lucide-react-native";
 
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { registerForStallAlerts } from "@/lib/notifications/push";
@@ -35,19 +36,32 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
   const showToast = useUIStore((state) => state.showToast);
   const [preferences, setPreferences] = useState<PushPreferences>(DEFAULT_PUSH_PREFERENCES);
   const [isSaving, setIsSaving] = useState(false);
+  // Switches stay disabled until the saved preferences load, so defaults are never shown as truth.
+  const [loadState, setLoadState] = useState<"loading" | "loaded" | "error">("loading");
+
+  const loadPreferences = useCallback((isCancelled: () => boolean = () => false) => {
+    setLoadState("loading");
+    getHungryService()
+      .push.getPreferences()
+      .then((next) => {
+        if (isCancelled()) return;
+        setPreferences(next);
+        setLoadState("loaded");
+      })
+      .catch(() => {
+        if (!isCancelled()) setLoadState("error");
+      });
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
-    void getHungryService()
-      .push.getPreferences()
-      .then((next) => {
-        if (!cancelled) setPreferences(next);
-      })
-      .catch(() => {});
+    loadPreferences(() => cancelled);
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [loadPreferences]);
+
+  const isBusy = loadState !== "loaded" || isSaving;
 
   const handleToggle = async (
     key: "stallUpdates" | "weeklyPicks" | "mealtimeSuggestions",
@@ -57,10 +71,14 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
     setIsSaving(true);
     try {
       if (enabled && !(await registerForStallAlerts())) {
-        showToast({
-          message: "Allow notifications for Hungry in your phone settings to get these alerts.",
-          tone: "error",
-        });
+        Alert.alert(
+          "Notifications are off",
+          "Allow notifications for Hungry in your phone settings to get these alerts.",
+          [
+            { text: "Not now", style: "cancel" },
+            { text: "Open Settings", onPress: () => void Linking.openSettings().catch(() => {}) },
+          ],
+        );
         return;
       }
       const next = await getHungryService().push.updatePreferences({ [key]: enabled });
@@ -76,7 +94,16 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
   };
 
   return (
-    <SettingsSection title="Alerts">
+    <SettingsSection title="Notifications">
+      {loadState === "error" ? (
+        <SettingsRow
+          label="Couldn't load your alert settings"
+          description="Tap to try again."
+          icon={<RefreshCw size={20} color={palette.orange} />}
+          onPress={() => loadPreferences()}
+          isLast={false}
+        />
+      ) : null}
       <SettingsRow
         label="Menu changes at followed stalls"
         description={`New dishes, price changes and restocks. Quiet ${formatHour(
@@ -85,6 +112,7 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
         icon={<BellRing size={20} color={palette.orange} />}
         type="toggle"
         isEnabled={preferences.stallUpdates}
+        busy={isBusy}
         onToggle={(value) => void handleToggle("stallUpdates", value)}
         isLast={false}
       />
@@ -94,6 +122,7 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
         icon={<Sparkles size={20} color={palette.orange} />}
         type="toggle"
         isEnabled={preferences.weeklyPicks}
+        busy={isBusy}
         onToggle={(value) => void handleToggle("weeklyPicks", value)}
         isLast={false}
       />
@@ -103,6 +132,7 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
         icon={<UtensilsCrossed size={20} color={palette.orange} />}
         type="toggle"
         isEnabled={preferences.mealtimeSuggestions}
+        busy={isBusy}
         onToggle={(value) => void handleToggle("mealtimeSuggestions", value)}
         isLast={false}
       />

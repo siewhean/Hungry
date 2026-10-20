@@ -11,6 +11,7 @@ import {
   type SharedPostPayload,
 } from "@/features/home/activity";
 import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
+import { webShareUrl } from "@/constants/links";
 
 import { hungryPersistStorage } from "./persistStorage";
 
@@ -93,7 +94,9 @@ export const useActivityStore = create<ActivityState>()(
         }
       },
       sharePostToChat: async (chatId, post) => {
-        const shareBody = `Shared ${post.title}\n${post.subtitle}`;
+        // The link lets the recipient open the post; the rich card is local to the sender.
+        const shareLink = post.postId ? `\n${webShareUrl("post", post.postId)}` : "";
+        const shareBody = `Shared ${post.title}\n${post.subtitle}${shareLink}`;
         await getHungryService().chat.sendMessage({
           conversationId: chatId,
           body: shareBody,

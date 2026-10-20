@@ -43,6 +43,7 @@ import { suggestAllergensFromIngredients } from "@/features/merchant/allergenKey
 import { validateMerchantProfileUpdates } from "@/features/merchant/profileValidation";
 import { REVIEW_PHOTOS_NOT_ATTACHED, createClientReviewId } from "@/features/review/reviewDraft";
 import { validateMerchantPromotionInput } from "@/features/merchant/promotionValidation";
+import { MERCHANT_DEEP_LINKS } from "@/features/merchant/merchantDeepLinks";
 import type {
   Bite,
   BiteDraft,
@@ -208,6 +209,7 @@ function mapChecklist(row: Row): Checklist {
     name: String(row.name ?? "Untitled checklist"),
     createdAt: String(row.created_at ?? row.createdAt ?? ""),
     updatedAt: String(row.updated_at ?? row.updatedAt ?? ""),
+    itemCount: readEmbeddedCount(row.checklist_items),
   };
 }
 
@@ -228,6 +230,9 @@ function mapChecklistItem(row: Row): ChecklistItem {
   };
 }
 
+/** Most lists one getPortfolios read returns (matches the search_portfolios cap). */
+const PORTFOLIO_LIST_LIMIT = 100;
+
 function mapPortfolio(row: Row): Portfolio {
   return {
     id: String(row.id ?? ""),
@@ -239,7 +244,17 @@ function mapPortfolio(row: Row): Portfolio {
     publishedAt: asString(row.published_at ?? row.publishedAt),
     createdAt: String(row.created_at ?? row.createdAt ?? ""),
     updatedAt: String(row.updated_at ?? row.updatedAt ?? ""),
+    itemCount: readEmbeddedCount(row.item_count ?? row.portfolio_items),
+    followerCount: readEmbeddedCount(row.follower_count),
   };
+}
+
+/** Count from an RPC column (number/bigint string) or a PostgREST `rel(count)` embed. */
+function readEmbeddedCount(value: unknown): number | undefined {
+  if (Array.isArray(value)) return readEmbeddedCount((value[0] as Row | undefined)?.count);
+  if (value === null || value === undefined || value === "") return undefined;
+  const count = Number(value);
+  return Number.isFinite(count) ? count : undefined;
 }
 
 function mapPortfolioItem(row: Row): PortfolioItem {
@@ -779,6 +794,7 @@ function getFallbackDiscoveryFeed(request: {
       dish,
       score: dish.rating / 5,
     })),
+    isFallback: true,
   };
 }
 
@@ -922,36 +938,52 @@ function toAppSessionFromAuthSession(
   };
 }
 
+/** Review photos uploaded at once; more in flight starves slow mobile links. */
+const REVIEW_PHOTO_UPLOAD_CONCURRENCY = 3;
+
 async function uploadReviewPhotos(
   client: SupabaseClient,
   userId: string,
   reviewId: string,
   photos: string[],
 ): Promise<Row[]> {
-  const uploaded: Row[] = [];
   // Uploads never overwrite, so a retried submission needs fresh object paths.
   const attempt = Date.now().toString(36);
-  for (let index = 0; index < photos.length; index += 1) {
-    const uri = photos[index];
-    if (!uri) continue;
+  const jobs = photos
+    .map((uri, index) => ({ uri, index }))
+    .filter((job): job is { uri: string; index: number } => Boolean(job.uri));
+  jobs.forEach(({ uri }) => {
     if (!isLocalUri(uri)) {
       throw new Error("Review photos must be uploaded from local device files.");
     }
-    const extension = uri.split(".").pop()?.toLowerCase() || "jpg";
-    const path = `${userId}/${reviewId}/photo-${index}-${attempt}.${extension}`;
-    const asset = await uploadImageFromUri({
-      client,
-      bucket: "review-media",
-      path,
-      uri,
-    });
-    uploaded.push({
-      url: asset.path,
-      storage_bucket: "review-media",
-      storage_path: asset.path,
-    });
-  }
-  return uploaded;
+  });
+  const uploaded: (Row | undefined)[] = new Array(jobs.length);
+  let nextJob = 0;
+  const worker = async () => {
+    while (nextJob < jobs.length) {
+      const jobIndex = nextJob;
+      nextJob += 1;
+      const { uri, index } = jobs[jobIndex]!;
+      const extension = uri.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${userId}/${reviewId}/photo-${index}-${attempt}.${extension}`;
+      const asset = await uploadImageFromUri({
+        client,
+        bucket: "review-media",
+        path,
+        uri,
+      });
+      uploaded[jobIndex] = {
+        url: asset.path,
+        storage_bucket: "review-media",
+        storage_path: asset.path,
+      };
+    }
+  };
+  await Promise.all(
+    Array.from({ length: Math.min(REVIEW_PHOTO_UPLOAD_CONCURRENCY, jobs.length) }, worker),
+  );
+  // Keep the picked order for sort_order.
+  return uploaded.filter((row): row is Row => Boolean(row));
 }
 
 async function mapSupabaseReviewRows(
@@ -1068,6 +1100,24 @@ async function uploadAvatarIfNeeded(
   return uploaded.publicUrl;
 }
 
+/** Removes the user's older avatar files once the new avatar_url is saved. Best effort. */
+async function removePreviousAvatars(
+  client: SupabaseClient,
+  userId: string,
+  currentAvatarUrl: string,
+): Promise<void> {
+  try {
+    const { data, error } = await client.storage.from("avatars").list(userId, { limit: 100 });
+    if (error || !Array.isArray(data)) return;
+    const stalePaths = data
+      .filter((entry) => entry.id && !currentAvatarUrl.includes(`${userId}/${entry.name}`))
+      .map((entry) => `${userId}/${entry.name}`);
+    if (stalePaths.length > 0) await client.storage.from("avatars").remove(stalePaths);
+  } catch {
+    // A leftover file is harmless; the profile already points at the new avatar.
+  }
+}
+
 function isVideoUri(value: string): boolean {
   const normalized = value.split("?")[0]?.toLowerCase() ?? "";
   return normalized.endsWith(".mp4") || normalized.endsWith(".mov") || normalized.endsWith(".webm");
@@ -1114,12 +1164,52 @@ async function createSignedStorageUrls(
   return signed;
 }
 
+/** Signed post media URLs live 1 hour; reuse one until 5 minutes before it expires. */
+const POST_MEDIA_SIGNED_URL_REUSE_MS = 55 * 60 * 1000;
+/**
+ * Signed URL per storage path. A refetch reuses the same URL, so the image cache
+ * (keyed by URL) does not re-download or flicker on every feed load.
+ */
+const signedPostMediaUrlCache = new Map<string, { url: string; expiresAt: number }>();
+
+function cachedSignedPostMediaUrl(path: string): string | undefined {
+  const cached = signedPostMediaUrlCache.get(path);
+  if (!cached) return undefined;
+  if (cached.expiresAt <= Date.now()) {
+    signedPostMediaUrlCache.delete(path);
+    return undefined;
+  }
+  return cached.url;
+}
+
+function rememberSignedPostMediaUrl(path: string, url: string) {
+  signedPostMediaUrlCache.set(path, {
+    url,
+    expiresAt: Date.now() + POST_MEDIA_SIGNED_URL_REUSE_MS,
+  });
+}
+
+/** Sign every uncached post-media path in one request before rows are mapped. */
+async function presignPostMediaRows(client: SupabaseClient, mediaRows: Row[]): Promise<void> {
+  const paths = mediaRows
+    .filter((row) => asString(row.storage_bucket) === "post-media")
+    .map((row) => asString(row.storage_path))
+    .filter((path): path is string => Boolean(path) && !cachedSignedPostMediaUrl(path!));
+  if (paths.length === 0) return;
+  const signed = await createSignedStorageUrls(client, "post-media", paths);
+  signed.forEach((url, path) => rememberSignedPostMediaUrl(path, url));
+}
+
 async function resolvePostMediaDisplayUrl(client: SupabaseClient, row: Row): Promise<string> {
   const bucket = asString(row.storage_bucket);
   const path = asString(row.storage_path) ?? "";
   const publicUrl = asString(row.public_url);
   if (bucket === "post-media" && path) {
-    return (await createSignedStorageUrl(client, bucket, path)) ?? publicUrl ?? "";
+    const cached = cachedSignedPostMediaUrl(path);
+    if (cached) return cached;
+    const signed = await createSignedStorageUrl(client, bucket, path);
+    if (signed) rememberSignedPostMediaUrl(path, signed);
+    return signed ?? publicUrl ?? "";
   }
   return publicUrl ?? path;
 }
@@ -1233,9 +1323,9 @@ async function fetchPublishedPostBites(
     .order("published_at", { ascending: false })
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
-  // An author read throws so a failed load is not shown as "No posts yet".
-  if (error && options?.authorId) throw error;
-  if (error || !Array.isArray(data)) return [];
+  // A failed read throws so it is not shown as "No posts yet" (offline included).
+  if (error) throw error;
+  if (!Array.isArray(data)) return [];
 
   const postRows = data as Row[];
   const postIds = postRows.map((row) => asString(row.id)).filter((id): id is string => !!id);
@@ -1299,6 +1389,7 @@ async function fetchPublishedPostBites(
           )
       : [];
 
+  await presignPostMediaRows(client, mediaRows);
   const mediaByPostId = groupRowsByStringKey(mediaRows, "post_id");
   const dishById = new Map(dishRows.map((row) => [asString(row.id) ?? "", row]));
   const venueById = new Map(venueRows.map((row) => [asString(row.id) ?? "", row]));
@@ -1385,9 +1476,10 @@ async function mapFeedRpcRowToBite(client: SupabaseClient, row: Row): Promise<Bi
   return {
     id: asString(row.id) ?? `post-${Date.now()}`,
     authorId: asString(row.author_id) ?? "unknown-author",
+    // Live profile fields first: the publish-time snapshot goes stale after a rename.
     authorName:
-      asString(authorMeta.displayName) ?? asString(row.author_display_name) ?? "Hungry User",
-    authorAvatar: asString(authorMeta.avatarUrl) ?? asString(row.author_avatar_url),
+      asString(row.author_display_name) ?? asString(authorMeta.displayName) ?? "Hungry User",
+    authorAvatar: asString(row.author_avatar_url) ?? asString(authorMeta.avatarUrl),
     dishId: asString(row.dish_id) ?? asString(dishMeta.id) ?? "",
     dishName: asString(row.dish_name) ?? asString(dishMeta.name) ?? "Unknown dish",
     venueId: asString(row.venue_id) ?? asString(venueMeta.id) ?? "",
@@ -1450,6 +1542,10 @@ async function fetchHomeSocialFeedBitesViaRpc(
   if (!Array.isArray(legacyResult.data)) return undefined;
 
   const rows = legacyResult.data as Row[];
+  await presignPostMediaRows(
+    client,
+    rows.flatMap((row) => asRowArray(row.media)),
+  );
   return Promise.all(rows.map((row) => mapFeedRpcRowToBite(client, row)));
 }
 
@@ -1948,6 +2044,15 @@ function hasEmailPasswordIdentity(user: {
   return user.app_metadata?.provider === "email";
 }
 
+// Bump when the taste quiz questions or answer scale change, so stored answers
+// can be told apart. v2: the 4-step onboarding quiz (6 taste questions + diet).
+const TASTE_QUIZ_VERSION = "v2";
+
+// Keyboards (QuickType, autofill) often add a trailing space or a capital letter.
+function normalizeAuthEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
 async function exchangeRecoveryCodeIfPresent(client: SupabaseClient, token: string): Promise<void> {
   const trimmed = token.trim();
   if (!trimmed) return;
@@ -2036,18 +2141,6 @@ function asMerchantInviteStatus(value: unknown): MerchantTeamMember["inviteStatu
   return "pending";
 }
 
-function normalizeAvailabilityFlag(flag: string): string {
-  return flag.toLowerCase().replace(/[\s-]+/g, "_");
-}
-
-function mergeAvailabilityFlag(currentFlags: string[], flag: string, enabled: boolean): string[] {
-  const normalized = normalizeAvailabilityFlag(flag);
-  const withoutFlag = currentFlags.filter(
-    (currentFlag) => normalizeAvailabilityFlag(currentFlag) !== normalized,
-  );
-  return enabled ? [...withoutFlag, flag] : withoutFlag;
-}
-
 function toMerchantVerification(
   row?: Row,
   evidence?: VerificationEvidence[],
@@ -2068,28 +2161,61 @@ async function fetchVerificationForOutlet(
   client: SupabaseClient,
   outletId: string,
 ): Promise<MerchantOutlet["verification"]> {
+  return (
+    (await fetchVerificationsForOutlets(client, [outletId])).get(outletId) ??
+    toMerchantVerification()
+  );
+}
+
+/** Verification and evidence for several outlets in two queries, not two per outlet. */
+async function fetchVerificationsForOutlets(
+  client: SupabaseClient,
+  outletIds: string[],
+): Promise<Map<string, MerchantOutlet["verification"]>> {
+  const byOutletId = new Map<string, MerchantOutlet["verification"]>();
+  const ids = Array.from(new Set(outletIds.filter(Boolean)));
+  if (ids.length === 0) return byOutletId;
+
   const { data, error } = await client
     .from("merchant_verifications")
     .select("*")
-    .eq("outlet_id", outletId)
-    .maybeSingle();
+    .in("outlet_id", ids);
   if (error) throw error;
-  if (!data) return toMerchantVerification();
+  const verificationRows = Array.isArray(data) ? (data as Row[]) : [];
+  const verificationIds = verificationRows
+    .map((row) => asString(row.id))
+    .filter((id): id is string => Boolean(id));
 
-  const { data: evidenceRows, error: evidenceError } = await client
-    .from("merchant_verification_evidence")
-    .select("*")
-    .eq("verification_id", (data as Row).id);
-  if (evidenceError) throw evidenceError;
+  const evidenceByVerificationId = new Map<string, VerificationEvidence[]>();
+  if (verificationIds.length > 0) {
+    const { data: evidenceRows, error: evidenceError } = await client
+      .from("merchant_verification_evidence")
+      .select("*")
+      .in("verification_id", verificationIds);
+    if (evidenceError) throw evidenceError;
+    for (const row of Array.isArray(evidenceRows) ? (evidenceRows as Row[]) : []) {
+      const verificationId = asString(row.verification_id) ?? "";
+      const list = evidenceByVerificationId.get(verificationId) ?? [];
+      list.push({
+        id: asString(row.id) ?? "",
+        method: (asString(row.method) as VerificationEvidence["method"]) ?? "video_walkaround",
+        fileUrl: asString(row.file_url) ?? "",
+        uploadedAt: asString(row.uploaded_at) ?? new Date().toISOString(),
+        reviewNote: asString(row.review_note),
+      });
+      evidenceByVerificationId.set(verificationId, list);
+    }
+  }
 
-  const evidence = (Array.isArray(evidenceRows) ? (evidenceRows as Row[]) : []).map((row) => ({
-    id: asString(row.id) ?? "",
-    method: (asString(row.method) as VerificationEvidence["method"]) ?? "video_walkaround",
-    fileUrl: asString(row.file_url) ?? "",
-    uploadedAt: asString(row.uploaded_at) ?? new Date().toISOString(),
-    reviewNote: asString(row.review_note),
-  }));
-  return toMerchantVerification(data as Row, evidence);
+  for (const row of verificationRows) {
+    const outletId = asString(row.outlet_id);
+    if (!outletId) continue;
+    byOutletId.set(
+      outletId,
+      toMerchantVerification(row, evidenceByVerificationId.get(asString(row.id) ?? "") ?? []),
+    );
+  }
+  return byOutletId;
 }
 
 function toSocialLinks(value: unknown): MerchantOutlet["socialLinks"] {
@@ -2101,7 +2227,11 @@ function toSocialLinks(value: unknown): MerchantOutlet["socialLinks"] {
   });
 }
 
-async function toMerchantOutlet(client: SupabaseClient, row: Row): Promise<MerchantOutlet> {
+async function toMerchantOutlet(
+  client: SupabaseClient,
+  row: Row,
+  prefetchedVerification?: MerchantOutlet["verification"],
+): Promise<MerchantOutlet> {
   const venueId = asString(row.venue_id);
   const venue = venueId ? supabaseRepository.getVenueById(venueId) : undefined;
   const venueDishes = venueId ? supabaseRepository.listDishesByVenue(venueId) : [];
@@ -2134,7 +2264,8 @@ async function toMerchantOutlet(client: SupabaseClient, row: Row): Promise<Merch
     tasteTags: [],
     signatureDishIds: venueDishes.slice(0, 3).map((dish) => dish.id),
     isLive: asBoolean(row.is_live) ?? false,
-    verification: await fetchVerificationForOutlet(client, asString(row.id) ?? ""),
+    verification:
+      prefetchedVerification ?? (await fetchVerificationForOutlet(client, asString(row.id) ?? "")),
   };
 }
 
@@ -2179,9 +2310,18 @@ async function getSupabaseMerchantAccount(
     .select("*")
     .eq("merchant_account_id", account.id);
   if (error) throw error;
+  const rows = Array.isArray(outletRows) ? (outletRows as Row[]) : [];
+  const verifications = await fetchVerificationsForOutlets(
+    client,
+    rows.map((row) => asString(row.id) ?? ""),
+  );
   const outlets = await Promise.all(
-    (Array.isArray(outletRows) ? (outletRows as Row[]) : []).map((row) =>
-      toMerchantOutlet(client, row),
+    rows.map((row) =>
+      toMerchantOutlet(
+        client,
+        row,
+        verifications.get(asString(row.id) ?? "") ?? toMerchantVerification(),
+      ),
     ),
   );
   return {
@@ -2428,13 +2568,30 @@ async function fetchSafeProfileRowsById(
   return profileById;
 }
 
+/** Random id so two dishes saved in the same millisecond, or on two phones, never collide. */
+function createMerchantDishId(): string {
+  return `merchant-dish-${createClientReviewId()}`;
+}
+
+function toTasteVectorJson(tasteVector: TasteVector | undefined): Row | null {
+  if (tasteVector === undefined) return null;
+  return {
+    sweet: tasteVector.sweet,
+    spicy: tasteVector.spicy,
+    sour: tasteVector.sour,
+    salty: tasteVector.salty,
+    rich: tasteVector.rich,
+    aromatic: tasteVector.aromatic,
+  };
+}
+
 function buildDishPayload(outlet: Row, dish: Partial<DishDetail>): Row {
   const venueId = asString(outlet.venue_id) ?? "";
   const buildingId = asString(outlet.building_id) ?? "";
   const price = asNumber(dish.price) ?? 0;
   const imageUrl = dish.imageUrl ?? dish.gallery?.[0] ?? null;
   return {
-    id: dish.id ?? `merchant-dish-${Date.now()}`,
+    id: dish.id ?? createMerchantDishId(),
     venue_id: venueId,
     building_id: buildingId,
     name: dish.name ?? "New dish",
@@ -2516,88 +2673,58 @@ async function resolveMerchantDishGalleryUrls(
   return uploadedUrls;
 }
 
-async function replaceDishImages(
+async function saveMerchantDish(
   client: SupabaseClient,
+  outlet: Row,
   dishId: string,
-  galleryUrls: string[] | undefined,
-): Promise<void> {
-  if (galleryUrls === undefined) return;
-  const { error: deleteError } = await client.from("dish_images").delete().eq("dish_id", dishId);
-  if (deleteError) throw deleteError;
-  const rows = galleryUrls
-    .filter(Boolean)
-    .map((url, sortOrder) => ({ dish_id: dishId, url, sort_order: sortOrder }));
-  if (rows.length === 0) return;
-  const { error } = await client.from("dish_images").insert(rows);
+  fields: Row,
+  children: {
+    galleryUrls: string[] | undefined;
+    dietaryFlags: DietaryFlag[] | undefined;
+    tasteVector: TasteVector | undefined;
+  },
+): Promise<Row> {
+  const venueId = asString(outlet.venue_id) ?? "";
+  const dishFields: Row = { ...fields };
+  delete dishFields.id;
+  delete dishFields.venue_id;
+  // One transaction: the dish, its photos, dietary labels and taste vector save together or not at all.
+  const { error } = await client.rpc("merchant_save_dish", {
+    p_dish_id: dishId,
+    p_venue_id: venueId,
+    p_building_id: asString(outlet.building_id) ?? asString(fields.building_id) ?? "",
+    p_fields: dishFields,
+    p_gallery_urls: children.galleryUrls ?? null,
+    p_dietary_slugs:
+      children.dietaryFlags === undefined ? null : Array.from(new Set(children.dietaryFlags)),
+    p_taste_vector: toTasteVectorJson(children.tasteVector),
+  });
   if (error) throw error;
+  const { data, error: readError } = await client
+    .from("dishes")
+    .select("*")
+    .eq("id", dishId)
+    .eq("venue_id", venueId)
+    .single();
+  if (readError) throw readError;
+  return data as Row;
 }
 
-async function replaceDishDietaryFlags(
+async function setMerchantDishFlag(
   client: SupabaseClient,
+  outlet: Row,
   dishId: string,
-  dietaryFlags: DietaryFlag[] | undefined,
-): Promise<void> {
-  if (dietaryFlags === undefined) return;
-  const uniqueFlags = Array.from(new Set(dietaryFlags));
-  const { error: deleteError } = await client
-    .from("dish_dietary_flags")
-    .delete()
-    .eq("dish_id", dishId);
-  if (deleteError) throw deleteError;
-  if (uniqueFlags.length === 0) return;
-
-  const { data, error } = await client
-    .from("dietary_flags")
-    .select("id,slug")
-    .in("slug", uniqueFlags);
+  flag: "sold_out" | "featured",
+  enabled?: boolean,
+): Promise<boolean> {
+  const { data, error } = await client.rpc("merchant_set_dish_availability_flag", {
+    p_dish_id: dishId,
+    p_venue_id: asString(outlet.venue_id) ?? "",
+    p_flag: flag,
+    p_enabled: enabled ?? null,
+  });
   if (error) throw error;
-  const idBySlug = new Map(
-    (Array.isArray(data) ? (data as Row[]) : [])
-      .map((row) => [asString(row.slug) ?? "", asString(row.id) ?? ""] as const)
-      .filter(([slug, id]) => slug.length > 0 && id.length > 0),
-  );
-  const missingFlags = uniqueFlags.filter((flag) => !idBySlug.has(flag));
-  if (missingFlags.length > 0) {
-    throw new Error(`Unknown dietary flags: ${missingFlags.join(", ")}`);
-  }
-
-  const { error: insertError } = await client.from("dish_dietary_flags").insert(
-    uniqueFlags.map((flag) => ({
-      dish_id: dishId,
-      dietary_flag_id: idBySlug.get(flag),
-    })),
-  );
-  if (insertError) throw insertError;
-}
-
-async function replaceDishTasteVector(
-  client: SupabaseClient,
-  dishId: string,
-  tasteVector: TasteVector | undefined,
-): Promise<void> {
-  if (tasteVector === undefined) return;
-  const { error } = await client.from("dish_taste_vectors").upsert(
-    {
-      dish_id: dishId,
-      sweet: tasteVector.sweet,
-      spicy: tasteVector.spicy,
-      sour: tasteVector.sour,
-      salty: tasteVector.salty,
-      rich: tasteVector.rich,
-      aromatic: tasteVector.aromatic,
-      vector: [
-        tasteVector.sweet,
-        tasteVector.spicy,
-        tasteVector.sour,
-        tasteVector.salty,
-        tasteVector.rich,
-        tasteVector.aromatic,
-      ],
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "dish_id" },
-  );
-  if (error) throw error;
+  return data === true;
 }
 
 function buildPromotionAnalytics(
@@ -2996,7 +3123,7 @@ export const supabaseService: HungryService = {
     async signUp(email, password, name) {
       const client = requireSupabaseClient();
       const { error } = await client.auth.signUp({
-        email,
+        email: normalizeAuthEmail(email),
         password,
         options: {
           data: { display_name: name },
@@ -3013,7 +3140,7 @@ export const supabaseService: HungryService = {
       const client = requireSupabaseClient();
       const { error } = await client.auth.resend({
         type: "signup",
-        email,
+        email: normalizeAuthEmail(email),
         options: {
           emailRedirectTo: AUTH_REDIRECTS.emailConfirm,
         },
@@ -3032,7 +3159,10 @@ export const supabaseService: HungryService = {
 
     async signIn(email, password) {
       const client = requireSupabaseClient();
-      const { error } = await client.auth.signInWithPassword({ email, password });
+      const { error } = await client.auth.signInWithPassword({
+        email: normalizeAuthEmail(email),
+        password,
+      });
       if (error) throw error;
       const session = await toAppSession(client);
       if (!session) throw new Error("Sign-in succeeded but no active session.");
@@ -3058,16 +3188,20 @@ export const supabaseService: HungryService = {
       const userId = await getCurrentSupabaseUserId();
       if (!userId) throw new Error("You must be signed in to request account deletion.");
 
-      const { error } = await client.from("account_deletion_requests").insert({
-        user_id: userId,
-        reason: request?.reason ?? "user_initiated_settings_flow",
+      // The server sets scheduled_for and status; a repeat request returns the pending date
+      // (20261020050000_request_my_account_deletion.sql).
+      const { data, error } = await client.rpc("request_my_account_deletion", {
+        p_reason: request?.reason ?? "user_initiated_settings_flow",
       });
       if (error) throw error;
+      const scheduledFor = asString(data);
+      if (!scheduledFor) throw new Error("The deletion request did not return a date.");
 
       // The request is queued; a failed token unbind or sign-out must not report
       // the deletion itself as failed. The caller clears the local session.
       await unregisterStoredPushToken(client).catch(() => undefined);
       await this.signOut().catch(() => undefined);
+      return { scheduledFor };
     },
 
     async getPendingAccountDeletion() {
@@ -3097,7 +3231,7 @@ export const supabaseService: HungryService = {
 
     async forgotPassword(email) {
       const client = requireSupabaseClient();
-      const { error } = await client.auth.resetPasswordForEmail(email, {
+      const { error } = await client.auth.resetPasswordForEmail(normalizeAuthEmail(email), {
         redirectTo: AUTH_REDIRECTS.passwordReset,
       });
       if (error) throw error;
@@ -3231,7 +3365,14 @@ export const supabaseService: HungryService = {
     },
 
     async getDish(id) {
-      return (await getDishByIdViaRpc(id)) ?? supabaseRepository.getDishById(id);
+      try {
+        return (await getDishByIdViaRpc(id)) ?? supabaseRepository.getDishById(id);
+      } catch (error) {
+        // A failed read still shows the cached dish; with no cache the screen shows a retry.
+        const cached = supabaseRepository.getDishById(id);
+        if (cached) return cached;
+        throw error;
+      }
     },
 
     async listActivePromotionsForTarget(input) {
@@ -3480,8 +3621,14 @@ export const supabaseService: HungryService = {
           "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend,merchant_reply_text,merchant_replied_at",
         )
         .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
         .limit(limit);
-      if (options?.before) {
+      if (options?.before && options.beforeId) {
+        // Keyset cursor (created_at, id): rows sharing the boundary timestamp are kept.
+        query = query.or(
+          `created_at.lt."${options.before}",and(created_at.eq."${options.before}",id.lt."${options.beforeId}")`,
+        );
+      } else if (options?.before) {
         query = query.lt("created_at", options.before);
       }
       if (options?.dishIds) {
@@ -3583,6 +3730,9 @@ export const supabaseService: HungryService = {
       if (Object.keys(payload).length > 1) {
         const { error } = await client.from("user_profiles").upsert(payload, { onConflict: "id" });
         if (error) throw error;
+        if (typeof payload.avatar_url === "string") {
+          await removePreviousAvatars(client, userId, payload.avatar_url);
+        }
       }
       if (updates.profileVisibility !== undefined) {
         const { error } = await client.from("privacy_settings").upsert(
@@ -3754,6 +3904,7 @@ export const supabaseService: HungryService = {
       if (!client || !userId) return;
       const { error } = await client.from("quiz_responses").insert({
         user_id: userId,
+        quiz_version: TASTE_QUIZ_VERSION,
         responses,
         generated_taste_vector: tasteVectorToArray(tasteVector),
       });
@@ -5394,7 +5545,11 @@ export const supabaseService: HungryService = {
 
       const userId = await getCurrentSupabaseUserId();
       if (!userId) throw new Error("You must be signed in to upload verification evidence.");
-      assertLocalUserMediaUri(evidence.fileUrl, "Merchant verification evidence");
+      const fileUrls = [evidence.fileUrl, ...(evidence.additionalFileUrls ?? [])].filter(Boolean);
+      if (fileUrls.length === 0) throw new Error("Attach at least one file for verification.");
+      fileUrls.forEach((fileUrl) =>
+        assertLocalUserMediaUri(fileUrl, "Merchant verification evidence"),
+      );
 
       const { data: existingVerification, error: existingError } = await client
         .from("merchant_verifications")
@@ -5421,23 +5576,31 @@ export const supabaseService: HungryService = {
         throw new Error("Unable to prepare verification evidence upload.");
       }
 
-      const evidenceExtension = extensionFromUri(evidence.fileUrl);
-      const evidencePath = `${userId}/${resolvedOutletId}/${verificationId}-${Date.now()}.${evidenceExtension}`;
-      const uploadedEvidence = await uploadPostMediaFromUri({
-        client,
-        bucket: "merchant-verification-evidence",
-        path: evidencePath,
-        uri: evidence.fileUrl,
-      });
-      const { error: evidenceError } = await client.from("merchant_verification_evidence").insert({
-        verification_id: verificationId,
-        method: evidence.method,
-        file_url: `supabase://merchant-verification-evidence/${uploadedEvidence.path}`,
-        storage_bucket: "merchant-verification-evidence",
-        storage_path: uploadedEvidence.path,
-        uploaded_by: userId,
-        review_note: evidence.reviewNote ?? null,
-      });
+      // Upload every file first, then record them in one insert and flip the status once, so a
+      // failed upload never leaves a submitted outlet with part of its evidence.
+      const uploadedAt = Date.now();
+      const uploadedPaths: string[] = [];
+      for (let index = 0; index < fileUrls.length; index += 1) {
+        const fileUrl = fileUrls[index];
+        const uploadedEvidence = await uploadPostMediaFromUri({
+          client,
+          bucket: "merchant-verification-evidence",
+          path: `${userId}/${resolvedOutletId}/${verificationId}-${uploadedAt}-${index}.${extensionFromUri(fileUrl)}`,
+          uri: fileUrl,
+        });
+        uploadedPaths.push(uploadedEvidence.path);
+      }
+      const { error: evidenceError } = await client.from("merchant_verification_evidence").insert(
+        uploadedPaths.map((path) => ({
+          verification_id: verificationId,
+          method: evidence.method,
+          file_url: `supabase://merchant-verification-evidence/${path}`,
+          storage_bucket: "merchant-verification-evidence",
+          storage_path: path,
+          uploaded_by: userId,
+          review_note: evidence.reviewNote ?? null,
+        })),
+      );
       if (evidenceError) throw evidenceError;
 
       const { error } = await client
@@ -5560,7 +5723,8 @@ export const supabaseService: HungryService = {
     async addDish(outletId, dish) {
       const client = requireSupabaseClient();
       const outlet = await requireLinkedMerchantOutlet(client, outletId);
-      const dishId = dish.id ?? `merchant-dish-${Date.now()}`;
+      // The editor passes a stable id, so a retried create edits the first try's row.
+      const dishId = dish.id ?? createMerchantDishId();
       const galleryUrls = await resolveMerchantDishGalleryUrls(client, outlet, dishId, dish);
       const payload = buildDishPayload(outlet, {
         ...dish,
@@ -5568,15 +5732,15 @@ export const supabaseService: HungryService = {
         imageUrl: galleryUrls?.[0] ?? dish.imageUrl,
         gallery: galleryUrls ?? dish.gallery,
       });
-      const { data, error } = await client.from("dishes").insert(payload).select("*").single();
-      if (error) throw error;
-      await replaceDishImages(client, dishId, galleryUrls);
-      await replaceDishDietaryFlags(client, dishId, dish.dietaryFlags);
-      await replaceDishTasteVector(client, dishId, dish.tasteVector);
+      const row = await saveMerchantDish(client, outlet, dishId, payload, {
+        galleryUrls,
+        dietaryFlags: dish.dietaryFlags,
+        tasteVector: dish.tasteVector,
+      });
       await refreshSupabaseRepositoryCache();
       const presentationByDishId = await fetchDishPresentationMap(client, [dishId]);
       return mapSupabaseDish(
-        data as Row,
+        row,
         await fetchVenueRow(client, asString(outlet.venue_id) ?? ""),
         presentationByDishId.get(dishId),
       );
@@ -5592,30 +5756,11 @@ export const supabaseService: HungryService = {
         imageUrl: galleryUrls?.[0] ?? updates.imageUrl,
         gallery: galleryUrls ?? updates.gallery,
       });
-      let row: Row;
-      if (Object.keys(payload).length > 0) {
-        const { data, error } = await client
-          .from("dishes")
-          .update(payload)
-          .eq("id", dishId)
-          .eq("venue_id", venueId)
-          .select("*")
-          .single();
-        if (error) throw error;
-        row = data as Row;
-      } else {
-        const { data, error } = await client
-          .from("dishes")
-          .select("*")
-          .eq("id", dishId)
-          .eq("venue_id", venueId)
-          .single();
-        if (error) throw error;
-        row = data as Row;
-      }
-      await replaceDishImages(client, dishId, galleryUrls);
-      await replaceDishDietaryFlags(client, dishId, updates.dietaryFlags);
-      await replaceDishTasteVector(client, dishId, updates.tasteVector);
+      const row = await saveMerchantDish(client, outlet, dishId, payload, {
+        galleryUrls,
+        dietaryFlags: updates.dietaryFlags,
+        tasteVector: updates.tasteVector,
+      });
       await refreshSupabaseRepositoryCache();
       const presentationByDishId = await fetchDishPresentationMap(client, [dishId]);
       return mapSupabaseDish(
@@ -5637,50 +5782,17 @@ export const supabaseService: HungryService = {
       await refreshSupabaseRepositoryCache();
     },
 
-    async toggleSoldOut(outletId, dishId) {
+    async toggleSoldOut(outletId, dishId, soldOut) {
       const client = requireSupabaseClient();
       const outlet = await requireLinkedMerchantOutlet(client, outletId);
-      const venueId = asString(outlet.venue_id) ?? "";
-      const { data, error } = await client
-        .from("dishes")
-        .select("availability_flags")
-        .eq("id", dishId)
-        .eq("venue_id", venueId)
-        .single();
-      if (error) throw error;
-      const current = asStringArray((data as Row).availability_flags);
-      const enabled = !current.some((flag) => normalizeAvailabilityFlag(flag) === "sold_out");
-      const { error: updateError } = await client
-        .from("dishes")
-        .update({ availability_flags: mergeAvailabilityFlag(current, "sold_out", enabled) })
-        .eq("id", dishId)
-        .eq("venue_id", venueId);
-      if (updateError) throw updateError;
-      await refreshSupabaseRepositoryCache();
-      return enabled;
+      // One atomic UPDATE; the catalog trigger refreshes the diner card, so no full cache reload.
+      return setMerchantDishFlag(client, outlet, dishId, "sold_out", soldOut);
     },
 
     async toggleFeatured(outletId, dishId) {
       const client = requireSupabaseClient();
       const outlet = await requireLinkedMerchantOutlet(client, outletId);
-      const venueId = asString(outlet.venue_id) ?? "";
-      const { data, error } = await client
-        .from("dishes")
-        .select("availability_flags")
-        .eq("id", dishId)
-        .eq("venue_id", venueId)
-        .single();
-      if (error) throw error;
-      const current = asStringArray((data as Row).availability_flags);
-      const enabled = !current.some((flag) => normalizeAvailabilityFlag(flag) === "featured");
-      const { error: updateError } = await client
-        .from("dishes")
-        .update({ availability_flags: mergeAvailabilityFlag(current, "featured", enabled) })
-        .eq("id", dishId)
-        .eq("venue_id", venueId);
-      if (updateError) throw updateError;
-      await refreshSupabaseRepositoryCache();
-      return enabled;
+      return setMerchantDishFlag(client, outlet, dishId, "featured");
     },
 
     async getOCRDrafts(outletId) {
@@ -5779,13 +5891,20 @@ export const supabaseService: HungryService = {
       const client = requireSupabaseClient();
       const outlet = await requireLinkedMerchantOutlet(client, outletId);
       const venueId = asString(outlet.venue_id) ?? "";
-      const { data, error } = await client
+      // Only reviews exist today, so a non-review type filter has nothing to return.
+      if (filters?.type && filters.type !== "review") return [];
+      let query = client
         .from("reviews")
-        .select("*")
+        .select(
+          "id,author_name,rating,text,tags,created_at,merchant_reply_text,merchant_replied_at",
+        )
         .eq("venue_id", venueId)
         .order("created_at", { ascending: false });
+      if (filters?.unrepliedOnly) query = query.is("merchant_reply_text", null);
+      if (filters?.limit !== undefined) query = query.limit(Math.max(1, filters.limit));
+      const { data, error } = await query;
       if (error) throw error;
-      let interactions = (Array.isArray(data) ? (data as Row[]) : []).map((row) => {
+      const interactions = (Array.isArray(data) ? (data as Row[]) : []).map((row) => {
         const rating = asNumber(row.rating);
         return {
           id: asString(row.id) ?? "",
@@ -5813,8 +5932,6 @@ export const supabaseService: HungryService = {
                   : "neutral",
         } satisfies CustomerInteraction;
       });
-      if (filters?.type) interactions = interactions.filter((item) => item.type === filters.type);
-      if (filters?.unrepliedOnly) interactions = interactions.filter((item) => !item.reply);
       return interactions;
     },
 
@@ -6133,6 +6250,18 @@ export const supabaseService: HungryService = {
       return mapPromotion(data as Row);
     },
 
+    async deletePromotion(promoId) {
+      const client = requireSupabaseClient();
+      // RLS (merchant_promotions_write_owner_or_manager_delete) limits this to the outlet's team.
+      const { data, error } = await client
+        .from("merchant_promotions")
+        .delete()
+        .eq("id", promoId)
+        .select("id");
+      if (error) throw error;
+      if (!data?.length) throw new Error("Promotion not found or you cannot delete it.");
+    },
+
     async getPromotionAnalytics(promoId) {
       const { data, error } = await requireSupabaseClient()
         .from("merchant_promotions")
@@ -6155,6 +6284,31 @@ export const supabaseService: HungryService = {
       });
       if (error) throw error;
       return mapMerchantAnalyticsPayload(data, resolvedOutletId, dateRange);
+    },
+
+    async getDashboardSummary(outletId) {
+      const client = requireSupabaseClient();
+      const outlet = await getMerchantOutletRow(client, outletId);
+      const { data, error } = await client.rpc("get_merchant_dashboard_summary", {
+        p_outlet_id: asString(outlet.id) ?? outletId,
+      });
+      if (error) throw error;
+      const row = (data ?? {}) as Row;
+      const latest = row.latestReview as Row | null | undefined;
+      return {
+        menuCount: asNumber(row.menuCount) ?? 0,
+        dishesWithoutImages: asNumber(row.dishesWithoutImages) ?? 0,
+        unrepliedReviews: asNumber(row.unrepliedReviews) ?? 0,
+        latestReview: latest
+          ? {
+              id: asString(latest.id) ?? "",
+              authorName: asString(latest.authorName) ?? "Hungry diner",
+              rating: asNumber(latest.rating),
+              text: asString(latest.text) ?? "",
+              createdAt: asString(latest.createdAt) ?? new Date().toISOString(),
+            }
+          : undefined,
+      };
     },
 
     async getWeeklySummaryStats(outletId) {
@@ -6212,7 +6366,7 @@ export const supabaseService: HungryService = {
         body: `${review.rating?.toFixed(1)} stars: ${review.text.slice(0, 120)}`,
         status: "unread",
         dedupe_key: `low-rating:${review.sourceId ?? review.id}`,
-        deep_link: "MerchantTabs/CustomerInbox",
+        deep_link: MERCHANT_DEEP_LINKS.inbox,
         metadata: {
           reviewId: review.sourceId ?? review.id,
           rating: review.rating,
@@ -6254,7 +6408,7 @@ export const supabaseService: HungryService = {
           body: `${summary.totalViews.toLocaleString()} views, ${summary.newReviews} new reviews, ${summary.unrepliedReviews} unreplied reviews.`,
           status: "unread",
           dedupe_key: `weekly-summary:${summary.id}:${member.id}`,
-          deep_link: "MerchantTabs/MerchantAnalytics",
+          deep_link: MERCHANT_DEEP_LINKS.analytics,
           metadata: { summaryId: summary.id },
         }));
       if (rows.length === 0) return [];
@@ -6436,7 +6590,7 @@ export const supabaseService: HungryService = {
             body: `${trimmedName}, open Hungry to accept your merchant team invite.`,
             status: "sent",
             dedupe_key: `team-invite:${merchantAccountId}:${normalizedEmail}`,
-            deep_link: "MerchantTabs/MerchantSettings",
+            deep_link: MERCHANT_DEEP_LINKS.settings,
             metadata: {
               memberId: asString(row.id),
               role,
@@ -6825,7 +6979,7 @@ export const supabaseService: HungryService = {
       if (!client) throw new Error("Supabase client not initialized");
       const { data, error } = await client
         .from("checklists")
-        .select("*")
+        .select("*, checklist_items(count)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data || []).map((row) => mapChecklist(row as Row));
@@ -6955,7 +7109,8 @@ export const supabaseService: HungryService = {
     async getPortfolios(filters?: any) {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
-      let query = client.from("portfolios").select("*");
+      // Item counts ride along, so list cards show real counts without opening each list.
+      let query = client.from("portfolios").select("*, portfolio_items(count)");
 
       if (filters?.userId) {
         query = query.eq("owner_id", filters.userId);
@@ -6967,7 +7122,8 @@ export const supabaseService: HungryService = {
         query = query.eq("type", filters.type);
       }
 
-      query = query.order("created_at", { ascending: false });
+      // Bounded: an unfiltered read must not pull every public list on the platform.
+      query = query.order("created_at", { ascending: false }).limit(PORTFOLIO_LIST_LIMIT);
 
       const { data, error } = await query;
       if (error) throw error;
@@ -6977,7 +7133,11 @@ export const supabaseService: HungryService = {
     async getPortfolio(id: string) {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
-      const { data, error } = await client.from("portfolios").select("*").eq("id", id).single();
+      const { data, error } = await client
+        .from("portfolios")
+        .select("*, portfolio_items(count)")
+        .eq("id", id)
+        .single();
       if (error) throw error;
       return mapPortfolio(data as Row);
     },
@@ -7209,6 +7369,19 @@ export const supabaseService: HungryService = {
         .eq("portfolio_id", portfolioId);
       if (error) throw error;
       return (data || []).map((row) => mapPortfolioFollow(row as Row));
+    },
+
+    async getFollowedPortfolioIds() {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) return [];
+      const { data, error } = await client
+        .from("portfolio_follows")
+        .select("portfolio_id")
+        .eq("user_id", userId);
+      if (error) throw error;
+      return (data || []).map((row) => String((row as Row).portfolio_id ?? ""));
     },
 
     async isFollowingPortfolio(portfolioId: string) {

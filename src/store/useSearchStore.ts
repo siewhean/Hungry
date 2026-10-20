@@ -151,8 +151,9 @@ export const useSearchStore = create<SearchState>()(
     {
       name: "hungry-search-v1",
       storage: hungryPersistStorage,
+      // The typed query and categories are per search (route params), never restored on launch.
       partialize: (state) => ({
-        filters: state.filters,
+        filters: { ...state.filters, query: "", categories: [] },
         recentSearches: state.recentSearches,
         history: state.history,
       }),

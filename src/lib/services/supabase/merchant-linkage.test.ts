@@ -29,13 +29,13 @@ test("Supabase merchant dish writes persist user-visible metadata and media", ()
   assert.match(service, /resolveMerchantDishGalleryUrls/);
   assert.match(service, /bucket: "merchant-dish-images"/);
   assert.match(service, /uploadImageFromUri/);
-  assert.match(service, /replaceDishImages/);
-  assert.match(service, /from\("dish_images"\)/);
-  assert.match(service, /replaceDishDietaryFlags/);
-  assert.match(service, /from\("dish_dietary_flags"\)/);
-  assert.match(service, /from\("dietary_flags"\)/);
-  assert.match(service, /replaceDishTasteVector/);
-  assert.match(service, /from\("dish_taste_vectors"\)\.upsert/);
+  // Dish row, images, dietary flags and taste vector are written in one transaction by the
+  // merchant_save_dish RPC, so a failed step can no longer leave a half-saved live dish.
+  assert.match(service, /rpc\("merchant_save_dish"/);
+  assert.match(service, /p_gallery_urls/);
+  assert.match(service, /p_dietary_slugs/);
+  assert.match(service, /p_taste_vector/);
+  assert.doesNotMatch(service, /replaceDishImages|replaceDishDietaryFlags|replaceDishTasteVector/);
   assert.match(service, /buildDishUpdatePayload/);
   assert.match(service, /fetchDishPresentationMap/);
   assert.match(service, /mapSupabaseDish\(row, venue, presentationByDishId/);

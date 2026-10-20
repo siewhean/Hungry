@@ -14,19 +14,23 @@
  * A signed-in merchant who left the app in Merchant mode reopens in the Merchant Centre.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { View, Animated, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import Constants from "expo-constants";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { HUNGRY_LOGO_ICON, HUNGRY_LOGO_STANDARD_SIZE } from "@/constants/brandAssets";
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useMerchantStore } from "@/store/useMerchantStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme, type HungryTheme } from "@/theme";
 import { AppText } from "@/components/ui";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Splash">;
+
+/** If session hydration never reports back (e.g. corrupt storage), stop waiting. */
+const HYDRATION_FALLBACK_MS = 5000;
 
 export function SplashScreen({ navigation }: Props) {
   const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
@@ -35,7 +39,11 @@ export function SplashScreen({ navigation }: Props) {
   const dismissMerchantModeRestore = useMerchantStore((state) => state.dismissMerchantModeRestore);
   const { palette, motion, spacing, radii, typography } = useHungryTheme();
   const appVersion = Constants.expoConfig?.version ?? "0.1.0";
-  const styles = createStyles({ palette, typography, spacing, radii });
+  const reduceMotion = useReduceMotion();
+  const styles = useMemo(
+    () => createStyles({ palette, typography, spacing, radii }),
+    [palette, radii, spacing, typography],
+  );
 
   // ── Animated values ───────────────────────────────────────────────────────
   const logoScale = useRef(new Animated.Value(0.4)).current;
@@ -46,6 +54,15 @@ export function SplashScreen({ navigation }: Props) {
   const [mountedAt] = useState(() => Date.now());
 
   useEffect(() => {
+    if (reduceMotion) {
+      // Reduce Motion: show the final frame without scaling or springs.
+      logoScale.setValue(1);
+      logoOpacity.setValue(1);
+      taglineOpacity.setValue(1);
+      dotScale.setValue(1);
+      dotOpacity.setValue(1);
+      return;
+    }
     // Staggered entrance animation
     Animated.sequence([
       // Logo scales in.
@@ -91,8 +108,18 @@ export function SplashScreen({ navigation }: Props) {
     motion.splashDot,
     motion.splashFast,
     motion.splashReveal,
+    reduceMotion,
     taglineOpacity,
   ]);
+
+  useEffect(() => {
+    if (isAuthReady) return;
+    const timer = setTimeout(() => {
+      const session = useSessionStore.getState();
+      if (!session.hasHydrated) session.markHydrated();
+    }, HYDRATION_FALLBACK_MS);
+    return () => clearTimeout(timer);
+  }, [isAuthReady]);
 
   // Leave as soon as auth/bootstrap is ready, keeping only a short minimum.
   useEffect(() => {
@@ -185,18 +212,20 @@ export function SplashScreen({ navigation }: Props) {
         </AppText>
       </Animated.View>
 
-      {/* Version stamp */}
-      <Animated.View
-        style={{
-          opacity: taglineOpacity,
-          position: "absolute",
-          bottom: spacing[12],
-        }}
-      >
-        <AppText variant="micro" tone="muted">
-          Hungry v{appVersion} · Singapore
-        </AppText>
-      </Animated.View>
+      {/* Version stamp: development builds only. */}
+      {__DEV__ ? (
+        <Animated.View
+          style={{
+            opacity: taglineOpacity,
+            position: "absolute",
+            bottom: spacing[12],
+          }}
+        >
+          <AppText variant="micro" tone="muted">
+            Hungry v{appVersion} · Singapore
+          </AppText>
+        </Animated.View>
+      ) : null}
     </View>
   );
 }

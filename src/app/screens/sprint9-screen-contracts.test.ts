@@ -29,7 +29,7 @@ test("Sprint 9 screen contract: Login screen uses service auth + error boundary"
   // while a request runs every auth button is disabled and the submit shows loading.
   assert.match(
     source,
-    /\{oauthProvidersEnabled \? \([\s\S]*<AuthProviderButton[\s\S]*disabled=\{isBusy\}[\s\S]*intent="signIn"[\s\S]*provider="google"[\s\S]*provider="apple"[\s\S]*\) : null\}/,
+    /\{oauthProvidersEnabled \? \([\s\S]*<AuthProviderButton[\s\S]*disabled=\{isBusy\}[\s\S]*intent="continue"[\s\S]*provider="apple"[\s\S]*provider="google"[\s\S]*\) : null\}/,
   );
   assert.match(source, /loading=\{isSubmitting\}/);
   assert.doesNotMatch(source, /disabled=\{!oauthProvidersEnabled\}/);
@@ -37,7 +37,7 @@ test("Sprint 9 screen contract: Login screen uses service auth + error boundary"
   assert.match(signUpSource, /FEATURE_FLAGS\.oauthProvidersEnabled/);
   assert.match(
     signUpSource,
-    /\{oauthProvidersEnabled \? \([\s\S]*<AuthProviderButton[\s\S]*disabled=\{isBusy\}[\s\S]*intent="continue"[\s\S]*provider="google"[\s\S]*provider="apple"[\s\S]*\) : null\}/,
+    /\{oauthProvidersEnabled \? \([\s\S]*<AuthProviderButton[\s\S]*disabled=\{isBusy\}[\s\S]*intent="continue"[\s\S]*provider="apple"[\s\S]*provider="google"[\s\S]*\) : null\}/,
   );
   assert.match(signUpSource, /loading=\{isSubmitting\}/);
   assert.doesNotMatch(signUpSource, /disabled=\{!oauthProvidersEnabled\}/);
@@ -89,7 +89,7 @@ test("Sprint 9 screen contract: Login screen uses service auth + error boundary"
     /accessibilityLabel=\{AUTH_COPY\.forgotPassword\.backToLogin\}/,
   );
   assert.match(forgotPasswordSource, /accessibilityHint="Returns to the sign in screen"/);
-  assert.match(resetPasswordSource, /accessibilityLabel="Back to Sign In"/);
+  assert.match(resetPasswordSource, /accessibilityLabel="Back to sign in"/);
   assert.match(
     resetPasswordSource,
     /accessibilityLabel=\{showPassword \? "Hide password" : "Show password"\}/,
@@ -160,12 +160,9 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
   assert.doesNotMatch(tasteProfileResult, /generated food photo/);
   assert.match(
     tasteQuiz,
-    /accessibilityRole="button"[\s\S]*accessibilityLabel=\{`\$\{labels\[index\]\} \$\{QUESTIONS\[currentKey\]\}`\}/,
+    /accessibilityRole="button"[\s\S]*accessibilityLabel=\{`\$\{QUESTIONS\[currentKey\]\} \$\{labels\[index\]\}`\}/,
   );
-  assert.match(
-    tasteQuiz,
-    /accessibilityHint=\{`Selects \$\{choiceFoods\[index\]\.label\} as your answer for this taste question`\}/,
-  );
+  assert.match(tasteQuiz, /accessibilityHint=\{`For example, \$\{choiceFoods\[index\]\.label\}`\}/);
   assert.match(
     tasteQuiz,
     /accessibilityState=\{\{ selected: isSelected, disabled: isTransitioning \}\}/,
@@ -175,7 +172,7 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
     /accessibilityRole="checkbox"[\s\S]*accessibilityLabel=\{`Dietary preference \$\{option\.label\}`\}/,
   );
   assert.match(tasteQuiz, /accessibilityState=\{\{ checked: isSelected \}\}/);
-  assert.match(tasteQuiz, /const \{ fontScale, width \} = useWindowDimensions\(\)/);
+  assert.match(tasteQuiz, /const \{ fontScale, height, width \} = useWindowDimensions\(\)/);
   assert.match(
     tasteQuiz,
     /const accessibilityFooterReserve = Math\.ceil\(Math\.max\(fontScale - 1, 0\) \* 96\)/,
@@ -364,13 +361,17 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
     /horizontal[\s\S]*pagingEnabled[\s\S]*showsHorizontalScrollIndicator=\{false\}/,
   );
   assert.match(source, /setCarouselIndexByPostId/);
-  assert.match(source, /numberOfLines=\{2\}/);
+  // " more" expands the caption in place; comments open from the comment button.
+  assert.match(source, /numberOfLines=\{isCaptionExpanded \? undefined : 2\}/);
   assert.match(source, /onTextLayout=\{\(event\) => handleCaptionTextLayout\(item\.id, event\)\}/);
-  assert.match(source, /accessibilityLabel=\{`Read comments for \$\{item\.authorName\}'s post`\}/);
+  assert.match(
+    source,
+    /setExpandedCaptionByPostId\(\(current\) => \(\{ \.\.\.current, \[item\.id\]: true \}\)\)/,
+  );
   assert.match(source, /onPress=\{\(\) => openComments\(item\)\}/);
   assert.match(
     source,
-    /\{captionOverflows \? formatCollapsedCaption\(item\.caption\) : item\.caption\}/,
+    /captionOverflows && !isCaptionExpanded\s*\? formatCollapsedCaption\(item\.caption\)\s*: item\.caption/,
   );
   assert.match(source, /\{" more"\}/);
   assert.doesNotMatch(source, /Read more comments for/);
@@ -562,8 +563,10 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.match(source, /getDataRepository\(\)/);
   assert.match(source, /type Props = NativeStackScreenProps<RootStackParamList, "DishDetail">/);
   assert.match(source, /buildDishGallery\(dish\)/);
-  assert.match(source, /function formatBasePrice\(price: number\)/);
-  assert.match(source, /formatBasePrice\(dish\.price\)/);
+  // Unpriced dishes show the range or "Price not listed", never S$0.00.
+  assert.match(source, /function formatDishPrice\(/);
+  assert.match(source, /Price not listed/);
+  assert.match(source, /const dishPrice = formatDishPrice\(dish\)/);
   assert.match(source, /fontSize: 28, lineHeight: 34/);
   assert.match(source, /const heroGradientColors: readonly \[ColorValue, ColorValue, ColorValue\]/);
   assert.match(source, /palette\.detailHeroGradientStart/);
@@ -575,24 +578,27 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.doesNotMatch(source, /borderBottomWidth: 1,[\s\S]*Epicurean Discovery/);
   assert.match(source, /View Taste Profile/);
   assert.match(source, /Opening Hours/);
-  assert.match(source, /Signature Dishes/);
+  assert.match(source, /More from \{venueName\}/);
   assert.match(source, /From the Community/);
-  assert.match(source, /const venueDishes = useMemo/);
-  assert.match(source, /getSignatureDishes\(dish, venueDishes\)/);
+  assert.match(source, /const cachedVenueDishes = useMemo/);
+  // Never repeats the dish being viewed.
+  assert.match(source, /getMoreFromStall\(dish, venueDishes\)/);
+  assert.match(source, /if \(dish\.id !== currentDish\.id\)/);
   assert.doesNotMatch(source, /supplementalDishes/);
   assert.match(source, /const signatureGridItemWidth = width \/ 2/);
   assert.match(source, /const signatureGridItemHeight = signatureGridItemWidth \* 1\.5/);
   assert.match(source, /marginHorizontal: -spacing\[4\]/);
-  assert.match(source, /signatureDishes\.slice\(0, 4\)\.map/);
+  assert.match(source, /moreFromStall\.map/);
   assert.match(source, /height: signatureGridItemHeight/);
   assert.match(source, /width: signatureGridItemWidth/);
   assert.match(source, /palette\.detailImageBadgeSurface/);
   assert.match(source, /shadowRadius: 12/);
   assert.match(source, /textShadowRadius: 3/);
-  assert.match(source, /formatBasePrice\(item\.price\)/);
+  assert.match(source, /formatDishPrice\(item\)/);
   assert.doesNotMatch(source, /\{dish\.priceRange\}/);
   assert.doesNotMatch(source, /\{item\.priceRange\}/);
-  assert.match(source, /navigation\.navigate\("DishDetail", \{ dishId: item\.id \}\)/);
+  // push, so Back returns to the previous dish.
+  assert.match(source, /navigation\.push\("DishDetail", \{ dishId: item\.id \}\)/);
   assert.match(navigatorSource, /const loadDishDetailScreenV2 =/);
   // The redundant DishDetailV2 alias route was removed; DishDetail is the V2 screen.
   assert.doesNotMatch(navigatorSource, /name="DishDetailV2"/);
@@ -615,5 +621,8 @@ test("search home hands every query to the paged results and keeps a see-all act
 
   assert.doesNotMatch(search, /getSearchResultsAsync|inlineResults/);
   assert.match(search, /"See all results"/);
-  assert.match(search, /navigation\.navigate\("SearchResults"\)/);
+  assert.match(
+    search,
+    /navigation\.navigate\("SearchResults", \{\s*initialQuery: trimmedQuery \|\| undefined,/,
+  );
 });

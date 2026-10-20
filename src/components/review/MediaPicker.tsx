@@ -48,23 +48,36 @@ export function MediaPicker({
       return;
     }
 
+    const remainingPhotos = Math.max(0, maxPhotos - photos.length);
+    if (type === "image" && remainingPhotos === 0) return;
+    // Photos are picked several at a time (no editor round trip per photo);
+    // a reel is still one clip with the trim editor.
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes:
-        type === "image"
-          ? ImagePicker.MediaTypeOptions.Images
-          : ImagePicker.MediaTypeOptions.Videos,
-      allowsEditing: true,
+      mediaTypes: type === "image" ? ["images"] : ["videos"],
+      allowsEditing: type === "video",
+      allowsMultipleSelection: type === "image",
+      selectionLimit: type === "image" ? remainingPhotos : 1,
+      orderedSelection: true,
       quality: 0.8,
       videoMaxDuration: 60,
     });
 
     if (result.canceled || !result.assets?.length) return;
 
-    const asset = result.assets[0];
     if (type === "video") {
-      onSetVideo?.(asset.uri);
-    } else {
-      onAddPhoto(asset.uri);
+      onSetVideo?.(result.assets[0]?.uri);
+      return;
+    }
+    const pickedUris = result.assets
+      .map((asset) => asset.uri)
+      .filter((uri, index, uris) => uri && !photos.includes(uri) && uris.indexOf(uri) === index)
+      .slice(0, remainingPhotos);
+    pickedUris.forEach(onAddPhoto);
+    if (pickedUris.length < result.assets.length) {
+      showToast({
+        message: `Up to ${maxPhotos} photos, each added once.`,
+        tone: "info",
+      });
     }
   };
 

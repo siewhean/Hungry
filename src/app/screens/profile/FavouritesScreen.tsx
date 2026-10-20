@@ -1,7 +1,7 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
-import { Heart, Star } from "lucide-react-native";
+import { Bookmark, Star } from "lucide-react-native";
 
 import { AccessibleImage, AppText, Chip, EmptyState } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
@@ -85,21 +85,22 @@ export function FavouritesScreen({ navigation }: Props) {
                   {tab === "want" ? (
                     <Pressable
                       accessibilityRole="button"
-                      accessibilityLabel={`Remove ${dish.name} from favourites`}
+                      accessibilityLabel={`Remove ${dish.name} from saved`}
+                      hitSlop={6}
                       onPress={() => toggleFavourite(dish)}
                       style={{
                         position: "absolute",
                         top: spacing[2],
                         right: spacing[2],
-                        width: 32,
-                        height: 32,
+                        width: 36,
+                        height: 36,
                         borderRadius: componentRadii.iconButton,
                         backgroundColor: palette.surfaceTranslucent,
                         alignItems: "center",
                         justifyContent: "center",
                       }}
                     >
-                      <Heart size={16} color={palette.error} fill={palette.error} />
+                      <Bookmark size={16} color={palette.orange} fill={palette.orange} />
                     </Pressable>
                   ) : null}
                 </View>

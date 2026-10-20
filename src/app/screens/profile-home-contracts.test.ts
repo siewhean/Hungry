@@ -38,7 +38,9 @@ test("profile home contract: profile stats use dynamic profile and social store 
   assert.match(source, /value=\{profileFollowCounts\?\.followersCount \?\? null\}/);
   assert.match(source, /value=\{profileFollowCounts\?\.followingCount \?\? null\}/);
   assert.doesNotMatch(source, /mergeFollowerNames|localFollowerCount|localFollowingCount/);
-  assert.match(source, /value=\{profile\.stats\.dishesReviewed\}/);
+  // Reviews count real reviews from the server; Stalls share the Visited stalls source.
+  assert.match(source, /value=\{ownReviews\?\.length \?\? null\}/);
+  assert.match(source, /value=\{visitedStallIds\.length\}/);
   assert.match(source, /label="Followers"/);
   assert.match(source, /label="Following"/);
   assert.match(source, /label="Reviews"[\s\S]*<PencilLine size=\{14\}/);
@@ -137,9 +139,7 @@ test("profile home contract: customer surfaces read the merchant mode flag, not 
     "src/app/navigation/RootNavigator.tsx",
     "src/app/screens/home/HomeFeedScreen.tsx",
     "src/app/screens/discover/DiscoverHomeScreen.tsx",
-    "src/app/screens/review/ReviewScreen.tsx",
     "src/app/screens/review/QuickReviewSheet.tsx",
-    "src/app/screens/review/ReviewSuccessModal.tsx",
     "src/app/screens/post/PostComposerScreen.tsx",
     "src/app/screens/post/PostComposerScreenV2.tsx",
     "src/features/post/components/PostTab.tsx",

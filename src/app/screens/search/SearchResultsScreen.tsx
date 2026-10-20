@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -10,15 +10,17 @@ import {
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { ArrowLeft } from "lucide-react-native";
+import { ArrowLeft, MapPinOff, X } from "lucide-react-native";
 import { FlashList } from "@shopify/flash-list";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
   AccessibleImage,
   AppText,
+  Button,
   EmptyState,
   FilterChipRail,
+  IconButton,
   Screen,
   Skeleton,
 } from "@/components/ui";
@@ -28,18 +30,47 @@ import type {
   CatalogRawDishCard,
   CatalogRawVenueCard,
 } from "@/lib/services/catalog";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { reportError } from "@/lib/monitoring/reportError";
-import { useLocationStore } from "@/store/useLocationStore";
+import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
-import { useSearchStore } from "@/store/useSearchStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
 
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 type SearchResultsRoute = RouteProp<RootStackParamList, "SearchResults">;
-const RAW_BROWSE_FILTER_OPTIONS = ["All", "Halal", "Japanese", "Western", "Noodles", "Rice"].map(
-  (filter) => ({ id: filter, label: filter }),
-);
+// "Open now" and the price cap map onto p_open_only / p_max_price in the catalog RPCs.
+const OPEN_NOW_FILTER = "Open now";
+const BUDGET_FILTER = "Under S$6";
+const BUDGET_MAX_PRICE = 6;
+const RAW_BROWSE_FILTER_OPTIONS = [
+  "All",
+  OPEN_NOW_FILTER,
+  BUDGET_FILTER,
+  "Halal",
+  "Japanese",
+  "Western",
+  "Noodles",
+  "Rice",
+].map((filter) => ({ id: filter, label: filter }));
+
+/** Maps a route/link filter or food-type tag onto one of the chips ("Local" was the old open-now chip). */
+function resolveInitialFilter(value?: string) {
+  if (!value) return undefined;
+  if (value.toLowerCase() === "local") return OPEN_NOW_FILTER;
+  return RAW_BROWSE_FILTER_OPTIONS.find((option) => option.id.toLowerCase() === value.toLowerCase())
+    ?.id;
+}
+
+/** "120 m" under a kilometre, "2.4 km" above. */
+export function formatBrowseDistance(meters: number) {
+  return meters >= 1000 ? `${(meters / 1000).toFixed(1)} km` : `${Math.round(meters)} m`;
+}
+
+/** ~100 m buckets, so a GPS refresh that barely moves does not reset the list. */
+function roundCoordinate(value: number) {
+  return Math.round(value * 1000) / 1000;
+}
 
 function BrowseGridLoadingState({
   itemWidth,
@@ -94,11 +125,12 @@ function rawCatalogRequest(
     sort: query.trim() ? "relevance" : "nearby",
     dietaryFlags: filter === "halal" ? ["halal"] : [],
     cuisineTags: ["japanese", "western", "noodles", "rice"].includes(filter) ? [filter] : [],
-    openOnly: mode === "stalls" && filter === "local",
+    openOnly: selectedFilter === OPEN_NOW_FILTER,
+    maxPrice: selectedFilter === BUDGET_FILTER ? BUDGET_MAX_PRICE : undefined,
   };
 }
 
-function RawCatalogCard({
+const RawCatalogCard = memo(function RawCatalogCard({
   item,
   itemWidth,
   mode,
@@ -151,7 +183,8 @@ function RawCatalogCard({
               </AppText>
             </View>
           )}
-          {item.verificationStatus !== "approved" ? (
+          {/* Only positive verification is badged; most catalog rows are unverified. */}
+          {item.verificationStatus === "verified" || item.verificationStatus === "approved" ? (
             <View
               style={{
                 backgroundColor: palette.surface,
@@ -163,8 +196,8 @@ function RawCatalogCard({
                 top: spacing[2],
               }}
             >
-              <AppText variant="micro" style={{ color: palette.textMuted, fontSize: 10 }}>
-                {item.verificationStatus === "verified" ? "Source verified" : "Unverified"}
+              <AppText variant="micro" style={{ color: palette.textSecondary }}>
+                {item.verificationStatus === "approved" ? "Verified" : "Source verified"}
               </AppText>
             </View>
           ) : null}
@@ -179,7 +212,7 @@ function RawCatalogCard({
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
             <AppText tone="muted" variant="micro">
               {item.distanceMeters !== undefined
-                ? `${Math.round(item.distanceMeters)} m`
+                ? formatBrowseDistance(item.distanceMeters)
                 : "Singapore"}
             </AppText>
             {price !== undefined ? (
@@ -192,39 +225,57 @@ function RawCatalogCard({
       </View>
     </Pressable>
   );
-}
+});
 
 function RawCatalogBrowseGrid({
-  initialFoodTypeTag,
+  initialFilter,
   initialSearchQuery = "",
   mode,
 }: {
-  initialFoodTypeTag?: string;
+  initialFilter?: string;
   initialSearchQuery?: string;
   mode: "dishes" | "stalls";
 }) {
   const navigation = useNavigation<RootNavigation>();
   const { palette, spacing } = useHungryTheme();
   const { width } = useWindowDimensions();
+  const permission = useLocationStore((state) => state.permission);
   const currentLocation = useLocationStore((state) => state.currentLocation);
+  const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const lastRecordedQueryRef = useRef("");
-  const initialRawFilter = RAW_BROWSE_FILTER_OPTIONS.find(
-    (option) => option.id.toLowerCase() === initialFoodTypeTag?.toLowerCase(),
-  )?.id;
-  const [selectedFilter, setSelectedFilter] = useState(initialRawFilter ?? "All");
+  const [selectedFilter, setSelectedFilter] = useState(
+    () => resolveInitialFilter(initialFilter) ?? "All",
+  );
   const [items, setItems] = useState<RawCatalogItem[]>([]);
   const [nextCursor, setNextCursor] = useState<string | undefined>();
   const [releaseId, setReleaseId] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // A failed next page waits for a tap on Retry instead of re-firing on every scroll.
+  const [loadMoreFailed, setLoadMoreFailed] = useState(false);
   const requestVersion = useRef(0);
   const releaseIdRef = useRef<string | undefined>(undefined);
   const service = getCatalogRawService();
   const itemWidth = width / 2;
+
+  // A link or a new navigation with other params replaces what the grid shows.
+  useEffect(() => {
+    setSearchQuery(initialSearchQuery);
+  }, [initialSearchQuery]);
+  useEffect(() => {
+    setSelectedFilter(resolveInitialFilter(initialFilter) ?? "All");
+  }, [initialFilter]);
+
+  // A picked area wins over GPS; without either the default point is used and disclosed below.
+  const { coordinate: effectiveCoordinate, isApproximate: isUsingDefaultLocation } =
+    getEffectiveLocation({ permission, currentLocation, manualCoordinate });
+  const latitude = roundCoordinate(effectiveCoordinate.latitude);
+  const longitude = roundCoordinate(effectiveCoordinate.longitude);
+  const coordinate = useMemo(() => ({ latitude, longitude }), [latitude, longitude]);
 
   const loadPage = useCallback(
     async (cursor?: string, append = false) => {
@@ -232,14 +283,9 @@ function RawCatalogBrowseGrid({
       if (append) setIsLoadingMore(true);
       else setIsLoading(true);
       setError(null);
+      setLoadMoreFailed(false);
       try {
-        const request = rawCatalogRequest(
-          mode,
-          searchQuery,
-          selectedFilter,
-          currentLocation,
-          cursor,
-        );
+        const request = rawCatalogRequest(mode, searchQuery, selectedFilter, coordinate, cursor);
         request.releaseId = cursor ? releaseIdRef.current : undefined;
         const page =
           mode === "dishes" ? await service.listDishes(request) : await service.listVenues(request);
@@ -248,11 +294,26 @@ function RawCatalogBrowseGrid({
         setNextCursor(page.nextCursor);
         releaseIdRef.current = page.releaseId || undefined;
         setReleaseId(releaseIdRef.current);
+        if (append) {
+          trackAnalyticsEvent("search_load_more", { mode, count: page.items.length });
+        } else if (page.items.length === 0) {
+          trackAnalyticsEvent("search_zero_results", {
+            mode,
+            filter: selectedFilter,
+            query_length: searchQuery.trim().length,
+          });
+        }
       } catch (loadError) {
         if (requestVersion.current === version) {
           reportError(loadError, { surface: "catalog_browse", mode });
-          setError(loadError instanceof Error ? loadError.message : "Could not load the catalog.");
-          if (!append) setItems([]);
+          if (append) {
+            setLoadMoreFailed(true);
+          } else {
+            setError(
+              loadError instanceof Error ? loadError.message : "Could not load the catalog.",
+            );
+            setItems([]);
+          }
         }
       } finally {
         if (requestVersion.current === version) {
@@ -261,7 +322,7 @@ function RawCatalogBrowseGrid({
         }
       }
     },
-    [currentLocation, mode, searchQuery, selectedFilter, service],
+    [coordinate, mode, searchQuery, selectedFilter, service],
   );
 
   // Only a submitted query is a committed search: one taste signal each, not one per typing pause.
@@ -270,6 +331,11 @@ function RawCatalogBrowseGrid({
       const committedQuery = query.trim().toLowerCase();
       if (!committedQuery || lastRecordedQueryRef.current === committedQuery) return;
       lastRecordedQueryRef.current = committedQuery;
+      trackAnalyticsEvent("search_query", {
+        mode,
+        filter: selectedFilter,
+        query_length: committedQuery.length,
+      });
       recordTasteInteraction({
         type: "search_query",
         surface: "search",
@@ -277,7 +343,7 @@ function RawCatalogBrowseGrid({
         chipId: selectedFilter === "All" ? undefined : selectedFilter,
       });
     },
-    [recordTasteInteraction, selectedFilter],
+    [mode, recordTasteInteraction, selectedFilter],
   );
 
   // A query sent from Search home was already submitted there.
@@ -301,6 +367,51 @@ function RawCatalogBrowseGrid({
     return () => clearTimeout(timer);
   }, [loadPage]);
 
+  const handleSelectFilter = useCallback(
+    (filter: string) => {
+      setSelectedFilter(filter);
+      trackAnalyticsEvent("search_filter_changed", { mode, filter });
+    },
+    [mode],
+  );
+
+  const handleBack = useCallback(() => {
+    // Cold starts and links have nothing to go back to.
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    navigation.navigate("MainTabs", { screen: "Discover" });
+  }, [navigation]);
+
+  const renderItem = useCallback(
+    ({ item, index }: { item: RawCatalogItem; index: number }) => (
+      <RawCatalogCard
+        item={item}
+        itemWidth={itemWidth}
+        mode={mode}
+        onPress={() => {
+          navigation.navigate("CatalogRawDetail", {
+            kind: mode === "dishes" ? "dish" : "venue",
+            id: item.id,
+            releaseId,
+          });
+          trackAnalyticsEvent("search_result_opened", { mode, position: index });
+          if (mode === "dishes") {
+            recordTasteInteraction({
+              type: "dish_result_click",
+              surface: "search",
+              dishId: item.id,
+              query: searchQuery.trim() || undefined,
+              buttonId: "search_result",
+            });
+          }
+        }}
+      />
+    ),
+    [itemWidth, mode, navigation, recordTasteInteraction, releaseId, searchQuery],
+  );
+
   return (
     <Screen scroll={false} fullWidth style={{ backgroundColor: palette.bg }}>
       <View style={{ flex: 1, backgroundColor: palette.bg }}>
@@ -308,75 +419,83 @@ function RawCatalogBrowseGrid({
           style={{ gap: spacing[3], paddingHorizontal: spacing[4], paddingVertical: spacing[3] }}
         >
           <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-            <Pressable
-              accessibilityRole="button"
+            <IconButton
+              variant="ghost"
               accessibilityLabel="Go back"
-              onPress={() => navigation.goBack()}
-            >
-              <ArrowLeft color={palette.text} size={24} />
-            </Pressable>
-            <TextInput
-              accessibilityLabel={`Search ${mode}`}
-              autoCorrect={false}
-              onChangeText={setSearchQuery}
-              onSubmitEditing={() => recordCommittedQuery(searchQuery)}
-              placeholder={mode === "dishes" ? "Search all dishes" : "Search all stalls"}
-              placeholderTextColor={palette.textMuted}
-              testID="browse-results-search-input"
-              style={[
-                browseStyles.textInput,
-                {
-                  backgroundColor: palette.surface,
-                  borderColor: palette.border,
-                  borderRadius: 18,
-                  borderWidth: 1,
-                  color: palette.text,
-                  height: 48,
-                  paddingHorizontal: spacing[3],
-                },
-              ]}
-              value={searchQuery}
+              onPress={handleBack}
+              icon={<ArrowLeft color={palette.text} size={22} />}
             />
+            <View style={{ flex: 1, justifyContent: "center" }}>
+              <TextInput
+                accessibilityLabel={`Search ${mode}`}
+                autoCorrect={false}
+                onChangeText={setSearchQuery}
+                onSubmitEditing={() => recordCommittedQuery(searchQuery)}
+                placeholder={mode === "dishes" ? "Search all dishes" : "Search all stalls"}
+                placeholderTextColor={palette.textMuted}
+                returnKeyType="search"
+                testID="browse-results-search-input"
+                style={[
+                  browseStyles.textInput,
+                  {
+                    backgroundColor: palette.surface,
+                    borderColor: palette.border,
+                    borderRadius: 18,
+                    borderWidth: 1,
+                    color: palette.text,
+                    height: 48,
+                    paddingLeft: spacing[3],
+                    paddingRight: searchQuery ? 48 : spacing[3],
+                  },
+                ]}
+                value={searchQuery}
+              />
+              {searchQuery ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear search"
+                  hitSlop={8}
+                  onPress={() => setSearchQuery("")}
+                  style={browseStyles.clearButton}
+                >
+                  <X color={palette.textMuted} size={18} />
+                </Pressable>
+              ) : null}
+            </View>
           </View>
           <FilterChipRail
             options={RAW_BROWSE_FILTER_OPTIONS}
             selectedId={selectedFilter}
-            onSelect={setSelectedFilter}
+            onSelect={handleSelectFilter}
           />
+          {isUsingDefaultLocation ? (
+            <View
+              accessibilityRole="text"
+              style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}
+            >
+              <MapPinOff color={palette.textMuted} size={16} />
+              <AppText tone="secondary" variant="micro" style={{ flex: 1 }}>
+                Location is off, so distances are from central Singapore.
+              </AppText>
+            </View>
+          ) : null}
         </View>
         <FlashList
           data={items}
           // @ts-ignore FlashList v2 supports this runtime prop but its bundled type omits it.
           estimatedItemSize={itemWidth * 1.25}
+          extraData={releaseId}
           keyExtractor={(item) => item.id}
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
           numColumns={2}
           onEndReached={() => {
-            if (nextCursor && !isLoadingMore && !isLoading) void loadPage(nextCursor, true);
+            if (nextCursor && !isLoadingMore && !isLoading && !loadMoreFailed) {
+              void loadPage(nextCursor, true);
+            }
           }}
           onEndReachedThreshold={0.6}
-          renderItem={({ item }) => (
-            <RawCatalogCard
-              item={item}
-              itemWidth={itemWidth}
-              mode={mode}
-              onPress={() => {
-                navigation.navigate("CatalogRawDetail", {
-                  kind: mode === "dishes" ? "dish" : "venue",
-                  id: item.id,
-                  releaseId,
-                });
-                if (mode === "dishes") {
-                  recordTasteInteraction({
-                    type: "dish_result_click",
-                    surface: "search",
-                    dishId: item.id,
-                    query: searchQuery.trim() || undefined,
-                    buttonId: "search_result",
-                  });
-                }
-              }}
-            />
-          )}
+          renderItem={renderItem}
           ListEmptyComponent={
             isLoading ? (
               <BrowseGridLoadingState itemWidth={itemWidth} mode={mode} />
@@ -397,6 +516,15 @@ function RawCatalogBrowseGrid({
               <View style={{ paddingVertical: spacing[4] }}>
                 <ActivityIndicator color={palette.orange} />
               </View>
+            ) : loadMoreFailed && nextCursor ? (
+              <View style={{ alignItems: "center", gap: spacing[2], paddingVertical: spacing[4] }}>
+                <AppText tone="secondary">{"Couldn't load more."}</AppText>
+                <Button
+                  label="Retry"
+                  variant="secondary"
+                  onPress={() => void loadPage(nextCursor, true)}
+                />
+              </View>
             ) : null
           }
         />
@@ -406,10 +534,16 @@ function RawCatalogBrowseGrid({
 }
 
 const browseStyles = StyleSheet.create({
+  clearButton: {
+    alignItems: "center",
+    height: 44,
+    justifyContent: "center",
+    position: "absolute",
+    right: 2,
+    width: 44,
+  },
   textInput: {
-    flex: 1,
     fontSize: 16,
-    height: "100%",
     padding: 0,
     textAlignVertical: "center",
   },
@@ -425,17 +559,13 @@ export function BrowseStallsScreen() {
 
 export function SearchResultsScreen() {
   const route = useRoute<SearchResultsRoute>();
-  const storedQuery = useSearchStore((state) => state.filters.query);
-  const selectedCategories = useSearchStore((state) => state.filters.categories);
-  const storedCatalogCategory = selectedCategories.find((category) =>
-    ["noodles", "rice"].includes(category),
-  );
 
+  // Everything comes from route params, so a search never inherits an older persisted query.
   return (
     <RawCatalogBrowseGrid
       mode={route.params?.browseMode ?? "dishes"}
-      initialFoodTypeTag={route.params?.foodTypeTag ?? storedCatalogCategory}
-      initialSearchQuery={route.params?.initialQuery ?? storedQuery}
+      initialFilter={route.params?.initialFilter ?? route.params?.foodTypeTag}
+      initialSearchQuery={route.params?.initialQuery ?? ""}
     />
   );
 }

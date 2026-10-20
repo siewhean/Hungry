@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { BellRing } from "lucide-react-native";
 
@@ -34,7 +34,7 @@ export function FollowedStallsScreen({ navigation }: Props) {
       title="Followed stalls"
       subtitle="Get an alert when these stalls add a dish, change a price or restock."
     >
-      <ScrollView contentContainerStyle={{ gap: spacing[3], paddingBottom: spacing[5] }}>
+      <View style={{ gap: spacing[3], paddingBottom: spacing[5] }}>
         {venues.length ? (
           venues.map((venue) => (
             <Pressable
@@ -73,7 +73,7 @@ export function FollowedStallsScreen({ navigation }: Props) {
             body="Tap Follow on a stall page to hear about its menu changes."
           />
         )}
-      </ScrollView>
+      </View>
     </ProfileScreenShell>
   );
 }

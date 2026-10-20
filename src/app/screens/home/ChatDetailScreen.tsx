@@ -176,6 +176,7 @@ export function ChatDetailScreen({ navigation, route }: Props) {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Go back to activity"
+          hitSlop={10}
           onPress={() => navigation.goBack()}
           style={styles.backBtn}
         >

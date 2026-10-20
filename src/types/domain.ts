@@ -456,6 +456,10 @@ export interface StallPost {
   isStallAccount?: boolean;
   /** Inline dish link references in caption — tap navigates to dish detail */
   dishLinks?: { name: string; dishId: string }[];
+  /** Venue fields from the feed read, used when the local catalog has not loaded this venue. */
+  venueName?: string;
+  venueUnitNumber?: string;
+  buildingName?: string;
 }
 
 export interface SearchHistoryEntry {
@@ -685,6 +689,20 @@ export interface MerchantAnalytics {
   };
 }
 
+/** Counts behind the merchant dashboard's action cards, from one call. */
+export interface MerchantDashboardSummary {
+  menuCount: number;
+  dishesWithoutImages: number;
+  unrepliedReviews: number;
+  latestReview?: {
+    id: string;
+    authorName: string;
+    rating?: number;
+    text: string;
+    createdAt: string;
+  };
+}
+
 export type PromotionStatus = "draft" | "scheduled" | "active" | "ended";
 
 // ─── Checklist Types ──────────────────────────────────────────────────────────
@@ -697,6 +715,8 @@ export interface Checklist {
   name: string;
   createdAt: string;
   updatedAt: string;
+  /** Server item count from the list query; undefined when the read did not include it. */
+  itemCount?: number;
 }
 
 export interface ChecklistItem {
@@ -733,6 +753,10 @@ export interface Portfolio {
   publishedAt?: string;
   createdAt: string;
   updatedAt: string;
+  /** Server item count from the list query; undefined when the read did not include it. */
+  itemCount?: number;
+  /** Server follower count (search_portfolios); undefined when not returned. */
+  followerCount?: number;
 }
 
 export interface PortfolioItem {

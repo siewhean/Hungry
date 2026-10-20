@@ -3,6 +3,7 @@ import { getHungryService, getServiceProvider } from "@/lib/services/serviceProv
 import type { TasteKey, TasteProfile, TasteVector, UserProfile } from "@/types/domain";
 import { useProfileStore } from "@/store/useProfileStore";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
+import { flushPendingQuizResponse } from "@/features/profile/pendingQuizResponse";
 
 const TASTE_KEYS: TasteKey[] = ["sweet", "spicy", "sour", "salty", "rich", "aromatic"];
 
@@ -36,6 +37,19 @@ function hasMeaningfulGuestDietaryPreferences(profile: UserProfile) {
   return profile.id === "guest-user" && profile.dietaryPreferences.length > 0;
 }
 
+// Guest answers only fill an account that has none of its own: a returning user
+// who browses briefly as a guest on a new phone keeps their saved profile.
+function hasNoSavedTaste(profile: UserProfile) {
+  return (
+    vectorsMatch(profile.tasteVector, NEUTRAL_TASTE_VECTOR) &&
+    (!profile.tasteProfile || tasteProfilesMatch(profile.tasteProfile, NEUTRAL_TASTE_PROFILE))
+  );
+}
+
+function hasNoSavedDietaryPreferences(profile: UserProfile) {
+  return profile.dietaryPreferences.length === 0;
+}
+
 export function applySignedInProfile(
   sessionProfile: UserProfile,
   options: { onSyncWarning?: () => void; profileReady?: Promise<UserProfile> } = {},
@@ -43,8 +57,11 @@ export function applySignedInProfile(
   const profileState = useProfileStore.getState();
   const guestProfile = profileState.profile;
   const guestTasteProfile = guestProfile.tasteProfile ?? profileState.tasteProfile;
-  const shouldMergeTaste = hasMeaningfulGuestTaste(guestProfile, guestTasteProfile);
-  const shouldMergeDietary = hasMeaningfulGuestDietaryPreferences(guestProfile);
+  const shouldMergeTaste =
+    hasMeaningfulGuestTaste(guestProfile, guestTasteProfile) && hasNoSavedTaste(sessionProfile);
+  const shouldMergeDietary =
+    hasMeaningfulGuestDietaryPreferences(guestProfile) &&
+    hasNoSavedDietaryPreferences(sessionProfile);
   const mergedProfile: UserProfile = {
     ...sessionProfile,
     tasteVector: shouldMergeTaste ? guestProfile.tasteVector : sessionProfile.tasteVector,
@@ -62,15 +79,25 @@ export function applySignedInProfile(
 
   scheduleIdleWork(
     () => {
-      void Promise.all([
-        shouldMergeTaste
-          ? getHungryService().profile.updateTasteProfile(guestTasteProfile)
-          : Promise.resolve(),
-        shouldMergeDietary
-          ? getHungryService().profile.updateDietaryPreferences(guestProfile.dietaryPreferences)
-          : Promise.resolve(),
-      ])
-        .catch(() => options.onSyncWarning?.())
+      void flushPendingQuizResponse();
+      // An OAuth session starts from a provisional profile; check the guest merge
+      // again against the account's real profile before writing anything.
+      const serverProfileReady = options.profileReady
+        ? options.profileReady.catch(() => sessionProfile)
+        : Promise.resolve(sessionProfile);
+      void serverProfileReady
+        .then((serverProfile) => {
+          const mergeTaste = shouldMergeTaste && hasNoSavedTaste(serverProfile);
+          const mergeDietary = shouldMergeDietary && hasNoSavedDietaryPreferences(serverProfile);
+          return Promise.all([
+            mergeTaste
+              ? getHungryService().profile.updateTasteProfile(guestTasteProfile)
+              : Promise.resolve(),
+            mergeDietary
+              ? getHungryService().profile.updateDietaryPreferences(guestProfile.dietaryPreferences)
+              : Promise.resolve(),
+          ]).catch(() => options.onSyncWarning?.());
+        })
         .then(() => options.profileReady ?? getHungryService().profile.getProfile())
         .then((profile) => {
           if (useProfileStore.getState().profile.id === sessionProfile.id) {

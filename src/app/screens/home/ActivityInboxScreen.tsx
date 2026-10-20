@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { useCallback, useMemo, useState } from "react";
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import {
@@ -22,8 +22,9 @@ import {
   IconButton,
 } from "@/components/ui";
 import {
-  ACTIVITY_UPDATES,
   getActivityReadKey,
+  isActivityUpdateForViewer,
+  selectActivitySourceUpdates,
   type ActivityUpdate,
 } from "@/features/home/activity";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
@@ -35,6 +36,7 @@ import {
   getServiceProvider,
 } from "@/lib/services/serviceProvider";
 import type { ChatConversation } from "@/lib/services/types";
+import type { StallPost } from "@/types/domain";
 import { useActivityStore } from "@/store/useActivityStore";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -79,10 +81,11 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
   const postById = useMemo(() => new Map(posts.map((post) => [post.id, post])), [posts]);
   const { palette, spacing, semanticSpacing, radii } = useHungryTheme();
   const allUpdates = useMemo(() => {
-    const sourceUpdates =
-      getServiceProvider().mode === "mock"
-        ? [...ACTIVITY_UPDATES, ...activityUpdates]
-        : [...dbActivityEvents, ...activityUpdates];
+    const sourceUpdates = selectActivitySourceUpdates(
+      getServiceProvider().mode,
+      dbActivityEvents,
+      activityUpdates,
+    );
     return sourceUpdates.map((update) => {
       if (update.target) return update;
       if (update.kind === "follow") return { ...update, target: "View profile" };
@@ -127,7 +130,7 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
     };
 
     return allUpdates
-      .filter((update) => !update.recipientUserId || update.recipientUserId === userId)
+      .filter((update) => isActivityUpdateForViewer(update, userId))
       .sort((a, b) => createdAt(b.time) - createdAt(a.time));
   }, [allUpdates, userId]);
 
@@ -160,11 +163,7 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
       });
   }, []);
 
-  useEffect(() => {
-    void loadConversations();
-    void fetchActivityEvents();
-  }, [fetchActivityEvents, loadConversations]);
-
+  // Focus also covers the first mount: no separate mount effect (it double-fetched).
   useFocusEffect(
     useCallback(() => {
       void loadConversations();
@@ -189,47 +188,53 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
           }
         />
 
-        <View style={[styles.segmentedControl, { backgroundColor: palette.bgSoft }]}>
-          {tabs.map((tab) => {
-            const isActive = activeTab === tab;
-            const unreadCount =
-              tab === "messages"
-                ? conversations.reduce((total, conversation) => total + conversation.unreadCount, 0)
-                : visibleUpdates.filter(
-                    (update) =>
-                      update.unread &&
-                      !readActivityIds.includes(getActivityReadKey("update", update.id)),
-                  ).length;
+        {/* One tab (DMs off): no segmented control with a single pill. */}
+        {tabs.length > 1 ? (
+          <View style={[styles.segmentedControl, { backgroundColor: palette.bgSoft }]}>
+            {tabs.map((tab) => {
+              const isActive = activeTab === tab;
+              const unreadCount =
+                tab === "messages"
+                  ? conversations.reduce(
+                      (total, conversation) => total + conversation.unreadCount,
+                      0,
+                    )
+                  : visibleUpdates.filter(
+                      (update) =>
+                        update.unread &&
+                        !readActivityIds.includes(getActivityReadKey("update", update.id)),
+                    ).length;
 
-            return (
-              <Pressable
-                key={tab}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: isActive }}
-                onPress={() => setActiveTab(tab)}
-                testID={`activity-tab-${tab}`}
-                style={[
-                  styles.segment,
-                  {
-                    backgroundColor: isActive ? palette.surface : "transparent",
-                    borderColor: isActive ? palette.border : "transparent",
-                  },
-                ]}
-              >
-                <AppText variant="bodySmallBold" style={{ color: palette.text }}>
-                  {tab === "messages" ? "Messages" : "Updates"}
-                </AppText>
-                {unreadCount > 0 ? (
-                  <View style={[styles.segmentBadge, { backgroundColor: palette.orange }]}>
-                    <AppText variant="micro" style={{ color: palette.white, fontWeight: "800" }}>
-                      {unreadCount}
-                    </AppText>
-                  </View>
-                ) : null}
-              </Pressable>
-            );
-          })}
-        </View>
+              return (
+                <Pressable
+                  key={tab}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: isActive }}
+                  onPress={() => setActiveTab(tab)}
+                  testID={`activity-tab-${tab}`}
+                  style={[
+                    styles.segment,
+                    {
+                      backgroundColor: isActive ? palette.surface : "transparent",
+                      borderColor: isActive ? palette.border : "transparent",
+                    },
+                  ]}
+                >
+                  <AppText variant="bodySmallBold" style={{ color: palette.text }}>
+                    {tab === "messages" ? "Messages" : "Updates"}
+                  </AppText>
+                  {unreadCount > 0 ? (
+                    <View style={[styles.segmentBadge, { backgroundColor: palette.orangeControl }]}>
+                      <AppText variant="micro" style={{ color: palette.white, fontWeight: "800" }}>
+                        {unreadCount}
+                      </AppText>
+                    </View>
+                  ) : null}
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
 
         {activeTab === "messages" ? (
           <MessagesTab
@@ -248,7 +253,12 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
             }}
           />
         ) : (
-          <UpdatesTab navigation={navigation} updates={visibleUpdates} />
+          <UpdatesTab
+            navigation={navigation}
+            updates={visibleUpdates}
+            postById={postById}
+            onRefresh={fetchActivityEvents}
+          />
         )}
       </View>
     </SafeAreaView>
@@ -319,7 +329,11 @@ function MessagesTab({
                   }
 
                   onConversationRead(chatId);
-                  void getHungryService().chat.markConversationRead(chatId);
+                  void getHungryService()
+                    .chat.markConversationRead(chatId)
+                    .catch((error: unknown) => {
+                      console.warn("Failed to mark conversation read", error);
+                    });
                   navigation.navigate("ChatDetail", {
                     chatId,
                     name: normalizedName,
@@ -349,7 +363,7 @@ function MessagesTab({
                   {unreadCount > 0 ? (
                     <UnreadCountBadge
                       accessibilityLabel={`${unreadCount} unread messages`}
-                      backgroundColor={palette.orange}
+                      backgroundColor={palette.orangeControl}
                       borderColor={palette.bg}
                       count={unreadCount}
                       textColor={palette.white}
@@ -382,18 +396,37 @@ function MessagesTab({
 function UpdatesTab({
   navigation,
   updates,
+  postById,
+  onRefresh,
 }: {
   navigation: Props["navigation"];
   updates: ActivityUpdate[];
+  postById: Map<string, StallPost>;
+  onRefresh: () => Promise<void>;
 }) {
   const { palette, spacing, semanticSpacing, radii } = useHungryTheme();
-  const repository = getDataRepository();
   const readActivityIds = useActivityStore((state) => state.readActivityIds);
   const markActivityRead = useActivityStore((state) => state.markActivityRead);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await onRefresh();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [onRefresh]);
 
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefreshing}
+          onRefresh={() => void handleRefresh()}
+          tintColor={palette.orange}
+        />
+      }
       contentContainerStyle={{
         gap: spacing[4],
         paddingHorizontal: semanticSpacing.screenEdge,
@@ -402,9 +435,7 @@ function UpdatesTab({
       }}
     >
       {updates.map((update) => {
-        const post = repository
-          .listStallPosts()
-          .find((candidate) => candidate.id === update.postId);
+        const post = update.postId ? postById.get(update.postId) : undefined;
         const kindColor =
           update.kind === "like"
             ? palette.error
@@ -492,7 +523,7 @@ function UpdatesTab({
                 {isUnread ? (
                   <UnreadDot
                     accessibilityLabel="Unread update"
-                    backgroundColor={palette.orange}
+                    backgroundColor={palette.orangeControl}
                     borderColor={palette.bg}
                   />
                 ) : null}

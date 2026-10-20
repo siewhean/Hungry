@@ -1,11 +1,25 @@
 import { View } from "react-native";
 
 import { AppText } from "@/components/ui";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { useHungryTheme } from "@/theme";
 
 /** The whole first-run flow: welcome, location, optional taste quiz, done. */
 export const ONBOARDING_STEPS = ["welcome", "location", "taste", "done"] as const;
 export type OnboardingStep = (typeof ONBOARDING_STEPS)[number];
+
+/** Onboarding funnel: one event per step shown, tagged with the onboarding surface. */
+export function trackOnboardingStepViewed(step: OnboardingStep) {
+  trackAnalyticsEvent("onboarding_step_viewed", {
+    step,
+    step_number: ONBOARDING_STEPS.indexOf(step) + 1,
+    surface: "onboarding",
+  });
+}
+
+export function trackOnboardingStepSkipped(step: OnboardingStep) {
+  trackAnalyticsEvent("onboarding_step_skipped", { step, surface: "onboarding" });
+}
 
 /** The one progress indicator every onboarding screen shows: "Step x of N". */
 export function OnboardingProgress({ step }: { step: OnboardingStep }) {

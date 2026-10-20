@@ -97,7 +97,8 @@ test("portfolio store tracks create/add/publish and validates scores and duplica
   );
 
   const storedItems = usePortfolioStore.getState().items[portfolio.id] ?? [];
-  assert.equal(storedItems[0]?.score, 8.3);
+  // Scores are whole numbers (integer column): 8.3 rounds to 8.
+  assert.equal(storedItems[0]?.score, 8);
 
   const events = getTrackedAnalyticsEvents().map((event) => event.event);
   assert.equal(events.filter((event) => event === "portfolio_created").length, 1);

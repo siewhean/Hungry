@@ -4,7 +4,7 @@
  * Features large numbers, big buttons, and simple navigation.
  * Feedback-driven for 'Uncle Tan' and 'Ahmad'.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { View, ScrollView, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -18,80 +18,52 @@ import {
   Megaphone,
   Sparkles,
   Settings,
-  QrCode,
   ChevronRight,
   X,
 } from "lucide-react-native";
 
-import { AppText, Skeleton, EmptyState } from "@/components/ui";
+import { AppText, Skeleton, EmptyState, FilterChipRail } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { OutletSwitcher } from "@/components/merchant/OutletSwitcher";
 import { prefetchMerchantTab, preloadRoute } from "@/features/navigation/prefetch";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
-import type { CustomerInteraction, DishDetail, MerchantAnalytics } from "@/types/domain";
+import type { MerchantAnalytics, MerchantDashboardSummary } from "@/types/domain";
+import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
 import {
-  buildMerchantDashboardMetrics,
   getMetricDelta,
   type MetricTrend,
   getMerchantOutletStatus,
   getMerchantOutletStatusLabel,
   getMerchantProfileGaps,
-  getUnrepliedReviews,
 } from "@/features/merchant/merchantReadiness";
 
-// ─── Segmented Control ────────────────────────────────────────────────────────
+// ─── Date range ──────────────────────────────────────────────────────────────
 
-function DateRangeSelector({
-  selected,
-  onSelect,
-}: {
-  selected: "Today" | "7 Days" | "30 Days";
-  onSelect: (val: "Today" | "7 Days" | "30 Days") => void;
-}) {
-  const { palette, spacing, radii } = useHungryTheme();
-  const options = ["Today", "7 Days", "30 Days"] as const;
+type DashboardRange = "today" | "7d" | "30d";
 
-  return (
-    <View
-      style={{
-        flexDirection: "row",
-        backgroundColor: palette.surface,
-        borderRadius: radii.pill,
-        padding: 4,
-        borderWidth: 1,
-        borderColor: palette.border,
-      }}
-    >
-      {options.map((opt) => (
-        <Pressable
-          key={opt}
-          onPress={() => onSelect(opt)}
-          style={{
-            flex: 1,
-            paddingVertical: spacing[2],
-            alignItems: "center",
-            backgroundColor: selected === opt ? palette.orange : "transparent",
-            borderRadius: radii.pill,
-          }}
-        >
-          <AppText
-            variant="bodySmallBold"
-            style={{
-              color: selected === opt ? palette.white : palette.textSecondary,
-            }}
-          >
-            {opt}
-          </AppText>
-        </Pressable>
-      ))}
-    </View>
-  );
-}
+// The shared chip rail gives each option a button role and selected state.
+const DASHBOARD_RANGE_OPTIONS: { id: DashboardRange; label: string }[] = [
+  { id: "today", label: "Today" },
+  { id: "7d", label: "7 Days" },
+  { id: "30d", label: "30 Days" },
+];
+
+const RANGE_COMPARISON_LABELS: Record<DashboardRange, string> = {
+  today: "vs yesterday",
+  "7d": "vs previous 7 days",
+  "30d": "vs previous 30 days",
+};
+
+const RANGE_LABELS: Record<DashboardRange, string> = {
+  today: "today",
+  "7d": "in the last 7 days",
+  "30d": "in the last 30 days",
+};
 
 // ─── Dashboard Card ──────────────────────────────────────────────────────────
 
@@ -113,6 +85,12 @@ function MetricCard({
   const { componentRadii, palette, spacing, shadows } = useHungryTheme();
   return (
     <View
+      accessible
+      accessibilityLabel={
+        typeof value === "string" && typeof subtext === "string"
+          ? `${title}: ${value}, ${subtext}`
+          : title
+      }
       style={{
         borderColor: palette.border,
         borderWidth: 1,
@@ -199,6 +177,9 @@ function ActionCard({
   const { componentRadii, palette, spacing } = useHungryTheme();
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${title}. ${description}`}
+      accessibilityHint={actionText}
       onPressIn={onPressIn}
       onPress={onPress}
       style={({ pressed }) => [
@@ -254,12 +235,13 @@ export function MerchantDashboardScreen() {
   const activeOutlet = useMerchantStore(getActiveOutlet);
   const navigation = useNavigation<NativeStackNavigationProp<MerchantTabParamList>>();
 
-  const [dateRange, setDateRange] = useState<"Today" | "7 Days" | "30 Days">("Today");
+  const [dateRange, setDateRange] = useState<DashboardRange>("today");
   const [analytics, setAnalytics] = useState<MerchantAnalytics | null>(null);
-  const [menu, setMenu] = useState<DishDetail[]>([]);
-  const [interactions, setInteractions] = useState<CustomerInteraction[]>([]);
+  const [summary, setSummary] = useState<MerchantDashboardSummary | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Only the newest request may write state: a slow "30 Days" reply must not overwrite "Today".
+  const latestRequestId = useRef(0);
   const prefetchMerchantRoute = useCallback(
     (routeName: keyof MerchantTabParamList) => {
       prefetchMerchantTab(routeName, activeOutlet?.id, activeOutlet?.merchantAccountId);
@@ -268,12 +250,14 @@ export function MerchantDashboardScreen() {
     [activeOutlet?.id, activeOutlet?.merchantAccountId, navigation],
   );
 
-  const mappedRange = dateRange === "Today" ? "today" : dateRange === "7 Days" ? "7d" : "30d";
+  const activeOutletId = activeOutlet?.id;
 
   const loadDashboard = useCallback(async () => {
+    const requestId = latestRequestId.current + 1;
+    latestRequestId.current = requestId;
     setError(null);
     setIsLoading(true);
-    if (!activeOutlet) {
+    if (!activeOutletId) {
       setError("No active outlet selected.");
       setAnalytics(null);
       setIsLoading(false);
@@ -282,30 +266,36 @@ export function MerchantDashboardScreen() {
 
     try {
       const service = getHungryService();
-      const [data, menuItems, inboxItems] = await Promise.all([
-        service.merchant.getAnalytics(activeOutlet.id, mappedRange),
-        service.merchant.getMenu(activeOutlet.id),
-        service.merchant.getInbox(activeOutlet.id),
+      // Analytics carries the range's own rating and review count; the summary carries the
+      // all-time counts behind the action cards. No full menu or inbox download.
+      const [data, counts] = await Promise.all([
+        service.merchant.getAnalytics(activeOutletId, dateRange),
+        service.merchant.getDashboardSummary(activeOutletId),
       ]);
-      setMenu(menuItems);
-      setInteractions(inboxItems);
-      setAnalytics(buildMerchantDashboardMetrics(data, inboxItems));
-      void service.merchant
-        .syncLowRatingNotifications(activeOutlet.id)
-        .catch((notificationError) => {
-          console.error("Failed to sync low-rating notifications:", notificationError);
-        });
+      if (requestId !== latestRequestId.current) return;
+      setAnalytics(data);
+      setSummary(counts);
     } catch (err) {
+      if (requestId !== latestRequestId.current) return;
       console.error("Failed to fetch analytics:", err);
       setError(err instanceof Error ? err.message : "Failed to load dashboard analytics.");
     } finally {
-      setIsLoading(false);
+      if (requestId === latestRequestId.current) setIsLoading(false);
     }
-  }, [activeOutlet, mappedRange]);
+  }, [activeOutletId, dateRange]);
 
-  useEffect(() => {
-    void loadDashboard();
-  }, [loadDashboard]);
+  // Refetch on every focus: a reply, dish edit or outlet change elsewhere updates the cards.
+  useFocusEffect(
+    useCallback(() => {
+      void loadDashboard();
+    }, [loadDashboard]),
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      trackMerchantEvent("merchant_dashboard_viewed", activeOutletId);
+    }, [activeOutletId]),
+  );
 
   if (error) {
     return (
@@ -352,12 +342,7 @@ export function MerchantDashboardScreen() {
           analytics.previousPeriodComparison.menuViews,
       )
     : undefined;
-  const viewsComparison =
-    dateRange === "Today"
-      ? "vs yesterday"
-      : dateRange === "7 Days"
-        ? "vs previous 7 days"
-        : "vs previous 30 days";
+  const viewsComparison = RANGE_COMPARISON_LABELS[dateRange];
   const viewsSubtext = viewsDelta ? (
     `${viewsDelta.label} ${viewsComparison}`
   ) : (
@@ -370,7 +355,7 @@ export function MerchantDashboardScreen() {
     <Skeleton height={24} width={40} borderRadius={radii.sm} />
   );
   const ratingSubtext = analytics ? (
-    `${analytics.reviewCount} ${analytics.reviewCount === 1 ? "review" : "reviews"}`
+    `${analytics.reviewCount} ${analytics.reviewCount === 1 ? "review" : "reviews"} ${RANGE_LABELS[dateRange]}`
   ) : (
     <Skeleton height={12} width={80} borderRadius={radii.sm} />
   );
@@ -389,13 +374,13 @@ export function MerchantDashboardScreen() {
       : outletStatus === "closed"
         ? palette.amber + "20"
         : palette.bgSoft;
-  const profileGaps = activeOutlet ? getMerchantProfileGaps(activeOutlet, menu) : [];
-  const unrepliedReviews = getUnrepliedReviews(interactions);
+  const profileGaps = activeOutlet && summary ? getMerchantProfileGaps(activeOutlet, summary) : [];
+  const unrepliedCount = summary?.unrepliedReviews ?? 0;
   const hasActionCards =
     activeOutlet?.verification.status !== "verified" ||
     profileGaps.length > 0 ||
-    unrepliedReviews.length > 0;
-  const latestFeedback = interactions[0];
+    unrepliedCount > 0;
+  const latestFeedback = summary?.latestReview;
   const analyticsDisclosure = getDataTrustDisclosure("merchantAnalytics");
 
   return (
@@ -436,7 +421,12 @@ export function MerchantDashboardScreen() {
         </View>
 
         {/* Date Range Selector */}
-        <DateRangeSelector selected={dateRange} onSelect={setDateRange} />
+        <FilterChipRail
+          options={DASHBOARD_RANGE_OPTIONS}
+          selectedId={dateRange}
+          onSelect={setDateRange}
+          gap={spacing[2]}
+        />
         <AppText variant="micro" tone="muted">
           {analyticsDisclosure}
         </AppText>
@@ -493,10 +483,10 @@ export function MerchantDashboardScreen() {
             />
           ) : null}
 
-          {unrepliedReviews.length > 0 ? (
+          {unrepliedCount > 0 ? (
             <ActionCard
               title="Unreplied Reviews"
-              description={`${unrepliedReviews.length} review${unrepliedReviews.length === 1 ? "" : "s"} waiting for your response.`}
+              description={`${unrepliedCount} review${unrepliedCount === 1 ? "" : "s"} waiting for your response.`}
               icon={<MessageSquare size={20} color={palette.textSecondary} />}
               actionText="Read Reviews"
               onPressIn={() => prefetchMerchantRoute("CustomerInbox")}
@@ -529,6 +519,8 @@ export function MerchantDashboardScreen() {
           </AppText>
 
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Manage Menu. Update prices or add new dishes"
             onPressIn={() => prefetchMerchantRoute("Menu")}
             onPress={() => navigation.navigate("Menu")}
             style={{
@@ -564,6 +556,8 @@ export function MerchantDashboardScreen() {
           </Pressable>
 
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Recent Reviews. Read and reply to your customers"
             onPressIn={() => prefetchMerchantRoute("CustomerInbox")}
             onPress={() => navigation.navigate("CustomerInbox")}
             style={{
@@ -642,15 +636,6 @@ export function MerchantDashboardScreen() {
             onPressIn={() => prefetchMerchantRoute("MerchantSettings")}
             onPress={() => navigation.navigate("MerchantSettings")}
           />
-
-          <ActionCard
-            title="In-App Ordering"
-            description="Preview the QR ordering setup before the pilot opens."
-            icon={<QrCode size={20} color={palette.textSecondary} />}
-            actionText="Preview Ordering"
-            onPressIn={() => prefetchMerchantRoute("OrdersComingSoon")}
-            onPress={() => navigation.navigate("OrdersComingSoon")}
-          />
         </View>
 
         {/* Recent Activity */}
@@ -660,6 +645,8 @@ export function MerchantDashboardScreen() {
           </AppText>
           {latestFeedback ? (
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Latest review from ${latestFeedback.authorName}: ${latestFeedback.text}`}
               onPressIn={() => prefetchMerchantRoute("CustomerInbox")}
               onPress={() => navigation.navigate("CustomerInbox")}
               style={({ pressed }) => [

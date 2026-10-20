@@ -1,7 +1,7 @@
 import React from "react";
 import { View, StyleSheet, Switch, Pressable } from "react-native";
 import { Star, Sparkles, MessageSquare } from "lucide-react-native";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 import { AppText, Input, Badge } from "@/components/ui";
 import { StarRating } from "@/components/review";
 import { useHungryTheme } from "@/theme";

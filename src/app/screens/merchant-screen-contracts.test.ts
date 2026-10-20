@@ -187,16 +187,12 @@ test("Merchant screen contract: merchant navigation buttons are accessible and h
   assert.match(tabs, /accessibilityLabel=\{`Merchant \$\{tabConfig\.label\}`\}/);
   assert.match(tabs, /tabConfig\.label/);
 
-  for (const route of [
-    "FeaturedVisitors",
-    "PromotionList",
-    "AIAssistant",
-    "MerchantSettings",
-    "OrdersComingSoon",
-  ]) {
+  for (const route of ["FeaturedVisitors", "PromotionList", "AIAssistant", "MerchantSettings"]) {
     assert.match(dashboard, new RegExp(`prefetchMerchantRoute\\("${route}"\\)`));
     assert.match(dashboard, new RegExp(`navigation\\.navigate\\("${route}"\\)`));
   }
+  // The In-App Ordering mock is no longer promoted from the Dashboard.
+  assert.doesNotMatch(dashboard, /navigation\.navigate\("OrdersComingSoon"\)/);
 });
 
 test("Merchant screen contract: merchant route params match editable sub-screen needs", () => {
@@ -206,7 +202,10 @@ test("Merchant screen contract: merchant route params match editable sub-screen 
     navigationTypes,
     /DishEditor: \{ dishId\?: string; ocrDraftId\?: string \} \| undefined;/,
   );
-  assert.match(navigationTypes, /PromotionBuilder: \{ promotionId\?: string \} \| undefined;/);
+  assert.match(
+    navigationTypes,
+    /PromotionBuilder: \{ promotionId\?: string; duplicateFromId\?: string \} \| undefined;/,
+  );
   assert.match(navigationTypes, /OCRDrafts: undefined;/);
   assert.match(navigationTypes, /CustomerInbox: undefined;/);
   assert.match(navigationTypes, /FeaturedVisitors: undefined;/);
@@ -265,18 +264,30 @@ test("Merchant screen contract: profile, menu, and analytics use production-read
   const dishEditor = read("src/app/screens/merchant/DishEditorScreen.tsx");
 
   assert.match(profile, /BusinessTypeDropdown/);
-  assert.match(imageField, /launchImageLibraryAsync/);
+  assert.match(imageField, /pickMerchantMedia\(/);
   assert.match(profile, /<MerchantImageField/);
   assert.match(dishEditor, /<MerchantImageField/);
   assert.doesNotMatch(dishEditor, /Paste image URL/);
   assert.match(profile, /name="isLive"/);
   assert.match(profile, /Show on Hungry/);
   assert.doesNotMatch(profile, /Profile image upload unavailable/);
-  assert.match(verificationCentre, /launchImageLibraryAsync/);
+  // Picking only stages evidence; it is uploaded after the merchant reviews and submits it.
+  assert.match(verificationCentre, /pickMerchantMedia\(/);
+  assert.match(verificationCentre, /setPendingEvidence\(\{ method, kind, uri \}\)/);
+  assert.match(verificationCentre, /Review before submitting/);
   assert.match(verificationCentre, /submitVerification\(activeOutlet\.id/);
+  assert.match(verificationCentre, /resubmitVerification\(activeOutlet\.id/);
+  assert.match(verificationCentre, /verification\.rejectionReason/);
   assert.match(homeBasedVerification, /launchImageLibraryAsync/);
-  assert.match(homeBasedVerification, /for \(const fileUrl of photoUris\)/);
+  assert.match(homeBasedVerification, /mediaTypes: \["images"\]/);
+  // All photos go in one submission (uploaded before any evidence row or status write).
+  assert.doesNotMatch(homeBasedVerification, /for \(const fileUrl of photoUris\)/);
+  assert.match(homeBasedVerification, /additionalFileUrls/);
   assert.match(homeBasedVerification, /submitVerification\(activeOutlet\.id/);
+  assert.match(homeBasedVerification, /MIN_HOME_BASED_PHOTOS = 3/);
+  assert.match(homeBasedVerification, /accessibilityRole="checkbox"/);
+  assert.match(homeBasedVerification, /accessibilityRole="radio"/);
+  assert.match(homeBasedVerification, /setSubmitError\(/);
   assert.doesNotMatch(`${verificationCentre}\n${homeBasedVerification}`, /mock-url:\/\//);
   assert.doesNotMatch(`${verificationCentre}\n${homeBasedVerification}`, /Mock photos|Attach mock/);
   const submitVerification = segmentBetween(
@@ -304,7 +315,8 @@ test("Merchant screen contract: profile, menu, and analytics use production-read
   assert.match(analytics, /showsVerticalScrollIndicator=\{false\}/);
   assert.match(analytics, /See More/);
   assert.match(dashboard, /getMerchantProfileGaps/);
-  assert.match(dashboard, /getUnrepliedReviews/);
+  // Unreplied and menu counts come from the dashboard summary RPC, not full menu/inbox loads.
+  assert.match(dashboard, /merchant\.getDashboardSummary\(/);
   assert.doesNotMatch(dashboard, /Hello,/);
   assert.doesNotMatch(dashboard, /STALL IS LIVE & DISCOVERABLE/);
 });
@@ -353,7 +365,8 @@ test("Merchant screen contract: inbox, promotions, assistant, and settings scree
 
   assert.match(settings, /merchant\.getMerchantNotifications\(/);
   assert.match(settings, /merchant\.getWeeklySummaryStats\(/);
-  assert.match(settings, /merchant\.syncLowRatingNotifications\(/);
+  // Low-rating detection is a database trigger; Settings no longer rescans every review.
+  assert.doesNotMatch(settings, /merchant\.syncLowRatingNotifications\(/);
   assert.doesNotMatch(settings, /Team Management|Invite staff|Every active team member/);
 });
 

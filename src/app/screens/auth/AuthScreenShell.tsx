@@ -1,5 +1,6 @@
 import type { PropsWithChildren, ReactNode } from "react";
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
+import { X } from "lucide-react-native";
 
 import { Screen, AppText, HungryLogo } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
@@ -11,6 +12,9 @@ interface AuthScreenShellProps {
   footer?: ReactNode;
   wordmarkColor?: string;
   compact?: boolean;
+  /** Shows a close (X) control so the screen is never a dead end. */
+  onClose?: () => void;
+  closeLabel?: string;
 }
 
 export function AuthScreenShell({
@@ -20,8 +24,10 @@ export function AuthScreenShell({
   footer,
   wordmarkColor,
   compact = false,
+  onClose,
+  closeLabel = "Close",
 }: PropsWithChildren<AuthScreenShellProps>) {
-  const { palette, spacing } = useHungryTheme();
+  const { componentSizes, palette, spacing } = useHungryTheme();
   const gap = compact ? spacing[3] : spacing[6];
   const titleGap = compact ? spacing[4] : spacing[8];
   const innerGap = compact ? spacing[3] : spacing[4];
@@ -33,11 +39,28 @@ export function AuthScreenShell({
     // Auth forms always scroll and lift above the keyboard so the submit button stays reachable.
     <Screen keyboardAvoiding>
       <View style={{ gap, paddingVertical: spacing[3], marginTop: spacing[3] }}>
+        {onClose ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={closeLabel}
+            onPress={onClose}
+            hitSlop={8}
+            style={{
+              alignItems: "center",
+              alignSelf: "flex-start",
+              justifyContent: "center",
+              minHeight: componentSizes.touchTarget,
+              minWidth: componentSizes.touchTarget,
+            }}
+          >
+            <X color={palette.text} size={22} />
+          </Pressable>
+        ) : null}
         <View style={{ alignItems: "center", gap: titleGap, marginBottom: innerGap }}>
           <HungryLogo size={logoSize} showWordmark wordmarkColor={effectiveWordmarkColor} />
           <View style={{ alignItems: "center", gap: spacing[1] }}>
             {title.trim().length > 0 ? (
-              <AppText variant="h1" style={{ textAlign: "center", fontSize: 24 }}>
+              <AppText variant="h1" accessibilityRole="header" style={{ textAlign: "center" }}>
                 {title}
               </AppText>
             ) : null}

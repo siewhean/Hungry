@@ -106,7 +106,8 @@ const browserStorage: StateStorage = {
   },
 };
 
-const safeAsyncStorage: StateStorage = {
+/** Durable key-value storage (AsyncStorage, browser storage on web, memory as a fallback). */
+export const safeAsyncStorage: StateStorage = {
   getItem: async (name) => {
     const browserValue = await browserStorage.getItem(name);
     if (browserValue !== null) {

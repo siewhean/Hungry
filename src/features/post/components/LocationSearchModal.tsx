@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, type ComponentProps } from "react";
 import { View, StyleSheet, Pressable, Platform, FlatList, Dimensions } from "react-native";
 import { MapPin, Search, X } from "lucide-react-native";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 import { BottomSheetModal, BottomSheetBackdrop, useBottomSheet } from "@gorhom/bottom-sheet";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { useAnimatedStyle, interpolate, Extrapolation } from "react-native-reanimated";

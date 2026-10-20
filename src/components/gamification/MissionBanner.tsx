@@ -54,7 +54,8 @@ export function MissionBanner({ onPress }: MissionBannerProps) {
         style={({ pressed }) => [
           styles.container,
           {
-            backgroundColor: pressed ? palette.successSoft : palette.successSoft,
+            backgroundColor: palette.successSoft,
+            opacity: pressed ? 0.8 : 1,
             borderColor: palette.success,
             borderRadius: componentRadii.card,
             borderWidth: 1,
@@ -108,12 +109,13 @@ export function MissionBanner({ onPress }: MissionBannerProps) {
           <AppText variant="bodySmall" style={{ color: palette.orange, fontWeight: "700" }}>
             This week
           </AppText>
-          <AppText tone="muted" variant="micro" style={{ marginLeft: spacing[2] }}>
-            {disclosure}
-          </AppText>
         </View>
         <ChevronRight size={16} color={palette.textMuted} />
       </View>
+      {/* Disclosure on its own line so the header is not squeezed. */}
+      <AppText tone="muted" variant="micro">
+        {disclosure}
+      </AppText>
 
       {/* Mission title */}
       <AppText variant="bodySmall" numberOfLines={1}>

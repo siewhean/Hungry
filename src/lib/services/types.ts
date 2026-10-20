@@ -22,6 +22,7 @@ import type {
   InteractionType,
   MerchantAccount,
   MerchantAnalytics,
+  MerchantDashboardSummary,
   MerchantNotification,
   MerchantNotificationPreferences,
   MerchantOutlet,
@@ -63,6 +64,10 @@ import type {
   VenueSummary,
   WeeklyMission,
 } from "@/types/domain";
+
+export type VerificationSubmission = Omit<VerificationEvidence, "id" | "uploadedAt"> & {
+  additionalFileUrls?: string[];
+};
 
 export interface DecideForMeOptions {
   dietaryFlags?: DietaryFlag[];
@@ -337,6 +342,8 @@ export interface Bite {
   tasteStamp: TasteStamp;
   cravingCount: number;
   savedCount: number;
+  /** Server distance from the query point, when the read computed one. */
+  distanceMeters?: number;
   /** The viewer's own like/save, when the read returns it (undefined = unknown). */
   viewerHasLiked?: boolean;
   viewerHasSaved?: boolean;
@@ -490,6 +497,8 @@ export interface DiscoveryLocationFeedRequest {
 export interface DiscoveryLocationFeed {
   venues: VenueSummary[];
   results: SearchResult[];
+  /** True when the live read failed and these rows come from the local cache. */
+  isFallback?: boolean;
 }
 
 export interface VenueLocationSearchRequest extends DiscoveryLocationFeedRequest {
@@ -540,6 +549,11 @@ export interface ListRecentReviewsOptions {
   limit?: number;
   /** Cursor: only return reviews created strictly before this ISO timestamp. */
   before?: string;
+  /**
+   * Keyset tie-breaker for `before`: also return reviews created at exactly
+   * `before` whose id sorts below this one, so rows sharing a timestamp are not skipped.
+   */
+  beforeId?: string;
   /** Only reviews of these dishes (for example one stall's menu). An empty list returns none. */
   dishIds?: string[];
 }
@@ -720,7 +734,8 @@ export interface HungryService {
     signInWithGoogle(): Promise<Session>;
     signInWithApple(): Promise<Session>;
     signOut(): Promise<void>;
-    requestAccountDeletion(request?: AccountDeletionRequest): Promise<void>;
+    /** Queues deletion; resolves with the server's scheduled date. */
+    requestAccountDeletion(request?: AccountDeletionRequest): Promise<PendingAccountDeletion>;
     getPendingAccountDeletion(): Promise<PendingAccountDeletion | null>;
     cancelAccountDeletion(): Promise<boolean>;
     forgotPassword(email: string): Promise<void>;
@@ -1032,14 +1047,12 @@ export interface HungryService {
 
     // Verification
     getVerificationStatus(outletId: string): Promise<MerchantOutlet["verification"]>;
-    submitVerification(
-      outletId: string,
-      evidence: Omit<VerificationEvidence, "id" | "uploadedAt">,
-    ): Promise<void>;
-    resubmitVerification(
-      outletId: string,
-      evidence: Omit<VerificationEvidence, "id" | "uploadedAt">,
-    ): Promise<void>;
+    /**
+     * Uploads the evidence and marks the outlet submitted once. `additionalFileUrls` are more files
+     * for the same method (e.g. home-based photos); every file is recorded or none are.
+     */
+    submitVerification(outletId: string, evidence: VerificationSubmission): Promise<void>;
+    resubmitVerification(outletId: string, evidence: VerificationSubmission): Promise<void>;
 
     // Profile
     updateBusinessProfile(
@@ -1052,7 +1065,8 @@ export interface HungryService {
     addDish(outletId: string, dish: Partial<DishDetail>): Promise<DishDetail>;
     editDish(outletId: string, dishId: string, updates: Partial<DishDetail>): Promise<DishDetail>;
     deleteDish(outletId: string, dishId: string): Promise<void>;
-    toggleSoldOut(outletId: string, dishId: string): Promise<boolean>;
+    /** Toggles sold out, or sets it when `soldOut` is given. Returns the new state. */
+    toggleSoldOut(outletId: string, dishId: string, soldOut?: boolean): Promise<boolean>;
     toggleFeatured(outletId: string, dishId: string): Promise<boolean>;
 
     // OCR Drafts
@@ -1067,7 +1081,7 @@ export interface HungryService {
     // Customer Inbox
     getInbox(
       outletId: string,
-      filters?: { type?: InteractionType; unrepliedOnly?: boolean },
+      filters?: { type?: InteractionType; unrepliedOnly?: boolean; limit?: number },
     ): Promise<CustomerInteraction[]>;
     replyToInteraction(interactionId: string, text: string): Promise<void>;
     reportInteraction(interactionId: string, reason: string): Promise<void>;
@@ -1092,10 +1106,13 @@ export interface HungryService {
       promoId: string,
       updates: Partial<MerchantPromotion>,
     ): Promise<MerchantPromotion>;
+    /** Permanently removes a promotion (any status). */
+    deletePromotion(promoId: string): Promise<void>;
     getPromotionAnalytics(promoId: string): Promise<NonNullable<MerchantPromotion["analytics"]>>;
 
     // Analytics
     getAnalytics(outletId: string, dateRange: "today" | "7d" | "30d"): Promise<MerchantAnalytics>;
+    getDashboardSummary(outletId: string): Promise<MerchantDashboardSummary>;
     getWeeklySummaryStats(outletId: string): Promise<MerchantWeeklySummary>;
     getMerchantNotifications(merchantAccountId: string): Promise<MerchantNotification[]>;
     syncLowRatingNotifications(outletId: string): Promise<MerchantNotification[]>;
@@ -1215,6 +1232,8 @@ export interface HungryService {
     unfollowPortfolio(portfolioId: string): Promise<void>;
     getPortfolioFollows(portfolioId: string): Promise<PortfolioFollow[]>;
     isFollowingPortfolio(portfolioId: string): Promise<boolean>;
+    /** Ids of the lists the signed-in user follows (empty when signed out). */
+    getFollowedPortfolioIds(): Promise<string[]>;
 
     flagPortfolio(portfolioId: string, reason: string, details?: string): Promise<void>;
     getPortfolioFlags(filters?: { status?: string }): Promise<PortfolioFlag[]>;

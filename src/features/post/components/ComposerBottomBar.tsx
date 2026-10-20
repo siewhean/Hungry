@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { View, StyleSheet, Pressable, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 import { ChevronUp, Send, Save, Check, Calendar, Clock } from "lucide-react-native";
 import { AppText, Button, Card } from "@/components/ui";
 import { useHungryTheme } from "@/theme";

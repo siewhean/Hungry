@@ -30,7 +30,6 @@ export type OnboardingStackParamList = {
 };
 export type ProfileStackParamList = {
   ProfileHome: undefined;
-  ProfilePremium: undefined;
   Favourites: undefined;
   ReviewHistory: undefined;
   Followers: { userId?: string; userDisplayName?: string } | undefined;
@@ -87,7 +86,7 @@ export type MerchantTabParamList = {
   OCRDrafts: undefined;
   CustomerInbox: undefined;
   FeaturedVisitors: undefined;
-  PromotionBuilder: { promotionId?: string } | undefined;
+  PromotionBuilder: { promotionId?: string; duplicateFromId?: string } | undefined;
   PromotionList: undefined;
   AIAssistant: undefined;
   OrdersComingSoon: undefined;
@@ -150,7 +149,12 @@ export type RootStackParamList = {
   NotFound: { title?: string; body?: string } | undefined;
   Post: { venueId?: string; dishId?: string } | undefined;
   QuickBites:
-    | { collection?: "quickBites" | "trending" | "editorChoice" | "budget" | "lateNight" }
+    | {
+        collection?: "quickBites" | "trending" | "editorChoice" | "budget" | "lateNight";
+        /** The Discover area the list was opened from; GPS is used when absent. */
+        latitude?: number;
+        longitude?: number;
+      }
     | undefined;
   DeveloperLauncher: undefined;
   Favourites: undefined;

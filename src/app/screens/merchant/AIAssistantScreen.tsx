@@ -19,7 +19,20 @@ import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { safeAsyncStorage } from "@/store/persistStorage";
 import type { AIBusinessInsight } from "@/types/domain";
+
+const dismissedInsightsKey = (outletId: string) => `hungry.merchant.dismissedInsights.${outletId}`;
+
+async function readDismissedInsightIds(outletId: string): Promise<string[]> {
+  try {
+    const raw = await safeAsyncStorage.getItem(dismissedInsightsKey(outletId));
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : [];
+  } catch {
+    return [];
+  }
+}
 
 type MerchantNavigation = BottomTabNavigationProp<MerchantTabParamList>;
 
@@ -42,8 +55,14 @@ export function AIAssistantScreen() {
       return;
     }
     try {
-      const data = await getHungryService().merchant.getAIInsights(activeOutlet.id);
-      setInsights(data.filter((i) => i.type !== "weekly_summary" && !i.isDismissed));
+      const [data, dismissedIds] = await Promise.all([
+        getHungryService().merchant.getAIInsights(activeOutlet.id),
+        readDismissedInsightIds(activeOutlet.id),
+      ]);
+      const dismissed = new Set(dismissedIds);
+      setInsights(
+        data.filter((i) => i.type !== "weekly_summary" && !i.isDismissed && !dismissed.has(i.id)),
+      );
 
       const summary = await getHungryService().merchant.getWeeklySummary(activeOutlet.id);
       setWeeklySummary(summary);
@@ -75,8 +94,19 @@ export function AIAssistantScreen() {
     );
   }
 
+  // Dismissals are remembered on this device per outlet, so a dismissed tip stays gone.
   const handleDismiss = (id: string) => {
     setInsights((prev) => prev.filter((i) => i.id !== id));
+    if (!activeOutlet) return;
+    const outletId = activeOutlet.id;
+    void readDismissedInsightIds(outletId).then((ids) =>
+      Promise.resolve(
+        safeAsyncStorage.setItem(
+          dismissedInsightsKey(outletId),
+          JSON.stringify(Array.from(new Set([...ids, id])).slice(-100)),
+        ),
+      ).catch(() => undefined),
+    );
   };
 
   const handleInsightAction = (target?: string) => {

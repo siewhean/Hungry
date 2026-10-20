@@ -36,7 +36,8 @@ export async function confirmGalleryAccess({
           },
         },
       ],
-      { cancelable: true },
+      // Android back/outside tap dismisses without a button; treat it as "Not now".
+      { cancelable: true, onDismiss: () => resolve(false) },
     );
   });
 }

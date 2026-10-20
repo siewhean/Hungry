@@ -202,6 +202,11 @@ export const useChecklistStore = create<ChecklistState>()(
             [checklistId]: (state.items[checklistId] ?? []).filter((item) => item.id !== id),
           },
         }));
+        trackAnalyticsEvent(
+          "list_item_removed",
+          { list_kind: "checklist", list_id: checklistId },
+          { userId: getAnalyticsUserId() },
+        );
       },
 
       reorderItems: async (checklistId: string, itemIds: string[]) => {

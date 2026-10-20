@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { memo, type ReactNode } from "react";
 import { Pressable, StyleSheet, View, Switch } from "react-native";
 import { ChevronRight } from "lucide-react-native";
 import { AppText } from "../ui";
@@ -19,7 +19,7 @@ interface SettingsRowProps {
   busy?: boolean;
 }
 
-export function SettingsRow({
+export const SettingsRow = memo(function SettingsRow({
   label,
   description,
   icon,
@@ -116,9 +116,10 @@ export function SettingsRow({
             value={isEnabled}
             onValueChange={onToggle}
             disabled={busy}
-            trackColor={{ false: palette.border, true: palette.orange }}
+            // The off track uses textMuted so it keeps 3:1 against the row (WCAG 1.4.11).
+            trackColor={{ false: palette.textMuted, true: palette.orange }}
             thumbColor={palette.white}
-            ios_backgroundColor={palette.border}
+            ios_backgroundColor={palette.textMuted}
             // The row itself is the accessible switch; avoid a second, unlabeled control.
             accessible={false}
             accessibilityElementsHidden
@@ -160,7 +161,7 @@ export function SettingsRow({
       {content}
     </Pressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   left: {

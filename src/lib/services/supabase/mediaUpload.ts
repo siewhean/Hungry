@@ -32,6 +32,8 @@ const MAX_MENU_PHOTO_BYTES = 10 * 1024 * 1024;
 const MAX_IMAGE_UPLOAD_BYTES = 10 * 1024 * 1024;
 const MAX_POST_MEDIA_BYTES = 50 * 1024 * 1024;
 const MAGIC_BYTE_SAMPLE_BYTES = 16;
+/** Longest edge an uploaded photo keeps after re-encoding. */
+const MAX_UPLOAD_IMAGE_EDGE_PX = 2048;
 
 function guessContentType(uri: string): string {
   const normalized = uri.toLowerCase();
@@ -88,7 +90,17 @@ async function reencodeImageWithoutMetadata(
         : SaveFormat.JPEG;
 
   try {
-    const rendered = await ImageManipulator.manipulate(uri).renderAsync();
+    let rendered = await ImageManipulator.manipulate(uri).renderAsync();
+    // Full-resolution phone photos are 3-5x larger than any screen shows: cap the long edge.
+    if (Math.max(rendered.width, rendered.height) > MAX_UPLOAD_IMAGE_EDGE_PX) {
+      rendered = await ImageManipulator.manipulate(uri)
+        .resize(
+          rendered.width >= rendered.height
+            ? { width: MAX_UPLOAD_IMAGE_EDGE_PX }
+            : { height: MAX_UPLOAD_IMAGE_EDGE_PX },
+        )
+        .renderAsync();
+    }
     const saved = await rendered.saveAsync({ format, compress: 0.9 });
     const blob = await fetchBlobFromUri(saved.uri);
     return { blob, contentType: `image/${format}` };

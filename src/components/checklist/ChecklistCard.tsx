@@ -14,7 +14,7 @@ interface ChecklistCardProps {
 export function ChecklistCard({
   checklist,
   itemCount = 0,
-  triedCount = 0,
+  triedCount,
   onPress,
 }: ChecklistCardProps) {
   const { spacing } = useHungryTheme();
@@ -30,7 +30,9 @@ export function ChecklistCard({
           <View style={styles.copy}>
             <AppText variant="bodyBold">{checklist.name}</AppText>
             <AppText variant="bodySmall" tone="secondary">
-              {itemCount} item{itemCount === 1 ? "" : "s"} · {triedCount} tried
+              {itemCount} item{itemCount === 1 ? "" : "s"}
+              {/* Tried count only when this list's items are loaded; otherwise it would read "0 tried". */}
+              {triedCount === undefined ? "" : ` · ${triedCount} tried`}
             </AppText>
           </View>
           <AppText variant="micro" tone="muted">

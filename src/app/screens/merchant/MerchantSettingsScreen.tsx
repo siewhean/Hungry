@@ -1,6 +1,6 @@
 import React, { useCallback, useState, useEffect } from "react";
 import { View, Alert, Platform } from "react-native";
-import { BellRing, Shield, HelpCircle, LogOut, X } from "lucide-react-native";
+import { ArrowLeftRight, BellRing, Shield, HelpCircle, X } from "lucide-react-native";
 import { CommonActions, useNavigation } from "@react-navigation/native";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
@@ -57,11 +57,6 @@ export function MerchantSettingsScreen() {
       void registerForStallAlerts({ askPermission: false })
         .then(setIsDeviceRegistered)
         .catch(() => setIsDeviceRegistered(false));
-      if (activeOutlet) {
-        void service.merchant.syncLowRatingNotifications(activeOutlet.id).then(async () => {
-          setMerchantNotifications(await service.merchant.getMerchantNotifications(account.id));
-        });
-      }
     } catch (e) {
       console.error(e);
       setError(e instanceof Error ? e.message : "Failed to load merchant settings.");
@@ -248,13 +243,12 @@ export function MerchantSettingsScreen() {
           />
         </SettingsSection>
 
-        {/* Logout */}
+        {/* A mode switch, not a destructive action: neutral icon and border. */}
         <Button
           label="Switch to Customer Mode"
           variant="secondary"
-          leftIcon={<LogOut size={18} color={palette.error} />}
+          leftIcon={<ArrowLeftRight size={18} color={palette.textSecondary} />}
           onPress={handleSwitchToCustomerMode}
-          style={{ borderColor: palette.errorSoft }}
         />
       </View>
     </Screen>

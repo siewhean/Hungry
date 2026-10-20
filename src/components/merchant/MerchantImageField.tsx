@@ -1,17 +1,12 @@
 import React, { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 
 import { AccessibleImage, AppText, Button } from "@/components/ui";
-import { confirmGalleryAccess, isGalleryPermissionGranted } from "@/lib/permissions/gallery";
+import {
+  pickMerchantMedia,
+  type MerchantMediaSource,
+} from "@/features/merchant/merchantMediaPicker";
 import { useHungryTheme } from "@/theme";
-
-function loadImagePickerModule() {
-  try {
-    return require("expo-image-picker");
-  } catch {
-    return null;
-  }
-}
 
 export function MerchantImageField({
   label,
@@ -19,52 +14,32 @@ export function MerchantImageField({
   onChange,
   isSaving,
   icon,
+  rationale,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   isSaving: boolean;
   icon: React.ReactNode;
+  /** Why Hungry needs the photo library for this image, shown before the permission prompt. */
+  rationale?: string;
 }) {
   const { componentRadii, palette, spacing } = useHungryTheme();
   const [error, setError] = useState<string | null>(null);
 
-  const handlePick = async () => {
+  const handlePick = async (source: MerchantMediaSource) => {
     try {
       setError(null);
-      const imagePicker = loadImagePickerModule();
-      if (!imagePicker) {
-        setError("Photo picker is unavailable in this build.");
-        return;
-      }
-
-      const shouldRequestPermission = await confirmGalleryAccess({
-        title: "Allow gallery access",
-        message:
-          "Hungry needs access to your photo library to upload your profile image for the outlet.",
-        confirmLabel: "Allow",
-        cancelLabel: "Not now",
+      const uri = await pickMerchantMedia({
+        kind: "image",
+        source,
+        rationale:
+          rationale ??
+          `Hungry needs access to your photo library to upload the ${label.toLowerCase()} for your outlet.`,
       });
-
-      if (!shouldRequestPermission) {
-        return;
-      }
-
-      const permission = await imagePicker.requestMediaLibraryPermissionsAsync();
-      if (!isGalleryPermissionGranted(permission)) {
-        setError("Photos permission is required to upload this image.");
-        return;
-      }
-      const result = await imagePicker.launchImageLibraryAsync({
-        allowsEditing: true,
-        mediaTypes: imagePicker.MediaTypeOptions.Images,
-        quality: 0.82,
-        selectionLimit: 1,
-      });
-      if (result.canceled || !result.assets?.length) return;
-      onChange(result.assets[0].uri);
-    } catch {
-      setError("Unable to open the photo library right now.");
+      if (uri) onChange(uri);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unable to open the photo library right now.");
     }
   };
 
@@ -109,7 +84,18 @@ export function MerchantImageField({
         </AppText>
       ) : null}
       <View style={{ flexDirection: "row", gap: spacing[2] }}>
-        <Button label={value ? "Replace" : "Upload"} variant="secondary" onPress={handlePick} />
+        <Button
+          label={value ? "Replace" : "Upload"}
+          variant="secondary"
+          onPress={() => void handlePick("library")}
+        />
+        {Platform.OS !== "web" ? (
+          <Button
+            label="Take photo"
+            variant="secondary"
+            onPress={() => void handlePick("camera")}
+          />
+        ) : null}
         {value ? <Button label="Remove" variant="ghost" onPress={() => onChange("")} /> : null}
       </View>
     </View>

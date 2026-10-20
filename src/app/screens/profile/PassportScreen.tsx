@@ -2,11 +2,11 @@
  * PassportScreen — branded Hungry Passport progress and stamp collection.
  */
 
-import { AccessibilityInfo, ScrollView, View } from "react-native";
+import { AccessibilityInfo, View } from "react-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { ProfileScreenShell } from "@/app/screens/profile/ProfileScreenShell";
@@ -26,6 +26,7 @@ import {
 } from "@/constants/passportConfig";
 import { computeWeeklyGoal, milestoneReachedThisWeek } from "@/features/passport/weeklyGoal";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { trackPassportViewed } from "@/lib/analytics/gamificationEvents";
 import { useChecklistStore } from "@/store/useChecklistStore";
 import { usePassportStore } from "@/store/usePassportStore";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
@@ -151,6 +152,10 @@ export function PassportScreen({ navigation: _nav }: Props) {
     computeProgress(triedStallIds);
   }, [computeProgress, triedStallIds]);
 
+  useEffect(() => {
+    trackPassportViewed("profile");
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       void Promise.all([loadPassportStamps(), loadPassportEvents()]).catch(() => undefined);
@@ -230,7 +235,7 @@ export function PassportScreen({ navigation: _nav }: Props) {
       title="Hungry Passport"
       subtitle={`${totalStamps} ${totalStamps === 1 ? "stamp" : "stamps"} earned`}
     >
-      <ScrollView contentContainerStyle={{ gap: spacing[5], paddingBottom: spacing[8] }}>
+      <View style={{ gap: spacing[5], paddingBottom: spacing[8] }}>
         <PassportPageFlip
           pageKey={`${totalStamps}-${celebratingStampId ?? "idle"}`}
           reduceMotion={reduceMotion}
@@ -299,6 +304,7 @@ export function PassportScreen({ navigation: _nav }: Props) {
                       celebrating={celebratingStampId === stamp.id}
                       earned={earnedForCategory.some((earned) => earned.id === stamp.id)}
                       nextStamp={nextStamp}
+                      triedInCategory={progress?.triedCount ?? 0}
                       reduceMotion={reduceMotion}
                       stamp={stamp}
                     />
@@ -313,7 +319,7 @@ export function PassportScreen({ navigation: _nav }: Props) {
             })}
           </View>
         ))}
-      </ScrollView>
+      </View>
     </ProfileScreenShell>
   );
 }
