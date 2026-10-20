@@ -6697,15 +6697,49 @@ export const supabaseService: HungryService = {
       };
     },
 
-    async recordImpression(surface, dishIds) {
+    async recordImpression(surface, dishIds, buckets) {
       const client = getSupabaseClient();
       const userId = await getCurrentSupabaseUserId();
       const ids = [...new Set(dishIds)].slice(0, 50);
       if (!client || !userId || ids.length === 0) return;
-      const { error } = await client
-        .from("recommendation_impressions")
-        .insert({ user_id: userId, surface, dish_ids: ids });
+      const shownBuckets = Object.fromEntries(
+        ids.filter((id) => buckets?.[id]).map((id) => [id, buckets?.[id]]),
+      );
+      const { error } = await client.from("recommendation_impressions").insert({
+        user_id: userId,
+        surface,
+        dish_ids: ids,
+        ...(Object.keys(shownBuckets).length > 0 ? { buckets: shownBuckets } : {}),
+      });
       if (error) console.warn("Failed to record recommendation impression", error.message);
+    },
+
+    async getFoodHistory() {
+      const client = getSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!client || !userId) return [];
+      const { data, error } = await client.rpc("get_my_food_history", { p_limit: 300 });
+      if (error || !Array.isArray(data)) {
+        if (error) console.warn("Failed to load food history", error.message);
+        return [];
+      }
+      return (data as Row[]).map((row) => ({
+        dishId: String(row.dish_id ?? ""),
+        foodType: typeof row.food_type === "string" ? row.food_type : undefined,
+        venueId: typeof row.venue_id === "string" ? row.venue_id : undefined,
+        evidence: Number(row.evidence ?? 0),
+        absEvidence: Number(row.abs_evidence ?? 0),
+        lastEventAt: String(row.last_event_at ?? new Date().toISOString()),
+        dismissedUntil: typeof row.dismissed_until === "string" ? row.dismissed_until : undefined,
+      }));
+    },
+
+    async resetFoodHistory() {
+      const client = getSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!client || !userId) return;
+      const { error } = await client.from("user_dish_affinities").delete().eq("user_id", userId);
+      if (error) throw error;
     },
 
     async recordExplicitFeedback(feedback) {

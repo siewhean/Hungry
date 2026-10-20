@@ -1,7 +1,14 @@
+import type { FoodHistory } from "@/lib/ai/foodHistory";
 import { runRecommendationPipeline } from "@/lib/ai/tasteEngine";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { listSharedStallPosts } from "@/features/social/sharedStallPosts";
-import type { DishDetail, StallPost, UserProfile, VenueSummary } from "@/types/domain";
+import type {
+  DishDetail,
+  FoodOpenness,
+  StallPost,
+  UserProfile,
+  VenueSummary,
+} from "@/types/domain";
 
 export interface HomeFeedItem extends StallPost {
   venue: VenueSummary;
@@ -22,6 +29,8 @@ export interface HomeFeedOptions {
   followedAuthors?: Record<string, boolean>;
   followedUserIds?: Record<string, boolean>;
   refreshSeed?: number;
+  /** What the user ate or liked before, and how open they are to new food */
+  personalisation?: { history: FoodHistory; openness: FoodOpenness };
 }
 
 const HOME_FEED_BUNDLE_CACHE_TTL_MS = 5_000;
@@ -71,14 +80,28 @@ export function getHomeFeedBundleCacheKey(
     refreshSeed: options?.refreshSeed ?? 0,
     taste: getProfileTasteKey(profile),
     tasteProfile: profile.tasteProfile?.neophiliaIndex ?? null,
+    openness: options?.personalisation?.openness ?? null,
+    history: getFoodHistoryKey(options?.personalisation?.history),
   });
+}
+
+function getFoodHistoryKey(history: FoodHistory | undefined) {
+  if (!history) return null;
+  return [
+    [...history.likedDishIds].sort().join(","),
+    [...history.dismissedDishIds].sort().join(","),
+  ].join("|");
 }
 
 export function clearHomeFeedBundleCache() {
   homeFeedBundleCache.clear();
 }
 
-function rankHomeFeedItems(items: HomeFeedItem[], profile: UserProfile): HomeFeedItem[] {
+function rankHomeFeedItems(
+  items: HomeFeedItem[],
+  profile: UserProfile,
+  personalisation?: HomeFeedOptions["personalisation"],
+): HomeFeedItem[] {
   const candidateDishes = items.map((item) => item.dishes[0]).filter(Boolean) as DishDetail[];
   const ranked = runRecommendationPipeline(candidateDishes, {
     userVector: profile.tasteVector,
@@ -86,6 +109,8 @@ function rankHomeFeedItems(items: HomeFeedItem[], profile: UserProfile): HomeFee
     neophiliaIndex: profile.tasteProfile?.neophiliaIndex ?? 5,
     radiusMeters: Number.MAX_SAFE_INTEGER,
     likedDishIds: [...profile.favouriteDishIds, ...(profile.onboardingSelectedDishIds ?? [])],
+    history: personalisation?.history,
+    openness: personalisation?.openness,
   });
   const ranks = new Map(ranked.map((result, index) => [result.dishId, index]));
 
@@ -142,6 +167,7 @@ function venueFromPost(post: StallPost): VenueSummary | undefined {
 async function buildHomeFeedItems(
   profile: UserProfile,
   repository = getDataRepository(),
+  personalisation?: HomeFeedOptions["personalisation"],
 ): Promise<HomeFeedItem[]> {
   const postsById = new Map<string, StallPost>();
   for (const post of await listSharedStallPosts(repository)) {
@@ -164,7 +190,7 @@ async function buildHomeFeedItems(
     })
     .filter((p): p is HomeFeedItem => !!p);
 
-  return rankHomeFeedItems(items, profile);
+  return rankHomeFeedItems(items, profile, personalisation);
 }
 
 const RELATIVE_TIME_UNITS: Record<string, number> = {
@@ -250,7 +276,7 @@ async function buildHomeFeedBundle(
   options?: HomeFeedOptions,
   repository = getDataRepository(),
 ): Promise<HomeFeedBundle> {
-  const allPosts = await buildHomeFeedItems(profile, repository);
+  const allPosts = await buildHomeFeedItems(profile, repository, options?.personalisation);
   const now = Date.now();
   const socialFeed = orderHomeSocialFeed(allPosts, now, options);
 

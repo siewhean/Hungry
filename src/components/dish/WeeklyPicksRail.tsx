@@ -6,6 +6,7 @@ import {
   getWeeklyPicksKey,
   isWeeklyPicksPersonalised,
 } from "@/features/home/weeklyPicks";
+import { useFoodHistory } from "@/hooks/useFoodHistory";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -31,6 +32,7 @@ export function WeeklyPicksRail({
   const profile = useProfileStore((state) => state.profile);
   const weekKey = getWeeklyPicksKey();
   const lastTrackedWeek = useRef<string | null>(null);
+  const personalisation = useFoodHistory();
 
   const { picks, personalised } = useMemo(() => {
     const candidates = getDataRepository().searchDishes(
@@ -44,10 +46,10 @@ export function WeeklyPicksRail({
       profile.tasteVector,
     );
     return {
-      picks: buildWeeklyPicks(candidates, profile, weekKey),
+      picks: buildWeeklyPicks(candidates, profile, weekKey, undefined, personalisation),
       personalised: isWeeklyPicksPersonalised(profile.tasteVector, candidates),
     };
-  }, [profile, weekKey]);
+  }, [personalisation, profile, weekKey]);
 
   useEffect(() => {
     if (!picks.length || lastTrackedWeek.current === weekKey) return;

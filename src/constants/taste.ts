@@ -1,4 +1,5 @@
 import type {
+  FoodOpenness,
   HawkerTasteTag,
   TasteKey,
   TasteProfile,
@@ -46,6 +47,33 @@ export const NEUTRAL_TASTE_PROFILE: TasteProfile = {
   neophiliaIndex: 5,
   spiceSeeking: 5,
 };
+
+/** Onboarding / Settings: "How open are you to trying new food?" */
+export const FOOD_OPENNESS_OPTIONS: {
+  value: FoodOpenness;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: "favourites",
+    label: "Stick to my favourites",
+    description: "Mostly dishes you know, and the same food from other stalls.",
+  },
+  {
+    value: "mix",
+    label: "Mix it up",
+    description: "Some favourites, some similar dishes, a few new ones.",
+  },
+  {
+    value: "adventurous",
+    label: "Always try new food",
+    description: "Mostly new dishes, picked from flavours you already enjoy.",
+  },
+];
+
+export function foodOpennessLabel(value: FoodOpenness): string {
+  return FOOD_OPENNESS_OPTIONS.find((option) => option.value === value)?.label ?? "Mix it up";
+}
 
 // ─── Review Tags ──────────────────────────────────────────────────────────────
 

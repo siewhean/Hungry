@@ -2591,6 +2591,15 @@ export const hungryService: HungryService = {
       return resolve(undefined);
     },
 
+    async getFoodHistory() {
+      // The mock keeps no server history; the profile store derives it from favourites and reviews.
+      return resolve([]);
+    },
+
+    async resetFoodHistory() {
+      return resolve(undefined);
+    },
+
     async recordExplicitFeedback(feedback) {
       const dish = feedback.dishId ? dishes.find((item) => item.id === feedback.dishId) : undefined;
       if (!dish && feedback.feedbackType !== "search_query") {

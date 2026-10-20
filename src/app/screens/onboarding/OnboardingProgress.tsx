@@ -4,8 +4,8 @@ import { AppText } from "@/components/ui";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { useHungryTheme } from "@/theme";
 
-/** The whole first-run flow: welcome, location, optional taste quiz, done. */
-export const ONBOARDING_STEPS = ["welcome", "location", "taste", "done"] as const;
+/** The whole first-run flow: welcome, location, optional taste quiz, food openness, done. */
+export const ONBOARDING_STEPS = ["welcome", "location", "taste", "openness", "done"] as const;
 export type OnboardingStep = (typeof ONBOARDING_STEPS)[number];
 
 /** Onboarding funnel: one event per step shown, tagged with the onboarding surface. */
