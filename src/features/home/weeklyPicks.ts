@@ -3,7 +3,8 @@ import {
   isNeutralTasteVector,
   runRecommendationPipeline,
 } from "@/lib/ai/tasteEngine";
-import type { DishDetail, TasteVector, UserProfile } from "@/types/domain";
+import type { FoodHistory } from "@/lib/ai/foodHistory";
+import type { DishDetail, FoodOpenness, TasteVector, UserProfile } from "@/types/domain";
 
 export const WEEKLY_PICKS_COUNT = 5;
 const SINGAPORE_OFFSET_MS = 8 * 60 * 60 * 1000;
@@ -66,6 +67,7 @@ export function buildWeeklyPicks(
   >,
   weekKey: string,
   count = WEEKLY_PICKS_COUNT,
+  personalisation?: { history: FoodHistory; openness: FoodOpenness },
 ): WeeklyPick[] {
   const ranked = runRecommendationPipeline(dishes, {
     userVector: profile.tasteVector,
@@ -73,6 +75,8 @@ export function buildWeeklyPicks(
     neophiliaIndex: profile.tasteProfile?.neophiliaIndex ?? 5,
     radiusMeters: Number.MAX_SAFE_INTEGER,
     excludeDishIds: profile.reviewedDishIds,
+    history: personalisation?.history,
+    openness: personalisation?.openness,
   });
   const dishById = new Map(dishes.map((dish) => [dish.id, dish]));
   // Photo dishes get a small bump so they lead when scores are close; photo-less dishes stay eligible.

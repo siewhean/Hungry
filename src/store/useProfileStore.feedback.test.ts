@@ -184,3 +184,23 @@ test("signed-out Supabase onboarding taste and dietary choices stay local until 
     resetServiceProvider();
   }
 });
+
+test("setFoodOpenness sets openness and the matching neophiliaIndex", () => {
+  useProfileStore.getState().clearProfile();
+  useProfileStore.getState().setFoodOpenness("adventurous", "onboarding");
+  const { profile, tasteProfile } = useProfileStore.getState();
+  assert.equal(profile.tasteProfile?.foodOpenness, "adventurous");
+  assert.equal(profile.tasteProfile?.neophiliaIndex, 8);
+  assert.equal(tasteProfile.foodOpenness, "adventurous");
+});
+
+test("Not for me hides the dish in local food history for 30 days", () => {
+  const dish = getDataRepository().listPopularNearby()[0];
+  assert.ok(dish);
+  useProfileStore.getState().clearProfile();
+  useProfileStore.getState().recordTasteInteraction({ type: "dismissed", surface: "decide", dish });
+  const row = useProfileStore.getState().foodHistory.find((item) => item.dishId === dish.id);
+  assert.ok(row?.dismissedUntil);
+  assert.ok(Date.parse(row.dismissedUntil) > Date.now() + 29 * 24 * 60 * 60 * 1000);
+  assert.equal(row.evidence, -4);
+});

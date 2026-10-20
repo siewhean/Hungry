@@ -21,6 +21,8 @@ export type OnboardingStackParamList = {
         answers?: TasteVector;
       }
     | undefined;
+  /** "How open are you to trying new food?" mode "settings": change it from Settings and go back. */
+  FoodOpenness: { mode?: "onboarding" | "settings" } | undefined;
   /** Last step: "you're all set", then Home. */
   TasteProfileResult: undefined;
   LocationPermission: undefined;

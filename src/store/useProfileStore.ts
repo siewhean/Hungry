@@ -14,15 +14,24 @@ import {
   getSimilarityScore,
 } from "@/lib/services/serviceProvider";
 import type { ExplicitFeedbackInput } from "@/lib/services/types";
+import {
+  applyAffinityEvent,
+  deriveLocalFoodHistory,
+  mergeFoodHistory,
+  type AffinitySignal,
+} from "@/lib/ai/foodHistory";
+import { OPENNESS_NEOPHILIA_INDEX } from "@/lib/ai/exploration";
 import type {
   DietaryFlag,
   DishDetail,
+  FoodOpenness,
   RecommendationSurface,
   ProfileVisibility,
   TasteProfile,
   TasteInteractionEvent,
   TasteInteractionType,
   TasteVector,
+  UserDishAffinity,
   UserProfile,
 } from "@/types/domain";
 import { NEUTRAL_TASTE_PROFILE, NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
@@ -106,6 +115,12 @@ interface ProfileState {
   >;
   /** True when the last attempt to load favourites from the backend failed. Not persisted. */
   favouritesRehydrationFailed: boolean;
+  /** Per-dish food history: server rows plus this device's not-yet-synced signals. */
+  foodHistory: UserDishAffinity[];
+  loadFoodHistory: () => Promise<void>;
+  resetFoodHistory: () => Promise<void>;
+  /** Onboarding / Settings: how open the user is to new food. Also sets neophiliaIndex. */
+  setFoodOpenness: (openness: FoodOpenness, surface: "onboarding" | "settings") => void;
   applyProfile: (profile: UserProfile) => void;
   syncProfile: (isAuthenticated: boolean, userId?: string | null) => void;
   toggleFavourite: (dish: DishDetail) => void;
@@ -369,6 +384,48 @@ export const useProfileStore = create<ProfileState>()(
       tasteInteractionEvents: [],
       reviewEntries: {},
       favouritesRehydrationFailed: false,
+      foodHistory: [],
+      loadFoodHistory: async () => {
+        const userId = get().profile.id;
+        try {
+          const rows = await getHungryService().recommendations.getFoodHistory();
+          if (get().profile.id !== userId) return;
+          // Server rows replace local ones; dismissals made on this device stay until the server has them.
+          set((state) => ({
+            foodHistory: mergeFoodHistory(
+              rows,
+              state.foodHistory.filter((row) => row.dismissedUntil),
+            ),
+          }));
+        } catch (error) {
+          console.warn("Failed to load food history", error);
+        }
+      },
+      resetFoodHistory: async () => {
+        await getHungryService().recommendations.resetFoodHistory();
+        set({ foodHistory: [] });
+        trackAnalyticsEvent("food_history_reset", {});
+      },
+      setFoodOpenness: (openness, surface) => {
+        const previousSnapshot = { profile: get().profile, tasteProfile: get().tasteProfile };
+        const base = get().profile.tasteProfile ?? get().tasteProfile;
+        const tasteProfile: TasteProfile = {
+          ...base,
+          foodOpenness: openness,
+          neophiliaIndex: OPENNESS_NEOPHILIA_INDEX[openness],
+        };
+        set((state) => ({ profile: { ...state.profile, tasteProfile }, tasteProfile }));
+        trackAnalyticsEvent("food_openness_set", { openness, surface });
+        const optimisticProfile = get().profile;
+        if (!shouldSyncAuthenticatedProfile(optimisticProfile)) return;
+        void getHungryService()
+          .profile.updateTasteProfile(tasteProfile)
+          .catch((error) => {
+            console.error("Failed to sync food openness", error);
+            if (get().profile !== optimisticProfile) return;
+            set(previousSnapshot);
+          });
+      },
       applyProfile: (profile) =>
         set({
           profile: withNeutralTasteProfile(ensureSupabaseCompatibleProfile(profile)),
@@ -414,6 +471,7 @@ export const useProfileStore = create<ProfileState>()(
 
         if (isAuthenticated && userId && currentProfile.id === userId) {
           rehydrateFavouriteDishIds();
+          if (authenticatedUserId) void get().loadFoodHistory();
           return;
         }
 
@@ -424,8 +482,10 @@ export const useProfileStore = create<ProfileState>()(
             ),
           ),
           tasteProfile: NEUTRAL_TASTE_PROFILE,
+          foodHistory: [],
         });
         rehydrateFavouriteDishIds();
+        if (authenticatedUserId) void get().loadFoodHistory();
       },
       toggleFavourite: (dish) => {
         const dishId = dish.id;
@@ -855,6 +915,26 @@ export const useProfileStore = create<ProfileState>()(
             tasteInteractionEvents: appendTasteEvent(state.tasteInteractionEvents, event),
           };
         });
+        const affinitySignal = getAffinitySignal(input, recordedEvent);
+        const affinityDishId = input.dish?.id ?? input.dishId;
+        if (affinitySignal && affinityDishId) {
+          const dish = input.dish ?? getDataRepository().getDishById(affinityDishId);
+          set((state) => {
+            const existing = state.foodHistory.find((row) => row.dishId === affinityDishId);
+            const next = applyAffinityEvent(existing, {
+              dishId: affinityDishId,
+              signal: affinitySignal,
+              foodType: dish?.foodTypeTag,
+              venueId: dish?.venueId,
+            });
+            return {
+              foodHistory: [
+                next,
+                ...state.foodHistory.filter((row) => row.dishId !== affinityDishId),
+              ],
+            };
+          });
+        }
         persistTasteInteraction(input, recordedEvent);
         return recordedEvent;
       },
@@ -867,6 +947,7 @@ export const useProfileStore = create<ProfileState>()(
           tasteInteractionEvents: [],
           reviewEntries: {},
           favouritesRehydrationFailed: false,
+          foodHistory: [],
         }),
     }),
     {
@@ -892,10 +973,34 @@ export const useProfileStore = create<ProfileState>()(
         tasteProfile: state.tasteProfile,
         tasteInteractionEvents: state.tasteInteractionEvents,
         reviewEntries: state.reviewEntries,
+        foodHistory: state.foodHistory,
       }),
     },
   ),
 );
+
+/** Same signals the server trigger counts (20261020080000); saves and ratings come from favourites and reviews. */
+function getAffinitySignal(
+  input: RecordTasteInteractionInput,
+  event: TasteInteractionEvent | undefined,
+): AffinitySignal | undefined {
+  if (input.type === "dismissed") return "dismissed";
+  if (!event?.applied) return undefined;
+  if (input.type === "dish_like") return "dish_like";
+  if (input.type === "dish_result_click" || input.type === "food_button_click") return "click";
+  return undefined;
+}
+
+/** Food history for ranking: stored rows, plus favourites and tried dishes the rows do not cover yet. */
+export function selectFoodHistoryRows(
+  state: Pick<ProfileState, "foodHistory" | "profile">,
+): UserDishAffinity[] {
+  const repository = getDataRepository();
+  return mergeFoodHistory(
+    state.foodHistory,
+    deriveLocalFoodHistory(state.profile, (dishId) => repository.getDishById(dishId)),
+  );
+}
 
 export const getTasteSimilarityWithDish = (profile: UserProfile, dish: DishDetail) =>
   Math.round(getSimilarityScore(profile.tasteVector, dish.tasteVector) * 100);

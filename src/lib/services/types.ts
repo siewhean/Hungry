@@ -45,6 +45,7 @@ import type {
   PublicPortfolio,
   PublicMerchantProfile,
   PromotionStatus,
+  RecommendationBucket,
   RecommendationSurface,
   SearchFilters,
   StallInteraction,
@@ -56,6 +57,7 @@ import type {
   TasteProfile,
   TasteInteractionEvent,
   TasteVector,
+  UserDishAffinity,
   UserFoodCred,
   UserMissionProgress,
   UserStallSubmission,
@@ -1001,7 +1003,15 @@ export interface HungryService {
   recommendations: {
     getSlate(request: RecommendationSlateRequest): Promise<RecommendationSlate>;
     /** Best-effort log of the dishes a surface showed, for tap-rate measurement; skipped for guests. */
-    recordImpression(surface: RecommendationSurface, dishIds: string[]): Promise<void>;
+    recordImpression(
+      surface: RecommendationSurface,
+      dishIds: string[],
+      buckets?: Record<string, RecommendationBucket>,
+    ): Promise<void>;
+    /** What the signed-in user has eaten or liked (user_dish_affinities); [] for guests. */
+    getFoodHistory(): Promise<UserDishAffinity[]>;
+    /** Clear the signed-in user's food history ("Reset food history" in Settings). */
+    resetFoodHistory(): Promise<void>;
     recordExplicitFeedback(
       feedback: ExplicitFeedbackInput,
     ): Promise<RecordRecommendationFeedbackResult>;

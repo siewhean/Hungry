@@ -310,9 +310,9 @@ export function TasteQuizScreen({ navigation, route }: Props) {
       return;
     }
     // Answering the taste questions means the quiz was not skipped; a Skip still
-    // reaches this dietary step and stays marked as skipped. On to the last step.
+    // reaches this dietary step and stays marked as skipped. Next: how open they are to new food.
     setSkippedTasteQuiz(!hasTasteAnswers);
-    navigation.navigate("TasteProfileResult");
+    navigation.navigate("FoodOpenness", { mode: "onboarding" });
   };
 
   const isLast = step === STEPS.length - 1;

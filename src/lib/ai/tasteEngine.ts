@@ -9,7 +9,14 @@
  * Scale: 0–10
  */
 
-import type { TasteVector, DietaryFlag, DishSummary, HawkerTasteTag } from "@/types/domain";
+import type {
+  TasteVector,
+  DietaryFlag,
+  DishSummary,
+  FoodOpenness,
+  HawkerTasteTag,
+  RecommendationBucket,
+} from "@/types/domain";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // EXTENDED RECOMMENDATION PIPELINE
@@ -18,6 +25,13 @@ import type { TasteVector, DietaryFlag, DishSummary, HawkerTasteTag } from "@/ty
 import { filterSafeDishes } from "./dietaryGate";
 import { applyContextModifier, computeContextModifier, getCurrentContext } from "./contextEngine";
 import type { ContextState } from "./contextEngine";
+import { hasLikedHistory, type FoodHistory } from "./foodHistory";
+import {
+  allocateByBuckets,
+  bucketExplanation,
+  buildLikedProfile,
+  neophiliaToOpenness,
+} from "./exploration";
 
 // ─── Vector math ──────────────────────────────────────────────────────────────
 
@@ -260,6 +274,10 @@ export interface PipelineContext {
   context?: ContextState;
   /** Dishes the user liked (favourites, onboarding picks); their tags form a light secondary match */
   likedDishIds?: string[];
+  /** How open the user is to new food; defaults from neophiliaIndex */
+  openness?: FoodOpenness;
+  /** What the user ate or liked before; with liked dishes, stage 4 mixes familiar and new food by openness */
+  history?: FoodHistory;
 }
 
 export interface PipelineResult {
@@ -272,6 +290,8 @@ export interface PipelineResult {
   explanation: string;
   /** Whether this dish was injected for serendipity */
   isSerendipitous: boolean;
+  /** Why the dish is in the slate; set only when food history drives stage 4 */
+  bucket?: RecommendationBucket;
 }
 
 export const RECOMMENDATION_SCORE_WEIGHTS = {
@@ -281,6 +301,9 @@ export const RECOMMENDATION_SCORE_WEIGHTS = {
   rating: 0.1,
   novelty: 0.1,
 } as const;
+
+/** Candidates kept after stage 2 when food history drives stage 4. */
+const HISTORY_CANDIDATE_POOL = 600;
 
 /** Share of the taste score that comes from flavour/cuisine tag overlap when the user has liked dishes. */
 export const TAG_MATCH_WEIGHT = 0.2;
@@ -593,13 +616,23 @@ export function runRecommendationPipeline(
     return true;
   });
 
+  const history = hasLikedHistory(ctx.history) ? ctx.history : undefined;
+  if (history) {
+    candidates = candidates.filter((d) => !history.dismissedDishIds.has(d.id));
+  }
+
   if (candidates.length === 0) return [];
 
-  // Stage 2: Narrow to top candidates by taste match
-  const topCandidates = stage2CandidateGeneration(candidates, contextVector, 50);
+  // Stage 2: Narrow to top candidates by taste match. With history the familiar and
+  // same-food buckets need dishes outside the taste top 50, so keep a wider pool.
+  const topCandidates = stage2CandidateGeneration(
+    candidates,
+    contextVector,
+    history ? HISTORY_CANDIDATE_POOL : 50,
+  );
 
   // Stage 3: Multi-signal precision scoring
-  const likedIds = new Set(ctx.likedDishIds ?? []);
+  const likedIds = new Set([...(ctx.likedDishIds ?? []), ...(history?.likedDishIds ?? [])]);
   const tagAffinity = buildTagAffinity(allDishes.filter((dish) => likedIds.has(dish.id)));
   const precisionRanked = stage3PrecisionScoring(
     topCandidates,
@@ -611,6 +644,34 @@ export function runRecommendationPipeline(
   // Sort by precision score
   precisionRanked.sort((a, b) => b._precisionScore - a._precisionScore);
 
+  const dishesById = new Map(candidates.map((dish) => [dish.id, dish]));
+
+  // Stage 4 with history: mix familiar and new food by the user's openness.
+  if (history) {
+    const allocated = allocateByBuckets(
+      precisionRanked.map((dish) => ({ dish, score: dish._precisionScore })),
+      {
+        openness: ctx.openness ?? neophiliaToOpenness(ctx.neophiliaIndex),
+        history,
+        liked: buildLikedProfile(allDishes.filter((dish) => likedIds.has(dish.id))),
+      },
+    );
+    return diversifyResults(
+      allocated.map(({ dish, score, bucket }) => ({
+        dishId: dish.id,
+        score,
+        matchPercent: Math.round(score * 100),
+        explanation:
+          bucket === "similar"
+            ? buildExplanation(ctx.userVector, dish.tasteVector, dish.name)
+            : bucketExplanation(bucket, dish),
+        isSerendipitous: bucket === "new",
+        bucket,
+      })),
+      dishesById,
+    );
+  }
+
   // Stage 4: Inject serendipity based on neophilia
   const reranked = stage4SerendipityReRanking(
     precisionRanked,
@@ -619,7 +680,7 @@ export function runRecommendationPipeline(
     candidates,
   );
 
-  return diversifyResults(reranked, new Map(candidates.map((dish) => [dish.id, dish])));
+  return diversifyResults(reranked, dishesById);
 }
 
 // ─── Explicit Feedback Processing ─────────────────────────────────────────────
