@@ -38,6 +38,8 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
   const recoveryCode = route.params?.code ?? "";
   const [linkError, setLinkError] = useState<string | null>(() => {
     if (!isSupabaseMode) return null;
+    // The emailed code was already verified on ForgotPassword: no link to check.
+    if (route.params?.recoveryVerified) return null;
     if (route.params?.error === "expired") return EXPIRED_LINK_MESSAGE;
     if (route.params?.error || !recoveryCode) return INVALID_LINK_MESSAGE;
     return null;
@@ -48,7 +50,7 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
   const confirmPasswordRef = useRef<TextInput>(null);
   // The reset link's code can be exchanged only once; a retry after a rejected
   // password must call updatePassword alone.
-  const recoveryCodeExchangedRef = useRef(false);
+  const recoveryCodeExchangedRef = useRef(route.params?.recoveryVerified === true);
   const {
     control,
     handleSubmit,

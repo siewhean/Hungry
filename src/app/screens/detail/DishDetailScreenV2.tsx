@@ -33,6 +33,8 @@ import { getDataRepository, getHungryService } from "@/lib/services/serviceProvi
 import { useProfileStore, getTasteSimilarityWithDish } from "@/store/useProfileStore";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useSessionStore } from "@/store/useSessionStore";
+import { saveDishAfterSignIn } from "@/features/auth/finishGuestAction";
+import { useRequireAccount } from "@/features/auth/useRequireAccount";
 import { useUIStore } from "@/store/useUIStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import { TASTE_DIMENSIONS } from "@/constants/taste";
@@ -135,6 +137,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const removeReviewedDish = useProfileStore((state) => state.removeReviewedDish);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
+  const requireAccount = useRequireAccount();
   const showToast = useUIStore((state) => state.showToast);
   const stallInteractions = useStallInteractionStore((state) => state.interactions);
   const stallInteraction = dish?.venueId ? stallInteractions[dish.venueId] : undefined;
@@ -561,12 +564,13 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   };
 
   const handleSave = async () => {
-    if (!isAuthenticated) {
-      setReturnRoute({
-        name: "DishDetail",
-        params: { dishId: dish.id },
-      });
-      navigation.navigate("AuthStack", { screen: "Login" });
+    if (
+      !requireAccount(
+        `Sign in to save ${dish.name}`,
+        { name: "DishDetail", params: { dishId: dish.id } },
+        () => saveDishAfterSignIn(dish),
+      )
+    ) {
       return;
     }
 

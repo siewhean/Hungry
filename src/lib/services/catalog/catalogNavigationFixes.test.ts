@@ -301,7 +301,7 @@ test("browse grid keeps rows on a failed continuation and offers retry", () => {
 
 test("favourites rows use sibling Open and Remove controls", () => {
   const favourites = read("src/app/screens/profile/FavouritesScreen.tsx");
-  const legacy = favourites.slice(favourites.indexOf("function LegacyFavouritesScreen"));
+  const legacy = favourites.slice(favourites.indexOf("Want to try ("));
   const openStart = legacy.indexOf("accessibilityLabel={`Open ${dish.name}");
   const openEnd = legacy.indexOf("</Pressable>", openStart);
   const removeAt = legacy.indexOf("accessibilityLabel={`Remove ${dish.name}");

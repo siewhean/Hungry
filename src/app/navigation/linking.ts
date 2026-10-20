@@ -60,6 +60,10 @@ function sanitizeRouteParams(name: string, params: unknown): Record<string, unkn
     return undefined;
   }
 
+  if (name === "UserProfile" && !isSafeDeepLinkId(next.authorId)) {
+    return undefined;
+  }
+
   if (name === "WheelStack") {
     // The join code rides on the nested WheelHome route, which is where WheelHome reads it.
     const nested =
@@ -192,6 +196,11 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
     const postId = decodePathSegment(parts[1]);
     return postId ? createState("ActivityPostDetail", { postId }) : undefined;
   }
+  // Shared profiles: https://usehungry.com/user/:id (the screen loads the public name).
+  if (FEATURE_FLAGS.socialFeedEnabled && parts[0] === "user") {
+    const authorId = decodePathSegment(parts[1]);
+    return authorId ? createState("UserProfile", { authorId }) : undefined;
+  }
   if (FEATURE_FLAGS.postCreationEnabled && path === "order") {
     return createState("Post", parseOrderDeepLinkQuery(rawPath));
   }
@@ -238,6 +247,7 @@ const SHARED_LINK_ROUTES = new Set([
   "CatalogRawDetail",
   "ActivityPostDetail",
   "PortfolioPublicView",
+  "UserProfile",
   "WheelStack",
 ]);
 
@@ -301,6 +311,7 @@ export function createRootLinking(
         CatalogRawDetail: "catalog/:kind/:id",
         ...(FEATURE_FLAGS.activityEnabled ? { ActivityPostDetail: "post/:postId" } : {}),
         ...(FEATURE_FLAGS.postCreationEnabled ? { Post: "order" } : {}),
+        ...(FEATURE_FLAGS.socialFeedEnabled ? { UserProfile: "user/:authorId" } : {}),
         SearchResults: "search",
         ...(FEATURE_FLAGS.portfoliosEnabled
           ? { PortfolioPublicView: "portfolio/:portfolioId" }

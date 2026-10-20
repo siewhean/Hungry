@@ -273,7 +273,7 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
   assert.match(source, /toChatShareRecipient/);
   assert.doesNotMatch(source, /ACTIVITY_MESSAGES/);
   assert.match(source, /recipientAccessibilityLabelPrefix="Share post to"/);
-  assert.match(source, /Clipboard\.setString/);
+  assert.match(source, /Clipboard\.setStringAsync/);
   assert.match(source, /Share\.share\(/);
   assert.match(source, /const openCommentSheet = useCallback/);
   assert.match(source, /const commentSheet = commentsSheetRef\.current/);

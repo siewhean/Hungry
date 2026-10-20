@@ -1,12 +1,22 @@
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const UPPERCASE_REGEX = /[A-Z]/;
-const LOWERCASE_REGEX = /[a-z]/;
-const DIGIT_REGEX = /\d/;
-const SYMBOL_REGEX = /[^A-Za-z0-9]/;
+/** Length is the only client rule; Supabase rejects leaked passwords (HIBP). */
+export const MIN_PASSWORD_LENGTH = 10;
 
 /** iOS strong-password rules matching validatePassword, so suggested passwords pass. */
-export const PASSWORD_RULES =
-  "minlength: 12; required: lower; required: upper; required: digit; required: special;";
+export const PASSWORD_RULES = `minlength: ${MIN_PASSWORD_LENGTH};`;
+
+export const PASSWORD_REQUIREMENTS_COPY = `Use at least ${MIN_PASSWORD_LENGTH} characters. Avoid passwords you've used elsewhere.`;
+
+export const WEAK_PASSWORD_MESSAGE =
+  "That password has appeared in a data breach or is too easy to guess. Try a longer, less common one.";
+
+/** True for Supabase's weak/leaked password rejection (code weak_password). */
+export function isWeakPasswordError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const { code, message } = error as { code?: unknown; message?: unknown };
+  if (code === "weak_password") return true;
+  return typeof message === "string" && /weak|pwned|leaked|breach/i.test(message);
+}
 
 /** User-facing copy for a rejected password update (Supabase AuthError codes). */
 export function getPasswordUpdateErrorMessage(error: unknown): string {
@@ -17,8 +27,8 @@ export function getPasswordUpdateErrorMessage(error: unknown): string {
   if (code === "same_password") {
     return "Your new password must be different from your current one.";
   }
-  if (code === "weak_password") {
-    return "That password is too weak. Try a longer, less common one.";
+  if (isWeakPasswordError(error)) {
+    return WEAK_PASSWORD_MESSAGE;
   }
   return "Password reset failed. Please try again.";
 }
@@ -44,9 +54,10 @@ export function validateEmail(value: string): true | string {
   return true;
 }
 
-export const PASSWORD_MIN_LENGTH = 12;
+/** Kept for callers of the shared checklist; equals MIN_PASSWORD_LENGTH. */
+export const PASSWORD_MIN_LENGTH = MIN_PASSWORD_LENGTH;
 
-export type PasswordRuleId = "length" | "uppercase" | "lowercase" | "number" | "special";
+export type PasswordRuleId = "length";
 
 export type PasswordRule = {
   id: PasswordRuleId;
@@ -58,40 +69,17 @@ export type PasswordRule = {
 };
 
 /**
- * Single source of truth for new-password rules. validatePassword and the
- * upfront requirements checklist both read this list so they never drift.
+ * Single source of truth for new-password rules. Length is the only client rule
+ * (Supabase rejects leaked passwords), and validatePassword plus the upfront
+ * checklist both read this list so they never drift.
  */
-export function getPasswordRules(minLength = PASSWORD_MIN_LENGTH): PasswordRule[] {
+export function getPasswordRules(minLength = MIN_PASSWORD_LENGTH): PasswordRule[] {
   return [
     {
       id: "length",
       label: `At least ${minLength} characters`,
       error: `Password must be at least ${minLength} characters`,
       test: (value) => value.length >= minLength,
-    },
-    {
-      id: "uppercase",
-      label: "One uppercase letter",
-      error: "Password must include at least one uppercase letter",
-      test: (value) => UPPERCASE_REGEX.test(value),
-    },
-    {
-      id: "lowercase",
-      label: "One lowercase letter",
-      error: "Password must include at least one lowercase letter",
-      test: (value) => LOWERCASE_REGEX.test(value),
-    },
-    {
-      id: "number",
-      label: "One number",
-      error: "Password must include at least one number",
-      test: (value) => DIGIT_REGEX.test(value),
-    },
-    {
-      id: "special",
-      label: "One special character",
-      error: "Password must include at least one special character",
-      test: (value) => SYMBOL_REGEX.test(value),
     },
   ];
 }
@@ -100,7 +88,7 @@ export type PasswordRuleStatus = { id: PasswordRuleId; label: string; met: boole
 
 export function getPasswordRuleStatuses(
   value: string,
-  minLength = PASSWORD_MIN_LENGTH,
+  minLength = MIN_PASSWORD_LENGTH,
 ): PasswordRuleStatus[] {
   return getPasswordRules(minLength).map((rule) => ({
     id: rule.id,
@@ -109,7 +97,7 @@ export function getPasswordRuleStatuses(
   }));
 }
 
-export function validatePassword(value: string, minLength = PASSWORD_MIN_LENGTH): true | string {
+export function validatePassword(value: string, minLength = MIN_PASSWORD_LENGTH): true | string {
   const required = validateRequired(value, "Password");
   if (required !== true) {
     return required;

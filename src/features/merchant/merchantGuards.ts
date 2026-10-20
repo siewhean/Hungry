@@ -39,9 +39,13 @@ export function canEditProfile(level: MerchantAccessLevel): boolean {
   return level === "unverified" || level === "verified";
 }
 
-/** Can the merchant manage menu/dishes? */
+/**
+ * Can the merchant manage menu/dishes? Unverified merchants prepare drafts: the database keeps
+ * them out of every diner read until the outlet is verified, and dishes diners already see stay
+ * read-only until then (app_private.enforce_merchant_dish_draft_scope).
+ */
 export function canManageMenu(level: MerchantAccessLevel): boolean {
-  return level === "verified";
+  return level === "unverified" || level === "verified";
 }
 
 /** Can the merchant publish promotions? */
@@ -78,7 +82,7 @@ export function canViewOnboarding(level: MerchantAccessLevel): boolean {
  * - View verification status
  * - Submit/resubmit evidence
  * - View limited onboarding instructions
- * - Prepare the stall profile (hidden from diners until verified)
+ * - Prepare the stall profile and menu (hidden from diners until verified)
  * - Open Profile and Settings, which hold the "Switch to Customer Mode" and "Sign Out" exits
  */
 export const UNVERIFIED_ALLOWED_SCREENS = [
@@ -86,26 +90,25 @@ export const UNVERIFIED_ALLOWED_SCREENS = [
   "HomeBasedVerification",
   "Profile",
   "BusinessProfileEditor",
+  "Menu",
+  "DishEditor",
+  "OCRDrafts",
   "MerchantSettings",
 ] as const;
 
 /**
  * Actions blocked for unverified merchants:
- * - Edit live stall/business details
+ * - Edit live stall/business details, or dishes diners can already see
  * - Publish promotions
  * - Reply publicly as the business
  * - Access full merchant analytics
  */
 export const VERIFIED_ONLY_SCREENS = [
   "Dashboard",
-  "Menu",
-  "DishEditor",
-  "OCRDrafts",
   "CustomerInbox",
   "FeaturedVisitors",
   "PromotionBuilder",
   "PromotionList",
   "AIAssistant",
-  "OrdersComingSoon",
   "Analytics",
 ] as const;

@@ -39,6 +39,7 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { Button, Dialog } from "@/components/ui";
 import { SettingsSection, SettingsRow } from "@/components/settings";
 import { StallAlertsSettings } from "@/components/settings/StallAlertsSettings";
+import { AccountDeletionCodeDialog } from "@/components/settings/AccountDeletionCodeDialog";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { foodOpennessLabel } from "@/constants/taste";
 import { resolveFoodOpenness } from "@/lib/ai/exploration";
@@ -64,6 +65,12 @@ const THEME_LABELS: Record<ThemePreference, string> = {
   light: "Light",
   dark: "Dark",
 };
+
+/** Supabase AuthErrors (wrong or expired code) keep the code dialog open. */
+function isAuthCodeError(error: unknown): boolean {
+  const name = (error as { name?: unknown } | null)?.name;
+  return typeof name === "string" && name.startsWith("Auth");
+}
 
 function formatDeletionDate(scheduledFor: string): string {
   const date = new Date(scheduledFor);
@@ -150,6 +157,7 @@ export function SettingsScreen() {
       : "system";
 
   const [deletionRequested, setDeletionRequested] = useState(false);
+  const [deletionCodeVisible, setDeletionCodeVisible] = useState(false);
   const [isExportingData, setIsExportingData] = useState(false);
   const [isSavingVisibility, setIsSavingVisibility] = useState(false);
 
@@ -204,7 +212,7 @@ export function SettingsScreen() {
   };
 
   const [accountDialog, setAccountDialog] = useState<
-    "signOut" | "deleteAccount" | "deleteFailed" | null
+    "signOut" | "deleteAccount" | "deleteFailed" | "codeSendFailed" | null
   >(null);
 
   const resetToLogin = () => {
@@ -218,19 +226,37 @@ export function SettingsScreen() {
 
   const handleDeleteAccount = () => setAccountDialog("deleteAccount");
 
-  const runAccountDeletion = async () => {
+  // Step 1: email a code (works for Google and Apple accounts too).
+  const sendDeletionCode = async () => {
     setDeletionRequested(true);
+    try {
+      await getHungryService().auth.sendAccountDeletionCode();
+      setDeletionCodeVisible(true);
+    } catch {
+      setAccountDialog("codeSendFailed");
+    } finally {
+      setDeletionRequested(false);
+    }
+  };
+
+  // Step 2: the emailed code proves the person deleting can read the account's email.
+  // A wrong code stays in the code dialog.
+  const submitDeletionCode = async (code: string) => {
     let scheduledFor: string;
     try {
       ({ scheduledFor } = await getHungryService().auth.requestAccountDeletion({
         reason: "user_initiated_settings_flow",
+        code,
       }));
       trackAnalyticsEvent("account_deletion_requested", { surface: "settings" });
-    } catch {
-      setDeletionRequested(false);
+    } catch (error) {
+      if (isAuthCodeError(error)) throw error;
+      setDeletionCodeVisible(false);
       setAccountDialog("deleteFailed");
       return;
     }
+    setDeletionCodeVisible(false);
+    setDeletionRequested(true);
 
     // The deletion request is queued at this point. A local purge failure must
     // not be reported as a failed deletion request.
@@ -706,10 +732,10 @@ export function SettingsScreen() {
         message={`Your account and personal data will be deleted in ${ACCOUNT_DELETION_GRACE_DAYS} days. Sign back in before then to keep your account. After that, deletion is permanent. Menu photos you shared stay on the stall without your name, and some security, moderation, or legal records may remain in anonymized form.`}
         buttons={[
           {
-            text: "Request deletion",
+            text: "Email me a code",
             style: "destructive",
             onPress: () => {
-              void runAccountDeletion();
+              void sendDeletionCode();
             },
           },
           { text: "Cancel", style: "cancel" },
@@ -724,6 +750,19 @@ export function SettingsScreen() {
         message="We could not queue your account deletion request. Please try again or contact support."
         buttons={[{ text: "OK", style: "cancel" }]}
         onClose={() => setAccountDialog(null)}
+      />
+      <Dialog
+        visible={accountDialog === "codeSendFailed"}
+        title="Couldn't send the code"
+        message="Please wait a minute and try again, or contact support."
+        buttons={[{ text: "OK", style: "cancel" }]}
+        onClose={() => setAccountDialog(null)}
+      />
+      <AccountDeletionCodeDialog
+        visible={deletionCodeVisible}
+        email={profile.email}
+        onSubmit={submitDeletionCode}
+        onCancel={() => setDeletionCodeVisible(false)}
       />
     </ProfileScreenShell>
   );

@@ -22,10 +22,12 @@ import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
 import { trackAuthFailed, trackAuthScreenViewed } from "@/features/auth/authAnalytics";
 import { getMockSignUpFailure } from "@/features/auth/mockAuth";
 import {
+  isWeakPasswordError,
   PASSWORD_RULES,
   validateEmail,
   validatePassword,
   validateRequired,
+  WEAK_PASSWORD_MESSAGE,
 } from "@/features/auth/validation";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
@@ -172,7 +174,9 @@ export function OnboardingAuthScreen({ navigation }: Props) {
       const code =
         (err as { error_code?: string; code?: string })?.error_code ??
         (err as { error_code?: string; code?: string })?.code;
-      if (code === "over_email_send_rate_limit") {
+      if (isWeakPasswordError(err)) {
+        showToast({ message: WEAK_PASSWORD_MESSAGE, tone: "error" });
+      } else if (code === "over_email_send_rate_limit") {
         showToast({ message: AUTH_COPY.signUp.tooManyAttemptsToast, tone: "error" });
       } else if (code === "email_address_invalid") {
         showToast({ message: AUTH_COPY.signUp.invalidEmailToast, tone: "error" });

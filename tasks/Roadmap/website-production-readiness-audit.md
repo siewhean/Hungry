@@ -158,6 +158,7 @@ All P0 blockers resolved. All static predeploy gates pass.
 | `/malls/[mallSlug]/food` | Public SEO | Public | No | Conditional | Supabase/public fallback content | Medium | Noindex if thin or unsupported facts |
 | `/portfolio/[id]` | Public share preview | Public | No | No (noindex) | get_public_portfolio RPC (public lists only) | Medium | Uncached so private lists disappear at once |
 | `/post/[id]` | Public share preview | Public | No | No (noindex) | None (opens the app) | Low | Fallback for shared post links without the app |
+| `/user/[id]` | Public share preview | Public | No | No (noindex) | public_profiles (RLS: public accounts only) | Low | Uncached so a profile made private disappears at once |
 | `/privacy` | Public legal | Public | No | Yes | Legal copy | Medium | Keep provider claims accurate |
 | `/singapore` | Public SEO | Public | No | Yes | Static Singapore index | Low | Keep public and cached |
 | `/singapore/[area]/[dish]` | Public SEO | Public | No | Conditional | Supabase/public fallback content | Medium | No fake ratings/hours |

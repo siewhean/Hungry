@@ -1,27 +1,23 @@
 import { useCallback } from "react";
-import { useNavigation } from "@react-navigation/native";
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { useSessionStore, type PendingRoute } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 
 // Guests can browse; anything that saves needs an account. Returns true when signed
-// in. Otherwise it asks the guest to sign in and returns them to `returnRoute` after.
+// in. Otherwise it opens the sign-in sheet (SignInPromptSheet), returns the guest to
+// `returnRoute` after sign-in and then runs `onSignedIn` to finish the save/like/follow.
 export function useRequireAccount() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
-  const showToast = useUIStore((state) => state.showToast);
+  const openSignInPrompt = useUIStore((state) => state.openSignInPrompt);
 
   return useCallback(
-    (message: string, returnRoute: string | PendingRoute) => {
+    (message: string, returnRoute: string | PendingRoute, onSignedIn?: () => void) => {
       if (isAuthenticated) return true;
       setReturnRoute(returnRoute);
-      showToast({ message, tone: "warning" });
-      navigation.navigate("AuthStack", { screen: "Login" });
+      openSignInPrompt({ title: message.replace(/\.$/, "") }, onSignedIn);
       return false;
     },
-    [isAuthenticated, navigation, setReturnRoute, showToast],
+    [isAuthenticated, openSignInPrompt, setReturnRoute],
   );
 }

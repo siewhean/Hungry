@@ -7,6 +7,8 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { MerchantImageField } from "@/components/merchant/MerchantImageField";
+import { OpeningHoursEditor } from "@/components/merchant/OpeningHoursEditor";
+import { MapSurface } from "@/components/map";
 import {
   AccessibleImage,
   AppText,
@@ -21,11 +23,17 @@ import {
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
-import type { MerchantOutlet, LocationPrivacy } from "@/types/domain";
+import type { Coordinate, MerchantOutlet, LocationPrivacy, OpeningSchedule } from "@/types/domain";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { formatBusinessType } from "@/features/merchant/merchantReadiness";
 import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
 import { useUnsavedChangesGuard } from "@/features/merchant/useUnsavedChangesGuard";
+import { lookupPostalCode, SINGAPORE_POSTAL_CODE_PATTERN } from "@/lib/geo/oneMap";
+import {
+  formatScheduleText,
+  scheduleFromHoursText,
+  validateOpeningSchedule,
+} from "@/utils/openingSchedule";
 
 type NavigationProp = NativeStackNavigationProp<MerchantTabParamList, "BusinessProfileEditor">;
 
@@ -36,8 +44,11 @@ type FormData = {
   cuisineCategories: string;
   unitNumber: string;
   floor: string;
+  postalCode: string;
+  address: string;
+  coordinate: Coordinate | null;
   locationPrivacy: LocationPrivacy;
-  operatingHours: string;
+  openingSchedule: OpeningSchedule;
   temporaryClosure: string;
   profilePhotoUrl: string;
   coverPhotoUrl: string;
@@ -73,8 +84,12 @@ function toFormData(outlet: MerchantOutlet): FormData {
     cuisineCategories: outlet.cuisineCategories?.join(", ") || "",
     unitNumber: outlet.unitNumber || "",
     floor: outlet.floor || "",
+    postalCode: outlet.postalCode || "",
+    address: outlet.address || "",
+    coordinate: outlet.coordinate ?? null,
     locationPrivacy: toHomeBasedPrivacy(outlet.locationPrivacy),
-    operatingHours: outlet.operatingHours || "",
+    // Older outlets only have free-text hours: seed the weekly editor from them.
+    openingSchedule: outlet.openingSchedule ?? scheduleFromHoursText(outlet.operatingHours),
     temporaryClosure: outlet.temporaryClosure || "",
     profilePhotoUrl: outlet.profilePhotoUrl || "",
     coverPhotoUrl: outlet.coverPhotoUrl || "",
@@ -138,12 +153,17 @@ export function BusinessProfileEditorScreen() {
   const activeOutlet = useMerchantStore(getActiveOutlet);
   const updateOutletProfile = useMerchantStore((state) => state.updateOutletProfile);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
+  const [hoursError, setHoursError] = useState<string>();
+  const [postalStatus, setPostalStatus] = useState<string>();
+  const [isLookingUpPostal, setIsLookingUpPostal] = useState(false);
 
   const {
     control,
     handleSubmit,
     reset,
     watch,
+    getValues,
+    setValue,
     formState: { isSubmitting, isDirty, errors },
   } = useForm<FormData>({
     defaultValues: {
@@ -153,8 +173,11 @@ export function BusinessProfileEditorScreen() {
       cuisineCategories: "",
       unitNumber: "",
       floor: "",
+      postalCode: "",
+      address: "",
+      coordinate: null,
       locationPrivacy: "approximate",
-      operatingHours: "",
+      openingSchedule: { weekly: {}, special: [] },
       temporaryClosure: "",
       profilePhotoUrl: "",
       coverPhotoUrl: "",
@@ -168,6 +191,32 @@ export function BusinessProfileEditorScreen() {
   });
 
   const businessType = watch("businessType");
+  const coordinate = watch("coordinate");
+
+  // OneMap postal-code lookup fills the street address and drops the map pin.
+  const handlePostalLookup = async () => {
+    const postalCode = getValues("postalCode").trim();
+    if (!SINGAPORE_POSTAL_CODE_PATTERN.test(postalCode)) {
+      setPostalStatus("Enter a 6-digit postal code.");
+      return;
+    }
+    setIsLookingUpPostal(true);
+    setPostalStatus(undefined);
+    try {
+      const result = await lookupPostalCode(postalCode);
+      if (!result) {
+        setPostalStatus("No address found for this postal code.");
+        return;
+      }
+      setValue("address", result.address, { shouldDirty: true });
+      setValue("coordinate", result.coordinate, { shouldDirty: true });
+      setPostalStatus("Address found. Tap the map to fine-tune the pin.");
+    } catch (error) {
+      setPostalStatus(error instanceof Error ? error.message : "Postal code lookup failed.");
+    } finally {
+      setIsLookingUpPostal(false);
+    }
+  };
 
   // Seed once per outlet. A background account sync hands back a new outlet object with the
   // same id: re-seed only while the form is untouched, so it never wipes the merchant's edits.
@@ -184,6 +233,12 @@ export function BusinessProfileEditorScreen() {
 
   const onSubmit = async (data: FormData) => {
     if (!activeOutlet) return;
+    const hoursProblem = validateOpeningSchedule(data.openingSchedule);
+    setHoursError(hoursProblem);
+    if (hoursProblem) {
+      Alert.alert("Check opening hours", hoursProblem);
+      return;
+    }
     try {
       const profilePhotoUrl = data.profilePhotoUrl.trim();
       const coverPhotoUrl = data.coverPhotoUrl.trim();
@@ -206,11 +261,16 @@ export function BusinessProfileEditorScreen() {
           .filter(Boolean),
         unitNumber: data.unitNumber,
         floor: data.floor,
+        postalCode: data.postalCode,
+        address: data.address,
+        ...(data.coordinate ? { coordinate: data.coordinate } : {}),
         // Location privacy only applies to home-based businesses (never exact for them).
         ...(data.businessType === "home_based"
           ? { locationPrivacy: toHomeBasedPrivacy(data.locationPrivacy) }
           : {}),
-        operatingHours: data.operatingHours,
+        openingSchedule: data.openingSchedule,
+        // The readable line older screens and the catalog show; "Open now" uses the schedule.
+        operatingHours: formatScheduleText(data.openingSchedule),
         temporaryClosure: data.temporaryClosure,
         profilePhotoUrl,
         coverPhotoUrl,
@@ -483,21 +543,84 @@ export function BusinessProfileEditorScreen() {
             </View>
           </View>
 
-          <View>
+          <View style={{ gap: spacing[2] }}>
+            <View style={{ flexDirection: "row", alignItems: "flex-end", gap: spacing[3] }}>
+              <View style={{ flex: 1 }}>
+                <Controller
+                  control={control}
+                  name="postalCode"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                      label="Postal Code"
+                      onBlur={onBlur}
+                      onChangeText={onChange}
+                      value={value}
+                      keyboardType="number-pad"
+                      maxLength={6}
+                      placeholder="e.g. 069184"
+                    />
+                  )}
+                />
+              </View>
+              <Button
+                label={isLookingUpPostal ? "Finding..." : "Find address"}
+                variant="secondary"
+                onPress={() => void handlePostalLookup()}
+                disabled={isLookingUpPostal}
+                loading={isLookingUpPostal}
+              />
+            </View>
+            {postalStatus ? (
+              <AppText variant="bodySmall" tone="muted" accessibilityLiveRegion="polite">
+                {postalStatus}
+              </AppText>
+            ) : null}
             <Controller
               control={control}
-              name="operatingHours"
+              name="address"
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
-                  label="Operating Hours"
+                  label="Street Address"
                   onBlur={onBlur}
                   onChangeText={onChange}
                   value={value}
-                  placeholder="e.g. Mon-Sun 10:00-22:00"
+                  placeholder="Filled in from the postal code"
                 />
               )}
             />
+            {coordinate ? (
+              <View style={{ gap: spacing[1] }}>
+                <MapSurface
+                  style={{ height: 180, borderRadius: componentRadii.card, overflow: "hidden" }}
+                  centerCoordinate={coordinate}
+                  zoomLevel={17}
+                  markers={[{ id: "outlet-pin", label: "Your stall", coordinate }]}
+                  selectedMarkerId="outlet-pin"
+                  onMapPress={(next) => setValue("coordinate", next, { shouldDirty: true })}
+                />
+                <AppText variant="bodySmall" tone="muted">
+                  {businessType === "home_based"
+                    ? "Home-based businesses never show this pin to diners."
+                    : "Tap the map to move the pin to your stall's entrance."}
+                </AppText>
+              </View>
+            ) : null}
           </View>
+
+          <Controller
+            control={control}
+            name="openingSchedule"
+            render={({ field: { onChange, value } }) => (
+              <OpeningHoursEditor
+                value={value}
+                onChange={(next) => {
+                  setHoursError(undefined);
+                  onChange(next);
+                }}
+                error={hoursError}
+              />
+            )}
+          />
 
           <View>
             <Controller

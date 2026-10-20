@@ -7,6 +7,7 @@ const APP_PATHS = [
   "/venue/*",
   "/post/*",
   "/portfolio/*",
+  "/user/*",
   "/join/*",
   "/home",
 ];

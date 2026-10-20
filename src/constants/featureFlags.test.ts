@@ -9,7 +9,6 @@ const SHIPPED_SURFACE_FLAGS = [
   "postCreationEnabled",
   "reviewCreationEnabled",
   "activityEnabled",
-  "readsEnabled",
   "mapEnabled",
   "hungryWheelEnabled",
   "favouritesEnabled",

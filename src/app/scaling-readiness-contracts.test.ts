@@ -93,7 +93,6 @@ test("production feature flags remain MVP-safe and documented in the release mat
     "postCreationEnabled",
     "reviewCreationEnabled",
     "activityEnabled",
-    "readsEnabled",
     "mapEnabled",
     "hungryWheelEnabled",
     "craveEnabled",

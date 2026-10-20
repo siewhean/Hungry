@@ -140,8 +140,6 @@ function isReleaseRouteAvailable(routeName: RootRouteName | MainTabRouteName): b
       return FEATURE_FLAGS.mapEnabled;
     case "Post":
       return FEATURE_FLAGS.postCreationEnabled;
-    case "BlogPost":
-      return FEATURE_FLAGS.readsEnabled;
     case "WheelStack":
       return FEATURE_FLAGS.hungryWheelEnabled;
     case "ActivityInbox":
@@ -815,9 +813,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
               }}
             />
           ) : null}
-          {FEATURE_FLAGS.readsEnabled ? (
-            <RootStack.Screen component={BlogPostRouteScreen} name="BlogPost" />
-          ) : null}
+          <RootStack.Screen component={BlogPostRouteScreen} name="BlogPost" />
           {FEATURE_FLAGS.reviewCreationEnabled ? (
             <RootStack.Screen getComponent={loadReviewStack} name="ReviewStack" />
           ) : null}

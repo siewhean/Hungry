@@ -90,7 +90,6 @@ test("production route gates keep advanced surfaces behind MVP-safe flags", () =
     ["mapEnabled", "DiscoverMap"],
     ["mapEnabled", "MapZoomedIn"],
     ["postCreationEnabled", "Post"],
-    ["readsEnabled", "BlogPost"],
     ["reviewCreationEnabled", "ReviewStack"],
     ["hungryWheelEnabled", "WheelStack"],
     ["activityEnabled", "ActivityInbox"],

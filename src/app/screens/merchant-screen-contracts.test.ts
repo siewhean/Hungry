@@ -109,12 +109,6 @@ const merchantScreens = [
     hidden: true,
   },
   {
-    route: "OrdersComingSoon",
-    component: "OrdersComingSoonScreen",
-    file: "src/app/screens/merchant/OrdersComingSoonScreen.tsx",
-    hidden: true,
-  },
-  {
     route: "MerchantSettings",
     component: "MerchantSettingsScreen",
     file: "src/app/screens/merchant/MerchantSettingsScreen.tsx",
@@ -163,7 +157,6 @@ test("Merchant screen contract: verified-only routes are guarded by merchant acc
     "PromotionList",
     "AIAssistant",
     "BusinessProfileEditor",
-    "OrdersComingSoon",
     "MerchantSettings",
     "Analytics",
   ]) {
@@ -191,8 +184,11 @@ test("Merchant screen contract: merchant navigation buttons are accessible and h
     assert.match(dashboard, new RegExp(`prefetchMerchantRoute\\("${route}"\\)`));
     assert.match(dashboard, new RegExp(`navigation\\.navigate\\("${route}"\\)`));
   }
-  // The In-App Ordering mock is no longer promoted from the Dashboard.
-  assert.doesNotMatch(dashboard, /navigation\.navigate\("OrdersComingSoon"\)/);
+  // The In-App Ordering mock is deleted until ordering exists (decision 26).
+  assert.doesNotMatch(dashboard, /OrdersComingSoon/);
+  assert.doesNotMatch(tabs, /OrdersComingSoon/);
+  assert.doesNotMatch(read("src/app/navigation/navigationTypes.ts"), /OrdersComingSoon/);
+  assert.equal(exists("src/app/screens/merchant/OrdersComingSoonScreen.tsx"), false);
 });
 
 test("Merchant screen contract: merchant route params match editable sub-screen needs", () => {
@@ -372,7 +368,7 @@ test("Merchant screen contract: inbox, promotions, assistant, and settings scree
 
 test("Merchant screen contract: merchant screens resolve services through provider", () => {
   const serviceBackedScreens = merchantScreens.filter(
-    (screen) => !["Dashboard", "Analytics", "Profile", "OrdersComingSoon"].includes(screen.route),
+    (screen) => !["Dashboard", "Analytics", "Profile"].includes(screen.route),
   );
 
   for (const screen of serviceBackedScreens) {

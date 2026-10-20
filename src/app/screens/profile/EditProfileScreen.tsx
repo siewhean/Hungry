@@ -7,6 +7,7 @@ import { ChevronRight, Camera } from "lucide-react-native";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { AccessibleImage, AppText, Button, Card, Input } from "@/components/ui";
 import { validateEmail } from "@/features/auth/validation";
+import { PROFILE_BIO_MAX_LENGTH } from "@/features/profile/profileBio";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -45,6 +46,8 @@ export function EditProfileScreen({ navigation }: Props) {
   const displayName = displayNameDraft ?? profile.displayName;
   const [emailDraft, setEmailDraft] = useState<string | null>(null);
   const email = emailDraft ?? profile.email ?? "";
+  const [bioDraft, setBioDraft] = useState<string | null>(null);
+  const bio = bioDraft ?? profile.bio ?? "";
   const [avatarUri, setAvatarUri] = useState<string | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
   const [canChangePassword, setCanChangePassword] = useState(false);
@@ -64,8 +67,11 @@ export function EditProfileScreen({ navigation }: Props) {
 
   const trimmedName = displayName.trim();
   const nameError = trimmedName ? undefined : "Enter a display name.";
+  const trimmedBio = bio.trim();
+  const bioChanged = trimmedBio !== (profile.bio ?? "").trim();
   const isDirty =
     trimmedName !== profile.displayName.trim() ||
+    bioChanged ||
     email.trim().toLowerCase() !== (profile.email ?? "").trim().toLowerCase() ||
     avatarUri !== undefined;
   // Saving (or leaving after a save) must not trigger the unsaved-changes prompt.
@@ -74,6 +80,7 @@ export function EditProfileScreen({ navigation }: Props) {
     useCallback(() => {
       setDisplayNameDraft(null);
       setEmailDraft(null);
+      setBioDraft(null);
       setAvatarUri(undefined);
       allowLeaveRef.current = false;
     }, []),
@@ -215,6 +222,16 @@ export function EditProfileScreen({ navigation }: Props) {
             error={Boolean(nameError)}
           />
           <Input
+            label="Bio"
+            placeholder="A line about what you love to eat"
+            value={bio}
+            onChangeText={setBioDraft}
+            multiline
+            maxLength={PROFILE_BIO_MAX_LENGTH}
+            accessibilityHint={`Up to ${PROFILE_BIO_MAX_LENGTH} characters`}
+            helperText={`${bio.length}/${PROFILE_BIO_MAX_LENGTH}`}
+          />
+          <Input
             label="Email"
             autoCapitalize="none"
             keyboardType="email-address"
@@ -266,6 +283,7 @@ export function EditProfileScreen({ navigation }: Props) {
             try {
               const savedProfile = await getHungryService().profile.updateProfile({
                 displayName: trimmedName,
+                ...(bioChanged ? { bio: trimmedBio } : {}),
                 ...(avatarUri ? { avatarUrl: avatarUri } : {}),
                 dietaryPreferences: profile.dietaryPreferences,
               });
@@ -273,6 +291,7 @@ export function EditProfileScreen({ navigation }: Props) {
               allowLeaveRef.current = true;
               trackAnalyticsEvent("profile_updated", {
                 name_changed: trimmedName !== profile.displayName.trim(),
+                bio_changed: bioChanged,
                 avatar_changed: avatarUri !== undefined,
                 email_change_requested: emailChanged,
               });

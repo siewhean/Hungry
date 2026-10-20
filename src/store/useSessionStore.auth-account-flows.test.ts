@@ -137,7 +137,7 @@ test("account deletion purges locally, records a notice, then signs out; confirm
   );
   assert.match(settings, /<Dialog\s+visible=\{accountDialog === "signOut"\}/);
   assert.match(settings, /<Dialog\s+visible=\{accountDialog === "deleteAccount"\}/);
-  const run = settings.slice(settings.indexOf("const runAccountDeletion"));
+  const run = settings.slice(settings.indexOf("const submitDeletionCode"));
   const purgeIndex = run.indexOf("await purgePersistedAccountData()");
   const noticeIndex = run.indexOf("setAuthNotice(");
   const signOutIndex = run.indexOf("signOut();");

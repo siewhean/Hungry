@@ -41,6 +41,7 @@ import {
 } from "@/lib/services/supabase/mediaUpload";
 import { suggestAllergensFromIngredients } from "@/features/merchant/allergenKeywords";
 import { validateMerchantProfileUpdates } from "@/features/merchant/profileValidation";
+import { validateOpeningSchedule } from "@/utils/openingSchedule";
 import { REVIEW_PHOTOS_NOT_ATTACHED, createClientReviewId } from "@/features/review/reviewDraft";
 import { validateMerchantPromotionInput } from "@/features/merchant/promotionValidation";
 import { MERCHANT_DEEP_LINKS } from "@/features/merchant/merchantDeepLinks";
@@ -98,6 +99,7 @@ import type {
   PortfolioItem,
   ProfileVisibility,
   PromotionStatus,
+  OpeningSchedule,
   PublicMerchantProfile,
   SearchFilters,
   TasteProfile,
@@ -721,6 +723,7 @@ async function fetchUserProfile(client: SupabaseClient, userId: string, email?: 
       DEFAULT_AUTH_PROFILE_BASE.displayName,
     email: resolvedEmail ?? "",
     avatarUrl: asString(row.avatar_url),
+    bio: asString(row.bio),
     profileVisibility: accountVisibility === "private" ? "private" : "public",
     tasteVector: toTasteVector(row),
     tasteProfile: (row.taste_profile as TasteProfile | undefined) ?? undefined,
@@ -1069,6 +1072,7 @@ async function mapSupabaseReviewRows(
       tags: asStringArray(row.tags),
       wouldRecommend: asBoolean(row.would_recommend) ?? true,
       photos: photosByReviewId.get(id) ?? [],
+      helpfulCount: asNumber(row.helpful_count),
       merchantReply: asString(row.merchant_reply_text)
         ? {
             text: asString(row.merchant_reply_text) ?? "",
@@ -2227,6 +2231,23 @@ function toSocialLinks(value: unknown): MerchantOutlet["socialLinks"] {
   });
 }
 
+/** A stored schedule, or undefined when the column is empty or not in the expected shape. */
+function toOpeningSchedule(value: unknown): OpeningSchedule | undefined {
+  const record = asRecord(value);
+  if (!record.weekly || typeof record.weekly !== "object" || Array.isArray(record.weekly)) {
+    return undefined;
+  }
+  const schedule = {
+    weekly: record.weekly as OpeningSchedule["weekly"],
+    special: Array.isArray(record.special) ? (record.special as OpeningSchedule["special"]) : [],
+  };
+  try {
+    return validateOpeningSchedule(schedule) ? undefined : schedule;
+  } catch {
+    return undefined;
+  }
+}
+
 async function toMerchantOutlet(
   client: SupabaseClient,
   row: Row,
@@ -2244,6 +2265,13 @@ async function toMerchantOutlet(
     buildingId: asString(row.building_id) ?? venue?.buildingId,
     unitNumber: asString(row.unit_number) ?? venue?.unitNumber,
     floor: asString(row.floor) ?? venue?.floor,
+    address: asString(row.address),
+    postalCode: asString(row.postal_code),
+    coordinate:
+      asNumber(row.latitude) !== undefined && asNumber(row.longitude) !== undefined
+        ? { latitude: asNumber(row.latitude) ?? 0, longitude: asNumber(row.longitude) ?? 0 }
+        : undefined,
+    openingSchedule: toOpeningSchedule(row.opening_schedule),
     locationPrivacy:
       (asString(row.location_privacy) as MerchantOutlet["locationPrivacy"]) ?? "approximate",
     description: asString(row.description) ?? "",
@@ -3157,6 +3185,17 @@ export const supabaseService: HungryService = {
       return session;
     },
 
+    async verifyEmailCode(email, code, type) {
+      const client = requireSupabaseClient();
+      const { error } = await client.auth.verifyOtp({
+        email: normalizeAuthEmail(email),
+        token: code.trim(),
+        type,
+      });
+      if (error) throw error;
+      return await toAppSession(client);
+    },
+
     async signIn(email, password) {
       const client = requireSupabaseClient();
       const { error } = await client.auth.signInWithPassword({
@@ -3183,10 +3222,38 @@ export const supabaseService: HungryService = {
       if (error) throw error;
     },
 
+    async sendAccountDeletionCode() {
+      const client = requireSupabaseClient();
+      const { data, error: userError } = await client.auth.getUser();
+      if (userError) throw userError;
+      const email = data.user?.email;
+      if (!email) throw new Error("This account has no email address to send a code to.");
+      // An email OTP (not reauthenticate(), whose nonce only updateUser accepts) so the
+      // code can be checked with verifyOtp. Works for Google and Apple accounts too.
+      const { error } = await client.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: false },
+      });
+      if (error) throw error;
+    },
+
     async requestAccountDeletion(request) {
       const client = requireSupabaseClient();
       const userId = await getCurrentSupabaseUserId();
       if (!userId) throw new Error("You must be signed in to request account deletion.");
+      const { data: userData, error: userError } = await client.auth.getUser();
+      if (userError) throw userError;
+      const email = userData.user?.email;
+      const code = request?.code?.trim();
+      if (!email || !code) throw new Error("Enter the code we emailed you.");
+      // Proves the person deleting can read the account's email, right before the RPC.
+      const { data: verified, error: codeError } = await client.auth.verifyOtp({
+        email,
+        token: code,
+        type: "email",
+      });
+      if (codeError) throw codeError;
+      if (verified.user?.id !== userId) throw new Error("That code is for a different account.");
 
       // The server sets scheduled_for and status; a repeat request returns the pending date
       // (20261020050000_request_my_account_deletion.sql).
@@ -3409,6 +3476,18 @@ export const supabaseService: HungryService = {
       } satisfies PublicMerchantProfile;
     },
 
+    async getVenueOpeningSchedule(venueId) {
+      const client = getSupabaseClient();
+      if (!client || !venueId) return undefined;
+      const { data, error } = await client
+        .from("venues")
+        .select("opening_schedule")
+        .eq("id", venueId)
+        .maybeSingle();
+      if (error || !data) return undefined;
+      return toOpeningSchedule((data as Row).opening_schedule);
+    },
+
     async recordDishView(dishId, context) {
       const client = getSupabaseClient();
       if (!client) return;
@@ -3618,7 +3697,7 @@ export const supabaseService: HungryService = {
       let query = client
         .from("reviews")
         .select(
-          "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend,merchant_reply_text,merchant_replied_at",
+          "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend,merchant_reply_text,merchant_replied_at,helpful_count",
         )
         .order("created_at", { ascending: false })
         .order("id", { ascending: false })
@@ -3682,6 +3761,23 @@ export const supabaseService: HungryService = {
       const reviews = await mapSupabaseReviewRows(client, rows, {
         includePhotos: !options?.dishIds,
       });
+      // The viewer's own helpful votes on this page (RLS returns only their rows).
+      const viewerId = await getCurrentSupabaseUserId();
+      const helpfulReviewIds = new Set<string>();
+      if (viewerId) {
+        const { data: voteRows } = await client
+          .from("review_helpful_votes")
+          .select("review_id")
+          .eq("user_id", viewerId)
+          .in(
+            "review_id",
+            reviews.map((review) => review.id),
+          );
+        for (const voteRow of (Array.isArray(voteRows) ? voteRows : []) as Row[]) {
+          const reviewId = asString(voteRow.review_id);
+          if (reviewId) helpfulReviewIds.add(reviewId);
+        }
+      }
       return reviews.flatMap((review): RecentReviewFeedEntry[] => {
         const dish = review.dishId ? dishById.get(review.dishId) : undefined;
         // Reviews of dishes the catalog cannot display are skipped.
@@ -3689,7 +3785,7 @@ export const supabaseService: HungryService = {
         const venueId = review.venueId ?? dish.venueId ?? "";
         return [
           {
-            review,
+            review: { ...review, viewerFoundHelpful: helpfulReviewIds.has(review.id) },
             dishId: review.dishId,
             dishName: dish.name,
             venueId,
@@ -3697,6 +3793,29 @@ export const supabaseService: HungryService = {
           },
         ];
       });
+    },
+
+    async setReviewHelpful(reviewId, helpful) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to mark reviews helpful.");
+      // Set the requested state instead of toggling, so a repeated tap never flips it back.
+      if (!helpful) {
+        const { error } = await client
+          .from("review_helpful_votes")
+          .delete()
+          .eq("review_id", reviewId)
+          .eq("user_id", userId);
+        if (error) throw error;
+        return;
+      }
+      const { error } = await client
+        .from("review_helpful_votes")
+        .upsert(
+          { review_id: reviewId, user_id: userId },
+          { onConflict: "review_id,user_id", ignoreDuplicates: true },
+        );
+      if (error) throw error;
     },
   },
 
@@ -3715,6 +3834,8 @@ export const supabaseService: HungryService = {
       if (!userId) throw new Error("You must be signed in to update your profile.");
       const payload: Record<string, unknown> = { id: userId };
       if (updates.displayName !== undefined) payload.display_name = updates.displayName;
+      // Empty clears it; the column's check constraint caps it at 150 characters.
+      if (updates.bio !== undefined) payload.bio = updates.bio.trim() || null;
       // Email is not written here: it changes only through auth.requestEmailChange.
       if (updates.dietaryPreferences !== undefined) {
         payload.dietary_preferences = updates.dietaryPreferences;
@@ -3747,6 +3868,26 @@ export const supabaseService: HungryService = {
       }
 
       return fetchUserProfile(client, userId);
+    },
+
+    async getPublicProfile(userId) {
+      const client = getSupabaseClient();
+      if (!client) return undefined;
+      const { data, error } = await client
+        .from("public_profiles")
+        .select("id,display_name,avatar_url,bio")
+        .eq("id", userId)
+        .maybeSingle();
+      if (error) throw error;
+      const row = (data ?? null) as Row | null;
+      const id = row ? asString(row.id) : undefined;
+      if (!row || !id) return undefined;
+      return {
+        id,
+        displayName: asString(row.display_name) ?? "Hungry member",
+        avatarUrl: asString(row.avatar_url),
+        bio: asString(row.bio),
+      };
     },
 
     async exportMyData() {
@@ -5645,6 +5786,15 @@ export const supabaseService: HungryService = {
       if (normalized.description !== undefined) payload.description = normalized.description;
       if (normalized.operatingHours !== undefined) {
         payload.operating_hours = normalized.operatingHours;
+      }
+      if (normalized.openingSchedule !== undefined) {
+        payload.opening_schedule = normalized.openingSchedule;
+      }
+      if (normalized.address !== undefined) payload.address = normalized.address || null;
+      if (normalized.postalCode !== undefined) payload.postal_code = normalized.postalCode || null;
+      if (normalized.coordinate !== undefined) {
+        payload.latitude = normalized.coordinate.latitude;
+        payload.longitude = normalized.coordinate.longitude;
       }
       if (normalized.temporaryClosure !== undefined) {
         payload.temporary_closure = normalized.temporaryClosure || null;

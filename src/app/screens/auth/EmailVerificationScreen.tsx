@@ -7,11 +7,13 @@ import { AppText, Button, FeedErrorBoundary } from "@/components/ui";
 import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
 import { trackAuthFailed, trackAuthScreenViewed } from "@/features/auth/authAnalytics";
 import { completeVerifiedSignUp } from "@/features/auth/completeVerifiedSignUp";
+import { EmailCodeField } from "@/features/auth/EmailCodeField";
 import {
   rememberPendingEmailVerification,
   takePendingEmailVerificationCompletesOnboarding,
 } from "@/features/auth/pendingEmailVerification";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import type { Session } from "@/lib/services/types";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -79,27 +81,34 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
     return () => clearInterval(timer);
   }, [resendEndsAt]);
 
-  // Exchanges the confirmation code (or, in mock mode, simulates the link) and
-  // signs the new account in. RootNavigator then routes to onboarding or Home.
+  // Signs the verified account in. RootNavigator then routes to onboarding or Home.
+  const finishVerifiedSession = useCallback(
+    async (session: Session) => {
+      const shouldCompleteOnboarding = await takePendingEmailVerificationCompletesOnboarding();
+      const migration = await applySignedInProfile(session.profile, {
+        profileReady: session.profileReady,
+        onSyncWarning: () => {
+          showToast({
+            message:
+              "Email verified, but your taste profile could not sync. Try updating it again later.",
+            tone: "warning",
+          });
+        },
+      });
+      if (migration.status === "failed") return;
+      completeVerifiedSignUp(shouldCompleteOnboarding);
+      showToast({ message: "Email verified. Welcome to Hungry.", tone: "success" });
+    },
+    [showToast],
+  );
+
+  // Exchanges the confirmation link's code (or, in mock mode, simulates the link).
   const confirm = useCallback(
     async (code: string) => {
       setIsConfirming(true);
       try {
         const session = await getHungryService().auth.confirmEmail(code);
-        const shouldCompleteOnboarding = await takePendingEmailVerificationCompletesOnboarding();
-        const migration = await applySignedInProfile(session.profile, {
-          profileReady: session.profileReady,
-          onSyncWarning: () => {
-            showToast({
-              message:
-                "Email verified, but your taste profile could not sync. Try updating it again later.",
-              tone: "warning",
-            });
-            if (migration.status === "failed") return;
-          },
-        });
-        completeVerifiedSignUp(shouldCompleteOnboarding);
-        showToast({ message: "Email verified. Welcome to Hungry.", tone: "success" });
+        await finishVerifiedSession(session);
       } catch (error) {
         trackAuthFailed("email_confirm", "email", error);
         showToast({
@@ -112,8 +121,21 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
         setIsConfirming(false);
       }
     },
-    [navigation, showToast],
+    [finishVerifiedSession, navigation, showToast],
   );
+
+  // The 8-digit code in the email works when the link was opened on another device.
+  const confirmWithEmailCode = async (code: string) => {
+    if (!email) return;
+    try {
+      const session = await getHungryService().auth.verifyEmailCode(email, code, "signup");
+      if (!session) throw new Error("Email verified but no active session.");
+      await finishVerifiedSession(session);
+    } catch (error) {
+      trackAuthFailed("email_confirm", "email", error);
+      throw error;
+    }
+  };
 
   useEffect(() => {
     if (!confirmationCode || exchangedCode.current === confirmationCode) return;
@@ -179,7 +201,7 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
     >
       <AuthScreenShell
         title="Verify your email"
-        subtitle="Tap the link in the email we sent you on this phone to finish signing up."
+        subtitle="Tap the link in the email we sent you, or type the code from it below."
       >
         <View style={{ gap: spacing[4] }}>
           <View
@@ -207,6 +229,10 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
               "Check your inbox for the verification email."
             )}
           </AppText>
+
+          {email && !isConfirming ? (
+            <EmailCodeField onSubmit={confirmWithEmailCode} submitLabel="Verify email" />
+          ) : null}
 
           {email ? (
             <Pressable

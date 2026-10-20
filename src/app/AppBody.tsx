@@ -11,6 +11,7 @@ import { PreAuthNavigator } from "@/app/navigation/PreAuthNavigator";
 import { getReleasedSupabaseConfigurationError } from "@/lib/services/supabase/client";
 import { isE2eDeveloperLauncherRequested } from "@/lib/runtime/e2eDeveloperLauncher";
 import { useSessionStore } from "@/store/useSessionStore";
+import { SignInPromptSheet } from "@/features/auth/SignInPromptSheet";
 
 const APP_SHELL_FONT_GRACE_MS = 900;
 
@@ -85,6 +86,8 @@ export function AppBody() {
       <BottomSheetModalProvider>
         <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
         {showRootNavigator ? <RootNavigator theme={theme} /> : <PreAuthNavigator theme={theme} />}
+        {/* Backstop only: the app is sign-in only, but a session can expire mid-use. */}
+        <SignInPromptSheet />
       </BottomSheetModalProvider>
     </View>
   );

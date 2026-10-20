@@ -227,8 +227,6 @@ Source: `src/theme/tokens.ts → motion`
 |-----------|----------|-------|
 | `ReviewCard` | `review: Review` | Single review display |
 | `StarRating` | `value`, `max?`, `editable?` | Star display + interactive input |
-| `TasteTagSelector` | `selected`, `onToggle` | Multi-select taste tag chips |
-| `PhotoPicker` | `photos`, `onAdd`, `onRemove` | Photo strip in review compose |
 
 ---
 

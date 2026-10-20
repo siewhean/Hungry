@@ -12,14 +12,40 @@ test("useRequireAccount asks a guest to sign in and returns them afterwards", ()
   const hook = read("src/features/auth/useRequireAccount.ts");
   assert.match(hook, /if \(isAuthenticated\) return true;/);
   assert.match(hook, /setReturnRoute\(returnRoute\)/);
-  assert.match(hook, /navigation\.navigate\("AuthStack", \{ screen: "Login" \}\)/);
+  assert.match(hook, /openSignInPrompt\(\{ title: [^}]+\}, onSignedIn\)/);
+});
+
+test("one sign-in sheet opens the shared Login and finishes the guest's action once", () => {
+  const sheet = read("src/features/auth/SignInPromptSheet.tsx");
+  assert.match(sheet, /navigationRef\.navigate\("AuthStack", \{ screen: "Login" \}\)/);
+  assert.match(
+    sheet,
+    /if \(!isAuthenticated\) return;\s*const action = useUIStore\.getState\(\)\.takePendingAuthAction\(\);/,
+  );
+  // "Not now" drops the action and the return route.
+  assert.match(sheet, /if \(!goingToSignIn\.current\) \{\s*ui\.takePendingAuthAction\(\);/);
+  assert.match(read("src/app/AppBody.tsx"), /<SignInPromptSheet \/>/);
+  // Login has no guest "Not now" exit: the app is sign-in only.
+  assert.doesNotMatch(read("src/app/screens/auth/LoginScreen.tsx"), /continueAsGuest/);
+
+  const ui = read("src/store/useUIStore.ts");
+  assert.match(ui, /pendingAuthAction: \(\(\) => void\) \| null;/);
+  // The slot holds a function, so it must never be persisted.
+  assert.doesNotMatch(ui.slice(ui.indexOf("partialize")), /pendingAuthAction|signInPrompt/);
+
+  const dish = read("src/app/screens/detail/DishDetailScreenV2.tsx");
+  assert.match(dish, /`Sign in to save \$\{dish\.name\}`[\s\S]*?saveDishAfterSignIn\(dish\)/);
+  const finish = read("src/features/auth/finishGuestAction.ts");
+  // Finishing never toggles an existing save/like/follow off.
+  assert.match(finish, /if \(!profile\.profile\.favouriteDishIds\.includes\(dish\.id\)\)/);
+  assert.match(finish, /if \(!social\.interactions\[postId\]\?\.liked\)/);
 });
 
 test("guest-reachable follow, like and comment taps prompt sign-in first", () => {
   const homeFeed = read("src/app/screens/home/HomeFeedScreen.tsx");
   assert.match(
     homeFeed,
-    /if \(!requireAuthForFollow\(\)\) return;[\s\S]*toggleFollow\(followTargetId\)/,
+    /!requireAuthForFollow\([\s\S]*?followUserAfterSignIn\(followTargetId\)[\s\S]*?toggleFollow\(followTargetId\)/,
   );
   // The comment sheet closes before sign-in opens, so it is not left on top.
   assert.match(
@@ -30,7 +56,7 @@ test("guest-reachable follow, like and comment taps prompt sign-in first", () =>
   const reviewFeed = read("src/app/screens/review/ReviewFeedScreen.tsx");
   assert.match(
     reviewFeed,
-    /reviewReactionsEnabled &&\s*requireAccountForReviewAction\("Sign in to like reviews\."\)/,
+    /reviewReactionsEnabled &&\s*requireAccountForReviewAction\("Sign in to like reviews\.", \(\) =>\s*likePostAfterSignIn\(targetItem\.interactionId\)/,
   );
   assert.match(reviewFeed, /onBeforeSend=\{requireAccountForComment\}/);
   assert.match(
@@ -43,7 +69,7 @@ test("guest-reachable follow, like and comment taps prompt sign-in first", () =>
   const userProfile = read("src/app/screens/profile/UserProfileContent.tsx");
   assert.match(
     userProfile,
-    /requireAccount\("Sign in to follow people\."[\s\S]*?toggleFollow\(resolvedAuthorId\)/,
+    /requireAccount\(\s*`Sign in to follow \$\{authorName\}`[\s\S]*?followUserAfterSignIn\(resolvedAuthorId\)[\s\S]*?toggleFollow\(resolvedAuthorId\)/,
   );
 });
 

@@ -15,7 +15,10 @@ export type AuthStackParamList = {
       }
     | undefined;
   ForgotPassword: undefined;
-  ResetPassword: { email?: string; code?: string; error?: "expired" | "invalid" } | undefined;
+  /** recoveryVerified: the emailed code was already verified (ForgotPassword). */
+  ResetPassword:
+    | { email?: string; code?: string; error?: "expired" | "invalid"; recoveryVerified?: boolean }
+    | undefined;
   ResetPasswordSuccess: undefined;
 };
 
@@ -42,6 +45,8 @@ export type OnboardingStackParamList = {
 export type ProfileStackParamList = {
   ProfileHome: undefined;
   Favourites: undefined;
+  /** One Lists area: Saved, your lists (portfolios) and checklists. */
+  ListsHome: undefined;
   ReviewHistory: undefined;
   Followers: { userId?: string; userDisplayName?: string } | undefined;
   Following: { userId?: string; userDisplayName?: string } | undefined;
@@ -100,7 +105,6 @@ export type MerchantTabParamList = {
   PromotionBuilder: { promotionId?: string; duplicateFromId?: string } | undefined;
   PromotionList: undefined;
   AIAssistant: undefined;
-  OrdersComingSoon: undefined;
   MerchantSettings: undefined;
 };
 
@@ -150,7 +154,8 @@ export type RootStackParamList = {
   Crave: undefined;
   MusicSelection: undefined;
   UserProfile: {
-    authorName: string;
+    /** Omitted by user/:id deep links; the screen loads the public name. */
+    authorName?: string;
     authorAvatarUrl?: string;
     authorLocation?: string;
     reviewSignalLabel?: string;

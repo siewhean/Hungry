@@ -42,7 +42,6 @@ export function resolveFeatureFlags(
   const postCreationEnabled = surface("EXPO_PUBLIC_ENABLE_POSTS", true);
   const reviewCreationEnabled = surface("EXPO_PUBLIC_ENABLE_REVIEWS", true);
   const activityEnabled = surface("EXPO_PUBLIC_ENABLE_ACTIVITY", true);
-  const readsEnabled = surface("EXPO_PUBLIC_ENABLE_READS", true);
   const mapEnabled = surface("EXPO_PUBLIC_ENABLE_MAP", true);
   // Wheel solo spin ships everywhere. Group parties are an in-memory mock (a /join
   // link can't reach another phone), so hosting/joining stays out of production.
@@ -59,7 +58,6 @@ export function resolveFeatureFlags(
     postCreationEnabled,
     reviewCreationEnabled,
     activityEnabled,
-    readsEnabled,
     mapEnabled,
     hungryWheelEnabled,
     craveEnabled,

@@ -36,8 +36,7 @@ export const AUTH_COPY = {
     displayNamePlaceholder: "Full name",
     emailPlaceholder: "Email address",
     passwordPlaceholder: "Create password",
-    passwordRules:
-      "Use at least 12 characters with an uppercase letter, a lowercase letter, a number and a symbol.",
+    passwordRules: "Use at least 10 characters. Avoid passwords you've used elsewhere.",
     termsLinkHint: "Opens the Terms of Service in your browser",
     privacyLinkHint: "Opens the Privacy Policy in your browser",
     primaryButton: "Create account",
@@ -68,7 +67,7 @@ export const AUTH_COPY = {
     helperText: "We keep this flow secure and simple so you can return to dish discovery quickly.",
     sentTitle: "Check your inbox",
     sentBody:
-      "If an account exists for {email}, we've sent a link to reset your password. Open it on this phone.",
+      "If an account exists for {email}, we've sent a link and a code to reset your password. Open the link on this phone, or enter the code below.",
     sentSpamHint: "Can't find it? Check your spam or promotions folder.",
     resendButton: "Send again",
     useDifferentEmail: "Use a different email",

@@ -29,7 +29,7 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
       /SignUp: undefined/,
       /EmailVerification:\s*\|\s*\{\s*email\?: string;\s*completedOnboarding\?: boolean;\s*code\?: string;/,
       /ForgotPassword: undefined/,
-      /ResetPassword: \{ email\?: string; code\?: string; error\?: "expired" \| "invalid" \} \| undefined/,
+      /ResetPassword:\s*\|?\s*\{ email\?: string; code\?: string; error\?: "expired" \| "invalid"; recoveryVerified\?: boolean \}\s*\|\s*undefined/,
       /TasteQuiz: \{ mode\?: "onboarding" \| "profile"; initialPhase\?: "taste" \| "dietary" \} \| undefined/,
       /LocationPermission: undefined/,
       /ManualLocationPicker: \{ mode\?: "settings" \} \| undefined/,

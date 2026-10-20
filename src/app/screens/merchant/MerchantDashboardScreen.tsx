@@ -363,13 +363,13 @@ export function MerchantDashboardScreen() {
   const outletStatus = getMerchantOutletStatus(activeOutlet);
   const outletStatusLabel = getMerchantOutletStatusLabel(outletStatus);
   const statusColor =
-    outletStatus === "open"
+    outletStatus === "open" || outletStatus === "live"
       ? palette.success
       : outletStatus === "closed"
         ? palette.amber
         : palette.textMuted;
   const statusBg =
-    outletStatus === "open"
+    outletStatus === "open" || outletStatus === "live"
       ? palette.successSoft
       : outletStatus === "closed"
         ? palette.amber + "20"

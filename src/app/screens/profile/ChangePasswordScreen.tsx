@@ -5,9 +5,12 @@ import { useNavigation } from "@react-navigation/native";
 
 import { AppText, Button, Card, Input } from "@/components/ui";
 import {
+  isWeakPasswordError,
+  PASSWORD_REQUIREMENTS_COPY,
   validateConfirmPassword,
   validatePassword,
   validateRequired,
+  WEAK_PASSWORD_MESSAGE,
 } from "@/features/auth/validation";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useUIStore } from "@/store/useUIStore";
@@ -50,6 +53,8 @@ export function ChangePasswordScreen() {
       const message = error instanceof Error ? error.message : "";
       if (message === "Current password is incorrect.") {
         setError("currentPassword", { message });
+      } else if (isWeakPasswordError(error)) {
+        setError("newPassword", { message: WEAK_PASSWORD_MESSAGE });
       } else {
         showToast({ message: "Could not update your password. Please try again.", tone: "error" });
       }
@@ -110,8 +115,7 @@ export function ChangePasswordScreen() {
             )}
           />
           <AppText variant="bodySmall" tone="muted">
-            At least 12 characters, including uppercase, lowercase, a number and a special
-            character.
+            {PASSWORD_REQUIREMENTS_COPY}
           </AppText>
         </View>
       </Card>

@@ -35,8 +35,9 @@ test("peak hours read as Singapore clock hours, with midnight as 12 AM", () => {
   assert.match(read("src/app/screens/merchant/MerchantAnalyticsScreen.tsx"), /formatPeakHour\(/);
 });
 
-test("a live outlet is labelled live on Hungry, not open, since hours are free text", () => {
-  assert.equal(getMerchantOutletStatusLabel("open"), "Live on Hungry");
+test("a live outlet without readable hours is labelled live on Hungry, not open", () => {
+  assert.equal(getMerchantOutletStatusLabel("live"), "Live on Hungry");
+  assert.equal(getMerchantOutletStatusLabel("open"), "Open now");
 });
 
 test("a floor alone does not count as a set location", () => {
