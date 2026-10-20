@@ -5,6 +5,7 @@ import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import { EditProfileScreen } from "./EditProfileScreen";
 import { AddStallScreen } from "./AddStallScreen";
 import { FavouritesScreen } from "./FavouritesScreen";
+import { ListsHomeScreen } from "./ListsHomeScreen";
 import { ProfileHomeScreen } from "./ProfileHomeScreen";
 import { FollowersScreen, FollowingScreen } from "./ProfileConnectionsScreen";
 import { ReviewHistoryScreen } from "./ReviewHistoryScreen";
@@ -81,6 +82,7 @@ export function ProfileStack() {
         <Stack.Screen name="VisitedStalls" component={VisitedStallsScreen} />
         <Stack.Screen name="FollowedStalls" component={FollowedStallsScreen} />
         <Stack.Screen name="Favourites" component={FavouritesScreen} />
+        <Stack.Screen name="ListsHome" component={ListsHomeScreen} />
         <Stack.Screen name="ReviewHistory" component={ReviewHistoryScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="ReviewFlow" component={ReviewStack} />

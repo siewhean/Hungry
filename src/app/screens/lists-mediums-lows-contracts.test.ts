@@ -171,12 +171,12 @@ test("wheel and list analytics fire", () => {
   assert.match(read("src/app/screens/portfolio/PortfoliosHomeScreen.tsx"), /"list_load_failed"/);
 });
 
-test("blog post has a not-found state and the reminder doesn't promise a notification", () => {
+test("blog post has a not-found state and the checklist has no reminder field", () => {
   const blog = read("src/app/screens/reads/BlogPostWebViewScreen.tsx");
   assert.match(blog, /Article not found/);
   assert.doesNotMatch(blog, /\?\? posts\[0\]/);
-  assert.match(
+  assert.doesNotMatch(
     read("src/app/screens/checklist/ChecklistItemPickerScreen.tsx"),
-    /doesn't send a notification yet/,
+    /Remind me|reminderDateTime/,
   );
 });

@@ -721,6 +721,7 @@ async function fetchUserProfile(client: SupabaseClient, userId: string, email?: 
       DEFAULT_AUTH_PROFILE_BASE.displayName,
     email: resolvedEmail ?? "",
     avatarUrl: asString(row.avatar_url),
+    bio: asString(row.bio),
     profileVisibility: accountVisibility === "private" ? "private" : "public",
     tasteVector: toTasteVector(row),
     tasteProfile: (row.taste_profile as TasteProfile | undefined) ?? undefined,
@@ -3795,6 +3796,8 @@ export const supabaseService: HungryService = {
       if (!userId) throw new Error("You must be signed in to update your profile.");
       const payload: Record<string, unknown> = { id: userId };
       if (updates.displayName !== undefined) payload.display_name = updates.displayName;
+      // Empty clears it; the column's check constraint caps it at 150 characters.
+      if (updates.bio !== undefined) payload.bio = updates.bio.trim() || null;
       // Email is not written here: it changes only through auth.requestEmailChange.
       if (updates.dietaryPreferences !== undefined) {
         payload.dietary_preferences = updates.dietaryPreferences;
@@ -3827,6 +3830,26 @@ export const supabaseService: HungryService = {
       }
 
       return fetchUserProfile(client, userId);
+    },
+
+    async getPublicProfile(userId) {
+      const client = getSupabaseClient();
+      if (!client) return undefined;
+      const { data, error } = await client
+        .from("public_profiles")
+        .select("id,display_name,avatar_url,bio")
+        .eq("id", userId)
+        .maybeSingle();
+      if (error) throw error;
+      const row = (data ?? null) as Row | null;
+      const id = row ? asString(row.id) : undefined;
+      if (!row || !id) return undefined;
+      return {
+        id,
+        displayName: asString(row.display_name) ?? "Hungry member",
+        avatarUrl: asString(row.avatar_url),
+        bio: asString(row.bio),
+      };
     },
 
     async exportMyData() {

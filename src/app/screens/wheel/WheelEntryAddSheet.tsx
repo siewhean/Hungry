@@ -3,7 +3,8 @@
  *
  * Bottom-sheet with 4 tabs for adding wheel entries:
  *   1. Search — text search → venue results
- *   2. Random — "Surprise me" picks any stall not already on the wheel
+ *   2. Random — "Surprise me" picks a stall not already on the wheel: among the closest
+ *      ones when location permission is granted, otherwise any stall
  *   3. Browse — browse by SearchCategory chips
  *   4. Favourites — from profile favourite dish IDs
  */
@@ -15,7 +16,9 @@ import * as Haptics from "@/lib/haptics";
 
 import { AccessibleImage, AppText, Badge, Card, EmptyState, Input } from "@/components/ui";
 import { dishMatchesSearchCategory } from "@/lib/services/searchCategoryMatch";
+import { pickSurpriseCandidate } from "@/features/wheel/surprisePick";
 import { getDataRepository } from "@/lib/services/serviceProvider";
+import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
@@ -179,6 +182,15 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
   }, [members]);
 
   const [tab, setTab] = useState<Tab>("search");
+  // Distance is used only once location permission is granted; otherwise the pick is uniform.
+  const locationPermission = useLocationStore((state) => state.permission);
+  const currentLocation = useLocationStore((state) => state.currentLocation);
+  const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
+  const usesLocation = locationPermission === "granted";
+  const surpriseOrigin = usesLocation
+    ? getEffectiveLocation({ permission: locationPermission, currentLocation, manualCoordinate })
+        .coordinate
+    : undefined;
   const [query, setQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<SearchCategory | null>(null);
 
@@ -227,16 +239,18 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
 
   function addRandom() {
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    const all = repository
-      .listBuildings()
-      .flatMap((b) => repository.listVenuesByBuilding(b.id))
-      .filter((v) => !addedVenueIds.has(v.id));
-    if (all.length === 0) {
+    const candidates = repository.listBuildings().flatMap((b) =>
+      repository
+        .listVenuesByBuilding(b.id)
+        .filter((v) => !addedVenueIds.has(v.id))
+        .map((venue) => ({ item: venue, coordinate: b.coordinate })),
+    );
+    if (candidates.length === 0) {
       Alert.alert("Nothing left to add", "Every stall is already on the wheel.");
       return;
     }
-    const pick = all[Math.floor(Math.random() * all.length)];
-    addVenue(pick);
+    const pick = pickSurpriseCandidate(candidates, surpriseOrigin);
+    if (pick) addVenue(pick);
   }
 
   // ── Venue list for search + category ─────────────────────────────────────
@@ -515,12 +529,16 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                   style={{ textAlign: "center", paddingHorizontal: spacing[3] }}
                   tone="secondary"
                 >
-                  Can&apos;t decide? Let us add a random stall to the wheel.
+                  {usesLocation
+                    ? "Can't decide? We'll add a random stall close to you."
+                    : "Can't decide? Let us add a random stall to the wheel."}
                 </AppText>
               </View>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Pick a random stall for me"
+                accessibilityLabel={
+                  usesLocation ? "Pick a random stall close to me" : "Pick a random stall for me"
+                }
                 onPress={addRandom}
                 style={({ pressed }) => [
                   {

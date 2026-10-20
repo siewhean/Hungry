@@ -97,7 +97,7 @@ test("Review feed cards do not render bottom bites sections", () => {
   assert.match(reviewShareSheet, /sharePostToChat\(chatId,/);
   assert.match(
     reviewShareSheet,
-    /Clipboard\.setString\(withShareSource\(activeReview\.link, "copy_link"\)\)/,
+    /Clipboard\.setStringAsync\(withShareSource\(activeReview\.link, "copy_link"\)\)/,
   );
   assert.match(reviewShareSheet, /Share\.share\(\{/);
   assert.match(reviewShareSheet, /recipientAccessibilityLabelPrefix="Select"/);

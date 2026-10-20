@@ -41,6 +41,7 @@
             { "scheme": "https", "host": "usehungry.com", "pathPrefix": "/venue/" },
             { "scheme": "https", "host": "usehungry.com", "pathPrefix": "/post/" },
             { "scheme": "https", "host": "usehungry.com", "pathPrefix": "/portfolio/" },
+            { "scheme": "https", "host": "usehungry.com", "pathPrefix": "/user/" },
             { "scheme": "https", "host": "usehungry.com", "pathPrefix": "/join/" },
             { "scheme": "https", "host": "usehungry.com", "path": "/home" }
           ],

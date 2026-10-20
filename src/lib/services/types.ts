@@ -44,6 +44,7 @@ import type {
   PortfolioItem,
   PublicPortfolio,
   PublicMerchantProfile,
+  PublicUserProfile,
   PromotionStatus,
   RecommendationSurface,
   SearchFilters,
@@ -848,6 +849,8 @@ export interface HungryService {
   profile: {
     getProfile(): Promise<UserProfile>;
     updateProfile(updates: Partial<UserProfile>): Promise<UserProfile>;
+    /** Another user's public profile (name, avatar, bio); undefined when hidden or missing. */
+    getPublicProfile(userId: string): Promise<PublicUserProfile | undefined>;
     /** Every category of the signed-in user's own data. Throws instead of returning partial data. */
     exportMyData(): Promise<MyDataExport>;
     updateDietaryPreferences(flags: DietaryFlag[]): Promise<void>;

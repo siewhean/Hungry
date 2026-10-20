@@ -365,6 +365,8 @@ export interface UserProfile {
   displayName: string;
   email: string;
   avatarUrl?: string;
+  /** Short public bio, at most PROFILE_BIO_MAX_LENGTH (150) characters. */
+  bio?: string;
   tasteVector: TasteVector;
   profileVisibility: ProfileVisibility;
   /** Extended psychometric taste profile (populated after scenario quiz) */
@@ -629,6 +631,14 @@ export interface MerchantOutlet {
 }
 
 /** What diners see of a live merchant outlet on the stall page. */
+/** Another user's public-safe profile fields (public_profiles; RLS applies visibility). */
+export interface PublicUserProfile {
+  id: string;
+  displayName: string;
+  avatarUrl?: string;
+  bio?: string;
+}
+
 export interface PublicMerchantProfile {
   outletId: string;
   description?: string;
