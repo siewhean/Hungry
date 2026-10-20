@@ -18,7 +18,10 @@ test.describe("checklist and portfolio critical flows", () => {
     await page.getByRole("button", { name: "My Checklists" }).click();
     await expect(page.getByText("My Checklists", { exact: true }).first()).toBeVisible();
 
-    await page.getByRole("button", { name: /Create Checklist|Create/ }).first().click();
+    await page
+      .getByRole("button", { name: /Create Checklist|Create/ })
+      .first()
+      .click();
     await expect(page.getByText("Checklist", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("Checklist name", { exact: true }).first()).toBeVisible();
     await expect(page.getByLabel("Checklist name")).toHaveValue("New Checklist");
@@ -40,10 +43,16 @@ test.describe("checklist and portfolio critical flows", () => {
     await page.getByPlaceholder("What makes this list useful?").fill("Created by E2E smoke.");
     await page.getByRole("button", { name: "Create portfolio" }).click();
 
-    await expect(page.getByText("Hungry Portfolio", { exact: true }).first()).toBeVisible();
+    // The list name is the screen title.
+    await expect(page.getByText(portfolioName, { exact: true }).first()).toBeVisible();
     await expect(page.getByLabel("Title")).toHaveValue(portfolioName);
 
-    await page.getByRole("button", { name: "Publish" }).click();
-    await expect(page.getByRole("button", { name: "Published" }).first()).toBeVisible();
+    // Publishing asks first; once live the toggle offers Unpublish.
+    await page.getByRole("button", { name: "Publish", exact: true }).click();
+    await expect(page.getByText("Publish this list?", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Publish", exact: true }).last().click();
+    await expect(
+      page.getByRole("button", { name: "Unpublish", exact: true }).first(),
+    ).toBeVisible();
   });
 });

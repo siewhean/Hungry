@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 
 import { UserProfileContent } from "./UserProfileContent";
 
@@ -14,10 +15,14 @@ export function UserProfileScreen({ navigation, route }: UserProfileScreenRouteP
   const isSelf = Boolean(route.params.authorId && route.params.authorId === viewerId);
 
   // Your own avatar or name opens your own Profile tab, not a stranger view of yourself.
-  useEffect(() => {
-    if (!isSelf) return;
-    navigation.popTo("MainTabs", { screen: "Profile", params: { screen: "ProfileHome" } });
-  }, [isSelf, navigation]);
+  // Only once focused: Home preloads this route on press-in, and a preloaded
+  // (placeholder) screen cannot dispatch navigation actions.
+  useFocusEffect(
+    useCallback(() => {
+      if (!isSelf) return;
+      navigation.popTo("MainTabs", { screen: "Profile", params: { screen: "ProfileHome" } });
+    }, [isSelf, navigation]),
+  );
 
   if (isSelf) return null;
 
