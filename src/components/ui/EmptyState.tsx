@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { Alert, Clipboard, Share, View } from "react-native";
+import { Alert, Share, View } from "react-native";
+import * as Clipboard from "expo-clipboard";
 import { Info } from "lucide-react-native";
 
 import { useHungryTheme } from "@/theme";
@@ -47,7 +48,7 @@ export function EmptyState({
         ? async () => {
             const payload = `${reportContext}\n${title}\n${errorMessage}`;
             try {
-              await Clipboard.setString(payload);
+              await Clipboard.setStringAsync(payload);
             } catch {}
             try {
               await Share.share({ message: payload, title: "Hungry App Error Report" });

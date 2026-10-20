@@ -8,6 +8,7 @@ import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
 import { trackAuthFailed, trackAuthScreenViewed } from "@/features/auth/authAnalytics";
 import {
   getPasswordUpdateErrorMessage,
+  MIN_PASSWORD_LENGTH,
   PASSWORD_RULES,
   validateConfirmPassword,
   validatePassword,
@@ -25,13 +26,10 @@ type FormValues = { password: string; confirmPassword: string };
 
 // Mirrors validatePassword so the checklist ticks as the user types.
 const PASSWORD_CHECKS = [
-  { label: "At least 12 characters", test: (value: string) => value.length >= 12 },
   {
-    label: "Upper and lowercase letters",
-    test: (value: string) => /[A-Z]/.test(value) && /[a-z]/.test(value),
+    label: `At least ${MIN_PASSWORD_LENGTH} characters`,
+    test: (value: string) => value.length >= MIN_PASSWORD_LENGTH,
   },
-  { label: "A number", test: (value: string) => /\d/.test(value) },
-  { label: "A symbol", test: (value: string) => /[^A-Za-z0-9]/.test(value) },
 ] as const;
 
 export function ResetPasswordScreen({ navigation, route }: Props) {
@@ -45,7 +43,7 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
   const confirmPasswordRef = useRef<TextInput>(null);
   // The reset link's code can be exchanged only once; a retry after a rejected
   // password must call updatePassword alone.
-  const recoveryCodeExchangedRef = useRef(false);
+  const recoveryCodeExchangedRef = useRef(route.params?.recoveryVerified === true);
   // An expired or used link can never succeed on retry; offer a new one instead.
   const [linkExpired, setLinkExpired] = useState(false);
   const {

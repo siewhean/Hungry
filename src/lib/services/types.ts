@@ -43,7 +43,9 @@ import type {
   PortfolioFollow,
   PortfolioItem,
   PublicPortfolio,
+  OpeningSchedule,
   PublicMerchantProfile,
+  PublicUserProfile,
   PromotionStatus,
   RecommendationBucket,
   RecommendationSurface,
@@ -581,6 +583,8 @@ export interface MyDataExport {
 export interface AccountDeletionRequest {
   userId?: string;
   reason?: string;
+  /** The code from sendAccountDeletionCode; required with Supabase. */
+  code?: string;
 }
 
 /** Account deletion runs after a grace period; until then the owner can cancel. */
@@ -732,11 +736,22 @@ export interface HungryService {
     resendVerificationEmail(email: string): Promise<void>;
     /** Exchanges the `?code` from the signup confirmation link for a session. */
     confirmEmail(code: string): Promise<Session>;
+    /**
+     * Verifies the 8-digit code from a sign-up or password-reset email, so a link
+     * opened on another device is not needed. Signs the user in.
+     */
+    verifyEmailCode(
+      email: string,
+      code: string,
+      type: "signup" | "recovery",
+    ): Promise<Session | null>;
     signIn(email: string, password: string): Promise<Session>;
     signInWithGoogle(): Promise<Session>;
     signInWithApple(): Promise<Session>;
     signOut(): Promise<void>;
-    /** Queues deletion; resolves with the server's scheduled date. */
+    /** Emails the signed-in user a one-time code to confirm account deletion. */
+    sendAccountDeletionCode(): Promise<void>;
+    /** Verifies `request.code`, then queues deletion; resolves with the server's scheduled date. */
     requestAccountDeletion(request?: AccountDeletionRequest): Promise<PendingAccountDeletion>;
     getPendingAccountDeletion(): Promise<PendingAccountDeletion | null>;
     cancelAccountDeletion(): Promise<boolean>;
@@ -779,6 +794,8 @@ export interface HungryService {
     }): Promise<MerchantPromotion[]>;
     /** Live merchant profile shown on the stall page, if the stall is claimed. */
     getPublicMerchantProfile(venueId: string): Promise<PublicMerchantProfile | undefined>;
+    /** Structured weekly + special hours a verified merchant set for this stall, if any. */
+    getVenueOpeningSchedule(venueId: string): Promise<OpeningSchedule | undefined>;
     recordDishView(
       dishId: string,
       context?: { sessionId?: string; userId?: string },
@@ -829,12 +846,16 @@ export interface HungryService {
     submitReview(draft: SubmitReviewInput): Promise<void>;
     /** Newest-first review feed across all dishes, fetched as one paginated query. */
     listRecentReviews(options?: ListRecentReviewsOptions): Promise<RecentReviewFeedEntry[]>;
+    /** Marks (helpful=true) or un-marks a review as helpful for the signed-in user. Idempotent. */
+    setReviewHelpful(reviewId: string, helpful: boolean): Promise<void>;
   };
 
   // Profile
   profile: {
     getProfile(): Promise<UserProfile>;
     updateProfile(updates: Partial<UserProfile>): Promise<UserProfile>;
+    /** Another user's public profile (name, avatar, bio); undefined when hidden or missing. */
+    getPublicProfile(userId: string): Promise<PublicUserProfile | undefined>;
     /** Every category of the signed-in user's own data. Throws instead of returning partial data. */
     exportMyData(): Promise<MyDataExport>;
     updateDietaryPreferences(flags: DietaryFlag[]): Promise<void>;

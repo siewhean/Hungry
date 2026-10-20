@@ -1,7 +1,7 @@
 /**
  * ReviewFeedScreen — Tab 3
  * Pure user-review feed.
- * Filter by dish, stall, rating, or recency.
+ * Sort by recency, rating, or A–Z by dish or stall.
  * No discovery or editorial content here.
  */
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -24,6 +24,7 @@ import {
   MoreHorizontal,
   Send,
   Star,
+  ThumbsUp,
 } from "lucide-react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import {
@@ -63,6 +64,7 @@ import { useDelayedLoadingSkeleton } from "@/hooks/useDelayedLoadingSkeleton";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSocialStore, type InteractionState } from "@/store/useSocialStore";
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
+import { likePostAfterSignIn, saveDishAfterSignIn } from "@/features/auth/finishGuestAction";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -72,6 +74,11 @@ import {
   makeReviewInteractionId,
   type ReviewFeedItem,
 } from "@/features/review/reviewFeed";
+import {
+  reviewHelpfulState,
+  toggleReviewHelpful,
+  type ReviewHelpfulState,
+} from "@/features/review/reviewHelpful";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { webShareUrl } from "@/constants/links";
 import { trackAnalyticsEvent } from "@/lib/analytics";
@@ -108,8 +115,8 @@ function formatReviewDate(createdAt: string): string {
 const FILTER_OPTIONS: { id: FilterMode; label: string }[] = [
   { id: "recent", label: "Most Recent" },
   { id: "top_rated", label: "Top Rated" },
-  { id: "dish", label: "By Dish" },
-  { id: "location", label: "By Location" },
+  { id: "dish", label: "A–Z dish" },
+  { id: "location", label: "A–Z stall" },
 ];
 
 // ─── StarRow ─────────────────────────────────────────────────────────────────
@@ -190,11 +197,16 @@ const ReviewCard = memo(function ReviewCard({
   onSavePress,
   onSharePress,
   onLikePress,
+  helpful,
+  onHelpfulPress,
   onSafetyHidden,
   reviewReactionsEnabled,
 }: {
   item: ReviewFeedItem;
   interaction: InteractionState;
+  /** Server-saved "Helpful" vote state, with any optimistic change applied. */
+  helpful: ReviewHelpfulState;
+  onHelpfulPress: (item: ReviewFeedItem) => void;
   /** The viewer wrote this review: no Report/Block on it. */
   isOwnReview: boolean;
   commentsEnabled: boolean;
@@ -468,6 +480,34 @@ const ReviewCard = memo(function ReviewCard({
             >
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel={
+                  helpful.count === 1
+                    ? "Helpful, 1 person found this helpful"
+                    : `Helpful, ${helpful.count} people found this helpful`
+                }
+                accessibilityState={{ disabled: isOwnReview, selected: helpful.helpful }}
+                disabled={isOwnReview}
+                hitSlop={8}
+                onPress={() => onHelpfulPress(item)}
+                style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
+              >
+                <ThumbsUp
+                  color={helpful.helpful ? palette.orange : palette.text}
+                  fill={helpful.helpful ? palette.orange : "transparent"}
+                  size={20}
+                />
+                <AppText
+                  variant="micro"
+                  style={{
+                    color: helpful.helpful ? palette.orange : palette.text,
+                    fontWeight: "600",
+                  }}
+                >
+                  {helpful.count > 0 ? `Helpful · ${helpful.count}` : "Helpful"}
+                </AppText>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
                 accessibilityLabel="Share review"
                 hitSlop={8}
                 onPress={() => onSharePress(item)}
@@ -572,6 +612,10 @@ export function ReviewFeedScreen() {
   const commentInputRef = useRef<TextInput>(null);
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
   const [serviceReviewItems, setServiceReviewItems] = useState<ReviewFeedItem[] | null>(null);
+  /** Helpful votes changed on this screen, by review id, until the next full reload. */
+  const [helpfulByReviewId, setHelpfulByReviewId] = useState<Record<string, ReviewHelpfulState>>(
+    {},
+  );
   const [serviceLoadFailed, setServiceLoadFailed] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -662,6 +706,8 @@ export function ReviewFeedScreen() {
         if (loadId !== serviceLoadIdRef.current) return;
         lastServiceLoadAtRef.current = Date.now();
         const items = entries.map(toServiceFeedItem);
+        // A full reload carries the server's helpful counts and votes.
+        if (mode === "replace") setHelpfulByReviewId({});
         setServiceReviewItems((current) =>
           mode === "append" && current ? [...current, ...items] : items,
         );
@@ -830,8 +876,8 @@ export function ReviewFeedScreen() {
 
   const requireAccount = useRequireAccount();
   const requireAccountForReviewAction = useCallback(
-    (message: string) =>
-      requireAccount(message, { name: "MainTabs", params: { screen: "Review" } }),
+    (message: string, onSignedIn?: () => void) =>
+      requireAccount(message, { name: "MainTabs", params: { screen: "Review" } }, onSignedIn),
     [requireAccount],
   );
   const requireAccountForComment = useCallback(() => {
@@ -843,10 +889,12 @@ export function ReviewFeedScreen() {
 
   const handleSavePress = useCallback(
     (item: ReviewFeedItem) => {
-      if (!isAuthenticated) {
-        setReturnRoute({ name: "MainTabs", params: { screen: "Review" } });
-        showToast({ message: "Sign in to save this dish.", tone: "warning" });
-        navigation.navigate("AuthStack", { screen: "Login" });
+      if (
+        !requireAccountForReviewAction(`Sign in to save ${item.dishName}`, () => {
+          const dish = item.dish ?? repository.getDishById(item.dishId);
+          if (dish) saveDishAfterSignIn(dish);
+        })
+      ) {
         return;
       }
 
@@ -874,11 +922,9 @@ export function ReviewFeedScreen() {
         );
     },
     [
-      isAuthenticated,
-      navigation,
       repository,
+      requireAccountForReviewAction,
       serviceProviderMode,
-      setReturnRoute,
       showToast,
       toggleFavourite,
       toggleSave,
@@ -904,11 +950,32 @@ export function ReviewFeedScreen() {
 
   const handleLikePress = useCallback(
     (targetItem: ReviewFeedItem) => {
-      if (reviewReactionsEnabled && requireAccountForReviewAction("Sign in to like reviews.")) {
+      if (
+        reviewReactionsEnabled &&
+        requireAccountForReviewAction("Sign in to like reviews.", () =>
+          likePostAfterSignIn(targetItem.interactionId),
+        )
+      ) {
         void toggleLike(targetItem.interactionId);
       }
     },
     [requireAccountForReviewAction, reviewReactionsEnabled, toggleLike],
+  );
+  const handleHelpfulPress = useCallback(
+    (targetItem: ReviewFeedItem) => {
+      if (!requireAccountForReviewAction("Sign in to mark reviews helpful.")) return;
+      const reviewId = targetItem.review.id;
+      const previous = helpfulByReviewId[reviewId] ?? reviewHelpfulState(targetItem.review);
+      const next = toggleReviewHelpful(previous);
+      setHelpfulByReviewId((current) => ({ ...current, [reviewId]: next }));
+      getHungryService()
+        .reviews.setReviewHelpful(reviewId, next.helpful)
+        .catch(() => {
+          setHelpfulByReviewId((current) => ({ ...current, [reviewId]: previous }));
+          showToast({ message: "Could not save your helpful vote.", tone: "warning" });
+        });
+    },
+    [helpfulByReviewId, requireAccountForReviewAction, showToast],
   );
   const handlePressDish = useCallback(
     (dishId: string) => navigation.navigate("DishDetail", { dishId }),
@@ -948,6 +1015,8 @@ export function ReviewFeedScreen() {
           commentsEnabled={commentsEnabled}
           onCommentPress={openReviewComments}
           onLikePress={handleLikePress}
+          helpful={helpfulByReviewId[item.review.id] ?? reviewHelpfulState(item.review)}
+          onHelpfulPress={handleHelpfulPress}
           onPressDish={handlePressDish}
           onSavePress={handleSavePress}
           onSharePress={openShareReview}
@@ -960,6 +1029,8 @@ export function ReviewFeedScreen() {
       interactions,
       favouriteDishIds,
       handleLikePress,
+      handleHelpfulPress,
+      helpfulByReviewId,
       handlePressDish,
       openReviewComments,
       openShareReview,

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { AccessibilityInfo, Alert, Clipboard, Pressable, Share, View } from "react-native";
+import { AccessibilityInfo, Alert, Pressable, Share, View } from "react-native";
+import * as Clipboard from "expo-clipboard";
 import { useIsFocused } from "@react-navigation/native";
 import {
   ChevronRight,
@@ -33,6 +34,7 @@ import { toChatShareRecipient, type ChatShareRecipient } from "@/features/home/c
 import { prefetchMerchantTab, preloadRoute } from "@/features/navigation/prefetch";
 import { listSharedStallPosts, mergeStallPosts } from "@/features/social/sharedStallPosts";
 import { useVisitedStallIds } from "@/features/profile/visitedStalls";
+import { profileShareUrl, shareProfileLink } from "@/features/share/profileShare";
 import { biteToStallPost } from "@/lib/services/postTransforms";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
@@ -495,12 +497,26 @@ export function ProfileHomeScreen({
     return `Check out my Taste Fingerprint on Hungry!\n\nTop taste traits: ${topTastes.join(", ")}`;
   }, [profile.tasteVector]);
 
-  // The share text has no link yet, so the action copies text and confirms it was copied.
-  const copyTasteFingerprintLink = useCallback(() => {
-    Clipboard.setString(tasteShareMessage);
-    AccessibilityInfo.announceForAccessibility("Taste Fingerprint copied");
-    Alert.alert("Copied", "Your Taste Fingerprint summary is on the clipboard.");
-  }, [tasteShareMessage]);
+  // Copies the summary with a link to your profile (usehungry.com/user/:id).
+  const copyTasteFingerprintLink = useCallback(async () => {
+    try {
+      await Clipboard.setStringAsync(
+        `${tasteShareMessage}\n\n${profileShareUrl(profile.id, "copy_link")}`,
+      );
+      AccessibilityInfo.announceForAccessibility("Taste Fingerprint link copied");
+      Alert.alert("Copied", "Your Taste Fingerprint and profile link are on the clipboard.");
+    } catch {
+      Alert.alert("Couldn't copy", "Try again, or use Share instead.");
+    }
+  }, [profile.id, tasteShareMessage]);
+
+  const handleShareProfile = useCallback(async () => {
+    try {
+      await shareProfileLink(profile.id, profile.displayName);
+    } catch (error) {
+      console.error("Error sharing profile:", error);
+    }
+  }, [profile.displayName, profile.id]);
 
   const tastePersonaSummary = useMemo(() => {
     const ranked = TASTE_DIMENSIONS.map((dimension) => ({
@@ -668,25 +684,15 @@ export function ProfileHomeScreen({
                   }}
                 />
               )}
-              {isAuthenticated && FEATURE_FLAGS.collectionsEnabled && (
+              {isAuthenticated && (
+                // Saved, lists (portfolios) and checklists live in one Lists area.
                 <MenuRow
-                  label="My Checklists"
-                  icon={<Bookmark size={20} color={palette.orange} />}
-                  onPressIn={() => preloadRoute(navigation, "ChecklistsHome")}
-                  onPress={() => {
-                    setMenuOpen(false);
-                    navigation.navigate("ChecklistsHome");
-                  }}
-                />
-              )}
-              {isAuthenticated && FEATURE_FLAGS.portfoliosEnabled && (
-                <MenuRow
-                  label="Hungry Portfolios"
+                  label="Lists"
                   icon={<BarChart3 size={20} color={palette.orange} />}
-                  onPressIn={() => preloadRoute(navigation, "PortfoliosHome")}
+                  onPressIn={() => preloadRoute(navigation, "ListsHome")}
                   onPress={() => {
                     setMenuOpen(false);
-                    navigation.navigate("PortfoliosHome");
+                    navigation.navigate("ListsHome");
                   }}
                 />
               )}
@@ -837,15 +843,35 @@ export function ProfileHomeScreen({
             >
               {profile.displayName}
             </AppText>
+            {profile.bio ? (
+              <AppText variant="bodySmall" tone="secondary" testID="profile-bio">
+                {profile.bio}
+              </AppText>
+            ) : null}
             {gamificationEnabled ? <FoodCredBadge size="sm" /> : null}
-            <Button
-              label="Edit profile"
-              variant="secondary"
-              size="sm"
-              onPressIn={() => preloadRoute(navigation, "EditProfile")}
-              onPress={() => navigation.navigate("EditProfile")}
-              style={{ alignSelf: "flex-start", minHeight: 44 }}
-            />
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+              <Button
+                label="Edit profile"
+                variant="secondary"
+                size="sm"
+                fullWidth={false}
+                onPressIn={() => preloadRoute(navigation, "EditProfile")}
+                onPress={() => navigation.navigate("EditProfile")}
+                style={{ alignSelf: "flex-start", minHeight: 44 }}
+              />
+              {isAuthenticated ? (
+                <Button
+                  label="Share profile"
+                  variant="secondary"
+                  size="sm"
+                  fullWidth={false}
+                  leftIcon={<Share2 size={16} color={palette.text} />}
+                  accessibilityHint="Shares a link to your Hungry profile"
+                  onPress={() => void handleShareProfile()}
+                  style={{ alignSelf: "flex-start", minHeight: 44 }}
+                />
+              ) : null}
+            </View>
           </View>
         </View>
 
@@ -1227,10 +1253,10 @@ export function ProfileHomeScreen({
                 quickActions={[
                   {
                     key: "copy",
-                    label: "Copy text",
-                    accessibilityLabel: "Copy taste fingerprint text",
+                    label: "Copy link",
+                    accessibilityLabel: "Copy taste fingerprint with profile link",
                     icon: ({ color, size }) => <Copy color={color} size={size} />,
-                    onPress: copyTasteFingerprintLink,
+                    onPress: () => void copyTasteFingerprintLink(),
                   },
                   {
                     key: "share",

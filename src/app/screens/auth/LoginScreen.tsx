@@ -68,6 +68,7 @@ export function LoginScreen({ navigation }: Props) {
   const continueAsGuest = () => {
     trackGuestContinued("login");
     setReturnRoute(undefined);
+    useUIStore.getState().takePendingAuthAction();
     const root = navigation.getParent<NavigationProp<RootStackParamList>>();
     if (root?.canGoBack()) {
       root.goBack();

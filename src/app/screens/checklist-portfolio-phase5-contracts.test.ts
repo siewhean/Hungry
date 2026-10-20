@@ -87,12 +87,11 @@ test("Phase 5 screens handle deleted references and invalid portfolio scores", (
   assert.match(checklistDetail, /Deleted stall/);
   assert.match(checklistItemPicker, /ScheduleFields/);
   assert.match(checklistItemPicker, /parseDateOnly/);
-  assert.match(checklistItemPicker, /parseReminderDateTime/);
+  // Reminder field removed until notifications ship (decision 17).
+  assert.doesNotMatch(checklistItemPicker, /parseReminderDateTime|reminderAt:|Remind me/);
   assert.match(checklistItemPicker, /plannedVisitDate: parseDateOnly/);
-  assert.match(checklistItemPicker, /reminderAt: parseReminderDateTime/);
-  assert.match(checklistItemPicker, /YYYY-MM-DD HH:mm/);
   assert.match(checklistItemRow, /formatDateOnly/);
-  assert.match(checklistItemRow, /formatReminder/);
+  assert.doesNotMatch(checklistItemRow, /formatReminder|Reminder /);
   assert.match(checklistItemRow, /getScheduleLabel/);
   assert.match(checklistItemRow, /PanResponder\.create/);
   assert.match(checklistItemRow, /GripVertical/);

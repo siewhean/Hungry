@@ -11,7 +11,6 @@ Production defaults must stay MVP-safe. Advanced surfaces may be visible in deve
 
 | Flag | Development | Staging | Production | Notes |
 | --- | --- | --- | --- | --- |
-| `readsEnabled` | true | true | true | Stable MVP surface |
 | `craveEnabled` | true | true | true | Stable if current QA remains green |
 | `hungryWheelEnabled` | true | true | true | Stable decision flow |
 | `notificationsEnabled` | false | false | false | Push not release-proven |

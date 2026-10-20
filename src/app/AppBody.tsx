@@ -7,6 +7,7 @@ import { AppText } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useAppBootstrap } from "@/hooks/useAppBootstrap";
 import { RootNavigator } from "@/app/navigation/RootNavigator";
+import { SignInPromptSheet } from "@/features/auth/SignInPromptSheet";
 
 const APP_SHELL_FONT_GRACE_MS = 900;
 
@@ -66,6 +67,7 @@ export function AppBody() {
       <BottomSheetModalProvider>
         <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
         <RootNavigator theme={theme} />
+        <SignInPromptSheet />
       </BottomSheetModalProvider>
     </View>
   );

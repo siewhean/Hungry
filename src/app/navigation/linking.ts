@@ -66,6 +66,10 @@ function sanitizeRouteParams(name: string, params: unknown): Record<string, unkn
     return undefined;
   }
 
+  if (name === "UserProfile" && !isSafeDeepLinkId(next.authorId)) {
+    return undefined;
+  }
+
   if (name === "WheelStack") {
     // The join code rides on the nested WheelHome route, which is where WheelHome reads it.
     const nested =
@@ -145,6 +149,11 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
     const postId = decodePathSegment(parts[1]);
     return postId ? createState("ActivityPostDetail", { postId }) : undefined;
   }
+  // Shared profiles: https://usehungry.com/user/:id (the screen loads the public name).
+  if (parts[0] === "user") {
+    const authorId = decodePathSegment(parts[1]);
+    return authorId ? createState("UserProfile", { authorId }) : undefined;
+  }
   if (path === "order") return createState("Post", parseOrderDeepLinkQuery(rawPath));
   // Shared searches: https://usehungry.com/search?q=laksa&filter=Halal&mode=stalls
   if (path === "search") return createState("SearchResults", parseSearchDeepLinkQuery(rawPath));
@@ -194,6 +203,7 @@ const SHARED_LINK_ROUTES = new Set([
   "StallDetail",
   "ActivityPostDetail",
   "PortfolioPublicView",
+  "UserProfile",
   "WheelStack",
 ]);
 
@@ -241,6 +251,7 @@ export function createRootLinking(
         DishDetail: "dish/:id",
         StallDetail: "venue/:id",
         ActivityPostDetail: "post/:postId",
+        UserProfile: "user/:authorId",
         Post: "order",
         SearchResults: "search",
         ...(FEATURE_FLAGS.portfoliosEnabled

@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
-import { FlatList, Pressable, Share, View, StyleSheet } from "react-native";
+import { FlatList, Pressable, View, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Copy, List, Trash2, Users, Plus } from "lucide-react-native";
+import * as Clipboard from "expo-clipboard";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
@@ -45,9 +46,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
   const canSpin = activeEntries.length >= 2;
 
   async function copyCode() {
-    await Share.share({
-      message: `Join my Hungry Wheel party! Code: ${party!.code}`,
-    });
+    await Clipboard.setStringAsync(party!.code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -155,6 +154,8 @@ export function WheelLobbyScreen({ navigation }: Props) {
                 </View>
                 <Pressable
                   onPress={copyCode}
+                  accessibilityRole="button"
+                  accessibilityLabel={copied ? "Party code copied" : "Copy party code"}
                   style={({ pressed }) => ({
                     backgroundColor: palette.inverseSurfaceSubtle,
                     paddingHorizontal: spacing[4],
@@ -174,7 +175,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
                       marginTop: 4,
                     }}
                   >
-                    {copied ? "COPIED" : "INVITE"}
+                    {copied ? "COPIED" : "COPY"}
                   </AppText>
                 </Pressable>
               </LinearGradient>

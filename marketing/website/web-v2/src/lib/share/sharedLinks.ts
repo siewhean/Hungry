@@ -241,6 +241,53 @@ export async function getSharedPortfolio(id: string): Promise<SharedPortfolio | 
   }
 }
 
+export type SharedProfile = {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+  bio: string | null;
+  dishesReviewed: number;
+  stallsVisited: number;
+};
+
+type PublicProfileRow = {
+  id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  dishes_reviewed: number | null;
+  stalls_visited: number | null;
+};
+
+/** usehungry.com/user/:id. public_profiles RLS hides private accounts from signed-out visitors. */
+export async function getSharedProfile(id: string): Promise<SharedProfile | null> {
+  if (!UUID_PATTERN.test(id) || !isSupabasePublicConfigured()) return null;
+  try {
+    // Not cached: a person can make their account private at any time.
+    const { data } = await supabaseFetchOnDemand<PublicProfileRow[]>("rest/v1/public_profiles", {
+      params: {
+        id: `eq.${id}`,
+        select: "id,display_name,avatar_url,bio,dishes_reviewed,stalls_visited",
+        limit: "1",
+      },
+    });
+    const row = Array.isArray(data) ? data[0] : undefined;
+    if (!row) return null;
+    // Only https avatars are shown; storage paths or other schemes are dropped.
+    const avatarUrl = row.avatar_url?.startsWith("https://") ? row.avatar_url : null;
+    return {
+      id: row.id,
+      displayName: row.display_name?.trim() || "Hungry member",
+      avatarUrl,
+      bio: row.bio?.trim() || null,
+      dishesReviewed: Number(row.dishes_reviewed ?? 0),
+      stallsVisited: Number(row.stalls_visited ?? 0),
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function formatPrice(price: number) {
   return `S$${price.toFixed(2)}`;
 }

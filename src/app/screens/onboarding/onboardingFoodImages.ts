@@ -4,7 +4,8 @@ import type { TasteKey } from "@/types/domain";
 
 export type OnboardingFoodImage = {
   label: string;
-  imageSource: ImageSourcePropType;
+  /** Omitted until a generated photo exists; the quiz then shows the shared no-photo tile. */
+  imageSource?: ImageSourcePropType;
 };
 
 export const ONBOARDING_FOOD_IMAGES = {
@@ -28,6 +29,8 @@ export const ONBOARDING_FOOD_IMAGES = {
   burger: require("../../../assets/onboarding/food/burger.png"),
   pasta: require("../../../assets/onboarding/food/pasta.png"),
   pizza: require("../../../assets/onboarding/food/pizza.png"),
+  carrotCake: require("../../../assets/onboarding/food/carrot-cake.png"),
+  meeSiam: require("../../../assets/onboarding/food/mee-siam.png"),
 } as const;
 
 export const TASTE_QUESTION_FOODS: Record<TasteKey, readonly OnboardingFoodImage[]> = {
@@ -42,19 +45,19 @@ export const TASTE_QUESTION_FOODS: Record<TasteKey, readonly OnboardingFoodImage
     { label: "Mala xiang guo", imageSource: ONBOARDING_FOOD_IMAGES.mala },
   ],
   sour: [
-    { label: "Fish soup", imageSource: ONBOARDING_FOOD_IMAGES.fishSoup },
-    { label: "Yong tau foo", imageSource: ONBOARDING_FOOD_IMAGES.yongTauFoo },
-    { label: "Roti prata curry", imageSource: ONBOARDING_FOOD_IMAGES.rotiPrata },
+    { label: "Asam laksa" },
+    { label: "Rojak" },
+    { label: "Mee siam", imageSource: ONBOARDING_FOOD_IMAGES.meeSiam },
   ],
   salty: [
     { label: "Fish soup", imageSource: ONBOARDING_FOOD_IMAGES.fishSoup },
-    { label: "Chicken rice", imageSource: ONBOARDING_FOOD_IMAGES.chickenRice },
+    { label: "Chai tow kway", imageSource: ONBOARDING_FOOD_IMAGES.carrotCake },
     { label: "Char kway teow", imageSource: ONBOARDING_FOOD_IMAGES.charKwayTeow },
   ],
   rich: [
     { label: "Ramen", imageSource: ONBOARDING_FOOD_IMAGES.ramenSet },
     { label: "Japanese curry", imageSource: ONBOARDING_FOOD_IMAGES.japaneseCurry },
-    { label: "Laksa", imageSource: ONBOARDING_FOOD_IMAGES.laksa },
+    { label: "Nasi lemak", imageSource: ONBOARDING_FOOD_IMAGES.nasiLemak },
   ],
   aromatic: [
     { label: "Chicken rice", imageSource: ONBOARDING_FOOD_IMAGES.chickenRice },

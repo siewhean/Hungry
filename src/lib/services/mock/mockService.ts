@@ -8,6 +8,7 @@
  */
 
 import { getFloorPlan } from "@/lib/geo/floorPlans";
+import { PROFILE_BIO_MAX_LENGTH } from "@/features/profile/profileBio";
 import { MERCHANT_DEEP_LINKS } from "@/features/merchant/merchantDeepLinks";
 import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
@@ -74,6 +75,7 @@ import type {
   MerchantNotification,
   MerchantNotificationPreferences,
   MerchantPromotion,
+  OpeningSchedule,
   PublicMerchantProfile,
   MerchantTeamMember,
   MerchantWeeklySummary,
@@ -296,6 +298,8 @@ function createMockUserStallSubmission(input: SubmitUserStallSubmissionInput): U
 
 let _profile: UserProfile = { ...guestProfile };
 const _submittedClientReviewIds = new Set<string>();
+/** Reviews the mock viewer marked helpful. */
+const _helpfulReviewIds = new Set<string>();
 let _followedStallIds = new Set<string>();
 let _pushPreferences: PushPreferences = { ...DEFAULT_PUSH_PREFERENCES };
 /** Singapore dates the mock user opened the app (record_app_open). */
@@ -849,6 +853,7 @@ function syncMerchantOutletToUserCatalog(
     liveCrowd: "medium",
     topDishId,
     operatingHours: outlet.operatingHours,
+    openingSchedule: outlet.openingSchedule,
     closureNotice: outlet.temporaryClosure,
     deliveryLinks: outlet.deliveryLinks,
     verificationStatus: outlet.verification.status,
@@ -1489,6 +1494,13 @@ export const hungryService: HungryService = {
       return resolve(mockSession(_profile));
     },
 
+    async verifyEmailCode(_email, code, type) {
+      if (!/^\d{8}$/.test(code.trim())) throw new Error("Invalid code");
+      _isAuthenticated = true;
+      _authProvider = "email";
+      return resolve(type === "signup" ? mockSession(_profile) : null);
+    },
+
     async signIn(email, _password) {
       _isAuthenticated = true;
       _authProvider = "email";
@@ -1513,6 +1525,10 @@ export const hungryService: HungryService = {
     async signOut() {
       _isAuthenticated = false;
       _profile = { ...guestProfile };
+      return resolve(undefined);
+    },
+
+    async sendAccountDeletionCode() {
       return resolve(undefined);
     },
 
@@ -1694,6 +1710,11 @@ export const hungryService: HungryService = {
       } satisfies PublicMerchantProfile);
     },
 
+    async getVenueOpeningSchedule(venueId) {
+      const schedule = venues.find((venue) => venue.id === venueId)?.openingSchedule;
+      return resolve(schedule ? clone(schedule) : undefined);
+    },
+
     async recordDishView(dishId, context) {
       const outlet = getOutletForDishView(dishId);
       if (!outlet) return resolve(undefined);
@@ -1849,7 +1870,12 @@ export const hungryService: HungryService = {
           dish.reviews
             .filter((review) => !isMockReviewHiddenForViewer(review))
             .map((review) => ({
-              review,
+              review: {
+                ...review,
+                helpfulCount:
+                  (review.helpfulCount ?? 0) + (_helpfulReviewIds.has(review.id) ? 1 : 0),
+                viewerFoundHelpful: _helpfulReviewIds.has(review.id),
+              },
               dishId: dish.id,
               dishName: dish.name,
               venueId: dish.venueId,
@@ -1871,6 +1897,12 @@ export const hungryService: HungryService = {
         );
       return resolve(entries.slice(0, limit));
     },
+
+    async setReviewHelpful(reviewId, helpful) {
+      if (helpful) _helpfulReviewIds.add(reviewId);
+      else _helpfulReviewIds.delete(reviewId);
+      return resolve(undefined);
+    },
   },
 
   // ── Profile ─────────────────────────────────────────────────────────────────
@@ -1883,8 +1915,29 @@ export const hungryService: HungryService = {
     async updateProfile(updates) {
       // The sign-in email changes only through auth.requestEmailChange.
       const { email: _ignoredEmail, ...profileUpdates } = updates;
+      // Mirrors the user_profiles_bio_length check constraint.
+      if (profileUpdates.bio !== undefined) {
+        const bio = profileUpdates.bio.trim();
+        if (bio.length > PROFILE_BIO_MAX_LENGTH) {
+          throw new Error(`Bio must be ${PROFILE_BIO_MAX_LENGTH} characters or fewer.`);
+        }
+        profileUpdates.bio = bio || undefined;
+      }
       _profile = { ..._profile, ...profileUpdates } as UserProfile;
       return resolve({ ..._profile });
+    },
+
+    async getPublicProfile(userId: string) {
+      if (userId === _profile.id) {
+        return resolve({
+          id: _profile.id,
+          displayName: _profile.displayName,
+          avatarUrl: _profile.avatarUrl,
+          bio: _profile.bio,
+        });
+      }
+      const person = findMockPerson(userId);
+      return resolve({ id: userId, ...person });
     },
 
     async updateDietaryPreferences(flags: DietaryFlag[]) {

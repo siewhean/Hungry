@@ -98,7 +98,6 @@ The application uses feature flags to toggle functionality for development and r
 | `FEATURE_FLAGS.collectionsEnabled`     | Enable collection list/detail routes.                                            | `true` outside production, `false` in production     |
 | `FEATURE_FLAGS.storiesEnabled`         | Enable story viewer and story creation surfaces.                                 | `true` outside production, `false` in production     |
 | `FEATURE_FLAGS.craveEnabled`           | Enable the "Daily Crave" swiping discovery mode.                                 | `true`                                               |
-| `FEATURE_FLAGS.readsEnabled`           | Enable the "Reads" (blog) tab.                                                   | `true`                                               |
 | `FEATURE_FLAGS.mockMapboxEnabled`      | Use a static fallback for the map in test environments.                          | `false`                                              |
 
 To override these locally, you can use `.env.development` or modify the constants directly during prototyping.
@@ -142,7 +141,6 @@ To override these locally, you can use `.env.development` or modify the constant
 - `MerchantTabs` is registered only when `FEATURE_FLAGS.merchantCentreEnabled` is true
 - Direct messages and chat entry points are hidden or disabled when `FEATURE_FLAGS.directMessagesEnabled` is false
 - Indoor floorplan routes and layout entry points are registered only when `FEATURE_FLAGS.floorplansEnabled` is true
-- `Reads` tab is behind `FEATURE_FLAGS.readsEnabled` (default `true`)
 - Map mock mode: set `FEATURE_FLAGS.mockMapboxEnabled = true` for test environments
 - Real map runtime: set `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` locally to enable the live Mapbox surface; without it, the map falls back to a static coordinate preview so the repo screens stay inspectable.
 - Maps now use a draggable bottom sheet (`16% / 44% / 82%`) and dynamic camera padding; the active pilot directory overlay is Koufu @ JEM (`L2` + `L3`) with official floor-map image backplates, unit-aligned polygons, computed fit-to-viewport scaling, and explicit zoom controls.

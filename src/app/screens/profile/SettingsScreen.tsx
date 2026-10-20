@@ -39,6 +39,7 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { Button } from "@/components/ui";
 import { SettingsSection, SettingsRow } from "@/components/settings";
 import { StallAlertsSettings } from "@/components/settings/StallAlertsSettings";
+import { AccountDeletionCodeDialog } from "@/components/settings/AccountDeletionCodeDialog";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { foodOpennessLabel } from "@/constants/taste";
 import { resolveFoodOpenness } from "@/lib/ai/exploration";
@@ -64,6 +65,12 @@ const THEME_LABELS: Record<ThemePreference, string> = {
   light: "Light",
   dark: "Dark",
 };
+
+/** Supabase AuthErrors (wrong or expired code) keep the code dialog open. */
+function isAuthCodeError(error: unknown): boolean {
+  const name = (error as { name?: unknown } | null)?.name;
+  return typeof name === "string" && name.startsWith("Auth");
+}
 
 function formatDeletionDate(scheduledFor: string): string {
   const date = new Date(scheduledFor);
@@ -151,6 +158,7 @@ export function SettingsScreen() {
       : "system";
 
   const [deletionRequested, setDeletionRequested] = useState(false);
+  const [deletionCodeVisible, setDeletionCodeVisible] = useState(false);
   const [isExportingData, setIsExportingData] = useState(false);
   const [isSavingVisibility, setIsSavingVisibility] = useState(false);
 
@@ -204,6 +212,44 @@ export function SettingsScreen() {
     })();
   };
 
+  // Step 2: the emailed code (any sign-in method, Google and Apple included) proves the
+  // person deleting can read the account's email. A wrong code stays in the dialog.
+  const submitDeletionCode = async (code: string) => {
+    let scheduledFor: string;
+    try {
+      ({ scheduledFor } = await getHungryService().auth.requestAccountDeletion({
+        reason: "user_initiated_settings_flow",
+        code,
+      }));
+    } catch (error) {
+      if (isAuthCodeError(error)) throw error;
+      setDeletionCodeVisible(false);
+      Alert.alert(
+        "Deletion request failed",
+        "We could not queue your account deletion request. Please try again or contact support.",
+      );
+      return;
+    }
+    setDeletionCodeVisible(false);
+    setDeletionRequested(true);
+    trackAnalyticsEvent("account_deletion_requested", { surface: "settings" });
+    await purgePersistedAccountData();
+    clearSession();
+    clearProfile();
+    clearSearchState();
+    resetDraft();
+    resetLocationState();
+    // Replace the whole stack so Back cannot return to the signed-in screens.
+    rootNavigation.reset({
+      index: 0,
+      routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+    });
+    Alert.alert(
+      "Deletion scheduled",
+      `Your account will be deleted ${formatDeletionDate(scheduledFor)}. Sign in before then to keep it.`,
+    );
+  };
+
   const handleDeleteAccount = () => {
     Alert.alert(
       "Delete account",
@@ -211,37 +257,21 @@ export function SettingsScreen() {
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Request deletion",
+          text: "Email me a code",
           style: "destructive",
           onPress: () => {
             void (async () => {
               try {
                 setDeletionRequested(true);
-                const { scheduledFor } = await getHungryService().auth.requestAccountDeletion({
-                  reason: "user_initiated_settings_flow",
-                });
-                trackAnalyticsEvent("account_deletion_requested", { surface: "settings" });
-                await purgePersistedAccountData();
-                clearSession();
-                clearProfile();
-                clearSearchState();
-                resetDraft();
-                resetLocationState();
-                // Replace the whole stack so Back cannot return to the signed-in screens.
-                rootNavigation.reset({
-                  index: 0,
-                  routes: [{ name: "AuthStack", params: { screen: "Login" } }],
-                });
-                Alert.alert(
-                  "Deletion scheduled",
-                  `Your account will be deleted ${formatDeletionDate(scheduledFor)}. Sign in before then to keep it.`,
-                );
+                await getHungryService().auth.sendAccountDeletionCode();
+                setDeletionCodeVisible(true);
               } catch {
-                setDeletionRequested(false);
                 Alert.alert(
-                  "Deletion request failed",
-                  "We could not queue your account deletion request. Please try again or contact support.",
+                  "Couldn't send the code",
+                  "Please wait a minute and try again, or contact support.",
                 );
+              } finally {
+                setDeletionRequested(false);
               }
             })();
           },
@@ -692,6 +722,12 @@ export function SettingsScreen() {
           leftIcon={<Trash2 size={20} color={palette.white} />}
         />
       </View>
+      <AccountDeletionCodeDialog
+        visible={deletionCodeVisible}
+        email={profile.email}
+        onSubmit={submitDeletionCode}
+        onCancel={() => setDeletionCodeVisible(false)}
+      />
     </ProfileScreenShell>
   );
 }

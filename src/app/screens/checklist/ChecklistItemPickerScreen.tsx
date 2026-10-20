@@ -16,7 +16,6 @@ import type { DishDetail, VenueSummary } from "@/types/domain";
 type Props = NativeStackScreenProps<ProfileStackParamList, "ChecklistItemPicker">;
 
 const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
-const REMINDER_PATTERN = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?$/;
 
 function isValidDateParts(year: number, month: number, day: number): boolean {
   const date = new Date(Date.UTC(year, month - 1, day));
@@ -39,25 +38,6 @@ function parseDateOnly(value: string): string | undefined {
   return trimmed;
 }
 
-function parseReminderDateTime(value: string): string | undefined {
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
-  const match = REMINDER_PATTERN.exec(trimmed);
-  if (!match) {
-    throw new Error("Use YYYY-MM-DD HH:mm.");
-  }
-  const [, yearValue, monthValue, dayValue, hourValue = "09", minuteValue = "00"] = match;
-  const year = Number(yearValue);
-  const month = Number(monthValue);
-  const day = Number(dayValue);
-  const hour = Number(hourValue);
-  const minute = Number(minuteValue);
-  if (!isValidDateParts(year, month, day) || hour > 23 || minute > 59) {
-    throw new Error("Use a real date and time.");
-  }
-  return `${yearValue}-${monthValue}-${dayValue}T${hourValue}:${minuteValue}:00+08:00`;
-}
-
 function getFieldError(parser: (value: string) => string | undefined, value: string) {
   try {
     parser(value);
@@ -76,7 +56,6 @@ export function ChecklistItemPickerScreen({ navigation, route }: Props) {
   const [query, setQuery] = useState("");
   const [customText, setCustomText] = useState("");
   const [plannedVisitDate, setPlannedVisitDate] = useState("");
-  const [reminderDateTime, setReminderDateTime] = useState("");
   const [dishes, setDishes] = useState<DishDetail[]>([]);
   const [venues, setVenues] = useState<VenueSummary[]>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -130,13 +109,12 @@ export function ChecklistItemPickerScreen({ navigation, route }: Props) {
   const visibleDishes = useMemo(() => dishes, [dishes]);
   const visibleVenues = useMemo(() => venues, [venues]);
   const plannedVisitDateError = getFieldError(parseDateOnly, plannedVisitDate);
-  const reminderDateTimeError = getFieldError(parseReminderDateTime, reminderDateTime);
-  const hasScheduleError = Boolean(plannedVisitDateError || reminderDateTimeError);
+  const hasScheduleError = Boolean(plannedVisitDateError);
 
   function getSchedulePayload() {
     return {
       plannedVisitDate: parseDateOnly(plannedVisitDate),
-      reminderAt: parseReminderDateTime(reminderDateTime),
+      // No reminder field until notifications ship; nothing would schedule reminder_at.
     };
   }
 
@@ -232,10 +210,7 @@ export function ChecklistItemPickerScreen({ navigation, route }: Props) {
           <ScheduleFields
             plannedVisitDate={plannedVisitDate}
             plannedVisitDateError={plannedVisitDateError}
-            reminderDateTime={reminderDateTime}
-            reminderDateTimeError={reminderDateTimeError}
             onPlannedVisitDateChange={setPlannedVisitDate}
-            onReminderDateTimeChange={setReminderDateTime}
           />
           <Button
             label="Add custom item"
@@ -257,10 +232,7 @@ export function ChecklistItemPickerScreen({ navigation, route }: Props) {
             <ScheduleFields
               plannedVisitDate={plannedVisitDate}
               plannedVisitDateError={plannedVisitDateError}
-              reminderDateTime={reminderDateTime}
-              reminderDateTimeError={reminderDateTimeError}
               onPlannedVisitDateChange={setPlannedVisitDate}
-              onReminderDateTimeChange={setReminderDateTime}
             />
           </Card>
           {(mode === "dish" ? visibleDishes : visibleVenues).length === 0 ? (
@@ -318,17 +290,11 @@ export function ChecklistItemPickerScreen({ navigation, route }: Props) {
 function ScheduleFields({
   plannedVisitDate,
   plannedVisitDateError,
-  reminderDateTime,
-  reminderDateTimeError,
   onPlannedVisitDateChange,
-  onReminderDateTimeChange,
 }: {
   plannedVisitDate: string;
   plannedVisitDateError?: string;
-  reminderDateTime: string;
-  reminderDateTimeError?: string;
   onPlannedVisitDateChange: (value: string) => void;
-  onReminderDateTimeChange: (value: string) => void;
 }) {
   const { spacing } = useHungryTheme();
 
@@ -337,7 +303,7 @@ function ScheduleFields({
       <View style={{ gap: spacing[1] }}>
         <AppText variant="bodyBold">Plan it</AppText>
         <AppText variant="bodySmall" tone="secondary">
-          Optional dates help this checklist turn into a real food plan.
+          An optional date helps this checklist turn into a real food plan.
         </AppText>
       </View>
       <Input
@@ -350,18 +316,6 @@ function ScheduleFields({
         error={Boolean(plannedVisitDateError)}
         errorText={plannedVisitDateError}
         helperText="Leave blank if you only want to save it for later."
-      />
-      <Input
-        label="Remind me on (note only)"
-        placeholder="YYYY-MM-DD HH:mm"
-        value={reminderDateTime}
-        onChangeText={onReminderDateTimeChange}
-        autoCapitalize="none"
-        autoCorrect={false}
-        error={Boolean(reminderDateTimeError)}
-        errorText={reminderDateTimeError}
-        // Nothing schedules reminder_at yet, so don't promise a notification.
-        helperText="Saved on the item; Hungry doesn't send a notification yet. Singapore time, 09:00 if no time."
       />
     </View>
   );
