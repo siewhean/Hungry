@@ -9,7 +9,7 @@
       "distribution": "internal",
       "channel": "development",
       "ios": {
-        "image": "macos-sequoia-15.6-xcode-26.2"
+        "image": "macos-tahoe-26.4-xcode-26.4"
       },
       "env": {
         "EXPO_PUBLIC_APP_ENV": "development",
@@ -22,7 +22,7 @@
       "distribution": "internal",
       "channel": "staging",
       "ios": {
-        "image": "macos-sequoia-15.6-xcode-26.2"
+        "image": "macos-tahoe-26.4-xcode-26.4"
       },
       "env": {
         "EXPO_PUBLIC_APP_ENV": "staging",
@@ -35,13 +35,13 @@
       "extends": "preview",
       "ios": {
         "simulator": true,
-        "image": "macos-sequoia-15.6-xcode-26.2"
+        "image": "macos-tahoe-26.4-xcode-26.4"
       }
     },
     "production": {
       "channel": "production",
       "ios": {
-        "image": "macos-sequoia-15.6-xcode-26.2"
+        "image": "macos-tahoe-26.4-xcode-26.4"
       },
       "env": {
         "EXPO_PUBLIC_APP_ENV": "production",

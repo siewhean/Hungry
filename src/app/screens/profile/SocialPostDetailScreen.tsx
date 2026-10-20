@@ -526,7 +526,7 @@ const styles = StyleSheet.create({
     right: 0,
   },
   playButtonContainer: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: "center",
     justifyContent: "center",
   },

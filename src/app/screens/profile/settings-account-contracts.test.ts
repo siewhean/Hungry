@@ -100,5 +100,5 @@ test("iOS data export is shared as a .json file, not a text message", () => {
     exportHandler,
     /Share\.share\(\{ title: "My Hungry data", url: exportFile\.uri \}\)/,
   );
-  assert.match(read("package.json"), /"expo-file-system": "~55\.0\.26"/);
+  assert.match(read("package.json"), /"expo-file-system": "~57\.0\.7"/);
 });

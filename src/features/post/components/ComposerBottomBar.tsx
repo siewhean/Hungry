@@ -417,7 +417,7 @@ export function ComposerBottomBar({ routeDishId, routeVenueId }: ComposerBottomB
 
 const styles = StyleSheet.create({
   wrapper: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     zIndex: 100,
   },
   container: {
@@ -428,7 +428,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   row: {
     flexDirection: "row",
