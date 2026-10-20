@@ -304,6 +304,37 @@ function MerchantTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   );
 }
 
+/**
+ * Editors are hidden tabs that stay mounted. Remount on every open (new params, or after
+ * leaving) so "Add dish" / "New promotion" never start with the last form's values.
+ */
+function FreshEditorLayout({
+  navigation,
+  route,
+  children,
+}: {
+  navigation: { addListener: (event: "blur", callback: () => void) => () => void };
+  route: { params?: object };
+  children: React.ReactElement;
+}) {
+  const [openCount, setOpenCount] = useState(0);
+  useEffect(
+    () => navigation.addListener("blur", () => setOpenCount((count) => count + 1)),
+    [navigation],
+  );
+  return (
+    <React.Fragment key={`${openCount}:${JSON.stringify(route.params ?? null)}`}>
+      {children}
+    </React.Fragment>
+  );
+}
+
+// Navigators call `layout` as a plain function during their own render, so wrap it in an
+// element; otherwise FreshEditorLayout's hooks would run inside the tab navigator.
+const renderFreshEditorLayout = (props: React.ComponentProps<typeof FreshEditorLayout>) => (
+  <FreshEditorLayout {...props} />
+);
+
 export function MerchantTabs() {
   const { palette, spacing } = useHungryTheme();
   const navigation = useNavigation<NavigationProp<MerchantTabParamList>>();
@@ -456,6 +487,8 @@ export function MerchantTabs() {
       initialRouteName={access === "verified" ? "Dashboard" : "VerificationCentre"}
       tabBar={(props: BottomTabBarProps) => <MerchantTabBar {...props} />}
       screenOptions={{ headerShown: false }}
+      // Detail routes are hidden tabs: Back returns to the screen that opened them.
+      backBehavior="history"
     >
       <Tab.Screen name="Dashboard" getComponent={loadMerchantDashboardScreen} />
       <Tab.Screen name="Menu" getComponent={loadMerchantMenuScreen} />
@@ -490,6 +523,7 @@ export function MerchantTabs() {
         name="DishEditor"
         getComponent={loadDishEditorScreen}
         options={{ tabBarStyle: { display: "none" } }}
+        layout={renderFreshEditorLayout}
       />
       <Tab.Screen
         name="OCRDrafts"
@@ -505,6 +539,7 @@ export function MerchantTabs() {
         name="PromotionBuilder"
         getComponent={loadPromotionBuilderScreen}
         options={{ tabBarStyle: { display: "none" } }}
+        layout={renderFreshEditorLayout}
       />
       <Tab.Screen
         name="AIAssistant"

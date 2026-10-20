@@ -2122,7 +2122,10 @@ async function toMerchantOutlet(client: SupabaseClient, row: Row): Promise<Merch
     temporaryClosure: asString(row.temporary_closure),
     profilePhotoUrl: asString(row.profile_photo_url),
     coverPhotoUrl: asString(row.cover_photo_url),
-    galleryUrls: [],
+    // The outlet has no gallery of its own; its profile and cover photos are the gallery.
+    galleryUrls: [asString(row.profile_photo_url), asString(row.cover_photo_url)].filter(
+      (url): url is string => Boolean(url),
+    ),
     contactPhone: asString(row.contact_phone),
     contactEmail: asString(row.contact_email),
     socialLinks: toSocialLinks(row.social_links),
@@ -5532,25 +5535,9 @@ export const supabaseService: HungryService = {
       if (error) throw error;
 
       const outlet = data as Row;
-      const venueId = asString(outlet.venue_id);
-      if (venueId) {
-        const venuePayload: Row = {};
-        if (normalized.name !== undefined) venuePayload.name = normalized.name;
-        if (normalized.buildingId !== undefined) venuePayload.building_id = normalized.buildingId;
-        if (normalized.unitNumber !== undefined) venuePayload.unit_number = normalized.unitNumber;
-        if (normalized.floor !== undefined) venuePayload.floor = normalized.floor;
-        if (normalized.operatingHours !== undefined) {
-          venuePayload.operating_hours = normalized.operatingHours;
-        }
-        if (Object.keys(venuePayload).length > 0) {
-          const { error: venueError } = await client
-            .from("venues")
-            .update(venuePayload)
-            .eq("id", venueId);
-          if (venueError) throw venueError;
-          await refreshSupabaseRepositoryCache();
-        }
-      }
+      // The verified-outlet sync trigger copies name, hours, unit and floor onto the venue
+      // (with home-based location privacy applied); merchants never write venues directly.
+      if (asString(outlet.venue_id)) await refreshSupabaseRepositoryCache();
       return toMerchantOutlet(client, outlet);
     },
 

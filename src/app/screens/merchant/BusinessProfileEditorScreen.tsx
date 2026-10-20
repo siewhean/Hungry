@@ -11,6 +11,7 @@ import {
   AccessibleImage,
   AppText,
   Button,
+  ChipGroup,
   EmptyState,
   FormSwitchRow,
   Input,
@@ -40,8 +41,6 @@ type FormData = {
   coverPhotoUrl: string;
   contactPhone: string;
   contactEmail: string;
-  dietaryLabels: string;
-  tasteTags: string;
   websiteUrl: string;
   instagramUrl: string;
   facebookUrl: string;
@@ -66,6 +65,15 @@ const LINK_FIELDS = [
 
 function findLink(links: MerchantOutlet["socialLinks"] | undefined, platform: string): string {
   return links?.find((link) => link.platform.toLowerCase() === platform)?.url ?? "";
+}
+
+const HOME_BASED_PRIVACY_OPTIONS: { id: Exclude<LocationPrivacy, "exact">; label: string }[] = [
+  { id: "approximate", label: "Approximate area" },
+  { id: "hidden", label: "Hidden" },
+];
+
+function toHomeBasedPrivacy(value: LocationPrivacy | undefined): Exclude<LocationPrivacy, "exact"> {
+  return value === "hidden" ? "hidden" : "approximate";
 }
 
 const BUSINESS_TYPE_OPTIONS: MerchantOutlet["businessType"][] = [
@@ -111,6 +119,7 @@ export function BusinessProfileEditorScreen() {
     control,
     handleSubmit,
     setValue,
+    watch,
     formState: { isSubmitting, errors },
   } = useForm<FormData>({
     defaultValues: {
@@ -120,21 +129,21 @@ export function BusinessProfileEditorScreen() {
       cuisineCategories: "",
       unitNumber: "",
       floor: "",
-      locationPrivacy: "exact",
+      locationPrivacy: "approximate",
       operatingHours: "",
       temporaryClosure: "",
       profilePhotoUrl: "",
       coverPhotoUrl: "",
       contactPhone: "",
       contactEmail: "",
-      dietaryLabels: "",
-      tasteTags: "",
       websiteUrl: "",
       instagramUrl: "",
       facebookUrl: "",
       isLive: false,
     },
   });
+
+  const businessType = watch("businessType");
 
   useEffect(() => {
     if (activeOutlet) {
@@ -144,15 +153,13 @@ export function BusinessProfileEditorScreen() {
       setValue("cuisineCategories", activeOutlet.cuisineCategories?.join(", ") || "");
       setValue("unitNumber", activeOutlet.unitNumber || "");
       setValue("floor", activeOutlet.floor || "");
-      setValue("locationPrivacy", activeOutlet.locationPrivacy || "exact");
+      setValue("locationPrivacy", toHomeBasedPrivacy(activeOutlet.locationPrivacy));
       setValue("operatingHours", activeOutlet.operatingHours || "");
       setValue("temporaryClosure", activeOutlet.temporaryClosure || "");
       setValue("profilePhotoUrl", activeOutlet.profilePhotoUrl || "");
       setValue("coverPhotoUrl", activeOutlet.coverPhotoUrl || "");
       setValue("contactPhone", activeOutlet.contactPhone || "");
       setValue("contactEmail", activeOutlet.contactEmail || "");
-      setValue("dietaryLabels", activeOutlet.dietaryLabels?.join(", ") || "");
-      setValue("tasteTags", activeOutlet.tasteTags?.join(", ") || "");
       LINK_FIELDS.forEach(({ field, platform }) =>
         setValue(field, findLink(activeOutlet.socialLinks, platform)),
       );
@@ -184,7 +191,10 @@ export function BusinessProfileEditorScreen() {
           .filter(Boolean),
         unitNumber: data.unitNumber,
         floor: data.floor,
-        locationPrivacy: data.locationPrivacy,
+        // Location privacy only applies to home-based businesses (never exact for them).
+        ...(data.businessType === "home_based"
+          ? { locationPrivacy: toHomeBasedPrivacy(data.locationPrivacy) }
+          : {}),
         operatingHours: data.operatingHours,
         temporaryClosure: data.temporaryClosure,
         profilePhotoUrl,
@@ -192,14 +202,6 @@ export function BusinessProfileEditorScreen() {
         galleryUrls,
         contactPhone: data.contactPhone,
         contactEmail: data.contactEmail,
-        dietaryLabels: data.dietaryLabels
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean) as any,
-        tasteTags: data.tasteTags
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
         socialLinks: [
           ...activeOutlet.socialLinks.filter(
             (link) => !LINK_FIELDS.some(({ platform }) => platform === link.platform.toLowerCase()),
@@ -223,7 +225,7 @@ export function BusinessProfileEditorScreen() {
           ? 'Your profile is saved. Turn on "Show on Hungry" when you want diners to see it.'
           : activeOutlet.verification?.status === "verified"
             ? "Your changes are live for diners now."
-            : "Your profile is saved and visible. Photos appear once Hungry verifies your stall.",
+            : "Your profile is saved. Diners will see it once Hungry verifies your stall.",
       );
       navigation.goBack();
     } catch (error) {
@@ -420,38 +422,6 @@ export function BusinessProfileEditorScreen() {
               )}
             />
           </View>
-
-          <View>
-            <Controller
-              control={control}
-              name="dietaryLabels"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input
-                  label="Dietary Labels"
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  value={value}
-                  placeholder="e.g. halal, pork_free, vegetarian"
-                />
-              )}
-            />
-          </View>
-
-          <View>
-            <Controller
-              control={control}
-              name="tasteTags"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input
-                  label="Taste Tags"
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  value={value}
-                  placeholder="e.g. Spicy, Savoury, Wok Hei"
-                />
-              )}
-            />
-          </View>
         </View>
 
         <View style={{ gap: spacing[4] }}>
@@ -524,18 +494,26 @@ export function BusinessProfileEditorScreen() {
             />
           </View>
 
-          <Controller
-            control={control}
-            name="locationPrivacy"
-            render={({ field: { onChange, value } }) => (
-              <FormSwitchRow
-                label="Exact Location Privacy"
-                description="Turn off to hide your exact unit number and floor (useful for home-based businesses)."
-                value={value === "exact"}
-                onValueChange={(val) => onChange(val ? "exact" : "hidden")}
+          {businessType === "home_based" ? (
+            <View style={{ gap: spacing[2] }}>
+              <AppText variant="bodySmallBold">Location shown to diners</AppText>
+              <Controller
+                control={control}
+                name="locationPrivacy"
+                render={({ field: { onChange, value } }) => (
+                  <ChipGroup
+                    options={HOME_BASED_PRIVACY_OPTIONS}
+                    selectedId={toHomeBasedPrivacy(value)}
+                    onSelect={onChange}
+                  />
+                )}
               />
-            )}
-          />
+              <AppText variant="bodySmall" tone="muted">
+                Home-based businesses never show a unit number, floor or exact pin. Hidden also
+                removes the street address.
+              </AppText>
+            </View>
+          ) : null}
         </View>
 
         <View style={{ gap: spacing[4] }}>
