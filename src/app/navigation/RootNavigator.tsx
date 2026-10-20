@@ -454,17 +454,6 @@ function OfflineBanner() {
   );
 }
 
-function QuickReviewModalHost() {
-  const payload = useUIStore((state) => state.quickReview);
-  if (!payload) {
-    return null;
-  }
-
-  const { QuickReviewModal } =
-    require("@/app/screens/review/QuickReviewModal") as typeof import("@/app/screens/review/QuickReviewModal");
-  return <QuickReviewModal />;
-}
-
 function ReviewSuccessModalHost({ onOpenHistory }: { onOpenHistory: () => void }) {
   const payload = useUIStore((state) => state.reviewSuccess);
   if (!payload) {
@@ -845,7 +834,6 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       </NavigationContainer>
       <GlobalScrollBackButton />
       <OfflineBanner />
-      <QuickReviewModalHost />
       <ReviewSuccessModalHost onOpenHistory={() => navigationRef.navigate("ReviewHistory")} />
       <FloatingToast />
       <CredEarnedToastHost />

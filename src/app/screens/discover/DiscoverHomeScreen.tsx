@@ -23,6 +23,7 @@ import {
   Star,
   Flame,
   Dices,
+  Users,
   Utensils,
 } from "lucide-react-native";
 import {
@@ -2100,7 +2101,8 @@ export function DiscoverHomeScreen() {
 
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Open hungry wheel"
+            accessibilityLabel="Pick with friends"
+            accessibilityHint="Opens the Hungry Wheel to spin together with your group"
             onPressIn={() => preloadRoute(navigation, "WheelStack", { screen: "WheelHome" })}
             onPress={() => navigation.navigate("WheelStack", { screen: "WheelHome" })}
             style={({ pressed }) => [
@@ -2129,7 +2131,7 @@ export function DiscoverHomeScreen() {
                 width: decisionCardIconSize,
               }}
             >
-              <Compass color={palette.white} size={decisionCardIconGraphicSize} />
+              <Users color={palette.white} size={decisionCardIconGraphicSize} />
             </View>
             <AppText
               adjustsFontSizeToFit
@@ -2148,7 +2150,7 @@ export function DiscoverHomeScreen() {
                 textAlignVertical: "center",
               }}
             >
-              Hungry Wheel
+              Pick with friends
             </AppText>
           </Pressable>
         </View>

@@ -100,7 +100,6 @@ test("production bottom sheet surfaces expose contextual modal labels", () => {
   const directBottomSheetFiles = [
     "src/app/screens/home/HomeFeedScreen.tsx",
     "src/app/screens/profile/ProfileHomeScreen.tsx",
-    "src/app/screens/review/QuickReviewModal.tsx",
     "src/app/screens/review/ReviewShareSheet.tsx",
     "src/components/social/BiteCommentsSheet.tsx",
     "src/components/social/ReviewCommentsSheet.tsx",

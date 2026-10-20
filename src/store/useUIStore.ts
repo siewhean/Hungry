@@ -16,13 +16,6 @@ export interface ToastPayload {
   borderWidth?: number;
 }
 
-export interface QuickReviewPayload {
-  venueId: string;
-  venueName: string;
-  dishId?: string;
-  dishName?: string;
-}
-
 export interface ReviewSuccessPayload {
   dishName: string;
   venueName: string;
@@ -44,9 +37,6 @@ interface UIState {
   scrollBackVisible: boolean;
   registerScrollForBack: (y: number) => void;
   resetScrollBack: () => void;
-  quickReview: QuickReviewPayload | null;
-  showQuickReview: (payload: QuickReviewPayload) => void;
-  hideQuickReview: () => void;
   reviewSuccess: ReviewSuccessPayload | null;
   showReviewSuccess: (payload: ReviewSuccessPayload) => void;
   hideReviewSuccess: () => void;
@@ -84,9 +74,6 @@ export const useUIStore = create<UIState>()(
         });
       },
       resetScrollBack: () => set({ scrollBackVisible: false }),
-      quickReview: null,
-      showQuickReview: (payload) => set({ quickReview: payload }),
-      hideQuickReview: () => set({ quickReview: null }),
       reviewSuccess: null,
       showReviewSuccess: (payload) => set({ reviewSuccess: payload }),
       hideReviewSuccess: () => set({ reviewSuccess: null }),
