@@ -16,7 +16,6 @@ import { FlashList } from "@shopify/flash-list";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
   AccessibleImage,
-  AppHeader,
   AppText,
   Button,
   EmptyState,
@@ -216,9 +215,7 @@ function RawCatalogBrowseGrid({
   const { width } = useWindowDimensions();
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
-  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
-  const route = useRoute();
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const lastRecordedQueryRef = useRef("");
   const initialRawFilter = RAW_BROWSE_FILTER_OPTIONS.find(
@@ -327,7 +324,7 @@ function RawCatalogBrowseGrid({
         }
       }
     },
-    [currentLocation, isAuthenticated, mode, searchQuery, selectedFilter, service],
+    [currentLocation, mode, searchQuery, selectedFilter, service],
   );
 
   // Only a submitted query is a committed search: one taste signal each, not one per typing pause.
@@ -366,27 +363,6 @@ function RawCatalogBrowseGrid({
     );
     return () => clearTimeout(timer);
   }, [loadPage]);
-
-  if (!isAuthenticated) {
-    return (
-      <Screen scroll={false}>
-        <AppHeader title={mode === "dishes" ? "Dishes" : "Stalls"} />
-        <EmptyState
-          title="Sign in to browse the full directory"
-          body="The complete Hungry catalog is available after you sign in."
-          ctaLabel="Sign in"
-          onPress={() => {
-            // Bring the guest back to this same page after signing in.
-            setReturnRoute({
-              name: route.name,
-              params: route.params as Record<string, unknown> | undefined,
-            });
-            navigation.navigate("AuthStack", { screen: "Login" });
-          }}
-        />
-      </Screen>
-    );
-  }
 
   return (
     <Screen scroll={false} fullWidth style={{ backgroundColor: palette.bg }}>

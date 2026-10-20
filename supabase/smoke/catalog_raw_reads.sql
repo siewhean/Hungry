@@ -14,8 +14,9 @@ select 'raw_catalog_dishes_authenticated_only' as check_name,
          'execute'
        )::text as detail;
 
-select 'raw_catalog_dishes_not_anon' as check_name,
-       (not has_function_privilege(
+-- Guests browse the catalog since 20261019210000_guest_catalog_raw_reads.sql.
+select 'raw_catalog_dishes_guest_readable' as check_name,
+       (has_function_privilege(
          'anon',
          'public.catalog_raw_dishes_page(text,double precision,double precision,integer,text[],text[],numeric,boolean,text,text,uuid,integer,text,text[])',
          'execute'

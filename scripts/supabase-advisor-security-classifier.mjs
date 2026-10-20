@@ -183,7 +183,17 @@ const INTENDED_AUTHENTICATED_RPCS = [
 ];
 
 // SECURITY DEFINER RPCs signed-out visitors are meant to call; each returns only public rows.
-const INTENDED_ANON_RPCS = ["get_public_merchant_profile", "get_public_portfolio"];
+// Guests browse the catalog (sh, 2026-10-19): the catalog_raw_* read RPCs are capped and read-only.
+const INTENDED_ANON_RPCS = [
+  "catalog_raw_dish_detail",
+  "catalog_raw_dishes_page",
+  "catalog_raw_map_view",
+  "catalog_raw_venue_detail",
+  "catalog_raw_venue_menu_page",
+  "catalog_raw_venues_page",
+  "get_public_merchant_profile",
+  "get_public_portfolio",
+];
 
 function intendedReason(finding) {
   const metadata = finding.metadata || {};

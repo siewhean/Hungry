@@ -144,3 +144,57 @@ test("catalog release publisher fails when count validation does not activate a 
   assert.match(publisher, /release\?\.status !== "active"/);
   assert.match(publisher, /process\.exitCode = 1/);
 });
+
+test("guest catalog migration opens only the read RPCs to anon", () => {
+  const migration = read("supabase/migrations/20261019210000_guest_catalog_raw_reads.sql");
+  for (const rpc of [
+    "catalog_raw_dishes_page",
+    "catalog_raw_venue_menu_page",
+    "catalog_raw_venues_page",
+    "catalog_raw_dish_detail",
+    "catalog_raw_venue_detail",
+    "catalog_raw_map_view",
+  ]) {
+    assert.match(
+      migration,
+      new RegExp(`grant execute on function public\\.${rpc}\\([^;]*\\) to anon;`),
+    );
+  }
+  assert.match(migration, /auth\.role\(\), ''\) not in \('anon', 'authenticated'\)/);
+  assert.match(
+    migration,
+    /revoke all on function public\.catalog_raw_require_authenticated\(\) from public, anon, authenticated;/,
+  );
+  // No table grants and no write/admin RPC grants to anon.
+  assert.doesNotMatch(migration, /grant [^;]* on table/i);
+  assert.doesNotMatch(migration, /catalog_raw_publish_release|catalog_raw_refresh_venue/);
+
+  const smoke = read("supabase/smoke/guest_catalog_raw_reads.sql");
+  assert.match(smoke, /set local role anon;/);
+  assert.match(smoke, /has_table_privilege\('anon', v_table, 'select'\)/);
+  assert.match(smoke, /catalog_raw_publish_release/);
+  assert.match(smoke, /select 'guest_catalog_raw_reads_smoke_passed' as result;\s*rollback;\s*$/);
+});
+
+test("signed-out users never reach map pins or catalog detail (sign-in required)", () => {
+  // The database also allows anon catalog reads (20261019210000), but the app
+  // stays sign-in only: the signed-in navigator mounts only with a session.
+  const appBody = read("src/app/AppBody.tsx");
+  assert.match(appBody, /const wantsRootNavigator = isAuthenticated \|\|/);
+  const map = read("src/app/screens/discover/HomeMapScreen.tsx");
+  assert.match(map, /catalogRawService\.getMapViewport\(/);
+  assert.doesNotMatch(map, /GuestMapPrompt/);
+  const service = read("src/lib/services/catalog/index.ts");
+  assert.match(
+    service,
+    /if \(!result\.data\.session\?\.user\) throw new CatalogAuthenticationRequiredError\(\);/,
+  );
+  const detail = read("src/app/screens/catalog/CatalogRawDetailScreen.tsx");
+  assert.match(
+    detail,
+    /if \(!isAuthenticated\) \{\s*setError\("Sign in to view this catalog record\."\);/,
+  );
+  // Its only save action is the favourites store, which refuses a signed-out caller.
+  assert.doesNotMatch(detail, /toggleSave|toggleLike|addItem\(/);
+  assert.match(detail, /useProfileStore\(\(state\) => state\.toggleFavourite\)/);
+});

@@ -68,6 +68,7 @@ function statusLabel(status: Detail["verificationStatus"]) {
 
 export function CatalogRawDetailScreen({ navigation, route }: Props) {
   const { palette, spacing } = useHungryTheme();
+  // Read-only catalog record with no save/like actions. Sign-in is still required.
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const service = getCatalogRawService();
   const [detail, setDetail] = useState<Detail | null>(null);
@@ -237,7 +238,7 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthenticated, isDish, route.params.id, route.params.releaseId, service]);
+  }, [isDish, route.params.id, route.params.releaseId, service]);
 
   useEffect(() => {
     void load();

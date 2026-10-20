@@ -40,6 +40,9 @@ begin
   end if;
 end $$;
 
+-- Setup runs as ops (service_role) so merchant verification guards allow a verified outlet.
+select set_config('request.jwt.claim.role', 'service_role', true);
+
 insert into merchant_accounts (id, user_id, display_name, email)
 values (
   '00000000-0000-0045-a000-000000000001',
@@ -84,6 +87,7 @@ values (
 );
 
 reset role;
+select set_config('request.jwt.claim.role', 'service_role', true);
 
 do $$
 declare

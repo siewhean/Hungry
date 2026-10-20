@@ -82,7 +82,11 @@ test("social store contract: UUID follows sync to service while local-name fallb
   assert.match(profileContentSource, /value=\{followingCount\}/);
   assert.doesNotMatch(profileContentSource, /value=\{isFollowingAuthor \? 1 : 0\}/);
   assert.match(profileContentSource, /const canShowFollowButton = Boolean\(resolvedAuthorId\)/);
-  assert.match(profileContentSource, /if \(resolvedAuthorId\) toggleFollow\(resolvedAuthorId\)/);
+  // A guest is asked to sign in before the follow is sent.
+  assert.match(
+    profileContentSource,
+    /if \(!resolvedAuthorId\) return;[\s\S]*?requireAccount\([\s\S]*?toggleFollow\(resolvedAuthorId\)/,
+  );
 });
 
 test("social store contract: follow state is loaded from the server on sign-in", () => {

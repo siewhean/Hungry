@@ -35,6 +35,8 @@ interface ReviewCommentsSheetProps {
   inputRef: RefObject<TextInput | null>;
   innerRef: RefObject<BottomSheetModal | null>;
   onDismiss: () => void;
+  /** Return false to block sending, e.g. a guest who must sign in first. */
+  onBeforeSend?: () => boolean;
 }
 
 export function ReviewCommentsSheet({
@@ -43,6 +45,7 @@ export function ReviewCommentsSheet({
   inputRef,
   innerRef,
   onDismiss,
+  onBeforeSend,
 }: ReviewCommentsSheetProps) {
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
@@ -111,6 +114,7 @@ export function ReviewCommentsSheet({
 
   const handlePostCommentOrReply = useCallback(() => {
     if (!activeReview || !draftComment.trim().length) return;
+    if (onBeforeSend && !onBeforeSend()) return;
 
     if (activeReplyCommentId) {
       const newReply: SocialReply = {
@@ -139,7 +143,15 @@ export function ReviewCommentsSheet({
     }
 
     setDraftComment("");
-  }, [activeReview, activeReplyCommentId, addComment, addReply, draftComment, profile]);
+  }, [
+    activeReview,
+    activeReplyCommentId,
+    addComment,
+    addReply,
+    draftComment,
+    onBeforeSend,
+    profile,
+  ]);
 
   if (!FEATURE_FLAGS.commentsEnabled) {
     return null;
