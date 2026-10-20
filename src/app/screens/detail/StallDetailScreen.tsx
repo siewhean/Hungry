@@ -85,13 +85,24 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { formatHoursRows, getVenueOpenState, parseOperatingHours } from "@/utils/operatingHours";
+import {
+  formatScheduleRows,
+  getScheduleOpenState,
+  getUpcomingSpecialHours,
+  hasWeeklyHours,
+} from "@/utils/openingSchedule";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
 import {
   CyclingGridImage,
   CYCLING_GRID_IMAGE_INTERVAL_MS,
 } from "@/components/discover/CyclingGridImage";
 import { CustomerPromotionCard } from "@/components/promotion/CustomerPromotionCard";
-import type { DishDetail, MerchantPromotion, PublicMerchantProfile } from "@/types/domain";
+import type {
+  DishDetail,
+  MerchantPromotion,
+  OpeningSchedule,
+  PublicMerchantProfile,
+} from "@/types/domain";
 import {
   DetailSaveActionsCard,
   useDetailSaveActions,
@@ -432,6 +443,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const [reviewsReloadKey, setReviewsReloadKey] = useState(0);
   const [activePromotions, setActivePromotions] = useState<MerchantPromotion[]>([]);
   const [merchantProfile, setMerchantProfile] = useState<PublicMerchantProfile>();
+  const [openingSchedule, setOpeningSchedule] = useState<OpeningSchedule>();
   const [activeMenuCategory, setActiveMenuCategory] = useState(ALL_MENU_CATEGORY);
   const [visibleMenuItemCount, setVisibleMenuItemCount] = useState(INITIAL_MENU_ITEM_COUNT);
   const contentBodyLayoutRef = useRef<{ y: number; height: number } | null>(null);
@@ -540,6 +552,15 @@ export function StallDetailScreen({ navigation, route }: Props) {
       })
       .catch(() => {
         if (active) setMerchantProfile(undefined);
+      });
+
+    void getHungryService()
+      .discovery.getVenueOpeningSchedule(venue.id)
+      .then((schedule) => {
+        if (active) setOpeningSchedule(schedule);
+      })
+      .catch(() => {
+        if (active) setOpeningSchedule(undefined);
       });
 
     void getHungryService()
@@ -718,7 +739,11 @@ export function StallDetailScreen({ navigation, route }: Props) {
     merchantProfile?.coverPhotoUrl ||
     venue.imageUrl ||
     dishes.map((dish) => getStallDishPhotos(dish)[0]).find(Boolean);
-  const openState = getVenueOpenState(venue.operatingHours, venue.isOpen);
+  // A verified merchant's weekly schedule (with special hours) wins over listed text hours.
+  const schedule = openingSchedule ?? venue.openingSchedule;
+  const openState = hasWeeklyHours(schedule)
+    ? getScheduleOpenState(schedule, venue.isOpen)
+    : getVenueOpenState(venue.operatingHours, venue.isOpen);
   const closureNotice = merchantProfile?.temporaryClosure ?? venue.closureNotice;
   const operatingStatusLabel = merchantProfile?.temporaryClosure
     ? merchantProfile.temporaryClosure
@@ -730,7 +755,15 @@ export function StallDetailScreen({ navigation, route }: Props) {
           : "Hours not listed"
         : (closureNotice ?? ["Closed now", openState.detail].filter(Boolean).join(" · "));
   const merchantWebLinks = (merchantProfile?.socialLinks ?? []).slice(0, 5);
-  const parsedHoursRows = formatHoursRows(parseOperatingHours(venue.operatingHours));
+  const parsedHoursRows = hasWeeklyHours(schedule)
+    ? [
+        ...formatScheduleRows(schedule),
+        ...getUpcomingSpecialHours(schedule).map((row) => ({
+          label: `${row.label} (special)`,
+          text: row.text,
+        })),
+      ]
+    : formatHoursRows(parseOperatingHours(venue.operatingHours));
   // Unreadable text is still shown as written rather than dropped.
   const weeklyOperatingHours =
     parsedHoursRows.length > 0

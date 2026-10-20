@@ -102,8 +102,8 @@ function MerchantAccessGate({
       <Screen title="Verification required" subtitle="Complete verification to use this section">
         <View style={[styles.accessGate, { padding: spacing[5], gap: spacing[3] }]}>
           <AppText variant="body" tone="muted" style={{ textAlign: "center" }}>
-            Verified merchants can manage menus, promotions, inbox replies and analytics. You can
-            already set up your stall profile while Hungry reviews your verification.
+            Verified merchants can manage promotions, inbox replies and analytics. You can already
+            set up your stall profile and menu while Hungry reviews your verification.
           </AppText>
           <View style={{ width: "100%", gap: spacing[2] }}>
             <Button
@@ -263,13 +263,6 @@ const loadAIAssistantScreen = () =>
     (
       require("@/app/screens/merchant/AIAssistantScreen") as typeof import("@/app/screens/merchant/AIAssistantScreen")
     ).AIAssistantScreen,
-  );
-const loadOrdersComingSoonScreen = () =>
-  createGuardedScreen(
-    "OrdersComingSoon",
-    (
-      require("@/app/screens/merchant/OrdersComingSoonScreen") as typeof import("@/app/screens/merchant/OrdersComingSoonScreen")
-    ).OrdersComingSoonScreen,
   );
 const loadMerchantSettingsScreen = () =>
   createGuardedScreen(
@@ -558,11 +551,6 @@ export function MerchantTabs() {
       <Tab.Screen
         name="AIAssistant"
         getComponent={loadAIAssistantScreen}
-        options={{ tabBarStyle: { display: "none" } }}
-      />
-      <Tab.Screen
-        name="OrdersComingSoon"
-        getComponent={loadOrdersComingSoonScreen}
         options={{ tabBarStyle: { display: "none" } }}
       />
       <Tab.Screen

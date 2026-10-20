@@ -89,7 +89,6 @@ export type MerchantTabParamList = {
   PromotionBuilder: { promotionId?: string; duplicateFromId?: string } | undefined;
   PromotionList: undefined;
   AIAssistant: undefined;
-  OrdersComingSoon: undefined;
   MerchantSettings: undefined;
 };
 

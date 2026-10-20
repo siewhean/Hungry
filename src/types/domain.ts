@@ -132,6 +132,8 @@ export interface VenueSummary {
   liveCrowd?: "low" | "medium" | "high";
   topDishId: string;
   operatingHours: string;
+  /** Weekly + special hours a verified merchant set; wins over operatingHours for "Open now". */
+  openingSchedule?: OpeningSchedule;
   closureNotice?: string;
   deliveryLinks: DeliveryLink[];
   verificationStatus?: VerificationStatus;
@@ -594,6 +596,21 @@ export interface MerchantVerification {
   expiresAt?: string;
 }
 
+export type OpeningDayKey = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
+
+/** 24-hour "HH:MM" times. close "24:00" is midnight; close before open runs past midnight. */
+export interface OpeningTimeRange {
+  open: string;
+  close: string;
+}
+
+/** Fixed weekly hours (a missing or empty day is closed) plus special hours by date. */
+export interface OpeningSchedule {
+  weekly: Partial<Record<OpeningDayKey, OpeningTimeRange[]>>;
+  /** Overrides by Singapore date ("YYYY-MM-DD"); empty ranges = closed that day. */
+  special?: { date: string; ranges: OpeningTimeRange[]; note?: string }[];
+}
+
 export interface MerchantOutlet {
   id: string;
   merchantAccountId: string;
@@ -605,10 +622,15 @@ export interface MerchantOutlet {
   unitNumber?: string;
   floor?: string;
   coordinate?: Coordinate;
+  /** Street address and 6-digit postal code, from the OneMap postal-code lookup. */
+  address?: string;
+  postalCode?: string;
   locationPrivacy: LocationPrivacy;
   description: string;
   cuisineCategories: string[];
+  /** Display line derived from openingSchedule when one is set. */
   operatingHours: string;
+  openingSchedule?: OpeningSchedule;
   temporaryClosure?: string;
   profilePhotoUrl?: string;
   coverPhotoUrl?: string;

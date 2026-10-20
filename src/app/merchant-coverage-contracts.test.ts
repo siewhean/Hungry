@@ -87,7 +87,8 @@ test("merchant profile edits validate fields and propagate to user-side venue re
     [
       /name="name"/,
       /name="description"/,
-      /name="operatingHours"/,
+      /name="openingSchedule"/,
+      /name="postalCode"/,
       /name="temporaryClosure"/,
       /name="contactPhone"/,
       /name="contactEmail"/,

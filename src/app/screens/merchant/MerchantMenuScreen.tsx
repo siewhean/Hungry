@@ -285,7 +285,7 @@ export function MerchantMenuScreen() {
           {
             text: hasAvailabilityFlag(dishDialog.dish.availabilityFlags, "sold_out")
               ? "Mark Available"
-              : "Mark Sold Out",
+              : "Sold Out Until Tomorrow",
             onPress: () => void handleToggleSoldOut(dishDialog.dish),
           },
           {
@@ -345,8 +345,8 @@ export function MerchantMenuScreen() {
           >
             <AppText variant="bodySmall">
               {isVerified
-                ? "Changes you make here show to diners straight away."
-                : "Your menu is saved but hidden from diners until Hungry verifies your stall."}
+                ? "Changes you make here show to diners straight away. Sold-out dishes come back on automatically at midnight."
+                : "Dishes you add are saved as drafts, hidden from diners until Hungry verifies your stall. Dishes diners already see can be changed once you are verified."}
             </AppText>
           </View>
 

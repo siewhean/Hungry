@@ -43,6 +43,7 @@ import type {
   PortfolioFollow,
   PortfolioItem,
   PublicPortfolio,
+  OpeningSchedule,
   PublicMerchantProfile,
   PromotionStatus,
   RecommendationSurface,
@@ -777,6 +778,8 @@ export interface HungryService {
     }): Promise<MerchantPromotion[]>;
     /** Live merchant profile shown on the stall page, if the stall is claimed. */
     getPublicMerchantProfile(venueId: string): Promise<PublicMerchantProfile | undefined>;
+    /** Structured weekly + special hours a verified merchant set for this stall, if any. */
+    getVenueOpeningSchedule(venueId: string): Promise<OpeningSchedule | undefined>;
     recordDishView(
       dishId: string,
       context?: { sessionId?: string; userId?: string },

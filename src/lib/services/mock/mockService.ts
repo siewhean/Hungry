@@ -74,6 +74,7 @@ import type {
   MerchantNotification,
   MerchantNotificationPreferences,
   MerchantPromotion,
+  OpeningSchedule,
   PublicMerchantProfile,
   MerchantTeamMember,
   MerchantWeeklySummary,
@@ -849,6 +850,7 @@ function syncMerchantOutletToUserCatalog(
     liveCrowd: "medium",
     topDishId,
     operatingHours: outlet.operatingHours,
+    openingSchedule: outlet.openingSchedule,
     closureNotice: outlet.temporaryClosure,
     deliveryLinks: outlet.deliveryLinks,
     verificationStatus: outlet.verification.status,
@@ -1692,6 +1694,11 @@ export const hungryService: HungryService = {
         temporaryClosure: outlet.temporaryClosure,
         isVerified,
       } satisfies PublicMerchantProfile);
+    },
+
+    async getVenueOpeningSchedule(venueId) {
+      const schedule = venues.find((venue) => venue.id === venueId)?.openingSchedule;
+      return resolve(schedule ? clone(schedule) : undefined);
     },
 
     async recordDishView(dishId, context) {
