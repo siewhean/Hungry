@@ -41,6 +41,7 @@ import {
 } from "@/lib/services/supabase/mediaUpload";
 import { suggestAllergensFromIngredients } from "@/features/merchant/allergenKeywords";
 import { validateMerchantProfileUpdates } from "@/features/merchant/profileValidation";
+import { validateOpeningSchedule } from "@/utils/openingSchedule";
 import { REVIEW_PHOTOS_NOT_ATTACHED, createClientReviewId } from "@/features/review/reviewDraft";
 import { validateMerchantPromotionInput } from "@/features/merchant/promotionValidation";
 import { MERCHANT_DEEP_LINKS } from "@/features/merchant/merchantDeepLinks";
@@ -98,6 +99,7 @@ import type {
   PortfolioItem,
   ProfileVisibility,
   PromotionStatus,
+  OpeningSchedule,
   PublicMerchantProfile,
   SearchFilters,
   TasteProfile,
@@ -2229,6 +2231,23 @@ function toSocialLinks(value: unknown): MerchantOutlet["socialLinks"] {
   });
 }
 
+/** A stored schedule, or undefined when the column is empty or not in the expected shape. */
+function toOpeningSchedule(value: unknown): OpeningSchedule | undefined {
+  const record = asRecord(value);
+  if (!record.weekly || typeof record.weekly !== "object" || Array.isArray(record.weekly)) {
+    return undefined;
+  }
+  const schedule = {
+    weekly: record.weekly as OpeningSchedule["weekly"],
+    special: Array.isArray(record.special) ? (record.special as OpeningSchedule["special"]) : [],
+  };
+  try {
+    return validateOpeningSchedule(schedule) ? undefined : schedule;
+  } catch {
+    return undefined;
+  }
+}
+
 async function toMerchantOutlet(
   client: SupabaseClient,
   row: Row,
@@ -2246,6 +2265,13 @@ async function toMerchantOutlet(
     buildingId: asString(row.building_id) ?? venue?.buildingId,
     unitNumber: asString(row.unit_number) ?? venue?.unitNumber,
     floor: asString(row.floor) ?? venue?.floor,
+    address: asString(row.address),
+    postalCode: asString(row.postal_code),
+    coordinate:
+      asNumber(row.latitude) !== undefined && asNumber(row.longitude) !== undefined
+        ? { latitude: asNumber(row.latitude) ?? 0, longitude: asNumber(row.longitude) ?? 0 }
+        : undefined,
+    openingSchedule: toOpeningSchedule(row.opening_schedule),
     locationPrivacy:
       (asString(row.location_privacy) as MerchantOutlet["locationPrivacy"]) ?? "approximate",
     description: asString(row.description) ?? "",
@@ -3448,6 +3474,18 @@ export const supabaseService: HungryService = {
         temporaryClosure: asString(row.temporary_closure),
         isVerified: asBoolean(row.is_verified) ?? false,
       } satisfies PublicMerchantProfile;
+    },
+
+    async getVenueOpeningSchedule(venueId) {
+      const client = getSupabaseClient();
+      if (!client || !venueId) return undefined;
+      const { data, error } = await client
+        .from("venues")
+        .select("opening_schedule")
+        .eq("id", venueId)
+        .maybeSingle();
+      if (error || !data) return undefined;
+      return toOpeningSchedule((data as Row).opening_schedule);
     },
 
     async recordDishView(dishId, context) {
@@ -5745,6 +5783,15 @@ export const supabaseService: HungryService = {
       if (normalized.description !== undefined) payload.description = normalized.description;
       if (normalized.operatingHours !== undefined) {
         payload.operating_hours = normalized.operatingHours;
+      }
+      if (normalized.openingSchedule !== undefined) {
+        payload.opening_schedule = normalized.openingSchedule;
+      }
+      if (normalized.address !== undefined) payload.address = normalized.address || null;
+      if (normalized.postalCode !== undefined) payload.postal_code = normalized.postalCode || null;
+      if (normalized.coordinate !== undefined) {
+        payload.latitude = normalized.coordinate.latitude;
+        payload.longitude = normalized.coordinate.longitude;
       }
       if (normalized.temporaryClosure !== undefined) {
         payload.temporary_closure = normalized.temporaryClosure || null;

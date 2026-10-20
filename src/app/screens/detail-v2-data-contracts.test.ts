@@ -13,10 +13,9 @@ test("stall detail uses real venue hours and popular visitors", () => {
   const stall = read("src/app/screens/detail/StallDetailScreen.tsx");
 
   assert.match(stall, /PopularVisitorsSection/);
-  assert.match(
-    stall,
-    /const openState = getVenueOpenState\(venue\.operatingHours, venue\.isOpen\)/,
-  );
+  // A verified merchant's weekly schedule wins; listed text hours are the fallback.
+  assert.match(stall, /getScheduleOpenState\(schedule, venue\.isOpen\)/);
+  assert.match(stall, /: getVenueOpenState\(venue\.operatingHours, venue\.isOpen\)/);
   assert.match(stall, /parseOperatingHours\(venue\.operatingHours\)/);
   assert.match(stall, /weeklyOperatingHours\.map/);
   assert.doesNotMatch(stall, /venue\.operatingHours\.split\(" – "\)/);

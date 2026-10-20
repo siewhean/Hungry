@@ -4,8 +4,10 @@ import type {
   MerchantOutlet,
   MerchantPromotion,
 } from "@/types/domain";
+import { getVenueOpenState } from "@/utils/operatingHours";
+import { getScheduleOpenState, hasWeeklyHours } from "@/utils/openingSchedule";
 
-export type MerchantOutletStatus = "open" | "closed" | "offline";
+export type MerchantOutletStatus = "open" | "closed" | "live" | "offline";
 
 export type MerchantProfileGap = {
   id: string;
@@ -45,18 +47,26 @@ export function formatBusinessType(value: MerchantOutlet["businessType"]): strin
   return BUSINESS_TYPE_LABELS[value] ?? value.replace(/_/g, " ");
 }
 
-export function getMerchantOutletStatus(outlet?: MerchantOutlet | null): MerchantOutletStatus {
+/**
+ * "open"/"closed" come from the opening hours in Singapore time (the weekly schedule with special
+ * hours when set, else readable listed hours). "live" means live on Hungry with hours we cannot
+ * read, so the badge never claims "Open now" without hours.
+ */
+export function getMerchantOutletStatus(
+  outlet?: MerchantOutlet | null,
+  now: Date = new Date(),
+): MerchantOutletStatus {
   if (!outlet || !outlet.isLive) return "offline";
   if (hasText(outlet.temporaryClosure)) return "closed";
-  return "open";
+  const state = hasWeeklyHours(outlet.openingSchedule)
+    ? getScheduleOpenState(outlet.openingSchedule, true, now)
+    : getVenueOpenState(outlet.operatingHours, true, now);
+  return state.status === "unknown" ? "live" : state.status;
 }
 
-/**
- * "open" means live on Hungry with no closure notice. Opening hours are free text, so this cannot
- * say whether the stall is trading right now: the label says "Live", not "Open".
- */
 export function getMerchantOutletStatusLabel(status: MerchantOutletStatus): string {
-  if (status === "open") return "Live on Hungry";
+  if (status === "open") return "Open now";
+  if (status === "live") return "Live on Hungry";
   if (status === "offline") return "Offline";
   return "Closed";
 }
@@ -75,7 +85,8 @@ export function getMerchantProfileGaps(
   if (!hasText(outlet.coverPhotoUrl)) gaps.push({ id: "cover-image", label: "Cover image" });
   if (!hasLocation(outlet)) gaps.push({ id: "location", label: "Location/address" });
   if (!hasContact(outlet)) gaps.push({ id: "contact", label: "Contact information" });
-  if (!hasText(outlet.operatingHours)) gaps.push({ id: "opening-hours", label: "Opening hours" });
+  if (!hasText(outlet.operatingHours) && !hasWeeklyHours(outlet.openingSchedule))
+    gaps.push({ id: "opening-hours", label: "Opening hours" });
   if (menu.menuCount === 0) gaps.push({ id: "menu-items", label: "Menu items" });
   if (menu.menuCount > 0 && menu.dishesWithoutImages > 0) {
     gaps.push({ id: "dish-images", label: "Dish images" });

@@ -1,8 +1,12 @@
 import type { MerchantOutlet } from "@/types/domain";
+import { isInSingapore, SINGAPORE_POSTAL_CODE_PATTERN } from "@/lib/geo/oneMap";
+import { validateOpeningSchedule } from "@/utils/openingSchedule";
 
 const MAX_NAME_LENGTH = 80;
 const MAX_DESCRIPTION_LENGTH = 600;
-const MAX_OPERATING_HOURS_LENGTH = 120;
+// Derived from the weekly schedule: up to 7 day groups of 3 ranges each.
+const MAX_OPERATING_HOURS_LENGTH = 300;
+const MAX_ADDRESS_LENGTH = 200;
 const MAX_TEMPORARY_CLOSURE_LENGTH = 160;
 const MAX_CONTACT_PHONE_LENGTH = 30;
 const MAX_CONTACT_EMAIL_LENGTH = 120;
@@ -53,6 +57,8 @@ export function validateMerchantProfileUpdates(
   normalized.contactEmail = normalizeText(normalized.contactEmail);
   normalized.unitNumber = normalizeText(normalized.unitNumber);
   normalized.floor = normalizeText(normalized.floor);
+  normalized.address = normalizeText(normalized.address);
+  normalized.postalCode = normalizeText(normalized.postalCode);
   normalized.cuisineCategories = normalizeStringArray(normalized.cuisineCategories);
   normalized.tasteTags = normalizeStringArray(normalized.tasteTags);
   normalized.socialLinks = normalizeSocialLinks(normalized.socialLinks);
@@ -70,6 +76,21 @@ export function validateMerchantProfileUpdates(
 
   if (normalized.operatingHours && normalized.operatingHours.length > MAX_OPERATING_HOURS_LENGTH) {
     throw new Error(`Operating hours must be at most ${MAX_OPERATING_HOURS_LENGTH} characters.`);
+  }
+
+  if (normalized.openingSchedule) {
+    const problem = validateOpeningSchedule(normalized.openingSchedule);
+    if (problem) throw new Error(problem);
+  }
+
+  if (normalized.postalCode && !SINGAPORE_POSTAL_CODE_PATTERN.test(normalized.postalCode)) {
+    throw new Error("Postal code must be 6 digits.");
+  }
+  if (normalized.address && normalized.address.length > MAX_ADDRESS_LENGTH) {
+    throw new Error(`Address must be at most ${MAX_ADDRESS_LENGTH} characters.`);
+  }
+  if (normalized.coordinate && !isInSingapore(normalized.coordinate)) {
+    throw new Error("The map pin must be in Singapore.");
   }
 
   if (
