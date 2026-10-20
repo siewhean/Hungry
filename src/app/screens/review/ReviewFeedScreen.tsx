@@ -904,10 +904,7 @@ export function ReviewFeedScreen() {
 
   const handleLikePress = useCallback(
     (targetItem: ReviewFeedItem) => {
-      if (
-        reviewReactionsEnabled &&
-        requireAccountForReviewAction("Sign in to like reviews.")
-      ) {
+      if (reviewReactionsEnabled && requireAccountForReviewAction("Sign in to like reviews.")) {
         void toggleLike(targetItem.interactionId);
       }
     },

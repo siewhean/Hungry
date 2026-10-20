@@ -206,14 +206,7 @@ export function HomeMapScreen() {
       active = false;
       clearTimeout(timer);
     };
-  }, [
-    catalogRawService,
-    currentLocation,
-    currentZoom,
-    mapCenter,
-    mapFilters,
-    mapReloadKey,
-  ]);
+  }, [catalogRawService, currentLocation, currentZoom, mapCenter, mapFilters, mapReloadKey]);
 
   const snapTo = (height: number) => {
     Animated.spring(animatedHeight, {
