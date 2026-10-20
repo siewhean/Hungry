@@ -29,7 +29,7 @@ test("Release 0.1 profile does not expose favourites while the route is disabled
 test("profile edits do not claim upload success before persistence or mutate auth email indirectly", () => {
   const profile = read("src/app/screens/profile/EditProfileScreen.tsx");
 
-  assert.match(profile, /Photo selected\. Save changes to upload it\./);
+  assert.match(profile, /Photo selected\. Tap Save changes to use it\./);
   // Email changes go through auth.requestEmailChange (confirmed on both addresses).
   assert.match(profile, /auth\.requestEmailChange\(nextEmail\)/);
   assert.doesNotMatch(profile, /updateProfile\(\{[\s\S]*?email,/);

@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 import { Music, Search, X, Check, Play, Pause } from "lucide-react-native";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 import { BottomSheetModal, BottomSheetFlatList } from "@gorhom/bottom-sheet";
 
 import { AppText, EmptyState, Input, IconButton, BottomSheet } from "@/components/ui";

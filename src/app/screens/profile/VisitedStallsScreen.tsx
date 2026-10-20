@@ -1,12 +1,14 @@
-import { useMemo } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { useEffect, useMemo } from "react";
+import { Pressable, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { MapPin } from "lucide-react-native";
 
 import { AppText, Card, EmptyState } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { getDataRepository } from "@/lib/services/serviceProvider";
+import { useVisitedStallIds } from "@/features/profile/visitedStalls";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useHungryTheme } from "@/theme";
 import { isVenueOpenFromHours } from "@/utils/stallStatus";
 import type { ProfileStackParamList } from "./ProfileStack";
@@ -29,35 +31,40 @@ export function VisitedStallsScreen({ navigation }: Props) {
   const repository = getDataRepository();
   const rootNavigation = getRootNavigation(navigation as any);
 
-  const visitedVenues = useMemo<VenueItem[]>(() => {
-    const venuesById = new Map<string, VenueItem>();
+  const loadInteractions = useStallInteractionStore((state) => state.loadInteractions);
+  const visitedStallIds = useVisitedStallIds();
 
-    profile.reviewedDishIds.forEach((dishId) => {
-      const dish = repository.getDishById(dishId);
-      if (!dish) return;
-
-      const venue = repository.getVenueById(dish.venueId);
-      if (!venue) return;
-
-      venuesById.set(venue.id, {
-        id: venue.id,
-        name: venue.name,
-        unitNumber: venue.unitNumber,
-        floor: venue.floor,
-        isOpen: venue.isOpen,
-        operatingHours: venue.operatingHours,
-      });
+  useEffect(() => {
+    void loadInteractions(profile.id).catch((error) => {
+      console.error("Failed to load visited stalls:", error);
     });
+  }, [loadInteractions, profile.id]);
 
-    return [...venuesById.values()];
-  }, [profile.reviewedDishIds, repository]);
+  const visitedVenues = useMemo<VenueItem[]>(
+    () =>
+      visitedStallIds.flatMap((stallId) => {
+        const venue = repository.getVenueById(stallId);
+        if (!venue) return [];
+        return [
+          {
+            id: venue.id,
+            name: venue.name,
+            unitNumber: venue.unitNumber,
+            floor: venue.floor,
+            isOpen: venue.isOpen,
+            operatingHours: venue.operatingHours,
+          },
+        ];
+      }),
+    [repository, visitedStallIds],
+  );
 
   return (
     <ProfileScreenShell
-      title="Visited stores"
-      subtitle="Stalls tied to dishes in your review history."
+      title="Visited stalls"
+      subtitle="Stalls you marked as tried or ate a dish at."
     >
-      <ScrollView contentContainerStyle={{ gap: spacing[3], paddingBottom: spacing[5] }}>
+      <View style={{ gap: spacing[3], paddingBottom: spacing[5] }}>
         {visitedVenues.length ? (
           visitedVenues.map((venue) => (
             <Pressable
@@ -99,11 +106,11 @@ export function VisitedStallsScreen({ navigation }: Props) {
           ))
         ) : (
           <EmptyState
-            title="No visited stores yet"
-            body="Review dishes to add stalls to this list."
+            title="No visited stalls yet"
+            body="Mark stalls or dishes as tried to add them to this list."
           />
         )}
-      </ScrollView>
+      </View>
     </ProfileScreenShell>
   );
 }

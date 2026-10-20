@@ -30,7 +30,7 @@ export function MerchantClaimExplainerScreen({ navigation }: Props) {
       <Pressable
         onPress={() => navigation.goBack()}
         style={{
-          ...StyleSheet.absoluteFillObject,
+          ...StyleSheet.absoluteFill,
           backgroundColor: palette.overlay,
         }}
         accessibilityRole="button"
@@ -54,6 +54,7 @@ export function MerchantClaimExplainerScreen({ navigation }: Props) {
             onPress={() => navigation.goBack()}
             accessibilityRole="button"
             accessibilityLabel="Close claim verification"
+            hitSlop={13}
           >
             <X size={18} color={palette.text} />
           </Pressable>

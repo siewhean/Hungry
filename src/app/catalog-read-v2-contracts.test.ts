@@ -22,16 +22,12 @@ test("search and browse read only the paged catalog (no legacy path or flag)", (
     source,
     /export function BrowseStallsScreen\(\)[\s\S]*<RawCatalogBrowseGrid mode="stalls"/,
   );
-  assert.match(source, /const storedQuery = useSearchStore\(\(state\) => state\.filters\.query\)/);
+  // Results read only route params: a persisted query or category never leaks into a new search.
+  assert.doesNotMatch(source, /useSearchStore|storedQuery/);
+  assert.match(source, /initialSearchQuery=\{route\.params\?\.initialQuery \?\? ""\}/);
   assert.match(
     source,
-    /const selectedCategories = useSearchStore\(\(state\) => state\.filters\.categories\)/,
-  );
-  assert.match(source, /const storedCatalogCategory = selectedCategories\.find/);
-  assert.match(source, /initialSearchQuery=\{route\.params\?\.initialQuery \?\? storedQuery\}/);
-  assert.match(
-    source,
-    /initialFoodTypeTag=\{route\.params\?\.foodTypeTag \?\? storedCatalogCategory\}/,
+    /initialFilter=\{route\.params\?\.initialFilter \?\? route\.params\?\.foodTypeTag\}/,
   );
   assert.match(source, /request\.releaseId = cursor \? releaseIdRef\.current : undefined/);
   assert.match(

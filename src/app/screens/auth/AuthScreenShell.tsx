@@ -71,7 +71,7 @@ export function AuthScreenShell({
               <HungryLogo size={logoSize} showWordmark wordmarkColor={effectiveWordmarkColor} />
               <View style={{ alignItems: "center", gap: spacing[1] }}>
                 {title.trim().length > 0 ? (
-                  <AppText variant="h1" style={{ textAlign: "center", fontSize: 24 }}>
+                  <AppText variant="h1" accessibilityRole="header" style={{ textAlign: "center" }}>
                     {title}
                   </AppText>
                 ) : null}

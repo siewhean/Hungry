@@ -262,7 +262,10 @@ export async function getDiscoverBitesFromSearch(
   return results
     .map((result) => result.dish)
     .filter((dish) => (maxPrice ? dish.price <= maxPrice : true))
-    .map((dish, index) => dishToBite(dish, undefined, index));
+    .map((dish, index) => ({
+      ...dishToBite(dish, undefined, index),
+      distanceMeters: dish.distanceMeters,
+    }));
 }
 
 export function syncBiteWithDish(
@@ -289,11 +292,13 @@ export function syncBiteWithDish(
   };
 }
 
+/** Distance in metres, or undefined when nothing measured it (never a fake 0m). */
 export function getDiscoverBiteDistance(
   bite: Bite,
   repository: DataRepository = getDataRepository(),
-) {
-  return repository.getDishById(bite.dishId)?.distanceMeters ?? 0;
+): number | undefined {
+  const distance = bite.distanceMeters ?? repository.getDishById(bite.dishId)?.distanceMeters;
+  return typeof distance === "number" && distance > 0 ? distance : undefined;
 }
 
 export function getDiscoverBiteCollection(

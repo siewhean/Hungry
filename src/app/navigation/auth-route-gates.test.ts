@@ -10,7 +10,8 @@ test("order and wheel join links resolve for signed-in users when their surfaces
   assert.equal(linking.getStateFromPath("order")?.routes?.[0]?.name, "Post");
   assert.deepEqual(linking.getStateFromPath("join/SAFE_CODE")?.routes?.[0], {
     name: "WheelStack",
-    params: { code: "SAFE_CODE" },
+    // WheelHome reads the join code from its own params.
+    params: { screen: "WheelHome", params: { code: "SAFE_CODE" } },
   });
 });
 

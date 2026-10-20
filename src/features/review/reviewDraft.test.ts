@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { REVIEW_TEXT_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSanitization";
-import { useReviewDraftStore } from "@/store/useReviewDraftStore";
+import { REVIEW_MAX_PHOTOS, useReviewDraftStore } from "@/store/useReviewDraftStore";
 import {
   createClientReviewId,
   createInitialReviewDraft,
@@ -118,4 +118,22 @@ test("sanitizeFreeText strips markup and trims at submit but keeps words and lin
   );
   assert.equal(sanitizeFreeText("one   two\t three", 500), "one two three");
   assert.equal(sanitizeFreeText("abc def", 4), "abc");
+});
+
+test("review photos are capped and a duplicate pick is ignored", () => {
+  const store = useReviewDraftStore;
+  store.getState().resetDraft();
+  store.getState().addPhoto("file:///a.jpg");
+  store.getState().addPhoto("file:///a.jpg");
+  assert.deepEqual(store.getState().draft.photos, ["file:///a.jpg"]);
+
+  for (let index = 0; index < 10; index += 1) {
+    store.getState().addPhoto(`file:///photo-${index}.jpg`);
+  }
+  assert.equal(store.getState().draft.photos.length, REVIEW_MAX_PHOTOS);
+
+  // One remove tap removes one photo.
+  store.getState().removePhoto("file:///a.jpg");
+  assert.equal(store.getState().draft.photos.length, REVIEW_MAX_PHOTOS - 1);
+  store.getState().resetDraft();
 });

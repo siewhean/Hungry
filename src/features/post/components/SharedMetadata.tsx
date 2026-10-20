@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Pressable, StyleSheet, Alert } from "react-native";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 import { MapPin, Users, Hash, ChevronRight } from "lucide-react-native";
 import { AppText, Card, Chip, IconButton } from "@/components/ui";
 import { useHungryTheme } from "@/theme";

@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Pressable, View } from "react-native";
-import { Heart, MessageCircleMore, PencilLine, Send, Utensils } from "lucide-react-native";
+import { Alert, Pressable, View } from "react-native";
+import {
+  MessageCircleMore,
+  MoreHorizontal,
+  PencilLine,
+  UserCheck,
+  Users,
+  Utensils,
+} from "lucide-react-native";
 
 import {
   AccessibleImage,
@@ -14,6 +21,8 @@ import {
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { listSharedStallPosts, mergeStallPosts } from "@/features/social/sharedStallPosts";
 import { biteToStallPost } from "@/lib/services/postTransforms";
+import { promptContentSafetyActions } from "@/lib/security/communitySafety";
+import { useProfileStore } from "@/store/useProfileStore";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
 import { useSocialStore } from "@/store/useSocialStore";
@@ -84,6 +93,9 @@ export function UserProfileContent({
   // Posts, reviews and follows are matched only by account id: display names are not unique.
   const normalizedAuthorId = authorId?.trim() || undefined;
   const resolvedAuthorId = normalizedAuthorId;
+  const viewerId = useProfileStore((state) => state.profile.id);
+  // Your own posts can link here: never offer Follow, Report or Block on yourself.
+  const isSelf = Boolean(resolvedAuthorId && resolvedAuthorId === viewerId);
 
   const openProfileConnections = useCallback(
     (target: "UserFollowers" | "UserFollowing") => {
@@ -235,7 +247,45 @@ export function UserProfileContent({
     : isFollowingAuthor
       ? "Following"
       : "Follow";
-  const canShowFollowButton = Boolean(resolvedAuthorId);
+  const canShowFollowButton = Boolean(resolvedAuthorId) && !isSelf;
+  const handleFollowPress = () => {
+    if (!resolvedAuthorId) return;
+    if (
+      !requireAccount("Sign in to follow people.", {
+        name: "UserProfile",
+        params: { authorName, authorAvatarUrl, authorId },
+      })
+    ) {
+      return;
+    }
+    if (!isFollowingAuthor) {
+      toggleFollow(resolvedAuthorId);
+      return;
+    }
+    // Unfollowing is easy to mis-tap, so it asks first.
+    Alert.alert(`Unfollow ${authorName}?`, undefined, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Unfollow",
+        style: "destructive",
+        onPress: () => toggleFollow(resolvedAuthorId),
+      },
+    ]);
+  };
+  const openProfileSafetyActions = () => {
+    if (!resolvedAuthorId) return;
+    promptContentSafetyActions({
+      targetType: "profile",
+      targetId: resolvedAuthorId,
+      authorName,
+      authorId: resolvedAuthorId,
+      label: "profile",
+      onBlocked: () => {
+        setFollowedUserId(resolvedAuthorId, false);
+        if (navigation?.canGoBack?.()) navigation.goBack();
+      },
+    });
+  };
   const loadedFollowState =
     serverFollowState && serverFollowState.userId === resolvedAuthorId ? serverFollowState : null;
   // No account id (name-only author): there is no server follow data to show.
@@ -258,7 +308,23 @@ export function UserProfileContent({
   const activeItemsCount = activeTab === "posts" ? posts.length : reviews.length;
 
   return (
-    <ProfileScreenShell title={authorName}>
+    <ProfileScreenShell
+      title={authorName}
+      headerRight={
+        resolvedAuthorId && !isSelf ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`More options for ${authorName}`}
+            accessibilityHint="Report or block this user"
+            hitSlop={8}
+            onPress={openProfileSafetyActions}
+            style={{ alignItems: "center", height: 44, justifyContent: "center", width: 44 }}
+          >
+            <MoreHorizontal color={palette.text} size={22} />
+          </Pressable>
+        ) : undefined
+      }
+    >
       <View style={{ gap: spacing[4], paddingBottom: spacing[8] }}>
         <View
           style={{
@@ -299,24 +365,13 @@ export function UserProfileContent({
                 }
                 accessibilityHint={isFollowRequested ? "Cancels your follow request" : undefined}
                 hitSlop={8}
-                onPress={() => {
-                  if (!resolvedAuthorId) return;
-                  if (
-                    !requireAccount("Sign in to follow people.", {
-                      name: "UserProfile",
-                      params: { authorName, authorAvatarUrl, authorId },
-                    })
-                  ) {
-                    return;
-                  }
-                  toggleFollow(resolvedAuthorId);
-                }}
+                onPress={handleFollowPress}
                 style={{
                   alignItems: "center",
                   borderRadius: componentRadii.button,
                   borderWidth: 1,
                   justifyContent: "center",
-                  minHeight: 30,
+                  minHeight: 36,
                   minWidth: 92,
                   paddingHorizontal: spacing[3],
                   marginTop: spacing[1],
@@ -351,14 +406,14 @@ export function UserProfileContent({
             <View style={{ gap: spacing[4] }}>
               <View style={{ flexDirection: "row", gap: spacing[2] }}>
                 <StatBlock
-                  icon={<Heart color={palette.orange} size={14} />}
+                  icon={<Users color={palette.orange} size={14} />}
                   label="Followers"
                   value={followersCount}
                   accessibilityHint={`Opens ${authorName}'s followers`}
                   onPress={() => openProfileConnections("UserFollowers")}
                 />
                 <StatBlock
-                  icon={<Send color={palette.orange} size={14} />}
+                  icon={<UserCheck color={palette.orange} size={14} />}
                   label="Following"
                   value={followingCount}
                   accessibilityHint={`Opens the people ${authorName} follows`}
@@ -383,7 +438,7 @@ export function UserProfileContent({
             </View>
 
             <View style={{ gap: spacing[4], marginTop: spacing[2] }}>
-              <AppText variant="h2">Posts</AppText>
+              <AppText variant="h2">{activeTab === "posts" ? "Posts" : "Reviews"}</AppText>
               <View
                 accessibilityRole="tablist"
                 style={{

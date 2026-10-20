@@ -24,6 +24,12 @@ test("Discover map keeps left-edge swipe back enabled", () => {
   assert.match(homeMap, /navigation\.canGoBack\(\)/);
   assert.match(homeMap, /navigation\.goBack\(\)/);
   assert.match(homeMap, /\{\.\.\.edgeBackPanResponder\.panHandlers\}/);
-  assert.match(homeMap, /styles\.edgeBackGestureZone/);
-  assert.match(homeMap, /width: Math\.max\(28, insets\.left \+ 24\)/);
+  // No overlay strip: the root captures only a horizontal move that starts at the edge,
+  // so taps on the map, legend and cards are never swallowed.
+  assert.doesNotMatch(homeMap, /edgeBackGestureZone|pointerEvents="box-only"/);
+  assert.match(homeMap, /const edgeBackZoneWidth = Math\.max\(28, insets\.left \+ 24\)/);
+  assert.match(
+    homeMap,
+    /onMoveShouldSetPanResponderCapture:[\s\S]*gestureState\.x0 <= edgeBackZoneWidth/,
+  );
 });

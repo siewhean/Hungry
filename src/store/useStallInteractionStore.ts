@@ -11,7 +11,11 @@
 import { create } from "zustand";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useFoodCredStore } from "./useFoodCredStore";
-import { trackStallSaved, trackStallMarkedTried } from "@/lib/analytics/gamificationEvents";
+import {
+  trackStallSaved,
+  trackStallMarkedTried,
+  type StallInteractionSourceScreen,
+} from "@/lib/analytics/gamificationEvents";
 import { withinCredCutoff } from "@/constants/gamificationLimits";
 import type { StallInteraction } from "@/types/domain";
 
@@ -37,6 +41,7 @@ interface StallInteractionState {
   markTried: (
     userId: string,
     stallId: string,
+    sourceScreen?: StallInteractionSourceScreen,
   ) => Promise<{
     isTried: boolean;
     pointsAwarded: number;
@@ -123,7 +128,7 @@ export const useStallInteractionStore = create<StallInteractionState>()((set, ge
     }
   },
 
-  markTried: async (userId, stallId) => {
+  markTried: async (userId, stallId, sourceScreen = "StallDetail") => {
     const existing = get().interactions[stallId];
     const shouldUnmark = existing?.isTried ?? false;
     const now = new Date().toISOString();
@@ -164,7 +169,7 @@ export const useStallInteractionStore = create<StallInteractionState>()((set, ge
         pointsAwarded = useFoodCredStore.getState().lastEarnedPoints;
       }
 
-      trackStallMarkedTried({ stallId, sourceScreen: "StallDetail" });
+      trackStallMarkedTried({ stallId, sourceScreen });
     }
 
     return {

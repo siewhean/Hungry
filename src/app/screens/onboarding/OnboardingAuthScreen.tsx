@@ -13,9 +13,10 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Controller, useForm } from "react-hook-form";
 import { Eye, EyeOff, Mail, Lock, User } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 
 import { AppText, Button, Input } from "@/components/ui";
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
 import { trackAuthFailed, trackAuthScreenViewed } from "@/features/auth/authAnalytics";
@@ -35,7 +36,7 @@ import { AuthProviderButton } from "../auth/AuthProviderButton";
 import { PasswordRequirements } from "../auth/PasswordRequirements";
 import {
   AUTH_COPY,
-  getAuthProviderUnavailableMessage,
+  getProviderErrorMessage,
   getSignUpProviderSuccessMessage,
   type AuthProvider,
 } from "../auth/authCopy";
@@ -63,6 +64,7 @@ export function OnboardingAuthScreen({ navigation }: Props) {
   const showToast = useUIStore((s) => s.showToast);
   const completeAuth = useSessionStore((s) => s.completeAuth);
   const completeOnboarding = useSessionStore((s) => s.completeOnboarding);
+  const reduceMotion = useReduceMotion();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
@@ -72,18 +74,23 @@ export function OnboardingAuthScreen({ navigation }: Props) {
   }, []);
 
   useEffect(() => {
+    const duration = reduceMotion ? 0 : 320;
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 320, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 320, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration, useNativeDriver: true }),
     ]).start();
-  }, [fadeAnim, slideAnim]);
+  }, [fadeAnim, reduceMotion, slideAnim]);
 
   // Animate tab switch
   const tabAnim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     tabAnim.setValue(0);
-    Animated.timing(tabAnim, { toValue: 1, duration: 200, useNativeDriver: true }).start();
-  }, [tab, tabAnim]);
+    Animated.timing(tabAnim, {
+      toValue: 1,
+      duration: reduceMotion ? 0 : 200,
+      useNativeDriver: true,
+    }).start();
+  }, [reduceMotion, tab, tabAnim]);
 
   const signUpForm = useForm<SignUpValues>({
     defaultValues: { displayName: "", email: "", password: "" },
@@ -98,6 +105,12 @@ export function OnboardingAuthScreen({ navigation }: Props) {
 
   const finishOnboarding = () => {
     completeOnboarding();
+  };
+
+  const openForgotPassword = () => {
+    navigation
+      .getParent<NavigationProp<RootStackParamList>>()
+      ?.navigate("AuthStack", { screen: "ForgotPassword" });
   };
 
   const applySessionProfile = async (
@@ -185,7 +198,16 @@ export function OnboardingAuthScreen({ navigation }: Props) {
       finishOnboarding();
     } catch (err) {
       trackAuthFailed("sign_in", "email", err);
-      showToast({ message: AUTH_COPY.signUp.genericErrorToast, tone: "error" });
+      const code =
+        (err as { error_code?: string; code?: string })?.error_code ??
+        (err as { error_code?: string; code?: string })?.code;
+      const message =
+        code === "invalid_credentials"
+          ? AUTH_COPY.login.invalidCredentialsToast
+          : code === "email_not_confirmed"
+            ? AUTH_COPY.login.emailNotConfirmedToast
+            : AUTH_COPY.login.genericErrorToast;
+      showToast({ message, tone: "error" });
     }
   });
 
@@ -208,16 +230,14 @@ export function OnboardingAuthScreen({ navigation }: Props) {
       finishOnboarding();
     } catch (err) {
       trackAuthFailed("sign_up", provider, err);
-      const message = (err as { message?: string })?.message?.toLowerCase() ?? "";
-      if (message.includes("provider is not enabled")) {
-        showToast({ message: getAuthProviderUnavailableMessage(provider), tone: "error" });
-        return;
-      }
-      if (message.includes("cancelled")) {
-        showToast({ message: AUTH_COPY.signUp.providerCancelledToast, tone: "warning" });
-        return;
-      }
-      showToast({ message: AUTH_COPY.signUp.genericErrorToast, tone: "error" });
+      const message = getProviderErrorMessage(err, provider, {
+        cancelled: AUTH_COPY.signUp.providerCancelledToast,
+        failed: AUTH_COPY.signUp.genericErrorToast,
+      });
+      showToast({
+        message,
+        tone: message === AUTH_COPY.signUp.providerCancelledToast ? "warning" : "error",
+      });
     } finally {
       setProviderInFlight(null);
     }
@@ -256,19 +276,15 @@ export function OnboardingAuthScreen({ navigation }: Props) {
           }}
         >
           {/* Header */}
-          <View style={{ marginBottom: 28 }}>
+          <View style={{ marginBottom: spacing[6] }}>
             <AppText
-              style={{
-                fontFamily: "Fraunces_700Bold",
-                fontSize: 32,
-                lineHeight: 38,
-                color: palette.text,
-                marginBottom: 6,
-              }}
+              variant="display"
+              accessibilityRole="header"
+              style={{ marginBottom: spacing[1] }}
             >
               {"Save your\ntaste profile"}
             </AppText>
-            <AppText style={{ color: palette.textSecondary, fontSize: 14, lineHeight: 20 }}>
+            <AppText variant="bodySmall" tone="secondary">
               Create an account to keep your preferences and discover more.
             </AppText>
           </View>
@@ -291,18 +307,16 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                 accessibilityState={{ selected: tab === t }}
                 style={{
                   flex: 1,
-                  paddingVertical: 9,
+                  justifyContent: "center",
+                  minHeight: 44,
                   borderRadius: 9,
                   alignItems: "center",
                   backgroundColor: tab === t ? palette.surface : "transparent",
                 }}
               >
                 <AppText
-                  style={{
-                    fontFamily: tab === t ? "Nunito_700Bold" : "Nunito_400Regular",
-                    fontSize: 14,
-                    color: tab === t ? palette.text : palette.textSecondary,
-                  }}
+                  variant={tab === t ? "bodyBold" : "body"}
+                  tone={tab === t ? "default" : "secondary"}
                 >
                   {t === "signup" ? "Create account" : "Sign in"}
                 </AppText>
@@ -525,6 +539,18 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                     </View>
                   )}
                 />
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={AUTH_COPY.login.forgotPasswordLink}
+                  accessibilityHint="Opens password reset"
+                  onPress={openForgotPassword}
+                  hitSlop={8}
+                  style={{ alignSelf: "flex-end", justifyContent: "center", minHeight: 44 }}
+                >
+                  <AppText variant="bodySmall" tone="accent">
+                    {AUTH_COPY.login.forgotPasswordLink}
+                  </AppText>
+                </Pressable>
                 <Button
                   label="Sign in"
                   onPress={handleLogin}

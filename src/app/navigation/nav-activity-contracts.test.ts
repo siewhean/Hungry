@@ -84,7 +84,16 @@ test("activity routes remain feature-gated with direct messages separately gated
     home,
     /preloadRoute\(navigation, "ActivityInbox", \{ initialTab: activityInitialTab \}\)/,
   );
-  assert.match(home, /import \{ getActivityUnreadCount \} from "@\/features\/home\/activity"/);
+  assert.match(
+    home,
+    /import \{ getActivityUnreadCount, selectActivitySourceUpdates \} from "@\/features\/home\/activity"/,
+  );
+  // The bell and the inbox count the same updates for the same viewer.
+  assert.match(
+    home,
+    /selectActivitySourceUpdates\(serviceProviderMode, dbActivityEvents, activityUpdates\)/,
+  );
+  assert.match(activity, /isActivityUpdateForViewer\(update, userId\)/);
   assert.match(
     home,
     /const dbActivityEvents = useActivityStore\(\(state\) => state\.dbActivityEvents\)/,
@@ -92,10 +101,6 @@ test("activity routes remain feature-gated with direct messages separately gated
   assert.match(
     home,
     /const fetchActivityEvents = useActivityStore\(\(state\) => state\.fetchActivityEvents\)/,
-  );
-  assert.match(
-    home,
-    /serviceProviderMode === "mock"[\s\S]*\? activityUpdates[\s\S]*: \[\.\.\.dbActivityEvents, \.\.\.activityUpdates\]/,
   );
   assert.match(home, /void fetchActivityEvents\(\)/);
   assert.match(home, /getHungryService\(\)[\s\S]*\.chat\.listConversations\(\)/);
@@ -125,7 +130,11 @@ test("activity routes remain feature-gated with direct messages separately gated
   );
   assert.match(
     activity,
-    /getServiceProvider\(\)\.mode === "mock"[\s\S]*\[\.\.\.ACTIVITY_UPDATES, \.\.\.activityUpdates\][\s\S]*\[\.\.\.dbActivityEvents, \.\.\.activityUpdates\]/,
+    /selectActivitySourceUpdates\(\s*getServiceProvider\(\)\.mode,\s*dbActivityEvents,\s*activityUpdates,\s*\)/,
+  );
+  assert.match(
+    activityData,
+    /mode === "mock"\s*\? \[\.\.\.ACTIVITY_UPDATES, \.\.\.localActivityUpdates\]\s*: \[\.\.\.dbActivityEvents, \.\.\.localActivityUpdates\]/,
   );
   assert.match(activity, /visibleUpdates/);
   assert.match(activity, /stylesInline\.kindBadge/);
@@ -138,7 +147,11 @@ test("activity routes remain feature-gated with direct messages separately gated
   assert.match(activity, /getHungryService\(\)[\s\S]*\.chat[\s\S]*\.listConversations\(\)/);
   assert.match(activity, /type \{ ChatConversation \}/);
   assert.match(activity, /conversation\.unreadCount/);
-  assert.match(activity, /void getHungryService\(\)\.chat\.markConversationRead\(chatId\)/);
+  // A failed mark-read is caught, never an unhandled rejection.
+  assert.match(
+    activity,
+    /void getHungryService\(\)\s*\.chat\.markConversationRead\(chatId\)\s*\.catch\(/,
+  );
   assert.match(activity, /<UnreadCountBadge/);
   assert.match(activity, /accessibilityLabel=\{`\$\{unreadCount\} unread messages`\}/);
   assert.match(activity, /stylesInline\.unreadCountBadge/);

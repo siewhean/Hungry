@@ -1,7 +1,11 @@
-import React, { useCallback, useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect, useMemo } from "react";
 import { View, StyleSheet, Alert, Pressable } from "react-native";
-import { Calendar, X } from "lucide-react-native";
+import { X } from "lucide-react-native";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
+import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+
+import { PromotionDateField } from "@/components/merchant/PromotionDateField";
+import { CustomerPromotionCard } from "@/components/promotion/CustomerPromotionCard";
 
 import {
   AppText,
@@ -22,10 +26,9 @@ import type {
   PromotionStatus,
 } from "@/types/domain";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
-import {
-  getPromotionPricing,
-  resolvePromotionRuntimeStatus,
-} from "@/features/merchant/merchantReadiness";
+import { resolvePromotionRuntimeStatus } from "@/features/merchant/merchantReadiness";
+import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
+import { useUnsavedChangesGuard } from "@/features/merchant/useUnsavedChangesGuard";
 import {
   promotionBoundaryToDateOnly,
   toSingaporeDateOnly,
@@ -41,11 +44,24 @@ const PROMOTION_ITEM_TYPE_OPTIONS: readonly { id: PromotionItemType; label: stri
   { id: "existing_menu_item", label: "Existing menu item" },
 ];
 
+/** Discount implied by the two prices, so the merchant never has to make three fields agree. */
+function computeDiscount(originalPrice: string, finalPrice: string): number | undefined {
+  const original = Number(originalPrice);
+  const final = Number(finalPrice);
+  if (!originalPrice || !finalPrice || !Number.isFinite(original) || !Number.isFinite(final)) {
+    return undefined;
+  }
+  if (original <= 0 || final < 0 || final > original) return undefined;
+  return Math.round(((original - final) / original) * 100);
+}
+
 export function PromotionBuilderScreen() {
   const { componentRadii, palette, spacing } = useHungryTheme();
-  const navigation = useNavigation();
+  const navigation = useNavigation<BottomTabNavigationProp<MerchantTabParamList>>();
   const route = useRoute<RouteProps>();
   const promotionId = route.params?.promotionId;
+  // "Duplicate" opens a new draft prefilled from another promotion.
+  const duplicateFromId = promotionId ? undefined : route.params?.duplicateFromId;
   const activeOutlet = useMerchantStore(getActiveOutlet);
   const updateOutletProfile = useMerchantStore((state) => state.updateOutletProfile);
 
@@ -73,6 +89,7 @@ export function PromotionBuilderScreen() {
     new Set(["nearby_users"]),
   );
   const [dateErrors, setDateErrors] = useState({ start: false, end: false });
+  const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
 
   const loadPromotion = useCallback(async () => {
     setError(null);
@@ -90,15 +107,19 @@ export function PromotionBuilderScreen() {
         getHungryService().merchant.getMenu(activeOutlet.id),
       ]);
       setMenu(menuItems);
-      if (!promotionId) return;
-      const promo = promos.find((p) => p.id === promotionId);
+      const sourceId = promotionId ?? duplicateFromId;
+      if (!sourceId) return;
+      const promo = promos.find((p) => p.id === sourceId);
       if (promo) {
         setTitle(promo.title);
         setDescription(promo.description);
         setTargetDishId(promo.targetDishId);
-        setStartDate(promotionBoundaryToDateOnly(promo.startDate, "start"));
-        setEndDate(promotionBoundaryToDateOnly(promo.endDate, "end"));
-        setStatus(promo.status);
+        // A duplicate keeps the content but starts as a fresh draft on the default dates.
+        if (promotionId) {
+          setStartDate(promotionBoundaryToDateOnly(promo.startDate, "start"));
+          setEndDate(promotionBoundaryToDateOnly(promo.endDate, "end"));
+          setStatus(promo.status);
+        }
         setTargetAudiences(new Set(promo.targetAudience));
         setPromotionItemType(promo.promotionItemType ?? "new_item");
         setOriginalPrice(promo.originalPrice?.toString() ?? "");
@@ -113,11 +134,104 @@ export function PromotionBuilderScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [promotionId, activeOutlet]);
+  }, [promotionId, duplicateFromId, activeOutlet]);
 
   useEffect(() => {
     void loadPromotion();
   }, [loadPromotion]);
+
+  const computedDiscount = computeDiscount(originalPrice, promotionalPrice);
+  const formSnapshot = useMemo(
+    () =>
+      JSON.stringify([
+        title,
+        description,
+        targetDishId,
+        promotionItemType,
+        originalPrice,
+        promotionalPrice,
+        discountPercentage,
+        isAvailable,
+        startDate,
+        endDate,
+      ]),
+    [
+      title,
+      description,
+      targetDishId,
+      promotionItemType,
+      originalPrice,
+      promotionalPrice,
+      discountPercentage,
+      isAvailable,
+      startDate,
+      endDate,
+    ],
+  );
+  useEffect(() => {
+    if (!isLoading && savedSnapshot === null) setSavedSnapshot(formSnapshot);
+  }, [formSnapshot, isLoading, savedSnapshot]);
+  const isDirty = savedSnapshot !== null && savedSnapshot !== formSnapshot && !isSaving;
+  const leaveEditor = useCallback(() => navigation.goBack(), [navigation]);
+  const confirmLeave = useUnsavedChangesGuard(isDirty, leaveEditor);
+  const runtimeStatus = resolvePromotionRuntimeStatus({
+    startDate: toSingaporePromotionBoundary(startDate, "start"),
+    endDate: toSingaporePromotionBoundary(endDate, "end"),
+    status,
+  });
+
+  const runPromotionAction = async (action: () => Promise<unknown>, failureTitle: string) => {
+    setIsSaving(true);
+    try {
+      await action();
+      setSavedSnapshot(formSnapshot);
+      navigation.goBack();
+    } catch (e) {
+      Alert.alert(failureTitle, e instanceof Error ? e.message : "Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEndNow = () => {
+    if (!promotionId) return;
+    Alert.alert("End promotion now?", "Diners will stop seeing it straight away.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "End now",
+        style: "destructive",
+        onPress: () =>
+          void runPromotionAction(
+            () => getHungryService().merchant.updatePromotion(promotionId, { status: "ended" }),
+            "Could not end promotion",
+          ),
+      },
+    ]);
+  };
+
+  const handleMoveToDrafts = () => {
+    if (!promotionId) return;
+    void runPromotionAction(
+      () => getHungryService().merchant.updatePromotion(promotionId, { status: "draft" }),
+      "Could not move promotion to drafts",
+    );
+  };
+
+  const handleDelete = () => {
+    if (!promotionId) return;
+    Alert.alert("Delete promotion?", "This permanently removes it and its numbers.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () =>
+          void runPromotionAction(
+            () => getHungryService().merchant.deletePromotion(promotionId),
+            "Could not delete promotion",
+          ),
+      },
+    ]);
+  };
 
   const handleSave = async (publish: boolean) => {
     if (!activeOutlet) return;
@@ -141,7 +255,9 @@ export function PromotionBuilderScreen() {
     try {
       const parsedOriginalPrice = originalPrice ? Number(originalPrice) : undefined;
       const parsedPromotionalPrice = promotionalPrice ? Number(promotionalPrice) : undefined;
-      const parsedDiscount = discountPercentage ? Number(discountPercentage) : undefined;
+      // With both prices set the discount is derived from them; otherwise it is typed.
+      const parsedDiscount =
+        computedDiscount ?? (discountPercentage ? Number(discountPercentage) : undefined);
       if (
         [parsedOriginalPrice, parsedPromotionalPrice, parsedDiscount].some(
           (value) => value !== undefined && !Number.isFinite(value),
@@ -178,7 +294,16 @@ export function PromotionBuilderScreen() {
         await getHungryService().merchant.updatePromotion(promotionId, promoData);
       } else {
         await getHungryService().merchant.createPromotion(activeOutlet.id, promoData);
+        trackMerchantEvent("merchant_promotion_created", activeOutlet.id, {
+          duplicated: Boolean(duplicateFromId),
+        });
       }
+      if (publish) {
+        trackMerchantEvent("merchant_promotion_published", activeOutlet.id, {
+          status: newStatus,
+        });
+      }
+      setSavedSnapshot(formSnapshot);
 
       if (publish && !activeOutlet.isLive) {
         // Diners only see promotions of stalls shown on Hungry: offer the one-tap fix.
@@ -222,8 +347,8 @@ export function PromotionBuilderScreen() {
 
   if (isLoading) {
     return (
-      <Screen title="Loading...">
-        <AppText>Fetching promotion details...</AppText>
+      <Screen title={promotionId ? "Edit Promotion" : "New Promotion"}>
+        <AppText tone="muted">Loading promotion details...</AppText>
       </Screen>
     );
   }
@@ -260,13 +385,13 @@ export function PromotionBuilderScreen() {
     originalPrice: originalPrice ? Number(originalPrice) : selectedDish?.price,
     promotionalPrice: promotionalPrice ? Number(promotionalPrice) : undefined,
     finalPrice: promotionalPrice ? Number(promotionalPrice) : selectedDish?.price,
-    discountPercentage: discountPercentage ? Number(discountPercentage) : undefined,
+    discountPercentage:
+      computedDiscount ?? (discountPercentage ? Number(discountPercentage) : undefined),
     isAvailable,
   };
-  const pricePreview = getPromotionPricing(previewPromotion);
 
   return (
-    <Screen title={promotionId ? "Edit Promotion" : "New Promotion"}>
+    <Screen title={promotionId ? "Edit Promotion" : "New Promotion"} onBackPress={confirmLeave}>
       <View style={{ gap: spacing[5], width: "100%" }}>
         {/* Preview Card */}
         <View>
@@ -277,55 +402,21 @@ export function PromotionBuilderScreen() {
           >
             Preview
           </AppText>
-          <View
-            style={[
-              styles.previewCard,
-              {
-                backgroundColor: palette.surface,
-                borderColor: palette.orange,
-                borderRadius: componentRadii.card,
-                padding: spacing[4],
-              },
-            ]}
+          {/* The same card diners see on the stall page. */}
+          <CustomerPromotionCard
+            promotion={{
+              ...previewPromotion,
+              title: title || "Your Promotion Title",
+              description:
+                description || "Add a description to tell customers why they should visit.",
+            }}
+          />
+          <AppText
+            variant="micro"
+            style={{ color: palette.orangeText, marginTop: spacing[2], fontWeight: "bold" }}
           >
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: spacing[2],
-                marginBottom: spacing[2],
-              }}
-            >
-              <View
-                style={{
-                  backgroundColor: palette.orange,
-                  paddingHorizontal: 8,
-                  paddingVertical: 4,
-                  borderRadius: componentRadii.button,
-                }}
-              >
-                <AppText variant="bodySmallBold" style={{ color: palette.white }}>
-                  PROMO
-                </AppText>
-              </View>
-              <AppText variant="bodySmall" tone="muted">
-                {activeOutlet?.name}
-              </AppText>
-            </View>
-            <AppText variant="bodyBold">{title || "Your Promotion Title"}</AppText>
-            <AppText variant="body" tone="muted" style={{ marginTop: 4 }}>
-              {description || "Add a description to tell customers why they should visit."}
-            </AppText>
-            <AppText
-              variant="micro"
-              style={{ color: palette.orange, marginTop: spacing[2], fontWeight: "bold" }}
-            >
-              Valid {startDate} to {endDate}
-            </AppText>
-            <AppText variant="bodySmallBold" style={{ marginTop: spacing[2], color: palette.text }}>
-              {pricePreview.label}
-            </AppText>
-          </View>
+            Valid {startDate} to {endDate} (Singapore time)
+          </AppText>
         </View>
 
         <View>
@@ -364,6 +455,9 @@ export function PromotionBuilderScreen() {
               {menu.map((dish) => (
                 <Pressable
                   key={dish.id}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: targetDishId === dish.id }}
+                  accessibilityLabel={`${dish.name}, ${dish.priceRange}`}
                   onPress={() => {
                     setTargetDishId(dish.id);
                     setOriginalPrice(dish.price.toString());
@@ -413,13 +507,25 @@ export function PromotionBuilderScreen() {
 
           <View style={{ flexDirection: "row", gap: spacing[3] }}>
             <View style={{ flex: 1 }}>
-              <Input
-                label="Discount %"
-                keyboardType="decimal-pad"
-                value={discountPercentage}
-                onChangeText={setDiscountPercentage}
-                placeholder="15"
-              />
+              {computedDiscount !== undefined ? (
+                <View style={{ gap: spacing[1] }}>
+                  <AppText variant="bodySmallBold">Discount</AppText>
+                  <AppText variant="bodyBold" accessibilityLiveRegion="polite">
+                    {computedDiscount}% off
+                  </AppText>
+                  <AppText variant="micro" tone="muted">
+                    Worked out from the two prices.
+                  </AppText>
+                </View>
+              ) : (
+                <Input
+                  label="Discount %"
+                  keyboardType="decimal-pad"
+                  value={discountPercentage}
+                  onChangeText={setDiscountPercentage}
+                  placeholder="15"
+                />
+              )}
             </View>
             <FormSwitchRow
               label="Available"
@@ -432,31 +538,26 @@ export function PromotionBuilderScreen() {
 
         <View style={{ flexDirection: "row", gap: spacing[3] }}>
           <View style={{ flex: 1 }}>
-            <Input
+            <PromotionDateField
               label="Start Date"
               value={startDate}
-              onChangeText={(text) => {
+              onChange={(text) => {
                 setStartDate(text);
                 setDateErrors((prev) => ({ ...prev, start: false }));
               }}
-              placeholder="YYYY-MM-DD"
-              leftIcon={<Calendar size={18} color={palette.textSecondary} />}
               error={dateErrors.start}
-              errorText="Format: YYYY-MM-DD"
             />
           </View>
           <View style={{ flex: 1 }}>
-            <Input
+            <PromotionDateField
               label="End Date"
               value={endDate}
-              onChangeText={(text) => {
+              minimumDate={startDate}
+              onChange={(text) => {
                 setEndDate(text);
                 setDateErrors((prev) => ({ ...prev, end: false }));
               }}
-              placeholder="YYYY-MM-DD"
-              leftIcon={<Calendar size={18} color={palette.textSecondary} />}
               error={dateErrors.end}
-              errorText="Format: YYYY-MM-DD"
             />
           </View>
         </View>
@@ -482,16 +583,47 @@ export function PromotionBuilderScreen() {
             disabled={isSaving}
           />
         </View>
+
+        {promotionId ? (
+          <View style={{ gap: spacing[2] }}>
+            {runtimeStatus === "active" ? (
+              <Button
+                label="End now"
+                variant="secondary"
+                onPress={handleEndNow}
+                disabled={isSaving}
+              />
+            ) : null}
+            {runtimeStatus === "scheduled" ? (
+              <Button
+                label="Move to drafts"
+                variant="secondary"
+                onPress={handleMoveToDrafts}
+                disabled={isSaving}
+              />
+            ) : null}
+            <Button
+              label="Duplicate"
+              variant="secondary"
+              onPress={() =>
+                navigation.navigate("PromotionBuilder", { duplicateFromId: promotionId })
+              }
+              disabled={isSaving}
+            />
+            <Button
+              label="Delete promotion"
+              variant="destructive"
+              onPress={handleDelete}
+              disabled={isSaving}
+            />
+          </View>
+        ) : null}
       </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  previewCard: {
-    borderWidth: 1,
-    borderStyle: "dashed",
-  },
   menuItemOption: {
     alignItems: "center",
     borderWidth: 1,

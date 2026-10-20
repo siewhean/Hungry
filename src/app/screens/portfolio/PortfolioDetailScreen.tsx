@@ -2,12 +2,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ArrowLeft, Flag, Plus, Share2 } from "lucide-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useShallow } from "zustand/react/shallow";
 
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import { PortfolioItemRow } from "@/components/portfolio";
 import { AppText, Button, Card, Input } from "@/components/ui";
 import { webShareUrl } from "@/constants/links";
-import { useItemLabels } from "@/features/checklistPortfolio/useItemLabels";
+import { formatPortfolioSummary, isPortfolioLive } from "@/features/checklistPortfolio/listLabels";
+import { useItemLabelsState } from "@/features/checklistPortfolio/useItemLabels";
 import { runListMutation } from "@/features/checklistPortfolio/runListMutation";
 import { shareLink, type ShareChannel } from "@/features/share/messagingShare";
 import { usePortfolioStore } from "@/store/usePortfolioStore";
@@ -19,9 +22,14 @@ type Props = NativeStackScreenProps<ProfileStackParamList, "PortfolioDetail">;
 
 const EMPTY_PORTFOLIO_ITEMS: PortfolioItem[] = [];
 
-function formatPortfolioItemLabel(item: PortfolioItem, labels: Record<string, string>) {
-  if (item.dishId) return labels[item.dishId] ?? "Deleted dish";
-  if (item.stallId) return labels[item.stallId] ?? "Deleted stall";
+function formatPortfolioItemLabel(
+  item: PortfolioItem,
+  labels: Record<string, string>,
+  labelsLoaded: boolean,
+) {
+  // Until the name lookup finishes, say so instead of flashing "Deleted dish".
+  if (item.dishId) return labels[item.dishId] ?? (labelsLoaded ? "Deleted dish" : "Loading…");
+  if (item.stallId) return labels[item.stallId] ?? (labelsLoaded ? "Deleted stall" : "Loading…");
   return "Portfolio item";
 }
 
@@ -40,10 +48,12 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
     portfolios,
     items,
     follows,
-    loadPortfolios,
+    refreshPortfolio,
+    checkFollowStatus,
     loadPortfolioItems,
     updatePortfolio,
     publishPortfolio,
+    deletePortfolio,
     deleteItem,
     reorderItems,
     followPortfolio,
@@ -51,7 +61,26 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
     flagPortfolio,
     conflicts,
     clearConflict,
-  } = usePortfolioStore();
+  } = usePortfolioStore(
+    useShallow((state) => ({
+      portfolios: state.portfolios,
+      items: state.items,
+      follows: state.follows,
+      refreshPortfolio: state.refreshPortfolio,
+      checkFollowStatus: state.checkFollowStatus,
+      loadPortfolioItems: state.loadPortfolioItems,
+      updatePortfolio: state.updatePortfolio,
+      publishPortfolio: state.publishPortfolio,
+      deletePortfolio: state.deletePortfolio,
+      deleteItem: state.deleteItem,
+      reorderItems: state.reorderItems,
+      followPortfolio: state.followPortfolio,
+      unfollowPortfolio: state.unfollowPortfolio,
+      flagPortfolio: state.flagPortfolio,
+      conflicts: state.conflicts,
+      clearConflict: state.clearConflict,
+    })),
+  );
   const portfolio = portfolios.find((entry) => entry.id === portfolioId);
   const conflict = conflicts[portfolioId];
   // Stable fallback: a new [] each render re-ran effects keyed on the items (render loop).
@@ -61,25 +90,45 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
   const [draftName, setDraftName] = useState(portfolio?.name ?? "");
   const [draftDescription, setDraftDescription] = useState(portfolio?.description ?? "");
   const [isSaving, setIsSaving] = useState(false);
+  const insets = useSafeAreaInsets();
+  const topSpacing = Math.max(insets.top, spacing[4]);
 
   useEffect(() => {
-    void loadPortfolios().catch((error) => console.error("Failed to load list:", error));
+    // Load just this list (not every list) and the viewer's follow state for it.
+    void refreshPortfolio(portfolioId).catch((error) =>
+      console.error("Failed to load list:", error),
+    );
     void loadPortfolioItems(portfolioId).catch((error) =>
       console.error("Failed to load list:", error),
     );
-  }, [loadPortfolioItems, loadPortfolios, portfolioId]);
+    void checkFollowStatus(portfolioId).catch((error) =>
+      console.error("Failed to load follow status:", error),
+    );
+  }, [checkFollowStatus, loadPortfolioItems, portfolioId, refreshPortfolio]);
 
   useEffect(() => {
     setDraftName(portfolio?.name ?? "");
     setDraftDescription(portfolio?.description ?? "");
   }, [portfolio?.description, portfolio?.name]);
 
-  const labels = useItemLabels(portfolioItems);
+  const { labels, isLoaded: labelsLoaded } = useItemLabelsState(portfolioItems);
 
-  const statsLabel = useMemo(() => {
-    const itemCount = portfolioItems.length;
-    return `${portfolio?.type ?? "portfolio"} · ${portfolio?.visibility ?? "private"} · ${itemCount} item${itemCount === 1 ? "" : "s"}`;
-  }, [portfolio?.type, portfolio?.visibility, portfolioItems.length]);
+  const statsLabel = useMemo(
+    () => (portfolio ? formatPortfolioSummary(portfolio, portfolioItems.length) : ""),
+    [portfolio, portfolioItems],
+  );
+  const isLive = portfolio ? isPortfolioLive(portfolio) : false;
+
+  const runOwnerAction = useCallback(async (action: () => Promise<void>) => {
+    setIsSaving(true);
+    try {
+      await action();
+    } catch (error) {
+      showPortfolioError(error);
+    } finally {
+      setIsSaving(false);
+    }
+  }, []);
 
   const saveMetadata = useCallback(async () => {
     if (!portfolio || !isOwner) return;
@@ -118,7 +167,12 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
 
   if (!portfolio) {
     return (
-      <View style={[styles.centered, { backgroundColor: palette.bg, padding: spacing[5] }]}>
+      <View
+        style={[
+          styles.centered,
+          { backgroundColor: palette.bg, padding: spacing[5], paddingTop: topSpacing },
+        ]}
+      >
         <AppText variant="h2">Portfolio not found</AppText>
         <Button
           label="Go back"
@@ -131,7 +185,7 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: palette.bg }}
+      style={{ flex: 1, backgroundColor: palette.bg, paddingTop: topSpacing }}
       contentContainerStyle={[styles.content, { gap: spacing[4], padding: spacing[4] }]}
     >
       <View style={styles.header}>
@@ -144,7 +198,9 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
           <ArrowLeft color={palette.text} size={22} />
         </Pressable>
         <View style={{ flex: 1 }}>
-          <AppText variant="h1">Hungry Portfolio</AppText>
+          <AppText variant="h1" numberOfLines={2}>
+            {portfolio.name}
+          </AppText>
           <AppText variant="bodySmall" tone="secondary">
             {statsLabel}
           </AppText>
@@ -216,20 +272,36 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
                 }
               />
               <Button
-                label={portfolio.publishedAt ? "Published" : "Publish"}
+                label={isLive ? "Unpublish" : "Publish"}
                 size="sm"
                 fullWidth={false}
-                variant={portfolio.publishedAt ? "secondary" : "primary"}
-                disabled={Boolean(portfolio.publishedAt) || isSaving}
-                onPress={async () => {
-                  setIsSaving(true);
-                  try {
-                    await publishPortfolio(portfolio.id);
-                  } catch (error) {
-                    showPortfolioError(error);
-                  } finally {
-                    setIsSaving(false);
+                variant={isLive ? "secondary" : "primary"}
+                disabled={isSaving}
+                onPress={() => {
+                  if (isLive) {
+                    Alert.alert("Unpublish this list?", "It goes back to private.", [
+                      { text: "Cancel", style: "cancel" },
+                      {
+                        text: "Unpublish",
+                        onPress: () =>
+                          void runOwnerAction(() =>
+                            updatePortfolio(portfolio.id, { visibility: "private" }),
+                          ),
+                      },
+                    ]);
+                    return;
                   }
+                  Alert.alert(
+                    "Publish this list?",
+                    "It becomes public: anyone with the link can see it.",
+                    [
+                      { text: "Cancel", style: "cancel" },
+                      {
+                        text: "Publish",
+                        onPress: () => void runOwnerAction(() => publishPortfolio(portfolio.id)),
+                      },
+                    ],
+                  );
                 }}
               />
               <Button
@@ -245,6 +317,27 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
                 fullWidth={false}
                 variant="secondary"
                 onPress={() => navigation.navigate("PortfolioCollaborators", { portfolioId })}
+              />
+              <Button
+                label="Delete"
+                size="sm"
+                fullWidth={false}
+                variant="secondary"
+                disabled={isSaving}
+                onPress={() => {
+                  Alert.alert("Delete this list?", "This can't be undone.", [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                      text: "Delete",
+                      style: "destructive",
+                      onPress: () =>
+                        void runOwnerAction(async () => {
+                          await deletePortfolio(portfolio.id);
+                          navigation.goBack();
+                        }),
+                    },
+                  ]);
+                }}
               />
             </>
           ) : (
@@ -313,7 +406,7 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
           <PortfolioItemRow
             key={item.id}
             item={item}
-            label={formatPortfolioItemLabel(item, labels)}
+            label={formatPortfolioItemLabel(item, labels, labelsLoaded)}
             index={index}
             totalCount={portfolioItems.length}
             isOwner={isOwner}

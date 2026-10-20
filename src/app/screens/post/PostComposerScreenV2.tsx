@@ -3,7 +3,7 @@ import { View, ScrollView, StyleSheet, Pressable } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { useHungryTheme } from "@/theme";

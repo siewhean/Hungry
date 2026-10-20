@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Alert, Linking } from "react-native";
 import { BellPlus, BellRing } from "lucide-react-native";
 
 import { Button } from "@/components/ui";
@@ -30,10 +31,21 @@ async function enableStallAlertsOnFirstFollow(): Promise<boolean> {
 interface FollowStallButtonProps {
   stallId: string;
   stallName: string;
+  /** False for guests: the button still shows, and a tap goes through onRequireAuth. */
+  isAuthenticated?: boolean;
+  onRequireAuth?: () => void;
+  /** Opens Hungry's own Settings screen (stall updates switch). */
+  onOpenAppSettings?: () => void;
 }
 
-/** Follow a stall to get opt-in alerts when its menu changes. Signed-in users only. */
-export function FollowStallButton({ stallId, stallName }: FollowStallButtonProps) {
+/** Follow a stall to get opt-in alerts when its menu changes. Guests are sent to sign in. */
+export function FollowStallButton({
+  stallId,
+  stallName,
+  isAuthenticated = true,
+  onRequireAuth,
+  onOpenAppSettings,
+}: FollowStallButtonProps) {
   const { palette } = useHungryTheme();
   const isLoaded = useStallFollowStore((state) => state.isLoaded);
   const isFollowing = useStallFollowStore((state) => state.followedStallIds.includes(stallId));
@@ -43,13 +55,17 @@ export function FollowStallButton({ stallId, stallName }: FollowStallButtonProps
   const [isPending, setIsPending] = useState(false);
 
   useEffect(() => {
-    if (!isLoaded) {
+    if (!isLoaded && isAuthenticated) {
       void loadFollowedStalls().catch(() => {});
     }
-  }, [isLoaded, loadFollowedStalls]);
+  }, [isAuthenticated, isLoaded, loadFollowedStalls]);
 
   const handlePress = async () => {
     if (isPending) return;
+    if (!isAuthenticated) {
+      onRequireAuth?.();
+      return;
+    }
     setIsPending(true);
     try {
       const isFirstFollow = useStallFollowStore.getState().followedStallIds.length === 0;
@@ -60,12 +76,33 @@ export function FollowStallButton({ stallId, stallName }: FollowStallButtonProps
       }
       if (FEATURE_FLAGS.stallAlertsEnabled && isFirstFollow) {
         const alertsOn = await enableStallAlertsOnFirstFollow().catch(() => false);
-        showToast({
-          message: alertsOn
-            ? `Following ${stallName}. We'll tell you when its menu changes.`
-            : `Following ${stallName}. Allow notifications for Hungry in your phone settings to get alerts.`,
-          tone: "success",
-        });
+        if (alertsOn) {
+          showToast({
+            message: `Following ${stallName}. We'll tell you when its menu changes.`,
+            tone: "success",
+          });
+          return;
+        }
+        // The fix lives in phone settings, so offer a way there.
+        Alert.alert(
+          `Following ${stallName}`,
+          "Allow notifications for Hungry in your phone settings to get menu alerts.",
+          [
+            { text: "Not now", style: "cancel" },
+            { text: "Open settings", onPress: () => void Linking.openSettings() },
+          ],
+        );
+        return;
+      }
+      if (onOpenAppSettings) {
+        Alert.alert(
+          `Following ${stallName}`,
+          "Turn on stall updates in Settings to get alerts when its menu changes.",
+          [
+            { text: "Not now", style: "cancel" },
+            { text: "Open Settings", onPress: onOpenAppSettings },
+          ],
+        );
         return;
       }
       showToast({

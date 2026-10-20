@@ -144,3 +144,24 @@ test("bottom tab active label and create icon meet contrast targets", () => {
   assert.ok(contrast(colors.dark.textOnOrange as HexColor, colors.dark.orange as HexColor) >= 4.5);
   assert.ok(contrast(colors.dark.white as HexColor, colors.dark.orange as HexColor) < 3);
 });
+
+test("rating stars and dark-on-orange CTA labels meet contrast targets", () => {
+  for (const mode of ["light", "dark"] as const) {
+    const palette = colors[mode];
+    // Stars are non-text graphics: 3:1 against the card surface.
+    assert.ok(
+      contrast(palette.ratingStar as HexColor, palette.surface as HexColor) >= 3,
+      `${mode} ratingStar on surface should pass 3:1`,
+    );
+    // Review CTA and orange badges use dark ink on the orange fill.
+    assert.ok(contrast(palette.textOnOrange as HexColor, palette.orange as HexColor) >= 4.5);
+  }
+  // "Fast" badges: white ink on the light-mode green, dark ink on the dark-mode green.
+  assert.ok(contrast(colors.light.white as HexColor, colors.light.statusFast as HexColor) >= 4.5);
+  assert.ok(
+    contrast(colors.dark.textOnOrange as HexColor, colors.dark.statusFast as HexColor) >= 4.5,
+  );
+  // Discover "VALUE" badge: white on the light-mode success fill, dark ink in dark mode.
+  assert.ok(contrast(colors.light.white as HexColor, colors.light.success as HexColor) >= 4.5);
+  assert.ok(contrast(colors.dark.textOnOrange as HexColor, colors.dark.success as HexColor) >= 4.5);
+});

@@ -57,15 +57,9 @@ export const useDiscoveryStore = create<DiscoveryState>()(
       decideForMe: undefined,
       mapFilters: initialFilters,
       recommendationCache: {},
-      setSelectedBuilding: (selectedBuilding) => {
-        set({ selectedBuilding });
-        if (selectedBuilding) {
-          trackAnalyticsEvent("map_pin_tapped", {
-            building_id: selectedBuilding.id,
-            building_type: selectedBuilding.type,
-          });
-        }
-      },
+      // Selecting a building is also done by code (deep links, screen mounts), so
+      // map_pin_tapped is sent from the marker press handlers, not from here.
+      setSelectedBuilding: (selectedBuilding) => set({ selectedBuilding }),
       setSelectedFloor: (selectedFloor) => {
         set((state) => {
           if (state.selectedBuilding && state.selectedFloor !== selectedFloor) {

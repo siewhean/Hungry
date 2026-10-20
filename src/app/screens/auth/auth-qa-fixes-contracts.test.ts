@@ -37,7 +37,8 @@ test("sign-up fields use Input error styling and the visible field name", () => 
     "src/app/screens/onboarding/OnboardingAuthScreen.tsx",
   ]) {
     const source = read(file);
-    assert.doesNotMatch(source, /style=\{\{ color: palette\.error \}\}/, file);
+    // Field errors use Input props; a form-level error banner may still use error ink.
+    assert.doesNotMatch(source, /[eE]rrors\.\w+\??\.message\}\s*<\/AppText>/, file);
     assert.match(source, /error=\{!!\w+\.email\}\s*errorText=\{\w+\.email\?\.message\}/, file);
   }
   assert.equal(AUTH_COPY.signUp.displayNamePlaceholder, "Full name");
@@ -75,5 +76,6 @@ test("login errors map to clear messages and log without PII", () => {
     login,
     /console\.warn\("\[auth\] Email sign-in failed", getAuthErrorLogContext\(err\)\)/,
   );
-  assert.match(login, /showToast\(\{ message: getLoginErrorMessage\(err\), tone: "error" \}\)/);
+  assert.match(login, /const message = getLoginErrorMessage\(err\);/);
+  assert.match(login, /setFormError\(message\);\s*showToast\(\{ message, tone: "error" \}\)/);
 });

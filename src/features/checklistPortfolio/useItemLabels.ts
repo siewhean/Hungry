@@ -25,8 +25,20 @@ function sameLabels(left: Record<string, string>, right: Record<string, string>)
  * ids changes, and keeps the same object when nothing changed (no render loop).
  */
 export function useItemLabels(items: readonly LabelTarget[]): Record<string, string> {
+  return useItemLabelsState(items).labels;
+}
+
+/**
+ * Labels plus whether the lookup for the current ids has finished, so rows can say
+ * "Loading…" instead of flashing "Deleted dish" before names arrive.
+ */
+export function useItemLabelsState(items: readonly LabelTarget[]): {
+  labels: Record<string, string>;
+  isLoaded: boolean;
+} {
   const targetsKey = useMemo(() => itemLabelTargetsKey(items), [items]);
   const [labels, setLabels] = useState<Record<string, string>>({});
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -51,7 +63,9 @@ export function useItemLabels(items: readonly LabelTarget[]): Record<string, str
           }
         }),
       );
-      if (mounted) setLabels((current) => (sameLabels(current, nextLabels) ? current : nextLabels));
+      if (!mounted) return;
+      setLabels((current) => (sameLabels(current, nextLabels) ? current : nextLabels));
+      setLoadedKey(targetsKey);
     })();
 
     return () => {
@@ -59,5 +73,5 @@ export function useItemLabels(items: readonly LabelTarget[]): Record<string, str
     };
   }, [targetsKey]);
 
-  return labels;
+  return { labels, isLoaded: loadedKey === targetsKey };
 }

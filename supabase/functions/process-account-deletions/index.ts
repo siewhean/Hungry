@@ -195,6 +195,13 @@ Deno.serve(async (request) => {
       );
       if (purgeError) throw purgeError;
 
+      // The anonymized profile row stays, so drop its avatar link (files are removed below).
+      const { error: avatarError } = await client
+        .from("user_profiles")
+        .update({ avatar_url: null })
+        .eq("id", userId);
+      if (avatarError) throw avatarError;
+
       // Every step is idempotent, so a failure here leaves the request claimable and
       // the next run safely repeats anonymize/purge before retrying auth deletion.
       const storageRemoved = await deleteUserStorageObjects(

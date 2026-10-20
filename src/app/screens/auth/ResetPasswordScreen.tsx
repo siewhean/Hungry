@@ -1,7 +1,7 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Controller, useForm } from "react-hook-form";
 import { Pressable, View, type TextInput } from "react-native";
-import { ArrowLeft, CheckCircle2, Eye, EyeOff } from "lucide-react-native";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 
 import { AppText, Button, FeedErrorBoundary, InlineBanner, Input } from "@/components/ui";
@@ -116,13 +116,13 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
       body="Couldn't load password reset right now. Please retry."
     >
       <AuthScreenShell
-        title=""
+        title="Set a new password"
         wordmarkColor={colorScheme === "dark" ? palette.white : palette.navy}
         footer={
           <Pressable
             accessible
             accessibilityRole="button"
-            accessibilityLabel="Back to Sign In"
+            accessibilityLabel="Back to sign in"
             accessibilityHint="Returns to the sign in screen"
             onPress={() => leaveRecovery("Login")}
             style={{
@@ -130,11 +130,12 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
               flexDirection: "row",
               gap: spacing[2],
               justifyContent: "center",
+              minHeight: 44,
             }}
           >
             <ArrowLeft color={palette.text} size={12} />
             <AppText tone="secondary" style={{ fontWeight: "600" }}>
-              Back to Sign In
+              Back to sign in
             </AppText>
           </Pressable>
         }
@@ -144,7 +145,7 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
             <View style={{ gap: spacing[3] }}>
               <InlineBanner message={linkError} tone="error" />
               <Button
-                label="Request a new link"
+                label="Send a new link"
                 variant="secondary"
                 onPress={() => leaveRecovery("ForgotPassword")}
               />
@@ -156,7 +157,7 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
             rules={{ validate: (value) => validatePassword(value) }}
             render={({ field: { onChange, value } }) => (
               <Input
-                label="NEW PASSWORD"
+                label="New password"
                 secureTextEntry={!showPassword}
                 textContentType="newPassword"
                 autoComplete="new-password"
@@ -164,7 +165,6 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
                 returnKeyType="next"
                 submitBehavior="submit"
                 onSubmitEditing={() => confirmPasswordRef.current?.focus()}
-                placeholder="••••••••"
                 value={value}
                 onChangeText={onChange}
                 error={!!errors.password}
@@ -199,14 +199,13 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
             render={({ field: { onChange, value } }) => (
               <Input
                 ref={confirmPasswordRef}
-                label="CONFIRM NEW PASSWORD"
+                label="Confirm new password"
                 secureTextEntry={!showConfirmPassword}
                 textContentType="newPassword"
                 autoComplete="new-password"
                 passwordRules={PASSWORD_RULES}
                 returnKeyType="go"
                 onSubmitEditing={() => void handleReset()}
-                placeholder="••••••••"
                 value={value}
                 onChangeText={onChange}
                 error={!!errors.confirmPassword}
@@ -250,7 +249,7 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
           </View>
 
           <Button
-            label="Update Password"
+            label="Update password"
             onPress={handleReset}
             loading={isSubmitting}
             disabled={Boolean(linkError)}

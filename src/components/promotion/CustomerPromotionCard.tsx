@@ -45,11 +45,11 @@ export function CustomerPromotionCard({
               S${pricing.finalPrice.toFixed(2)}
             </AppText>
           </View>
-        ) : (
+        ) : pricing.label ? (
           <AppText variant="price" style={{ color: palette.orange }}>
             {pricing.label}
           </AppText>
-        )}
+        ) : null}
       </View>
       {onPress && ctaLabel ? <Button label={ctaLabel} onPress={onPress} /> : null}
     </Card>

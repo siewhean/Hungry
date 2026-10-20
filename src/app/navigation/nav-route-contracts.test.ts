@@ -57,6 +57,12 @@ test("onboarding is about four steps: welcome, location, optional taste quiz, do
   }
   // After sign-up the signed-in app runs onboarding via Splash/RootNavigator.
   assert.doesNotMatch(read("src/app/screens/auth/SignUpScreen.tsx"), /continueAsGuest/);
+  // Only RootNavigator routes after auth; SignUp no longer resets into onboarding itself.
+  assert.doesNotMatch(read("src/app/screens/auth/SignUpScreen.tsx"), /screen: "OnboardingWelcome"/);
+  assert.match(
+    read("src/app/navigation/RootNavigator.tsx"),
+    /isAuthenticated && !hasCompletedOnboarding[\s\S]*screen: "OnboardingWelcome"/,
+  );
 
   // One progress component, "Step x of N", on every step.
   assert.match(progress, /ONBOARDING_STEPS = \["welcome", "location", "taste", "done"\] as const/);
@@ -65,7 +71,7 @@ test("onboarding is about four steps: welcome, location, optional taste quiz, do
   assert.match(welcome, /<OnboardingProgress step="welcome" \/>/);
   assert.match(location, /<OnboardingProgress step="location" \/>/);
   assert.match(picker, /\{isOnboarding \? <OnboardingProgress step="location" \/> : null\}/);
-  assert.match(quiz, /flowMode === "onboarding" \? <OnboardingProgress step="taste" \/> : null/);
+  assert.match(quiz, /flowMode === "onboarding" \? \([\s\S]*?<OnboardingProgress step="taste" \/>/);
   assert.match(done, /<OnboardingProgress step="done" \/>/);
   // The quiz no longer draws its own progress bar.
   assert.doesNotMatch(quiz, /progressAnim|progressTrack/);
@@ -95,8 +101,16 @@ test("onboarding is about four steps: welcome, location, optional taste quiz, do
   assert.equal(quiz.match(/setTasteVector\(/g)?.length, 1);
   assert.match(types, /DietaryPreferences:[\s\S]*answers\?: TasteVector;/);
   assert.match(quiz, /navigation\.navigate\("TasteProfileResult"\)/);
-  // The quiz is optional: skipping goes straight to the done step.
-  assert.match(quiz, /setSkippedTasteQuiz\(true\);\s*navigation\.navigate\("TasteProfileResult"\)/);
+  // The taste questions are optional, but Skip still asks about dietary needs
+  // (without taste answers), and the quiz stays marked as skipped.
+  assert.match(
+    quiz,
+    /setSkippedTasteQuiz\(true\);\s*navigation\.navigate\("DietaryPreferences", \{\s*mode: flowMode,\s*initialPhase: "dietary",\s*\}\)/,
+  );
+  assert.match(
+    quiz,
+    /setSkippedTasteQuiz\(!hasTasteAnswers\);\s*navigation\.navigate\("TasteProfileResult"\)/,
+  );
   assert.doesNotMatch(quiz, /navigation\.navigate\("LocationPermission"\)/);
 
   // Sign-in is required. The done step completes onboarding and resets to Home for a
@@ -115,9 +129,14 @@ test("onboarding is about four steps: welcome, location, optional taste quiz, do
     done,
     /if \(!isAuthenticated\) \{\s*navigation\.navigate\("OnboardingAuth"\);\s*return;\s*\}/,
   );
+  // RootNavigator owns the transition Home once onboarding completes (one navigation).
   assert.match(
     done,
-    /completeOnboarding\(hasSkippedTasteQuiz\);\s*navigation\.getParent<NavigationProp<RootStackParamList>>\(\)\?\.reset\(\{\s*index: 0,\s*routes: \[\{ name: "MainTabs", params: \{ screen: "Home" \} \}\]/,
+    /completeOnboarding\(hasSkippedTasteQuiz\);\s*if \(alreadyCompleted\) \{\s*navigation\.getParent<NavigationProp<RootStackParamList>>\(\)\?\.reset\(\{\s*index: 0,\s*routes: \[\{ name: "MainTabs", params: \{ screen: "Home" \} \}\],/,
+  );
+  assert.match(
+    read("src/app/navigation/RootNavigator.tsx"),
+    /currentTopRoute === "OnboardingStack" && hasCompletedOnboarding[\s\S]*?navigateHome\(\)/,
   );
   // Saving a dish as a guest never opens the account step early.
   assert.doesNotMatch(done, /setPendingSaveDish/);

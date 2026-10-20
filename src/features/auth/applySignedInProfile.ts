@@ -1,4 +1,5 @@
 import { NEUTRAL_TASTE_PROFILE, NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
+import { flushPendingQuizResponse } from "@/features/profile/pendingQuizResponse";
 import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
 import { useLocationStore } from "@/store/useLocationStore";
 import { type ProvisionalOnboardingMigration, useProfileStore } from "@/store/useProfileStore";
@@ -41,6 +42,19 @@ function hasMeaningfulProvisionalTaste(profile: UserProfile, tasteProfile: Taste
     !vectorsMatch(profile.tasteVector, NEUTRAL_TASTE_VECTOR) ||
     !tasteProfilesMatch(tasteProfile, NEUTRAL_TASTE_PROFILE)
   );
+}
+
+// Onboarding answers only fill an account that has none of its own: a returning
+// user who signs in at the end of setup on a new phone keeps their saved profile.
+function hasNoSavedTaste(profile: UserProfile) {
+  return (
+    vectorsMatch(profile.tasteVector, NEUTRAL_TASTE_VECTOR) &&
+    (!profile.tasteProfile || tasteProfilesMatch(profile.tasteProfile, NEUTRAL_TASTE_PROFILE))
+  );
+}
+
+function hasNoSavedDietaryPreferences(profile: UserProfile) {
+  return profile.dietaryPreferences.length === 0;
 }
 
 function isProvisionalOnboardingProfile(profile: UserProfile) {
@@ -87,15 +101,21 @@ export function mergeServerProfileWithProvisional(
   provisional?: ProvisionalOnboardingMigration,
 ): UserProfile {
   if (!provisional || provisional.userId !== serverProfile.id) return serverProfile;
+  const fillTaste = Boolean(provisional.tasteProfile) && hasNoSavedTaste(serverProfile);
+  const fillDietary =
+    provisional.dietaryPreferences.length > 0 && hasNoSavedDietaryPreferences(serverProfile);
 
   return {
     ...serverProfile,
-    tasteVector: provisional.tasteProfile?.vector ?? serverProfile.tasteVector,
-    tasteProfile: provisional.tasteProfile ?? serverProfile.tasteProfile,
-    dietaryPreferences:
-      provisional.dietaryPreferences.length > 0
-        ? provisional.dietaryPreferences
-        : serverProfile.dietaryPreferences,
+    tasteVector:
+      fillTaste && provisional.tasteProfile
+        ? provisional.tasteProfile.vector
+        : serverProfile.tasteVector,
+    tasteProfile:
+      fillTaste && provisional.tasteProfile ? provisional.tasteProfile : serverProfile.tasteProfile,
+    dietaryPreferences: fillDietary
+      ? provisional.dietaryPreferences
+      : serverProfile.dietaryPreferences,
   };
 }
 
@@ -120,10 +140,10 @@ export async function runProvisionalOnboardingMigration(
   }
 
   const writes = await Promise.allSettled([
-    provisional.tasteProfile
+    provisional.tasteProfile && hasNoSavedTaste(profileReady)
       ? operations.updateTasteProfile(provisional.tasteProfile)
       : Promise.resolve(),
-    provisional.dietaryPreferences.length > 0
+    provisional.dietaryPreferences.length > 0 && hasNoSavedDietaryPreferences(profileReady)
       ? operations.updateDietaryPreferences(provisional.dietaryPreferences)
       : Promise.resolve(),
   ]);
@@ -175,6 +195,9 @@ export async function applySignedInProfile(
   if (provisional && provisional !== provisionalFromStore) {
     profileState.setProvisionalOnboardingMigration(provisional);
   }
+
+  // Quiz answers saved on the device before sign-in are recorded now (with quiz_version).
+  void flushPendingQuizResponse().catch(() => undefined);
 
   if (getServiceProvider().mode === "mock") {
     const profile = mergeServerProfileWithProvisional(sessionProfile, provisional);

@@ -7,6 +7,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import { PortfolioCard } from "@/components/portfolio";
 import { AppText, Button, Card, Input } from "@/components/ui";
+import { useShallow } from "zustand/react/shallow";
+
+import { resolveListItemCount } from "@/features/checklistPortfolio/listLabels";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { usePortfolioStore } from "@/store/usePortfolioStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
@@ -23,7 +27,17 @@ const TAB_LABELS: Record<PortfolioTab, string> = {
 export function PortfoliosHomeScreen({ navigation }: Props) {
   const { palette, spacing } = useHungryTheme();
   const profile = useProfileStore((state) => state.profile);
-  const { portfolios, items, follows, isLoaded, loadPortfolios } = usePortfolioStore();
+  const { portfolios, items, follows, isLoaded, loadPortfolios, loadFollowedPortfolios } =
+    usePortfolioStore(
+      useShallow((state) => ({
+        portfolios: state.portfolios,
+        items: state.items,
+        follows: state.follows,
+        isLoaded: state.isLoaded,
+        loadPortfolios: state.loadPortfolios,
+        loadFollowedPortfolios: state.loadFollowedPortfolios,
+      })),
+    );
   const [activeTab, setActiveTab] = useState<PortfolioTab>("mine");
   const [query, setQuery] = useState("");
   const insets = useSafeAreaInsets();
@@ -33,13 +47,18 @@ export function PortfoliosHomeScreen({ navigation }: Props) {
 
   const load = useCallback(async () => {
     setLoadFailed(false);
+    // Follows load on their own: a failure there must not hide the lists.
+    void loadFollowedPortfolios().catch((error) =>
+      console.error("Failed to load followed lists:", error),
+    );
     try {
       await loadPortfolios();
     } catch (error) {
       console.error("Failed to load portfolios:", error);
+      trackAnalyticsEvent("list_load_failed", { list_kind: "portfolio" });
       setLoadFailed(true);
     }
-  }, [loadPortfolios]);
+  }, [loadFollowedPortfolios, loadPortfolios]);
 
   const refresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -163,7 +182,7 @@ export function PortfoliosHomeScreen({ navigation }: Props) {
           <PortfolioCard
             key={portfolio.id}
             portfolio={portfolio}
-            itemCount={items[portfolio.id]?.length ?? 0}
+            itemCount={resolveListItemCount(portfolio, items[portfolio.id])}
             onPress={() => navigation.navigate("PortfolioDetail", { portfolioId: portfolio.id })}
           />
         ))

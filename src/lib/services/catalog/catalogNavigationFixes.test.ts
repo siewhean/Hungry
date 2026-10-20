@@ -294,8 +294,8 @@ test("browse grid keeps rows on a failed continuation and offers retry", () => {
   const grid = read("src/app/screens/search/SearchResultsScreen.tsx");
 
   assert.match(grid, /appendUniqueById\(current, page\.items\)/);
-  assert.match(grid, /if \(append\) setLoadMoreError\(message\)/);
-  assert.match(grid, /Couldn.t load more results\./);
+  assert.match(grid, /if \(append\) \{\s*setLoadMoreFailed\(true\);/);
+  assert.match(grid, /Couldn.t load more\./);
   assert.match(grid, /onPress=\{\(\) => void loadPage\(nextCursor, true\)\}/);
 });
 

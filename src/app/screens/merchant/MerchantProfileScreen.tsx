@@ -1,8 +1,19 @@
 import React from "react";
-import { ScrollView, View, StyleSheet, Pressable } from "react-native";
+import { View, StyleSheet, Pressable } from "react-native";
 import { CommonActions, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Clock, MapPin, Phone, LogOut, ChevronRight, ShieldCheck } from "lucide-react-native";
+import {
+  Clock,
+  MapPin,
+  Phone,
+  LogOut,
+  ChevronRight,
+  ShieldCheck,
+  Store,
+  Megaphone,
+  Users,
+  Settings,
+} from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
@@ -11,6 +22,7 @@ import { useHungryTheme } from "@/theme";
 import { useSessionStore } from "@/store/useSessionStore";
 import { getActiveOutlet, useMerchantStore } from "@/store/useMerchantStore";
 import { getDataRepository } from "@/lib/services/serviceProvider";
+import { prefetchMerchantTab } from "@/features/navigation/prefetch";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type ProfileItemProps = {
@@ -18,10 +30,60 @@ type ProfileItemProps = {
   label: string;
   value: string;
   onPress: () => void;
+  onPressIn?: () => void;
 };
 
-export function MerchantProfileScreen() {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  const { spacing } = useHungryTheme();
+  return (
+    <View style={{ marginBottom: spacing[6] }}>
+      <AppText
+        variant="h3"
+        accessibilityRole="header"
+        style={{ marginBottom: spacing[3], fontWeight: "800" }}
+      >
+        {title}
+      </AppText>
+      <View style={{ gap: spacing[3] }}>{children}</View>
+    </View>
+  );
+}
+
+function ProfileItem({ icon: Icon, label, value, onPress, onPressIn }: ProfileItemProps) {
   const { componentRadii, palette, spacing } = useHungryTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${label}: ${value}`}
+      onPress={onPress}
+      onPressIn={onPressIn}
+      style={({ pressed }) => [
+        styles.item,
+        {
+          backgroundColor: palette.surfaceRaised,
+          borderRadius: componentRadii.card,
+          minHeight: 44,
+          opacity: pressed ? 0.78 : 1,
+          padding: spacing[4],
+        },
+      ]}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3], flex: 1 }}>
+        <Icon size={20} color={palette.orange} />
+        <View style={{ flex: 1 }}>
+          <AppText variant="micro" tone="muted">
+            {label}
+          </AppText>
+          <AppText variant="bodyBold">{value}</AppText>
+        </View>
+      </View>
+      <ChevronRight size={18} color={palette.textMuted} />
+    </Pressable>
+  );
+}
+
+export function MerchantProfileScreen() {
+  const { palette, spacing } = useHungryTheme();
   const navigation = useNavigation<NavigationProp>();
   const rootNavigation = getRootNavigation(navigation);
   const signOut = useSessionStore((state) => state.signOut);
@@ -38,42 +100,12 @@ export function MerchantProfileScreen() {
     .join(" ");
   const outletContact =
     activeOutlet?.contactPhone ?? activeOutlet?.contactEmail ?? "No contact added";
-  const verificationLabel =
-    activeOutlet?.verification.status === "verified" ? "Verified Merchant" : "Verification pending";
-
-  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <View style={{ marginBottom: spacing[6] }}>
-      <AppText variant="h3" style={{ marginBottom: spacing[3], fontWeight: "800" }}>
-        {title}
-      </AppText>
-      <View style={{ gap: spacing[3] }}>{children}</View>
-    </View>
-  );
-
-  const ProfileItem = ({ icon: Icon, label, value, onPress }: ProfileItemProps) => (
-    <Pressable
-      onPress={onPress}
-      style={[
-        styles.item,
-        {
-          backgroundColor: palette.surfaceRaised,
-          borderRadius: componentRadii.card,
-          padding: spacing[4],
-        },
-      ]}
-    >
-      <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3], flex: 1 }}>
-        <Icon size={20} color={palette.orange} />
-        <View>
-          <AppText variant="micro" tone="muted">
-            {label}
-          </AppText>
-          <AppText variant="bodyBold">{value}</AppText>
-        </View>
-      </View>
-      <ChevronRight size={18} color={palette.textMuted} />
-    </Pressable>
-  );
+  const isVerified = activeOutlet?.verification.status === "verified";
+  const verificationLabel = isVerified ? "Verified Merchant" : "Verification pending";
+  const verificationColor = isVerified ? palette.success : palette.warningText;
+  const openMerchantRoute = (route: string) => navigation.navigate(route as any);
+  const prefetchRoute = (route: string) =>
+    prefetchMerchantTab(route, activeOutlet?.id, account?.id);
 
   if (!activeOutlet) {
     return (
@@ -92,10 +124,7 @@ export function MerchantProfileScreen() {
 
   return (
     <Screen title="Stall Profile" subtitle="Manage your stall information">
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: spacing[12] }}
-      >
+      <View style={{ paddingBottom: spacing[12], width: "100%" }}>
         {/* Stall Identity */}
         <View style={{ alignItems: "center", marginVertical: spacing[6] }}>
           <Avatar uri={outletPhoto} name={activeOutlet.name} size={80} />
@@ -103,8 +132,8 @@ export function MerchantProfileScreen() {
             {activeOutlet.name}
           </AppText>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 }}>
-            <ShieldCheck size={14} color={palette.success} />
-            <AppText variant="micro" style={{ color: palette.success }}>
+            <ShieldCheck size={14} color={verificationColor} />
+            <AppText variant="micro" style={{ color: verificationColor }}>
               {verificationLabel}
             </AppText>
           </View>
@@ -131,7 +160,45 @@ export function MerchantProfileScreen() {
           />
         </Section>
 
-        <View style={{ marginTop: spacing[8], gap: spacing[3] }}>
+        <Section title="Manage">
+          <ProfileItem
+            icon={Store}
+            label="Business details"
+            value="Name, photos, cuisine and links"
+            onPressIn={() => prefetchRoute("BusinessProfileEditor")}
+            onPress={() => openMerchantRoute("BusinessProfileEditor")}
+          />
+          <ProfileItem
+            icon={ShieldCheck}
+            label="Verification"
+            value={verificationLabel}
+            onPressIn={() => prefetchRoute("VerificationCentre")}
+            onPress={() => openMerchantRoute("VerificationCentre")}
+          />
+          <ProfileItem
+            icon={Megaphone}
+            label="Promotions"
+            value="Create and manage offers"
+            onPressIn={() => prefetchRoute("PromotionList")}
+            onPress={() => openMerchantRoute("PromotionList")}
+          />
+          <ProfileItem
+            icon={Users}
+            label="Featured visitors"
+            value="Pin diners on your stall page"
+            onPressIn={() => prefetchRoute("FeaturedVisitors")}
+            onPress={() => openMerchantRoute("FeaturedVisitors")}
+          />
+          <ProfileItem
+            icon={Settings}
+            label="Settings"
+            value="Alerts and support"
+            onPressIn={() => prefetchRoute("MerchantSettings")}
+            onPress={() => openMerchantRoute("MerchantSettings")}
+          />
+        </Section>
+
+        <View style={{ marginTop: spacing[2], gap: spacing[3] }}>
           <Button
             label="Switch to Customer Mode"
             variant="secondary"
@@ -159,7 +226,7 @@ export function MerchantProfileScreen() {
             leftIcon={<LogOut size={20} color="white" />}
           />
         </View>
-      </ScrollView>
+      </View>
     </Screen>
   );
 }

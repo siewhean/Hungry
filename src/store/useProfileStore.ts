@@ -141,7 +141,8 @@ interface ProfileState {
   syncProfile: (isAuthenticated: boolean, userId?: string | null) => void;
   toggleFavourite: (dish: FavouriteDishInput) => Promise<FavouriteToggleResult>;
   updateProfile: (next: Partial<Pick<UserProfile, "displayName" | "email" | "avatarUrl">>) => void;
-  setProfileVisibility: (profileVisibility: ProfileVisibility) => void;
+  /** Resolves false when the server rejected the change and the old value was restored. */
+  setProfileVisibility: (profileVisibility: ProfileVisibility) => Promise<boolean>;
   setTasteVector: (tasteVector: TasteVector) => void;
   setTasteProfile: (tasteProfile: TasteProfile) => void;
   setDietaryPreferences: (dietaryPreferences: DietaryFlag[]) => void;
@@ -155,7 +156,6 @@ interface ProfileState {
     entry: { rating: number; text: string; tags: string[] },
   ) => void;
   recordTasteInteraction: (input: RecordTasteInteractionInput) => TasteInteractionEvent | undefined;
-  setLeftHandedMode: (enabled: boolean) => void;
   clearProfile: () => void;
 }
 
@@ -691,9 +691,9 @@ export const useProfileStore = create<ProfileState>()(
             set({ profile: previousProfile });
           });
       },
-      setProfileVisibility: (profileVisibility) => {
+      setProfileVisibility: async (profileVisibility) => {
         const currentVisibility = get().profile.profileVisibility;
-        if (currentVisibility === profileVisibility) return;
+        if (currentVisibility === profileVisibility) return true;
         const previousProfile = get().profile;
         set((state) => ({
           profile: {
@@ -703,15 +703,16 @@ export const useProfileStore = create<ProfileState>()(
         }));
         const optimisticProfile = get().profile;
         if (!shouldSyncAuthenticatedProfile(optimisticProfile)) {
-          return;
+          return true;
         }
-        void getHungryService()
-          .profile.updateProfile({ profileVisibility })
-          .catch((error) => {
-            console.error("Failed to update profile visibility", error);
-            if (get().profile !== optimisticProfile) return;
-            set({ profile: previousProfile });
-          });
+        try {
+          await getHungryService().profile.updateProfile({ profileVisibility });
+          return true;
+        } catch (error) {
+          console.error("Failed to update profile visibility", error);
+          if (get().profile === optimisticProfile) set({ profile: previousProfile });
+          return false;
+        }
       },
       setTasteVector: (tasteVector) => {
         const previousSnapshot = {
@@ -948,7 +949,11 @@ export const useProfileStore = create<ProfileState>()(
           persistTasteInteraction(interactionInput, recordedEvent);
         }
       },
-      recordTasteInteraction: (input) => {
+      recordTasteInteraction: (rawInput) => {
+        // Settings > "Allow search history" off: no search signal and no query text is kept.
+        const allowSearchHistory = useUIStore.getState().allowSearchHistory;
+        if (!allowSearchHistory && rawInput.type === "search_query") return undefined;
+        const input = allowSearchHistory ? rawInput : { ...rawInput, query: undefined };
         let recordedEvent: TasteInteractionEvent | undefined;
         set((state) => {
           const feedbackType = getInteractionFeedbackType(input);
@@ -1008,13 +1013,6 @@ export const useProfileStore = create<ProfileState>()(
         persistTasteInteraction(input, recordedEvent);
         return recordedEvent;
       },
-      setLeftHandedMode: (enabled) =>
-        set((state) => ({
-          profile: {
-            ...state.profile,
-            leftHandedMode: enabled,
-          },
-        })),
       clearProfile: () => {
         bumpProfileAccountEpoch();
         set({

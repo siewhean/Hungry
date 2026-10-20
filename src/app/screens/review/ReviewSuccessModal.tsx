@@ -1,12 +1,11 @@
 import { useEffect } from "react";
 import { Modal, Pressable, View } from "react-native";
 import { CheckCircle2, Sparkles, X } from "lucide-react-native";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 
 import { AppText, Badge, Button, Card } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useUIStore } from "@/store/useUIStore";
-import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
 import { useHungryTheme } from "@/theme";
 
 interface ReviewSuccessModalProps {
@@ -17,9 +16,6 @@ export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const payload = useUIStore((state) => state.reviewSuccess);
   const hideReviewSuccess = useUIStore((state) => state.hideReviewSuccess);
-  const isMerchantMode = useMerchantStore(isMerchantModeActive);
-  const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
-  const shouldShowComposerTags = isMerchantMode || isDeveloperMode;
 
   useEffect(() => {
     if (payload) {
@@ -87,9 +83,9 @@ export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
 
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
             <Badge label={`${payload?.rating ?? 0}/5 rating`} tone="orange" />
-            {shouldShowComposerTags && (
-              <Badge label={`${payload?.tagCount ?? 0} taste tags`} tone="amber" />
-            )}
+            {payload?.tagCount ? (
+              <Badge label={`${payload.tagCount} taste tags`} tone="amber" />
+            ) : null}
             {/* Points exist only where gamification is on; never show a made-up score. */}
             {FEATURE_FLAGS.gamificationEnabled && payload?.pointsEarned ? (
               <Badge label={`+${payload.pointsEarned} points`} tone="success" />

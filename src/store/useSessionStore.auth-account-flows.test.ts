@@ -119,7 +119,7 @@ test("EditProfile does not open ResetPassword with a fake code", () => {
   assert.doesNotMatch(editProfile, /profile-settings/);
   assert.doesNotMatch(editProfile, /screen: "ResetPassword"/);
   assert.match(editProfile, /accessibilityLabel="Change profile photo"/);
-  assert.match(editProfile, /disabled=\{!trimmedDisplayName\}/);
+  assert.match(editProfile, /disabled=\{!isDirty \|\| Boolean\(nameError\)\}/);
 });
 
 test("account deletion purges locally, records a notice, then signs out; confirms are cross-platform", () => {

@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { Animated, Easing, Pressable, TextInput, View } from "react-native";
-import { ArrowLeft, Search as SearchIcon, X } from "lucide-react-native";
+import { ArrowLeft, History, Search as SearchIcon, X } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Button, ChipGroup, IconButton, Input, Screen } from "@/components/ui";
+import { useReduceMotion } from "@/hooks/useReduceMotion";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { useSearchStore } from "@/store/useSearchStore";
+import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { SearchCategory } from "@/types/domain";
 
@@ -22,34 +25,55 @@ type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 export function DishSearchScreen() {
   const navigation = useNavigation<RootNavigation>();
   const { motion, palette, spacing } = useHungryTheme();
-  const updateQuery = useSearchStore((state) => state.updateQuery);
+  const reduceMotion = useReduceMotion();
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
-  const selectedCategories = useSearchStore((state) => state.filters.categories);
-  const toggleCategory = useSearchStore((state) => state.toggleCategory);
+  const recentSearches = useSearchStore((state) => state.recentSearches);
+  const clearSearchHistory = useSearchStore((state) => state.clearSearchHistory);
+  const allowSearchHistory = useUIStore((state) => state.allowSearchHistory);
+  // Query and category live here and travel as route params, so nothing stale is persisted.
   const [searchText, setSearchText] = useState("");
   const searchInputRef = useRef<TextInput | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<SearchCategory | undefined>();
   // Search results own the paged catalog request; this landing screen stays
   // free of local recommendations so it never hydrates the whole catalog.
-  const entryY = useRef(new Animated.Value(-28)).current;
-  const entryOpacity = useRef(new Animated.Value(0)).current;
+  const entryY = useRef(new Animated.Value(reduceMotion ? 0 : -28)).current;
+  const entryOpacity = useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
   const trimmedSearchText = searchText.trim();
 
   useEffect(() => {
+    if (reduceMotion) {
+      entryY.setValue(0);
+      entryOpacity.setValue(1);
+      return;
+    }
     Animated.parallel([
       Animated.timing(entryY, {
         toValue: 0,
         duration: motion.screenTransition,
         easing: Easing.out(Easing.cubic),
-        useNativeDriver: false,
+        useNativeDriver: true,
       }),
       Animated.timing(entryOpacity, {
         toValue: 1,
         duration: motion.screenTransition,
         easing: Easing.out(Easing.quad),
-        useNativeDriver: false,
+        useNativeDriver: true,
       }),
     ]).start();
-  }, [entryOpacity, entryY, motion.screenTransition]);
+  }, [entryOpacity, entryY, motion.screenTransition, reduceMotion]);
+
+  const openResults = (query: string) => {
+    const trimmedQuery = query.trim();
+    if (trimmedQuery) {
+      rememberSearch(trimmedQuery);
+    }
+    navigation.navigate("SearchResults", {
+      initialQuery: trimmedQuery || undefined,
+      foodTypeTag: selectedCategory,
+    });
+  };
+
+  const showRecents = allowSearchHistory && recentSearches.length > 0;
 
   return (
     // "handled" lets the clear (x) work on the first tap while the keyboard is up.
@@ -87,16 +111,16 @@ export function DishSearchScreen() {
 
         <Input
           ref={searchInputRef}
+          autoFocus
           leftIcon={<SearchIcon color={palette.textMuted} size={18} />}
           rightIcon={
-            searchText.length > 0 ? (
+            searchText ? (
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Clear search"
                 hitSlop={12}
                 onPress={() => {
                   setSearchText("");
-                  updateQuery("");
                   // Keep the user typing: clearing should not drop focus/keyboard.
                   searchInputRef.current?.focus();
                 }}
@@ -107,32 +131,70 @@ export function DishSearchScreen() {
           }
           placeholder="Laksa, satay, Tian Tian..."
           accessibilityLabel="Search dishes, stalls, or hawker centres"
+          returnKeyType="search"
           value={searchText}
-          onChangeText={(text) => {
-            setSearchText(text);
-            updateQuery(text);
-          }}
-          onSubmitEditing={() => {
-            const trimmedQuery = searchText.trim();
-            if (trimmedQuery) {
-              rememberSearch(trimmedQuery);
-            }
-            navigation.navigate("SearchResults");
-          }}
+          onChangeText={setSearchText}
+          onSubmitEditing={() => openResults(searchText)}
         />
         <ChipGroup
           options={CATEGORY_OPTIONS}
-          selectedIds={selectedCategories}
-          onSelect={toggleCategory}
+          selectedIds={selectedCategory ? [selectedCategory] : []}
+          onSelect={(category) => {
+            const next = selectedCategory === category ? undefined : category;
+            setSelectedCategory(next);
+            trackAnalyticsEvent("category_chip_tapped", { category, selected: Boolean(next) });
+          }}
         />
+        {showRecents ? (
+          <View style={{ gap: spacing[2] }}>
+            <View
+              style={{
+                alignItems: "center",
+                flexDirection: "row",
+                justifyContent: "space-between",
+              }}
+            >
+              <AppText variant="bodyBold" accessibilityRole="header">
+                Recent searches
+              </AppText>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Clear recent searches"
+                hitSlop={12}
+                onPress={clearSearchHistory}
+              >
+                <AppText tone="secondary" variant="bodySmall">
+                  Clear
+                </AppText>
+              </Pressable>
+            </View>
+            {recentSearches.map((query) => (
+              <Pressable
+                key={query}
+                accessibilityRole="button"
+                accessibilityLabel={`Search ${query} again`}
+                onPress={() => {
+                  setSearchText(query);
+                  openResults(query);
+                }}
+                style={{
+                  alignItems: "center",
+                  flexDirection: "row",
+                  gap: spacing[3],
+                  minHeight: 44,
+                }}
+              >
+                <History color={palette.textMuted} size={18} />
+                <AppText numberOfLines={1} style={{ flex: 1 }}>
+                  {query}
+                </AppText>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
         <Button
           label={trimmedSearchText ? "See all results" : "View search results"}
-          onPress={() => {
-            if (trimmedSearchText) {
-              rememberSearch(trimmedSearchText);
-            }
-            navigation.navigate("SearchResults");
-          }}
+          onPress={() => openResults(searchText)}
         />
       </Animated.View>
     </Screen>

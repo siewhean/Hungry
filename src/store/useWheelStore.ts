@@ -13,6 +13,7 @@ import type {
   DietaryFlag,
 } from "@/types/domain";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 
 // ─── Mock Global DB ─────────────────────────────────────────────────────────
 // In a real app, this is Supabase or Firebase.
@@ -48,6 +49,14 @@ function dedupeEntries(entries: WheelEntry[]): WheelEntry[] {
     seen.add(entry.id);
     return true;
   });
+}
+
+/**
+ * The slices on the wheel: not eliminated, one per id. The wheel drawing and the
+ * spin math both use this, so slice indices can never diverge.
+ */
+export function selectActiveWheelEntries(entries: WheelEntry[]): WheelEntry[] {
+  return dedupeEntries(entries).filter((entry) => !entry.isEliminated);
 }
 
 /**
@@ -247,6 +256,10 @@ export const useWheelStore = create<WheelState>((set, get) => ({
 
     // Update local state immediately
     set((state) => ({ entries: appendEntryUnique(state.entries, entry) }));
+    trackAnalyticsEvent("wheel_option_added", {
+      party_id: party.id,
+      entry_count: get().entries.length,
+    });
   },
 
   // ── removeEntry ────────────────────────────────────────────────────────────
@@ -289,7 +302,7 @@ export const useWheelStore = create<WheelState>((set, get) => ({
 
     const seed = generateSpinSeed();
     const startedAt = Date.now();
-    const activeEntryIds = entries.filter((e) => !e.isEliminated).map((e) => e.id);
+    const activeEntryIds = selectActiveWheelEntries(entries).map((e) => e.id);
 
     _channel.broadcast({
       type: "spin_triggered",
@@ -308,6 +321,11 @@ export const useWheelStore = create<WheelState>((set, get) => ({
           }
         : null,
     }));
+    trackAnalyticsEvent("wheel_spun", {
+      party_id: party.id,
+      spin_mode: party.spinMode,
+      option_count: activeEntryIds.length,
+    });
   },
 
   // ── completeSpin ────────────────────────────────────────────────────────────
@@ -382,8 +400,19 @@ export const useWheelStore = create<WheelState>((set, get) => ({
   // ── leaveParty ──────────────────────────────────────────────────────────────
 
   leaveParty() {
-    const { _channel } = get();
+    const { _channel, party, myMemberId } = get();
     if (_channel) _channel.unsubscribe();
+    if (party) {
+      // Drop this member from the shared party; the last one out (or the host) removes it.
+      const found = mockPartyStore.get(party.code);
+      if (found) {
+        found.members = found.members.filter((member) => member.id !== myMemberId);
+        if (party.hostUserId === myMemberId || found.members.length === 0) {
+          MockRealtimeChannel.clearChannel(`party:${party.id}`);
+          mockPartyStore.delete(party.code);
+        }
+      }
+    }
     set({ ...initialState });
   },
 

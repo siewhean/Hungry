@@ -63,7 +63,8 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
       /getHungryService\(\)\.auth\.signIn\(/,
       /service\.auth\.signInWithGoogle\(/,
       /service\.auth\.signInWithApple\(/,
-      /const finishLogin = \(authProvider: "email" \| AuthProvider, trackSignInEvent = true\) => \{[\s\S]*completedOnboarding: true,[\s\S]*skippedTasteQuiz: true/,
+      // Email sign-in is an existing account; the quiz state is not overwritten.
+      /completeAuth\(\{ completedOnboarding: true \}\)/,
     ],
     "LoginScreen",
   );
@@ -77,6 +78,8 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
     ],
     "SignUpScreen",
   );
+  // RootNavigator alone routes a signed-in user into onboarding.
+  assert.doesNotMatch(signUp, /navigation\.getParent\(\)\?\.reset\(\{[\s\S]*OnboardingStack/);
   assertSourceIncludes(
     settings,
     [
@@ -136,7 +139,7 @@ test("home feed post cards cover carousel media, captions, comments, reactions, 
       /preserveReadyOnError: true, showLoading: false/,
       /const mediaUrls =\s*item\.mediaType === "photo" && item\.mediaUrls\?\.length/,
       /horizontal[\s\S]*pagingEnabled[\s\S]*showsHorizontalScrollIndicator=\{false\}/,
-      /numberOfLines=\{2\}/,
+      /numberOfLines=\{isCaptionExpanded \? undefined : 2\}/,
       /\{" more"\}/,
       /activeCommentItem\.caption/,
       /const openCommentSheet = useCallback/,
@@ -211,11 +214,9 @@ test("discover routes diners to details, opens the map from a toggle, and search
       /ExpandableSearchLauncher/,
       /accessibilityLabel="Search dishes"/,
       /iconAlignment="right"/,
-      /onPress=\{\(\) => navigation\.navigate\("DishDetail", \{ dishId: bite\.dishId \}\)\}/,
-      /source=\{\{ uri: activeImageUrl \}\}/,
-      /onError=\{\(\) =>/,
-      /\{bite\.dishName\}/,
-      /\{bite\.venueName\}/,
+      /navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dishId \}\)/,
+      /accessibilityLabel=\{`Open \$\{activeSlide\.dishName\} at \$\{activeSlide\.venueName\}`\}/,
+      /\{activeSlide\.dishName\}/,
     ],
     "QuickBitesScreen search icon and card mapping",
   );
@@ -318,7 +319,8 @@ test("review tab covers loading state, review cards, and bite card icon/sheet bo
   assertSourceIncludes(
     reviewFeed,
     [
-      /useDelayedLoadingSkeleton\(\s*isInitialLoading/,
+      // The skeleton follows the real fetch, not a setTimeout(0) flag.
+      /useDelayedLoadingSkeleton\(isServiceFeedLoading, 0\)/,
       /ReviewFeedSkeleton/,
       /ReviewCommentsSheet/,
       /ReviewShareSheet/,
@@ -480,7 +482,7 @@ test("profile surfaces keep own and other-user layouts linked while hiding taste
       /label="Stalls"/,
       /label="Saved"/,
       /accessibilityLabel=\{menuOpen \? "Close quick access" : "Open quick access"\}/,
-      /accessibilityLabel="Edit profile photo"/,
+      /accessibilityLabel="Edit profile"/,
       /accessibilityLabel="Share Taste Fingerprint"/,
       /<AppText\s+variant="h1"\s+numberOfLines=\{1\}\s+adjustsFontSizeToFit\s+minimumFontScale=\{0\.78\}[\s\S]*profile\.displayName/,
       /accessibilityLabel="Show profile posts"/,
@@ -493,7 +495,7 @@ test("profile surfaces keep own and other-user layouts linked while hiding taste
   assertSourceIncludes(
     userProfile,
     [
-      /ProfileScreenShell title=\{authorName\}/,
+      /<ProfileScreenShell\s+title=\{authorName\}/,
       /Avatar name=\{authorName\} uri=\{resolvedAuthorAvatarUrl\}/,
       /label="Followers"/,
       /label="Following"/,
@@ -551,15 +553,16 @@ test("profile surfaces keep own and other-user layouts linked while hiding taste
     settings,
     [
       /label="Profile visibility"/,
-      /onPress: \(\) => setProfileVisibility\("public"\)/,
-      /onPress: \(\) => setProfileVisibility\("private"\)/,
+      /onPress: \(\) => void changeProfileVisibility\("public"\)/,
+      /onPress: \(\) => void changeProfileVisibility\("private"\)/,
+      /const saved = await setProfileVisibility\(visibility\)/,
     ],
     "Settings profile visibility UI",
   );
   assertSourceIncludes(
     profileStore,
     [
-      /setProfileVisibility: \(profileVisibility\) =>/,
+      /setProfileVisibility: async \(profileVisibility\) =>/,
       /profileVisibility,/,
       /getServiceProvider\(\)\.mode === "mock"/,
       /profile\.updateProfile\(\{ profileVisibility \}\)/,

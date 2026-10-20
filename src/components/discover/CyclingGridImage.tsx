@@ -11,6 +11,7 @@ import {
 } from "react-native";
 
 import { AccessibleImage } from "@/components/ui/AccessibleImage";
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 
 const DEFAULT_CYCLE_MS = 4000;
 const AUTO_ADVANCE_SETTLE_MS = 520;
@@ -43,6 +44,8 @@ export function CyclingGridImage({
   const [activeIndex, setActiveIndex] = useState(0);
   const [failedUrls, setFailedUrls] = useState<readonly string[]>([]);
   const [layoutWidth, setLayoutWidth] = useState(0);
+  // Reduce Motion: no auto-advance; the viewer can still swipe through the images.
+  const reduceMotion = useReduceMotion();
   const imageSignature = images.join("\u001f");
   const safeImages = useMemo(
     () =>
@@ -111,7 +114,7 @@ export function CyclingGridImage({
   }, []);
 
   useEffect(() => {
-    if (!isAutoCycleActive || safeImages.length <= 1 || layoutWidth <= 0) {
+    if (reduceMotion || !isAutoCycleActive || safeImages.length <= 1 || layoutWidth <= 0) {
       return undefined;
     }
 
@@ -163,6 +166,7 @@ export function CyclingGridImage({
     isAutoCycleActive,
     layoutWidth,
     measureFullVisibility,
+    reduceMotion,
     safeImages.length,
     startDelayMs,
   ]);

@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { PanResponder, Platform, Pressable, ScrollView, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Alert, PanResponder, Platform, Pressable, ScrollView, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
@@ -7,6 +7,7 @@ import { Clock, GripVertical, ImagePlus, Plus, Store, X } from "lucide-react-nat
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
 
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import {
   AccessibleImage,
   AppText,
@@ -30,7 +31,20 @@ import { ProfileScreenShell } from "./ProfileScreenShell";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "AddStall">;
 
-type FormErrors = Partial<Record<"stallName" | "imageUri" | "openingHours", string>>;
+type FormErrors = Partial<
+  Record<"stallName" | "imageUri" | "openingHours" | "postalCode" | "deliveryLink", string>
+>;
+
+const SINGAPORE_POSTAL_CODE_PATTERN = /^\d{6}$/;
+
+function isHttpUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return (url.protocol === "https:" || url.protocol === "http:") && Boolean(url.hostname);
+  } catch {
+    return false;
+  }
+}
 type MenuItemDraft = { id: string; name: string; priceRange: string };
 type SelectedStallImage = {
   id: string;
@@ -225,14 +239,8 @@ export function AddStallScreen({ navigation }: Props) {
   const [postalCode, setPostalCode] = useState("");
   const [unitNumber, setUnitNumber] = useState("");
   const [floor, setFloor] = useState("");
-  const [timeSlots, setTimeSlots] = useState<TimeRange[]>([
-    {
-      id: "slot-1",
-      days: ["Mon"],
-      startMinutes: DEFAULT_START_MINUTES,
-      endMinutes: DEFAULT_END_MINUTES,
-    },
-  ]);
+  // No hours by default: a skipped section must not submit made-up opening hours.
+  const [timeSlots, setTimeSlots] = useState<TimeRange[]>([]);
   const [activeTimePicker, setActiveTimePicker] = useState<{
     slotId: string;
     type: "start" | "end";
@@ -253,9 +261,42 @@ export function AddStallScreen({ navigation }: Props) {
   const dragSourceIndexRef = useRef<number>(-1);
   const dragTargetIndexRef = useRef<number>(-1);
 
+  const hasSubmittedRef = useRef(false);
+
   useEffect(() => {
     selectedImagesRef.current = selectedImages;
   }, [selectedImages]);
+
+  const hasUnsavedChanges = Boolean(
+    stallName.trim() ||
+    selectedImages.length ||
+    buildingName.trim() ||
+    area ||
+    address.trim() ||
+    postalCode.trim() ||
+    unitNumber.trim() ||
+    floor.trim() ||
+    timeSlots.length ||
+    menuItemDrafts.some((item) => item.name.trim() || item.priceRange.trim()) ||
+    deliveryLink.trim(),
+  );
+
+  // Leaving with a half-filled form asks first, so details are not lost by a stray swipe.
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+    return navigation.addListener("beforeRemove", (event) => {
+      if (hasSubmittedRef.current) return;
+      event.preventDefault();
+      Alert.alert("Discard this stall?", "The details you entered will be lost.", [
+        { text: "Keep editing", style: "cancel" },
+        {
+          text: "Discard",
+          style: "destructive",
+          onPress: () => navigation.dispatch(event.data.action),
+        },
+      ]);
+    });
+  }, [hasUnsavedChanges, navigation]);
 
   const moveSelectedImage = (fromIndex: number, toIndex: number) => {
     setSelectedImages((current) => {
@@ -266,6 +307,52 @@ export function AddStallScreen({ navigation }: Props) {
       return next;
     });
   };
+
+  // One responder per photo slot, rebuilt only when the photo count changes (not every render).
+  const photoCount = selectedImages.length;
+  const photoPanResponders = useMemo(
+    () =>
+      Array.from({ length: photoCount }, (_, index) =>
+        PanResponder.create({
+          onStartShouldSetPanResponder: () => true,
+          onMoveShouldSetPanResponder: () => true,
+          onPanResponderGrant: () => {
+            dragSourceIndexRef.current = index;
+            dragTargetIndexRef.current = index;
+            setIsPhotoDragging(true);
+          },
+          onPanResponderMove: (_event, gestureState) => {
+            const currentLength = selectedImagesRef.current.length;
+            if (currentLength <= 1) {
+              return;
+            }
+            const slotSize = PHOTO_CARD_WIDTH + PHOTO_SPACING;
+            const offset = Math.round(gestureState.dx / slotSize);
+            const nextIndex = clamp(dragSourceIndexRef.current + offset, 0, currentLength - 1);
+            if (nextIndex !== dragTargetIndexRef.current) {
+              dragTargetIndexRef.current = nextIndex;
+            }
+          },
+          onPanResponderRelease: () => {
+            const sourceIndex = dragSourceIndexRef.current;
+            const targetIndex = dragTargetIndexRef.current;
+            if (sourceIndex >= 0 && targetIndex >= 0 && sourceIndex !== targetIndex) {
+              moveSelectedImage(sourceIndex, targetIndex);
+            }
+            setIsPhotoDragging(false);
+            dragSourceIndexRef.current = -1;
+            dragTargetIndexRef.current = -1;
+          },
+          onPanResponderTerminate: () => {
+            setIsPhotoDragging(false);
+            dragSourceIndexRef.current = -1;
+            dragTargetIndexRef.current = -1;
+          },
+        }),
+      ),
+    // moveSelectedImage only uses the stable state setter.
+    [photoCount],
+  );
 
   const pickImages = async () => {
     let permission = await ImagePicker.getMediaLibraryPermissionsAsync();
@@ -295,7 +382,7 @@ export function AddStallScreen({ navigation }: Props) {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images"],
       allowsMultipleSelection: true,
       selectionLimit: MAX_STALL_IMAGES,
       quality: 0.9,
@@ -461,6 +548,12 @@ export function AddStallScreen({ navigation }: Props) {
     if (getDuplicateSlotsByDays(filledSlots).size > 0) {
       nextErrors.openingHours = "Each weekday can only be used once.";
     }
+    if (postalCode.trim() && !SINGAPORE_POSTAL_CODE_PATTERN.test(postalCode.trim())) {
+      nextErrors.postalCode = "Enter a 6-digit postal code.";
+    }
+    if (deliveryLink.trim() && !isHttpUrl(deliveryLink.trim())) {
+      nextErrors.deliveryLink = "Enter a full link starting with https://";
+    }
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
@@ -496,11 +589,14 @@ export function AddStallScreen({ navigation }: Props) {
 
     try {
       const submission = await submitStall(input);
-      await Promise.allSettled([
-        awardFoodCred("stall_submitted", submission.id),
-        incrementMission(profile.id, "add_stall"),
-        recordPassportContribution(profile.id, "stall_submitted", submission.id),
-      ]);
+      hasSubmittedRef.current = true;
+      if (FEATURE_FLAGS.gamificationEnabled) {
+        await Promise.allSettled([
+          awardFoodCred("stall_submitted", submission.id),
+          incrementMission(profile.id, "add_stall"),
+          recordPassportContribution(profile.id, "stall_submitted", submission.id),
+        ]);
+      }
       addActivityUpdate({
         kind: "submission",
         postId: submission.id,
@@ -619,8 +715,21 @@ export function AddStallScreen({ navigation }: Props) {
                   <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
                     {selectedImages.length > 1 ? (
                       <View
-                        accessibilityLabel={`Drag photo ${index + 1}`}
-                        accessibilityHint="Hold and drag to reorder"
+                        accessible
+                        accessibilityRole="adjustable"
+                        accessibilityLabel={`Photo ${index + 1} of ${selectedImages.length}`}
+                        accessibilityHint="Drag, or swipe up or down, to reorder"
+                        accessibilityActions={[
+                          { name: "increment", label: "Move right" },
+                          { name: "decrement", label: "Move left" },
+                        ]}
+                        onAccessibilityAction={(event) => {
+                          const target =
+                            event.nativeEvent.actionName === "increment" ? index + 1 : index - 1;
+                          if (target < 0 || target >= selectedImages.length) return;
+                          moveSelectedImage(index, target);
+                        }}
+                        hitSlop={8}
                         style={{
                           alignItems: "center",
                           justifyContent: "center",
@@ -630,50 +739,7 @@ export function AddStallScreen({ navigation }: Props) {
                           height: 28,
                           width: 28,
                         }}
-                        {...PanResponder.create({
-                          onStartShouldSetPanResponder: () => true,
-                          onMoveShouldSetPanResponder: () => true,
-                          onPanResponderGrant: () => {
-                            dragSourceIndexRef.current = index;
-                            dragTargetIndexRef.current = index;
-                            setIsPhotoDragging(true);
-                          },
-                          onPanResponderMove: (_event, gestureState) => {
-                            const currentLength = selectedImagesRef.current.length;
-                            if (currentLength <= 1) {
-                              return;
-                            }
-                            const slotSize = PHOTO_CARD_WIDTH + PHOTO_SPACING;
-                            const offset = Math.round(gestureState.dx / slotSize);
-                            const nextIndex = clamp(
-                              dragSourceIndexRef.current + offset,
-                              0,
-                              currentLength - 1,
-                            );
-                            if (nextIndex !== dragTargetIndexRef.current) {
-                              dragTargetIndexRef.current = nextIndex;
-                            }
-                          },
-                          onPanResponderRelease: () => {
-                            const sourceIndex = dragSourceIndexRef.current;
-                            const targetIndex = dragTargetIndexRef.current;
-                            if (
-                              sourceIndex >= 0 &&
-                              targetIndex >= 0 &&
-                              sourceIndex !== targetIndex
-                            ) {
-                              moveSelectedImage(sourceIndex, targetIndex);
-                            }
-                            setIsPhotoDragging(false);
-                            dragSourceIndexRef.current = -1;
-                            dragTargetIndexRef.current = -1;
-                          },
-                          onPanResponderTerminate: () => {
-                            setIsPhotoDragging(false);
-                            dragSourceIndexRef.current = -1;
-                            dragTargetIndexRef.current = -1;
-                          },
-                        }).panHandlers}
+                        {...photoPanResponders[index]?.panHandlers}
                       >
                         <GripVertical size={16} color={palette.textMuted} />
                       </View>
@@ -782,8 +848,14 @@ export function AddStallScreen({ navigation }: Props) {
           label="Postal code"
           placeholder="Enter postal code"
           value={postalCode}
-          onChangeText={setPostalCode}
+          onChangeText={(value) => {
+            setPostalCode(value);
+            setErrors((current) => ({ ...current, postalCode: undefined }));
+          }}
           keyboardType="number-pad"
+          maxLength={6}
+          error={Boolean(errors.postalCode)}
+          errorText={errors.postalCode}
         />
         <View style={{ gap: spacing[3] }}>
           <AppText variant="h3">Opening hours</AppText>
@@ -818,11 +890,12 @@ export function AddStallScreen({ navigation }: Props) {
                       {minutesToTimeLabel(slot.endMinutes)}
                     </AppText>
                   </View>
-                  {timeSlots.length > 1 ? (
+                  {timeSlots.length > 0 ? (
                     <Pressable
                       accessibilityRole="button"
                       accessibilityLabel="Remove opening hours option"
                       accessibilityHint="Removes this opening hour option"
+                      hitSlop={8}
                       onPress={() => removeTimeSlot(slot.id)}
                       style={{
                         width: 28,
@@ -1087,9 +1160,14 @@ export function AddStallScreen({ navigation }: Props) {
           label="Ordering or delivery link"
           placeholder="https://"
           value={deliveryLink}
-          onChangeText={setDeliveryLink}
+          onChangeText={(value) => {
+            setDeliveryLink(value);
+            setErrors((current) => ({ ...current, deliveryLink: undefined }));
+          }}
           autoCapitalize="none"
           keyboardType="url"
+          error={Boolean(errors.deliveryLink)}
+          errorText={errors.deliveryLink}
         />
       </Card>
 

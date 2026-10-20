@@ -140,13 +140,6 @@ function clearAccountScopedStores(): void {
   const { useStallFollowStore } =
     require("./useStallFollowStore") as typeof import("./useStallFollowStore");
   useStallFollowStore.getState()._reset();
-  // Search history and review drafts are account-scoped too: every sign-out
-  // path (Settings, Profile tab, merchant, expiry, account switch) clears them.
-  const { useSearchStore } = require("./useSearchStore") as typeof import("./useSearchStore");
-  const { useReviewDraftStore } =
-    require("./useReviewDraftStore") as typeof import("./useReviewDraftStore");
-  useSearchStore.getState().clearSearchState();
-  useReviewDraftStore.getState().resetDraft();
   // Lists hold private notes and collaborators: never show them to the next account.
   const { useChecklistStore } =
     require("./useChecklistStore") as typeof import("./useChecklistStore");
@@ -154,6 +147,20 @@ function clearAccountScopedStores(): void {
     require("./usePortfolioStore") as typeof import("./usePortfolioStore");
   useChecklistStore.getState()._reset();
   usePortfolioStore.getState()._reset();
+  // A half-written review (and its clientReviewId) belongs to the account that wrote it.
+  const { useReviewDraftStore } =
+    require("./useReviewDraftStore") as typeof import("./useReviewDraftStore");
+  useReviewDraftStore.getState().resetDraft();
+  // Gamification and submissions skip reloading once isLoaded is set: reset them per account.
+  const { useFoodCredStore } = require("./useFoodCredStore") as typeof import("./useFoodCredStore");
+  const { useMissionStore } = require("./useMissionStore") as typeof import("./useMissionStore");
+  const { usePassportStore } = require("./usePassportStore") as typeof import("./usePassportStore");
+  const { useStallSubmissionStore } =
+    require("./useStallSubmissionStore") as typeof import("./useStallSubmissionStore");
+  useFoodCredStore.getState()._reset();
+  useMissionStore.getState()._reset();
+  usePassportStore.getState()._reset();
+  useStallSubmissionStore.getState()._reset();
   const { clearCommunitySafetySessionState } =
     require("@/lib/security/communitySafety") as typeof import("@/lib/security/communitySafety");
   clearCommunitySafetySessionState();
@@ -162,6 +169,18 @@ function clearAccountScopedStores(): void {
 function clearAuthenticatedProfile(): void {
   getProfileStoreState().clearProfile();
   getProfileStoreState().syncProfile(false);
+}
+
+/**
+ * Recent searches and unsent review drafts belong to the account that wrote them. Cleared on a
+ * deliberate sign-out or an account switch, not on session expiry (the same user signs back in).
+ */
+function clearAccountLocalHistory(): void {
+  const { useSearchStore } = require("./useSearchStore") as typeof import("./useSearchStore");
+  const { useReviewDraftStore } =
+    require("./useReviewDraftStore") as typeof import("./useReviewDraftStore");
+  useSearchStore.getState().clearSearchState();
+  useReviewDraftStore.getState().resetDraft();
 }
 
 /** Account whose follow state was already loaded during this app launch. */
@@ -287,6 +306,7 @@ export const useSessionStore = create<SessionState>()(
         const previousUserId = useSessionStore.getState().authenticatedUserId;
         if (previousUserId && nextUserId && previousUserId !== nextUserId) {
           clearAccountScopedStores();
+          clearAccountLocalHistory();
         }
         set((state) => ({
           isAuthReady: true,
@@ -377,6 +397,7 @@ export const useSessionStore = create<SessionState>()(
           authNotice,
         });
         clearAccountScopedStores();
+        clearAccountLocalHistory();
         clearAuthenticatedProfile();
         resetPostHogUser();
         resetSignInTracking();
@@ -426,6 +447,7 @@ export const useSessionStore = create<SessionState>()(
           const nextUserId = session.userId ?? null;
           if (previousUserId && nextUserId && previousUserId !== nextUserId) {
             clearAccountScopedStores();
+            clearAccountLocalHistory();
           }
           set((state) => ({
             isAuthenticated: true,
@@ -498,8 +520,14 @@ export const useSessionStore = create<SessionState>()(
         hasCompletedOnboarding: state.hasCompletedOnboarding,
         hasSkippedTasteQuiz: state.hasSkippedTasteQuiz,
       }),
+      // A corrupt persisted value rehydrates with no state; mark hydrated anyway
+      // so bootstrap still runs and Splash cannot hang on isAuthReady.
       onRehydrateStorage: () => (state) => {
-        state?.markHydrated();
+        if (state) {
+          state.markHydrated();
+          return;
+        }
+        setTimeout(() => useSessionStore.getState().markHydrated(), 0);
       },
     },
   ),

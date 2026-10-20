@@ -123,7 +123,7 @@ test("release-reachable screens hide controls for cut features behind their flag
   assert.match(settings, /const showSocialPrivacySettings = FEATURE_FLAGS\.socialFeedEnabled;/);
   assert.match(
     settings,
-    /\{showSocialPrivacySettings \? \(\s*<SettingsSection title="Privacy">[\s\S]*?label="Profile visibility"/,
+    /\{showSocialPrivacySettings \? \(\s*<SettingsRow\s+label="Profile visibility"/,
   );
   // Unwired preferences were removed outright (see mvp-source-of-truth-contracts).
   for (const label of [
@@ -135,7 +135,10 @@ test("release-reachable screens hide controls for cut features behind their flag
   ]) {
     assert.doesNotMatch(settings, new RegExp(`label="${label}"`));
   }
-  assert.match(settings, /onToggle=\{setLeftHandedMode\}\s*isLast\s/);
+  assert.match(
+    settings,
+    /onToggle=\{handleDeviceToggle\("left_handed_mode", setLeftHandedMode\)\}\s*isLast\s/,
+  );
 
   assert.match(
     notFound,

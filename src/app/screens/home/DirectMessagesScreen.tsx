@@ -68,6 +68,7 @@ export function DirectMessagesScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Go back"
+            hitSlop={10}
             onPress={() => navigation.goBack()}
           >
             <ChevronLeft color={palette.text} size={28} />

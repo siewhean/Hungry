@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Alert, Clipboard, Pressable, Share, View } from "react-native";
+import { AccessibilityInfo, Alert, Clipboard, Pressable, Share, View } from "react-native";
 import { useIsFocused } from "@react-navigation/native";
 import {
   ChevronRight,
@@ -20,15 +20,19 @@ import {
   ImagePlus,
   Trophy,
   UserPlus,
+  UserCheck,
+  Users,
 } from "lucide-react-native";
 
 import { AccessibleImage, AppText, Button, Card, EmptyState, Skeleton } from "@/components/ui";
 import { FloatingShareSendButton, InAppShareCard } from "@/components/social";
 import { MissionBanner } from "@/components/gamification/MissionBanner";
 import { PassportCard } from "@/components/gamification/PassportCard";
+import { FoodCredBadge } from "@/components/gamification/FoodCredBadge";
 import { toChatShareRecipient, type ChatShareRecipient } from "@/features/home/chatShare";
 import { prefetchMerchantTab, preloadRoute } from "@/features/navigation/prefetch";
 import { listSharedStallPosts, mergeStallPosts } from "@/features/social/sharedStallPosts";
+import { useVisitedStallIds } from "@/features/profile/visitedStalls";
 import { biteToStallPost } from "@/lib/services/postTransforms";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
@@ -55,7 +59,7 @@ import {
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import type { StallPost } from "@/types/domain";
+import type { Review, StallPost } from "@/types/domain";
 import { UserProfileContent } from "./UserProfileContent";
 
 type ProfileRouteParams = {
@@ -138,7 +142,6 @@ export function ProfileHomeScreen({
   const signOut = useSessionStore((state) => state.signOut);
   const merchantAccount = useMerchantStore((state) => state.account);
   const setMerchantAccount = useMerchantStore((state) => state.setAccount);
-  const reviewEntries = useProfileStore((state) => state.reviewEntries);
   const sharePostToChat = useActivityStore((state) => state.sharePostToChat);
   const { loadStories } = useStoryStore();
   const loadCredProfile = useFoodCredStore((s) => s.loadCredProfile);
@@ -148,6 +151,7 @@ export function ProfileHomeScreen({
   const loadStallInteractions = useStallInteractionStore((s) => s.loadInteractions);
   const stallInteractions = useStallInteractionStore((state) => state.interactions);
   const computePassportProgress = usePassportStore((s) => s.computeProgress);
+  const visitedStallIds = useVisitedStallIds();
   const insets = useSafeAreaInsets();
   const shareSheetRef = useRef<BottomSheetModal>(null);
   const shareSnapPoints = useMemo(() => ["45%"], []);
@@ -179,6 +183,12 @@ export function ProfileHomeScreen({
   const [hasMorePosts, setHasMorePosts] = useState(false);
   const [isLoadingMorePosts, setIsLoadingMorePosts] = useState(false);
   const [postsLoadFailed, setPostsLoadFailed] = useState(false);
+  const [postsLoaded, setPostsLoaded] = useState(false);
+  const [postsReloadKey, setPostsReloadKey] = useState(0);
+  /** Own server reviews; null until the first load finishes. */
+  const [ownReviews, setOwnReviews] = useState<Review[] | null>(null);
+  const [ownReviewsFailed, setOwnReviewsFailed] = useState(false);
+  const [ownReviewsReloadKey, setOwnReviewsReloadKey] = useState(0);
   const rootNavigation = getRootNavigation(navigation as any);
 
   const openProfileConnections = useCallback(
@@ -209,7 +219,7 @@ export function ProfileHomeScreen({
   const avatarSize = spacing[20];
   const avatarInitials = useMemo(
     () =>
-      (isAuthenticated ? profile.displayName : "Guest User")
+      profile.displayName
         .split(/\s+/)
         .filter(Boolean)
         .slice(0, 2)
@@ -273,24 +283,27 @@ export function ProfileHomeScreen({
     };
   }, [isAuthenticated, mode, profile.id, setMerchantAccount]);
 
+  // Loads run once per account; tried-stall changes only recompute progress (effect below).
   useEffect(() => {
-    if (isAuthenticated) {
-      if (storiesEnabled) {
-        void loadStories();
-      }
+    if (!isAuthenticated) return;
+    const logLoadError = (label: string) => (error: unknown) => {
+      console.error(`Failed to load ${label}:`, error);
+    };
 
-      void loadStallSubmissions();
+    if (storiesEnabled) {
+      void Promise.resolve(loadStories()).catch(logLoadError("stories"));
+    }
 
-      if (gamificationEnabled) {
-        void loadCredProfile(profile.id);
-        void loadMissions(profile.id);
-        void loadStallInteractions(profile.id).then(() => {
-          computePassportProgress(triedStallIds);
-        });
-      }
+    void loadStallSubmissions().catch(logLoadError("stall submissions"));
+
+    // Tried stalls feed the Stalls stat, so they load with or without gamification.
+    void loadStallInteractions(profile.id).catch(logLoadError("stall interactions"));
+
+    if (gamificationEnabled) {
+      void loadCredProfile(profile.id).catch(logLoadError("FoodCred"));
+      void loadMissions(profile.id).catch(logLoadError("missions"));
     }
   }, [
-    computePassportProgress,
     gamificationEnabled,
     isAuthenticated,
     loadCredProfile,
@@ -299,9 +312,13 @@ export function ProfileHomeScreen({
     loadStallInteractions,
     loadStories,
     storiesEnabled,
-    triedStallIds,
     profile.id,
   ]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !gamificationEnabled) return;
+    computePassportProgress(triedStallIds);
+  }, [computePassportProgress, gamificationEnabled, isAuthenticated, triedStallIds]);
 
   const loadOwnPostsPage = useCallback(
     (offset: number) =>
@@ -344,6 +361,7 @@ export function ProfileHomeScreen({
       );
       setProfilePosts((current) => (haveEqualPosts(current, nextPosts) ? current : nextPosts));
       setPostsLoadFailed(ownPage === null);
+      setPostsLoaded(true);
       setLoadedPostRows(ownPage?.rowCount ?? 0);
       setHasMorePosts(ownPage?.rowCount === OWN_POSTS_PAGE_SIZE);
     };
@@ -353,7 +371,7 @@ export function ProfileHomeScreen({
     return () => {
       isMounted = false;
     };
-  }, [isAuthenticated, loadOwnPostsPage, profile.id]);
+  }, [isAuthenticated, loadOwnPostsPage, profile.id, postsReloadKey]);
 
   const loadMoreProfilePosts = () => {
     if (isLoadingMorePosts || !hasMorePosts) return;
@@ -377,29 +395,26 @@ export function ProfileHomeScreen({
     });
   }, [profilePosts]);
 
-  const sharedReviews = useMemo(() => {
-    const repository = getDataRepository();
-
-    const reviewItems = profile.reviewedDishIds
-      .map((dishId) => {
-        const entry = reviewEntries[dishId];
-        const dish = repository.getDishById(dishId);
-        return {
-          id: dishId,
-          title: dish?.name ?? "Review",
-          subtitle: dish ? `Review for ${dish.name}` : "Review",
-          text: entry?.text || "You reviewed this dish.",
-          createdAt: entry?.createdAt ?? new Date(0).toISOString(),
-        };
+  // Own reviews come from the reviews read, not reviewedDishIds (which also holds "tried" taps).
+  useEffect(() => {
+    if (!isAuthenticated || !isFocused) return;
+    let isActive = true;
+    setOwnReviewsFailed(false);
+    void getHungryService()
+      .reviews.getUserReviews(profile.id)
+      .then((rows) => {
+        if (isActive) setOwnReviews(rows);
       })
-      .filter((item) => Boolean(item.text));
-
-    if (!reviewItems.length) return [];
-    return reviewItems.sort((a, b) => {
-      if (a.createdAt === b.createdAt) return 0;
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
-  }, [profile.reviewedDishIds, reviewEntries]);
+      .catch((error) => {
+        console.error("Failed to load own reviews:", error);
+        if (!isActive) return;
+        setOwnReviewsFailed(true);
+        setOwnReviews((current) => current ?? []);
+      });
+    return () => {
+      isActive = false;
+    };
+  }, [isAuthenticated, isFocused, profile.id, ownReviewsReloadKey]);
 
   const profileStatSummary = useMemo(
     () => ({
@@ -480,9 +495,22 @@ export function ProfileHomeScreen({
     return `Check out my Taste Fingerprint on Hungry!\n\nTop taste traits: ${topTastes.join(", ")}`;
   }, [profile.tasteVector]);
 
+  // The share text has no link yet, so the action copies text and confirms it was copied.
   const copyTasteFingerprintLink = useCallback(() => {
     Clipboard.setString(tasteShareMessage);
+    AccessibilityInfo.announceForAccessibility("Taste Fingerprint copied");
+    Alert.alert("Copied", "Your Taste Fingerprint summary is on the clipboard.");
   }, [tasteShareMessage]);
+
+  const tastePersonaSummary = useMemo(() => {
+    const ranked = TASTE_DIMENSIONS.map((dimension) => ({
+      label: dimension.label,
+      value: profile.tasteVector[dimension.key] ?? 0,
+    })).sort((a, b) => b.value - a.value);
+    const top = ranked.filter((entry) => entry.value > 0).slice(0, 2);
+    if (top.length === 0) return "Rate and save dishes to build your Taste Fingerprint.";
+    return `You lean ${top.map((entry) => entry.label.toLowerCase()).join(" and ")}.`;
+  }, [profile.tasteVector]);
 
   const shareTasteProfileOutsideApp = useCallback(async () => {
     try {
@@ -572,6 +600,8 @@ export function ProfileHomeScreen({
           </Pressable>
           {menuOpen && (
             <View
+              accessibilityViewIsModal
+              onAccessibilityEscape={() => setMenuOpen(false)}
               style={{
                 position: "absolute",
                 top: spacing[8] + spacing[0.5],
@@ -660,6 +690,15 @@ export function ProfileHomeScreen({
                   }}
                 />
               )}
+              <MenuRow
+                label="Followed Stalls"
+                icon={<Store size={20} color={palette.text} />}
+                onPressIn={() => preloadRoute(navigation, "FollowedStalls")}
+                onPress={() => {
+                  setMenuOpen(false);
+                  navigation.navigate("FollowedStalls");
+                }}
+              />
               {FEATURE_FLAGS.reviewCreationEnabled ? (
                 <MenuRow
                   label="Review History"
@@ -686,11 +725,20 @@ export function ProfileHomeScreen({
                   icon={<LogOut size={20} color={palette.error} />}
                   onPress={() => {
                     setMenuOpen(false);
-                    signOut();
-                    rootNavigation.reset({
-                      index: 0,
-                      routes: [{ name: "AuthStack", params: { screen: "Login" } }],
-                    });
+                    Alert.alert("Sign out", "You will be signed out from Hungry on this device.", [
+                      { text: "Cancel", style: "cancel" },
+                      {
+                        text: "Sign out",
+                        style: "destructive",
+                        onPress: () => {
+                          signOut();
+                          rootNavigation.reset({
+                            index: 0,
+                            routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+                          });
+                        },
+                      },
+                    ]);
                   }}
                 />
               )}
@@ -757,8 +805,9 @@ export function ProfileHomeScreen({
             {isAuthenticated && (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Edit profile photo"
+                accessibilityLabel="Edit profile"
                 accessibilityHint="Opens profile editing"
+                hitSlop={8}
                 onPressIn={() => preloadRoute(navigation, "EditProfile")}
                 onPress={() => navigation.navigate("EditProfile")}
                 style={{
@@ -788,8 +837,17 @@ export function ProfileHomeScreen({
               minimumFontScale={0.78}
               style={{ color: palette.text }}
             >
-              {isAuthenticated ? profile.displayName : "Guest User"}
+              {profile.displayName}
             </AppText>
+            {gamificationEnabled ? <FoodCredBadge size="sm" /> : null}
+            <Button
+              label="Edit profile"
+              variant="secondary"
+              size="sm"
+              onPressIn={() => preloadRoute(navigation, "EditProfile")}
+              onPress={() => navigation.navigate("EditProfile")}
+              style={{ alignSelf: "flex-start", minHeight: 44 }}
+            />
           </View>
         </View>
 
@@ -798,7 +856,7 @@ export function ProfileHomeScreen({
             <StatBlock
               label="Followers"
               value={profileFollowCounts?.followersCount ?? null}
-              icon={<Heart size={14} color={palette.orange} />}
+              icon={<Users size={14} color={palette.orange} />}
               onPress={() =>
                 openProfileConnections("Followers", {
                   userId: profile.id,
@@ -809,7 +867,7 @@ export function ProfileHomeScreen({
             <StatBlock
               label="Following"
               value={profileFollowCounts?.followingCount ?? null}
-              icon={<Send size={14} color={palette.orange} />}
+              icon={<UserCheck size={14} color={palette.orange} />}
               onPress={() =>
                 openProfileConnections("Following", {
                   userId: profile.id,
@@ -829,7 +887,7 @@ export function ProfileHomeScreen({
             {FEATURE_FLAGS.reviewCreationEnabled ? (
               <StatBlock
                 label="Reviews"
-                value={profile.stats.dishesReviewed}
+                value={ownReviews?.length ?? null}
                 icon={<PencilLine size={14} color={palette.orange} />}
                 onPressIn={() =>
                   !isOtherUserProfile ? preloadRoute(navigation, "ReviewHistory") : undefined
@@ -839,7 +897,7 @@ export function ProfileHomeScreen({
             ) : null}
             <StatBlock
               label="Stalls"
-              value={profile.stats.stallsVisited}
+              value={visitedStallIds.length}
               icon={<Utensils size={14} color={palette.orange} />}
               onPressIn={() => preloadRoute(navigation, "VisitedStalls")}
               onPress={() => navigation.navigate("VisitedStalls")}
@@ -887,7 +945,8 @@ export function ProfileHomeScreen({
                 accessibilityLabel="Share Taste Fingerprint"
                 accessibilityHint="Opens sharing options for your Taste Fingerprint"
                 onPress={handleShareTaste}
-                style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+                hitSlop={{ top: 14, bottom: 14, left: 8, right: 8 }}
+                style={{ flexDirection: "row", alignItems: "center", gap: 4, minHeight: 44 }}
               >
                 <Send size={16} color={palette.orange} />
                 <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
@@ -928,6 +987,7 @@ export function ProfileHomeScreen({
                 >
                   <BarChart3 size={20} color={palette.orange} />
                 </View>
+                <AppText style={{ flex: 1, fontWeight: "600" }}>{tastePersonaSummary}</AppText>
               </View>
 
               <View style={{ gap: spacing[2] }}>
@@ -944,7 +1004,9 @@ export function ProfileHomeScreen({
             </View>
           </View>
           <View style={{ gap: spacing[4], marginTop: spacing[5] }}>
-            <AppText variant="h2">Posts</AppText>
+            <AppText variant="h2">
+              {activeShareTab === "posts" ? "Posts" : resolvedReviewSignalLabel}
+            </AppText>
             <View
               style={{
                 alignSelf: "stretch",
@@ -1037,11 +1099,15 @@ export function ProfileHomeScreen({
                     </Pressable>
                   ))}
                 </View>
+              ) : !postsLoaded ? (
+                <ProfileGridSkeleton />
               ) : postsLoadFailed ? (
                 <EmptyState
                   title="Couldn't load posts"
-                  body="Check your connection and open your profile again."
+                  body="Check your connection and try again."
                   icon={<MessageCircleMore size={36} color={palette.textSecondary} />}
+                  ctaLabel="Retry"
+                  onPress={() => setPostsReloadKey((key) => key + 1)}
                 />
               ) : (
                 <EmptyState
@@ -1050,16 +1116,48 @@ export function ProfileHomeScreen({
                   icon={<MessageCircleMore size={36} color={palette.textSecondary} />}
                 />
               )
-            ) : sharedReviews.length ? (
+            ) : ownReviews === null ? (
               <View style={{ gap: spacing[3] }}>
-                {sharedReviews.map((item) => (
-                  <Card key={item.id} style={{ gap: spacing[3] }}>
-                    <View style={{ gap: spacing[1] }}>
-                      <AppText variant="bodyBold">{item.title}</AppText>
-                    </View>
-                  </Card>
-                ))}
+                <Skeleton height={spacing[16]} borderRadius={componentRadii.card} />
+                <Skeleton height={spacing[16]} borderRadius={componentRadii.card} />
               </View>
+            ) : ownReviews.length ? (
+              <View style={{ gap: spacing[3] }}>
+                {ownReviews.map((review) => {
+                  const dishName = review.dishId
+                    ? getDataRepository().getDishById(review.dishId)?.name
+                    : undefined;
+                  return (
+                    <Pressable
+                      key={review.id}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Review of ${dishName ?? "dish"}, rated ${review.rating} out of 5`}
+                      accessibilityHint="Opens the dish"
+                      disabled={!review.dishId}
+                      onPress={() =>
+                        review.dishId &&
+                        rootNavigation.navigate("DishDetail", { dishId: review.dishId })
+                      }
+                    >
+                      <Card style={{ gap: spacing[2] }}>
+                        <AppText variant="bodyBold">{dishName ?? "Reviewed dish"}</AppText>
+                        <AppText variant="micro" tone="secondary">
+                          {`Rated ${review.rating}/5`}
+                        </AppText>
+                        {review.text ? <AppText numberOfLines={3}>{review.text}</AppText> : null}
+                      </Card>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ) : ownReviewsFailed ? (
+              <EmptyState
+                title="Couldn't load reviews"
+                body="Check your connection and try again."
+                icon={<MessageCircleMore size={36} color={palette.textSecondary} />}
+                ctaLabel="Retry"
+                onPress={() => setOwnReviewsReloadKey((key) => key + 1)}
+              />
             ) : (
               <EmptyState
                 title="No reviews yet"
@@ -1133,8 +1231,8 @@ export function ProfileHomeScreen({
                 quickActions={[
                   {
                     key: "copy",
-                    label: "Copy link",
-                    accessibilityLabel: "Copy taste fingerprint link",
+                    label: "Copy text",
+                    accessibilityLabel: "Copy taste fingerprint text",
                     icon: ({ color, size }) => <Copy color={color} size={size} />,
                     onPress: copyTasteFingerprintLink,
                   },
@@ -1286,7 +1384,13 @@ function TasteBar({
   const width = `${(value / max) * 100}%` as any;
 
   return (
-    <View style={{ gap: spacing[1] }}>
+    <View
+      accessible
+      accessibilityRole="progressbar"
+      accessibilityLabel={label}
+      accessibilityValue={{ min: 0, max, now: value, text: `${value.toFixed(1)} out of ${max}` }}
+      style={{ gap: spacing[1] }}
+    >
       <View
         style={{
           flexDirection: "row",
@@ -1318,6 +1422,23 @@ function TasteBar({
           }}
         />
       </View>
+    </View>
+  );
+}
+
+/** Placeholder tiles while the first page of posts loads, so "No posts yet" does not flash. */
+function ProfileGridSkeleton() {
+  const { spacing } = useHungryTheme();
+  return (
+    <View
+      accessibilityLabel="Loading posts"
+      style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -spacing[4] }}
+    >
+      {Array.from({ length: 6 }, (_, index) => (
+        <View key={index} style={{ width: "33.333%", aspectRatio: 1, padding: 1 }}>
+          <Skeleton height="100%" borderRadius={0} />
+        </View>
+      ))}
     </View>
   );
 }

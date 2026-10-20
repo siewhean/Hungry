@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { View, Pressable } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Alert, View, Pressable } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ChevronRight, Camera } from "lucide-react-native";
@@ -7,11 +7,11 @@ import { ChevronRight, Camera } from "lucide-react-native";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { AccessibleImage, AppText, Button, Card, Input } from "@/components/ui";
 import { validateEmail } from "@/features/auth/validation";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
-import { confirmGalleryAccess, isGalleryPermissionGranted } from "@/lib/permissions/gallery";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import type { ProfileStackParamList } from "./ProfileStack";
 
@@ -20,13 +20,11 @@ type Props = NativeStackScreenProps<ProfileStackParamList, "EditProfile">;
 function loadImagePickerModule() {
   try {
     return require("expo-image-picker") as {
-      MediaTypeOptions: { Images: string };
-      requestMediaLibraryPermissionsAsync: () => Promise<{ status: string }>;
       launchImageLibraryAsync: (options: {
         allowsEditing: boolean;
         aspect: [number, number];
         quality: number;
-        mediaTypes: string;
+        mediaTypes: "images"[];
       }) => Promise<{ canceled: boolean; assets?: { uri: string }[] }>;
     };
   } catch {
@@ -42,22 +40,14 @@ export function EditProfileScreen({ navigation }: Props) {
   // The store is the source of truth. A local draft exists only while the user
   // is typing; it is cleared on every focus, so a screen instance mounted early
   // (ProfileHome preloads this route on press-in) or reopened after a save never
-  // shows a stale name snapshot.
+  // shows a stale snapshot.
   const [displayNameDraft, setDisplayNameDraft] = useState<string | null>(null);
   const displayName = displayNameDraft ?? profile.displayName;
   const [emailDraft, setEmailDraft] = useState<string | null>(null);
   const email = emailDraft ?? profile.email ?? "";
   const [avatarUri, setAvatarUri] = useState<string | undefined>(undefined);
-  useFocusEffect(
-    useCallback(() => {
-      setDisplayNameDraft(null);
-      setEmailDraft(null);
-      setAvatarUri(undefined);
-    }, []),
-  );
   const [isSaving, setIsSaving] = useState(false);
   const [canChangePassword, setCanChangePassword] = useState(false);
-  const trimmedDisplayName = displayName.trim();
   const avatarPreviewUri = avatarUri ?? profile.avatarUrl;
   const avatarSize = spacing[20];
   const avatarInitials = useMemo(
@@ -72,18 +62,41 @@ export function EditProfileScreen({ navigation }: Props) {
     [displayName],
   );
 
-  const handlePickAvatar = async () => {
-    const shouldRequestPermission = await confirmGalleryAccess({
-      title: "Allow gallery access",
-      message: "Hungry needs access to your photo library to update your profile picture.",
-      confirmLabel: "Allow",
-      cancelLabel: "Not now",
+  const trimmedName = displayName.trim();
+  const nameError = trimmedName ? undefined : "Enter a display name.";
+  const isDirty =
+    trimmedName !== profile.displayName.trim() ||
+    email.trim().toLowerCase() !== (profile.email ?? "").trim().toLowerCase() ||
+    avatarUri !== undefined;
+  // Saving (or leaving after a save) must not trigger the unsaved-changes prompt.
+  const allowLeaveRef = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      setDisplayNameDraft(null);
+      setEmailDraft(null);
+      setAvatarUri(undefined);
+      allowLeaveRef.current = false;
+    }, []),
+  );
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("beforeRemove", (event) => {
+      if (!isDirty || allowLeaveRef.current) return;
+      event.preventDefault();
+      Alert.alert("Discard changes?", "Your profile changes haven't been saved.", [
+        { text: "Keep editing", style: "cancel" },
+        {
+          text: "Discard",
+          style: "destructive",
+          onPress: () => navigation.dispatch(event.data.action),
+        },
+      ]);
     });
+    return unsubscribe;
+  }, [isDirty, navigation]);
 
-    if (!shouldRequestPermission) {
-      return;
-    }
-
+  const handlePickAvatar = async () => {
+    // The system photo picker needs no library permission, so there is no pre-prompt.
     const imagePicker = loadImagePickerModule();
     if (!imagePicker) {
       showToast({
@@ -93,17 +106,8 @@ export function EditProfileScreen({ navigation }: Props) {
       return;
     }
 
-    const permission = await imagePicker.requestMediaLibraryPermissionsAsync();
-    if (!isGalleryPermissionGranted(permission)) {
-      showToast({
-        message: "Photo permission is required to update your avatar.",
-        tone: "warning",
-      });
-      return;
-    }
-
     const result = await imagePicker.launchImageLibraryAsync({
-      mediaTypes: imagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
@@ -114,7 +118,7 @@ export function EditProfileScreen({ navigation }: Props) {
     }
 
     setAvatarUri(result.assets[0].uri);
-    showToast({ message: "Photo selected. Save changes to upload it.", tone: "info" });
+    showToast({ message: "Photo selected. Tap Save changes to use it.", tone: "info" });
   };
 
   useEffect(() => {
@@ -141,7 +145,6 @@ export function EditProfileScreen({ navigation }: Props) {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Change profile photo"
-          accessibilityHint="Opens your photo library to choose a new avatar"
           style={{ position: "relative" }}
           onPress={() => {
             void handlePickAvatar();
@@ -208,25 +211,24 @@ export function EditProfileScreen({ navigation }: Props) {
             label="Display name"
             value={displayName}
             onChangeText={setDisplayNameDraft}
-            error={!trimmedDisplayName}
-            errorText={trimmedDisplayName ? undefined : "Display name is required."}
+            errorText={nameError}
+            error={Boolean(nameError)}
           />
-          <View style={{ gap: spacing[1] }}>
-            <Input
-              label="Email"
-              autoCapitalize="none"
-              keyboardType="email-address"
-              value={email}
-              onChangeText={setEmailDraft}
-            />
-            <AppText variant="micro" tone="muted">
-              Changing your email sends confirmation links to your current and new addresses. Your
-              sign-in email stays the same until both are opened.
-            </AppText>
-          </View>
+          <Input
+            label="Email"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmailDraft}
+          />
+          <AppText variant="micro" tone="muted">
+            Changing your email sends confirmation links to your current and new addresses. Your
+            sign-in email stays the same until both are opened.
+          </AppText>
           {canChangePassword ? (
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel="Change password"
               onPress={handleChangePassword}
               style={{
                 flexDirection: "row",
@@ -244,10 +246,13 @@ export function EditProfileScreen({ navigation }: Props) {
       <Button
         label="Save changes"
         loading={isSaving}
-        disabled={!trimmedDisplayName}
+        disabled={!isDirty || Boolean(nameError)}
         onPress={() => {
-          if (!trimmedDisplayName) return;
           void (async () => {
+            if (nameError) {
+              showToast({ message: nameError, tone: "warning" });
+              return;
+            }
             const nextEmail = email.trim().toLowerCase();
             const emailChanged = nextEmail !== (profile.email ?? "").trim().toLowerCase();
             if (emailChanged) {
@@ -260,14 +265,17 @@ export function EditProfileScreen({ navigation }: Props) {
             setIsSaving(true);
             try {
               const savedProfile = await getHungryService().profile.updateProfile({
-                displayName: trimmedDisplayName,
+                displayName: trimmedName,
                 ...(avatarUri ? { avatarUrl: avatarUri } : {}),
                 dietaryPreferences: profile.dietaryPreferences,
               });
               applySavedProfileEdits(savedProfile);
-              setDisplayNameDraft(null);
-              setEmailDraft(null);
-              setAvatarUri(undefined);
+              allowLeaveRef.current = true;
+              trackAnalyticsEvent("profile_updated", {
+                name_changed: trimmedName !== profile.displayName.trim(),
+                avatar_changed: avatarUri !== undefined,
+                email_change_requested: emailChanged,
+              });
               if (emailChanged) {
                 try {
                   await getHungryService().auth.requestEmailChange(nextEmail);

@@ -33,6 +33,7 @@ import {
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
 import type { CustomerInteraction, InteractionType } from "@/types/domain";
 
 type InboxFilter = InteractionType | "all" | "unreplied";
@@ -307,8 +308,12 @@ function InteractionCard({
         />
       </View>
 
-      {interaction.rating && (
-        <View style={{ flexDirection: "row", marginBottom: spacing[2], gap: 2 }}>
+      {typeof interaction.rating === "number" && interaction.rating > 0 ? (
+        <View
+          accessible
+          accessibilityLabel={`Rated ${interaction.rating} out of 5`}
+          style={{ flexDirection: "row", marginBottom: spacing[2], gap: 2 }}
+        >
           {[1, 2, 3, 4, 5].map((s) => (
             <Star
               key={s}
@@ -318,7 +323,7 @@ function InteractionCard({
             />
           ))}
         </View>
-      )}
+      ) : null}
 
       <AppText variant="body" style={{ marginBottom: spacing[3] }}>
         {interaction.text}
@@ -393,6 +398,11 @@ function ReplyComposer({
     setIsSending(true);
     try {
       await getHungryService().merchant.replyToInteraction(interaction.id, text);
+      trackMerchantEvent(
+        "merchant_customer_reply_sent",
+        useMerchantStore.getState().activeOutletId ?? undefined,
+        { interaction_type: interaction.type },
+      );
       onSent();
     } catch (e) {
       Alert.alert("Error", "Failed to send reply.");

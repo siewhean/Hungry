@@ -15,6 +15,7 @@ import { G, Path, Svg, Text as SvgText } from "react-native-svg";
 
 import { AccessibleImage } from "@/components/ui/AccessibleImage";
 import { HUNGRY_LOGO_ICON } from "@/constants/brandAssets";
+import { selectActiveWheelEntries } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
 import type { WheelEntry } from "@/types/domain";
 
@@ -58,11 +59,7 @@ function truncateLabel(label: string, maxChars: number): string {
 export function WheelSvg({ entries, size = 300 }: Props) {
   const { palette } = useHungryTheme();
 
-  const active = Array.from(
-    new Map(
-      entries.filter((entry) => !entry.isEliminated).map((entry) => [entry.id, entry] as const),
-    ).values(),
-  );
+  const active = selectActiveWheelEntries(entries);
   const cx = size / 2;
   const cy = size / 2;
   const r = size / 2 - 4; // 4px inset keeps the border from clipping
@@ -90,7 +87,9 @@ export function WheelSvg({ entries, size = 300 }: Props) {
   return (
     <View
       accessible
-      accessibilityLabel={`Hungry wheel with ${active.length} options`}
+      accessibilityLabel={`Hungry wheel with ${active.length} options: ${active
+        .map((entry) => entry.label)
+        .join(", ")}`}
       accessibilityRole="image"
       style={{ width: size, height: size }}
     >
@@ -101,7 +100,8 @@ export function WheelSvg({ entries, size = 300 }: Props) {
             const endAngle = startAngle + segmentAngle;
             const midAngle = startAngle + segmentAngle / 2;
             const fill = i % 2 === 0 ? palette.orange : palette.surface;
-            const textFill = i % 2 === 0 ? palette.textOnDark : palette.text;
+            // Near-black on orange (white on orange measured 3.69:1).
+            const textFill = i % 2 === 0 ? palette.textOnOrange : palette.text;
 
             const labelPt = polarToCartesian(cx, cy, labelRadius, midAngle);
             const labelAngle = midAngle - 90; // rotate text to sit along arc
@@ -118,8 +118,8 @@ export function WheelSvg({ entries, size = 300 }: Props) {
                   x={labelPt.x}
                   y={labelPt.y}
                   fill={textFill}
-                  fontSize={11}
-                  fontWeight="500"
+                  fontSize={12}
+                  fontWeight="600"
                   textAnchor="middle"
                   alignmentBaseline="middle"
                   rotation={labelAngle}

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ArrowLeft, Search } from "lucide-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
@@ -16,8 +17,9 @@ type Props = NativeStackScreenProps<ProfileStackParamList, "PortfolioItemPicker"
 function parsePortfolioScore(value: string): number | undefined {
   const trimmed = value.trim();
   if (!trimmed) return undefined;
-  const parsed = Number.parseFloat(trimmed);
-  return Number.isFinite(parsed) ? parsed : Number.NaN;
+  // Whole numbers only: the stored score is an integer, so 8.5 would be silently rounded.
+  if (!/^\d+$/.test(trimmed)) return Number.NaN;
+  return Number.parseInt(trimmed, 10);
 }
 
 export function PortfolioItemPickerScreen({ navigation, route }: Props) {
@@ -27,7 +29,7 @@ export function PortfolioItemPickerScreen({ navigation, route }: Props) {
   const conflict = usePortfolioStore((state) => state.conflicts[portfolioId]);
   const clearConflict = usePortfolioStore((state) => state.clearConflict);
   const [query, setQuery] = useState("");
-  const [score, setScore] = useState("8");
+  const [score, setScore] = useState("");
   const [publicNotes, setPublicNotes] = useState("");
   const [privateNotes, setPrivateNotes] = useState("");
   const [dishes, setDishes] = useState<DishDetail[]>([]);
@@ -36,11 +38,13 @@ export function PortfolioItemPickerScreen({ navigation, route }: Props) {
   const parsedScore = parsePortfolioScore(score);
   const scoreError =
     parsedScore !== undefined && (Number.isNaN(parsedScore) || parsedScore < 1 || parsedScore > 10)
-      ? "Use a score from 1 to 10."
+      ? "Use a whole number from 1 to 10."
       : undefined;
   const canAddItem = !scoreError && !isSaving;
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
+    // `mounted` drops results from a superseded search; the timer debounces typing.
     let mounted = true;
     const service = getHungryService();
 
@@ -74,9 +78,12 @@ export function PortfolioItemPickerScreen({ navigation, route }: Props) {
       if (mounted) setVenues(nextVenues);
     }
 
-    void loadChoices();
+    const timer = setTimeout(() => {
+      void loadChoices().catch((error) => console.error("Failed to search:", error));
+    }, 250);
     return () => {
       mounted = false;
+      clearTimeout(timer);
     };
   }, [mode, query]);
 
@@ -126,7 +133,7 @@ export function PortfolioItemPickerScreen({ navigation, route }: Props) {
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: palette.bg }}
+      style={{ flex: 1, backgroundColor: palette.bg, paddingTop: Math.max(insets.top, spacing[4]) }}
       contentContainerStyle={[styles.content, { gap: spacing[4], padding: spacing[4] }]}
     >
       <View style={styles.header}>
@@ -141,7 +148,7 @@ export function PortfolioItemPickerScreen({ navigation, route }: Props) {
         <View style={{ flex: 1 }}>
           <AppText variant="h1">{mode === "dish" ? "Add dish" : "Add stall"}</AppText>
           <AppText variant="bodySmall" tone="secondary">
-            Score and notes can be edited later.
+            Add a score and notes, then pick an item.
           </AppText>
         </View>
       </View>
@@ -151,8 +158,9 @@ export function PortfolioItemPickerScreen({ navigation, route }: Props) {
           label="Score"
           value={score}
           onChangeText={setScore}
-          keyboardType="decimal-pad"
-          helperText={scoreError ?? "Use 1 to 10 for ranking portfolios."}
+          keyboardType="number-pad"
+          placeholder="Optional"
+          helperText={scoreError ?? "Optional. A whole number from 1 to 10 for rankings."}
         />
         <Input
           label="Public note"

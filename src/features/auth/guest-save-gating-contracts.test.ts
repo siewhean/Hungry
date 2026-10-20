@@ -90,7 +90,7 @@ test("a guest's taste quiz stays on the device and uploads on sign-in", () => {
   assert.match(apply, /return profile\.id === "guest-user";/);
   assert.match(
     apply,
-    /provisional\.tasteProfile\s*\? operations\.updateTasteProfile\(provisional\.tasteProfile\)/,
+    /provisional\.tasteProfile && hasNoSavedTaste\(profileReady\)\s*\? operations\.updateTasteProfile\(provisional\.tasteProfile\)/,
   );
   for (const screen of [
     "src/app/screens/auth/LoginScreen.tsx",

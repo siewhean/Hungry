@@ -3,12 +3,11 @@ import {
   View,
   StyleSheet,
   Pressable,
-  ScrollView,
   useWindowDimensions,
   Animated,
   type ViewToken,
 } from "react-native";
-import { ArrowLeft, MapPinned, Heart, Utensils } from "lucide-react-native";
+import { ArrowLeft, MapPinned, Star, Utensils } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -17,8 +16,8 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
-  AccessibleImage,
   AppText,
+  Button,
   ExpandableSearchLauncher,
   FilterChipRail,
   Screen,
@@ -53,7 +52,7 @@ import {
 
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 type QuickBitesRoute = RouteProp<RootStackParamList, "QuickBites">;
-type QuickBiteGridItem = Bite & { distance: number };
+type QuickBiteGridItem = Bite & { distance?: number };
 type QuickBiteCycleFrame = {
   imageUrl: string;
   item: QuickBiteGridItem;
@@ -76,42 +75,6 @@ function QuickBiteImagePlaceholder({ height }: { height: number }) {
     >
       <Utensils color={palette.orange} size={28} />
     </View>
-  );
-}
-
-function QuickBiteCarouselImage({ bite }: { bite: Bite }) {
-  const imageUrls = useMemo(
-    () =>
-      [bite.photoUrl, ...(bite.mediaUrls ?? [])].filter(
-        (imageUrl, index, imageUrls) =>
-          imageUrl.trim().length > 0 && imageUrls.indexOf(imageUrl) === index,
-      ),
-    [bite.mediaUrls, bite.photoUrl],
-  );
-  const [failedUrls, setFailedUrls] = useState<readonly string[]>([]);
-  const imageSignature = imageUrls.join("\u001f");
-  const activeImageUrl = imageUrls.find((imageUrl) => !failedUrls.includes(imageUrl));
-
-  useEffect(() => {
-    setFailedUrls([]);
-  }, [imageSignature]);
-
-  if (!activeImageUrl) {
-    return <QuickBiteImagePlaceholder height={104} />;
-  }
-
-  return (
-    <AccessibleImage
-      source={{ uri: activeImageUrl }}
-      style={{ height: 104, width: "100%" }}
-      contentFit="cover"
-      onError={() => {
-        setFailedUrls((current) =>
-          current.includes(activeImageUrl) ? current : [...current, activeImageUrl],
-        );
-      }}
-      decorative
-    />
   );
 }
 
@@ -171,6 +134,8 @@ function QuickBiteGridCard({
 
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Open ${activeSlide.dishName} at ${activeSlide.venueName}`}
       onPressIn={() => onPrefetch(activeSlide)}
       onPress={() => onOpen(activeSlide)}
       style={{
@@ -215,24 +180,33 @@ function QuickBiteGridCard({
           {activeSlide.dishName}
         </AppText>
         <View style={styles.metaRow}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
-            <MapPinned size={10} color={palette.white} />
-            <AppText
-              variant="micro"
-              style={{ color: palette.white, fontWeight: "600", fontSize: 10 }}
-            >
-              {activeSlide.distance}m
-            </AppText>
-          </View>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
-            <Heart size={10} color={palette.white} fill={palette.white} style={{ opacity: 0.8 }} />
-            <AppText
-              variant="micro"
-              style={{ color: palette.white, fontWeight: "700", fontSize: 10 }}
-            >
-              {activeSlide.cravingCount}
-            </AppText>
-          </View>
+          {activeSlide.distance !== undefined ? (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
+              <MapPinned size={10} color={palette.white} />
+              <AppText
+                variant="micro"
+                style={{ color: palette.white, fontWeight: "600", fontSize: 10 }}
+              >
+                {activeSlide.distance >= 1000
+                  ? `${(activeSlide.distance / 1000).toFixed(1)}km`
+                  : `${Math.round(activeSlide.distance)}m`}
+              </AppText>
+            </View>
+          ) : (
+            <View />
+          )}
+          {/* The count is reviews, so it is shown as the rating with its review count. */}
+          {activeSlide.cravingCount > 0 && activeSlide.rating > 0 ? (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+              <Star size={10} color={palette.white} fill={palette.white} />
+              <AppText
+                variant="micro"
+                style={{ color: palette.white, fontWeight: "700", fontSize: 10 }}
+              >
+                {`${activeSlide.rating.toFixed(1)} (${activeSlide.cravingCount})`}
+              </AppText>
+            </View>
+          ) : null}
         </View>
       </View>
     </Pressable>
@@ -283,9 +257,19 @@ export const COLLECTION_COPY: Record<
 export function QuickBitesScreen() {
   const navigation = useNavigation<RootNavigation>();
   const route = useRoute<QuickBitesRoute>();
-  const { componentRadii, palette, spacing } = useHungryTheme();
+  const { palette, spacing } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
-  const currentLocation = useLocationStore((state) => state.currentLocation);
+  const gpsLocation = useLocationStore((state) => state.currentLocation);
+  // "See all" from Discover passes its area, so the list matches the rail.
+  const areaLatitude = route.params?.latitude;
+  const areaLongitude = route.params?.longitude;
+  const currentLocation = useMemo(
+    () =>
+      typeof areaLatitude === "number" && typeof areaLongitude === "number"
+        ? { latitude: areaLatitude, longitude: areaLongitude }
+        : gpsLocation,
+    [areaLatitude, areaLongitude, gpsLocation],
+  );
   const tasteVector = useProfileStore((state) => state.profile.tasteVector);
   const dietaryPreferences = useProfileStore((state) => state.profile.dietaryPreferences);
   const collection: DiscoverCollection = route.params?.collection ?? "quickBites";
@@ -298,6 +282,8 @@ export function QuickBitesScreen() {
     [],
   );
   const [bites, setBites] = useState<Bite[]>(fallbackBites);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const [fullyVisibleBiteIds, setFullyVisibleBiteIds] = useState<Set<string>>(() => new Set());
   const searchQuery = useSearchStore((state) => state.filters.query);
   const updateSearchQuery = useSearchStore((state) => state.updateQuery);
@@ -355,6 +341,7 @@ export function QuickBitesScreen() {
     // Sync with location and real feed if available
     const loadBites = async () => {
       const isSupabaseDataSource = getServiceProvider().mode === "supabase";
+      setLoadFailed(false);
       try {
         if (isSupabaseDataSource) {
           const liveBites = await getDiscoverBitesFromSearch(collection, {
@@ -377,10 +364,11 @@ export function QuickBitesScreen() {
         }
       } catch {
         setBites(isSupabaseDataSource ? [] : fallbackBites);
+        setLoadFailed(isSupabaseDataSource);
       }
     };
     void loadBites();
-  }, [collection, currentLocation, dietaryPreferences, fallbackBites, tasteVector]);
+  }, [collection, currentLocation, dietaryPreferences, fallbackBites, reloadKey, tasteVector]);
 
   const collectionBites = useMemo(() => {
     return getDiscoverBiteCollection(collection, bites);
@@ -401,7 +389,10 @@ export function QuickBitesScreen() {
         return { ...bite, distance: getDiscoverBiteDistance(bite) };
       });
 
-    return list.sort((a, b) => a.distance - b.distance);
+    // Measured distances first, nearest first; unmeasured keep their ranking order.
+    return list.sort(
+      (a, b) => (a.distance ?? Number.POSITIVE_INFINITY) - (b.distance ?? Number.POSITIVE_INFINITY),
+    );
   }, [collectionBites, selectedCuisine]);
 
   useEffect(() => {
@@ -426,77 +417,34 @@ export function QuickBitesScreen() {
     },
   ).current;
 
+  const openBite = useCallback(
+    (activeItem: QuickBiteGridItem) =>
+      navigation.navigate("DishDetail", { dishId: activeItem.dishId }),
+    [navigation],
+  );
+  // Visibility comes in through extraData, so a viewability change does not rebuild
+  // renderItem (and with it every cell).
   const renderBiteItem = useCallback(
-    ({ item, index }: { item: QuickBiteGridItem; index: number }) => (
+    ({
+      item,
+      index,
+      extraData,
+    }: {
+      item: QuickBiteGridItem;
+      index: number;
+      extraData?: ReadonlySet<string>;
+    }) => (
       <QuickBiteGridCard
         allItems={filteredBites}
         index={index}
-        isAutoCycleActive={fullyVisibleBiteIds.has(item.id)}
+        isAutoCycleActive={Boolean(extraData?.has(item.id))}
         item={item}
         itemWidth={itemWidth}
-        onOpen={(activeItem) => navigation.navigate("DishDetail", { dishId: activeItem.dishId })}
+        onOpen={openBite}
         onPrefetch={prefetchBiteRoute}
       />
     ),
-    [filteredBites, fullyVisibleBiteIds, itemWidth, navigation, prefetchBiteRoute],
-  );
-
-  const renderFoodCarousel = useCallback(
-    () =>
-      filteredBites.length ? (
-        <View style={{ paddingVertical: spacing[5], gap: spacing[3] }}>
-          <View style={{ paddingHorizontal: spacing[4] }}>
-            <AppText variant="h3">{collectionCopy.title}</AppText>
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: spacing[3], paddingHorizontal: spacing[4] }}
-          >
-            {filteredBites.map((bite) => (
-              <Pressable
-                key={`carousel-${bite.id}`}
-                accessibilityRole="button"
-                accessibilityLabel={`Open ${bite.dishName} at ${bite.venueName}`}
-                onPressIn={() => prefetchBiteRoute(bite)}
-                onPress={() => navigation.navigate("DishDetail", { dishId: bite.dishId })}
-                style={[
-                  styles.carouselCard,
-                  {
-                    backgroundColor: palette.surface,
-                    borderColor: palette.border,
-                    borderRadius: componentRadii.card,
-                  },
-                ]}
-              >
-                <QuickBiteCarouselImage bite={bite} />
-                <View style={{ padding: spacing[2], gap: 2 }}>
-                  <AppText variant="bodySmallBold" numberOfLines={1}>
-                    {bite.dishName}
-                  </AppText>
-                  <AppText variant="micro" tone="secondary" numberOfLines={1}>
-                    {bite.venueName}
-                  </AppText>
-                  <AppText variant="price" style={{ color: palette.orange }}>
-                    S${bite.price.toFixed(2)}
-                  </AppText>
-                </View>
-              </Pressable>
-            ))}
-          </ScrollView>
-        </View>
-      ) : null,
-    [
-      collectionCopy.title,
-      filteredBites,
-      navigation,
-      palette.border,
-      palette.orange,
-      palette.surface,
-      prefetchBiteRoute,
-      componentRadii.card,
-      spacing,
-    ],
+    [filteredBites, itemWidth, openBite, prefetchBiteRoute],
   );
 
   return (
@@ -567,6 +515,7 @@ export function QuickBitesScreen() {
         <FlashList
           data={filteredBites}
           renderItem={renderBiteItem}
+          extraData={fullyVisibleBiteIds}
           keyExtractor={(item) => item.id}
           onViewableItemsChanged={handleFullyVisibleBitesChanged}
           viewabilityConfig={fullTileViewabilityConfig}
@@ -593,15 +542,17 @@ export function QuickBitesScreen() {
                 style={{ alignItems: "center", gap: spacing[1], paddingHorizontal: spacing[8] }}
               >
                 <AppText variant="h3" style={{ textAlign: "center" }}>
-                  {collectionCopy.emptyTitle}
+                  {loadFailed ? "Couldn't load dishes" : collectionCopy.emptyTitle}
                 </AppText>
                 <AppText tone="muted" style={{ textAlign: "center" }}>
-                  {collectionCopy.emptyBody}
+                  {loadFailed ? "Check your connection and try again." : collectionCopy.emptyBody}
                 </AppText>
               </View>
+              {loadFailed ? (
+                <Button label="Try again" onPress={() => setReloadKey((key) => key + 1)} />
+              ) : null}
             </View>
           }
-          ListFooterComponent={renderFoodCarousel}
         />
       </View>
     </Screen>
@@ -624,7 +575,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     width: 72,
   },
-  cardContent: { ...StyleSheet.absoluteFillObject, padding: 10, justifyContent: "flex-end" },
+  cardContent: { ...StyleSheet.absoluteFill, padding: 10, justifyContent: "flex-end" },
   authorBadge: {
     position: "absolute",
     top: 8,
@@ -637,9 +588,4 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   metaRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  carouselCard: {
-    borderWidth: 1,
-    overflow: "hidden",
-    width: 168,
-  },
 });

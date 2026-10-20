@@ -206,6 +206,8 @@ export function PromotionListScreen() {
               return (
                 <Pressable
                   key={promo.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Edit promotion ${promo.title}, ${promo.status}`}
                   onPress={() => navigation.navigate("PromotionBuilder", { promotionId: promo.id })}
                   style={[
                     styles.promoCard,
@@ -267,9 +269,11 @@ export function PromotionListScreen() {
                     </View>
                   </View>
 
-                  <AppText variant="bodySmallBold" style={{ marginBottom: spacing[3] }}>
-                    {pricing.label}
-                  </AppText>
+                  {pricing.label ? (
+                    <AppText variant="bodySmallBold" style={{ marginBottom: spacing[3] }}>
+                      {pricing.label}
+                    </AppText>
+                  ) : null}
 
                   {promo.analytics && (
                     <View

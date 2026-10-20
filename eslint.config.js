@@ -36,6 +36,33 @@ module.exports = defineConfig([
       "import/no-duplicates": "off",
       "@typescript-eslint/no-empty-object-type": "off",
       "@typescript-eslint/no-useless-constructor": "off",
+      // Haptics must go through src/lib/haptics.ts so the Settings switch applies everywhere.
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "expo-haptics",
+              message: 'Import haptics from "@/lib/haptics" so Settings > Haptic feedback is respected.',
+            },
+          ],
+        },
+      ],
+
+      // eslint-config-expo 57 ships eslint-plugin-react-hooks v7, which adds React Compiler
+      // rules as errors. Existing code predates them (~280 hits); keep them visible as warnings
+      // until they are fixed in a dedicated pass rather than inside the SDK upgrade.
+      "react-hooks/refs": "warn",
+      "react-hooks/set-state-in-effect": "warn",
+      "react-hooks/static-components": "warn",
+      "react-hooks/immutability": "warn",
+      "react-hooks/incompatible-library": "warn",
+      "react-hooks/purity": "warn",
+      "react-hooks/preserve-manual-memoization": "warn",
     },
+  },
+  {
+    files: ["src/lib/haptics.ts"],
+    rules: { "no-restricted-imports": "off" },
   }
 ]);

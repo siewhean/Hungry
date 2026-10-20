@@ -19,8 +19,8 @@ test("D1: saved dish bookmark uses a visible brand fill, never white on the ligh
 test("D3: missing-dish state offers a back control with a no-history fallback", () => {
   const dish = read("src/app/screens/detail/DishDetailScreenV2.tsx");
   const notFound = dish.slice(
-    dish.indexOf("if (!dish || !venue)"),
-    dish.indexOf('title="Dish not found"'),
+    dish.indexOf("if (!dish) {"),
+    dish.indexOf('title="We can\'t find this dish"'),
   );
   assert.match(notFound, /accessibilityLabel="Go back"/);
   assert.match(notFound, /onPress=\{leaveDetail\}/);

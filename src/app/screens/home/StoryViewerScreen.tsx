@@ -685,6 +685,7 @@ export function StoryViewerScreen() {
               }
               onPress={onLike}
               accessibilityLabel="Like story"
+              accessibilityState={{ selected: currentStory.interaction.liked }}
             />
             <AppText style={[styles.actionCountText, { color: palette.white }]}>
               {currentStory.interaction.likeCount > 0 ? currentStory.interaction.likeCount : " "}

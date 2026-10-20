@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RouteProp, useRoute } from "@react-navigation/native";
 import { Search } from "lucide-react-native";
@@ -200,7 +200,7 @@ function ProfileConnectionsScreen({ navigation }: Props) {
         autoCapitalize="none"
         autoCorrect={false}
       />
-      <ScrollView contentContainerStyle={{ gap: spacing[3], paddingBottom: spacing[5] }}>
+      <View style={{ gap: spacing[3], paddingBottom: spacing[5] }}>
         {isLoadingConnections ? (
           <View style={{ alignItems: "center", paddingTop: spacing[3], gap: spacing[2] }}>
             <ActivityIndicator color={palette.orange} />
@@ -233,13 +233,9 @@ function ProfileConnectionsScreen({ navigation }: Props) {
                   authorId: person.userId,
                 })
               }
+              // Card draws the border; the row only dims while pressed.
               style={({ pressed }) => [
-                {
-                  borderColor: palette.border,
-                  borderWidth: 1,
-                  borderRadius: componentRadii.card,
-                  backgroundColor: pressed ? palette.bgSoft : palette.surface,
-                },
+                { borderRadius: componentRadii.card, opacity: pressed ? 0.85 : 1 },
               ]}
             >
               <Card style={{ padding: spacing[3] }}>
@@ -303,7 +299,7 @@ function ProfileConnectionsScreen({ navigation }: Props) {
             onPress={loadMore}
           />
         ) : null}
-      </ScrollView>
+      </View>
     </ProfileScreenShell>
   );
 }
@@ -322,7 +318,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     justifyContent: "center",
-    minHeight: 32,
+    // With the 8pt hitSlop the tap target is at least 44pt.
+    minHeight: 36,
     minWidth: 78,
     paddingHorizontal: 12,
   },

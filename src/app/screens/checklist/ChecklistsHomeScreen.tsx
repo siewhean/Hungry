@@ -4,6 +4,9 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ChecklistCard } from "@/components/checklist";
+import { useShallow } from "zustand/react/shallow";
+import { resolveListItemCount } from "@/features/checklistPortfolio/listLabels";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { useChecklistStore } from "@/store/useChecklistStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { AppText, Button } from "@/components/ui";
@@ -15,7 +18,15 @@ type NavigationProp = NativeStackNavigationProp<ProfileStackParamList, "Checklis
 export function ChecklistsHomeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const theme = useHungryTheme();
-  const { checklists, items, isLoaded, loadChecklists, createChecklist } = useChecklistStore();
+  const { checklists, items, isLoaded, loadChecklists, createChecklist } = useChecklistStore(
+    useShallow((state) => ({
+      checklists: state.checklists,
+      items: state.items,
+      isLoaded: state.isLoaded,
+      loadChecklists: state.loadChecklists,
+      createChecklist: state.createChecklist,
+    })),
+  );
   const { isAuthenticated } = useSessionStore();
   const [isCreating, setIsCreating] = useState(false);
   // A failed first load shows an error with Retry instead of "Loading..." forever.
@@ -30,6 +41,7 @@ export function ChecklistsHomeScreen() {
       await loadChecklists();
     } catch (error) {
       console.error("Failed to load checklists:", error);
+      trackAnalyticsEvent("list_load_failed", { list_kind: "checklist" });
       setLoadFailed(true);
     }
   }, [loadChecklists]);
@@ -129,8 +141,8 @@ export function ChecklistsHomeScreen() {
           renderItem={({ item }) => (
             <ChecklistCard
               checklist={item}
-              itemCount={items[item.id]?.length ?? 0}
-              triedCount={(items[item.id] ?? []).filter((entry) => Boolean(entry.triedAt)).length}
+              itemCount={resolveListItemCount(item, items[item.id])}
+              triedCount={items[item.id]?.filter((entry) => Boolean(entry.triedAt)).length}
               onPress={() => navigation.navigate("ChecklistDetail", { checklistId: item.id })}
             />
           )}

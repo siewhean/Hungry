@@ -1,6 +1,6 @@
 import { Pressable, View } from "react-native";
 import { List, MapPinned } from "lucide-react-native";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 
 import { AppText } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
