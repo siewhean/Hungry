@@ -178,6 +178,10 @@ function intendedReason(finding) {
   ) {
     return "intended public read RPC";
   }
+  // Owner decision 2026-10-20: TOTP stays off until the app has an MFA enrolment screen.
+  if (finding.name === "auth_insufficient_mfa_options") {
+    return "intended: MFA off until the app has an enrolment screen";
+  }
   return null;
 }
 
