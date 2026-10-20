@@ -60,6 +60,11 @@ export interface ProvisionalOnboardingMigration {
   onboardingVersion: 1;
   capturedAt: string;
   tasteProfile?: TasteProfile;
+  /**
+   * The blended profile computed once against the saved account profile, so a
+   * retry after a partial failure writes the same result instead of blending twice.
+   */
+  resolvedTasteProfile?: TasteProfile;
   dietaryPreferences: DietaryFlag[];
   location: {
     permission: "unknown" | "granted" | "denied";

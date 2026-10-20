@@ -86,12 +86,19 @@ test("a guest's taste quiz stays on the device and uploads on sign-in", () => {
 
   // Onboarding taste is held as a provisional migration and written to the
   // account once it signs in (the app is sign-in only, so this is the pre-auth quiz).
+  // An account with saved taste is recalibrated toward the answers, never
+  // overwritten or ignored; diet restrictions and allergies are unioned.
   const apply = read("src/features/auth/applySignedInProfile.ts");
   assert.match(apply, /return profile\.id === "guest-user";/);
   assert.match(
     apply,
-    /provisional\.tasteProfile && hasNoSavedTaste\(profileReady\)\s*\? operations\.updateTasteProfile\(provisional\.tasteProfile\)/,
+    /if \(hasNoSavedTaste\(serverProfile\)\) return provisional\.tasteProfile;\s*return recalibrateTasteProfile\(savedTasteProfile\(serverProfile\), provisional\.tasteProfile\);/,
   );
+  assert.match(
+    apply,
+    /mergeDietaryPreferences\(serverProfile\.dietaryPreferences, provisional\.dietaryPreferences\)/,
+  );
+  assert.match(apply, /operations\.updateTasteProfile\(resolvedTasteProfile\)/);
   for (const screen of [
     "src/app/screens/auth/LoginScreen.tsx",
     "src/app/screens/auth/SignUpScreen.tsx",

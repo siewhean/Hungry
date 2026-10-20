@@ -9,7 +9,13 @@
  * Scale: 0–10
  */
 
-import type { TasteVector, DietaryFlag, DishSummary, HawkerTasteTag } from "@/types/domain";
+import type {
+  TasteVector,
+  TasteProfile,
+  DietaryFlag,
+  DishSummary,
+  HawkerTasteTag,
+} from "@/types/domain";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // EXTENDED RECOMMENDATION PIPELINE
@@ -156,6 +162,43 @@ export function calibrateVector(
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
+}
+
+// ─── Onboarding recalibration ─────────────────────────────────────────────────
+
+/** Weight of fresh onboarding answers when they meet a saved profile (new 0.6 / saved 0.4). */
+export const ONBOARDING_RECALIBRATION_WEIGHT = 0.6;
+
+/**
+ * Blends a returning user's fresh onboarding answers into their saved taste profile.
+ * Every 0–10 score takes the same clamped step as calibrateVector, weighted toward
+ * the new answers; the texture archetype is a single choice, so the new answer wins.
+ */
+export function recalibrateTasteProfile(
+  existing: TasteProfile,
+  incoming: TasteProfile,
+  weight = ONBOARDING_RECALIBRATION_WEIGHT,
+): TasteProfile {
+  const step = (saved: number, fresh: number) => clamp(saved + weight * (fresh - saved), 0, 10);
+  return {
+    vector: calibrateVector(existing.vector, incoming.vector, weight),
+    bitterTolerance: step(existing.bitterTolerance, incoming.bitterTolerance),
+    fatAffinity: step(existing.fatAffinity, incoming.fatAffinity),
+    neophiliaIndex: step(existing.neophiliaIndex, incoming.neophiliaIndex),
+    spiceSeeking: step(existing.spiceSeeking, incoming.spiceSeeking),
+    textureArchetype: incoming.textureArchetype,
+  };
+}
+
+/**
+ * Diet restrictions and allergies only ever accumulate: a stated restriction is
+ * never dropped silently. Saved flags keep their order; new ones are appended.
+ */
+export function mergeDietaryPreferences(
+  existing: readonly DietaryFlag[],
+  incoming: readonly DietaryFlag[],
+): DietaryFlag[] {
+  return Array.from(new Set([...existing, ...incoming]));
 }
 
 export function averageTasteVectors(vectors: TasteVector[], fallback: TasteVector): TasteVector {

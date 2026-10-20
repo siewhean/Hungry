@@ -174,14 +174,19 @@ function accountProfile(overrides: Partial<UserProfile>): UserProfile {
   };
 }
 
-test("guest answers never overwrite a returning account's saved taste and diet", () => {
+test("onboarding answers recalibrate a returning account's saved taste and union its diet", () => {
   seedGuestWithQuizAnswers();
   applySignedInProfile(
     accountProfile({ tasteVector: SAVED_VECTOR, dietaryPreferences: ["vegetarian"] }),
   );
   const profile = useProfileStore.getState().profile;
-  assert.deepEqual(profile.tasteVector, SAVED_VECTOR);
-  assert.deepEqual(profile.dietaryPreferences, ["vegetarian"]);
+  // 0.4 × saved + 0.6 × new on every axis.
+  const expected = { sweet: 6.6, spicy: 7.4, sour: 3.8, salty: 5, rich: 6.8, aromatic: 5 };
+  for (const [axis, value] of Object.entries(expected)) {
+    const actual = profile.tasteVector[axis as keyof typeof expected];
+    assert.ok(Math.abs(actual - value) < 1e-9, `${axis}: ${actual} !== ${value}`);
+  }
+  assert.deepEqual(profile.dietaryPreferences, ["vegetarian", "halal"]);
 });
 
 test("guest answers fill an account that has no saved taste or diet yet", () => {
@@ -192,4 +197,86 @@ test("guest answers fill an account that has no saved taste or diet yet", () => 
   const profile = useProfileStore.getState().profile;
   assert.deepEqual(profile.tasteVector, GUEST_VECTOR);
   assert.deepEqual(profile.dietaryPreferences, ["halal"]);
+});
+
+const SAVED_TASTE = {
+  vector: { sweet: 9, spicy: 2, sour: 5, salty: 5, rich: 4, aromatic: 6 },
+  bitterTolerance: 3,
+  fatAffinity: 8,
+  textureArchetype: "chewer" as const,
+  neophiliaIndex: 2,
+  spiceSeeking: 1,
+};
+
+test("a saved account profile is recalibrated, not overwritten, by the onboarding write", async () => {
+  const written: unknown[] = [];
+  const savedAccount: UserProfile = {
+    ...serverProfile,
+    tasteVector: SAVED_TASTE.vector,
+    tasteProfile: SAVED_TASTE,
+    dietaryPreferences: ["nut_free"],
+  };
+  const result = await runProvisionalOnboardingMigration(
+    savedAccount,
+    provisional,
+    successfulOperations({
+      awaitProfile: async () => savedAccount,
+      updateTasteProfile: async (profile?: unknown) => {
+        written.push(profile);
+      },
+      updateDietaryPreferences: async (preferences?: unknown) => {
+        written.push(preferences);
+      },
+    }),
+  );
+  assert.equal(result.status, "synced");
+  const taste = result.profile.tasteProfile;
+  assert.ok(taste);
+  // provisional spicy 7 vs saved 2: 2 + 0.6 × 5 = 5
+  assert.ok(Math.abs(taste.vector.spicy - 5) < 1e-9);
+  assert.equal(taste.textureArchetype, "chewer");
+  assert.deepEqual(written[0], taste);
+  // The saved nut allergy is kept alongside the new halal answer.
+  assert.deepEqual(result.profile.dietaryPreferences, ["nut_free", "halal"]);
+  assert.deepEqual(written[1], ["nut_free", "halal"]);
+});
+
+test("a retry after a partial failure writes the stored blend instead of blending twice", async () => {
+  const savedAccount: UserProfile = {
+    ...serverProfile,
+    tasteVector: SAVED_TASTE.vector,
+    tasteProfile: SAVED_TASTE,
+  };
+  const first = await runProvisionalOnboardingMigration(
+    savedAccount,
+    provisional,
+    successfulOperations({
+      awaitProfile: async () => savedAccount,
+      updateDietaryPreferences: async () => {
+        throw new Error("temporary write failure");
+      },
+    }),
+  );
+  assert.equal(first.status, "partial_retry_queued");
+  assert.ok(first.resolvedTasteProfile);
+
+  // The taste write landed, so the server now holds the blend; the retry must not re-blend it.
+  const afterFirstWrite: UserProfile = {
+    ...savedAccount,
+    tasteVector: first.resolvedTasteProfile.vector,
+    tasteProfile: first.resolvedTasteProfile,
+  };
+  const written: unknown[] = [];
+  const retry = await runProvisionalOnboardingMigration(
+    afterFirstWrite,
+    { ...provisional, resolvedTasteProfile: first.resolvedTasteProfile },
+    successfulOperations({
+      awaitProfile: async () => afterFirstWrite,
+      updateTasteProfile: async (profile?: unknown) => {
+        written.push(profile);
+      },
+    }),
+  );
+  assert.equal(retry.status, "synced");
+  assert.deepEqual(written[0], first.resolvedTasteProfile);
 });

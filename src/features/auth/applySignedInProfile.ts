@@ -1,5 +1,6 @@
 import { NEUTRAL_TASTE_PROFILE, NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { flushPendingQuizResponse } from "@/features/profile/pendingQuizResponse";
+import { mergeDietaryPreferences, recalibrateTasteProfile } from "@/lib/ai/tasteEngine";
 import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
 import { useLocationStore } from "@/store/useLocationStore";
 import { type ProvisionalOnboardingMigration, useProfileStore } from "@/store/useProfileStore";
@@ -13,6 +14,8 @@ export interface ProfileMigrationResult {
   status: ProfileMigrationStatus;
   profile: UserProfile;
   error?: unknown;
+  /** Set when onboarding answers were blended into a saved profile (kept for retries). */
+  resolvedTasteProfile?: TasteProfile;
 }
 
 type ProfileMigrationOperations = {
@@ -44,8 +47,6 @@ function hasMeaningfulProvisionalTaste(profile: UserProfile, tasteProfile: Taste
   );
 }
 
-// Onboarding answers only fill an account that has none of its own: a returning
-// user who signs in at the end of setup on a new phone keeps their saved profile.
 function hasNoSavedTaste(profile: UserProfile) {
   return (
     vectorsMatch(profile.tasteVector, NEUTRAL_TASTE_VECTOR) &&
@@ -53,8 +54,32 @@ function hasNoSavedTaste(profile: UserProfile) {
   );
 }
 
-function hasNoSavedDietaryPreferences(profile: UserProfile) {
-  return profile.dietaryPreferences.length === 0;
+function savedTasteProfile(profile: UserProfile): TasteProfile {
+  return profile.tasteProfile ?? { ...NEUTRAL_TASTE_PROFILE, vector: profile.tasteVector };
+}
+
+/**
+ * Onboarding answers meet the account's saved profile:
+ * - taste: an account with no saved taste takes the answers as they are; a returning
+ *   user's saved taste is recalibrated toward them (recalibrateTasteProfile);
+ * - diet restrictions and allergies: union, so nothing stated is dropped.
+ */
+function resolveOnboardingTaste(
+  serverProfile: UserProfile,
+  provisional: ProvisionalOnboardingMigration,
+): TasteProfile | undefined {
+  if (provisional.resolvedTasteProfile) return provisional.resolvedTasteProfile;
+  if (!provisional.tasteProfile) return undefined;
+  if (hasNoSavedTaste(serverProfile)) return provisional.tasteProfile;
+  return recalibrateTasteProfile(savedTasteProfile(serverProfile), provisional.tasteProfile);
+}
+
+function resolveOnboardingDietaryPreferences(
+  serverProfile: UserProfile,
+  provisional: ProvisionalOnboardingMigration,
+): UserProfile["dietaryPreferences"] | undefined {
+  if (provisional.dietaryPreferences.length === 0) return undefined;
+  return mergeDietaryPreferences(serverProfile.dietaryPreferences, provisional.dietaryPreferences);
 }
 
 function isProvisionalOnboardingProfile(profile: UserProfile) {
@@ -101,21 +126,14 @@ export function mergeServerProfileWithProvisional(
   provisional?: ProvisionalOnboardingMigration,
 ): UserProfile {
   if (!provisional || provisional.userId !== serverProfile.id) return serverProfile;
-  const fillTaste = Boolean(provisional.tasteProfile) && hasNoSavedTaste(serverProfile);
-  const fillDietary =
-    provisional.dietaryPreferences.length > 0 && hasNoSavedDietaryPreferences(serverProfile);
+  const tasteProfile = resolveOnboardingTaste(serverProfile, provisional);
+  const dietaryPreferences = resolveOnboardingDietaryPreferences(serverProfile, provisional);
 
   return {
     ...serverProfile,
-    tasteVector:
-      fillTaste && provisional.tasteProfile
-        ? provisional.tasteProfile.vector
-        : serverProfile.tasteVector,
-    tasteProfile:
-      fillTaste && provisional.tasteProfile ? provisional.tasteProfile : serverProfile.tasteProfile,
-    dietaryPreferences: fillDietary
-      ? provisional.dietaryPreferences
-      : serverProfile.dietaryPreferences,
+    tasteVector: tasteProfile?.vector ?? serverProfile.tasteVector,
+    tasteProfile: tasteProfile ?? serverProfile.tasteProfile,
+    dietaryPreferences: dietaryPreferences ?? serverProfile.dietaryPreferences,
   };
 }
 
@@ -139,24 +157,34 @@ export async function runProvisionalOnboardingMigration(
     return { status: "synced", profile: profileReady };
   }
 
+  // Resolve once against the saved profile; a retry reuses the same blended result.
+  const resolvedTasteProfile = resolveOnboardingTaste(profileReady, provisional);
+  const resolvedProvisional: ProvisionalOnboardingMigration = resolvedTasteProfile
+    ? { ...provisional, resolvedTasteProfile }
+    : provisional;
+  const dietaryPreferences = resolveOnboardingDietaryPreferences(profileReady, provisional);
+
   const writes = await Promise.allSettled([
-    provisional.tasteProfile && hasNoSavedTaste(profileReady)
-      ? operations.updateTasteProfile(provisional.tasteProfile)
-      : Promise.resolve(),
-    provisional.dietaryPreferences.length > 0 && hasNoSavedDietaryPreferences(profileReady)
-      ? operations.updateDietaryPreferences(provisional.dietaryPreferences)
+    resolvedTasteProfile ? operations.updateTasteProfile(resolvedTasteProfile) : Promise.resolve(),
+    dietaryPreferences
+      ? operations.updateDietaryPreferences(dietaryPreferences)
       : Promise.resolve(),
   ]);
   const rejected = writes.find(
     (result): result is PromiseRejectedResult => result.status === "rejected",
   );
-  const mergedProfile = mergeServerProfileWithProvisional(profileReady, provisional);
+  const mergedProfile = mergeServerProfileWithProvisional(profileReady, resolvedProvisional);
 
   if (rejected) {
-    return { status: "partial_retry_queued", profile: mergedProfile, error: rejected.reason };
+    return {
+      status: "partial_retry_queued",
+      profile: mergedProfile,
+      error: rejected.reason,
+      resolvedTasteProfile,
+    };
   }
 
-  return { status: "synced", profile: mergedProfile };
+  return { status: "synced", profile: mergedProfile, resolvedTasteProfile };
 }
 
 function profileMigrationOperations(
@@ -217,6 +245,12 @@ export async function applySignedInProfile(
   if (result.status === "synced") {
     useProfileStore.getState().clearProvisionalOnboardingMigration(sessionProfile.id);
   } else {
+    if (provisional && result.resolvedTasteProfile && !provisional.resolvedTasteProfile) {
+      useProfileStore.getState().setProvisionalOnboardingMigration({
+        ...provisional,
+        resolvedTasteProfile: result.resolvedTasteProfile,
+      });
+    }
     options.onSyncWarning?.();
   }
 
