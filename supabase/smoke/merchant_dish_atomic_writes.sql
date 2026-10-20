@@ -43,8 +43,10 @@ select set_config('request.jwt.claim.role', 'service_role', true);
 insert into merchant_verifications (outlet_id, status, verified_at)
 values ('00000000-0000-0060-d000-000000000001', 'verified', now());
 
+-- Reuse the live database's active release; only one may be active.
 insert into catalog_releases (id, status, activated_at)
-values ('00000000-0000-0060-c000-000000000001', 'active', now());
+select '00000000-0000-0060-c000-000000000001', 'active', now()
+where not exists (select 1 from catalog_releases where status = 'active');
 
 -- Count venue card rebuilds for this venue (rolled back with the smoke).
 create table smoke_ml_rebuilds (n integer not null);
@@ -99,7 +101,7 @@ begin
   end if;
   if not exists (
     select 1 from public.catalog_raw_dish_cards
-    where release_id = '00000000-0000-0060-c000-000000000001' and id = 'merchant-dish-smoke-ml-1'
+    where release_id = (select id from catalog_releases where status = 'active') and id = 'merchant-dish-smoke-ml-1'
   ) then
     raise exception 'catalog dish card was not rebuilt';
   end if;
