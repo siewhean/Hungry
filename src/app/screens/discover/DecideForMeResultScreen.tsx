@@ -29,7 +29,9 @@ import { webShareUrl } from "@/constants/links";
 import { blendedMatchScore, TASTE_LABELS } from "@/lib/ai/tasteEngine";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import type { DataRepository } from "@/lib/services/types";
+import { useFoodHistory } from "@/hooks/useFoodHistory";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
+import { mixByFoodHistory } from "@/lib/ai/exploration";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -277,18 +279,25 @@ export function DecideForMeResultScreen() {
 
   const scrollY = useRef(new Animated.Value(0)).current;
 
+  const { history: foodHistory, openness } = useFoodHistory();
   const candidates = useMemo(
     () =>
-      getCandidates(
-        repository,
-        profile.tasteVector,
-        profile.dietaryPreferences,
-        searchRadius,
-        effectiveLocation,
-        profile.maxDishBudget,
+      // Openness sets how often a pick is a dish they know versus something new.
+      mixByFoodHistory(
+        getCandidates(
+          repository,
+          profile.tasteVector,
+          profile.dietaryPreferences,
+          searchRadius,
+          effectiveLocation,
+          profile.maxDishBudget,
+        ),
+        { history: foodHistory, openness, lookup: (dishId) => repository.getDishById(dishId) },
       ),
     [
       effectiveLocation,
+      foodHistory,
+      openness,
       profile.dietaryPreferences,
       profile.maxDishBudget,
       profile.tasteVector,

@@ -99,6 +99,7 @@ import { withShareSource } from "@/features/share/shareAttribution";
 import { useActivityStore } from "@/store/useActivityStore";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
+import { useFoodHistory } from "@/hooks/useFoodHistory";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
@@ -300,6 +301,12 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const headerActionSize = spacing[8] + spacing[2.5];
   const insets = useSafeAreaInsets();
   const profile = useProfileStore((state) => state.profile);
+  const personalisation = useFoodHistory();
+  // Read at load time so a tap or save does not reload the feed; openness changes do (feed key).
+  const personalisationRef = useRef(personalisation);
+  useEffect(() => {
+    personalisationRef.current = personalisation;
+  }, [personalisation]);
   const leftHandedMode = useUIStore((state) => state.leftHandedMode);
   const publishedPostsVersion = usePublishedPostStore((state) => state.version);
   const stories = useStoryStore((state) => state.stories);
@@ -489,6 +496,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       profile.dietaryPreferences.join(","),
       tasteSignature,
       publishedPostsVersion,
+      personalisation.openness,
       Object.entries(followedAuthors)
         .filter(([, isFollowing]) => isFollowing)
         .map(([authorName]) => authorName)
@@ -503,6 +511,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   }, [
     followedAuthors,
     followedUserIds,
+    personalisation.openness,
     profile.dietaryPreferences,
     profile.id,
     profile.tasteVector,
@@ -535,6 +544,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
           followedAuthors,
           followedUserIds,
           refreshSeed: feedRefreshSeedRef.current,
+          personalisation: personalisationRef.current,
         });
         if (activeFeedLoadIdRef.current !== loadId) {
           return;

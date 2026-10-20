@@ -99,7 +99,7 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
       /setTasteVector\(values\)/,
       /setDietaryPreferences\(dietaryPreferences\)/,
       /setSkippedTasteQuiz\(true\)/,
-      /navigation\.navigate\("TasteProfileResult"\)/,
+      /navigation\.navigate\("FoodOpenness", \{ mode: "onboarding" \}\)/,
     ],
     "TasteQuizScreen",
   );

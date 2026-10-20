@@ -7,6 +7,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   Accessibility,
   AtSign,
+  Compass,
   Database,
   Download,
   Eraser,
@@ -28,6 +29,7 @@ import {
   SunMoon,
   Trash2,
   User,
+  UtensilsCrossed,
   Vibrate,
 } from "lucide-react-native";
 import { useShallow } from "zustand/react/shallow";
@@ -39,6 +41,8 @@ import { SettingsSection, SettingsRow } from "@/components/settings";
 import { StallAlertsSettings } from "@/components/settings/StallAlertsSettings";
 import { AccountDeletionCodeDialog } from "@/components/settings/AccountDeletionCodeDialog";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { foodOpennessLabel } from "@/constants/taste";
+import { resolveFoodOpenness } from "@/lib/ai/exploration";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -86,11 +90,12 @@ export function SettingsScreen() {
       isAuthenticated: state.isAuthenticated,
     })),
   );
-  const { clearProfile, setProfileVisibility, profile } = useProfileStore(
+  const { clearProfile, setProfileVisibility, profile, resetFoodHistory } = useProfileStore(
     useShallow((state) => ({
       clearProfile: state.clearProfile,
       setProfileVisibility: state.setProfileVisibility,
       profile: state.profile,
+      resetFoodHistory: state.resetFoodHistory,
     })),
   );
   const resetDraft = useReviewDraftStore((state) => state.resetDraft);
@@ -384,6 +389,25 @@ export function SettingsScreen() {
       trackAnalyticsEvent("settings_changed", { setting, value: enabled });
     };
 
+  const handleResetFoodHistory = () => {
+    Alert.alert(
+      "Reset food history",
+      "Recommendations will forget the dishes you liked, tapped or hid. Your favourites and reviews stay.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Reset",
+          style: "destructive",
+          onPress: () => {
+            void resetFoodHistory()
+              .then(() => Alert.alert("Food history reset", "Recommendations start fresh."))
+              .catch(() => Alert.alert("Couldn't reset", "Check your connection and try again."));
+          },
+        },
+      ],
+    );
+  };
+
   const handleResetLocation = () => {
     Alert.alert(
       "Reset selected location",
@@ -467,6 +491,30 @@ export function SettingsScreen() {
           value={profile.email?.trim() || "Not linked"}
           isLast
         />
+      </SettingsSection>
+
+      <SettingsSection title="Taste and recommendations">
+        <SettingsRow
+          label="Trying new food"
+          icon={<Compass size={20} color={palette.orange} />}
+          type="navigation"
+          value={foodOpennessLabel(resolveFoodOpenness(profile.tasteProfile))}
+          onPress={() =>
+            rootNavigation.navigate("OnboardingStack", {
+              screen: "FoodOpenness",
+              params: { mode: "settings" },
+            })
+          }
+          isLast={!isAuthenticated}
+        />
+        {isAuthenticated ? (
+          <SettingsRow
+            label="Reset food history"
+            icon={<UtensilsCrossed size={20} color={palette.orange} />}
+            onPress={handleResetFoodHistory}
+            isLast
+          />
+        ) : null}
       </SettingsSection>
 
       <SettingsSection title="Privacy and data">

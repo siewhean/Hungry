@@ -32,6 +32,27 @@ export interface TasteProfile {
   neophiliaIndex: number;
   /** Spice-seeking threshold: 0 = zero capsaicin tolerance → 10 = extreme heat seeker */
   spiceSeeking: number;
+  /** How open the user is to new food (onboarding/settings); sets neophiliaIndex and the exploration mix */
+  foodOpenness?: FoodOpenness;
+}
+
+/** How open a user is to trying new food; drives the familiar-vs-new split of recommendations. */
+export type FoodOpenness = "favourites" | "mix" | "adventurous";
+
+/** Why a dish is in a recommendation slate. */
+export type RecommendationBucket = "repeat" | "same_type" | "similar" | "new";
+
+/** Per-dish evidence of what a user has eaten or liked, decayed to lastEventAt (user_dish_affinities). */
+export interface UserDishAffinity {
+  dishId: string;
+  foodType?: string;
+  venueId?: string;
+  /** Signed evidence, decayed to lastEventAt */
+  evidence: number;
+  /** Sum of |weight|, decayed to lastEventAt; the shrinkage denominator */
+  absEvidence: number;
+  lastEventAt: string;
+  dismissedUntil?: string;
 }
 
 /**
