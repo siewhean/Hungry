@@ -21,7 +21,6 @@ export function resolveFeatureFlags(
   const merchantCentreEnabled = nonProductionSurfaceEnabled;
 
   return {
-    readsEnabled: true,
     notificationsEnabled: false,
     mockMapboxEnabled: process.env.EXPO_PUBLIC_MOCK_MAPBOX_ENABLED === "1",
     // Wheel solo spin ships everywhere. Group parties are an in-memory mock (a /join

@@ -108,7 +108,6 @@ Level 4 — Current Sprint Goal
 | `oauthProvidersEnabled` | `false` | Google/Apple OAuth provider buttons stay disabled until live credentials are verified |
 | `prototypeRoutesEnabled` | `false` | Prototype-only routes stay hidden in production |
 | `floorplansEnabled` | `false` | Indoor floorplan routes and entry points stay hidden in production |
-| `readsEnabled` | `true` | Reads tab is visible |
 | `notificationsEnabled` | `false` | Push notifications disabled |
 | `mockMapboxEnabled` | `false` | Use real Mapbox SDK; `true` = mock surface |
 

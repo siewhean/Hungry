@@ -1069,6 +1069,7 @@ async function mapSupabaseReviewRows(
       tags: asStringArray(row.tags),
       wouldRecommend: asBoolean(row.would_recommend) ?? true,
       photos: photosByReviewId.get(id) ?? [],
+      helpfulCount: asNumber(row.helpful_count),
       merchantReply: asString(row.merchant_reply_text)
         ? {
             text: asString(row.merchant_reply_text) ?? "",
@@ -3657,7 +3658,7 @@ export const supabaseService: HungryService = {
       let query = client
         .from("reviews")
         .select(
-          "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend,merchant_reply_text,merchant_replied_at",
+          "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend,merchant_reply_text,merchant_replied_at,helpful_count",
         )
         .order("created_at", { ascending: false })
         .order("id", { ascending: false })
@@ -3721,6 +3722,23 @@ export const supabaseService: HungryService = {
       const reviews = await mapSupabaseReviewRows(client, rows, {
         includePhotos: !options?.dishIds,
       });
+      // The viewer's own helpful votes on this page (RLS returns only their rows).
+      const viewerId = await getCurrentSupabaseUserId();
+      const helpfulReviewIds = new Set<string>();
+      if (viewerId) {
+        const { data: voteRows } = await client
+          .from("review_helpful_votes")
+          .select("review_id")
+          .eq("user_id", viewerId)
+          .in(
+            "review_id",
+            reviews.map((review) => review.id),
+          );
+        for (const voteRow of (Array.isArray(voteRows) ? voteRows : []) as Row[]) {
+          const reviewId = asString(voteRow.review_id);
+          if (reviewId) helpfulReviewIds.add(reviewId);
+        }
+      }
       return reviews.flatMap((review): RecentReviewFeedEntry[] => {
         const dish = review.dishId ? dishById.get(review.dishId) : undefined;
         // Reviews of dishes the catalog cannot display are skipped.
@@ -3728,7 +3746,7 @@ export const supabaseService: HungryService = {
         const venueId = review.venueId ?? dish.venueId ?? "";
         return [
           {
-            review,
+            review: { ...review, viewerFoundHelpful: helpfulReviewIds.has(review.id) },
             dishId: review.dishId,
             dishName: dish.name,
             venueId,
@@ -3736,6 +3754,29 @@ export const supabaseService: HungryService = {
           },
         ];
       });
+    },
+
+    async setReviewHelpful(reviewId, helpful) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to mark reviews helpful.");
+      // Set the requested state instead of toggling, so a repeated tap never flips it back.
+      if (!helpful) {
+        const { error } = await client
+          .from("review_helpful_votes")
+          .delete()
+          .eq("review_id", reviewId)
+          .eq("user_id", userId);
+        if (error) throw error;
+        return;
+      }
+      const { error } = await client
+        .from("review_helpful_votes")
+        .upsert(
+          { review_id: reviewId, user_id: userId },
+          { onConflict: "review_id,user_id", ignoreDuplicates: true },
+        );
+      if (error) throw error;
     },
   },
 

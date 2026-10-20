@@ -216,7 +216,6 @@ Source: `src/app/navigation/navigationTypes.ts`
 | Key | Value |
 |-----|-------|
 | Stack | `src/app/screens/review/ReviewStack.tsx` |
-| Shell | `src/app/screens/review/ReviewScreenShell.tsx` |
 | State | `useReviewDraftStore` — draft persists across steps |
 | Tab icon | `NotebookPen` (lucide) |
 | Auth required | No — soft-gate on submit, not on entry |
@@ -270,21 +269,15 @@ Source: `src/app/navigation/navigationTypes.ts`
 |--------|------|---------|
 | `DishDetail` | `src/app/screens/detail/DishDetailScreen.tsx` | Any `DishCard` tap |
 | `StallDetail` | `src/app/screens/detail/StallDetailScreen.tsx` | Any `StallCard` tap |
-| `BlogPost` | `src/app/screens/reads/BlogPostWebViewScreen.tsx` | Blog post tap |
+| `BlogPost` | `src/app/screens/reads/BlogPostWebViewScreen.tsx` | Developer launcher sample article |
 | `Offline` | `src/app/screens/detail/OfflineStateScreen.tsx` | No network / data unavailable |
 | `NotFound` | `src/app/screens/detail/NotFoundScreen.tsx` | Bad deep link / missing entity |
 
 ---
 
-### Reads (Feature-Flagged)
+### Reads
 
-| Key | Value |
-|-----|-------|
-| Flag | `FEATURE_FLAGS.readsEnabled` (default `true`) |
-| Feed screen | `src/app/screens/reads/ReadsFeedScreen.tsx` |
-| WebView screen | `src/app/screens/reads/BlogPostWebViewScreen.tsx` |
-| Content | `src/features/reads/feed.ts` |
-| Note | Reads tab is not in MainTabs by default — access via Home feed or BlogPost modal |
+Removed 2026-10-20: the unrouted Reads feed and its `readsEnabled` flag were deleted. Only the `BlogPost` WebView route remains.
 
 ---
 
