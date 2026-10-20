@@ -30,7 +30,7 @@ export function MerchantClaimExplainerScreen({ navigation }: Props) {
       <Pressable
         onPress={() => navigation.goBack()}
         style={{
-          ...StyleSheet.absoluteFillObject,
+          ...StyleSheet.absoluteFill,
           backgroundColor: palette.overlay,
         }}
         accessibilityRole="button"

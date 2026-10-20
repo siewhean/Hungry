@@ -2,8 +2,8 @@ internal import Expo
 import React
 import ReactAppDependencyProvider
 
-@UIApplicationMain
-class AppDelegate: ExpoAppDelegate {
+@main
+class AppDelegate: ExpoAppDelegate, ExpoReactNativeFactoryProvider {
   var window: UIWindow?
 
   var reactNativeDelegate: ExpoReactNativeFactoryDelegate?
@@ -19,13 +19,10 @@ class AppDelegate: ExpoAppDelegate {
 
     reactNativeDelegate = delegate
     reactNativeFactory = factory
-#if os(iOS) || os(tvOS)
-    window = UIWindow(frame: UIScreen.main.bounds)
-    factory.startReactNative(
-      withModuleName: "main",
-      in: window,
-      launchOptions: launchOptions)
-#endif
+
+    // The window and React Native start-up live in SceneDelegate (scene-based life cycle,
+    // required to launch on iOS 27). SceneDelegate reads `reactNativeFactory` via
+    // ExpoReactNativeFactoryProvider and mirrors its window back onto `window`.
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
