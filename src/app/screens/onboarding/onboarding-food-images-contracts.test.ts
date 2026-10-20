@@ -94,7 +94,7 @@ test("onboarding food visuals use generated local food assets", () => {
 
   assert.equal(
     uniqueReferencedAssets.size,
-    20,
+    22,
     "all onboarding food choices should use generated local assets",
   );
   assert.deepEqual(
@@ -142,4 +142,25 @@ test("onboarding food visuals use generated local food assets", () => {
       `${path.basename(assetPath)} should not be replaced with a tiny placeholder`,
     );
   }
+});
+
+test("taste questions show each dish once with sour and salty hawker examples", () => {
+  const source = fs.readFileSync(registryPath, "utf8");
+  const block = source.slice(source.indexOf("TASTE_QUESTION_FOODS"));
+  const labels = [...block.matchAll(/label: "([^"]+)"/g)].map(([, label]) => label);
+
+  assert.equal(labels.length, 18, "six taste questions should show three dishes each");
+  assert.equal(new Set(labels).size, labels.length, "each dish should appear in one question only");
+  assert.match(block, /sour: \[[^\]]*"Asam laksa"[^\]]*"Rojak"[^\]]*"Mee siam"/);
+  assert.match(block, /salty: \[[^\]]*"Fish soup"[^\]]*"Chai tow kway"[^\]]*"Char kway teow"/);
+
+  const quizScreen = fs.readFileSync(
+    path.join(repoRoot, "src/app/screens/onboarding/TasteQuizScreen.tsx"),
+    "utf8",
+  );
+  assert.match(
+    quizScreen,
+    /choiceFoods\[index\]\.imageSource \? \([\s\S]*<NoDishPhoto[\s\S]*dishName=\{choiceFoods\[index\]\.label\}/,
+    "dishes without a generated photo should fall back to the shared no-photo tile",
+  );
 });

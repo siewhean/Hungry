@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Check, ChevronRight, Search } from "lucide-react-native";
 
+import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import { AccessibleImage, Button, AppText, Card, Chip, EmptyState, Input } from "@/components/ui";
 import { NEUTRAL_TASTE_VECTOR, TASTE_DIMENSIONS } from "@/constants/taste";
 import { recordQuizResponse } from "@/features/profile/pendingQuizResponse";
@@ -608,13 +609,20 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                           },
                         ]}
                       >
-                        <AccessibleImage
-                          source={choiceFoods[index].imageSource}
-                          contentFit="cover"
-                          contentPosition="center"
-                          style={{ height: "100%", width: "100%" }}
-                          decorative
-                        />
+                        {choiceFoods[index].imageSource ? (
+                          <AccessibleImage
+                            source={choiceFoods[index].imageSource}
+                            contentFit="cover"
+                            contentPosition="center"
+                            style={{ height: "100%", width: "100%" }}
+                            decorative
+                          />
+                        ) : (
+                          <NoDishPhoto
+                            dishName={choiceFoods[index].label}
+                            style={{ height: "100%", width: "100%" }}
+                          />
+                        )}
                         <Animated.View
                           pointerEvents="none"
                           style={{

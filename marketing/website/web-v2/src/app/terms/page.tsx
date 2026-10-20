@@ -32,12 +32,12 @@ const sections = [
   {
     title: "6. Account Deletion",
     body:
-      "If you create an account, you can request account deletion in the app under Settings or at hungry.sg/account/delete. Hungry will remove or anonymize account-associated personal data unless limited retention is required for safety, fraud prevention, legal obligations, or audit purposes.",
+      "If you create an account, you can request account deletion in the app under Settings or at usehungry.com/account/delete. Hungry will remove or anonymize account-associated personal data unless limited retention is required for safety, fraud prevention, legal obligations, or audit purposes.",
   },
   {
     title: "7. Changes And Contact",
     body:
-      "Hungry may update these terms as the app and merchant tools evolve. For support, safety, privacy, or deletion requests, email usehungrysingapore@gmail.com.",
+      "Hungry may update these terms as the app and merchant tools evolve. For support, safety, or deletion requests, email usehungrysingapore@gmail.com. Our privacy contact (Data Protection Officer) for personal data questions is reachable at the same address, usehungrysingapore@gmail.com.",
   },
 ];
 
