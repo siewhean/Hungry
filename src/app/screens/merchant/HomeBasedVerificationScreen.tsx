@@ -112,6 +112,7 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
       // First update the profile with the specific home-based details
       await getHungryService().merchant.updateBusinessProfile(activeOutlet.id, {
         name: displayName,
+        businessType: "home_based",
         locationPrivacy: privacy,
       });
 
@@ -184,21 +185,16 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
         </AppText>
 
         <View style={{ gap: spacing[2] }}>
+          {/* Home-based businesses never show an exact address to diners. */}
           <PrivacyOption
             title="Approximate Area"
-            description="Shows a rough 500m radius"
+            description="Shows the building area only, never your unit or floor"
             selected={privacy === "approximate"}
             onSelect={() => setPrivacy("approximate")}
           />
           <PrivacyOption
-            title="Exact Address"
-            description="Shows full block and street"
-            selected={privacy === "exact"}
-            onSelect={() => setPrivacy("exact")}
-          />
-          <PrivacyOption
             title="Hidden"
-            description="Location is not shown at all"
+            description="Street address is not shown either"
             selected={privacy === "hidden"}
             onSelect={() => setPrivacy("hidden")}
           />
