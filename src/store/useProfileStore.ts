@@ -292,7 +292,12 @@ function persistTasteInteraction(
   input: RecordTasteInteractionInput,
   event?: TasteInteractionEvent,
 ) {
-  if (!event || getServiceProvider().mode !== "supabase") {
+  // Silent taste signals are never sent for a guest; they stay on the device.
+  if (
+    !event ||
+    getServiceProvider().mode !== "supabase" ||
+    !getSessionStoreState().isAuthenticated
+  ) {
     return;
   }
 

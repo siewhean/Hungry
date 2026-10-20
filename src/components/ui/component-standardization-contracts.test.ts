@@ -132,7 +132,8 @@ test("merchant forms use shared user-mode input, select, chip, and toggle primit
     [
       /<Input[\s\S]*label="Business Name \*"/,
       /<SelectField[\s\S]*label="Business Type"/,
-      /<FormSwitchRow[\s\S]*label="Exact Location Privacy"/,
+      /<ChipGroup[\s\S]*options=\{HOME_BASED_PRIVACY_OPTIONS\}/,
+      /<FormSwitchRow[\s\S]*label="Show on Hungry"/,
     ],
     "Business Profile form",
   );

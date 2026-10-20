@@ -66,6 +66,7 @@ import {
 } from "@/components/ui";
 import { DishCard } from "@/components/dish/DishCard";
 import { WeeklyPicksRail } from "@/components/dish/WeeklyPicksRail";
+import { WelcomeBackCard } from "@/components/home/WelcomeBackCard";
 import {
   BitesCarousel,
   CircleStoryCarousel,
@@ -101,6 +102,7 @@ import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
+import { useRequireAccount } from "@/features/auth/useRequireAccount";
 import { useStoryStore } from "@/store/useStoryStore";
 import { useSocialStore, type SocialComment, type SocialReply } from "@/store/useSocialStore";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
@@ -326,6 +328,13 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     navigation.navigate("AuthStack", { screen: "Login" });
     return false;
   }, [isAuthenticated, navigation, setReturnRoute, showToast]);
+
+  const requireAccount = useRequireAccount();
+  const requireAuthForFollow = useCallback(
+    () =>
+      requireAccount("Sign in to follow people.", { name: "MainTabs", params: { screen: "Home" } }),
+    [requireAccount],
+  );
 
   const openComposerFromEmptyFeed = useCallback(() => {
     if (!isAuthenticated) {
@@ -884,6 +893,12 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
 
   const handlePostCommentOrReply = useCallback(() => {
     if (!activeCommentItem || !draftComment.trim().length) return;
+    if (!isAuthenticated) {
+      // Close the sheet first so it does not stay on top of the sign-in screen.
+      commentsSheetRef.current?.dismiss();
+      requireAccount("Sign in to comment.", { name: "MainTabs", params: { screen: "Home" } });
+      return;
+    }
 
     if (activeReplyCommentId) {
       const newReply: SocialReply = {
@@ -918,6 +933,8 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     addPostReply,
     draftComment,
     activeReplyCommentId,
+    isAuthenticated,
+    requireAccount,
     profile.id,
     profile.avatarUrl,
     profile.displayName,
@@ -1155,6 +1172,11 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
           horizontalPadding={semanticSpacing.screenEdge}
           style={{ minHeight: 68 }}
         />
+        <WelcomeBackCard
+          horizontalPadding={semanticSpacing.screenEdge}
+          onOpenDish={(dishId) => navigation.navigate("DishDetail", { dishId })}
+          onOpenSaved={() => navigation.navigate("Favourites")}
+        />
         <WeeklyPicksRail
           horizontalPadding={semanticSpacing.screenEdge}
           onOpenDish={(dishId) => navigation.navigate("DishDetail", { dishId })}
@@ -1330,11 +1352,12 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                     accessibilityRole="button"
                     accessibilityLabel={`${isFollowRequested ? "Cancel follow request to" : isFollowingAuthor ? "Unfollow" : "Follow"} ${item.authorName}`}
                     hitSlop={8}
-                    onPress={() =>
-                      followTargetId
+                    onPress={() => {
+                      if (!requireAuthForFollow()) return;
+                      return followTargetId
                         ? toggleFollow(followTargetId)
-                        : toggleAuthorFollow(item.authorName)
-                    }
+                        : toggleAuthorFollow(item.authorName);
+                    }}
                     style={[
                       styles.followButton,
                       {
@@ -2029,6 +2052,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       handlePostSave,
       toggleAuthorFollow,
       toggleFollow,
+      requireAuthForFollow,
       serviceProviderMode,
       incrementPostShare,
       openShareSheet,

@@ -15,6 +15,7 @@ import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { listSharedStallPosts, mergeStallPosts } from "@/features/social/sharedStallPosts";
 import { biteToStallPost } from "@/lib/services/postTransforms";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import { useRequireAccount } from "@/features/auth/useRequireAccount";
 import { useSocialStore } from "@/store/useSocialStore";
 import { useHungryTheme } from "@/theme";
 import type { Review, StallPost } from "@/types/domain";
@@ -58,6 +59,7 @@ export function UserProfileContent({
   const rootNavigation = getRootNavigation(navigation);
   const followedUserIds = useSocialStore((state) => state.followedUserIds);
   const toggleFollow = useSocialStore((state) => state.toggleFollow);
+  const requireAccount = useRequireAccount();
   const setFollowedUserId = useSocialStore((state) => state.setFollowedUserId);
   const requestedUserIds = useSocialStore((state) => state.requestedUserIds);
   const setFollowRequested = useSocialStore((state) => state.setFollowRequested);
@@ -298,7 +300,16 @@ export function UserProfileContent({
                 accessibilityHint={isFollowRequested ? "Cancels your follow request" : undefined}
                 hitSlop={8}
                 onPress={() => {
-                  if (resolvedAuthorId) toggleFollow(resolvedAuthorId);
+                  if (!resolvedAuthorId) return;
+                  if (
+                    !requireAccount("Sign in to follow people.", {
+                      name: "UserProfile",
+                      params: { authorName, authorAvatarUrl, authorId },
+                    })
+                  ) {
+                    return;
+                  }
+                  toggleFollow(resolvedAuthorId);
                 }}
                 style={{
                   alignItems: "center",

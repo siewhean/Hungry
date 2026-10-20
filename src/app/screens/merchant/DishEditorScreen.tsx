@@ -219,6 +219,28 @@ export function DishEditorScreen() {
     }
   };
 
+  const handleDelete = () => {
+    if (!activeOutlet || !dishId) return;
+    Alert.alert("Delete Dish", `Are you sure you want to delete ${name || "this dish"}?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          setIsSaving(true);
+          try {
+            await getHungryService().merchant.deleteDish(activeOutlet.id, dishId);
+            navigation.goBack();
+          } catch (e) {
+            Alert.alert("Could not delete dish", errorMessage(e, "Please try again."));
+          } finally {
+            setIsSaving(false);
+          }
+        },
+      },
+    ]);
+  };
+
   const handleGenerateDescription = async () => {
     if (!name) {
       Alert.alert("Notice", "Please enter a dish name first.");
@@ -500,6 +522,15 @@ export function DishEditorScreen() {
           disabled={isSaving}
           style={{ marginTop: spacing[4] }}
         />
+        {dishId ? (
+          <Button
+            label="Delete Dish"
+            variant="destructive"
+            fullWidth
+            onPress={handleDelete}
+            disabled={isSaving}
+          />
+        ) : null}
       </View>
     </Screen>
   );

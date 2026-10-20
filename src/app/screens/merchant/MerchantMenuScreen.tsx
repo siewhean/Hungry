@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { View, StyleSheet, Alert, Pressable, ScrollView } from "react-native";
 import { Plus, Search, MoreVertical, Camera, X } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -9,6 +9,7 @@ import {
   AccessibleImage,
   AppText,
   Button,
+  Dialog,
   IconButton,
   EmptyState,
   FAB,
@@ -63,6 +64,12 @@ export function MerchantMenuScreen() {
   const [filter, setFilter] = useState<MenuFilter>("all");
   const [showCreateOptions, setShowCreateOptions] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dishDialog, setDishDialog] = useState<{
+    dish: DishDetail;
+    confirmDelete: boolean;
+  } | null>(null);
+  // Dialog closes itself after a button press; "Delete Dish" switches to the confirm step instead.
+  const keepDishDialogOpen = useRef(false);
 
   const loadMenu = useCallback(async () => {
     if (!activeOutlet) return;
@@ -207,44 +214,63 @@ export function MerchantMenuScreen() {
     }
   };
 
-  const handleDelete = (dish: DishDetail) => {
+  const handleDelete = async (dish: DishDetail) => {
     if (!activeOutlet) return;
-    Alert.alert("Delete Dish", `Are you sure you want to delete ${dish.name}?`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await getHungryService().merchant.deleteDish(activeOutlet.id, dish.id);
-            setMenu((prev) => prev.filter((d) => d.id !== dish.id));
-          } catch (e) {
-            showError("Could not delete dish", e);
-          }
-        },
-      },
-    ]);
+    try {
+      await getHungryService().merchant.deleteDish(activeOutlet.id, dish.id);
+      setMenu((prev) => prev.filter((d) => d.id !== dish.id));
+    } catch (e) {
+      showError("Could not delete dish", e);
+    }
   };
 
-  const showDishOptions = (dish: DishDetail) => {
-    Alert.alert("Dish Options", dish.name, [
-      { text: "Edit Dish", onPress: () => navigation.navigate("DishEditor", { dishId: dish.id }) },
-      {
-        text: hasAvailabilityFlag(dish.availabilityFlags, "sold_out")
-          ? "Mark Available"
-          : "Mark Sold Out",
-        onPress: () => handleToggleSoldOut(dish),
-      },
-      {
-        text: hasAvailabilityFlag(dish.availabilityFlags, "featured")
-          ? "Remove from Featured"
-          : "Feature Dish",
-        onPress: () => handleToggleFeatured(dish),
-      },
-      { text: "Delete", style: "destructive", onPress: () => handleDelete(dish) },
-      { text: "Cancel", style: "cancel" },
-    ]);
+  // A Dialog, not Alert.alert: Android alerts drop every button after the third.
+  const showDishOptions = (dish: DishDetail) => setDishDialog({ dish, confirmDelete: false });
+  const closeDishDialog = () => {
+    if (keepDishDialogOpen.current) {
+      keepDishDialogOpen.current = false;
+      return;
+    }
+    setDishDialog(null);
   };
+  const dishDialogButtons = !dishDialog
+    ? []
+    : dishDialog.confirmDelete
+      ? [
+          {
+            text: "Delete",
+            style: "destructive" as const,
+            onPress: () => void handleDelete(dishDialog.dish),
+          },
+          { text: "Cancel", style: "cancel" as const },
+        ]
+      : [
+          {
+            text: "Edit Dish",
+            onPress: () => navigation.navigate("DishEditor", { dishId: dishDialog.dish.id }),
+          },
+          {
+            text: hasAvailabilityFlag(dishDialog.dish.availabilityFlags, "sold_out")
+              ? "Mark Available"
+              : "Mark Sold Out",
+            onPress: () => void handleToggleSoldOut(dishDialog.dish),
+          },
+          {
+            text: hasAvailabilityFlag(dishDialog.dish.availabilityFlags, "featured")
+              ? "Remove from Featured"
+              : "Feature Dish",
+            onPress: () => void handleToggleFeatured(dishDialog.dish),
+          },
+          {
+            text: "Delete Dish",
+            style: "destructive" as const,
+            onPress: () => {
+              keepDishDialogOpen.current = true;
+              setDishDialog({ dish: dishDialog.dish, confirmDelete: true });
+            },
+          },
+          { text: "Cancel", style: "cancel" as const },
+        ];
 
   const handlePreviewMenuAsCustomer = () => {
     if (previewVenueId) {
@@ -504,6 +530,17 @@ export function MerchantMenuScreen() {
           </Pressable>
         </FAB>
       </View>
+      <Dialog
+        visible={Boolean(dishDialog)}
+        title={dishDialog?.confirmDelete ? "Delete Dish" : "Dish Options"}
+        message={
+          dishDialog?.confirmDelete
+            ? `Are you sure you want to delete ${dishDialog.dish.name}?`
+            : dishDialog?.dish.name
+        }
+        buttons={dishDialogButtons}
+        onClose={closeDishDialog}
+      />
     </Screen>
   );
 }

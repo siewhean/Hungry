@@ -47,6 +47,7 @@ export function PromotionBuilderScreen() {
   const route = useRoute<RouteProps>();
   const promotionId = route.params?.promotionId;
   const activeOutlet = useMerchantStore(getActiveOutlet);
+  const updateOutletProfile = useMerchantStore((state) => state.updateOutletProfile);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -179,6 +180,36 @@ export function PromotionBuilderScreen() {
         await getHungryService().merchant.createPromotion(activeOutlet.id, promoData);
       }
 
+      if (publish && !activeOutlet.isLive) {
+        // Diners only see promotions of stalls shown on Hungry: offer the one-tap fix.
+        const outletId = activeOutlet.id;
+        Alert.alert(
+          "Published, but not visible to diners",
+          'Your stall is hidden, so diners will not see this promotion until you turn on "Show on Hungry".',
+          [
+            { text: "Not now", style: "cancel", onPress: () => navigation.goBack() },
+            {
+              text: "Show on Hungry",
+              onPress: async () => {
+                try {
+                  const updated = await getHungryService().merchant.updateBusinessProfile(
+                    outletId,
+                    { isLive: true },
+                  );
+                  updateOutletProfile(outletId, updated);
+                } catch (e) {
+                  Alert.alert(
+                    "Could not show your stall",
+                    e instanceof Error ? e.message : "Please try again.",
+                  );
+                }
+                navigation.goBack();
+              },
+            },
+          ],
+        );
+        return;
+      }
       Alert.alert("Success", `Promotion ${publish ? "published" : "saved as draft"}!`);
       navigation.goBack();
     } catch (e) {

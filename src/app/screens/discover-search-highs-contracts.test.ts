@@ -149,13 +149,11 @@ test("Search hides empty sections and controls the backend ignores", () => {
   );
 });
 
-test("Search browse: guests get a way out, chips never show everything, errors stay friendly", () => {
+test("Search browse: guests can browse, chips never show everything, errors stay friendly", () => {
   const results = readRepoFile("src/app/screens/search/SearchResultsScreen.tsx");
 
-  assert.match(
-    results,
-    /ctaLabel="Sign in"[\s\S]*setReturnRoute\(\{[\s\S]*navigation\.navigate\("AuthStack", \{ screen: "Login" \}\)/,
-  );
+  // The catalog is guest-readable, so there is no sign-in wall on browse.
+  assert.doesNotMatch(results, /Sign in to browse the full directory/);
   assert.match(results, /dietaryFlags: filter === "halal" \? \["halal"\] : \[\]/);
   assert.doesNotMatch(results, /body=\{error\}/);
   assert.match(results, /errorMessage=\{error\}/);
@@ -210,14 +208,10 @@ test("Map is open to every diner from a List/Map toggle on Discover, guests incl
   assert.match(toggle, /accessibilityRole="tab"/);
   assert.match(toggle, /accessibilityState=\{\{ selected \}\}/);
 
-  // DiscoverMap is not an auth-required route; guests see the map and a sign-in prompt.
+  // DiscoverMap is not an auth-required route; guests see the map and its pins.
   const protectedRoutes = navigator.match(/const PROTECTED_ROOT_ROUTES[\s\S]*?\]\);/)?.[0] ?? "";
   assert.ok(protectedRoutes, "PROTECTED_ROOT_ROUTES should exist");
   assert.doesNotMatch(protectedRoutes, /"DiscoverMap"/);
-  assert.match(map, /if \(!isAuthenticated\) \{\s*setRawMapItems\(\[\]\);/);
-  assert.match(map, /\{isAuthenticated \? null : <GuestMapPrompt/);
-  assert.match(
-    map,
-    /setReturnRoute\(\{[\s\S]*navigation\.navigate\("AuthStack", \{ screen: "Login" \}\)/,
-  );
+  assert.doesNotMatch(map, /if \(!isAuthenticated\)/);
+  assert.doesNotMatch(map, /GuestMapPrompt/);
 });

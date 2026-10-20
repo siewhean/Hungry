@@ -16,6 +16,7 @@ import {
   setSupabaseServiceProvider,
 } from "@/lib/services/serviceProvider";
 import { isNetworkOffline } from "@/lib/network/connectivity";
+import { useLifecycleStore } from "@/store/useLifecycleStore";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -408,6 +409,23 @@ export function useAppBootstrap() {
     return () => {
       active = false;
       cancelHydrationWait();
+    };
+  }, [authenticatedUserId, isAuthReady, isAuthenticated, isDataSourceReady]);
+
+  // Record today's visit for the lifecycle state (the server keeps one row per Singapore day).
+  useEffect(() => {
+    if (!isAuthReady || !isDataSourceReady || !isAuthenticated) {
+      return;
+    }
+
+    void useLifecycleStore.getState().recordAppOpen();
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") void useLifecycleStore.getState().recordAppOpen();
+    });
+    return () => {
+      subscription.remove();
+      // A different (or no) user next: their state is recorded afresh.
+      useLifecycleStore.getState().reset();
     };
   }, [authenticatedUserId, isAuthReady, isAuthenticated, isDataSourceReady]);
 

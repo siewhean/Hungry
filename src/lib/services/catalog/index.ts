@@ -306,19 +306,16 @@ function writeCache<T>(
   return value;
 }
 
-async function requireAuthenticatedClient() {
+// Catalog browse reads are open to guests (anon key); saving anything needs an account.
+function requireCatalogClient() {
   const client = getSupabaseClient();
   if (!client)
     throw new CatalogAccessError("Catalog is unavailable because Supabase is not configured.");
-  const { data, error } = await client.auth.getSession();
-  if (error || !data.session?.user) {
-    throw new CatalogAccessError("Sign in to browse the complete Hungry directory.");
-  }
   return client;
 }
 
 async function callRawRpc<T>(name: string, args: Record<string, unknown>): Promise<T> {
-  const client = await requireAuthenticatedClient();
+  const client = requireCatalogClient();
   const { data, error } = await client.rpc(name, args);
   if (error) throw new CatalogAccessError(error.message);
   return data as T;

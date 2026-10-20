@@ -13,6 +13,7 @@ import { ProfileScreenShell } from "@/app/screens/profile/ProfileScreenShell";
 import { PassportBook } from "@/components/gamification/PassportBook";
 import { PassportPageFlip } from "@/components/gamification/PassportPageFlip";
 import { PassportStampCard } from "@/components/gamification/PassportStampCard";
+import { WeeklyGoalCard } from "@/components/gamification/WeeklyGoalCard";
 import { AppText, EmptyState } from "@/components/ui";
 import {
   ALL_PASSPORT_CATEGORIES,
@@ -23,6 +24,9 @@ import {
   getNewlyEarnedUncelebratedStamp,
   getNextPassportStamp,
 } from "@/constants/passportConfig";
+import { computeWeeklyGoal, milestoneReachedThisWeek } from "@/features/passport/weeklyGoal";
+import { trackAnalyticsEvent } from "@/lib/analytics";
+import { useChecklistStore } from "@/store/useChecklistStore";
 import { usePassportStore } from "@/store/usePassportStore";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useHungryTheme } from "@/theme";
@@ -79,8 +83,12 @@ export function PassportScreen({ navigation: _nav }: Props) {
   const passportStamps = usePassportStore((s) => s.stamps);
   const passportEvents = usePassportStore((s) => s.events);
   const stallInteractions = useStallInteractionStore((state) => state.interactions);
+  const checklistItems = useChecklistStore((state) => state.items);
+  const celebratedGoalWeeks = usePassportStore((s) => s.celebratedGoalWeeks);
+  const markGoalWeekCelebrated = usePassportStore((s) => s.markGoalWeekCelebrated);
   const [reduceMotion, setReduceMotion] = useState(false);
   const [celebratingStampId, setCelebratingStampId] = useState<string | null>(null);
+  const [celebratingGoal, setCelebratingGoal] = useState(false);
 
   const triedStallIds = useMemo(
     () =>
@@ -89,6 +97,26 @@ export function PassportScreen({ navigation: _nav }: Props) {
         .map((interaction) => interaction.stallId),
     [stallInteractions],
   );
+
+  // One entry per tried stall or dish (a stall tried and on a checklist counts once).
+  const weeklyGoal = useMemo(() => {
+    const triedAtByItem = new Map<string, string>();
+    for (const interaction of Object.values(stallInteractions)) {
+      if (interaction.isTried && interaction.triedAt) {
+        triedAtByItem.set(`stall:${interaction.stallId}`, interaction.triedAt);
+      }
+    }
+    for (const item of Object.values(checklistItems).flat()) {
+      if (!item.triedAt) continue;
+      const key = item.dishId
+        ? `dish:${item.dishId}`
+        : item.stallId
+          ? `stall:${item.stallId}`
+          : `item:${item.id}`;
+      if (!triedAtByItem.has(key)) triedAtByItem.set(key, item.triedAt);
+    }
+    return computeWeeklyGoal([...triedAtByItem.values()]);
+  }, [checklistItems, stallInteractions]);
 
   const earnedStamps = useMemo(() => getEarnedPassportStamps(progressMap), [progressMap]);
   const nextStamp = useMemo(() => getNextPassportStamp(progressMap), [progressMap]);
@@ -144,6 +172,35 @@ export function PassportScreen({ navigation: _nav }: Props) {
     }
   }, [celebrateMarker, markStampCelebrated, passportHydrated, reduceMotion]);
 
+  // Celebrate this week's goal once, the first time the Passport sees it met.
+  useEffect(() => {
+    if (!passportHydrated || !weeklyGoal.completed || celebratedGoalWeeks[weeklyGoal.weekKey]) {
+      return;
+    }
+
+    markGoalWeekCelebrated(weeklyGoal.weekKey);
+    setCelebratingGoal(true);
+    const milestone = milestoneReachedThisWeek(weeklyGoal);
+    trackAnalyticsEvent("weekly_goal_completed", {
+      week: weeklyGoal.weekKey,
+      count: weeklyGoal.count,
+      weeks_completed: weeklyGoal.weeksCompleted,
+      ...(milestone ? { milestone: milestone.title } : {}),
+    });
+    AccessibilityInfo.announceForAccessibility(
+      milestone ? `Weekly goal complete. ${milestone.title}!` : "Weekly goal complete!",
+    );
+    if (!reduceMotion) {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  }, [celebratedGoalWeeks, markGoalWeekCelebrated, passportHydrated, reduceMotion, weeklyGoal]);
+
+  useEffect(() => {
+    if (!celebratingGoal) return;
+    const timeout = setTimeout(() => setCelebratingGoal(false), reduceMotion ? 300 : 1600);
+    return () => clearTimeout(timeout);
+  }, [celebratingGoal, reduceMotion]);
+
   useEffect(() => {
     if (!celebratingStampId) return;
     const timeout = setTimeout(() => setCelebratingStampId(null), reduceMotion ? 300 : 1400);
@@ -184,6 +241,12 @@ export function PassportScreen({ navigation: _nav }: Props) {
             nextStamp={nextStamp}
           />
         </PassportPageFlip>
+
+        <WeeklyGoalCard
+          progress={weeklyGoal}
+          celebrating={celebratingGoal}
+          reduceMotion={reduceMotion}
+        />
 
         <PortfolioContributionPanel
           componentRadii={componentRadii}
