@@ -14,8 +14,10 @@ test.describe("checklist and portfolio critical flows", () => {
     await startOnboardedMockSession(page);
     await clickDevButton(page, "Profile", "Profile & Review");
 
+    // Saved, lists and checklists share one Lists area (main #91).
     await page.getByRole("button", { name: "Open quick access" }).click();
-    await page.getByRole("button", { name: "My Checklists" }).click();
+    await page.getByRole("button", { name: "Lists", exact: true }).click();
+    await page.getByRole("button", { name: /^Checklists\./ }).click();
     await expect(page.getByText("My Checklists", { exact: true }).first()).toBeVisible();
 
     await page
@@ -35,7 +37,8 @@ test.describe("checklist and portfolio critical flows", () => {
     await clickDevButton(page, "Profile", "Profile & Review");
 
     await page.getByRole("button", { name: "Open quick access" }).click();
-    await page.getByRole("button", { name: "Hungry Portfolios" }).click();
+    await page.getByRole("button", { name: "Lists", exact: true }).click();
+    await page.getByRole("button", { name: /^Your lists\./ }).click();
     await expect(page.getByText("Hungry Portfolios", { exact: true }).first()).toBeVisible();
 
     await page.getByRole("button", { name: "Create portfolio" }).first().click();
