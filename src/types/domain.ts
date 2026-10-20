@@ -251,6 +251,10 @@ export interface Review {
     text: string;
     repliedAt: string;
   };
+  /** People who marked this review helpful (server-kept count). */
+  helpfulCount?: number;
+  /** The signed-in viewer marked this review helpful. */
+  viewerFoundHelpful?: boolean;
 }
 
 export interface PopularVisitorPin {

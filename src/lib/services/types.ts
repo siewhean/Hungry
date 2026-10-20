@@ -827,6 +827,8 @@ export interface HungryService {
     submitReview(draft: SubmitReviewInput): Promise<void>;
     /** Newest-first review feed across all dishes, fetched as one paginated query. */
     listRecentReviews(options?: ListRecentReviewsOptions): Promise<RecentReviewFeedEntry[]>;
+    /** Marks (helpful=true) or un-marks a review as helpful for the signed-in user. Idempotent. */
+    setReviewHelpful(reviewId: string, helpful: boolean): Promise<void>;
   };
 
   // Profile

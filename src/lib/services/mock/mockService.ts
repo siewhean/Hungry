@@ -296,6 +296,8 @@ function createMockUserStallSubmission(input: SubmitUserStallSubmissionInput): U
 
 let _profile: UserProfile = { ...guestProfile };
 const _submittedClientReviewIds = new Set<string>();
+/** Reviews the mock viewer marked helpful. */
+const _helpfulReviewIds = new Set<string>();
 let _followedStallIds = new Set<string>();
 let _pushPreferences: PushPreferences = { ...DEFAULT_PUSH_PREFERENCES };
 /** Singapore dates the mock user opened the app (record_app_open). */
@@ -1849,7 +1851,12 @@ export const hungryService: HungryService = {
           dish.reviews
             .filter((review) => !isMockReviewHiddenForViewer(review))
             .map((review) => ({
-              review,
+              review: {
+                ...review,
+                helpfulCount:
+                  (review.helpfulCount ?? 0) + (_helpfulReviewIds.has(review.id) ? 1 : 0),
+                viewerFoundHelpful: _helpfulReviewIds.has(review.id),
+              },
               dishId: dish.id,
               dishName: dish.name,
               venueId: dish.venueId,
@@ -1870,6 +1877,12 @@ export const hungryService: HungryService = {
             (b.review.id < a.review.id ? -1 : b.review.id > a.review.id ? 1 : 0),
         );
       return resolve(entries.slice(0, limit));
+    },
+
+    async setReviewHelpful(reviewId, helpful) {
+      if (helpful) _helpfulReviewIds.add(reviewId);
+      else _helpfulReviewIds.delete(reviewId);
+      return resolve(undefined);
     },
   },
 
