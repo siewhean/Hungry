@@ -1,12 +1,22 @@
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const UPPERCASE_REGEX = /[A-Z]/;
-const LOWERCASE_REGEX = /[a-z]/;
-const DIGIT_REGEX = /\d/;
-const SYMBOL_REGEX = /[^A-Za-z0-9]/;
+/** Length is the only client rule; Supabase rejects leaked passwords (HIBP). */
+export const MIN_PASSWORD_LENGTH = 10;
 
 /** iOS strong-password rules matching validatePassword, so suggested passwords pass. */
-export const PASSWORD_RULES =
-  "minlength: 12; required: lower; required: upper; required: digit; required: special;";
+export const PASSWORD_RULES = `minlength: ${MIN_PASSWORD_LENGTH};`;
+
+export const PASSWORD_REQUIREMENTS_COPY = `Use at least ${MIN_PASSWORD_LENGTH} characters. Avoid passwords you've used elsewhere.`;
+
+export const WEAK_PASSWORD_MESSAGE =
+  "That password has appeared in a data breach or is too easy to guess. Try a longer, less common one.";
+
+/** True for Supabase's weak/leaked password rejection (code weak_password). */
+export function isWeakPasswordError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const { code, message } = error as { code?: unknown; message?: unknown };
+  if (code === "weak_password") return true;
+  return typeof message === "string" && /weak|pwned|leaked|breach/i.test(message);
+}
 
 /** User-facing copy for a rejected password update (Supabase AuthError codes). */
 export function getPasswordUpdateErrorMessage(error: unknown): string {
@@ -17,8 +27,8 @@ export function getPasswordUpdateErrorMessage(error: unknown): string {
   if (code === "same_password") {
     return "Your new password must be different from your current one.";
   }
-  if (code === "weak_password") {
-    return "That password is too weak. Try a longer, less common one.";
+  if (isWeakPasswordError(error)) {
+    return WEAK_PASSWORD_MESSAGE;
   }
   return "Password reset failed. Please try again.";
 }
@@ -44,7 +54,7 @@ export function validateEmail(value: string): true | string {
   return true;
 }
 
-export function validatePassword(value: string, minLength = 12): true | string {
+export function validatePassword(value: string, minLength = MIN_PASSWORD_LENGTH): true | string {
   const required = validateRequired(value, "Password");
   if (required !== true) {
     return required;
@@ -52,22 +62,6 @@ export function validatePassword(value: string, minLength = 12): true | string {
 
   if (value.length < minLength) {
     return `Password must be at least ${minLength} characters`;
-  }
-
-  if (!UPPERCASE_REGEX.test(value)) {
-    return "Password must include at least one uppercase letter";
-  }
-
-  if (!LOWERCASE_REGEX.test(value)) {
-    return "Password must include at least one lowercase letter";
-  }
-
-  if (!DIGIT_REGEX.test(value)) {
-    return "Password must include at least one number";
-  }
-
-  if (!SYMBOL_REGEX.test(value)) {
-    return "Password must include at least one special character";
   }
 
   return true;

@@ -11,10 +11,12 @@ import { trackAuthFailed, trackAuthScreenViewed } from "@/features/auth/authAnal
 import { getMockSignUpFailure } from "@/features/auth/mockAuth";
 import { reportError } from "@/lib/monitoring/reportError";
 import {
+  isWeakPasswordError,
   PASSWORD_RULES,
   validateEmail,
   validatePassword,
   validateRequired,
+  WEAK_PASSWORD_MESSAGE,
 } from "@/features/auth/validation";
 import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -108,8 +110,9 @@ export function SignUpScreen({ navigation }: Props) {
       const code =
         (err as { error_code?: string; code?: string })?.error_code ??
         (err as { error_code?: string; code?: string })?.code;
-      const message =
-        code === "over_email_send_rate_limit"
+      const message = isWeakPasswordError(err)
+        ? WEAK_PASSWORD_MESSAGE
+        : code === "over_email_send_rate_limit"
           ? AUTH_COPY.signUp.tooManyAttemptsToast
           : code === "email_address_invalid"
             ? AUTH_COPY.signUp.invalidEmailToast

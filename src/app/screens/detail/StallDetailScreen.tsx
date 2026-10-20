@@ -82,6 +82,8 @@ import { StallInteractionBar } from "@/components/stall/StallInteractionBar";
 import { FollowStallButton } from "@/components/stall/FollowStallButton";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useSessionStore } from "@/store/useSessionStore";
+import { followStallAfterSignIn } from "@/features/auth/finishGuestAction";
+import { useRequireAccount } from "@/features/auth/useRequireAccount";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { formatHoursRows, getVenueOpenState, parseOperatingHours } from "@/utils/operatingHours";
@@ -345,6 +347,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
+  const requireAccount = useRequireAccount();
   const showToast = useUIStore((state) => state.showToast);
   const { componentRadii, palette, radii, spacing, zIndex } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
@@ -655,19 +658,12 @@ export function StallDetailScreen({ navigation, route }: Props) {
     }
   }, [activeMenuCategory, menuCategories]);
 
-  const requireAuthForProtectedAction = (message: string) => {
-    if (isAuthenticated) {
-      return true;
-    }
-
-    setReturnRoute({
-      name: "StallDetail",
-      params: { venueId: venue?.id ?? venueId },
-    });
-    showToast({ message, tone: "warning" });
-    navigation.navigate("AuthStack", { screen: "Login" });
-    return false;
-  };
+  const requireAuthForProtectedAction = (message: string, onSignedIn?: () => void) =>
+    requireAccount(
+      message,
+      { name: "StallDetail", params: { venueId: venue?.id ?? venueId } },
+      onSignedIn,
+    );
 
   // A cold-start shared link opens this screen with nothing underneath it.
   const goBackOrHome = () => {
@@ -1138,7 +1134,12 @@ export function StallDetailScreen({ navigation, route }: Props) {
                 stallId={venue.id}
                 stallName={venue.name}
                 isAuthenticated={isAuthenticated}
-                onRequireAuth={() => requireAuthForProtectedAction("Sign in to follow this stall.")}
+                onRequireAuth={() =>
+                  requireAuthForProtectedAction(
+                    `Sign in to follow ${venue.name}`,
+                    () => void followStallAfterSignIn(venue.id),
+                  )
+                }
                 onOpenAppSettings={() => navigation.navigate("Settings")}
               />
 

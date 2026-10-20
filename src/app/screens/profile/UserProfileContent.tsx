@@ -24,6 +24,7 @@ import { biteToStallPost } from "@/lib/services/postTransforms";
 import { promptContentSafetyActions } from "@/lib/security/communitySafety";
 import { useProfileStore } from "@/store/useProfileStore";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import { followUserAfterSignIn } from "@/features/auth/finishGuestAction";
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
 import { useSocialStore } from "@/store/useSocialStore";
 import { useHungryTheme } from "@/theme";
@@ -251,10 +252,11 @@ export function UserProfileContent({
   const handleFollowPress = () => {
     if (!resolvedAuthorId) return;
     if (
-      !requireAccount("Sign in to follow people.", {
-        name: "UserProfile",
-        params: { authorName, authorAvatarUrl, authorId },
-      })
+      !requireAccount(
+        `Sign in to follow ${authorName}`,
+        { name: "UserProfile", params: { authorName, authorAvatarUrl, authorId } },
+        () => followUserAfterSignIn(resolvedAuthorId),
+      )
     ) {
       return;
     }

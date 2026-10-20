@@ -3157,6 +3157,17 @@ export const supabaseService: HungryService = {
       return session;
     },
 
+    async verifyEmailCode(email, code, type) {
+      const client = requireSupabaseClient();
+      const { error } = await client.auth.verifyOtp({
+        email: normalizeAuthEmail(email),
+        token: code.trim(),
+        type,
+      });
+      if (error) throw error;
+      return await toAppSession(client);
+    },
+
     async signIn(email, password) {
       const client = requireSupabaseClient();
       const { error } = await client.auth.signInWithPassword({
@@ -3183,10 +3194,38 @@ export const supabaseService: HungryService = {
       if (error) throw error;
     },
 
+    async sendAccountDeletionCode() {
+      const client = requireSupabaseClient();
+      const { data, error: userError } = await client.auth.getUser();
+      if (userError) throw userError;
+      const email = data.user?.email;
+      if (!email) throw new Error("This account has no email address to send a code to.");
+      // An email OTP (not reauthenticate(), whose nonce only updateUser accepts) so the
+      // code can be checked with verifyOtp. Works for Google and Apple accounts too.
+      const { error } = await client.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: false },
+      });
+      if (error) throw error;
+    },
+
     async requestAccountDeletion(request) {
       const client = requireSupabaseClient();
       const userId = await getCurrentSupabaseUserId();
       if (!userId) throw new Error("You must be signed in to request account deletion.");
+      const { data: userData, error: userError } = await client.auth.getUser();
+      if (userError) throw userError;
+      const email = userData.user?.email;
+      const code = request?.code?.trim();
+      if (!email || !code) throw new Error("Enter the code we emailed you.");
+      // Proves the person deleting can read the account's email, right before the RPC.
+      const { data: verified, error: codeError } = await client.auth.verifyOtp({
+        email,
+        token: code,
+        type: "email",
+      });
+      if (codeError) throw codeError;
+      if (verified.user?.id !== userId) throw new Error("That code is for a different account.");
 
       // The server sets scheduled_for and status; a repeat request returns the pending date
       // (20261020050000_request_my_account_deletion.sql).

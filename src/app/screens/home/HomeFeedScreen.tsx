@@ -102,6 +102,12 @@ import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
+import {
+  followUserAfterSignIn,
+  likePostAfterSignIn,
+  saveDishAfterSignIn,
+  savePostAfterSignIn,
+} from "@/features/auth/finishGuestAction";
 import { useStoryStore } from "@/store/useStoryStore";
 import { useSocialStore, type SocialComment, type SocialReply } from "@/store/useSocialStore";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
@@ -348,20 +354,19 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const isUserMode = !isDeveloperMode && !isMerchantMode;
   const shouldShowStories = storiesEnabled && !isUserMode;
 
-  const requireAuthForPostAction = useCallback(() => {
-    if (isAuthenticated) {
-      return true;
-    }
-    setReturnRoute({ name: "MainTabs", params: { screen: "Home" } });
-    showToast({ message: "Sign in to react, comment or follow.", tone: "warning" });
-    navigation.navigate("AuthStack", { screen: "Login" });
-    return false;
-  }, [isAuthenticated, navigation, setReturnRoute, showToast]);
-
   const requireAccount = useRequireAccount();
+  const requireAuthForPostAction = useCallback(
+    (message = "Sign in to react, comment or follow.", onSignedIn?: () => void) =>
+      requireAccount(message, { name: "MainTabs", params: { screen: "Home" } }, onSignedIn),
+    [requireAccount],
+  );
   const requireAuthForFollow = useCallback(
-    () =>
-      requireAccount("Sign in to follow people.", { name: "MainTabs", params: { screen: "Home" } }),
+    (onSignedIn?: () => void) =>
+      requireAccount(
+        "Sign in to follow people.",
+        { name: "MainTabs", params: { screen: "Home" } },
+        onSignedIn,
+      ),
     [requireAccount],
   );
 
@@ -871,7 +876,10 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
 
   const handlePostLike = useCallback(
     (item: HomeFeedItem) => {
-      if (!requireAuthForPostAction()) return;
+      if (
+        !requireAuthForPostAction("Sign in to like this post.", () => likePostAfterSignIn(item.id))
+      )
+        return;
       const wasLiked = useSocialStore.getState().interactions[item.id]?.liked;
       void togglePostLike(item.id);
       if (!wasLiked) {
@@ -885,10 +893,16 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
 
   const handlePostSave = useCallback(
     (item: HomeFeedItem) => {
-      if (!requireAuthForPostAction()) return;
+      const primaryDish = item.dishes?.[0];
+      if (
+        !requireAuthForPostAction(`Sign in to save ${primaryDish?.name ?? "this post"}`, () => {
+          savePostAfterSignIn(item.id);
+          if (primaryDish?.id) saveDishAfterSignIn(primaryDish);
+        })
+      )
+        return;
       const wasSaved = Boolean(useSocialStore.getState().interactions[item.id]?.saved);
       void togglePostSave(item.id);
-      const primaryDish = item.dishes?.[0];
       // Saving a post also saves its dish, but never un-saves a dish the user
       // already had, and unsaving the post leaves the dish alone.
       if (
@@ -1411,7 +1425,12 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                     accessibilityLabel={`${isFollowRequested ? "Cancel follow request to" : isFollowingAuthor ? "Unfollow" : "Follow"} ${item.authorName}`}
                     hitSlop={8}
                     onPress={() => {
-                      if (!requireAuthForFollow()) return;
+                      if (
+                        !requireAuthForFollow(
+                          followTargetId ? () => followUserAfterSignIn(followTargetId) : undefined,
+                        )
+                      )
+                        return;
                       void (followTargetId
                         ? toggleFollow(followTargetId)
                         : toggleAuthorFollow(item.authorName));

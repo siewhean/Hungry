@@ -27,6 +27,11 @@ export interface ReviewSuccessPayload {
 
 export type ThemePreference = "system" | "light" | "dark";
 
+/** Guest sign-in sheet, e.g. "Sign in to save Chicken Rice". */
+export interface SignInPrompt {
+  title: string;
+}
+
 interface UIState {
   toast: ToastPayload | null;
   showToast: (payload: ToastPayload) => void;
@@ -53,11 +58,18 @@ interface UIState {
   /** Device setting: kept across sign-outs and never overwritten by a server profile. */
   leftHandedMode: boolean;
   setLeftHandedMode: (enabled: boolean) => void;
+  signInPrompt: SignInPrompt | null;
+  /** The one guest action (save, like, follow) to finish after sign-in. Never persisted. */
+  pendingAuthAction: (() => void) | null;
+  openSignInPrompt: (prompt: SignInPrompt, action?: () => void) => void;
+  closeSignInPrompt: () => void;
+  /** Returns the pending action and clears the slot, so it runs at most once. */
+  takePendingAuthAction: () => (() => void) | null;
 }
 
 export const useUIStore = create<UIState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       toast: null,
       showToast: (payload) => set({ toast: payload }),
       hideToast: () => set({ toast: null }),
@@ -89,6 +101,16 @@ export const useUIStore = create<UIState>()(
       setAllowSearchHistory: (allowSearchHistory) => set({ allowSearchHistory }),
       leftHandedMode: false,
       setLeftHandedMode: (leftHandedMode) => set({ leftHandedMode }),
+      signInPrompt: null,
+      pendingAuthAction: null,
+      openSignInPrompt: (signInPrompt, action) =>
+        set({ signInPrompt, pendingAuthAction: action ?? null }),
+      closeSignInPrompt: () => set({ signInPrompt: null }),
+      takePendingAuthAction: () => {
+        const action = get().pendingAuthAction;
+        set({ pendingAuthAction: null });
+        return action;
+      },
     }),
     {
       name: "hungry-ui-v1",

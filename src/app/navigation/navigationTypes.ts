@@ -6,7 +6,8 @@ export type AuthStackParamList = {
   SignUp: undefined;
   EmailVerification: { email?: string; completedOnboarding?: boolean; code?: string } | undefined;
   ForgotPassword: undefined;
-  ResetPassword: { email?: string; code?: string } | undefined;
+  /** recoveryVerified: the emailed code was already verified (ForgotPassword). */
+  ResetPassword: { email?: string; code?: string; recoveryVerified?: boolean } | undefined;
   ResetPasswordSuccess: undefined;
 };
 

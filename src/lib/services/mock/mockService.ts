@@ -1489,6 +1489,13 @@ export const hungryService: HungryService = {
       return resolve(mockSession(_profile));
     },
 
+    async verifyEmailCode(_email, code, type) {
+      if (!/^\d{8}$/.test(code.trim())) throw new Error("Invalid code");
+      _isAuthenticated = true;
+      _authProvider = "email";
+      return resolve(type === "signup" ? mockSession(_profile) : null);
+    },
+
     async signIn(email, _password) {
       _isAuthenticated = true;
       _authProvider = "email";
@@ -1513,6 +1520,10 @@ export const hungryService: HungryService = {
     async signOut() {
       _isAuthenticated = false;
       _profile = { ...guestProfile };
+      return resolve(undefined);
+    },
+
+    async sendAccountDeletionCode() {
       return resolve(undefined);
     },
 

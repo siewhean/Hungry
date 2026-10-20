@@ -63,6 +63,7 @@ import { useDelayedLoadingSkeleton } from "@/hooks/useDelayedLoadingSkeleton";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSocialStore, type InteractionState } from "@/store/useSocialStore";
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
+import { likePostAfterSignIn, saveDishAfterSignIn } from "@/features/auth/finishGuestAction";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -830,8 +831,8 @@ export function ReviewFeedScreen() {
 
   const requireAccount = useRequireAccount();
   const requireAccountForReviewAction = useCallback(
-    (message: string) =>
-      requireAccount(message, { name: "MainTabs", params: { screen: "Review" } }),
+    (message: string, onSignedIn?: () => void) =>
+      requireAccount(message, { name: "MainTabs", params: { screen: "Review" } }, onSignedIn),
     [requireAccount],
   );
   const requireAccountForComment = useCallback(() => {
@@ -843,10 +844,12 @@ export function ReviewFeedScreen() {
 
   const handleSavePress = useCallback(
     (item: ReviewFeedItem) => {
-      if (!isAuthenticated) {
-        setReturnRoute({ name: "MainTabs", params: { screen: "Review" } });
-        showToast({ message: "Sign in to save this dish.", tone: "warning" });
-        navigation.navigate("AuthStack", { screen: "Login" });
+      if (
+        !requireAccountForReviewAction(`Sign in to save ${item.dishName}`, () => {
+          const dish = item.dish ?? repository.getDishById(item.dishId);
+          if (dish) saveDishAfterSignIn(dish);
+        })
+      ) {
         return;
       }
 
@@ -874,11 +877,9 @@ export function ReviewFeedScreen() {
         );
     },
     [
-      isAuthenticated,
-      navigation,
       repository,
+      requireAccountForReviewAction,
       serviceProviderMode,
-      setReturnRoute,
       showToast,
       toggleFavourite,
       toggleSave,
@@ -904,7 +905,12 @@ export function ReviewFeedScreen() {
 
   const handleLikePress = useCallback(
     (targetItem: ReviewFeedItem) => {
-      if (reviewReactionsEnabled && requireAccountForReviewAction("Sign in to like reviews.")) {
+      if (
+        reviewReactionsEnabled &&
+        requireAccountForReviewAction("Sign in to like reviews.", () =>
+          likePostAfterSignIn(targetItem.interactionId),
+        )
+      ) {
         void toggleLike(targetItem.interactionId);
       }
     },
