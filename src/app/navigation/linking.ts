@@ -1,5 +1,6 @@
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { WEB_BASE_URL } from "@/constants/links";
+import { parseFilterIds } from "@/features/search/browseFilters";
 import { MERCHANT_LINK_SCREENS } from "@/features/merchant/merchantDeepLinks";
 import { parseShareSource, rememberShareAttribution } from "@/features/share/shareAttribution";
 import { trackAnalyticsEvent } from "@/lib/analytics";
@@ -319,28 +320,21 @@ export function createRootLinking(
   };
 }
 
-const SEARCH_LINK_FILTERS = new Set([
-  "All",
-  "Local",
-  "Halal",
-  "Japanese",
-  "Western",
-  "Noodles",
-  "Rice",
-  "Spicy",
-]);
-
-/** Reads q, filter and mode from a search link; anything unexpected is dropped. */
+/**
+ * Reads q, filter and mode from a search link; anything unexpected is dropped. The filter
+ * allowlist is the set of filter chips on the results screen (one or several, comma
+ * separated), so every chip state can be linked and nothing that is not a chip is accepted.
+ */
 export function parseSearchDeepLinkQuery(rawPath: string): Record<string, unknown> {
   const queryIndex = rawPath.indexOf("?");
   if (queryIndex < 0) return {};
   const params = new URLSearchParams(rawPath.slice(queryIndex + 1).split("#")[0]);
   const query = sanitizeSearchQuery(params.get("q") ?? "", 80);
-  const filter = params.get("filter") ?? "";
+  const filters = parseFilterIds(params.get("filter") ?? "");
   const mode = params.get("mode");
   return {
     ...(query ? { initialQuery: query } : {}),
-    ...(SEARCH_LINK_FILTERS.has(filter) ? { initialFilter: filter } : {}),
+    ...(filters.length ? { initialFilter: filters.join(",") } : {}),
     ...(mode === "stalls" || mode === "dishes" ? { browseMode: mode } : {}),
   };
 }

@@ -504,7 +504,9 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /onPress=\{handleFoodStylePress\}/);
   // The map and Quick Bites bars keep their own text, so a chip no longer writes into them (r2 H21).
   assert.doesNotMatch(discover, /updateSearchQuery/);
-  assert.match(discover, /rememberSearch\(item\.query\)/);
+  // A chip tap is not a typed search: no recent-search entry, and the grid skips its own signal.
+  assert.doesNotMatch(discover, /rememberSearch/);
+  assert.match(discover, /source: "discover_chip"/);
   assert.match(discover, /navigation\.navigate\("SearchResults", \{/);
   assert.match(discover, /places to eat in this area/);
   assert.match(
@@ -759,7 +761,14 @@ test("Discover V1 contract: browse cards open the image-feed browse mode", () =>
   assert.match(navigationTypes, /BrowseStalls: undefined/);
   assert.match(searchResults, /export function BrowseDishesScreen/);
   assert.match(searchResults, /export function BrowseStallsScreen/);
-  assert.match(searchResults, /const RAW_BROWSE_FILTER_OPTIONS = \[[\s\S]*"All",[\s\S]*"Halal"/);
+  assert.match(
+    searchResults,
+    /const RAW_BROWSE_FILTER_OPTIONS = \[BROWSE_ALL_FILTER, \.\.\.BROWSE_FILTER_IDS\]/,
+  );
+  assert.match(
+    read("src/features/search/browseFilters.ts"),
+    /BROWSE_ALL_FILTER = "All"[\s\S]*"Halal"/,
+  );
   assert.match(searchResults, /<Screen scroll=\{false\} fullWidth/);
   assert.match(
     searchResults,

@@ -551,7 +551,7 @@ test("Taste recommendation contract: core surfaces use shared ranking and explic
   assert.match(discoverSource, /type: "dish_result_click"/);
   assert.match(searchScreenSource, /type: "search_query"/);
   assert.match(searchScreenSource, /type: "dish_result_click"/);
-  assert.match(searchScreenSource, /lastRecordedQueryRef\.current === committedQuery\) return/);
+  assert.match(searchScreenSource, /lastRecordedQueryRef\.current === key\) return/);
   assert.match(decideSource, /type: "dismissed"/);
   assert.match(decideSource, /type: "food_button_click"/);
   assert.doesNotMatch(decideSource, /dish: nextDish,[\s\S]*buttonId: "try_another_pick"/);

@@ -82,7 +82,6 @@ import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
-import { useSearchStore } from "@/store/useSearchStore";
 import { useMovingSearchPlaceholder } from "@/features/search/useMovingSearchPlaceholder";
 import { useHungryTheme } from "@/theme";
 import type { BuildingSummary, DietaryFlag, DishDetail, VenueSummary } from "@/types/domain";
@@ -1071,7 +1070,6 @@ export function DiscoverHomeScreen() {
   );
 
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
-  const rememberSearch = useSearchStore((state) => state.rememberSearch);
   const searchBarWidth = useMemo(
     () => Math.max(screenWidth - spacing[4] * 2, 240),
     [screenWidth, spacing],
@@ -1660,6 +1658,9 @@ export function DiscoverHomeScreen() {
       navigation.navigate("SearchResults", {
         browseMode: "stalls",
         initialQuery: item.query,
+        // Discover records the taste signal below; the results grid must not repeat it or
+        // save a chip tap as a recent search.
+        source: "discover_chip",
       });
 
       scheduleIdleWork(
@@ -1673,12 +1674,11 @@ export function DiscoverHomeScreen() {
             chipId: item.id,
             buttonId: "popular_right_now",
           });
-          rememberSearch(item.query);
         },
         { timeout: 500, fallbackDelayMs: 80 },
       );
     },
-    [navigation, recordTasteInteraction, rememberSearch],
+    [navigation, recordTasteInteraction],
   );
 
   const prefetchFoodStyle = useCallback(

@@ -127,3 +127,29 @@ test("local catalog suggests places and stalls by word start, food types when em
   const empty = await catalog.suggest("m");
   assert.ok(empty.every((item) => item.kind === "food_type"));
 });
+
+test("local catalog sorts by price, counts matches and skips one-character queries (r2 search-M1, M3)", async () => {
+  const cheapest = await catalog.listDishes({ sort: "price", limit: 50 });
+  const prices = cheapest.items.map((item) => item.price ?? Infinity);
+  assert.deepEqual(
+    prices,
+    [...prices].sort((left, right) => left - right),
+    "cheapest first",
+  );
+  assert.equal(cheapest.matchCount, Math.min(100, cheapest.totals.dishes));
+
+  const short = await catalog.listDishes({ query: "l" });
+  assert.deepEqual(short.items, []);
+  assert.equal(short.matchCount, 0);
+  const shortStalls = await catalog.listVenues({ query: "l" });
+  assert.deepEqual(shortStalls.items, []);
+});
+
+test("local catalog matches food keywords by dish name or food type (r2 search-M11)", async () => {
+  const noodles = await catalog.listDishes({ foodKeywords: ["laksa", "noodle"], limit: 50 });
+  assert.ok(noodles.items.length > 0);
+  const everything = await catalog.listDishes({ limit: 50 });
+  assert.ok(noodles.items.length < everything.totals.dishes);
+  const none = await catalog.listDishes({ foodKeywords: ["zzzz-not-a-food"] });
+  assert.deepEqual(none.items, []);
+});

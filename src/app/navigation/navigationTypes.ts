@@ -114,15 +114,10 @@ export type RootStackParamList = {
         browseMode?: "dishes" | "stalls";
         initialQuery?: string;
         foodTypeTag?: string;
-        initialFilter?:
-          | "All"
-          | "Local"
-          | "Halal"
-          | "Japanese"
-          | "Western"
-          | "Noodles"
-          | "Rice"
-          | "Spicy";
+        /** One chip or several, comma separated: "Halal", "Halal,Rice" or "Under S$6". */
+        initialFilter?: string;
+        /** Where the search came from; Discover chips already logged their own signal. */
+        source?: "discover_chip";
       }
     | undefined;
   BrowseDishes: undefined;

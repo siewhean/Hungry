@@ -1,7 +1,7 @@
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
-import type { DishDetail, SearchFilters, VenueSummary } from "@/types/domain";
+import type { SearchFilters } from "@/types/domain";
 
 /** Adds the user's real location (GPS or manual pick) when the caller has none. */
 export function withUserLocation(filters: SearchFilters): SearchFilters {
@@ -31,46 +31,4 @@ export function getDecideForMeDish() {
     neophiliaIndex: profile.tasteProfile?.neophiliaIndex ?? 5,
     radiusMeters: 500,
   });
-}
-
-export function groupResultsByVenue(results: DishDetail[]) {
-  const repository = getDataRepository();
-  const grouped = new Map<string, DishDetail[]>();
-
-  for (const dish of results) {
-    const venueResults = grouped.get(dish.venueId) ?? [];
-    venueResults.push(dish);
-    grouped.set(dish.venueId, venueResults);
-  }
-
-  return Array.from(grouped.entries())
-    .map(([venueId, dishesByVenue]) => {
-      const venue = repository.getVenueById(venueId);
-      if (!venue) {
-        return undefined;
-      }
-
-      return {
-        venue,
-        dishes: dishesByVenue.sort((left, right) => right.rating - left.rating),
-        minDistanceMeters: Math.min(...dishesByVenue.map((dish) => dish.distanceMeters)),
-        bestRating: Math.max(...dishesByVenue.map((dish) => dish.rating)),
-      };
-    })
-    .filter(
-      (
-        group,
-      ): group is {
-        venue: VenueSummary;
-        dishes: DishDetail[];
-        minDistanceMeters: number;
-        bestRating: number;
-      } => Boolean(group),
-    )
-    .sort((left, right) => {
-      if (left.minDistanceMeters !== right.minDistanceMeters) {
-        return left.minDistanceMeters - right.minDistanceMeters;
-      }
-      return right.bestRating - left.bestRating;
-    });
 }

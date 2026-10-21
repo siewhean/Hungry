@@ -711,26 +711,15 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen component={AuthStack} name="AuthStack" />
           <RootStack.Screen component={OnboardingStack} name="OnboardingStack" />
           <RootStack.Screen component={SwipeableTabNavigator} name="MainTabs" />
+          {/* Search home animates its own entry; the results and browse grids use the default push. */}
           <RootStack.Screen
             getComponent={loadDishSearchScreen}
             name="SearchHome"
             options={{ animation: "none" }}
           />
-          <RootStack.Screen
-            getComponent={loadSearchResultsScreen}
-            name="SearchResults"
-            options={{ animation: "none" }}
-          />
-          <RootStack.Screen
-            getComponent={loadBrowseDishesScreen}
-            name="BrowseDishes"
-            options={{ animation: "none" }}
-          />
-          <RootStack.Screen
-            getComponent={loadBrowseStallsScreen}
-            name="BrowseStalls"
-            options={{ animation: "none" }}
-          />
+          <RootStack.Screen getComponent={loadSearchResultsScreen} name="SearchResults" />
+          <RootStack.Screen getComponent={loadBrowseDishesScreen} name="BrowseDishes" />
+          <RootStack.Screen getComponent={loadBrowseStallsScreen} name="BrowseStalls" />
           <RootStack.Screen
             getComponent={loadHomeMapScreen}
             name="DiscoverMap"

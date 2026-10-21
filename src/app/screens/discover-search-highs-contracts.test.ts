@@ -142,7 +142,10 @@ test("Search hides empty sections and controls the backend ignores", () => {
   // noodles/rice into a cuisine filter, so the landing offers just those chips.
   assert.doesNotMatch(home, /suggestedDish|collections|TasteFilter|getSearchResultsAsync/);
   assert.match(home, /const CATALOG_CATEGORIES: SearchCategory\[\] = \["noodles", "rice"\]/);
-  assert.match(results, /radiusMeters: query\.trim\(\) \? undefined : 3_000/);
+  const browseGrid = readRepoFile("src/features/search/browseGrid.ts");
+  assert.match(browseGrid, /radiusMeters: query \? undefined : BROWSE_RADIUS_METERS/);
+  assert.match(browseGrid, /BROWSE_RADIUS_METERS = 3_000/);
+  assert.doesNotMatch(results, /rawCatalogRequest/);
   // Only location browsing is radius-bound, and never with a radius past Postgres int range.
   assert.match(
     repository,
@@ -155,7 +158,10 @@ test("Search browse: guests can browse, chips never show everything, errors stay
 
   // The catalog is guest-readable, so there is no sign-in wall on browse.
   assert.doesNotMatch(results, /Sign in to browse the full directory/);
-  assert.match(results, /dietaryFlags: filter === "halal" \? \["halal"\] : \[\]/);
+  assert.match(
+    readRepoFile("src/features/search/browseGrid.ts"),
+    /dietaryFlags: input\.filters\.includes\("Halal"\) \? \["halal"\] : \[\]/,
+  );
   assert.doesNotMatch(results, /body=\{error\}/);
   assert.match(results, /errorMessage=\{error\}/);
   assert.match(results, /reportError\(loadError/);

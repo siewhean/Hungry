@@ -217,8 +217,8 @@ test("discover routes diners to details, opens the map from a toggle, and search
   assertSourceIncludes(
     searchResults,
     [
-      /navigation\.navigate\("CatalogRawDetail", \{\s*kind: mode === "dishes" \? "dish" : "venue",/,
-      /accessibilityLabel=\{`\$\{title\} image`\}/,
+      /navigation\.navigate\("CatalogRawDetail", \{\s*kind: openedMode === "dishes" \? "dish" : "venue",/,
+      /accessibilityLabel=\{cardAccessibilityLabel\(mode, item\)\}/,
       /type: "search_query"/,
       /type: "dish_result_click"/,
     ],
@@ -229,8 +229,8 @@ test("discover routes diners to details, opens the map from a toggle, and search
     searchResults.match(/const loadPage = useCallback\([\s\S]*?\n  \);/)?.[0] ?? "";
   assert.ok(loadPageBody, "loadPage should exist");
   assert.doesNotMatch(loadPageBody, /search_query/);
-  assert.match(searchResults, /onSubmitEditing=\{\(\) => recordCommittedQuery\(searchQuery\)\}/);
-  assert.match(searchResults, /recordCommittedQuery\(initialSearchQuery\)/);
+  assert.match(searchResults, /onSubmitEditing=\{\(\) =>\s*recordCommittedQuery\(searchText, \{/);
+  assert.match(searchResults, /recordCommittedQuery\(initialSearchQuery, \{/);
   assertSourceIncludes(
     rootNavigator,
     [/name="BrowseDishes"/, /name="BrowseStalls"/, /name="DecideForMeResult"/, /name="WheelStack"/],
