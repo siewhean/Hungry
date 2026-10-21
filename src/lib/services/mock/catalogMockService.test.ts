@@ -100,3 +100,30 @@ test("local catalog detail reads match the list cards and unknown ids fail clean
   await assert.rejects(() => catalog.getDish("missing-dish"), CatalogAccessError);
   await assert.rejects(() => catalog.getVenue("missing-venue"), CatalogAccessError);
 });
+
+test("local catalog finds dishes and stalls by their building name (r2 H23)", async () => {
+  const dishesThere = await catalog.listDishes({ query: "Maxwell", limit: 50 });
+  assert.ok(dishesThere.items.some((item) => item.buildingName === maxwell.name));
+  const stallsThere = await catalog.listVenues({ query: "Maxwell", limit: 50 });
+  assert.ok(stallsThere.items.length > 0);
+  assert.ok(
+    stallsThere.items.every(
+      (item) => item.buildingName === maxwell.name || /maxwell/i.test(item.name),
+    ),
+  );
+});
+
+test("local catalog suggests places and stalls by word start, food types when empty (r2 H24)", async () => {
+  const suggestions = await catalog.suggest("max");
+  assert.ok(suggestions.length > 0 && suggestions.length <= 8);
+  assert.deepEqual(suggestions[0], { kind: "place", label: maxwell.name });
+  const wordStart = await catalog.suggest("food cen");
+  assert.ok(wordStart.some((item) => item.kind === "place" && item.label === maxwell.name));
+  const midWord = await catalog.suggest("axwell");
+  assert.equal(
+    midWord.some((item) => item.label === maxwell.name),
+    false,
+  );
+  const empty = await catalog.suggest("m");
+  assert.ok(empty.every((item) => item.kind === "food_type"));
+});

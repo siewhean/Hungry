@@ -639,6 +639,6 @@ test("search home hands every query to the paged results and keeps a see-all act
   assert.match(search, /"See all results"/);
   assert.match(
     search,
-    /navigation\.navigate\("SearchResults", \{\s*initialQuery: trimmedQuery \|\| undefined,/,
+    /navigation\.navigate\("SearchResults", \{[\s\S]*?initialQuery: trimmedQuery \|\| undefined,/,
   );
 });

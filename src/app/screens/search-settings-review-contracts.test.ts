@@ -32,7 +32,8 @@ test("search grid: load-more retry, stable location, analytics and labelled cont
   assert.match(grid, /accessibilityLabel="Clear search"/);
   assert.match(grid, /<IconButton[\s\S]*accessibilityLabel="Go back"[\s\S]*onPress=\{handleBack\}/);
   assert.match(grid, /if \(navigation\.canGoBack\(\)\)/);
-  assert.match(grid, /openOnly: selectedFilter === OPEN_NOW_FILTER/);
+  // No "Open now" chip until open status comes from opening hours (r2 H22).
+  assert.doesNotMatch(grid, /OPEN_NOW_FILTER|openOnly:/);
   assert.match(grid, /maxPrice: selectedFilter === BUDGET_FILTER \? BUDGET_MAX_PRICE : undefined/);
   assert.match(grid, /Location is off, so distances are from central Singapore\./);
   assert.doesNotMatch(grid, /fontSize: 10/);
