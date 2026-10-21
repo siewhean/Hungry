@@ -222,7 +222,7 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
   assert.match(source, /togglePostSave/);
   assert.match(source, /addPostComment/);
   assert.match(source, /addPostReply/);
-  assert.match(source, /const bundle = await getHomeFeedBundle\(profile,\s*\{/);
+  assert.match(source, /const bundle = await getHomeFeedBundle\(profileRef\.current,\s*\{/);
   assert.match(source, /followedAuthors,/);
   assert.match(source, /followedUserIds,/);
   assert.match(source, /refreshSeed: feedRefreshSeedRef\.current/);

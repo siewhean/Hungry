@@ -102,7 +102,7 @@ test("home, discover, and quick bites avoid duplicate render-time data work", ()
   assert.match(homeFeed, /const homeFeedBundleCache = new Map/);
   assert.match(homeFeed, /export function getHomeFeedBundleCacheKey/);
   assert.match(homeFeed, /export function clearHomeFeedBundleCache/);
-  assert.match(homeScreen, /getHomeFeedBundle\(profile,\s*\{/);
+  assert.match(homeScreen, /getHomeFeedBundle\(profileRef\.current,\s*\{/);
   assert.match(homeScreen, /followedAuthors,/);
   assert.match(homeScreen, /followedUserIds,/);
   assert.match(homeScreen, /refreshSeed: feedRefreshSeedRef\.current/);

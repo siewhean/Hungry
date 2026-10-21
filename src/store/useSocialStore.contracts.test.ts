@@ -168,7 +168,7 @@ test("profile grid contract: liked and saved posts read from the persisted socia
   const gridSource = read("src/app/screens/profile/SocialGridScreen.tsx");
 
   assert.match(homeSource, /useSocialStore/);
-  assert.match(homeSource, /getHomeFeedBundle\(profile,\s*\{/);
+  assert.match(homeSource, /getHomeFeedBundle\(profileRef\.current,\s*\{/);
   assert.match(homeSource, /followedAuthors,/);
   assert.match(homeSource, /followedUserIds,/);
   assert.match(homeSource, /\.\.\.bundle\.socialFeed/);
