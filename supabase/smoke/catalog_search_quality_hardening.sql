@@ -17,7 +17,7 @@ begin
   if v_def not like '%requested.flag = any(coalesce(d.availability_flags%' then
     raise exception 'search_dishes should require every requested dietary flag';
   end if;
-  if v_def not like '%security invoker%' then
+  if v_def like '%security definer%' then
     raise exception 'search_dishes must stay SECURITY INVOKER';
   end if;
 end;

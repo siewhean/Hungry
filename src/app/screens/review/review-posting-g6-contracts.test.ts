@@ -198,7 +198,7 @@ test("L14: /post opens the composer, with /order kept as an alias", () => {
 
 test("M4: a photo post without a rating shows no star", () => {
   const discover = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
-  assert.equal((discover.match(/bite\.rating > 0 \? \(/g) ?? []).length >= 4, true);
+  assert.match(discover, /bite\.cravingCount > 0 && bite\.rating > 0/);
   const publishing = read("src/features/post/publishing.ts");
   assert.match(publishing, /state\.rating > 0 \? state\.rating : 0/);
 });

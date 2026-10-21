@@ -47,6 +47,10 @@ values
   ('00000000-0000-0220-b000-000000000002', 'r2g-stranger@example.test'),
   ('00000000-0000-0220-b000-000000000003', 'r2g-diner@example.test');
 
+insert into public.user_profiles (id, display_name)
+values ('00000000-0000-0220-b000-000000000002', 'R2G Stranger')
+on conflict (id) do nothing;
+
 insert into merchant_accounts (id, user_id, display_name, email)
 values (
   '00000000-0000-0220-a000-000000000001',

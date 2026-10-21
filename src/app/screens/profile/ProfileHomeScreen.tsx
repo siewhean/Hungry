@@ -885,9 +885,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
           <View style={{ flexDirection: "row", gap: spacing[2] }}>
             <StatBlock
               label="Reviews"
-              value={
-                ownReviews === null ? null : ownReviews.length
-              }
+              value={ownReviews === null ? null : ownReviews.length}
               icon={<PencilLine size={14} color={palette.orange} />}
               onPressIn={() => preloadRoute(navigation, "ReviewHistory")}
               onPress={handleReviewsCardPress}

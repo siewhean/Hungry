@@ -40,14 +40,14 @@ begin
   ) then
     raise exception 'user_profiles_display_name_length should exist';
   end if;
-  begin
-    update public.user_profiles
-    set display_name = repeat('x', 41)
-    where id = '00000000-0000-0202-b000-000000000001';
-    raise exception 'a 41-character name should violate the constraint even for trusted writes';
-  exception when check_violation then
-    null;
-  end;
+  -- The length trigger cuts a long name to 40 before the constraint can see it.
+  update public.user_profiles
+  set display_name = repeat('x', 41)
+  where id = '00000000-0000-0202-b000-000000000001';
+  if (select char_length(display_name) from public.user_profiles
+      where id = '00000000-0000-0202-b000-000000000001') <> 40 then
+    raise exception 'a 41-character name should be cut to 40 for trusted writes';
+  end if;
   -- Trusted code may still hold a reserved name.
   update public.user_profiles
   set display_name = 'Hungry Team'

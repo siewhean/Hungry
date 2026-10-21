@@ -144,8 +144,8 @@ test("change password has autofill hints, a reveal toggle and a forgot link (L10
   assert.equal(change.match(/textContentType="newPassword"/g)?.length, 2);
   assert.equal(change.match(/autoComplete="new-password"/g)?.length, 2);
   assert.match(change, /"Show passwords"/);
-  assert.match(change, /Forgot your current password\?/);
-  assert.match(change, /auth\.forgotPassword\(address\)/);
+  assert.match(change, /Forgot current password\?/);
+  assert.match(change, /screen: "ForgotPassword"/);
 });
 
 // --- Guests (M8, L15) --------------------------------------------------------------------
@@ -170,7 +170,7 @@ test("guests can open Settings and see only guest-safe rows (M8, L15)", () => {
   // Account-only rows sit inside isAuthenticated branches.
   for (const accountOnly of [
     'label="Profile visibility"',
-    'label="Blocked accounts"',
+    'label="Blocked and hidden"',
     "label={isExportingData",
     'label="Delete account"',
   ]) {

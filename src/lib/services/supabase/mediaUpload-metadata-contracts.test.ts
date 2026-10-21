@@ -21,7 +21,7 @@ test("image uploads are re-encoded to strip EXIF/GPS after validating the origin
 
   const imageUpload = functionBody("uploadImageFromUri");
   const validateAt = imageUpload.indexOf("assertValidImageBlob(originalBlob");
-  const reencodeAt = imageUpload.indexOf("reencodeImageWithoutMetadata(uri");
+  const reencodeAt = imageUpload.search(/reencodeImageWithoutMetadata\(\s*uri/);
   const uploadAt = imageUpload.indexOf("uploadViaSignedUrl(");
   assert.ok(validateAt >= 0 && validateAt < reencodeAt && reencodeAt < uploadAt);
 });
