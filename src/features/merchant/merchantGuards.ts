@@ -4,32 +4,50 @@
  */
 
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
-import type { VerificationStatus } from "@/types/domain";
+import type { MerchantVerification, VerificationStatus } from "@/types/domain";
 
 export type MerchantAccessLevel = "none" | "unverified" | "verified";
 
 /**
+ * True when the outlet is verified and the verification has not expired. The server
+ * (merchant_venue_is_verified) rejects writes once expires_at has passed, so the app must not keep
+ * showing "Verified" and then fail those writes.
+ */
+export function isVerificationCurrent(
+  verification: Pick<MerchantVerification, "status" | "expiresAt"> | undefined,
+  now: Date = new Date(),
+): boolean {
+  if (verification?.status !== "verified") return false;
+  if (!verification.expiresAt) return true;
+  const expiresAt = new Date(verification.expiresAt).getTime();
+  return !Number.isFinite(expiresAt) || expiresAt > now.getTime();
+}
+
+/**
  * Resolve the merchant access level from current state.
  * - "none": feature disabled or no merchant account
- * - "unverified": merchant exists but not verified
+ * - "unverified": merchant exists but not verified (or the verification has expired)
  * - "verified": merchant is verified — full access
  */
 export function resolveMerchantAccess(
   isMerchant: boolean,
   verificationStatus: VerificationStatus | undefined,
+  verificationExpiresAt?: string,
 ): MerchantAccessLevel {
   if (!FEATURE_FLAGS.merchantCentreEnabled) return "none";
   if (!isMerchant) return "none";
-  if (verificationStatus === "verified") return "verified";
+  if (
+    isVerificationCurrent({
+      status: verificationStatus ?? "not_started",
+      expiresAt: verificationExpiresAt,
+    })
+  ) {
+    return "verified";
+  }
   return "unverified";
 }
 
 // ─── Permission checks ───────────────────────────────────────────────────────
-
-/** Can the merchant view the full Merchant Centre dashboard? */
-export function canAccessDashboard(level: MerchantAccessLevel): boolean {
-  return level === "verified";
-}
 
 /**
  * Can the merchant edit their business profile? Unverified merchants can prepare it: outlet edits
@@ -46,34 +64,6 @@ export function canEditProfile(level: MerchantAccessLevel): boolean {
  */
 export function canManageMenu(level: MerchantAccessLevel): boolean {
   return level === "unverified" || level === "verified";
-}
-
-/** Can the merchant publish promotions? */
-export function canPublishPromotions(level: MerchantAccessLevel): boolean {
-  return level === "verified";
-}
-
-/** Can the merchant reply to reviews/comments as the business? */
-export function canReplyAsBusiness(level: MerchantAccessLevel): boolean {
-  return level === "verified";
-}
-
-/** @deprecated Use canReplyAsBusiness */
-export const canReplyAsBusinesss = canReplyAsBusiness;
-
-/** Can the merchant view analytics? */
-export function canViewAnalytics(level: MerchantAccessLevel): boolean {
-  return level === "verified";
-}
-
-/** Can the merchant access verification flow? (even unverified can) */
-export function canAccessVerification(level: MerchantAccessLevel): boolean {
-  return level === "unverified" || level === "verified";
-}
-
-/** Can the merchant view limited onboarding? */
-export function canViewOnboarding(level: MerchantAccessLevel): boolean {
-  return level === "unverified";
 }
 
 /**

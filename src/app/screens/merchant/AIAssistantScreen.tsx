@@ -10,11 +10,10 @@ import {
   ChevronRight,
   X,
   BarChart2,
-  CheckCircle2,
   Sparkles,
 } from "lucide-react-native";
 
-import { AppText, IconButton, Screen, EmptyState } from "@/components/ui";
+import { AppText, IconButton, Screen, EmptyState, Skeleton } from "@/components/ui";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
@@ -152,6 +151,10 @@ export function AIAssistantScreen() {
           A simple summary of your stall&apos;s own activity.
         </AppText>
 
+        {isLoading && !weeklySummary ? (
+          <Skeleton height={120} borderRadius={componentRadii.card} />
+        ) : null}
+
         {weeklySummary && (
           <View
             style={[
@@ -181,7 +184,7 @@ export function AIAssistantScreen() {
               >
                 <BarChart2 size={16} color={palette.white} />
               </View>
-              <AppText variant="bodySmallBold" style={{ color: palette.orange }}>
+              <AppText variant="bodySmallBold" style={{ color: palette.orangeText }}>
                 SUMMARY
               </AppText>
             </View>
@@ -197,35 +200,12 @@ export function AIAssistantScreen() {
           </View>
         )}
 
-        <View style={{ gap: spacing[4] }}>
-          <AppText variant="h3" style={{ fontWeight: "bold", paddingHorizontal: spacing[1] }}>
-            Suggestions
-          </AppText>
-
-          {insights.length === 0 && !isLoading ? (
-            <View
-              style={[
-                styles.emptyContainer,
-                {
-                  borderColor: palette.border,
-                  borderRadius: componentRadii.card,
-                  padding: spacing[8],
-                },
-              ]}
-            >
-              <CheckCircle2 size={48} color={palette.success} />
-              <AppText variant="bodyBold" style={{ marginTop: spacing[3] }}>
-                No suggestions yet
-              </AppText>
-              <AppText
-                variant="bodySmall"
-                tone="muted"
-                style={{ textAlign: "center", marginTop: 4 }}
-              >
-                Suggestions will appear here when they are available.
-              </AppText>
-            </View>
-          ) : (
+        {/* Generated suggestions are not available yet, so the section only appears when there are some. */}
+        {insights.length > 0 ? (
+          <View style={{ gap: spacing[4] }}>
+            <AppText variant="h3" style={{ fontWeight: "bold", paddingHorizontal: spacing[1] }}>
+              Suggestions
+            </AppText>
             <View style={{ gap: spacing[3] }}>
               {insights.map((insight) => (
                 <View
@@ -307,8 +287,8 @@ export function AIAssistantScreen() {
                 </View>
               ))}
             </View>
-          )}
-        </View>
+          </View>
+        ) : null}
 
         <View
           style={{
@@ -341,11 +321,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignSelf: "flex-start",
     gap: 4,
-  },
-  emptyContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderStyle: "dashed",
   },
 });

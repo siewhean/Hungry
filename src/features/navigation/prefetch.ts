@@ -1,10 +1,6 @@
 import { Image as ExpoImage } from "expo-image";
 
-import {
-  getDataRepository,
-  getHungryService,
-  getServiceProvider,
-} from "@/lib/services/serviceProvider";
+import { getDataRepository, getServiceProvider } from "@/lib/services/serviceProvider";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import type { DataRepository } from "@/lib/services/types";
 import type { StallPost } from "@/types/domain";
@@ -26,7 +22,6 @@ type MerchantPrefetchRoute =
 
 const prefetchedImages = new Set<string>();
 const imagePrefetches = new Map<string, Promise<boolean>>();
-const merchantPrefetches = new Set<string>();
 const prefetchedDishDetails = new Set<string>();
 const prefetchedStallDetails = new Set<string>();
 const scheduledDishDetails = new Set<string>();
@@ -252,84 +247,15 @@ export function prefetchBrowseResults(
   }
 }
 
+/**
+ * Merchant tabs no longer warm their data: the fetches were fired and their results thrown away
+ * (no cache is shared with the screens), so every tab paid for each request twice. Each screen
+ * loads its own data on focus. Kept as a stable entry point for the navigation call sites.
+ */
 export function prefetchMerchantTab(
-  routeName: MerchantPrefetchRoute,
-  outletId?: string | null,
-  accountId?: string | null,
+  _routeName: MerchantPrefetchRoute,
+  _outletId?: string | null,
+  _accountId?: string | null,
 ) {
-  const key = `${routeName}:${outletId ?? "no-outlet"}:${accountId ?? "no-account"}`;
-  if (merchantPrefetches.has(key)) {
-    return;
-  }
-  merchantPrefetches.add(key);
-
-  schedulePrefetchWork(() => {
-    void (async () => {
-      try {
-        const merchant = getHungryService().merchant;
-        if (routeName === "Dashboard" && outletId) {
-          // Same range the Dashboard opens on ("Today"), plus its action-card counts.
-          await Promise.all([
-            merchant.getAnalytics(outletId, "today"),
-            merchant.getDashboardSummary(outletId),
-          ]);
-          return;
-        }
-        if (routeName === "Menu" && outletId) {
-          const dishes = await merchant.getMenu(outletId);
-          prefetchImages(
-            dishes.map((dish) => dish.imageUrl),
-            8,
-          );
-          return;
-        }
-        if (routeName === "Analytics" && outletId) {
-          await merchant.getAnalytics(outletId, "7d");
-          return;
-        }
-        if (routeName === "CustomerInbox" && outletId) {
-          await merchant.getInbox(outletId);
-          return;
-        }
-        if (routeName === "FeaturedVisitors" && outletId) {
-          await Promise.all([
-            merchant.listPopularVisitorPins(outletId),
-            merchant.listPopularVisitorCandidates(outletId),
-          ]);
-          return;
-        }
-        if (routeName === "PromotionList" && outletId) {
-          await merchant.getPromotions(outletId);
-          return;
-        }
-        if (routeName === "AIAssistant" && outletId) {
-          await Promise.all([
-            merchant.getAIInsights(outletId),
-            merchant.getWeeklySummary(outletId),
-          ]);
-          return;
-        }
-        if (routeName === "OCRDrafts" && outletId) {
-          await merchant.getOCRDrafts(outletId);
-          return;
-        }
-        if (routeName === "MerchantSettings" && accountId) {
-          await Promise.all([
-            merchant.getNotificationPreferences(accountId),
-            merchant.getTeamMembers(accountId),
-          ]);
-          return;
-        }
-        if (
-          routeName === "Profile" ||
-          routeName === "BusinessProfileEditor" ||
-          routeName === "VerificationCentre"
-        ) {
-          await merchant.getMerchantAccount();
-        }
-      } catch {
-        merchantPrefetches.delete(key);
-      }
-    })();
-  });
+  // Intentionally empty.
 }

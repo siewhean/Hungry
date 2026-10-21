@@ -30,6 +30,7 @@ import {
   listPopularNearbyViaRpc,
   listVenuesByBuildingViaRpc,
   refreshSupabaseRepositoryCache,
+  refreshSupabaseRepositoryVenueDishes,
   searchDishesViaRpc,
   searchVenuesByLocationViaRpc,
   supabaseRepository,
@@ -49,6 +50,7 @@ import { validateOpeningSchedule } from "@/utils/openingSchedule";
 import { REVIEW_PHOTOS_NOT_ATTACHED, createClientReviewId } from "@/features/review/reviewDraft";
 import { validateMerchantPromotionInput } from "@/features/merchant/promotionValidation";
 import { MERCHANT_DEEP_LINKS } from "@/features/merchant/merchantDeepLinks";
+import { MERCHANT_REPLY_MAX_LENGTH } from "@/features/merchant/merchantReadiness";
 import { normalizeReviewPatch } from "@/features/review/reviewEdit";
 import type {
   Bite,
@@ -2027,11 +2029,35 @@ function normalizeMenuEntry(value: string): string {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
+/** Most review rows one merchant read returns; longer histories are paged with `before`. */
+const MERCHANT_INBOX_MAX_ROWS = 200;
+
+async function fetchDishNamesById(
+  client: SupabaseClient,
+  dishIds: string[],
+): Promise<Map<string, string>> {
+  const names = new Map<string, string>();
+  const ids = Array.from(new Set(dishIds.filter(Boolean)));
+  if (ids.length === 0) return names;
+  const { data, error } = await client.from("dishes").select("id,name").in("id", ids);
+  // Dish names are context only: a failed lookup must not hide the reviews themselves.
+  if (error) return names;
+  (Array.isArray(data) ? (data as Row[]) : []).forEach((row) => {
+    const id = asString(row.id);
+    const name = asString(row.name);
+    if (id && name) names.set(id, name);
+  });
+  return names;
+}
+
 function getMerchantAnalyticsSince(dateRange: MerchantAnalytics["dateRange"]): string | null {
   const now = new Date();
   if (dateRange === "today") {
-    now.setHours(0, 0, 0, 0);
-    return now.toISOString();
+    // Midnight in Singapore (UTC+8, no daylight saving), whatever the phone's own time zone is.
+    const singaporeOffsetMs = 8 * 60 * 60 * 1000;
+    const singaporeNow = new Date(now.getTime() + singaporeOffsetMs);
+    singaporeNow.setUTCHours(0, 0, 0, 0);
+    return new Date(singaporeNow.getTime() - singaporeOffsetMs).toISOString();
   }
   if (dateRange === "7d") {
     now.setDate(now.getDate() - 7);
@@ -5902,6 +5928,33 @@ export const supabaseService: HungryService = {
       } as const;
     },
 
+    async getMerchantClaimStatus(venueId) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) return "none";
+      const { data, error } = await client
+        .from("merchant_claim_interests")
+        .select("status")
+        .eq("venue_id", venueId)
+        .eq("claimed_by", userId)
+        .maybeSingle();
+      if (error || !data) return "none";
+      // Ops moves a claim new -> contacted -> qualified -> converted (or rejected).
+      switch (asString((data as Row).status)) {
+        case "new":
+          return "submitted";
+        case "contacted":
+        case "qualified":
+          return "in_review";
+        case "converted":
+          return "approved";
+        case "rejected":
+          return "rejected";
+        default:
+          return "none";
+      }
+    },
+
     async listDraftDishesQueue(venueId) {
       const client = requireSupabaseClient();
       const { data, error } = await client.functions.invoke("ops-dishes-draft", {
@@ -6166,9 +6219,10 @@ export const supabaseService: HungryService = {
         client,
         rows.map((row) => asString(row.id) ?? ""),
       );
-      return rows.map((row) =>
-        mapSupabaseDish(row, venue, presentationByDishId.get(asString(row.id) ?? "")),
-      );
+      return rows.map((row) => ({
+        ...mapSupabaseDish(row, venue, presentationByDishId.get(asString(row.id) ?? "")),
+        isMerchantDraft: asBoolean(row.merchant_draft) ?? false,
+      }));
     },
 
     async addDish(outletId, dish) {
@@ -6188,7 +6242,7 @@ export const supabaseService: HungryService = {
         dietaryFlags: dish.dietaryFlags,
         tasteVector: dish.tasteVector,
       });
-      await refreshSupabaseRepositoryCache();
+      await refreshSupabaseRepositoryVenueDishes(asString(outlet.venue_id) ?? "");
       const presentationByDishId = await fetchDishPresentationMap(client, [dishId]);
       return mapSupabaseDish(
         row,
@@ -6212,7 +6266,7 @@ export const supabaseService: HungryService = {
         dietaryFlags: updates.dietaryFlags,
         tasteVector: updates.tasteVector,
       });
-      await refreshSupabaseRepositoryCache();
+      await refreshSupabaseRepositoryVenueDishes(venueId);
       const presentationByDishId = await fetchDishPresentationMap(client, [dishId]);
       return mapSupabaseDish(
         row,
@@ -6230,7 +6284,7 @@ export const supabaseService: HungryService = {
         p_venue_id: asString(outlet.venue_id) ?? "",
       });
       if (error) throw error;
-      await refreshSupabaseRepositoryCache();
+      await refreshSupabaseRepositoryVenueDishes(asString(outlet.venue_id) ?? "");
     },
 
     async toggleSoldOut(outletId, dishId, soldOut) {
@@ -6347,15 +6401,24 @@ export const supabaseService: HungryService = {
       let query = client
         .from("reviews")
         .select(
-          "id,author_name,rating,text,tags,created_at,merchant_reply_text,merchant_replied_at",
+          "id,dish_id,author_name,rating,text,tags,created_at,merchant_reply_text,merchant_replied_at",
         )
         .eq("venue_id", venueId)
         .order("created_at", { ascending: false });
       if (filters?.unrepliedOnly) query = query.is("merchant_reply_text", null);
-      if (filters?.limit !== undefined) query = query.limit(Math.max(1, filters.limit));
+      if (filters?.before) query = query.lt("created_at", filters.before);
+      // Never an unbounded read: callers page with `before` (the oldest created_at they hold).
+      query = query.limit(
+        Math.min(Math.max(1, filters?.limit ?? MERCHANT_INBOX_MAX_ROWS), MERCHANT_INBOX_MAX_ROWS),
+      );
       const { data, error } = await query;
       if (error) throw error;
-      const interactions = (Array.isArray(data) ? (data as Row[]) : []).map((row) => {
+      const reviewRows = Array.isArray(data) ? (data as Row[]) : [];
+      const dishNameById = await fetchDishNamesById(
+        client,
+        reviewRows.map((row) => asString(row.dish_id) ?? ""),
+      );
+      const interactions = reviewRows.map((row) => {
         const rating = asNumber(row.rating);
         return {
           id: asString(row.id) ?? "",
@@ -6366,6 +6429,7 @@ export const supabaseService: HungryService = {
           text: asString(row.text) ?? "",
           tags: asStringArray(row.tags),
           createdAt: asString(row.created_at) ?? new Date().toISOString(),
+          dishName: dishNameById.get(asString(row.dish_id) ?? ""),
           reply: asString(row.merchant_reply_text)
             ? {
                 text: asString(row.merchant_reply_text) ?? "",
@@ -6389,12 +6453,23 @@ export const supabaseService: HungryService = {
     async replyToInteraction(interactionId, text) {
       const trimmedText = text.trim();
       if (!trimmedText) throw new Error("Reply text is required");
+      if (trimmedText.length > MERCHANT_REPLY_MAX_LENGTH) {
+        throw new Error(`Replies can be up to ${MERCHANT_REPLY_MAX_LENGTH} characters.`);
+      }
       const { error } = await requireSupabaseClient()
         .from("reviews")
         .update({
           merchant_reply_text: trimmedText,
           merchant_replied_at: new Date().toISOString(),
         })
+        .eq("id", interactionId);
+      if (error) throw error;
+    },
+
+    async removeInteractionReply(interactionId) {
+      const { error } = await requireSupabaseClient()
+        .from("reviews")
+        .update({ merchant_reply_text: null, merchant_replied_at: null })
         .eq("id", interactionId);
       if (error) throw error;
     },
@@ -6409,17 +6484,22 @@ export const supabaseService: HungryService = {
       if (error) throw error;
     },
 
-    async listPopularVisitorCandidates(outletId) {
+    async listPopularVisitorCandidates(outletId, options) {
       const client = requireSupabaseClient();
       const outlet = await requireLinkedMerchantOutlet(client, outletId);
       const resolvedOutletId = asString(outlet.id) ?? outletId;
       const venueId = asString(outlet.venue_id) ?? "";
 
-      const { data, error } = await client
+      let candidateQuery = client
         .from("reviews")
         .select("id,user_id,dish_id,venue_id,author_name,rating,text,created_at")
         .eq("venue_id", venueId)
         .order("created_at", { ascending: false });
+      if (options?.before) candidateQuery = candidateQuery.lt("created_at", options.before);
+      candidateQuery = candidateQuery.limit(
+        Math.min(Math.max(1, options?.limit ?? MERCHANT_INBOX_MAX_ROWS), MERCHANT_INBOX_MAX_ROWS),
+      );
+      const { data, error } = await candidateQuery;
       if (error) throw error;
 
       const reviewRows = Array.isArray(data) ? (data as Row[]) : [];
@@ -6456,7 +6536,6 @@ export const supabaseService: HungryService = {
           authorProfileId: profileId,
           authorName:
             asString(profile?.display_name) ?? asString(row.author_name) ?? "Hungry diner",
-          authorAvatarUrl: asString(profile?.avatar_url),
           reviewText: asString(row.text) ?? "",
           rating: asNumber(row.rating) ?? 0,
           dishName: dishNameById.get(asString(row.dish_id) ?? ""),
@@ -6530,7 +6609,8 @@ export const supabaseService: HungryService = {
             author_profile_id: safeProfileId ?? null,
             author_name:
               asString(profile?.display_name) ?? asString(reviewRow.author_name) ?? "Hungry diner",
-            author_avatar_url: asString(profile?.avatar_url) ?? null,
+            // Names only: the pin never copies a diner's profile photo.
+            author_avatar_url: null,
             author_location: null,
             review_text: asString(reviewRow.text) ?? "",
             rating: asNumber(reviewRow.rating) ?? 0,
@@ -6606,7 +6686,6 @@ export const supabaseService: HungryService = {
       const validatedPromo = validateMerchantPromotionInput(promo, {
         outletDishIds: await listPromotionOutletDishIds(client, outlet),
       });
-      const analytics = buildPromotionAnalytics(validatedPromo);
       const { data, error } = await client
         .from("merchant_promotions")
         .insert({
@@ -6624,11 +6703,7 @@ export const supabaseService: HungryService = {
           final_price: validatedPromo.finalPrice ?? validatedPromo.promotionalPrice ?? null,
           discount_percentage: validatedPromo.discountPercentage ?? null,
           is_available: validatedPromo.isAvailable ?? validatedPromo.status === "active",
-          impressions: analytics.impressions,
-          clicks: analytics.clicks,
-          saves: analytics.saves,
-          profile_visits: analytics.profileVisits,
-          dish_views: analytics.dishViews,
+          // Counters are server-only (analytics events increment them); the column defaults apply.
         })
         .select("*")
         .single();
@@ -6684,13 +6759,6 @@ export const supabaseService: HungryService = {
       if (updates.discountPercentage !== undefined)
         payload.discount_percentage = validatedUpdates.discountPercentage;
       if (updates.isAvailable !== undefined) payload.is_available = validatedUpdates.isAvailable;
-      if (updates.analytics) {
-        payload.impressions = updates.analytics.impressions;
-        payload.clicks = updates.analytics.clicks;
-        payload.saves = updates.analytics.saves;
-        payload.profile_visits = updates.analytics.profileVisits;
-        payload.dish_views = updates.analytics.dishViews;
-      }
       const { data, error } = await client
         .from("merchant_promotions")
         .update(payload)
@@ -6763,29 +6831,11 @@ export const supabaseService: HungryService = {
     },
 
     async getWeeklySummaryStats(outletId) {
-      const client = requireSupabaseClient();
-      const outlet = await getMerchantOutletRow(client, outletId);
-      const resolvedOutletId = asString(outlet.id) ?? outletId;
       const analytics = await this.getAnalytics(outletId, "7d");
       const reviews = await this.getInbox(outletId, { type: "review" });
       const promotions = await this.getPromotions(outletId);
-      const summary = buildWeeklySummaryFromAnalytics(outletId, analytics, reviews, promotions);
-      const { error } = await client.rpc("persist_merchant_weekly_summary", {
-        p_outlet_id: resolvedOutletId,
-        p_week_start: summary.weekStart.slice(0, 10),
-        p_week_end: summary.weekEnd.slice(0, 10),
-        p_total_views: summary.totalViews,
-        p_dish_views: summary.dishViews,
-        p_top_dishes: summary.topDishes,
-        p_new_reviews: summary.newReviews,
-        p_average_rating: summary.averageRating,
-        p_rating_change: summary.ratingChange,
-        p_unreplied_reviews: summary.unrepliedReviews,
-        p_promotion_views: summary.promotionViews,
-        p_metadata: { source: "merchant_service" },
-      });
-      if (error) throw error;
-      return summary;
+      // Read-only: opening Settings must not write a summary row for every visit.
+      return buildWeeklySummaryFromAnalytics(outletId, analytics, reviews, promotions);
     },
 
     async getMerchantNotifications(merchantAccountId) {
@@ -6795,120 +6845,6 @@ export const supabaseService: HungryService = {
         .eq("merchant_account_id", merchantAccountId)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (Array.isArray(data) ? (data as Row[]) : []).map(mapMerchantNotification);
-    },
-
-    async syncLowRatingNotifications(outletId) {
-      const client = requireSupabaseClient();
-      const outlet = await getMerchantOutletRow(client, outletId);
-      const resolvedOutletId = asString(outlet.id) ?? outletId;
-      const merchantAccountId = asString(outlet.merchant_account_id) ?? "";
-      const outletName = asString(outlet.name) ?? "Your stall";
-      const reviews = await this.getInbox(outletId, { type: "review" });
-      const lowReviews = reviews.filter(
-        (review) => typeof review.rating === "number" && review.rating <= 2,
-      );
-      if (lowReviews.length === 0) return [];
-      const rows = lowReviews.map((review) => ({
-        merchant_account_id: merchantAccountId,
-        outlet_id: resolvedOutletId,
-        kind: "low_rating",
-        title: `${outletName} received a low rating`,
-        body: `${review.rating?.toFixed(1)} stars: ${review.text.slice(0, 120)}`,
-        status: "unread",
-        dedupe_key: `low-rating:${review.sourceId ?? review.id}`,
-        deep_link: MERCHANT_DEEP_LINKS.inbox,
-        metadata: {
-          reviewId: review.sourceId ?? review.id,
-          rating: review.rating,
-          snippet: review.text,
-        },
-        created_at: review.createdAt,
-      }));
-      const { error } = await client
-        .from("merchant_notifications")
-        .upsert(rows, { onConflict: "dedupe_key", ignoreDuplicates: true });
-      if (error) throw error;
-      const keys = rows.map((row) => row.dedupe_key);
-      const { data, error: readError } = await client
-        .from("merchant_notifications")
-        .select("*")
-        .in("dedupe_key", keys)
-        .order("created_at", { ascending: false });
-      if (readError) throw readError;
-      return (Array.isArray(data) ? (data as Row[]) : []).map(mapMerchantNotification);
-    },
-
-    async sendWeeklySummaryNotifications(outletId) {
-      const client = requireSupabaseClient();
-      const outlet = await getMerchantOutletRow(client, outletId);
-      const resolvedOutletId = asString(outlet.id) ?? outletId;
-      const merchantAccountId = asString(outlet.merchant_account_id) ?? "";
-      const outletName = asString(outlet.name) ?? "Your stall";
-      const summary = await this.getWeeklySummaryStats(outletId);
-      const members = await this.getTeamMembers(merchantAccountId);
-      const rows = members
-        .filter((member) => member.inviteStatus !== "removed")
-        .map((member) => ({
-          merchant_account_id: merchantAccountId,
-          outlet_id: resolvedOutletId,
-          recipient_user_id: member.userId || null,
-          recipient_email: member.email,
-          kind: "weekly_summary",
-          title: `${outletName} weekly summary is ready`,
-          body: `${summary.totalViews.toLocaleString()} views, ${summary.newReviews} new reviews, ${summary.unrepliedReviews} unreplied reviews.`,
-          status: "unread",
-          dedupe_key: `weekly-summary:${summary.id}:${member.id}`,
-          deep_link: MERCHANT_DEEP_LINKS.analytics,
-          metadata: { summaryId: summary.id },
-        }));
-      if (rows.length === 0) return [];
-      const { error } = await client
-        .from("merchant_notifications")
-        .upsert(rows, { onConflict: "dedupe_key", ignoreDuplicates: true });
-      if (error) throw error;
-      const emailRows = rows
-        .filter((row) => row.recipient_email)
-        .map((row) => ({
-          merchant_account_id: merchantAccountId,
-          outlet_id: resolvedOutletId,
-          recipient_email: row.recipient_email,
-          template: "weekly_summary",
-          subject: row.title,
-          body: row.body,
-          status: "queued",
-          dedupe_key: `email:${row.dedupe_key}`,
-          metadata: row.metadata,
-        }));
-      if (emailRows.length > 0) {
-        await Promise.all(
-          emailRows.map(async (row) => {
-            const memberId = row.dedupe_key.split(":").at(-1) ?? row.recipient_email;
-            const { error: emailError } = await client.rpc(
-              "enqueue_merchant_weekly_summary_email",
-              {
-                p_merchant_account_id: merchantAccountId,
-                p_outlet_id: resolvedOutletId,
-                p_recipient_email: row.recipient_email,
-                p_summary_id: String(row.metadata.summaryId ?? summary.id),
-                p_member_id: memberId,
-                p_subject: row.subject,
-                p_body: row.body,
-              },
-            );
-            if (emailError) throw emailError;
-          }),
-        );
-      }
-      const { data, error: readError } = await client
-        .from("merchant_notifications")
-        .select("*")
-        .in(
-          "dedupe_key",
-          rows.map((row) => row.dedupe_key),
-        )
-        .order("created_at", { ascending: false });
-      if (readError) throw readError;
       return (Array.isArray(data) ? (data as Row[]) : []).map(mapMerchantNotification);
     },
 

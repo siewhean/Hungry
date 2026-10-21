@@ -96,6 +96,7 @@ export type AnalyticsEventName =
   // ─── Merchant Mode Events ──────────────────────────────────────────────────
   | "merchant_mode_opened"
   | "merchant_dashboard_viewed"
+  | "merchant_analytics_range_changed"
   | "merchant_application_started"
   | "merchant_application_submitted"
   | "merchant_verification_started"

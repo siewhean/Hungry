@@ -1,10 +1,10 @@
 import React, { useCallback, useState, useEffect } from "react";
-import { View, Alert, Platform } from "react-native";
+import { View, Platform } from "react-native";
 import { ArrowLeftRight, BellRing, Shield, HelpCircle, X } from "lucide-react-native";
 import { CommonActions, useNavigation } from "@react-navigation/native";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
-import { AppText, Button, Screen, EmptyState } from "@/components/ui";
+import { AppText, Button, Screen, EmptyState, Skeleton } from "@/components/ui";
 import { SettingsRow, SettingsSection } from "@/components/settings";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
@@ -13,10 +13,14 @@ import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
 import { registerForStallAlerts } from "@/lib/notifications/push";
 import type { MerchantNotification, MerchantWeeklySummary } from "@/types/domain";
 import { WEB_LINKS } from "@/constants/links";
+import { isVerificationCurrent } from "@/features/merchant/merchantGuards";
+import { getVerificationStatusInfo } from "@/features/merchant/merchantReadiness";
+import { useMerchantDialog } from "@/features/merchant/useMerchantDialog";
 
 export function MerchantSettingsScreen() {
-  const { palette, spacing } = useHungryTheme();
+  const { componentRadii, palette, spacing } = useHungryTheme();
   const navigation = useNavigation();
+  const { showAlert, dialog } = useMerchantDialog();
   const rootNavigation = getRootNavigation(navigation as any);
   const activeOutlet = useMerchantStore(getActiveOutlet);
   const account = useMerchantStore((state) => state.account);
@@ -42,12 +46,13 @@ export function MerchantSettingsScreen() {
       const service = getHungryService();
       // Low-rating push alerts are the only merchant alert Hungry delivers. Team invites,
       // email alerts and the weekly email are not offered.
+      // Every read is optional: a failure of any of them must not replace Settings, which holds
+      // the "Switch to Customer Mode" and sign-out exits.
       const [notes, summary, prefs] = await Promise.all([
-        service.merchant.getMerchantNotifications(account.id),
+        service.merchant.getMerchantNotifications(account.id).catch(() => []),
         activeOutlet
-          ? service.merchant.getWeeklySummaryStats(activeOutlet.id)
+          ? service.merchant.getWeeklySummaryStats(activeOutlet.id).catch(() => null)
           : Promise.resolve(null),
-        // A failed preferences read must not hide the alerts and numbers above.
         service.merchant.getNotificationPreferences(account.id).catch(() => null),
       ]);
       setMerchantNotifications(notes);
@@ -72,7 +77,11 @@ export function MerchantSettingsScreen() {
   if (isLoading) {
     return (
       <Screen title="Settings">
-        <AppText>Loading settings...</AppText>
+        <View accessibilityLabel="Loading settings" style={{ gap: spacing[4], width: "100%" }}>
+          <Skeleton height={96} borderRadius={componentRadii.card} />
+          <Skeleton height={160} borderRadius={componentRadii.card} />
+          <Skeleton height={96} borderRadius={componentRadii.card} />
+        </View>
       </Screen>
     );
   }
@@ -94,7 +103,7 @@ export function MerchantSettingsScreen() {
   }
 
   const handleSwitchToCustomerMode = () => {
-    Alert.alert(
+    showAlert(
       "Switch to Customer Mode",
       "You will leave Merchant Centre and return to the customer app.",
       [
@@ -126,7 +135,7 @@ export function MerchantSettingsScreen() {
       });
       setLowRatingAlerts(enabled);
     } catch {
-      Alert.alert("Error", "Couldn't update low-rating alerts. Please try again.");
+      showAlert("Error", "Couldn't update low-rating alerts. Please try again.");
     } finally {
       setIsSavingAlerts(false);
     }
@@ -136,14 +145,15 @@ export function MerchantSettingsScreen() {
     const registered = await registerForStallAlerts().catch(() => false);
     setIsDeviceRegistered(registered);
     if (!registered) {
-      Alert.alert(
+      showAlert(
         "Notifications are off",
         "Allow notifications for Hungry in your phone settings to get low-rating alerts on this phone.",
       );
     }
   };
 
-  const isOutletVerified = activeOutlet?.verification?.status === "verified";
+  const isOutletVerified = isVerificationCurrent(activeOutlet?.verification);
+  const verificationInfo = getVerificationStatusInfo(activeOutlet?.verification);
 
   return (
     <Screen title="Settings" contentContainerStyle={{ paddingBottom: spacing[6] }}>
@@ -231,7 +241,8 @@ export function MerchantSettingsScreen() {
         <SettingsSection title="Support">
           <SettingsRow
             label="Verification Status"
-            value={activeOutlet?.verification?.status === "verified" ? "Verified" : "Pending"}
+            value={verificationInfo.label}
+            description={verificationInfo.nextStep || undefined}
             icon={<Shield size={20} color={palette.textSecondary} />}
             onPress={() => navigation.navigate("VerificationCentre" as never)}
           />
@@ -251,6 +262,7 @@ export function MerchantSettingsScreen() {
           onPress={handleSwitchToCustomerMode}
         />
       </View>
+      {dialog}
     </Screen>
   );
 }

@@ -1518,6 +1518,57 @@ export function invalidateSupabaseRepositoryCache(): void {
   void refreshCache(true);
 }
 
+/**
+ * Reload only one venue's dishes into the cache. A merchant dish save changes that venue's menu
+ * and nothing else, so it does not need the whole catalog, posts and blog download again.
+ */
+export async function refreshSupabaseRepositoryVenueDishes(venueId: string): Promise<void> {
+  if (!venueId || !isSupabaseConfigured()) return;
+  // Nothing cached yet: the first full hydration will load this venue with everything else.
+  if (!hydrated) return;
+  const client = getSupabaseClient();
+  if (!client) return;
+  const dishesResult = await client.from("dishes").select("*").eq("venue_id", venueId);
+  if (dishesResult.error || !Array.isArray(dishesResult.data)) {
+    // Fall back to the full reload rather than leave a stale menu.
+    await refreshSupabaseRepositoryCache();
+    return;
+  }
+  const dishRows = (dishesResult.data as unknown as Row[]).filter(isCatalogMenuDisplayable);
+  const dishIds = dishRows.map((row) => toString(row.id)).filter(Boolean);
+  const [imagesResult, tasteResult, dishFlagsResult, flagsResult] =
+    dishIds.length > 0
+      ? await Promise.all([
+          client
+            .from("dish_images")
+            .select(
+              "dish_id,url,sort_order,media_approved_for_display,media_rights_status,media_source_url",
+            )
+            .in("dish_id", dishIds)
+            .order("sort_order"),
+          client.from("dish_taste_vectors").select("*").in("dish_id", dishIds),
+          client
+            .from("dish_dietary_flags")
+            .select("dish_id,dietary_flag_id")
+            .in("dish_id", dishIds),
+          client.from("dietary_flags").select("id,slug"),
+        ])
+      : [null, null, null, null];
+  const rowsOf = (result: { data: unknown; error: unknown } | null): Row[] =>
+    result && Array.isArray(result.data) && !result.error ? (result.data as unknown as Row[]) : [];
+  const presentationByDishId = buildDishPresentationMap(
+    rowsOf(imagesResult),
+    rowsOf(tasteResult),
+    rowsOf(dishFlagsResult),
+    rowsOf(flagsResult),
+  );
+  const venue = cachedVenues.find((candidate) => candidate.id === venueId);
+  const mapped = dishRows.map((row) =>
+    mapDish(row, venue, presentationByDishId.get(toString(row.id))),
+  );
+  cachedDishes = [...cachedDishes.filter((dish) => dish.venueId !== venueId), ...mapped];
+}
+
 export async function refreshSupabaseRepositoryCache(): Promise<void> {
   hydrated = false;
   hydratedAt = 0;
