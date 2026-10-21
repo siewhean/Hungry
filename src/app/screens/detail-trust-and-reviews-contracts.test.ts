@@ -47,13 +47,14 @@ test("mock listRecentReviews scopes to the given dishes, newest first", async ()
   );
 });
 
-test("Supabase stall review reads skip photo signing and sign the rest in parallel", () => {
+test("Supabase dish and stall review reads sign photos in one request (H30)", () => {
   const service = read("src/lib/services/supabase/supabaseService.ts");
   assert.match(
     service,
     /if \(options\?\.dishIds\) \{\s*query = query\.in\("dish_id", options\.dishIds\)/,
   );
-  assert.match(service, /includePhotos: !options\?\.dishIds/);
+  assert.doesNotMatch(service, /includePhotos: !options\?\.dishIds/);
+  assert.match(service, /mapSupabaseReviewRows\(client, rows, \{ includePhotos: true \}\)/);
   assert.match(service, /One signing request for the whole page instead of one per photo\./);
 });
 
