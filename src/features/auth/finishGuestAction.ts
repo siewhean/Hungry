@@ -1,4 +1,5 @@
 import type { DishDetail } from "@/types/domain";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import { useStallFollowStore } from "@/store/useStallFollowStore";
@@ -6,7 +7,13 @@ import { useStallFollowStore } from "@/store/useStallFollowStore";
 // Actions a guest asked for, finished after sign-in (SignInPromptSheet). Each one only
 // ever adds: the account may already have the save/like/follow, so it never toggles off.
 
-export function saveDishAfterSignIn(dish: DishDetail) {
+// Runs right after sign-in, before the account's favourites have loaded; the server
+// toggle deletes an existing save, so check the server's list first.
+export async function saveDishAfterSignIn(dish: DishDetail) {
+  const savedIds = await getHungryService()
+    .profile.getFavouriteDishIds()
+    .catch(() => null);
+  if (!savedIds || savedIds.includes(dish.id)) return;
   const profile = useProfileStore.getState();
   if (!profile.profile.favouriteDishIds.includes(dish.id)) profile.toggleFavourite(dish);
 }
