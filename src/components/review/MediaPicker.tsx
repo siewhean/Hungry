@@ -6,7 +6,7 @@ import { useHungryTheme } from "@/theme";
 import { componentRadii } from "@/theme/tokens";
 import { useUIStore } from "@/store/useUIStore";
 import { AccessibleImage, AppText, Card } from "../ui";
-import { confirmGalleryAccess, isGalleryPermissionGranted } from "@/lib/permissions/gallery";
+import { askMediaSource, captureWithCamera } from "@/lib/permissions/mediaSource";
 
 interface MediaPickerProps {
   photos: string[];
@@ -30,26 +30,24 @@ export function MediaPicker({
   const showToast = useUIStore((state) => state.showToast);
 
   const handlePickMedia = async (type: "image" | "video") => {
-    const shouldOpenPicker = await confirmGalleryAccess({
-      title: "Allow gallery access",
-      message:
-        "Hungry needs access to your photo and video library to attach media to your review.",
-      confirmLabel: "Allow",
-      cancelLabel: "Not now",
-    });
-
-    if (!shouldOpenPicker) {
-      return;
-    }
-
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!isGalleryPermissionGranted(permission)) {
-      showToast({ message: "Gallery permission is required.", tone: "warning" });
-      return;
-    }
-
     const remainingPhotos = Math.max(0, maxPhotos - photos.length);
     if (type === "image" && remainingPhotos === 0) return;
+
+    if (type === "image") {
+      const source = await askMediaSource();
+      if (!source) return;
+      if (source === "camera") {
+        const capture = await captureWithCamera({ mediaTypes: ["images"], quality: 0.8 });
+        if (capture.status === "denied") {
+          showToast({ message: "Camera permission is required to take a photo.", tone: "warning" });
+        } else if (capture.status === "ok" && capture.assets[0]?.uri) {
+          onAddPhoto(capture.assets[0].uri);
+        }
+        return;
+      }
+    }
+
+    // The system photo picker needs no library permission; it only returns what is picked.
     // Photos are picked several at a time (no editor round trip per photo);
     // a reel is still one clip with the trim editor.
     const result = await ImagePicker.launchImageLibraryAsync({

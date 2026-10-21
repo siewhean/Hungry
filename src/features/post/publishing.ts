@@ -14,6 +14,8 @@ export interface PublishComposerPostOptions {
   publishMode: PublishMode;
   routeDishId?: string;
   routeVenueId?: string;
+  /** Reused by the caller across retries so a retried publish resumes the same post. */
+  clientPostId?: string;
 }
 
 interface ResolvedPublishTarget {
@@ -84,7 +86,8 @@ export async function publishComposerPost(options: PublishComposerPostOptions) {
     options.publishMode === "review" ||
     (options.publishMode === "both" && (state.rating > 0 || state.reviewCaption.trim().length > 0));
   const caption = state.postCaption.trim() || state.reviewCaption.trim() || dish.name;
-  const rating = state.rating > 0 ? state.rating : dish.rating;
+  // The poster's own rating only: 0 when they gave none, never the dish average.
+  const rating = state.rating > 0 ? state.rating : 0;
   const media = shouldPublishPost ? resolveMedia(state.media) : null;
   const applyReviewProfileState = () => {
     const profileStore = useProfileStore.getState();
@@ -141,6 +144,7 @@ export async function publishComposerPost(options: PublishComposerPostOptions) {
     tags: [...state.foodTags, ...state.tasteTags],
     tasteStamp: dish.tasteVector ?? NEUTRAL_TASTE_VECTOR,
     rating,
+    clientPostId: options.clientPostId,
     author: {
       id: profile.id,
       displayName: profile.displayName,

@@ -369,8 +369,11 @@ export interface BiteDraft {
   caption: string;
   tags?: string[];
   tasteStamp: TasteStamp;
+  /** The poster's own rating; 0 when they gave none (never the dish average). */
   rating: number;
   author?: Pick<UserProfile, "id" | "displayName" | "avatarUrl">;
+  /** Client-made post id reused across retries, so a retry resumes the post instead of duplicating it. */
+  clientPostId?: string;
 }
 
 // ─── AI / Recommendation Types ────────────────────────────────────────────────
@@ -557,9 +560,31 @@ export interface RecentReviewFeedEntry {
   venueName: string;
 }
 
+/** One page of the review feed, with the cursor taken from the raw rows read. */
+export interface RecentReviewFeedPage {
+  entries: RecentReviewFeedEntry[];
+  /**
+   * More rows exist after this page. Based on the raw row count, so reviews dropped from
+   * `entries` (for example a dish the viewer cannot read) never end the feed early.
+   */
+  hasMore: boolean;
+  /** Keyset cursor for the next page: the last raw row read, even when its entry was dropped. */
+  nextCursor?: { before: string; beforeId: string };
+}
+
+/** Keyset paging for one person's reviews (same cursor as the feed). */
+export interface GetUserReviewsOptions {
+  /** Page size. Without it every review is returned (data export). */
+  limit?: number;
+  before?: string;
+  beforeId?: string;
+}
+
 export interface ListRecentReviewsOptions {
   /** Page size (defaults to 50). */
   limit?: number;
+  /** Only reviews created at or after this ISO timestamp (what is newer than a loaded page). */
+  after?: string;
   /** Cursor: only return reviews created strictly before this ISO timestamp. */
   before?: string;
   /**
@@ -851,10 +876,14 @@ export interface HungryService {
   // Reviews
   reviews: {
     getReviewsForDish(dishId: string): Promise<DishDetail["reviews"]>;
-    getUserReviews(userId: string): Promise<DishDetail["reviews"]>;
+    getUserReviews(userId: string, options?: GetUserReviewsOptions): Promise<DishDetail["reviews"]>;
     submitReview(draft: SubmitReviewInput): Promise<void>;
     /** Newest-first review feed across all dishes, fetched as one paginated query. */
     listRecentReviews(options?: ListRecentReviewsOptions): Promise<RecentReviewFeedEntry[]>;
+    /** The same feed as listRecentReviews, with paging state that survives dropped rows. */
+    listRecentReviewsPage(options?: ListRecentReviewsOptions): Promise<RecentReviewFeedPage>;
+    /** One review with its dish and stall names (the shared review page); null when not visible. */
+    getReviewById(reviewId: string): Promise<RecentReviewFeedEntry | null>;
     /** Marks (helpful=true) or un-marks a review as helpful for the signed-in user. Idempotent. */
     setReviewHelpful(reviewId: string, helpful: boolean): Promise<void>;
     /** Edits the signed-in author's own review. Throws when it is not theirs or the text is refused. */

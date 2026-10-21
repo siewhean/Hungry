@@ -278,6 +278,10 @@ export interface Review {
   helpfulCount?: number;
   /** The signed-in viewer marked this review helpful. */
   viewerFoundHelpful?: boolean;
+  /** Set only on the viewer's own review when it was hidden or removed after reports. */
+  moderationState?: "hidden" | "removed";
+  /** ISO time the author last changed the rating, text or tags (undefined when never edited). */
+  editedAt?: string;
 }
 
 export interface PopularVisitorPin {
