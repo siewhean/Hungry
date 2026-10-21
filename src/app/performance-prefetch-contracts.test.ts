@@ -217,9 +217,6 @@ test("remaining high-traffic profile, developer, and merchant links prefetch on 
   assert.match(merchantDashboard, /function ActionCard[\s\S]*onPressIn\?: \(\) => void/);
   assert.match(merchantDashboard, /const prefetchMerchantRoute = useCallback/);
   assert.match(merchantDashboard, /prefetchMerchantTab\(routeName, activeOutlet\?\.id/);
-  assert.match(prefetch, /routeName === "BusinessProfileEditor"/);
-  assert.match(prefetch, /routeName === "VerificationCentre"/);
-  assert.match(prefetch, /await merchant\.getMerchantAccount\(\)/);
   assert.match(merchantDashboard, /onPressIn=\{\(\) => prefetchMerchantRoute\("Menu"\)\}/);
   assert.match(merchantDashboard, /onPressIn=\{\(\) => prefetchMerchantRoute\("CustomerInbox"\)\}/);
   assert.match(
@@ -229,10 +226,6 @@ test("remaining high-traffic profile, developer, and merchant links prefetch on 
   assert.match(
     merchantDashboard,
     /onPressIn=\{\(\) => prefetchMerchantRoute\("BusinessProfileEditor"\)\}/,
-  );
-  assert.match(
-    merchantDashboard,
-    /onPressIn=\{\(\) => prefetchMerchantRoute\("VerificationCentre"\)\}/,
   );
 
   assert.match(merchantMenu, /const prefetchDishEditorRoute = useCallback/);
@@ -296,19 +289,7 @@ test("developer and merchant surfaces defer non-selected work", () => {
   assert.match(merchantStore, /activeOutletStillExists/);
   assert.match(merchantStore, /activeOutletStillExists[\s\S]*state\.activeOutletId/);
 
-  assert.match(prefetch, /routeName === "Analytics"/);
-  assert.match(prefetch, /merchant\.getAnalytics\(outletId, "7d"\)/);
-  assert.match(prefetch, /routeName === "PromotionList"/);
-  assert.match(prefetch, /merchant\.getPromotions\(outletId\)/);
-  assert.match(prefetch, /routeName === "FeaturedVisitors"/);
-  assert.match(prefetch, /merchant\.listPopularVisitorPins\(outletId\)/);
-  assert.match(prefetch, /merchant\.listPopularVisitorCandidates\(outletId\)/);
-  assert.match(prefetch, /routeName === "AIAssistant"/);
-  assert.match(prefetch, /merchant\.getAIInsights\(outletId\)/);
-  assert.match(prefetch, /merchant\.getWeeklySummary\(outletId\)/);
-  assert.match(prefetch, /routeName === "OCRDrafts"/);
-  assert.match(prefetch, /merchant\.getOCRDrafts\(outletId\)/);
-  assert.match(prefetch, /routeName === "MerchantSettings"/);
-  assert.match(prefetch, /merchant\.getNotificationPreferences\(accountId\)/);
-  assert.match(prefetch, /merchant\.getTeamMembers\(accountId\)/);
+  // R2: merchant tab prefetching threw its results away, so it no longer fires requests.
+  assert.doesNotMatch(prefetch, /merchant\.get(Analytics|Promotions|Inbox|TeamMembers)/);
+  assert.doesNotMatch(prefetch, /getHungryService/);
 });

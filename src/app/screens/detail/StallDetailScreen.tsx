@@ -68,7 +68,7 @@ import {
   getServiceProvider,
 } from "@/lib/services/serviceProvider";
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
-import type { RecentReviewFeedEntry } from "@/lib/services/types";
+import type { MerchantClaimStatus, RecentReviewFeedEntry } from "@/lib/services/types";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { openMerchantProfileLink, openTrustedMapsUrl } from "@/lib/security/safeLinking";
 import { getDishSection, isSectionFlag, isSoldOut } from "@/features/merchant/menuSections";
@@ -116,6 +116,13 @@ import {
 import { webShareUrl } from "@/constants/links";
 
 const CommentIcon = MessageCircle ?? MessageCircleMore;
+const CLAIM_STATUS_LABELS: Record<MerchantClaimStatus, string> = {
+  none: "Claim this stall",
+  submitted: "Claim submitted",
+  in_review: "Claim in review",
+  approved: "Claim approved",
+  rejected: "Claim not approved",
+};
 const INITIAL_MENU_ITEM_COUNT = 10;
 const MENU_ITEM_BATCH_SIZE = 10;
 const MENU_LOAD_THRESHOLD_PX = 280;
@@ -450,6 +457,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const [isClaimPending, setIsClaimPending] = useState(() =>
     hasPendingClaimForVenue(profile.id, venueId),
   );
+  const [claimStatus, setClaimStatus] = useState<MerchantClaimStatus>(() =>
+    hasPendingClaimForVenue(profile.id, venueId) ? "submitted" : "none",
+  );
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
   const [reviewEntries, setReviewEntries] = useState<RecentReviewFeedEntry[]>([]);
   const [reviewsStatus, setReviewsStatus] = useState<"loading" | "error" | "ready">("loading");
@@ -531,8 +541,24 @@ export function StallDetailScreen({ navigation, route }: Props) {
   }, [cachedDishes.length, menuReloadKey, serviceProviderMode, venue?.id]);
 
   useEffect(() => {
-    setIsClaimPending(hasPendingClaimForVenue(profile.id, venueId));
-  }, [profile.id, venueId]);
+    const pendingLocally = hasPendingClaimForVenue(profile.id, venueId);
+    setIsClaimPending(pendingLocally);
+    setClaimStatus(pendingLocally ? "submitted" : "none");
+    if (!isAuthenticated || !FEATURE_FLAGS.merchantClaimCtaEnabled) return undefined;
+    // The claim may have been submitted on another device or already be in review.
+    let active = true;
+    void getHungryService()
+      .supply.getMerchantClaimStatus(venueId)
+      .then((status) => {
+        if (!active || status === "none") return;
+        setClaimStatus(status);
+        setIsClaimPending(true);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [isAuthenticated, profile.id, venueId]);
 
   useEffect(() => {
     if (!venue || trackedStallViewId.current === venue.id) return;
@@ -994,6 +1020,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
         });
       } else if (result.status === "created") {
         setIsClaimPending(true);
+        setClaimStatus("submitted");
         showToast({
           message: "Claim interest submitted. We will follow up with verification details.",
           tone: "success",
@@ -1794,7 +1821,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                       isSubmittingClaim
                         ? "Submitting..."
                         : isClaimPending
-                          ? "Claim Pending"
+                          ? CLAIM_STATUS_LABELS[claimStatus]
                           : "Claim this stall"
                     }
                     onPress={() => {

@@ -178,7 +178,10 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
       parts[1] && Object.prototype.hasOwnProperty.call(MERCHANT_LINK_SCREENS, parts[1])
         ? MERCHANT_LINK_SCREENS[parts[1]]
         : undefined;
-    return screen ? createState("MerchantTabs", { screen }) : createState("MerchantTabs");
+    // Over Home so a cold start has a way back to customer mode instead of stranding the user.
+    return screen
+      ? createStateOverHome("MerchantTabs", { screen })
+      : createStateOverHome("MerchantTabs");
   }
   if (parts[0] === "join") {
     const code = decodePathSegment(parts[1]);
