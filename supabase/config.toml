@@ -62,9 +62,11 @@ content_path = "./supabase/templates/magic_link.html"
 # Function on Resend, mail.usehungry.com), set in the dashboard. That hook must
 # include the code (email_data.token) for the three templates above.
 
+# Decision 4 (medium-low decisions): TOTP stays off until merchant two-factor
+# sign-in is built; the app has no screen to enrol or manage a factor.
 [auth.mfa.totp]
-enroll_enabled = true
-verify_enabled = true
+enroll_enabled = false
+verify_enabled = false
 
 [functions.guest-sessions]
 verify_jwt = false
