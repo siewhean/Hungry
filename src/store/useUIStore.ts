@@ -17,6 +17,9 @@ export interface ToastPayload {
 }
 
 export interface ReviewSuccessPayload {
+  /** The new review, so the confirmation can offer to share it. */
+  reviewId?: string;
+  dishId?: string;
   dishName: string;
   venueName: string;
   xpEarned: number;

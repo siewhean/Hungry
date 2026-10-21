@@ -18,13 +18,21 @@ import {
   Badge,
   ChipGroup,
   FeedErrorBoundary,
+  Skeleton,
 } from "@/components/ui";
 import { MediaPicker, StarRating } from "@/components/review";
 import { TRENDING_MUSIC } from "@/features/review/musicData";
-import { REVIEW_TAGS } from "@/constants/taste";
+import { REVIEW_EDITOR_TAGS } from "@/constants/taste";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
-import { useReviewDraftStore } from "@/store/useReviewDraftStore";
+import { useReviewDraftHydrated, useReviewDraftStore } from "@/store/useReviewDraftStore";
+import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
+import { describePublishError } from "@/features/review/publishErrorCopy";
+import {
+  buildDishPickerRows,
+  formatPickerDistance,
+  type PickerRow,
+} from "@/features/review/dishPicker";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -40,13 +48,6 @@ import type { ReviewStackParamList, RootStackParamList } from "@/app/navigation/
 import type { DishDetail } from "@/types/domain";
 
 type Props = NativeStackScreenProps<ReviewStackParamList, "ReviewMain">;
-
-/** Short, user-safe reason for a failed submit (the server's message when it has one). */
-function describeSubmitError(error: unknown): string {
-  const message = error instanceof Error ? error.message.trim() : "";
-  if (!message || message.length > 160) return "Please try again.";
-  return /[.!?]$/.test(message) ? message : `${message}.`;
-}
 
 // Music is never saved and video is never uploaded with a review, so both stay prototype-only.
 const reviewMusicEnabled = FEATURE_FLAGS.prototypeRoutesEnabled;
@@ -76,6 +77,9 @@ export function ReviewScreen({ navigation, route }: Props) {
   const setSubmitting = useReviewDraftStore((state) => state.setSubmitting);
   const resetDraft = useReviewDraftStore((state) => state.resetDraft);
   const ensurePendingReviewId = useReviewDraftStore((state) => state.ensurePendingReviewId);
+  // The saved draft loads asynchronously; acting on the route before it has would let the
+  // old draft land on top of the dish the person just chose.
+  const draftHydrated = useReviewDraftHydrated();
 
   // Local state
   const [query, setQuery] = useState("");
@@ -106,18 +110,51 @@ export function ReviewScreen({ navigation, route }: Props) {
         .flatMap((building) => repository.listVenuesByBuilding(building.id)),
     [repository],
   );
-  const venues = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
-    if (!normalizedQuery) return allVenues;
-    return allVenues.filter((venue) =>
-      `${venue.name} ${venue.unitNumber}`.toLowerCase().includes(normalizedQuery),
-    );
-  }, [allVenues, query]);
+  const allPickerDishes = useMemo(
+    () =>
+      allVenues.flatMap((venue) =>
+        repository.listDishesByVenue(venue.id).map((dish) => ({
+          id: dish.id,
+          name: dish.name,
+          venueId: venue.id,
+          venueName: venue.name,
+        })),
+      ),
+    [allVenues, repository],
+  );
+  const buildingCoordinates = useMemo(
+    () => new Map(repository.listBuildings().map((building) => [building.id, building.coordinate])),
+    [repository],
+  );
+  const permission = useLocationStore((state) => state.permission);
+  const currentLocation = useLocationStore((state) => state.currentLocation);
+  const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
+  const pickerOrigin = useMemo(() => {
+    const { coordinate, isApproximate } = getEffectiveLocation({
+      permission,
+      currentLocation,
+      manualCoordinate,
+    });
+    // The built-in default is not "you": no nearby ordering from it.
+    return isApproximate ? undefined : coordinate;
+  }, [permission, currentLocation, manualCoordinate]);
+  const pickerRows = useMemo(
+    () =>
+      buildDishPickerRows({
+        venues: allVenues,
+        dishes: allPickerDishes,
+        query,
+        origin: pickerOrigin,
+        buildingCoordinates,
+      }),
+    [allVenues, allPickerDishes, query, pickerOrigin, buildingCoordinates],
+  );
 
   // The route says what to review. A saved draft for something else never
   // silently wins (or is silently wiped): ask when it has content.
   const handledRouteKeyRef = useRef<string | null>(null);
   useEffect(() => {
+    if (!draftHydrated) return;
     if (!routeDishId && !routeVenueId) return;
     const routeKey = `${routeVenueId ?? ""}|${routeDishId ?? ""}`;
     if (handledRouteKeyRef.current === routeKey) return;
@@ -125,6 +162,8 @@ export function ReviewScreen({ navigation, route }: Props) {
 
     const routeVenueForDish =
       routeVenueId ?? (routeDishId ? repository.getDishById(routeDishId)?.venueId : undefined);
+    // Read after hydration: the render-time draft may still be the empty initial one.
+    const draft = useReviewDraftStore.getState().draft;
     const draftMatchesRoute = routeDishId
       ? draft.selectedDishId === routeDishId
       : draft.selectedVenueId === routeVenueId;
@@ -165,8 +204,8 @@ export function ReviewScreen({ navigation, route }: Props) {
         { text: "Start new", onPress: startFromRoute },
       ],
     );
-    // Only when the route changes.
-  }, [routeVenueId, routeDishId]);
+    // Only when the route changes (or once the saved draft has loaded).
+  }, [routeVenueId, routeDishId, draftHydrated]);
 
   // Cold legacy cache: the sync repository may not have the routed dish yet.
   useEffect(() => {
@@ -218,6 +257,26 @@ export function ReviewScreen({ navigation, route }: Props) {
     setIsSearching(false);
   };
 
+  const chooseDish = (venueId: string, dishId: string) => {
+    const switchingDish = Boolean(draft.selectedDishId) && draft.selectedDishId !== dishId;
+    if (!switchingDish || !reviewDraftHasContent(draft)) {
+      selectDish(venueId, dishId);
+      closePicker();
+      return;
+    }
+    Alert.alert("Change dish?", "Switching dish clears the rating, text and photos you added.", [
+      { text: "Keep current dish", style: "cancel" },
+      {
+        text: "Change dish",
+        style: "destructive",
+        onPress: () => {
+          selectDish(venueId, dishId);
+          closePicker();
+        },
+      },
+    ]);
+  };
+
   const handleSubmit = async () => {
     if (!selectedDish) {
       useUIStore.getState().showToast({ message: "Please select a dish first.", tone: "warning" });
@@ -229,7 +288,11 @@ export function ReviewScreen({ navigation, route }: Props) {
     const reviewScore = FEATURE_FLAGS.gamificationEnabled
       ? 25 + draft.selectedTags.length * 5 + draft.photos.length * 10 + (hasVideo ? 20 : 0)
       : 0;
+    // Fixed before the submit so the success modal can offer to share this exact review.
+    const reviewId = ensurePendingReviewId();
     const successPayload = {
+      reviewId,
+      dishId: selectedDish.id,
       dishName: selectedDish.name,
       venueName: selectedVenue?.name ?? selectedDish.venueName ?? "",
       pointsEarned: reviewScore,
@@ -250,7 +313,7 @@ export function ReviewScreen({ navigation, route }: Props) {
         photos: draft.photos,
         wouldRecommend: resolveWouldRecommend(draft.recommend, draft.rating),
         // Reused on retry so a failed photo step never creates a second review.
-        clientReviewId: ensurePendingReviewId(),
+        clientReviewId: reviewId,
       });
 
       useProfileStore.getState().addReviewedDish(selectedDish.id);
@@ -290,7 +353,7 @@ export function ReviewScreen({ navigation, route }: Props) {
       useUIStore.getState().showToast({
         message: photosOnly
           ? "Your review is posted, but the photos didn't upload. Tap Publish again to add them."
-          : `Could not publish review. ${describeSubmitError(error)}`,
+          : describePublishError(error, "review"),
         tone: "warning",
       });
     } finally {
@@ -300,6 +363,18 @@ export function ReviewScreen({ navigation, route }: Props) {
 
   if (!isAuthenticated) return null;
 
+  if (!draftHydrated) {
+    return (
+      <Screen title="Write a review" subtitle="Share your latest meal with the community.">
+        <View accessibilityLabel="Loading your draft" style={{ gap: spacing[4] }}>
+          <Skeleton width="100%" height={88} />
+          <Skeleton width="60%" height={32} />
+          <Skeleton width="100%" height={120} />
+        </View>
+      </Screen>
+    );
+  }
+
   const publishBlockedReason = !selectedDish
     ? "Choose a dish to review."
     : !draft.rating
@@ -307,7 +382,12 @@ export function ReviewScreen({ navigation, route }: Props) {
       : null;
 
   return (
-    <Screen title="Write a review" subtitle="Share your latest meal with the community." scroll>
+    <Screen
+      keyboardAvoiding
+      title="Write a review"
+      subtitle="Share your latest meal with the community."
+      scroll
+    >
       <FeedErrorBoundary
         title="Review editor failed"
         body="We hit a snag loading the editor. Please try again."
@@ -356,7 +436,7 @@ export function ReviewScreen({ navigation, route }: Props) {
           {/* 2. Rating */}
           <View style={{ gap: spacing[2] }}>
             <AppText variant="h3">Overall Rating</AppText>
-            <StarRating value={draft.rating} onChange={setRating} editable />
+            <StarRating value={draft.rating} onChange={setRating} editable showDescriptor />
           </View>
 
           {/* 3. Review text */}
@@ -443,7 +523,7 @@ export function ReviewScreen({ navigation, route }: Props) {
           <View style={{ gap: spacing[3] }}>
             <AppText variant="h3">Taste Tags</AppText>
             <ChipGroup
-              options={REVIEW_TAGS.map((tag) => ({ id: tag, label: tag }))}
+              options={REVIEW_EDITOR_TAGS.map((tag) => ({ id: tag, label: tag }))}
               selectedIds={draft.selectedTags}
               onSelect={toggleTag}
             />
@@ -524,8 +604,8 @@ export function ReviewScreen({ navigation, route }: Props) {
               </>
             ) : (
               <Input
-                placeholder="Search stalls..."
-                accessibilityLabel="Search stalls"
+                placeholder="Search dishes or stalls..."
+                accessibilityLabel="Search dishes or stalls"
                 value={query}
                 onChangeText={setQuery}
                 style={{ flex: 1 }}
@@ -540,36 +620,25 @@ export function ReviewScreen({ navigation, route }: Props) {
               data={pickerDishes}
               keyExtractor={(item) => item.id}
               ListEmptyComponent={
-                <AppText tone="secondary">No dishes listed for this stall yet.</AppText>
+                <View style={{ gap: spacing[3] }}>
+                  <AppText tone="secondary">No dishes listed for this stall yet.</AppText>
+                  <Button
+                    label="Suggest a dish"
+                    variant="secondary"
+                    fullWidth={false}
+                    onPress={() => {
+                      // The stall page has the menu-photo flow that adds dishes.
+                      closePicker();
+                      rootNavigation.navigate("StallDetail", { id: pickerVenue.id });
+                    }}
+                  />
+                </View>
               }
               renderItem={({ item }) => (
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={`Review ${item.name}`}
-                  onPress={() => {
-                    const switchingDish =
-                      Boolean(draft.selectedDishId) && draft.selectedDishId !== item.id;
-                    if (!switchingDish || !reviewDraftHasContent(draft)) {
-                      selectDish(pickerVenue.id, item.id);
-                      closePicker();
-                      return;
-                    }
-                    Alert.alert(
-                      "Change dish?",
-                      "Switching dish clears the rating, text and photos you added.",
-                      [
-                        { text: "Keep current dish", style: "cancel" },
-                        {
-                          text: "Change dish",
-                          style: "destructive",
-                          onPress: () => {
-                            selectDish(pickerVenue.id, item.id);
-                            closePicker();
-                          },
-                        },
-                      ],
-                    );
-                  }}
+                  onPress={() => chooseDish(pickerVenue.id, item.id)}
                   style={{
                     paddingVertical: spacing[3],
                     borderBottomWidth: 1,
@@ -593,20 +662,39 @@ export function ReviewScreen({ navigation, route }: Props) {
             />
           ) : (
             <FlatList
-              data={venues}
-              keyExtractor={(item) => item.id}
+              data={pickerRows}
+              keyExtractor={(row) => row.key}
               keyboardShouldPersistTaps="handled"
               ListEmptyComponent={
                 <AppText tone="secondary">
-                  {query.trim() ? `No stalls match "${query.trim()}".` : "No stalls to show yet."}
+                  {query.trim()
+                    ? `No dishes or stalls match "${query.trim()}".`
+                    : "No stalls to show yet."}
                 </AppText>
               }
-              renderItem={({ item }) => {
+              renderItem={({ item }: { item: PickerRow }) => {
+                const distance =
+                  item.distanceMeters === undefined
+                    ? ""
+                    : ` · ${formatPickerDistance(item.distanceMeters)}`;
+                const isDish = item.kind === "dish";
+                const title = isDish ? item.dish.name : item.venue.name;
+                const subtitle = isDish
+                  ? `${item.dish.venueName}${distance}`
+                  : `${item.venue.unitNumber}${distance}`;
                 return (
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={`Choose a dish at ${item.name}`}
-                    onPress={() => setPickerVenueId(item.id)}
+                    accessibilityLabel={
+                      isDish
+                        ? `Review ${title} at ${item.dish.venueName}`
+                        : `Choose a dish at ${title}`
+                    }
+                    onPress={() =>
+                      isDish
+                        ? chooseDish(item.dish.venueId, item.dish.id)
+                        : setPickerVenueId(item.venue.id)
+                    }
                     style={{
                       paddingVertical: spacing[3],
                       borderBottomWidth: 1,
@@ -620,13 +708,13 @@ export function ReviewScreen({ navigation, route }: Props) {
                         alignItems: "center",
                       }}
                     >
-                      <View>
-                        <AppText style={{ fontWeight: "600" }}>{item.name}</AppText>
+                      <View style={{ flex: 1 }}>
+                        <AppText style={{ fontWeight: "600" }}>{title}</AppText>
                         <AppText variant="bodySmall" tone="secondary">
-                          {item.unitNumber}
+                          {subtitle}
                         </AppText>
                       </View>
-                      <ChevronRight size={18} color={palette.textMuted} />
+                      {isDish ? null : <ChevronRight size={18} color={palette.textMuted} />}
                     </View>
                   </Pressable>
                 );

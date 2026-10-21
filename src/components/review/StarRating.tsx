@@ -2,6 +2,10 @@ import { Pressable, StyleSheet, View, type AccessibilityActionEvent } from "reac
 import { Star } from "lucide-react-native";
 
 import { useHungryTheme } from "@/theme";
+import { AppText } from "../ui";
+
+/** What each star count means, shown under the stars in the review editor. */
+export const STAR_DESCRIPTORS = ["Not good", "Could be better", "Okay", "Good", "Amazing"] as const;
 
 interface StarRatingProps {
   value: number;
@@ -9,6 +13,8 @@ interface StarRatingProps {
   editable?: boolean;
   onChange?: (value: number) => void;
   fullWidth?: boolean;
+  /** Names the chosen rating ("Good", "Amazing") under the stars. */
+  showDescriptor?: boolean;
 }
 
 export function StarRating({
@@ -17,6 +23,7 @@ export function StarRating({
   editable = false,
   onChange,
   fullWidth = false,
+  showDescriptor = false,
 }: StarRatingProps) {
   const { palette } = useHungryTheme();
 
@@ -30,7 +37,12 @@ export function StarRating({
     }
   };
 
-  return (
+  const descriptor =
+    showDescriptor && max === STAR_DESCRIPTORS.length && value >= 1
+      ? STAR_DESCRIPTORS[Math.min(value, max) - 1]
+      : undefined;
+
+  const stars = (
     <View
       style={[styles.row, fullWidth && { justifyContent: "space-between" }]}
       accessible
@@ -83,6 +95,22 @@ export function StarRating({
           </Pressable>
         );
       })}
+    </View>
+  );
+
+  if (!showDescriptor) return stars;
+  return (
+    <View>
+      {stars}
+      {/* The row's own label already says the number; this names it for sighted readers. */}
+      <AppText
+        variant="bodySmall"
+        tone="secondary"
+        importantForAccessibility="no-hide-descendants"
+        accessibilityElementsHidden
+      >
+        {descriptor ?? "Tap a star to rate"}
+      </AppText>
     </View>
   );
 }

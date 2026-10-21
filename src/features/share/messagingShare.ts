@@ -8,7 +8,7 @@ import { withShareSource } from "./shareAttribution";
 export type ShareChannel = "whatsapp" | "telegram" | "system_share";
 
 export interface ShareTarget {
-  kind: "dish" | "portfolio";
+  kind: "dish" | "portfolio" | "review";
   id: string;
   /** Short line shown above the link, e.g. "Chicken rice at Tian Tian, S$6.00". */
   message: string;
@@ -36,6 +36,10 @@ export async function shareLink(target: ShareTarget, channel: ShareChannel) {
       url,
     });
     if (result.action === Share.dismissedAction) return;
+  }
+  if (target.kind === "review") {
+    trackAnalyticsEvent("review_shared", { review_id: target.id, channel });
+    return;
   }
   trackAnalyticsEvent(target.kind === "dish" ? "dish_shared" : "collection_shared", {
     [target.kind === "dish" ? "dish_id" : "collection_id"]: target.id,

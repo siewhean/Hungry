@@ -113,7 +113,7 @@ export function ReviewShareSheet({
           ...recipients,
         });
       } else {
-        trackAnalyticsEvent("dish_shared", {
+        trackAnalyticsEvent("review_shared", {
           review_id: target.reviewId,
           channel,
           ...recipients,
