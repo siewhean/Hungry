@@ -1819,6 +1819,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
             }}
             onShareCompleted={recordMerchantShare}
           />
+          {detailSaveActions.saveToListSheet}
         </View>
       </SafeAreaView>
     </FeedErrorBoundary>

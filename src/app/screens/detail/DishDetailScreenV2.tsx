@@ -155,7 +155,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [hasMoreReviews, setHasMoreReviews] = useState(false);
   const [isLoadingMoreReviews, setIsLoadingMoreReviews] = useState(false);
-  const { addToPortfolio, isAddingToPortfolio } = useDetailSaveActions({
+  const { addToPortfolio, isAddingToPortfolio, saveToListSheet } = useDetailSaveActions({
     navigation,
     target: {
       itemType: "dish",
@@ -1472,6 +1472,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             }}
             onShareCompleted={recordMerchantShare}
           />
+          {saveToListSheet}
         </View>
       </SafeAreaView>
     </FeedErrorBoundary>
