@@ -10,13 +10,13 @@ import { AccessibleImage, AppText, Button, Card } from "@/components/ui";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { NEUTRAL_TASTE_VECTOR, TASTE_DIMENSIONS } from "@/constants/taste";
 import { flushPendingDishSave, rememberPendingDishSave } from "@/features/auth/pendingDishSave";
-import { getSearchResultsAsync } from "@/features/search/search";
 import {
   getDataRepository,
   getHungryService,
   getServiceProvider,
 } from "@/lib/services/serviceProvider";
-import type { SearchFilters, TasteVector } from "@/types/domain";
+import type { DishDetail, SearchFilters, TasteVector } from "@/types/domain";
+import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -40,6 +40,7 @@ function describeTaste(vector: TasteVector): string | null {
   return `You lean ${leaning.join(" and ")}.`;
 }
 
+// Local catalog search only (mock, or a cached catalog): no radius limit.
 function getResultFilters(): SearchFilters {
   const { tasteVector, dietaryPreferences } = useProfileStore.getState().profile;
   return {
@@ -49,6 +50,31 @@ function getResultFilters(): SearchFilters {
     tasteValues: tasteVector,
     radius: Number.MAX_SAFE_INTEGER,
   };
+}
+
+// Server picks start near the user and widen until there are enough dishes.
+const TASTE_PICK_RADII_METERS = [3000, 10000, undefined];
+
+/** Dishes ranked by the quiz taste vector on the server (get_taste_recommendations). */
+async function loadTastePicks(): Promise<DishDetail[]> {
+  const { tasteVector, dietaryPreferences } = useProfileStore.getState().profile;
+  const { coordinate, isApproximate } = getEffectiveLocation(useLocationStore.getState());
+  const location = isApproximate ? undefined : coordinate;
+  let picks: DishDetail[] = [];
+  for (const radiusMeters of location ? TASTE_PICK_RADII_METERS : [undefined]) {
+    const slate = await getHungryService().recommendations.getSlate({
+      surface: "home",
+      tasteProfile: tasteVector,
+      dietaryFlags: dietaryPreferences,
+      latitude: location?.latitude,
+      longitude: location?.longitude,
+      radiusMeters,
+      limit: RESULT_COUNT,
+    });
+    picks = slate.items.map((item) => item.dish);
+    if (picks.length >= RESULT_COUNT) break;
+  }
+  return picks;
 }
 
 export function TasteProfileResultScreen({ navigation }: Props) {
@@ -69,12 +95,17 @@ export function TasteProfileResultScreen({ navigation }: Props) {
 
   // Rank the catalog by the quiz taste vector (and dietary picks) instead of a fixed popular list.
   // Fetched once so saving a dish (which nudges the vector) does not reshuffle the grid.
-  const [dishes, setDishes] = useState(() => {
+  const [initialPicks] = useState(() => {
     const { tasteVector } = useProfileStore.getState().profile;
     const repository = getDataRepository();
     const ranked = repository.searchDishes(getResultFilters(), tasteVector);
-    return (ranked.length > 0 ? ranked : repository.listPopularNearby()).slice(0, RESULT_COUNT);
+    return ranked.length > 0
+      ? { dishes: ranked.slice(0, RESULT_COUNT), tasteRanked: true }
+      : { dishes: repository.listPopularNearby().slice(0, RESULT_COUNT), tasteRanked: false };
   });
+  const [dishes, setDishes] = useState(initialPicks.dishes);
+  // "Picked to match your taste" only when the list really is taste-ranked.
+  const [tasteRanked, setTasteRanked] = useState(initialPicks.tasteRanked);
 
   // The Supabase repository has no cached catalog during onboarding, so ask the server.
   const [loadState, setLoadState] = useState<"idle" | "loading" | "error">(() =>
@@ -86,14 +117,16 @@ export function TasteProfileResultScreen({ navigation }: Props) {
     if (dishes.length > 0) return;
     let active = true;
     setLoadState("loading");
-    const { tasteVector } = useProfileStore.getState().profile;
-    void getSearchResultsAsync(getResultFilters(), tasteVector)
-      .then((ranked) =>
-        ranked.length > 0 ? ranked : getHungryService().discovery.listPopularNearby(),
+    void loadTastePicks()
+      .then(async (picks) =>
+        picks.length > 0
+          ? { results: picks, ranked: true }
+          : { results: await getHungryService().discovery.listPopularNearby(), ranked: false },
       )
-      .then((results) => {
+      .then(({ results, ranked }) => {
         if (!active) return;
         setDishes(results.slice(0, RESULT_COUNT));
+        setTasteRanked(ranked);
         setLoadState("idle");
       })
       .catch(() => {
@@ -131,9 +164,11 @@ export function TasteProfileResultScreen({ navigation }: Props) {
           <AppText variant="bodySmall" tone="secondary">
             {hasSkippedTasteQuiz
               ? "Here are a few dishes to start with. Take the taste quiz anytime from Profile."
-              : dishes.length > 0
+              : dishes.length > 0 && tasteRanked
                 ? "Picked to match your taste. We'll keep ranking Home the same way."
-                : "We'll use your taste to rank dishes for you on Home."}
+                : dishes.length > 0
+                  ? "Popular dishes to start with. We'll use your taste to rank Home."
+                  : "We'll use your taste to rank dishes for you on Home."}
           </AppText>
         </View>
 

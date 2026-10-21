@@ -973,7 +973,11 @@ export async function searchDishesViaRpc(
     // Without a location the RPC would compare the radius against the stored
     // dishes.distance_meters column, which is not the distance from the user.
     // Text queries search everywhere; only location browsing is radius-bound.
-    p_radius_meters: hasLocation && !query ? filters.radius || null : null,
+    // p_radius_meters is a Postgres integer; a larger "no limit" radius means null.
+    p_radius_meters:
+      hasLocation && !query && filters.radius > 0 && filters.radius <= 2_147_483_647
+        ? Math.round(filters.radius)
+        : null,
     p_dietary_flags: filters.dietaryFlags,
     p_limit: 20,
     p_cursor_score: null,

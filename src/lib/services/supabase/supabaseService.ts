@@ -1676,6 +1676,15 @@ function mapRecommendationRpcRows(rows: Row[]): RankedRecommendation[] {
     .filter((item): item is RankedRecommendation => Boolean(item));
 }
 
+// p_radius_meters is a Postgres integer: a "no limit" radius such as
+// Number.MAX_SAFE_INTEGER would fail the whole call, so send null instead.
+const MAX_RPC_RADIUS_METERS = 2_147_483_647;
+function toRpcRadiusMeters(radiusMeters: number | undefined): number | null {
+  return radiusMeters && radiusMeters > 0 && radiusMeters <= MAX_RPC_RADIUS_METERS
+    ? Math.round(radiusMeters)
+    : null;
+}
+
 async function getLiveTasteRecommendations(
   client: SupabaseClient,
   request: RecommendationSlateRequest,
@@ -1688,7 +1697,7 @@ async function getLiveTasteRecommendations(
     p_query: request.query ?? null,
     p_lat: request.latitude ?? null,
     p_lng: request.longitude ?? null,
-    p_radius_meters: request.radiusMeters ?? null,
+    p_radius_meters: toRpcRadiusMeters(request.radiusMeters),
     p_exclude_dish_ids: request.excludeDishIds ?? [],
     p_limit: request.limit ?? 20,
   });
