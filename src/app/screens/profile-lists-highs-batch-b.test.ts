@@ -176,8 +176,11 @@ test("H32/H33/H34: list screens avoid render loops, show load errors and report 
   }
   assert.match(read("src/app/screens/checklist/ChecklistsHomeScreen.tsx"), /label="Retry"/);
   assert.match(read("src/app/screens/portfolio/PortfoliosHomeScreen.tsx"), /label="Retry"/);
-  assert.match(checklistDetail, /runListMutation\(\(\) => markItemTried\(item\.id\)/);
-  assert.match(portfolioDetail, /portfolio\.visibility === "public" \? \(/);
+  assert.match(
+    checklistDetail,
+    /runListMutation\(\(\) => markItemTried\(item\.id, !item\.triedAt\)/,
+  );
+  assert.match(portfolioDetail, /isLive \? \(|portfolio\.visibility === "public" \? \(/);
   assert.match(
     read("src/app/screens/checklist/ChecklistItemPickerScreen.tsx"),
     /if \(added\) navigation\.goBack\(\);/,

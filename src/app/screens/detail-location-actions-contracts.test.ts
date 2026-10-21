@@ -28,7 +28,7 @@ test("detail save buttons use compact standardized labels that stay inside the b
   const button = read("src/components/ui/Button.tsx");
 
   assert.match(saveActions, /label="Add to Checklist"[\s\S]*size="sm"/);
-  assert.match(saveActions, /label="Add to Portfolio"[\s\S]*size="sm"/);
+  assert.match(saveActions, /label="Add to list"[\s\S]*size="sm"/);
   assert.match(saveActions, /labelNumberOfLines=\{1\}/);
   assert.match(saveActions, /labelEllipsizeMode="tail"/);
   assert.match(button, /flexShrink: 1/);

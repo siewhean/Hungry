@@ -63,7 +63,7 @@ export function FavouritesScreen({ navigation }: Props) {
       ) : section === "lists" ? (
         <SavedListsSection
           onOpenList={(portfolioId) => navigation.navigate("PortfolioDetail", { portfolioId })}
-          onOpenAllLists={() => navigation.navigate("ListsHome")}
+          onOpenAllLists={() => navigation.navigate("ListsHome", undefined, { pop: true })}
         />
       ) : (
         <>
