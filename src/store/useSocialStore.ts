@@ -412,11 +412,16 @@ export const useSocialStore = create<SocialState>()(
           },
           requestedUserIds: { ...prev.requestedUserIds, [userId]: false },
         }));
-        trackAnalyticsEvent(isFollowing ? "user_unfollowed" : "user_followed", {
-          target_user_id: userId,
-        });
         void (isFollowing ? service.social.unfollowUser(userId) : service.social.followUser(userId))
           .then((result) => {
+            // Counted after the server answers, so a failed follow is not an event, and a
+            // request to a private account says "pending".
+            trackAnalyticsEvent(
+              isFollowing ? "user_unfollowed" : "user_followed",
+              isFollowing
+                ? { target_user_id: userId }
+                : { target_user_id: userId, status: result === "pending" ? "pending" : "approved" },
+            );
             // Private accounts must approve the request, so the viewer is not following yet.
             if (result !== "pending") return;
             set((prev) => ({

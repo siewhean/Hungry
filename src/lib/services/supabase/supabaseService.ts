@@ -735,7 +735,8 @@ async function fetchUserProfile(client: SupabaseClient, userId: string, email?: 
     stats: {
       dishesReviewed: asNumber(row.dishes_reviewed) ?? reviewedDishIds.length,
       stallsVisited: asNumber(row.stalls_visited) ?? 0,
-      favouritesCount: asNumber(row.favourites_count) ?? favouriteDishIds.length,
+      // The user_profiles column is never written, so it reads 0; count the real saved dishes.
+      favouritesCount: favouriteDishIds.length,
       followersCount: asNumber(row.followers_count) ?? 0,
       followingCount: asNumber(row.following_count) ?? 0,
     },
@@ -749,6 +750,11 @@ async function getCurrentUserProfileOrGuest(): Promise<UserProfile> {
   if (!userId) return DEFAULT_GUEST_PROFILE;
   return fetchUserProfile(client, userId);
 }
+
+/** Reviews per profile-list read; the Supabase read has no photos, so a page is cheap. */
+const USER_REVIEWS_PAGE_SIZE = 200;
+/** Saved posts read for Saved > Posts (newest save first). */
+const SAVED_POSTS_LIMIT = 200;
 
 const STORY_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -1319,9 +1325,11 @@ const USER_POSTS_PAGE_SIZE = 60;
 async function fetchPublishedPostBites(
   client: SupabaseClient,
   limit = 40,
-  options?: { authorId?: string; offset?: number },
+  options?: { authorId?: string; offset?: number; ids?: string[] },
 ): Promise<Bite[]> {
   let query = client.from("posts").select("*").eq("status", "published").is("deleted_at", null);
+  // Specific posts (the viewer's saved ones), whatever their age.
+  if (options?.ids) query = query.in("id", options.ids);
   // One author's posts are filtered on the server so older posts are not cut off.
   if (options?.authorId) query = query.eq("author_id", options.authorId);
   const offset = options?.offset ?? 0;
@@ -3654,15 +3662,22 @@ export const supabaseService: HungryService = {
       return mapSupabaseReviewRows(client, data as Row[]);
     },
 
-    async getUserReviews(userId) {
+    async getUserReviews(userId, page) {
       const client = requireSupabaseClient();
+      const limit = Math.min(Math.max(page?.limit ?? USER_REVIEWS_PAGE_SIZE, 1), 500);
+      const offset = Math.max(page?.offset ?? 0, 0);
       // Someone else's profile list goes through get_user_profile_reviews, which is
       // empty for a private account unless the viewer follows it (H39). Dish pages
       // keep showing every review. Older backends without the RPC use the table read.
       if (userId !== (await getCurrentSupabaseUserId())) {
-        const rpc = await client.rpc("get_user_profile_reviews", { p_user_id: userId });
+        const rpc = await client
+          .rpc("get_user_profile_reviews", { p_user_id: userId })
+          .range(offset, offset + limit - 1);
         if (!rpc.error) {
-          return Array.isArray(rpc.data) ? mapSupabaseReviewRows(client, rpc.data as Row[]) : [];
+          // Profile cards never show photos, so no photo rows are read or signed.
+          return Array.isArray(rpc.data)
+            ? mapSupabaseReviewRows(client, rpc.data as Row[], { includePhotos: false })
+            : [];
         }
       }
       const { data, error } = await client
@@ -3671,11 +3686,12 @@ export const supabaseService: HungryService = {
           "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend",
         )
         .eq("user_id", userId)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1);
       // Thrown so a failed read is not shown as "No reviews yet".
       if (error) throw error;
       if (!Array.isArray(data)) return [];
-      return mapSupabaseReviewRows(client, data as Row[]);
+      return mapSupabaseReviewRows(client, data as Row[], { includePhotos: false });
     },
 
     async submitReview(draft: SubmitReviewInput) {
@@ -3973,13 +3989,19 @@ export const supabaseService: HungryService = {
         payload.reviewed_dish_ids = updates.reviewedDishIds;
       if (updates.tasteProfile !== undefined) payload.taste_profile = updates.tasteProfile;
       if (updates.avatarUrl !== undefined) {
-        payload.avatar_url = await uploadAvatarIfNeeded(client, userId, updates.avatarUrl);
+        // An empty string removes the photo (the profile falls back to initials).
+        payload.avatar_url =
+          updates.avatarUrl === ""
+            ? null
+            : await uploadAvatarIfNeeded(client, userId, updates.avatarUrl);
       }
       if (Object.keys(payload).length > 1) {
         const { error } = await client.from("user_profiles").upsert(payload, { onConflict: "id" });
         if (error) throw error;
         if (typeof payload.avatar_url === "string") {
           await removePreviousAvatars(client, userId, payload.avatar_url);
+        } else if (payload.avatar_url === null) {
+          await removePreviousAvatars(client, userId, "");
         }
       }
       if (updates.profileVisibility !== undefined) {
@@ -4002,7 +4024,7 @@ export const supabaseService: HungryService = {
       if (!client) return undefined;
       const { data, error } = await client
         .from("public_profiles")
-        .select("id,display_name,avatar_url,bio")
+        .select("id,display_name,avatar_url,bio,stalls_visited")
         .eq("id", userId)
         .maybeSingle();
       if (error) throw error;
@@ -4028,6 +4050,7 @@ export const supabaseService: HungryService = {
         displayName: asString(row.display_name) ?? "Hungry member",
         avatarUrl: asString(row.avatar_url),
         bio: asString(row.bio),
+        stallsVisited: asNumber(row.stalls_visited),
       };
     },
 
@@ -4655,15 +4678,24 @@ export const supabaseService: HungryService = {
       const client = requireSupabaseClient();
       const userId = await getCurrentSupabaseUserId();
       if (!userId) return [];
+      // Newest save first. The posts are read by id, not filtered out of the latest feed window,
+      // so an older saved post still shows. Posts that are no longer readable drop out.
       const { data, error } = await client
         .from("post_saves")
         .select("post_id")
-        .eq("user_id", userId);
-      if (error || !Array.isArray(data)) return [];
-      const savedIds = new Set(
-        (data as Row[]).map((row) => asString(row.post_id)).filter((id): id is string => !!id),
-      );
-      return (await fetchPublishedPostBites(client)).filter((bite) => savedIds.has(bite.id));
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(SAVED_POSTS_LIMIT);
+      // A failed read throws so the Saved > Posts tab shows an error with Retry, not "no posts".
+      if (error) throw error;
+      if (!Array.isArray(data)) return [];
+      const savedIds = (data as Row[])
+        .map((row) => asString(row.post_id))
+        .filter((id): id is string => !!id);
+      if (savedIds.length === 0) return [];
+      const bites = await fetchPublishedPostBites(client, savedIds.length, { ids: savedIds });
+      const biteById = new Map(bites.map((bite) => [bite.id, bite]));
+      return savedIds.flatMap((id) => biteById.get(id) ?? []);
     },
 
     async getLikedBites() {
@@ -4679,6 +4711,38 @@ export const supabaseService: HungryService = {
         (data as Row[]).map((row) => asString(row.post_id)).filter((id): id is string => !!id),
       );
       return (await fetchPublishedPostBites(client)).filter((bite) => likedIds.has(bite.id));
+    },
+
+    async removeFollower(userId: string) {
+      const client = requireSupabaseClient();
+      const currentUserId = await getCurrentSupabaseUserId();
+      if (!currentUserId) throw new Error("You must be signed in to remove a follower.");
+      const { error } = await client.rpc("remove_follower", { p_follower_id: userId });
+      if (error) throw error;
+    },
+
+    async searchProfiles(query: string, page?: { limit?: number; offset?: number }) {
+      const client = requireSupabaseClient();
+      const term = query.trim();
+      if (term.length < 2) return [];
+      const { data, error } = await client.rpc("search_profiles", {
+        p_query: term,
+        p_limit: page?.limit ?? 20,
+        p_offset: page?.offset ?? 0,
+      });
+      if (error) throw error;
+      if (!Array.isArray(data)) return [];
+      return (data as Row[]).flatMap((row) => {
+        const userId = asString(row.user_id);
+        if (!userId) return [];
+        return [
+          {
+            userId,
+            displayName: asString(row.display_name) ?? "Hungry member",
+            avatarUrl: asString(row.avatar_url),
+          },
+        ];
+      });
     },
 
     async followUser(userId: string) {
