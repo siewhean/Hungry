@@ -15,6 +15,8 @@ test("root linking config exposes public dish, venue, and order entry points", (
   // The composer is named for what it does; /order still works as an alias.
   assert.equal(screens.Post, "post");
   assert.equal(screens.ReviewDetail, "review/:reviewId");
+  assert.equal(screens.ActivityInbox, "activity");
+  assert.equal(screens.FollowRequests, "follow-requests");
   assert.equal(screens.MerchantTabs, undefined);
   assert.deepEqual(screens.MainTabs, { screens: { Home: "home" } });
 });

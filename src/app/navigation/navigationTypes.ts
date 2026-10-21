@@ -154,6 +154,8 @@ export type RootStackParamList = {
   /** One review on its own page; opened by review/:reviewId share links. */
   ReviewDetail: { reviewId: string };
   FollowRequests: undefined;
+  /** People the viewer blocked and posts they hid, with Unblock and Unhide. */
+  BlockedAndHidden: undefined;
   /** Another user's follower/following lists, opened from their profile. */
   UserFollowers: { userId: string; userDisplayName?: string };
   UserFollowing: { userId: string; userDisplayName?: string };
@@ -186,7 +188,6 @@ export type RootStackParamList = {
   Settings: undefined;
   EditProfile: undefined;
   ChangePassword: undefined;
-  BlockedAccounts: undefined;
   DesignGallery: undefined;
   // V2 Prototypes
   PostComposerV2: { venueId?: string; dishId?: string } | undefined;

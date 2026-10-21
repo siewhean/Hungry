@@ -22,7 +22,6 @@ test("animated FDO surfaces share the system and app reduced-motion preference",
   const hook = read("src/hooks/useReduceMotion.ts");
   const animatedFiles = [
     "src/app/screens/home/StoryViewerScreen.tsx",
-    "src/components/social/BiteCard.tsx",
     "src/components/social/ZoomableMedia.tsx",
     "src/components/gamification/CredEarnedToast.tsx",
     "src/components/gamification/FoodCredBadge.tsx",

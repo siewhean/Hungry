@@ -407,7 +407,7 @@ test("Supabase social feed/profile history do not treat persisted local posts as
   assert.match(sharedPosts, /getServiceProvider\(\)\.mode === "supabase"/);
   assert.match(
     sharedPosts,
-    /return mergeStallPosts\(bitePosts, servicePosts, repository\.listStallPosts\(\)\)/,
+    /mergeStallPosts\(bitePosts, servicePosts, repository\.listStallPosts\(\)\)/,
   );
   assert.match(
     sharedPosts,
@@ -420,7 +420,8 @@ test("MVP browse surfaces do not show obvious fake trust claims", () => {
   const searchScreen = read("src/app/screens/search/SearchResultsScreen.tsx");
   const supabaseRepository = read("src/lib/services/supabase/supabaseRepository.ts");
 
-  assert.match(feed, /title: "Nearby picks"/);
+  // The Home feed no longer builds taste or "nearby" sections it never showed.
+  assert.doesNotMatch(feed, /Nearby picks/);
   assert.doesNotMatch(feed, /Fastest Near You|Mock distance logic/);
   assert.doesNotMatch(searchScreen, /fallbackPost|Heart\b|likeCount/);
   // Only positive verification is badged; unverified rows carry no pill.

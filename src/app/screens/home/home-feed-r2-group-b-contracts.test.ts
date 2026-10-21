@@ -33,7 +33,7 @@ test("H9: guests get a public Home feed and a sign-in empty state", () => {
   assert.match(service, /client\.rpc\("get_public_home_feed"/);
   assert.match(
     service,
-    /if \(!\(await getCurrentSupabaseUserId\(\)\)\) \{\s*const publicBites = await fetchPublicHomeFeedBites\(client\);/,
+    /if \(!\(await getCurrentSupabaseUserId\(\)\)\) \{\s*const publicBites = await fetchPublicHomeFeedBites\(client, page\);/,
   );
 
   const home = read("src/app/screens/home/HomeFeedScreen.tsx");
@@ -77,11 +77,12 @@ test("H11: a like, save, comment or share tap does not reload the feed", () => {
 test("H12: feed and post videos pause off screen and in the background", () => {
   const home = read("src/app/screens/home/HomeFeedScreen.tsx");
   assert.match(home, /const isFocused = useIsFocused\(\);/);
-  assert.match(home, /isActive=\{isFocused && activeVideoPostId === item\.id\}/);
+  assert.match(home, /isVideoActive=\{isFocused && activeVideoPostId === item\.id\}/);
+  assert.match(read("src/components/social/FeedPostCard.tsx"), /isActive=\{isVideoActive\}/);
 
   const detail = read("src/app/screens/home/ActivityPostDetailScreen.tsx");
   assert.match(detail, /const isFocused = useIsFocused\(\);/);
-  assert.match(detail, /<ZoomableMedia[\s\S]*?isActive=\{isFocused\}/);
+  assert.match(detail, /<FeedPostCard[\s\S]*?isVideoActive=\{isFocused\}/);
 
   const video = read("src/components/social/ZoomableVideo.tsx");
   assert.match(video, /AppState\.addEventListener\("change"/);

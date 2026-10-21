@@ -65,6 +65,7 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "ActivityPostDetail",
   "ReviewDetail",
   "FollowRequests",
+  "BlockedAndHidden",
   "UserFollowers",
   "UserFollowing",
   "ChatDetail",
@@ -78,7 +79,6 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "Settings",
   "EditProfile",
   "ChangePassword",
-  "BlockedAccounts",
   "DesignGallery",
   "PostComposerV2",
   "StoryViewer",
@@ -100,13 +100,13 @@ const PROTECTED_ROOT_ROUTES = new Set<RootRouteName>([
   "PostComposerV2",
   "ActivityInbox",
   "FollowRequests",
+  "BlockedAndHidden",
   "UserFollowers",
   "UserFollowing",
   "ChatDetail",
   "DirectMessages",
   "EditProfile",
   "ChangePassword",
-  "BlockedAccounts",
   "Favourites",
   "ReviewHistory",
   "ReviewStack",
@@ -205,10 +205,6 @@ const loadChangePasswordScreen = () =>
   (
     require("@/app/screens/profile/ChangePasswordScreen") as typeof import("@/app/screens/profile/ChangePasswordScreen")
   ).ChangePasswordScreen;
-const loadBlockedAccountsScreen = () =>
-  (
-    require("@/app/screens/profile/BlockedAccountsScreen") as typeof import("@/app/screens/profile/BlockedAccountsScreen")
-  ).BlockedAccountsScreen;
 const loadFavouritesScreen = () =>
   (
     require("@/app/screens/profile/FavouritesScreen") as typeof import("@/app/screens/profile/FavouritesScreen")
@@ -259,6 +255,10 @@ const loadFollowRequestsScreen = () =>
   (
     require("@/app/screens/profile/FollowRequestsScreen") as typeof import("@/app/screens/profile/FollowRequestsScreen")
   ).FollowRequestsScreen;
+const loadBlockedAndHiddenScreen = () =>
+  (
+    require("@/app/screens/profile/BlockedAndHiddenScreen") as typeof import("@/app/screens/profile/BlockedAndHiddenScreen")
+  ).BlockedAndHiddenScreen;
 const loadUserFollowersScreen = () =>
   (
     require("@/app/screens/profile/ProfileConnectionsScreen") as typeof import("@/app/screens/profile/ProfileConnectionsScreen")
@@ -739,7 +739,6 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen getComponent={loadPostComposerScreen} name="Post" />
           <RootStack.Screen getComponent={loadEditProfileScreen} name="EditProfile" />
           <RootStack.Screen getComponent={loadChangePasswordScreen} name="ChangePassword" />
-          <RootStack.Screen getComponent={loadBlockedAccountsScreen} name="BlockedAccounts" />
           <RootStack.Screen getComponent={loadFavouritesScreen} name="Favourites" />
           <RootStack.Screen getComponent={loadReviewHistoryScreen} name="ReviewHistory" />
           <RootStack.Screen getComponent={loadSettingsScreen} name="Settings" />
@@ -764,6 +763,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen getComponent={loadActivityPostDetailScreen} name="ActivityPostDetail" />
           <RootStack.Screen getComponent={loadReviewDetailScreen} name="ReviewDetail" />
           <RootStack.Screen getComponent={loadFollowRequestsScreen} name="FollowRequests" />
+          <RootStack.Screen getComponent={loadBlockedAndHiddenScreen} name="BlockedAndHidden" />
           <RootStack.Screen getComponent={loadUserFollowersScreen} name="UserFollowers" />
           <RootStack.Screen getComponent={loadUserFollowingScreen} name="UserFollowing" />
           {FEATURE_FLAGS.directMessagesEnabled ? (

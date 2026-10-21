@@ -624,6 +624,8 @@ const _contentReports: {
 }[] = [];
 /** Blocked author ids, keyed like the Supabase user_blocks.blocked_user_key column. */
 const _blockedUsers = new Map<string, { reason?: string; createdAt: string }>();
+/** Posts the viewer hid, with when. */
+const _hiddenPosts = new Map<string, string>();
 
 /** Distinct reporters that auto-hide a review, like report_content on the server. */
 const REVIEW_REPORT_AUTO_HIDE_THRESHOLD = 3;
@@ -2202,7 +2204,7 @@ export const hungryService: HungryService = {
   // ── Social (Bites) ──────────────────────────────────────────────────────────
 
   social: {
-    async getBitesFeed(_lat?, _lng?) {
+    async getBitesFeed(_lat?, _lng?, _page?) {
       await hydrateSocial();
       // Mirrors the Supabase feed read: blocked authors never reach the client,
       // and each row carries the viewer's own like/save state.
@@ -2697,7 +2699,42 @@ export const hungryService: HungryService = {
       return resolve(undefined);
     },
 
+    async unblockUser(blockedUserId) {
+      _blockedUsers.delete(blockedUserId);
+      return resolve(undefined);
+    },
+
+    async listBlockedUsers() {
+      return resolve(
+        Array.from(_blockedUsers.entries()).map(([blockedUserId, entry]) => ({
+          blockedUserId,
+          reason: entry.reason,
+          createdAt: entry.createdAt,
+        })),
+      );
+    },
+
+    async listHiddenPosts() {
+      return resolve(
+        Array.from(_hiddenPosts.entries())
+          .map(([postId, hiddenAt]) => {
+            const bite = MOCK_BITES_FEED.find((candidate) => candidate.id === postId);
+            return {
+              postId,
+              caption: bite?.caption,
+              authorId: bite?.authorId,
+              authorName: bite?.authorName,
+              dishName: bite?.dishName,
+              venueName: bite?.venueName,
+              hiddenAt,
+            };
+          })
+          .reverse(),
+      );
+    },
+
     async hidePost(postId, reason) {
+      _hiddenPosts.set(postId, new Date().toISOString());
       _contentReports.push({
         reporterId: _profile.id,
         targetType: "post",
@@ -2708,6 +2745,7 @@ export const hungryService: HungryService = {
     },
 
     async unhidePost(postId) {
+      _hiddenPosts.delete(postId);
       _contentReports.push({
         reporterId: _profile.id,
         targetType: "post",
@@ -2723,22 +2761,6 @@ export const hungryService: HungryService = {
           blockedUserId,
           reason: entry.reason,
           createdAt: entry.createdAt,
-        })),
-      );
-    },
-
-    async unblockUser(blockedUserId) {
-      _blockedUsers.delete(blockedUserId);
-      return resolve(undefined);
-    },
-
-    async getBlockedAccounts() {
-      return resolve(
-        Array.from(_blockedUsers.entries()).map(([blockedUserId, entry]) => ({
-          blockedUserId,
-          displayName: findMockPerson(blockedUserId).displayName,
-          avatarUrl: findMockPerson(blockedUserId).avatarUrl,
-          blockedAt: entry.createdAt,
         })),
       );
     },
@@ -4535,11 +4557,14 @@ export const hungryService: HungryService = {
   },
 
   notifications: {
-    async listActivityEvents() {
+    async listActivityEvents(_page?: { limit?: number; offset?: number }) {
       return resolve([]);
     },
     async markActivityRead(_eventId: string) {
       return resolve(undefined);
+    },
+    async markAllActivityRead() {
+      return resolve(0);
     },
   },
 };

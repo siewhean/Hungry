@@ -33,6 +33,7 @@ import {
   SunMoon,
   Trash2,
   User,
+  UserX,
   UtensilsCrossed,
   Vibrate,
 } from "lucide-react-native";
@@ -667,9 +668,10 @@ export function SettingsScreen() {
               isLast={false}
             />
             <SettingsRow
-              label="Blocked accounts"
-              icon={<Ban size={20} color={palette.orange} />}
-              onPress={() => rootNavigation.navigate("BlockedAccounts")}
+              label="Blocked and hidden"
+              icon={<UserX size={20} color={palette.orange} />}
+              type="navigation"
+              onPress={() => rootNavigation.navigate("BlockedAndHidden")}
               isLast={false}
             />
           </>

@@ -74,5 +74,5 @@ test("a feed read that started before a like/save write settled does not overwri
   assert.match(store, /settledAt >= readStartedAt/);
   assert.match(store, /!pendingReactionCounts\.has\(item\.id\) &&\s*!readPredatesWrite/);
   // The feed passes the time its read started.
-  assert.match(home, /section\.items\)\],\s*now,\s*\)/);
+  assert.match(home, /initializeInteractions\(bundle\.socialFeed, now\)/);
 });

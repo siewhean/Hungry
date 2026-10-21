@@ -490,6 +490,8 @@ export interface StallPost {
   likeCount?: number;
   commentCount?: number;
   savedCount?: number;
+  /** Server share total from the feed read, when it returned one. */
+  shareCount?: number;
   /** The viewer's own like/save from the server read; undefined when the read did not say. */
   viewerHasLiked?: boolean;
   viewerHasSaved?: boolean;

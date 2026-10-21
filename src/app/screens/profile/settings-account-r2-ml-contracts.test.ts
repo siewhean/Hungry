@@ -101,35 +101,6 @@ test("mock profile service mirrors the name guard, avatar removal and pending em
   }
 });
 
-// --- Blocked accounts (M5) ---------------------------------------------------------------
-
-test("blocked accounts can be listed and unblocked (mock service, screen, route)", async () => {
-  await hungryService.communitySafety.blockUser({ blockedUserId: "user-blocked-1", reason: "t" });
-  const listed = await hungryService.communitySafety.getBlockedAccounts();
-  assert.ok(listed.some((account) => account.blockedUserId === "user-blocked-1"));
-  await hungryService.communitySafety.unblockUser("user-blocked-1");
-  const after = await hungryService.communitySafety.getBlockedAccounts();
-  assert.ok(!after.some((account) => account.blockedUserId === "user-blocked-1"));
-
-  const supabase = service();
-  assert.match(supabase, /async unblockUser\(blockedUserId: string\)/);
-  assert.match(supabase, /\.from\("user_blocks"\)\s*\.delete\(\)\s*\.eq\("blocker_id", userId\)/);
-  assert.match(supabase, /rpc\("list_my_blocked_accounts"\)/);
-
-  assert.match(settings(), /label="Blocked accounts"/);
-  assert.match(settings(), /rootNavigation\.navigate\("BlockedAccounts"\)/);
-  const screen = read("src/app/screens/profile/BlockedAccountsScreen.tsx");
-  assert.match(screen, /unblockAccount\(account\.blockedUserId\)/);
-  assert.match(screen, /accessibilityLabel=\{`Unblock \$\{name\}`\}/);
-  const root = read("src/app/navigation/RootNavigator.tsx");
-  assert.match(root, /name="BlockedAccounts"/);
-  assert.match(read("src/app/navigation/navigationTypes.ts"), /BlockedAccounts: undefined;/);
-  assert.match(
-    read("src/lib/security/communitySafety.ts"),
-    /blockedAuthorIds\.delete\(normalized\)/,
-  );
-});
-
 // --- Sessions (M3, M4) -------------------------------------------------------------------
 
 test("plain sign-out only ends this device; global is explicit (M4)", () => {
@@ -186,7 +157,7 @@ test("guests can open Settings and see only guest-safe rows (M8, L15)", () => {
     root.indexOf("]);", root.indexOf("const PROTECTED_ROOT_ROUTES")),
   );
   assert.doesNotMatch(protectedBlock, /"Settings"/);
-  assert.match(protectedBlock, /"BlockedAccounts"/);
+  assert.match(protectedBlock, /"BlockedAndHidden"/);
   const linking = read("src/app/navigation/linking.ts");
   assert.doesNotMatch(
     linking.slice(linking.indexOf("PROTECTED_DEEP_LINK_ROUTES"), linking.indexOf("]);")),

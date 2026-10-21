@@ -35,6 +35,24 @@ export interface SignInPrompt {
   title: string;
 }
 
+export type SafetyReportReason = "spam" | "offensive" | "wrong_place" | "other";
+
+/**
+ * The report / hide / block sheet for one post or comment. The sheet is app-wide (see
+ * SafetyActionsSheet); the callbacks do the work so the sheet holds no service logic.
+ */
+export interface SafetyMenu {
+  /** "post" or "comment": the word used in the sheet copy. */
+  label: string;
+  authorName: string;
+  canHide: boolean;
+  /** False for seeded content with no account behind it. */
+  canBlock: boolean;
+  onReport: (reason: SafetyReportReason) => void;
+  onHide: () => void;
+  onBlock: () => void;
+}
+
 interface UIState {
   toast: ToastPayload | null;
   showToast: (payload: ToastPayload) => void;
@@ -68,6 +86,9 @@ interface UIState {
   closeSignInPrompt: () => void;
   /** Returns the pending action and clears the slot, so it runs at most once. */
   takePendingAuthAction: () => (() => void) | null;
+  safetyMenu: SafetyMenu | null;
+  openSafetyMenu: (menu: SafetyMenu) => void;
+  closeSafetyMenu: () => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -114,6 +135,9 @@ export const useUIStore = create<UIState>()(
         set({ pendingAuthAction: null });
         return action;
       },
+      safetyMenu: null,
+      openSafetyMenu: (safetyMenu) => set({ safetyMenu }),
+      closeSafetyMenu: () => set({ safetyMenu: null }),
     }),
     {
       name: "hungry-ui-v1",

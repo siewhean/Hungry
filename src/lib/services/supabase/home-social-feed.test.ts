@@ -79,10 +79,10 @@ test("Supabase social feed uses RPC-first reads with legacy fallback", () => {
   assert.match(serviceSource, /client\.rpc\("get_home_social_feed"/);
   assert.match(
     serviceSource,
-    /const\s+rpcBites\s+=\s+await\s+fetchHomeSocialFeedBitesViaRpc\(client\)/,
+    /const\s+rpcBites\s+=\s+await\s+fetchHomeSocialFeedBitesViaRpc\(client,\s+page\)/,
   );
   assert.match(serviceSource, /if\s+\(rpcBites\)\s+return\s+rpcBites/);
-  assert.match(serviceSource, /return\s+fetchPublishedPostBites\(client\)/);
+  assert.match(serviceSource, /fetchPublishedPostBites\(client\)/);
   // v3 first: it carries the viewer's like/save state.
   assert.match(serviceSource, /client\.rpc\("get_home_social_feed_v3"/);
   assert.match(serviceSource, /viewerHasLiked: typeof row\.viewer_has_liked === "boolean"/);

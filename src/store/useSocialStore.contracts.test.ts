@@ -25,7 +25,10 @@ test("social store contract: post interactions persist locally", () => {
 
 test("social store contract: UUID follows sync to service while local-name fallback is dev/mock only", () => {
   const source = read("src/store/useSocialStore.ts");
-  const homeSource = read("src/app/screens/home/HomeFeedScreen.tsx");
+  const homeSource = [
+    read("src/app/screens/home/HomeFeedScreen.tsx"),
+    read("src/components/social/FeedPostCard.tsx"),
+  ].join("\n");
   const profileSource = read("src/app/screens/profile/ProfileHomeScreen.tsx");
   const profileContentSource = read("src/app/screens/profile/UserProfileContent.tsx");
   const connectionsSource = read("src/app/screens/profile/ProfileConnectionsScreen.tsx");
@@ -50,11 +53,11 @@ test("social store contract: UUID follows sync to service while local-name fallb
   assert.match(homeSource, /const canUseAuthorFallbackFollow =/);
   assert.match(
     homeSource,
-    /const canShowFollowButton = Boolean\(followTargetId\) \|\| canUseAuthorFallbackFollow/,
+    /canShowFollow=\{Boolean\(item\.authorId\) \|\| canUseAuthorFallbackFollow\}/,
   );
   assert.match(
     homeSource,
-    /followTargetId[\s\S]*\? Boolean\(followedUserIds\[followTargetId\]\)[\s\S]*: canUseAuthorFallbackFollow && Boolean\(followedAuthors\[item\.authorName\]\)/,
+    /followTargetId\s*\? Boolean\(state\.followedUserIds\[followTargetId\]\)\s*: Boolean\(state\.followedAuthors\[item\.authorName\]\)/,
   );
   assert.match(
     homeSource,
@@ -172,8 +175,7 @@ test("profile grid contract: liked and saved posts read from the persisted socia
   assert.match(homeSource, /getHomeFeedBundle\(profileRef\.current,\s*\{/);
   assert.match(homeSource, /followedAuthors,/);
   assert.match(homeSource, /followedUserIds,/);
-  assert.match(homeSource, /\.\.\.bundle\.socialFeed/);
-  assert.match(homeSource, /\.\.\.bundle\.sections\.flatMap\(\(section\) => section\.items\)/);
+  assert.match(homeSource, /initializeInteractions\(bundle\.socialFeed, now\)/);
   assert.match(homeSource, /togglePostLike/);
   assert.match(homeSource, /togglePostSave/);
   assert.match(gridSource, /useSocialStore/);

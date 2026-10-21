@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 
@@ -13,8 +13,6 @@ test("Review feed cards do not render bottom bites sections", () => {
   const reviewFeed = read("src/app/screens/review/ReviewFeedScreen.tsx");
   const reviewShareSheet = read("src/app/screens/review/ReviewShareSheet.tsx");
   const commentsSheet = read("src/components/social/ReviewCommentsSheet.tsx");
-  const bitesCarousel = read("src/components/social/BitesCarousel.tsx");
-  const biteCommentsSheet = read("src/components/social/BiteCommentsSheet.tsx");
 
   assert.doesNotMatch(reviewFeed, /ReviewBitesStrip/);
   assert.doesNotMatch(reviewFeed, /BiteCommentsSheet/);
@@ -107,11 +105,7 @@ test("Review feed cards do not render bottom bites sections", () => {
   assert.match(reviewShareSheet, /accessibilityLabel=\{`Send shared \$\{kindNoun\}`\}/);
   assert.doesNotMatch(reviewShareSheet, /showSendAction/);
 
-  assert.match(bitesCarousel, /FEATURE_FLAGS\.commentsEnabled/);
-  assert.match(
-    bitesCarousel,
-    /commented=\{commentsEnabled && Boolean\(commentedBites\[item\.id\]\)\}/,
-  );
-  assert.match(bitesCarousel, /onCommentPress=\{\s*commentsEnabled\s*\?/);
-  assert.match(biteCommentsSheet, /if \(!FEATURE_FLAGS\.commentsEnabled\) \{\s*return null;\s*\}/);
+  // The unused Bite* cards and the bites strip were deleted (they were never mounted).
+  assert.equal(existsSync(path.join(root, "src/components/social/BitesCarousel.tsx")), false);
+  assert.equal(existsSync(path.join(root, "src/components/social/BiteCommentsSheet.tsx")), false);
 });

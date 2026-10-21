@@ -102,7 +102,7 @@ test("weekly picks push is a separate opt-out that reuses the outbox, cap and qu
     worker,
     /isWeeklyPicks\s*\? !pref\.weekly_picks\s*: !pref\.stall_updates\s*\)\s*skipReason = "opted_out"/,
   );
-  assert.match(worker, /!isWeeklyPicks && \(!dish \|\| isSoldOut/);
+  assert.match(worker, /!isWeeklyPicks\s*&&\s*!isSocial\s*&&\s*\(!dish \|\| isSoldOut/);
   assert.match(worker, /sentThisWeek\.get\(job\.user_id\) \?\? 0\) >= pref\.weekly_cap/);
 });
 
@@ -137,8 +137,14 @@ test("merchant low-rating push: reviews trigger enqueues, worker rechecks, setti
   assert.match(worker, /isLowRating\s*\? !liveReviewIds\.has\(job\.review_id\)/);
   assert.match(worker, /\.in\("state", \["hidden", "removed"\]\)/);
   // Merchant alerts neither use up nor are limited by the consumer weekly cap.
-  assert.match(worker, /!isLowRating && \(sentThisWeek\.get\(job\.user_id\)/);
-  assert.match(worker, /\.neq\("category", MERCHANT_LOW_RATING\)/);
+  assert.match(
+    worker,
+    /!isLowRating\s*&&\s*!isFollowRequest\s*&&\s*\(sentThisWeek\.get\(job\.user_id\)/,
+  );
+  assert.match(
+    worker,
+    /\.not\("category", "in", `\(\$\{MERCHANT_LOW_RATING\},\$\{SOCIAL_FOLLOW_REQUEST\}\)`\)/,
+  );
   // Off until Merchant Centre ships (the deep link needs it), and never held for quiet hours.
   assert.match(worker, /Deno\.env\.get\("MERCHANT_ALERTS_ENABLED"\) === "true"/);
   assert.match(

@@ -33,8 +33,11 @@ test("blocks are keyed by the author's user id, never the display name", () => {
   assert.match(helper, /communitySafety\.getBlockedUsers\(\)/);
 
   assert.match(supabase, /UUID_PATTERN\.test\(request\.blockedUserId\)/);
-  assert.match(supabase, /blocked_user_key: request\.blockedUserId\.toLowerCase\(\)/);
-  assert.match(supabase, /ignoreDuplicates: true/);
+  // Blocking goes through the block_user RPC, which also removes follows in both directions.
+  assert.match(
+    supabase,
+    /client\.rpc\("block_user", \{\s*p_blocked_user_id: request\.blockedUserId\.toLowerCase\(\)/,
+  );
   assert.match(supabase, /authorId: userId,/);
 });
 

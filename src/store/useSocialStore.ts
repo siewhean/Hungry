@@ -163,6 +163,54 @@ function toSocialComment(row: ServiceComment, fallbackName: string, fallbackAvat
   } satisfies SocialComment;
 }
 
+/** Newest posts whose like/save/share state is kept on the device. */
+export const PERSISTED_INTERACTION_LIMIT = 500;
+/** Newest posts whose comment threads are kept on the device. */
+export const PERSISTED_COMMENT_THREAD_LIMIT = 50;
+
+function keepNewestKeys<T>(record: Record<string, T>, limit: number): Record<string, T> {
+  const keys = Object.keys(record);
+  if (keys.length <= limit) return record;
+  // Insertion order: the newest posts are the last ones added.
+  return Object.fromEntries(keys.slice(keys.length - limit).map((key) => [key, record[key]]));
+}
+
+/**
+ * What hungry-social-v1 keeps on the device: follow state, and a bounded window of
+ * per-post state. The server re-sends the rest on the next read.
+ */
+export function partializeSocialState(
+  state: Pick<
+    SocialState,
+    | "interactions"
+    | "followedAuthors"
+    | "followedUserIds"
+    | "requestedUserIds"
+    | "commentsByPostId"
+    | "repliesByCommentId"
+  >,
+) {
+  const commentsByPostId = keepNewestKeys(state.commentsByPostId, PERSISTED_COMMENT_THREAD_LIMIT);
+  const commentIdsOf = (threads: Record<string, SocialComment[]>) =>
+    new Set(Object.values(threads).flatMap((comments) => comments.map((comment) => comment.id)));
+  const keptCommentIds = commentIdsOf(commentsByPostId);
+  const droppedCommentIds = commentIdsOf(state.commentsByPostId);
+  keptCommentIds.forEach((id) => droppedCommentIds.delete(id));
+  return {
+    interactions: keepNewestKeys(state.interactions, PERSISTED_INTERACTION_LIMIT),
+    followedAuthors: state.followedAuthors,
+    followedUserIds: state.followedUserIds,
+    requestedUserIds: state.requestedUserIds,
+    commentsByPostId,
+    repliesByCommentId: Object.fromEntries(
+      // Replies to a comment on a dropped thread go with it; replies to seeded comments stay.
+      Object.entries(state.repliesByCommentId).filter(
+        ([parentId]) => !droppedCommentIds.has(parentId),
+      ),
+    ),
+  };
+}
+
 const FOLLOW_SYNC_PAGE_SIZE = 500;
 const FOLLOW_SYNC_MAX_PAGES = 4;
 
@@ -229,7 +277,7 @@ export const useSocialStore = create<SocialState>()(
               savedAt: saved ? (previous?.savedAt ?? item.interaction?.savedAt) : undefined,
               likeCount: item.likeCount ?? previous?.likeCount ?? 0,
               saveCount: item.savedCount ?? previous?.saveCount ?? 0,
-              shareCount: previous?.shareCount ?? 0,
+              shareCount: item.shareCount ?? previous?.shareCount ?? 0,
               commentCount: Math.max(previous?.commentCount ?? 0, seededComments),
             };
             return;
@@ -242,12 +290,13 @@ export const useSocialStore = create<SocialState>()(
               savedAt: item.interaction?.savedAt,
               likeCount: seededLikes,
               saveCount: item.savedCount ?? 0,
-              shareCount: 0,
+              shareCount: item.shareCount ?? 0,
               commentCount: seededComments,
             };
           } else {
             next[item.id] = {
               ...next[item.id],
+              shareCount: Math.max(next[item.id].shareCount, item.shareCount ?? 0),
               commentCount: Math.max(next[item.id].commentCount, seededComments),
             };
           }
@@ -303,6 +352,11 @@ export const useSocialStore = create<SocialState>()(
               );
             } catch (e) {
               console.error("Failed to sync liked post reaction; rolled back optimistic state.", e);
+              showSocialToast(
+                isLiked
+                  ? "Couldn't like this post. Please try again."
+                  : "Couldn't remove your like. Please try again.",
+              );
               set((prev) => {
                 if (!interactionStatesMatch(prev.interactions[postId], nextState)) return prev;
                 return {
@@ -356,6 +410,11 @@ export const useSocialStore = create<SocialState>()(
               );
             } catch (e) {
               console.error("Failed to sync saved post reaction; rolled back optimistic state.", e);
+              showSocialToast(
+                isSaved
+                  ? "Couldn't save this post. Please try again."
+                  : "Couldn't remove this post from saved. Please try again.",
+              );
               set((prev) => {
                 if (!interactionStatesMatch(prev.interactions[postId], nextState)) return prev;
                 return {
@@ -815,6 +874,7 @@ export const useSocialStore = create<SocialState>()(
     {
       name: "hungry-social-v1",
       storage: hungryPersistStorage,
+      partialize: (state: SocialState) => partializeSocialState(state),
     },
   ),
 );
