@@ -149,9 +149,9 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
               style={{
                 alignItems: "center",
                 borderRadius: radii.pill,
-                height: 40,
+                height: 44,
                 justifyContent: "center",
-                width: 40,
+                width: 44,
               }}
             >
               <ArrowLeft color={palette.text} size={22} />
@@ -245,7 +245,7 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
           }}
         >
           <Button
-            label="Continue"
+            label={isOnboarding ? "Continue" : "Save location"}
             onPress={handleSubmit}
             disabled={!selectedArea}
             loading={false}

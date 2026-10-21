@@ -183,6 +183,7 @@ export type RootStackParamList = {
   Settings: undefined;
   EditProfile: undefined;
   ChangePassword: undefined;
+  BlockedAccounts: undefined;
   DesignGallery: undefined;
   // V2 Prototypes
   PostComposerV2: { venueId?: string; dishId?: string } | undefined;

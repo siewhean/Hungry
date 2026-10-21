@@ -87,7 +87,8 @@ test("settings: device left-handed mode, deletion via RPC, alerts states, haptic
   assert.doesNotMatch(service, /from\("account_deletion_requests"\)\.insert/);
   assert.match(settings, /formatDeletionDate\(scheduledFor\)/);
   assert.doesNotMatch(settings, /label="Profile ID"|label="Display name"/);
-  assert.match(settings, /showThemePicker/);
+  assert.match(settings, /SettingsChoiceSheet/);
+  assert.match(settings, /title="Theme"/);
   assert.match(alerts, /busy=\{isBusy\}/);
   assert.match(alerts, /Linking\.openSettings\(\)/);
   assert.match(section, /accessibilityRole="header"/);
@@ -103,9 +104,10 @@ test("edit profile: no pre-prompt, honest toast, unsaved-changes guard, labelled
   assert.doesNotMatch(edit, /confirmGalleryAccess|requestMediaLibraryPermissionsAsync/);
   assert.match(edit, /Photo selected\. Tap Save changes to use it\./);
   assert.match(edit, /addListener\("beforeRemove"/);
-  assert.match(edit, /Enter a display name\./);
+  assert.match(edit, /validateDisplayName\(displayName\)/);
+  assert.match(read("src/features/profile/profileName.ts"), /Enter a display name\./);
   assert.match(edit, /accessibilityLabel="Change profile photo"/);
-  assert.match(edit, /accessibilityLabel="Change password"/);
+  assert.match(read("src/app/screens/profile/SettingsScreen.tsx"), /label="Change password"/);
   assert.match(read("src/lib/permissions/gallery.ts"), /onDismiss: \(\) => resolve\(false\)/);
 });
 

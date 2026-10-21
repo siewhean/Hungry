@@ -547,8 +547,9 @@ test("profile surfaces keep own and other-user layouts linked while hiding taste
     settings,
     [
       /label="Profile visibility"/,
-      /onPress: \(\) => void changeProfileVisibility\("public"\)/,
-      /onPress: \(\) => void changeProfileVisibility\("private"\)/,
+      /value: "public" as const/,
+      /value: "private" as const/,
+      /void changeProfileVisibility\(visibility\)/,
       /const saved = await setProfileVisibility\(visibility\)/,
     ],
     "Settings profile visibility UI",

@@ -78,7 +78,7 @@ test("Email edits go through the auth email-change flow, not the profile column"
 test("SettingsRow exposes role, state and label to assistive tech", () => {
   const row = read("src/components/settings/SettingsRow.tsx");
 
-  assert.match(row, /accessibilityRole=\{isToggle \? "switch" : "button"\}/);
+  assert.match(row, /accessibilityRole=\{isToggle \? "switch" : isLink \? "link" : "button"\}/);
   assert.match(row, /checked: Boolean\(isEnabled\), busy/);
   assert.match(row, /accessibilityValue=/);
   assert.match(row, /importantForAccessibility="no-hide-descendants"/);
@@ -87,18 +87,21 @@ test("SettingsRow exposes role, state and label to assistive tech", () => {
   assert.match(read("src/app/screens/profile/SettingsScreen.tsx"), /busy=\{isExportingData\}/);
 });
 
-test("iOS data export is shared as a .json file, not a text message", () => {
+test("iOS data export is shared as a .json file, not a text message, and removed afterwards", () => {
   const settings = read("src/app/screens/profile/SettingsScreen.tsx");
+  const exportFile = read("src/features/profile/exportFile.ts");
   const exportHandler = segmentBetween(
     settings,
     "const handleExportData",
-    "const handleDeleteAccount",
+    "const submitDeletionCode",
   );
 
-  assert.match(exportHandler, /new File\(Paths\.cache, "hungry-data-export\.json"\)/);
+  assert.match(exportFile, /new fileSystem\.File\(fileSystem\.Paths\.cache, EXPORT_FILE_NAME\)/);
+  assert.match(exportFile, /EXPORT_FILE_NAME = "hungry-data-export\.json"/);
   assert.match(
     exportHandler,
-    /Share\.share\(\{ title: "My Hungry data", url: exportFile\.uri \}\)/,
+    /Share\.share\(\{ title: "My Hungry data", url: writeExportFile\(exportJson\) \}\)/,
   );
+  assert.match(exportHandler, /finally \{\s*deleteExportFile\(\);/);
   assert.match(read("package.json"), /"expo-file-system": "~57\.0\.7"/);
 });

@@ -596,6 +596,21 @@ export interface AccountDeletionRequest {
   code?: string;
 }
 
+/**
+ * What `auth.signOut` revokes: this device only ("local", the default), every device
+ * ("global") or every device except this one ("others").
+ */
+export type AuthSignOutScope = "local" | "global" | "others";
+
+/** A person the signed-in user blocked, for the Blocked accounts screen. */
+export interface BlockedAccount {
+  blockedUserId: string;
+  /** Empty when the account no longer exists. */
+  displayName?: string;
+  avatarUrl?: string;
+  blockedAt: string;
+}
+
 /** Account deletion runs after a grace period; until then the owner can cancel. */
 export const ACCOUNT_DELETION_GRACE_DAYS = 30;
 
@@ -757,7 +772,10 @@ export interface HungryService {
     signIn(email: string, password: string): Promise<Session>;
     signInWithGoogle(): Promise<Session>;
     signInWithApple(): Promise<Session>;
-    signOut(): Promise<void>;
+    /** Ends this device's session by default; "global" and "others" also revoke other devices. */
+    signOut(options?: { scope?: AuthSignOutScope }): Promise<void>;
+    /** Why this account cannot be deleted yet ("merchant_owner_must_transfer"), or null. */
+    getAccountDeletionBlocker(): Promise<"merchant_owner_must_transfer" | null>;
     /** Emails the signed-in user a one-time code to confirm account deletion. */
     sendAccountDeletionCode(): Promise<void>;
     /** Verifies `request.code`, then queues deletion; resolves with the server's scheduled date. */
@@ -784,6 +802,8 @@ export interface HungryService {
      * sign-up. Safe to repeat; a no-op once stamped.
      */
     markOnboarded(): Promise<void>;
+    /** The new address of an email change still waiting for confirmation, or null. */
+    getPendingEmailChange(): Promise<string | null>;
     getCurrentSession(): Promise<Session | null>;
     refreshSession(): Promise<Session | null>;
   };
@@ -1037,6 +1057,10 @@ export interface HungryService {
     hidePost(postId: string, reason?: string): Promise<void>;
     unhidePost(postId: string): Promise<void>;
     getBlockedUsers(): Promise<{ blockedUserId: string; reason?: string; createdAt: string }[]>;
+    /** Removes the signed-in user's own block on `blockedUserId`. */
+    unblockUser(blockedUserId: string): Promise<void>;
+    /** Blocked people with name and avatar (a block hides their public profile from the blocker). */
+    getBlockedAccounts(): Promise<BlockedAccount[]>;
   };
 
   contributions: {

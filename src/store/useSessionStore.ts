@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { clearShareAttribution, getShareAttribution } from "@/features/share/shareAttribution";
+import { deleteExportFile } from "@/features/profile/exportFile";
 import type { AuthProvider } from "@/lib/services/types";
 import { getConfiguredDataSource, type HungryDataSource } from "@/lib/services/supabase/client";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -162,6 +163,8 @@ function clearAccountLocalHistory(): void {
     require("./useReviewDraftStore") as typeof import("./useReviewDraftStore");
   useSearchStore.getState().clearSearchState();
   useReviewDraftStore.getState().resetDraft();
+  // The data export is a full copy of the account's personal data; it must not outlive sign-out.
+  deleteExportFile();
 }
 
 /** Account whose follow state was already loaded during this app launch. */

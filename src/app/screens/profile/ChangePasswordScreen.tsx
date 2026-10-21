@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Pressable, View } from "react-native";
+import { Alert, Pressable, View } from "react-native";
 import { useNavigation, type NavigationProp } from "@react-navigation/native";
 import { Eye, EyeOff } from "lucide-react-native";
 
@@ -61,6 +61,34 @@ export function ChangePasswordScreen() {
     </Pressable>
   );
 
+  // Changing a password does not end sessions already signed in elsewhere.
+  const offerSignOutOfOtherDevices = () => {
+    Alert.alert(
+      "Sign out other devices?",
+      "Your old password no longer works, but phones already signed in to Hungry stay signed in. Sign them out now if someone else may have had access.",
+      [
+        { text: "Not now", style: "cancel", onPress: () => navigation.goBack() },
+        {
+          text: "Sign out other devices",
+          onPress: () => {
+            void getHungryService()
+              .auth.signOut({ scope: "others" })
+              .then(() => showToast({ message: "Other devices signed out.", tone: "success" }))
+              .catch(() =>
+                showToast({
+                  message:
+                    "Couldn't sign out other devices. Try Sign out of all devices in Settings.",
+                  tone: "error",
+                }),
+              );
+            navigation.goBack();
+          },
+        },
+      ],
+      { cancelable: false },
+    );
+  };
+
   const handleChange = handleSubmit(async ({ currentPassword, newPassword }) => {
     if (currentPassword === newPassword) {
       setError("newPassword", { message: "Choose a password you have not used here." });
@@ -70,7 +98,7 @@ export function ChangePasswordScreen() {
     try {
       await getHungryService().auth.changePassword(currentPassword, newPassword);
       showToast({ message: "Password updated.", tone: "success" });
-      navigation.goBack();
+      offerSignOutOfOtherDevices();
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
       if (message === "Current password is incorrect.") {

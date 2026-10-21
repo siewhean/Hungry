@@ -14,6 +14,7 @@ import {
   type MockAuthFailure,
 } from "@/features/auth/mockAuth";
 import { PROFILE_BIO_MAX_LENGTH } from "@/features/profile/profileBio";
+import { validateDisplayName } from "@/features/profile/profileName";
 import { normalizeReviewPatch } from "@/features/review/reviewEdit";
 import { MERCHANT_DEEP_LINKS } from "@/features/merchant/merchantDeepLinks";
 import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
@@ -332,6 +333,7 @@ const _activityDates = new Set<string>();
 let _isAuthenticated = false;
 let _authProvider: "email" | "google" | "apple" = "email";
 let _pendingDeletionScheduledFor: string | undefined;
+let _pendingEmailChange: string | null = null;
 let _merchantAccount: MerchantAccount = clone(merchantAccount);
 let _merchantDishCounter = 0;
 let _merchantPromotionCounter = 0;
@@ -1579,6 +1581,10 @@ export const hungryService: HungryService = {
       return resolve(undefined);
     },
 
+    async getAccountDeletionBlocker() {
+      return resolve(null);
+    },
+
     async sendAccountDeletionCode() {
       return resolve(undefined);
     },
@@ -1636,12 +1642,16 @@ export const hungryService: HungryService = {
       if (!_isAuthenticated) throw new Error("You must be signed in to change your email.");
       if (!newEmail.trim()) throw new Error("Enter a new email address.");
       // Like Supabase, nothing changes until the user confirms from the new inbox.
+      _pendingEmailChange = newEmail.trim().toLowerCase();
       return resolve(undefined);
     },
 
     async markOnboarded() {
       // Mock sessions have no auth user to stamp.
       return resolve(undefined);
+    },
+    async getPendingEmailChange() {
+      return resolve(_isAuthenticated ? _pendingEmailChange : null);
     },
 
     async getCurrentSession() {
@@ -1987,6 +1997,14 @@ export const hungryService: HungryService = {
     async updateProfile(updates) {
       // The sign-in email changes only through auth.requestEmailChange.
       const { email: _ignoredEmail, ...profileUpdates } = updates;
+      // Mirrors the user_profiles_display_name_length check and the reserved-name guard.
+      if (profileUpdates.displayName !== undefined) {
+        const nameError = validateDisplayName(profileUpdates.displayName);
+        if (nameError) throw new Error(nameError);
+        profileUpdates.displayName = profileUpdates.displayName.trim();
+      }
+      // An empty avatarUrl removes the photo.
+      if (profileUpdates.avatarUrl === "") profileUpdates.avatarUrl = undefined;
       // Mirrors the user_profiles_bio_length check constraint.
       if (profileUpdates.bio !== undefined) {
         const bio = profileUpdates.bio.trim();
@@ -2676,6 +2694,22 @@ export const hungryService: HungryService = {
           blockedUserId,
           reason: entry.reason,
           createdAt: entry.createdAt,
+        })),
+      );
+    },
+
+    async unblockUser(blockedUserId) {
+      _blockedUsers.delete(blockedUserId);
+      return resolve(undefined);
+    },
+
+    async getBlockedAccounts() {
+      return resolve(
+        Array.from(_blockedUsers.entries()).map(([blockedUserId, entry]) => ({
+          blockedUserId,
+          displayName: findMockPerson(blockedUserId).displayName,
+          avatarUrl: findMockPerson(blockedUserId).avatarUrl,
+          blockedAt: entry.createdAt,
         })),
       );
     },
