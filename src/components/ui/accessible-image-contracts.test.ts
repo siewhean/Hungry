@@ -100,7 +100,8 @@ test("zoomable social media exposes actionable media and video controls to assis
 
   assert.match(home, /accessibilityLabel=\{`\$\{actionTargetName\} post image/);
   assert.match(home, /accessibilityHint=\{mediaHint\}/);
-  assert.match(activityDetail, /accessibilityLabel=\{`\$\{dishName \?\? venue\?\.name/);
+  // The detail screen renders the shared FeedPostCard, which labels the media.
+  assert.match(activityDetail, /<FeedPostCard/);
   assert.match(
     socialDetail,
     /accessibilityHint="Opens the linked customer detail page for this post"/,

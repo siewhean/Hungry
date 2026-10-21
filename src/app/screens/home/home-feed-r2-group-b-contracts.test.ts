@@ -82,7 +82,7 @@ test("H12: feed and post videos pause off screen and in the background", () => {
 
   const detail = read("src/app/screens/home/ActivityPostDetailScreen.tsx");
   assert.match(detail, /const isFocused = useIsFocused\(\);/);
-  assert.match(detail, /<ZoomableMedia[\s\S]*?isActive=\{isFocused\}/);
+  assert.match(detail, /<FeedPostCard[\s\S]*?isVideoActive=\{isFocused\}/);
 
   const video = read("src/components/social/ZoomableVideo.tsx");
   assert.match(video, /AppState\.addEventListener\("change"/);

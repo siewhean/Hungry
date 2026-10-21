@@ -239,10 +239,12 @@ test("activity messages and update posts are functional routes, not static mocku
   assert.match(detail, /\{commentsEnabled \? \(/);
   assert.match(detail, /commentsSheetRef\.current\?\.present\(\)/);
   assert.match(detail, /setActiveCommentReview/);
-  assert.match(detail, /accessibilityLabel="Open comments"/);
+  // The detail screen reuses the Home feed card (its comment button opens the sheet).
+  assert.match(detail, /<FeedPostCard/);
+  assert.match(detail, /openComments: \(\) => \{/);
   assert.match(detail, /seededCommentsForActiveReview/);
-  assert.match(detail, /likeCount: 0/);
-  assert.match(detail, /commentCount: 0/);
+  assert.match(read("src/components/social/FeedPostCard.tsx"), /likeCount: 0/);
+  assert.match(read("src/components/social/FeedPostCard.tsx"), /commentCount: 0/);
   assert.match(detail, /ReviewShareSheet/);
   assert.match(detail, /onShared=\{\(postId, channel\) => \{/);
   assert.match(detail, /incrementShare\(postId, channel\)/);
