@@ -35,6 +35,32 @@ export interface WeeklyPick {
   explanation: string;
 }
 
+/** What the saved picks belong to: the account, the week, and the dietary filters. */
+export function getWeeklyPicksCacheKey(
+  profileId: string,
+  weekKey: string,
+  dietaryPreferences: readonly string[],
+): string {
+  return `${profileId}|${weekKey}|${[...dietaryPreferences].sort().join(",")}`;
+}
+
+/**
+ * Turns saved picks back into dishes. Returns null when a saved dish is gone from the
+ * catalog, so the caller recomputes instead of showing a short or stale list.
+ */
+export function resolveStoredWeeklyPicks(
+  stored: { picks: { dishId: string; explanation: string }[] },
+  getDishById: (dishId: string) => DishDetail | undefined,
+): WeeklyPick[] | null {
+  const resolved: WeeklyPick[] = [];
+  for (const entry of stored.picks) {
+    const dish = getDishById(entry.dishId);
+    if (!dish) return null;
+    resolved.push({ dish, explanation: entry.explanation });
+  }
+  return resolved;
+}
+
 /** ISO week key ("2026-W42") in Singapore time, so picks refresh every Monday 00:00 SGT. */
 export function getWeeklyPicksKey(now = new Date()): string {
   const local = new Date(now.getTime() + SINGAPORE_OFFSET_MS);

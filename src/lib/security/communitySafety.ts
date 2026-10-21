@@ -3,6 +3,8 @@ import { Alert } from "react-native";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import type { ContentReportTargetType } from "@/lib/services/types";
+import { useSessionStore } from "@/store/useSessionStore";
+import { useUIStore, type SafetyReportReason } from "@/store/useUIStore";
 
 type ContentSafetyTarget = {
   targetType: ContentReportTargetType;
@@ -87,28 +89,33 @@ export function isContentHiddenForSession(target: {
   return authorId ? blockedAuthorIds.has(authorId) : false;
 }
 
-function reportContent(target: ContentSafetyTarget): void {
+function notify(message: string, tone: "success" | "error" = "success"): void {
+  useUIStore.getState().showToast({ message, tone });
+}
+
+function reportContent(target: ContentSafetyTarget, reason: SafetyReportReason): void {
   void getHungryService()
     .communitySafety.reportContent({
       targetType: target.targetType,
       targetId: target.targetId,
       targetAuthorKey: normalizeAuthorId(target.authorId) ?? targetAuthorKey(target.authorName),
-      reason: `user_reported_${target.targetType}`,
+      reason: `user_reported_${target.targetType}_${reason}`,
     })
     .then(() => {
       trackAnalyticsEvent("content_report_submitted", {
         targetType: target.targetType,
         targetId: target.targetId,
+        reason,
       });
-      Alert.alert("Report sent", "Hungry will review this content.");
+      notify("Report sent. Hungry will review it.");
     })
     .catch(() => {
-      Alert.alert("Could not send report", "Please try again later.");
+      notify("Could not send the report. Please try again.", "error");
     });
 }
 
 function blockAuthor(
-  target: Pick<ContentSafetyTarget, "targetType" | "targetId" | "onBlocked">,
+  target: Pick<ContentSafetyTarget, "targetType" | "targetId" | "onBlocked" | "authorName">,
   blockedAuthorId: string,
 ): void {
   void getHungryService()
@@ -123,10 +130,10 @@ function blockAuthor(
         targetType: `${target.targetType}_author`,
         targetId: target.targetId,
       });
-      Alert.alert("User blocked", "Thanks. We will reduce content from this user.");
+      notify(`Blocked ${target.authorName}. You won't see their posts or comments.`);
     })
     .catch(() => {
-      Alert.alert("Could not block user", "Please try again later.");
+      notify("Could not block this user. Please try again.", "error");
     });
 }
 
@@ -143,50 +150,34 @@ function hidePost(target: ContentSafetyTarget): void {
         targetType: target.targetType,
         targetId: postId,
       });
-      Alert.alert("Post hidden", "We will show less content like this.");
+      notify("Post hidden. You can unhide it in Settings.");
     })
     .catch(() => {
-      Alert.alert("Could not hide post", "Please try again later.");
+      notify("Could not hide this post. Please try again.", "error");
     });
 }
 
 export function promptContentSafetyActions(target: ContentSafetyTarget): void {
+  // Reports, hides and blocks all need an account; a visitor is told so, not dropped.
+  if (!useSessionStore.getState().isAuthenticated) {
+    Alert.alert("Sign in to report or block", "Create an account or sign in to use this.");
+    return;
+  }
   const label = target.label ?? "content";
   const canHidePost = target.targetType === "post" || Boolean(target.postId);
   // Seeded/demo content has no account behind it, so there is nobody to block.
   const blockedAuthorId = normalizeAuthorId(target.authorId);
-  const managementCopy = !blockedAuthorId
-    ? canHidePost
-      ? `Report or hide this ${label}?`
-      : `Report this ${label}?`
-    : canHidePost
-      ? `Report this ${label}, hide it, or block ${target.authorName}?`
-      : `Report this ${label} or block ${target.authorName}?`;
-  const actions = [
-    {
-      text: "Report",
-      style: "destructive" as const,
-      onPress: () => reportContent(target),
+  useUIStore.getState().openSafetyMenu({
+    label,
+    authorName: target.authorName,
+    canHide: canHidePost,
+    canBlock: Boolean(blockedAuthorId),
+    onReport: (reason) => reportContent(target, reason),
+    onHide: () => hidePost(target),
+    onBlock: () => {
+      if (blockedAuthorId) blockAuthor(target, blockedAuthorId);
     },
-  ];
-
-  if (canHidePost) {
-    actions.push({
-      text: "Hide post",
-      style: "destructive" as const,
-      onPress: () => hidePost(target),
-    });
-  }
-
-  if (blockedAuthorId) {
-    actions.push({
-      text: "Block user",
-      style: "destructive" as const,
-      onPress: () => blockAuthor(target, blockedAuthorId),
-    });
-  }
-
-  Alert.alert(`Manage ${label}`, managementCopy, [{ text: "Cancel", style: "cancel" }, ...actions]);
+  });
 }
 
 export function promptPostSafetyActions(target: {
@@ -255,10 +246,10 @@ export function promptReportReview(target: ReviewSafetyTarget): void {
                 targetType: "review",
                 targetId: target.reviewId,
               });
-              Alert.alert("Report sent", "Hungry will review this content.");
+              notify("Report sent. Hungry will review it.");
             })
             .catch(() => {
-              Alert.alert("Could not send report", "Please try again later.");
+              notify("Could not send the report. Please try again.", "error");
             });
         },
       },
@@ -278,7 +269,7 @@ export function promptBlockReviewAuthor(target: ReviewSafetyTarget): void {
 
   Alert.alert(
     "Block user",
-    `Block ${target.authorName}? You will see less content from this user.`,
+    `Block ${target.authorName}? You won't see their posts, comments or reviews.`,
     [
       { text: "Cancel", style: "cancel" },
       {
@@ -297,10 +288,10 @@ export function promptBlockReviewAuthor(target: ReviewSafetyTarget): void {
                 targetType: "review_author",
                 targetId: target.reviewId,
               });
-              Alert.alert("User blocked", "Thanks. We will reduce content from this user.");
+              notify(`Blocked ${target.authorName}. You won't see their posts or comments.`);
             })
             .catch(() => {
-              Alert.alert("Could not block user", "Please try again later.");
+              notify("Could not block this user. Please try again.", "error");
             });
         },
       },

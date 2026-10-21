@@ -167,7 +167,11 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   assert.match(prefetch, /schedulePrefetchWork\(\(\) => \{[\s\S]*"preload" in navigation/);
   assert.match(prefetch, /"preload" in navigation/);
   assert.match(prefetch, /export function prefetchMerchantTab/);
-  assert.match(homeScreen, /onPressIn=\{\(\) => prefetchFeedCardRoute\(item\)\}/);
+  assert.match(homeScreen, /prefetchDish: prefetchFeedCardRoute/);
+  assert.match(
+    read("src/components/social/FeedPostCard.tsx"),
+    /onPressIn=\{\(\) => actions\.prefetchDish\(item\)\}/,
+  );
   assert.match(discover, /onPressIn=\{\(\) => prefetchBiteCard\(bite\)\}/);
   assert.match(discover, /useDeferredValue\(activeDiscoverChipIds\)/);
   assert.match(discover, /renderLeftIcon=\{\(chip, isActive\) =>/);

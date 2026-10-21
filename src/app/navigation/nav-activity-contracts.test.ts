@@ -152,7 +152,7 @@ test("home bell opens activity inbox and gates messages by feature flag", () => 
   assert.match(activity, /<UnreadCountBadge/);
   assert.match(activity, /accessibilityLabel=\{`\$\{unreadCount\} unread messages`\}/);
   assert.match(activity, /stylesInline\.unreadCountBadge/);
-  assert.match(activity, /markActivityRead\("update", update\.id\)/);
+  assert.match(activity, /markActivityRead\("update", memberId\)/);
   assert.match(activity, /stylesInline\.updateMediaSlot/);
   assert.match(activity, /stylesInline\.updateUnreadSlot/);
   assert.match(activity, /stylesInline\.unreadDot/);
@@ -166,11 +166,13 @@ test("home bell opens activity inbox and gates messages by feature flag", () => 
     activityStore,
     /getActivityUnreadCount\(get\(\)\.readActivityIds, \[[\s\S]*\.\.\.get\(\)\.dbActivityEvents,[\s\S]*\.\.\.get\(\)\.activityUpdates/,
   );
-  assert.match(activityStore, /notifications\.listActivityEvents\(\)/);
+  assert.match(activityStore, /notifications\.listActivityEvents\(/);
   assert.match(activityStore, /notifications\.markActivityRead\(id\)/);
   assert.doesNotMatch(activityStore, /console\.error\("Failed to fetch activity events"/);
   assert.match(activityStore, /console\.warn\("Failed to fetch activity events"/);
-  assert.match(activityStore, /set\(\{ dbActivityEvents: \[\] \}\)/);
+  // A failed fetch keeps the last list and flags the error; it never shows as "No updates yet".
+  assert.doesNotMatch(activityStore, /set\(\{ dbActivityEvents: \[\] \}\)/);
+  assert.match(activityStore, /activityLoadFailed: true/);
   assert.match(supabaseService, /function isMissingActivityEventsSchemaError/);
   assert.match(supabaseService, /if \(isMissingActivityEventsSchemaError\(error\)\) return \[\]/);
   assert.match(supabaseService, /if \(isMissingMarkActivityReadRpcError\(error\)\) return/);

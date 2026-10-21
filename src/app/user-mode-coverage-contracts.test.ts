@@ -116,21 +116,24 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
 });
 
 test("home feed post cards cover carousel media, captions, comments, reactions, and refresh", () => {
-  const home = readRepoFile("src/app/screens/home/HomeFeedScreen.tsx");
+  const home = [
+    readRepoFile("src/app/screens/home/HomeFeedScreen.tsx"),
+    readRepoFile("src/components/social/FeedPostCard.tsx"),
+  ].join("\n");
   const feed = readRepoFile("src/features/home/feed.ts");
   const socialStore = readRepoFile("src/store/useSocialStore.ts");
   const publishing = readRepoFile("src/features/post/publishing.ts");
 
   assertSourceIncludes(
     feed,
-    [/listSharedStallPosts\(repository\)/, /runRecommendationPipeline/, /getHomeFeedBundle/],
+    [/listSharedStallPostsPage\(repository\)/, /getHomeFeedBundle/, /getHomeFeedNextPage/],
     "home feed bundle",
   );
   assertSourceIncludes(
     home,
     [
       /RefreshControl/,
-      /preserveReadyOnError: true, showLoading: false/,
+      /force: true, showLoading: false/,
       /const mediaUrls =\s*item\.mediaType === "photo" && item\.mediaUrls\?\.length/,
       /horizontal[\s\S]*pagingEnabled[\s\S]*showsHorizontalScrollIndicator=\{false\}/,
       /numberOfLines=\{isCaptionExpanded \? undefined : 2\}/,
@@ -146,7 +149,7 @@ test("home feed post cards cover carousel media, captions, comments, reactions, 
       /togglePostSave/,
       /incrementPostShare/,
       /FloatingShareSendButton/,
-      /setCarouselIndexByPostId/,
+      /setCarouselIndex/,
       /const postAgeLabel = formatPostAge\(item\.createdAt\)/,
     ],
     "HomeFeedScreen interactions",

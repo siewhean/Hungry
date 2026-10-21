@@ -18,11 +18,14 @@ import {
   AppHeader,
   AppText,
   Avatar,
+  Button,
   EmptyState,
   IconButton,
+  Skeleton,
 } from "@/components/ui";
 import {
   getActivityReadKey,
+  groupActivityUpdates,
   isActivityUpdateForViewer,
   selectActivitySourceUpdates,
   type ActivityUpdate,
@@ -407,6 +410,12 @@ function UpdatesTab({
   const { palette, spacing, semanticSpacing, radii } = useHungryTheme();
   const readActivityIds = useActivityStore((state) => state.readActivityIds);
   const markActivityRead = useActivityStore((state) => state.markActivityRead);
+  const markAllActivityRead = useActivityStore((state) => state.markAllActivityRead);
+  const fetchMoreActivityEvents = useActivityStore((state) => state.fetchMoreActivityEvents);
+  const hasLoadedActivity = useActivityStore((state) => state.hasLoadedActivity);
+  const activityLoadFailed = useActivityStore((state) => state.activityLoadFailed);
+  const hasMoreActivity = useActivityStore((state) => state.hasMoreActivity);
+  const isLoadingMoreActivity = useActivityStore((state) => state.isLoadingMoreActivity);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -416,6 +425,13 @@ function UpdatesTab({
       setIsRefreshing(false);
     }
   }, [onRefresh]);
+  const rows = useMemo(
+    () => groupActivityUpdates(updates, readActivityIds),
+    [readActivityIds, updates],
+  );
+  const hasUnread = rows.some((row) => row.isUnread);
+  // Mock mode has no server read to wait for.
+  const isFirstLoad = !hasLoadedActivity && getServiceProvider().mode !== "mock";
 
   return (
     <ScrollView
@@ -434,32 +450,55 @@ function UpdatesTab({
         paddingBottom: spacing[12],
       }}
     >
-      {updates.map((update) => {
+      {activityLoadFailed && rows.length > 0 ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Couldn't refresh updates. Showing the last ones we loaded. Tap to try again"
+          onPress={() => void handleRefresh()}
+          style={{
+            backgroundColor: palette.bgSoft,
+            borderColor: palette.border,
+            borderRadius: radii.md,
+            borderWidth: 1,
+            padding: spacing[3],
+          }}
+        >
+          <AppText variant="bodySmall" tone="secondary">
+            Couldn't refresh. Showing the last updates we loaded. Tap to try again.
+          </AppText>
+        </Pressable>
+      ) : null}
+
+      {hasUnread ? (
+        <Button
+          label="Mark all as read"
+          variant="ghost"
+          size="sm"
+          fullWidth={false}
+          style={{ alignSelf: "flex-end" }}
+          accessibilityLabel="Mark all updates as read"
+          onPress={() => void markAllActivityRead()}
+        />
+      ) : null}
+
+      {rows.map((update) => {
         const post = update.postId ? postById.get(update.postId) : undefined;
-        const kindColor =
-          update.kind === "like"
-            ? palette.error
-            : update.kind === "share"
-              ? palette.orange
-              : update.kind === "submission"
-                ? palette.orange
-                : palette.orange;
-        const isUnread =
-          update.unread && !readActivityIds.includes(getActivityReadKey("update", update.id));
+        const kindColor = update.kind === "like" ? palette.error : palette.orange;
+        const isUnread = update.isUnread;
+        const description =
+          update.kind === "follow_request"
+            ? `${update.actorName} requested to follow you. Open follow requests`
+            : update.kind === "follow"
+              ? `${update.actorName} started following you. Open their profile`
+              : `${update.actorName} ${update.text}${update.target ? `: ${update.target}` : ""}. ${formatTimeAgo(update.time)}`;
 
         return (
           <Pressable
             key={update.id}
             accessibilityRole="button"
-            accessibilityLabel={
-              update.kind === "follow_request"
-                ? `${update.actorName} requested to follow you. Open follow requests`
-                : update.kind === "follow"
-                  ? `${update.actorName} started following you. Open their profile`
-                  : `${update.actorName} ${update.text}${update.target ? `: ${update.target}` : ""}. ${formatTimeAgo(update.time)}`
-            }
+            accessibilityLabel={isUnread ? `Unread. ${description}` : description}
             onPress={() => {
-              markActivityRead("update", update.id);
+              update.memberIds.forEach((memberId) => markActivityRead("update", memberId));
               if (update.kind === "follow_request") {
                 navigation.navigate("FollowRequests");
                 return;
@@ -533,7 +572,40 @@ function UpdatesTab({
         );
       })}
 
-      {updates.length === 0 ? (
+      {hasMoreActivity && rows.length > 0 ? (
+        <Button
+          label="Show older updates"
+          variant="ghost"
+          size="sm"
+          loading={isLoadingMoreActivity}
+          onPress={() => void fetchMoreActivityEvents()}
+        />
+      ) : null}
+
+      {rows.length === 0 && isFirstLoad ? (
+        <View accessibilityLabel="Loading updates" style={{ gap: spacing[4] }}>
+          {[0, 1, 2].map((index) => (
+            <View key={index} style={[stylesInline.updateRow, { gap: spacing[3] }]}>
+              <Skeleton width={40} height={40} borderRadius={radii.pill} />
+              <View style={{ flex: 1, gap: spacing[1] }}>
+                <Skeleton width="40%" height={14} />
+                <Skeleton width="80%" height={12} />
+              </View>
+            </View>
+          ))}
+        </View>
+      ) : null}
+
+      {rows.length === 0 && !isFirstLoad && activityLoadFailed ? (
+        <EmptyState
+          title="Couldn't load updates"
+          body="Check your connection and try again."
+          ctaLabel="Try again"
+          onPress={() => void handleRefresh()}
+        />
+      ) : null}
+
+      {rows.length === 0 && !isFirstLoad && !activityLoadFailed ? (
         <EmptyState title="No updates yet" body="Activity updates will appear here." />
       ) : null}
     </ScrollView>

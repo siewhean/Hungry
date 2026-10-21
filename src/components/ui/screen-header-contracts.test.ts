@@ -94,10 +94,9 @@ test("Screen header contract: live Discover, Review, and New Post headers use Ap
   assert.match(tabs, /<Tab\.Screen name="Discover" component=\{DiscoverWrapper\}/);
   assert.match(tabs, /require\("@\/app\/screens\/discover\/DiscoverHomeScreen"\)/);
   assert.doesNotMatch(tabs, /DiscoverHomeScreenV2/);
-  assert.match(home, /<AppHeader[\s\S]*title="Hungry"/);
+  assert.match(home, /<AppHeader[\s\S]*title="Home"/);
   assert.match(home, /horizontalPadding=\{semanticSpacing\.screenEdge\}/);
   assert.doesNotMatch(home, /homeHeaderTopOffset/);
-  assert.match(home, /titleStyle=\{\{ color: palette\.orange \}\}/);
   assert.doesNotMatch(home, /homeHeaderTitle/);
   assert.match(reviews, /const reviewHeaderTitle = "Reviews"/);
   assert.doesNotMatch(reviews, /getNearestSingaporeArea|useLocationStore|locationLabel/);

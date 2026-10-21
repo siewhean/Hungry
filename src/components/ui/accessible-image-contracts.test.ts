@@ -76,7 +76,7 @@ test("animated brand imagery keeps explicit image semantics", () => {
 test("zoomable social media exposes actionable media and video controls to assistive tech", () => {
   const zoomableMedia = read("src/components/social/ZoomableMedia.tsx");
   const zoomableVideo = read("src/components/social/ZoomableVideo.tsx");
-  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
+  const home = read("src/components/social/FeedPostCard.tsx");
   const activityDetail = read("src/app/screens/home/ActivityPostDetailScreen.tsx");
   const socialDetail = read("src/app/screens/profile/SocialPostDetailScreen.tsx");
 
@@ -99,7 +99,7 @@ test("zoomable social media exposes actionable media and video controls to assis
   assert.match(zoomableVideo, /accessibilityState=\{\{ selected: !isMuted \}\}/);
 
   assert.match(home, /accessibilityLabel=\{`\$\{actionTargetName\} post image/);
-  assert.match(home, /accessibilityHint="Opens this media and supports double tap to like"/);
+  assert.match(home, /accessibilityHint=\{mediaHint\}/);
   assert.match(activityDetail, /accessibilityLabel=\{`\$\{dishName \?\? venue\?\.name/);
   assert.match(
     socialDetail,
