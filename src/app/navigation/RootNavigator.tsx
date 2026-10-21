@@ -588,9 +588,14 @@ export function RootNavigator({ theme }: { theme: Theme }) {
 
   useEffect(() => {
     if (sessionExpired && navigationRef.isReady()) {
-      // Keep the user's place (a dish, the composer) so sign-in returns there.
+      // Keep the user's place (a dish, the composer) so the next sign-in returns there. Guests
+      // can browse, so say what happened instead of pulling them out of what they were doing;
+      // a screen that needs an account sends them to sign in by itself.
       setReturnRoute(getActiveReturnRoute() ?? "Home");
-      navigationRef.navigate("AuthStack", { screen: "Login" });
+      useUIStore.getState().showToast({
+        message: "You were signed out. Sign in again to continue.",
+        tone: "warning",
+      });
       dismissSessionExpiry();
     }
   }, [dismissSessionExpiry, sessionExpired, setReturnRoute]);

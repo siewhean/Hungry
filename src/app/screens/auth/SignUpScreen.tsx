@@ -8,7 +8,7 @@ import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
 import { trackAuthFailed, trackAuthScreenViewed } from "@/features/auth/authAnalytics";
-import { getMockSignUpFailure } from "@/features/auth/mockAuth";
+import { getAuthErrorCode, getAuthFailureMessage } from "@/features/auth/authErrors";
 import { reportError } from "@/lib/monitoring/reportError";
 import {
   isWeakPasswordError,
@@ -26,6 +26,7 @@ import { useHungryTheme } from "@/theme";
 import type { AuthStackParamList } from "./AuthStack";
 import { AuthProviderButton } from "./AuthProviderButton";
 import { AuthScreenShell } from "./AuthScreenShell";
+import { AUTH_EYE_BUTTON_STYLE } from "./authEyeButton";
 import { AuthTermsNotice } from "./AuthTermsNotice";
 import {
   AUTH_COPY,
@@ -38,7 +39,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, "SignUp">;
 type FormValues = { displayName: string; email: string; password: string };
 
 export function SignUpScreen({ navigation }: Props) {
-  const { colorScheme, componentRadii, palette, spacing } = useHungryTheme();
+  const { componentRadii, palette, spacing } = useHungryTheme();
   const oauthProvidersEnabled = FEATURE_FLAGS.oauthProvidersEnabled;
   const [showPassword, setShowPassword] = useState(false);
   const [providerInFlight, setProviderInFlight] = useState<AuthProvider | null>(null);
@@ -64,60 +65,49 @@ export function SignUpScreen({ navigation }: Props) {
   const handleSignUp = handleSubmit(async (values) => {
     setFormError(null);
     try {
-      const dataSource = getConfiguredDataSource();
-      if (dataSource === "supabase") {
-        const session = await getHungryService().auth.signUp(
-          values.email,
-          values.password,
-          values.displayName,
-        );
-        // session === null means email confirmation is required.
-        if (!session) {
-          showToast({ message: AUTH_COPY.signUp.emailVerificationToast, tone: "success" });
-          navigation.navigate("EmailVerification", { email: values.email });
-          return;
-        }
-        await applySignedInProfile(session.profile, {
-          profileReady: session.profileReady,
-          onSyncWarning: () =>
-            showToast({
-              message:
-                "Account created, but your taste profile could not sync. Try updating it later.",
-              tone: "warning",
-            }),
-        });
-        // When project auth is auto-confirm, Supabase returns an active session immediately.
-        completeAuth({
-          authProvider: "email",
-          completedOnboarding: false,
-          isNewUser: true,
-        });
-        showToast({ message: AUTH_COPY.signUp.continueOnboardingToast, tone: "success" });
+      const session = await getHungryService().auth.signUp(
+        values.email,
+        values.password,
+        values.displayName,
+      );
+      // session === null means email confirmation is required. The mock service always
+      // returns a session, but its sign-up mirrors the confirmation flow.
+      if (!session || getConfiguredDataSource() !== "supabase") {
+        // Not "Account created": an address that already has an account also lands here
+        // (Supabase answers the same and sends nothing), so the verify screen offers sign-in.
+        showToast({ message: AUTH_COPY.signUp.emailVerificationToast, tone: "success" });
+        navigation.navigate("EmailVerification", { email: values.email });
         return;
-      } else {
-        const failure = getMockSignUpFailure(values.email);
-        if (failure) {
-          setFormError(failure.message);
-          showToast({ message: failure.message, tone: "error" });
-          return;
-        }
       }
-      showToast({ message: AUTH_COPY.signUp.emailVerificationToast, tone: "success" });
-      navigation.navigate("EmailVerification", { email: values.email });
+      await applySignedInProfile(session.profile, {
+        profileReady: session.profileReady,
+        onSyncWarning: () =>
+          showToast({
+            message:
+              "Account created, but your taste profile could not sync. Try updating it later.",
+            tone: "warning",
+          }),
+      });
+      // When project auth is auto-confirm, Supabase returns an active session immediately.
+      completeAuth({
+        authProvider: "email",
+        completedOnboarding: false,
+        isNewUser: true,
+      });
+      showToast({ message: AUTH_COPY.signUp.continueOnboardingToast, tone: "success" });
     } catch (err) {
       trackAuthFailed("sign_up", "email", err);
-      const code =
-        (err as { error_code?: string; code?: string })?.error_code ??
-        (err as { error_code?: string; code?: string })?.code;
-      const message = isWeakPasswordError(err)
-        ? WEAK_PASSWORD_MESSAGE
-        : code === "over_email_send_rate_limit"
-          ? AUTH_COPY.signUp.tooManyAttemptsToast
+      const code = getAuthErrorCode(err);
+      // The inline banner is the one announcement; a toast on top would read twice.
+      setFormError(
+        isWeakPasswordError(err)
+          ? WEAK_PASSWORD_MESSAGE
           : code === "email_address_invalid"
             ? AUTH_COPY.signUp.invalidEmailToast
-            : AUTH_COPY.signUp.genericErrorToast;
-      setFormError(message);
-      showToast({ message, tone: "error" });
+            : code === "user_already_exists" || code === "email_exists"
+              ? AUTH_COPY.signUp.emailTakenToast
+              : getAuthFailureMessage(err, AUTH_COPY.signUp.genericErrorToast),
+      );
     }
   });
 
@@ -162,14 +152,13 @@ export function SignUpScreen({ navigation }: Props) {
         cancelled: AUTH_COPY.signUp.providerCancelledToast,
         failed: AUTH_COPY.signUp.genericErrorToast,
       });
-      if (message !== AUTH_COPY.signUp.providerCancelledToast) {
+      if (message === AUTH_COPY.signUp.providerCancelledToast) {
+        // Cancelling is not an error: a passing toast, no red banner.
+        showToast({ message, tone: "warning" });
+      } else {
         reportError(err, { flow: "sign_up", provider });
         setFormError(message);
       }
-      showToast({
-        message,
-        tone: message === AUTH_COPY.signUp.providerCancelledToast ? "warning" : "error",
-      });
     } finally {
       setProviderInFlight(null);
     }
@@ -181,7 +170,7 @@ export function SignUpScreen({ navigation }: Props) {
         title={AUTH_COPY.signUp.title}
         subtitle={AUTH_COPY.signUp.subtitle}
         compact
-        wordmarkColor={colorScheme === "dark" ? palette.white : palette.navy}
+        onBack={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate("Login"))}
         footer={
           <View style={{ alignItems: "center", gap: spacing[4] }}>
             <AuthTermsNotice />
@@ -254,7 +243,8 @@ export function SignUpScreen({ navigation }: Props) {
               }}
               render={({ field: { onChange, value } }) => (
                 <Input
-                  placeholder={AUTH_COPY.signUp.displayNamePlaceholder}
+                  label={AUTH_COPY.signUp.displayNameLabel}
+                  helperText={AUTH_COPY.signUp.displayNameHelper}
                   value={value}
                   onChangeText={onChange}
                   textContentType="name"
@@ -275,7 +265,7 @@ export function SignUpScreen({ navigation }: Props) {
               render={({ field: { onChange, value } }) => (
                 <Input
                   ref={emailRef}
-                  placeholder={AUTH_COPY.signUp.emailPlaceholder}
+                  label={AUTH_COPY.signUp.emailLabel}
                   value={value}
                   onChangeText={onChange}
                   autoCapitalize="none"
@@ -299,7 +289,7 @@ export function SignUpScreen({ navigation }: Props) {
               render={({ field: { onChange, value } }) => (
                 <Input
                   ref={passwordRef}
-                  placeholder={AUTH_COPY.signUp.passwordPlaceholder}
+                  label={AUTH_COPY.signUp.passwordLabel}
                   value={value}
                   onChangeText={onChange}
                   secureTextEntry={!showPassword}
@@ -322,6 +312,7 @@ export function SignUpScreen({ navigation }: Props) {
                       }
                       onPress={() => setShowPassword((current) => !current)}
                       hitSlop={8}
+                      style={AUTH_EYE_BUTTON_STYLE}
                     >
                       {showPassword ? (
                         <EyeOff color={palette.textMuted} size={18} />

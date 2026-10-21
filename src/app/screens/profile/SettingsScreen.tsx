@@ -53,7 +53,7 @@ import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useSearchStore } from "@/store/useSearchStore";
-import { useSessionStore } from "@/store/useSessionStore";
+import { expectSignOut, useSessionStore } from "@/store/useSessionStore";
 import { ThemePreference, useUIStore } from "@/store/useUIStore";
 import { hungryPersistStorage } from "@/store/persistStorage";
 import { PendingDeletionBanner } from "@/features/auth/PendingDeletionBanner";
@@ -217,6 +217,8 @@ export function SettingsScreen() {
   // person deleting can read the account's email. A wrong code stays in the dialog.
   const submitDeletionCode = async (code: string) => {
     let scheduledFor: string;
+    // The service signs out as part of the request; that is not an expired session.
+    expectSignOut();
     try {
       ({ scheduledFor } = await getHungryService().auth.requestAccountDeletion({
         reason: "user_initiated_settings_flow",

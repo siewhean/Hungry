@@ -34,6 +34,14 @@ export function rememberPendingDishSave(dish: DishDetail): void {
   ).catch(() => undefined);
 }
 
+/** Drops a remembered save: the guest backed out of signing in ("Not now", the X on Login). */
+export function clearPendingDishSave(): void {
+  pending = null;
+  void Promise.resolve(hungryPersistStorage?.removeItem(PENDING_SAVE_STORAGE_NAME)).catch(
+    () => undefined,
+  );
+}
+
 // Claims the pending save so two callers never save it twice.
 async function takePending(): Promise<PendingDishSave | null> {
   if (pending === undefined) {

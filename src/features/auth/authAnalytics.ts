@@ -6,6 +6,7 @@ export type AuthFunnelScreen =
   | "forgot_password"
   | "reset_password"
   | "email_verification"
+  | "email_change"
   | "onboarding_auth";
 
 export type AuthFunnelFlow = "sign_in" | "sign_up" | "password_reset" | "email_confirm";

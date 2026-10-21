@@ -119,6 +119,20 @@ function parseAuthCallbackCode(rawPath: string): Record<string, unknown> | undef
   return code && SAFE_DEEP_LINK_ID_PATTERN.test(code) ? { code } : undefined;
 }
 
+// Supabase redirects a dead reset link (expired, already used) to the same URL with
+// `error`, `error_code` (e.g. otp_expired) and `error_description` in the query or, for
+// older flows, the fragment. Surfacing it lets the screen say so before anything is typed.
+function parseAuthCallbackParams(rawPath: string): Record<string, unknown> | undefined {
+  const query = rawPath.includes("?") ? rawPath.slice(rawPath.indexOf("?") + 1).split("#")[0] : "";
+  const fragment = rawPath.includes("#") ? rawPath.slice(rawPath.indexOf("#") + 1) : "";
+  const read = (name: string) =>
+    new URLSearchParams(query).get(name) ?? new URLSearchParams(fragment).get(name);
+  if (read("error") || read("error_code")) {
+    return { linkError: read("error_code") === "otp_expired" ? "expired" : "invalid" };
+  }
+  return parseAuthCallbackCode(rawPath);
+}
+
 function buildStateFromPath(rawPath: string): LinkingState | undefined {
   const [pathWithoutHash] = rawPath.split("#");
   const [pathname] = pathWithoutHash.split("?");
@@ -130,7 +144,7 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
   if (path === "forgot-password") return createAuthState("ForgotPassword");
   // auth/callback is the pre-split password-reset path, kept for old emails.
   if (path === "auth/reset" || path === "auth/callback") {
-    return createAuthState("ResetPassword", parseAuthCallbackCode(rawPath));
+    return createAuthState("ResetPassword", parseAuthCallbackParams(rawPath));
   }
   // The confirmation link carries a PKCE code; EmailVerification exchanges it for a
   // session. Without a code there is nothing to exchange, so the user signs in.
@@ -138,9 +152,13 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
     const params = parseAuthCallbackCode(rawPath);
     return params ? createAuthState("EmailVerification", params) : createAuthState("Login");
   }
+  // The confirmation link of a sign-in email change (the user is already signed in).
+  // It has its own path so it never runs the sign-up path ("Email verified. Welcome").
+  if (path === "auth/email-change") {
+    return createAuthState("EmailChange", parseAuthCallbackCode(rawPath));
+  }
   // OAuth returns are consumed by WebBrowser.openAuthSessionAsync.
   if (path === "auth/oauth") return undefined;
-  if (path === "auth/reset/success") return createAuthState("ResetPasswordSuccess");
   // Weekly picks push opens https://usehungry.com/home.
   if (path === "home") return createState("MainTabs", { screen: "Home" });
   // Lunch and dinner suggestion pushes open https://usehungry.com/decide.
@@ -255,7 +273,7 @@ export function createRootLinking(
             SignUp: "signup",
             ForgotPassword: "forgot-password",
             ResetPassword: "auth/reset",
-            ResetPasswordSuccess: "auth/reset/success",
+            EmailChange: "auth/email-change",
           },
         },
         MainTabs: {

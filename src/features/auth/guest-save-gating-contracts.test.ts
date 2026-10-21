@@ -16,7 +16,10 @@ test("useRequireAccount asks a guest to sign in and returns them afterwards", ()
 
 test("one sign-in sheet opens the shared Login and finishes the guest's action once", () => {
   const sheet = read("src/features/auth/SignInPromptSheet.tsx");
-  assert.match(sheet, /navigationRef\.navigate\("AuthStack", \{ screen: "Login" \}\)/);
+  assert.match(
+    sheet,
+    /navigationRef\.navigate\("AuthStack", \{ screen: "Login", params: \{ title \} \}\)/,
+  );
   assert.match(
     sheet,
     /if \(!isAuthenticated\) return;\s*const action = useUIStore\.getState\(\)\.takePendingAuthAction\(\);/,

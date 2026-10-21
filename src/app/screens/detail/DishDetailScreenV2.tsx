@@ -36,6 +36,7 @@ import { useProfileStore, getTasteSimilarityWithDish } from "@/store/useProfileS
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { saveDishAfterSignIn } from "@/features/auth/finishGuestAction";
+import { rememberPendingDishSave } from "@/features/auth/pendingDishSave";
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
 import { useUIStore } from "@/store/useUIStore";
 import { useSocialStore } from "@/store/useSocialStore";
@@ -547,6 +548,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   };
 
   const handleSave = () => {
+    // Also kept on the device: a sign-up that goes out to the email app and returns through a
+    // cold-start link has lost the closure below, but still finishes the save.
+    if (!isAuthenticated) rememberPendingDishSave(dish);
     if (
       !requireAccount(
         `Sign in to save ${dish.name}`,

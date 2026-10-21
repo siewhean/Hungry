@@ -18,14 +18,14 @@ site_url = "hungry://auth/confirm"
 # App deep links for email confirm, password reset and OAuth. auth/callback is the pre-split path kept for old emails.
 additional_redirect_urls = [
   "hungry://auth/confirm",
+  "hungry://auth/email-change",
   "hungry://auth/reset",
   "hungry://auth/oauth",
   "hungry://auth/callback",
-  # Website (production and Vercel previews).
+  # Website. The Vercel preview wildcards (hungry-*-...) are gone: production sign-in
+  # must not redirect to a preview deployment (medium-low decision 2).
   "https://hungry-siewheans-projects.vercel.app/",
   "https://hungry-siewheans-projects.vercel.app/**",
-  "https://hungry-*-siewheans-projects.vercel.app",
-  "https://hungry-*-siewheans-projects.vercel.app/**",
 ]
 # Matches MIN_PASSWORD_LENGTH in src/features/auth/validation.ts. Leaked-password
 # (HIBP) protection has no config.toml key; it is a dashboard setting.
@@ -62,9 +62,19 @@ content_path = "./supabase/templates/magic_link.html"
 # Function on Resend, mail.usehungry.com), set in the dashboard. That hook must
 # include the code (email_data.token) for the three templates above.
 
+# Off until merchant two-factor sign-in has a screen (medium-low decision 4); the app
+# never checks the MFA level, so enrolling would only add an unused factor.
 [auth.mfa.totp]
-enroll_enabled = true
-verify_enabled = true
+enroll_enabled = false
+verify_enabled = false
+
+# Bot protection for sign-up, password sign-in and reset (auth-L13). Not enabled: it needs
+# a Cloudflare Turnstile (or hCaptcha) site key in the app and the secret in the Supabase
+# dashboard first, otherwise every sign-up would be rejected. To turn it on:
+#   [auth.captcha]
+#   enabled = true
+#   provider = "turnstile"
+#   secret = "env(AUTH_CAPTCHA_SECRET)"
 
 [functions.guest-sessions]
 verify_jwt = false

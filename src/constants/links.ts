@@ -23,9 +23,11 @@ export function webShareUrl(
 
 // Each Supabase email/OAuth flow returns to its own path so the app never
 // mistakes a sign-up confirmation or OAuth return for a password reset.
-// All three must be on the Supabase Auth redirect allow-list.
+// Every one must be on the Supabase Auth redirect allow-list.
 export const AUTH_REDIRECTS = {
   emailConfirm: "hungry://auth/confirm",
+  /** A signed-in user confirming a new sign-in email; never the sign-up path. */
+  emailChange: "hungry://auth/email-change",
   passwordReset: "hungry://auth/reset",
   oauth: "hungry://auth/oauth",
 } as const;
