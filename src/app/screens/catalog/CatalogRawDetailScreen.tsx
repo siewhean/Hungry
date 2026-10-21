@@ -80,7 +80,11 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
   }
 
   const images = isDish
-    ? (detail as CatalogRawDishDetail).media.map((media) => media.url).filter(Boolean)
+    ? (detail as CatalogRawDishDetail).media
+        // Only photos with approved display rights, as on Discover.
+        .filter((media) => media.approvedForDisplay)
+        .map((media) => media.url)
+        .filter(Boolean)
     : [detail.imageUrl].filter((value): value is string => Boolean(value));
   const sourceUrl = detail.menuSourceUrl ?? detail.mediaSourceUrl;
 
