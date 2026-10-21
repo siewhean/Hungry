@@ -39,8 +39,10 @@ interface DiscoveryState {
   toggleMapFilter: (filter: keyof MapFilters) => void;
 }
 
+// "Near me" starts off and is never saved on: it only applies while the map sits
+// on the diner's GPS position, which a later session cannot assume.
 const initialFilters: MapFilters = {
-  nearMe: true,
+  nearMe: false,
   trendingOnly: false,
   hawkerOnly: false,
   mallOnly: false,
@@ -120,8 +122,17 @@ export const useDiscoveryStore = create<DiscoveryState>()(
       name: "hungry-discovery-v1",
       storage: hungryPersistStorage,
       partialize: (state) => ({
-        mapFilters: state.mapFilters,
+        mapFilters: { ...state.mapFilters, nearMe: false },
       }),
+      // Older installs saved nearMe: true; drop it on load.
+      merge: (persisted, current) => {
+        const saved = (persisted as Partial<Pick<DiscoveryState, "mapFilters">> | undefined)
+          ?.mapFilters;
+        return {
+          ...current,
+          mapFilters: { ...current.mapFilters, ...saved, nearMe: false },
+        };
+      },
     },
   ),
 );
