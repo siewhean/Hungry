@@ -1,4 +1,4 @@
-import { Share } from "react-native";
+import { Platform, Share } from "react-native";
 
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { openTrustedMessagingShareUrl } from "@/lib/security/safeLinking";
@@ -31,10 +31,12 @@ export async function shareLink(target: ShareTarget, channel: ShareChannel) {
   } else if (channel === "telegram") {
     await openTrustedMessagingShareUrl(buildTelegramShareUrl(target.message, url));
   } else {
-    const result = await Share.share({
-      message: `${target.message}\n${url}`,
-      url,
-    });
+    // iOS shows `url` as its own item, so the link goes there only; Android has no `url`.
+    const result = await Share.share(
+      Platform.OS === "ios"
+        ? { message: target.message, url }
+        : { message: `${target.message}\n${url}` },
+    );
     if (result.action === Share.dismissedAction) return;
   }
   if (target.kind === "review") {

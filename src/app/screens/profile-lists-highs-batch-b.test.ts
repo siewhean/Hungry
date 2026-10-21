@@ -40,12 +40,15 @@ test("H20: listUserPosts pages one author's posts on the server", async () => {
 
 test("H22: another user's Reviews tab lists only that account's reviews", async () => {
   const content = read("src/app/screens/profile/UserProfileContent.tsx");
-  assert.match(content, /reviews\.getUserReviews\(normalizedAuthorId\)/);
+  assert.match(
+    content,
+    /reviews\.getUserReviews\(normalizedAuthorId, \{ limit: USER_REVIEWS_PAGE_SIZE \}\)/,
+  );
   assert.doesNotMatch(content, /commentsByPostId/);
   assert.match(content, /title="Couldn't load reviews"/);
   assert.match(
     read("src/lib/services/supabase/supabaseService.ts"),
-    /async getUserReviews\(userId\) \{[\s\S]*?if \(error\) throw error;/,
+    /async getUserReviews\(userId, options\) \{[\s\S]*?if \(error\) throw error;/,
   );
   const otherUserId = "batch-b-other-user";
   const reviews = await hungryService.reviews.getUserReviews(otherUserId);

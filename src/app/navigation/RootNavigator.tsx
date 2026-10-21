@@ -64,6 +64,7 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "WheelStack",
   "ActivityInbox",
   "ActivityPostDetail",
+  "ReviewDetail",
   "FollowRequests",
   "UserFollowers",
   "UserFollowing",
@@ -246,6 +247,10 @@ const loadActivityPostDetailScreen = () =>
   (
     require("@/app/screens/home/ActivityPostDetailScreen") as typeof import("@/app/screens/home/ActivityPostDetailScreen")
   ).ActivityPostDetailScreen;
+const loadReviewDetailScreen = () =>
+  (
+    require("@/app/screens/review/ReviewDetailScreen") as typeof import("@/app/screens/review/ReviewDetailScreen")
+  ).ReviewDetailScreen;
 const loadFollowRequestsScreen = () =>
   (
     require("@/app/screens/profile/FollowRequestsScreen") as typeof import("@/app/screens/profile/FollowRequestsScreen")
@@ -763,6 +768,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen getComponent={loadWheelStack} name="WheelStack" />
           <RootStack.Screen getComponent={loadActivityInboxScreen} name="ActivityInbox" />
           <RootStack.Screen getComponent={loadActivityPostDetailScreen} name="ActivityPostDetail" />
+          <RootStack.Screen getComponent={loadReviewDetailScreen} name="ReviewDetail" />
           <RootStack.Screen getComponent={loadFollowRequestsScreen} name="FollowRequests" />
           <RootStack.Screen getComponent={loadUserFollowersScreen} name="UserFollowers" />
           <RootStack.Screen getComponent={loadUserFollowingScreen} name="UserFollowing" />

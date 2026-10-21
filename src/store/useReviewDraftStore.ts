@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -164,13 +164,9 @@ export const useReviewDraftStore = create<ReviewDraftState>()(
  * routed dish) must wait for this, or the saved draft lands on top of what it just did.
  */
 export function useReviewDraftHydrated(): boolean {
-  const [hydrated, setHydrated] = useState(() => useReviewDraftStore.persist.hasHydrated());
-  useEffect(() => {
-    if (useReviewDraftStore.persist.hasHydrated()) {
-      setHydrated(true);
-      return undefined;
-    }
-    return useReviewDraftStore.persist.onFinishHydration(() => setHydrated(true));
-  }, []);
-  return hydrated;
+  return useSyncExternalStore(
+    (onChange) => useReviewDraftStore.persist.onFinishHydration(onChange),
+    () => useReviewDraftStore.persist.hasHydrated(),
+    () => false,
+  );
 }

@@ -498,7 +498,7 @@ test("profile surfaces keep own and other-user layouts linked while hiding taste
       /activeTab === "posts"/,
       /activeTab === "reviews"/,
       /post\.authorId === normalizedAuthorId/,
-      /reviews\.getUserReviews\(normalizedAuthorId\)/,
+      /reviews\.getUserReviews\(normalizedAuthorId, \{ limit: USER_REVIEWS_PAGE_SIZE \}\)/,
       /rootNavigation\.navigate\(target, \{ userId: resolvedAuthorId/,
       /accessibilityState=\{\{ selected: activeTab === "posts" \}\}/,
       /accessibilityState=\{\{ selected: activeTab === "reviews" \}\}/,

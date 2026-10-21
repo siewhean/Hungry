@@ -43,6 +43,8 @@ type UserProfileContentProps = {
 };
 /** Posts per server page; matches listUserPosts' default page size. */
 const USER_POSTS_PAGE_SIZE = 60;
+/** Reviews fetched per page on a profile; "Load more" gets the next page. */
+const USER_REVIEWS_PAGE_SIZE = 20;
 
 function haveSamePosts(left: StallPost[], right: StallPost[]) {
   if (left.length !== right.length) return false;
@@ -86,6 +88,8 @@ export function UserProfileContent({
   const [postsLoadFailed, setPostsLoadFailed] = useState(false);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewsLoadFailed, setReviewsLoadFailed] = useState(false);
+  const [hasMoreReviews, setHasMoreReviews] = useState(false);
+  const [isLoadingMoreReviews, setIsLoadingMoreReviews] = useState(false);
   // Server follow counts plus whether the server already had the viewer following this user,
   // so a local follow/unfollow afterwards can adjust the follower count without refetching.
   const [serverFollowState, setServerFollowState] = useState<{
@@ -190,10 +194,11 @@ export function UserProfileContent({
     if (!normalizedAuthorId) return;
     let isMounted = true;
     void getHungryService()
-      .reviews.getUserReviews(normalizedAuthorId)
+      .reviews.getUserReviews(normalizedAuthorId, { limit: USER_REVIEWS_PAGE_SIZE })
       .then((rows) => {
         if (!isMounted) return;
         setReviews(rows);
+        setHasMoreReviews(rows.length >= USER_REVIEWS_PAGE_SIZE);
         setReviewsLoadFailed(false);
       })
       .catch((error) => {
@@ -204,6 +209,29 @@ export function UserProfileContent({
       isMounted = false;
     };
   }, [normalizedAuthorId]);
+
+  const loadMoreReviews = () => {
+    const oldest = reviews[reviews.length - 1];
+    if (!normalizedAuthorId || !oldest?.createdAt || isLoadingMoreReviews) return;
+    setIsLoadingMoreReviews(true);
+    void getHungryService()
+      .reviews.getUserReviews(normalizedAuthorId, {
+        limit: USER_REVIEWS_PAGE_SIZE,
+        before: oldest.createdAt,
+        beforeId: oldest.id,
+      })
+      .then((rows) => {
+        setReviews((current) => {
+          const known = new Set(current.map((review) => review.id));
+          return [...current, ...rows.filter((review) => !known.has(review.id))];
+        });
+        setHasMoreReviews(rows.length >= USER_REVIEWS_PAGE_SIZE);
+      })
+      .catch((error) => {
+        console.error("Failed to load more reviews:", error);
+      })
+      .finally(() => setIsLoadingMoreReviews(false));
+  };
 
   const resolvedAuthorAvatarUrl = useMemo(() => {
     if (authorAvatarUrl?.trim()) return authorAvatarUrl.trim();
@@ -255,7 +283,8 @@ export function UserProfileContent({
     };
   }, [resolvedAuthorId, setFollowRequested, setFollowedUserId]);
 
-  const reviewCount = reviews.length;
+  // Only the pages loaded so far are counted, so a full page reads "20+", not a wrong total.
+  const reviewCount = hasMoreReviews ? `${reviews.length}+` : reviews.length;
   const stallsCount = useMemo(
     () => new Set(posts.map((post) => post.venueId).filter(Boolean)).size,
     [posts],
@@ -656,6 +685,15 @@ export function UserProfileContent({
                     icon={<MessageCircleMore color={palette.textSecondary} size={36} />}
                   />
                 )}
+                {activeTab === "reviews" && hasMoreReviews ? (
+                  <Button
+                    label="Load more"
+                    variant="ghost"
+                    size="sm"
+                    loading={isLoadingMoreReviews}
+                    onPress={loadMoreReviews}
+                  />
+                ) : null}
                 {activeTab === "posts" && hasMorePosts ? (
                   <Button
                     label="Load more"
@@ -683,8 +721,8 @@ function StatBlock({
 }: {
   icon: ReactNode;
   label: string;
-  /** null while loading. */
-  value: number | null;
+  /** null while loading; text such as "20+" when only the loaded pages are counted. */
+  value: number | string | null;
   accessibilityHint?: string;
   onPress?: () => void;
 }) {

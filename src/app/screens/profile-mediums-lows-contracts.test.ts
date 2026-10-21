@@ -45,7 +45,10 @@ test("profile home loads once per account and recomputes passport progress separ
 test("profile home shows real reviews, loading skeletons, retry, and a confirmed sign-out", () => {
   const source = read("src/app/screens/profile/ProfileHomeScreen.tsx");
 
-  assert.match(source, /reviews\.getUserReviews\(profile\.id\)/);
+  assert.match(
+    source,
+    /reviews\.getUserReviews\(profile\.id, \{ limit: OWN_REVIEWS_PAGE_SIZE \}\)/,
+  );
   assert.doesNotMatch(source, /You reviewed this dish\./);
   assert.match(source, /!postsLoaded \? \(\s*<ProfileGridSkeleton \/>/);
   assert.match(source, /ctaLabel="Retry"/);

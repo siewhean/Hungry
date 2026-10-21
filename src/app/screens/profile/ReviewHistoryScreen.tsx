@@ -1,7 +1,8 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
 
+import { ReviewModerationNotice } from "@/components/review";
 import { AppText, Button, Card, EmptyState } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import {
@@ -11,12 +12,16 @@ import {
 } from "@/lib/services/serviceProvider";
 import { OwnReviewMenuButton, useOwnReviewEditor } from "@/features/profile/useOwnReviewEditor";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useUIStore } from "@/store/useUIStore";
 import type { Review } from "@/types/domain";
 import { isDishDetail } from "./profileGuards";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import type { ProfileStackParamList } from "./ProfileStack";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "ReviewHistory">;
+
+/** Reviews (and signed photo links) fetched per page; "Show more" loads the next page. */
+const HISTORY_PAGE_SIZE = 20;
 
 export function ReviewHistoryScreen({ navigation }: Props) {
   const profile = useProfileStore((state) => state.profile);
@@ -25,6 +30,9 @@ export function ReviewHistoryScreen({ navigation }: Props) {
   const serviceProviderMode = getServiceProvider().mode;
   const [remoteReviews, setRemoteReviews] = useState<Review[]>([]);
   const [remoteLoadFailed, setRemoteLoadFailed] = useState(false);
+  const [hasMoreRemote, setHasMoreRemote] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const showToast = useUIStore((state) => state.showToast);
   const ownReviewEditor = useOwnReviewEditor({
     onUpdated: (updated) =>
       setRemoteReviews((current) =>
@@ -50,6 +58,7 @@ export function ReviewHistoryScreen({ navigation }: Props) {
   useEffect(() => {
     let active = true;
     setRemoteLoadFailed(false);
+    setHasMoreRemote(false);
 
     if (serviceProviderMode === "mock") {
       setRemoteReviews([]);
@@ -66,9 +75,11 @@ export function ReviewHistoryScreen({ navigation }: Props) {
     }
 
     void getHungryService()
-      .reviews.getUserReviews(profile.id)
+      .reviews.getUserReviews(profile.id, { limit: HISTORY_PAGE_SIZE })
       .then((reviews) => {
-        if (active) setRemoteReviews(reviews);
+        if (!active) return;
+        setRemoteReviews(reviews);
+        setHasMoreRemote(reviews.length >= HISTORY_PAGE_SIZE);
       })
       .catch(() => {
         if (!active) return;
@@ -80,6 +91,28 @@ export function ReviewHistoryScreen({ navigation }: Props) {
       active = false;
     };
   }, [profile.id, serviceProviderMode]);
+
+  const loadMore = useCallback(async () => {
+    const oldest = remoteReviews[remoteReviews.length - 1];
+    if (!oldest?.createdAt || isLoadingMore) return;
+    setIsLoadingMore(true);
+    try {
+      const page = await getHungryService().reviews.getUserReviews(profile.id, {
+        limit: HISTORY_PAGE_SIZE,
+        before: oldest.createdAt,
+        beforeId: oldest.id,
+      });
+      setRemoteReviews((current) => {
+        const known = new Set(current.map((review) => review.id));
+        return [...current, ...page.filter((review) => !known.has(review.id))];
+      });
+      setHasMoreRemote(page.length >= HISTORY_PAGE_SIZE);
+    } catch {
+      showToast({ message: "Could not load more reviews.", tone: "warning" });
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [isLoadingMore, profile.id, remoteReviews, showToast]);
 
   const historyItems =
     serviceProviderMode === "supabase"
@@ -119,7 +152,11 @@ export function ReviewHistoryScreen({ navigation }: Props) {
               review?.text || entry?.text || "You submitted a quick review for this dish.";
             const dishId = review?.dishId ?? dish?.id;
             const dishName = dish?.name ?? "Reviewed dish";
-            const ratingLine = [rating ? `Rated ${rating}/5` : "", tagSummary]
+            const ratingLine = [
+              rating ? `Rated ${rating}/5` : "",
+              tagSummary,
+              review?.editedAt ? "Edited" : "",
+            ]
               .filter(Boolean)
               .join(" · ");
             const card = (
@@ -133,6 +170,13 @@ export function ReviewHistoryScreen({ navigation }: Props) {
                       <OwnReviewMenuButton onPress={() => ownReviewEditor.openActions(review)} />
                     ) : null}
                   </View>
+                  {review?.moderationState ? (
+                    <ReviewModerationNotice
+                      state={review.moderationState}
+                      reviewId={review.id}
+                      dishName={dishName}
+                    />
+                  ) : null}
                   <AppText tone="secondary">{reviewText}</AppText>
                   {ratingLine ? (
                     <AppText variant="bodySmall" tone="secondary">
@@ -158,6 +202,14 @@ export function ReviewHistoryScreen({ navigation }: Props) {
               <View key={key}>{card}</View>
             );
           })}
+          {hasMoreRemote ? (
+            <Button
+              label={isLoadingMore ? "Loading..." : "Show more"}
+              variant="secondary"
+              disabled={isLoadingMore}
+              onPress={() => void loadMore()}
+            />
+          ) : null}
           {ownReviewEditor.dialog}
         </>
       ) : (

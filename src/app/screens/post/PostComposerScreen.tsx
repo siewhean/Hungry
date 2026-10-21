@@ -170,8 +170,10 @@ function PostComposerScreenInner({ navigation, route }: Props) {
   // Read when the discard is confirmed, so the listener is not re-registered on every keystroke.
   const selectedMediaCountRef = useRef(0);
   const captionLengthRef = useRef(0);
-  selectedMediaCountRef.current = selectedMedia.length;
-  captionLengthRef.current = caption.trim().length;
+  useEffect(() => {
+    selectedMediaCountRef.current = selectedMedia.length;
+    captionLengthRef.current = caption.trim().length;
+  }, [selectedMedia.length, caption]);
   useEffect(() => {
     if (!hasUnsavedWork) return undefined;
     return navigation.addListener("beforeRemove", (event) => {

@@ -134,6 +134,8 @@ export type RootStackParamList = {
   WheelStack: NavigatorScreenParams<WheelStackParamList>;
   ActivityInbox: { initialTab?: "messages" | "updates" } | undefined;
   ActivityPostDetail: { postId: string; updateId?: string };
+  /** One review on its own page; opened by review/:reviewId share links. */
+  ReviewDetail: { reviewId: string };
   FollowRequests: undefined;
   /** Another user's follower/following lists, opened from their profile. */
   UserFollowers: { userId: string; userDisplayName?: string };

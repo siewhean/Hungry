@@ -241,6 +241,50 @@ export async function getSharedPortfolio(id: string): Promise<SharedPortfolio | 
   }
 }
 
+export type SharedReview = {
+  id: string;
+  authorName: string;
+  rating: number;
+  text: string;
+  createdAt: string | null;
+  dish: { id: string; name: string; imageUrl: string | null } | null;
+  stall: SharedDish["stall"];
+};
+
+type ReviewRow = {
+  id: string;
+  dish_id: string | null;
+  author_name: string | null;
+  rating: number | string | null;
+  text: string | null;
+  created_at: string | null;
+};
+
+/**
+ * usehungry.com/review/:id. Reads with the anon key, so RLS hides a review that was
+ * hidden after reports or removed. The preview image is the dish's approved image: review
+ * photos live in a private bucket that a signed-out visitor cannot read.
+ */
+export async function getSharedReview(id: string): Promise<SharedReview | null> {
+  if (!UUID_PATTERN.test(id)) return null;
+  const [review] = await fetchRows<ReviewRow>("reviews", {
+    id: `eq.${id}`,
+    select: "id,dish_id,author_name,rating,text,created_at",
+    limit: "1",
+  });
+  if (!review) return null;
+  const dish = review.dish_id ? await getSharedDish(review.dish_id) : null;
+  return {
+    id: review.id,
+    authorName: review.author_name?.trim() || "A Hungry member",
+    rating: Math.min(5, Math.max(0, Math.round(Number(review.rating) || 0))),
+    text: review.text?.trim() ?? "",
+    createdAt: review.created_at,
+    dish: dish ? { id: dish.id, name: dish.name, imageUrl: dish.imageUrl } : null,
+    stall: dish?.stall ?? null,
+  };
+}
+
 export type SharedProfile = {
   id: string;
   displayName: string;
