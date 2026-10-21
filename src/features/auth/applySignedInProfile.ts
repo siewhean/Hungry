@@ -56,7 +56,12 @@ export function applySignedInProfile(
 ) {
   const profileState = useProfileStore.getState();
   const guestProfile = profileState.profile;
-  const guestTasteProfile = guestProfile.tasteProfile ?? profileState.tasteProfile;
+  // The quiz updates profile.tasteVector; take the vector from there so a stale
+  // tasteProfile.vector never overwrites the guest's answers on the server.
+  const guestTasteProfile = {
+    ...(guestProfile.tasteProfile ?? profileState.tasteProfile),
+    vector: guestProfile.tasteVector,
+  };
   const shouldMergeTaste =
     hasMeaningfulGuestTaste(guestProfile, guestTasteProfile) && hasNoSavedTaste(sessionProfile);
   const shouldMergeDietary =

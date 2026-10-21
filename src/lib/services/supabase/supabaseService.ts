@@ -5858,6 +5858,7 @@ export const supabaseService: HungryService = {
         .from("dishes")
         .select("*")
         .eq("venue_id", venueId)
+        .is("archived_at", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
       const rows = Array.isArray(data) ? (data as Row[]) : [];
@@ -5923,11 +5924,11 @@ export const supabaseService: HungryService = {
     async deleteDish(outletId, dishId) {
       const client = requireSupabaseClient();
       const outlet = await requireLinkedMerchantOutlet(client, outletId);
-      const { error } = await client
-        .from("dishes")
-        .delete()
-        .eq("id", dishId)
-        .eq("venue_id", asString(outlet.venue_id) ?? "");
+      // Drafts are deleted; any other dish is archived so its reviews and saves are kept.
+      const { error } = await client.rpc("merchant_remove_dish", {
+        p_dish_id: dishId,
+        p_venue_id: asString(outlet.venue_id) ?? "",
+      });
       if (error) throw error;
       await refreshSupabaseRepositoryCache();
     },

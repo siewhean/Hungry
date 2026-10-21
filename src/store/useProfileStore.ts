@@ -411,6 +411,8 @@ export const useProfileStore = create<ProfileState>()(
         const base = get().profile.tasteProfile ?? get().tasteProfile;
         const tasteProfile: TasteProfile = {
           ...base,
+          // profile.tasteVector is the source of truth; base.vector can lag behind the quiz.
+          vector: get().profile.tasteVector,
           foodOpenness: openness,
           neophiliaIndex: OPENNESS_NEOPHILIA_INDEX[openness],
         };
@@ -640,6 +642,9 @@ export const useProfileStore = create<ProfileState>()(
             profile: {
               ...state.profile,
               tasteVector,
+              tasteProfile: state.profile.tasteProfile
+                ? { ...state.profile.tasteProfile, vector: tasteVector }
+                : undefined,
               recommendationSignals: {
                 confidence: clampConfidence(
                   (state.profile.recommendationSignals?.confidence ?? 0) + 0.05,
