@@ -21,6 +21,7 @@ import {
   type MerchantMediaKind,
   type MerchantMediaSource,
 } from "@/features/merchant/merchantMediaPicker";
+import { isVerificationCurrent } from "@/features/merchant/merchantGuards";
 import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
@@ -59,7 +60,19 @@ export function VerificationCentreScreen({ navigation }: Props) {
     );
   }
 
-  const status = activeOutlet.verification.status;
+  const isExpired =
+    activeOutlet.verification.status === "verified" &&
+    !isVerificationCurrent(activeOutlet.verification);
+  // An expired verification is handled like a fresh one: the merchant resubmits evidence.
+  const status = isExpired ? "not_started" : activeOutlet.verification.status;
+  // What Hungry asked for: the rejection reason, else the newest ops note on the evidence.
+  const opsNote =
+    activeOutlet.verification.rejectionReason?.trim() ||
+    [...activeOutlet.verification.evidence]
+      .reverse()
+      .find((item) => item.reviewNote?.trim())
+      ?.reviewNote?.trim();
+  const isResubmission = status === "rejected" || status === "more_info_needed";
 
   const handlePickEvidence = async (
     method: EvidenceMethod,
@@ -88,14 +101,14 @@ export function VerificationCentreScreen({ navigation }: Props) {
     setIsUploadingEvidence(true);
     try {
       const evidence = { method: pendingEvidence.method, fileUrl: pendingEvidence.uri };
-      if (status === "rejected") {
+      if (isResubmission) {
         await getHungryService().merchant.resubmitVerification(activeOutlet.id, evidence);
       } else {
         await getHungryService().merchant.submitVerification(activeOutlet.id, evidence);
       }
       trackMerchantEvent("merchant_verification_submitted", activeOutlet.id, {
         method: pendingEvidence.method,
-        resubmission: status === "rejected",
+        resubmission: isResubmission,
       });
       setPendingEvidence(null);
       const updatedAccount = await getHungryService().merchant.getMerchantAccount();
@@ -141,7 +154,8 @@ export function VerificationCentreScreen({ navigation }: Props) {
               Verification Pending
             </AppText>
             <AppText style={{ color: palette.text, marginTop: spacing[1], textAlign: "center" }}>
-              We are currently reviewing your documents. This usually takes 1-3 business days.
+              Hungry is reviewing your documents. You can keep setting up your stall and menu while
+              you wait.
             </AppText>
           </View>
         );
@@ -158,8 +172,8 @@ export function VerificationCentreScreen({ navigation }: Props) {
               Verification Rejected
             </AppText>
             <AppText style={{ color: palette.text, marginTop: spacing[1], textAlign: "center" }}>
-              {activeOutlet.verification.rejectionReason?.trim()
-                ? `Reason: ${activeOutlet.verification.rejectionReason.trim()}`
+              {opsNote
+                ? `Reason: ${opsNote}`
                 : "We could not verify your business with the provided information."}
             </AppText>
             <AppText
@@ -167,6 +181,31 @@ export function VerificationCentreScreen({ navigation }: Props) {
               style={{ color: palette.textSecondary, marginTop: spacing[2], textAlign: "center" }}
             >
               Choose a method below to resubmit.
+            </AppText>
+          </View>
+        );
+      case "more_info_needed":
+        return (
+          <View
+            style={[
+              { padding: spacing[6], alignItems: "center", justifyContent: "center" },
+              { backgroundColor: palette.warningSoft, borderRadius: componentRadii.card },
+            ]}
+          >
+            <AlertCircle size={32} color={palette.warningText} />
+            <AppText variant="h3" style={{ color: palette.warningText, marginTop: spacing[2] }}>
+              More Information Needed
+            </AppText>
+            <AppText style={{ color: palette.text, marginTop: spacing[1], textAlign: "center" }}>
+              {opsNote
+                ? `Hungry asked: ${opsNote}`
+                : "Hungry needs more evidence before it can verify your outlet."}
+            </AppText>
+            <AppText
+              variant="bodySmall"
+              style={{ color: palette.textSecondary, marginTop: spacing[2], textAlign: "center" }}
+            >
+              Choose a method below to send what was asked for.
             </AppText>
           </View>
         );
@@ -180,13 +219,14 @@ export function VerificationCentreScreen({ navigation }: Props) {
           >
             <ShieldAlert size={32} color={palette.orange} />
             <AppText variant="h3" style={{ color: palette.text, marginTop: spacing[2] }}>
-              Verify Your Outlet
+              {isExpired ? "Verification Expired" : "Verify Your Outlet"}
             </AppText>
             <AppText
               style={{ color: palette.textSecondary, marginTop: spacing[1], textAlign: "center" }}
             >
-              Verified stalls rank higher and get a trusted badge. Select a verification method
-              below.
+              {isExpired
+                ? "Your verification has expired, so changes to what diners see are paused. Select a method below to verify again."
+                : "Verification shows diners that this stall is yours and publishes your menu and profile. Select a verification method below."}
             </AppText>
           </View>
         );
@@ -226,7 +266,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
           submit it for review.
         </AppText>
         <Button
-          label={status === "rejected" ? "Resubmit for review" : "Submit for review"}
+          label={isResubmission ? "Resubmit for review" : "Submit for review"}
           onPress={() => void handleSubmitEvidence()}
           loading={isUploadingEvidence}
           disabled={isUploadingEvidence}

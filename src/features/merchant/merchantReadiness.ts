@@ -3,9 +3,14 @@ import type {
   MerchantDashboardSummary,
   MerchantOutlet,
   MerchantPromotion,
+  MerchantVerification,
 } from "@/types/domain";
+import { isVerificationCurrent } from "@/features/merchant/merchantGuards";
 import { getVenueOpenState } from "@/utils/operatingHours";
 import { getScheduleOpenState, hasWeeklyHours } from "@/utils/openingSchedule";
+
+/** Longest public reply a merchant can post under a review (also a database CHECK). */
+export const MERCHANT_REPLY_MAX_LENGTH = 1000;
 
 export type MerchantOutletStatus = "open" | "closed" | "live" | "offline";
 
@@ -71,6 +76,70 @@ export function getMerchantOutletStatusLabel(status: MerchantOutletStatus): stri
   return "Closed";
 }
 
+export type VerificationStatusInfo = {
+  /** Short word for a settings row. */
+  label: string;
+  /** Sentence for the profile header. */
+  profileLabel: string;
+  /** What the merchant can do next; empty when nothing is needed. */
+  nextStep: string;
+};
+
+/** Each verification status says what it is and what to do, instead of one shared "Pending". */
+export function getVerificationStatusInfo(
+  verification: Pick<MerchantVerification, "status" | "expiresAt"> | undefined,
+  now: Date = new Date(),
+): VerificationStatusInfo {
+  const status = verification?.status ?? "not_started";
+  if (status === "verified") {
+    return isVerificationCurrent(verification, now)
+      ? { label: "Verified", profileLabel: "Verified Merchant", nextStep: "" }
+      : {
+          label: "Expired",
+          profileLabel: "Verification expired",
+          nextStep: "Resubmit your evidence in Verification to be verified again.",
+        };
+  }
+  switch (status) {
+    case "draft":
+      return {
+        label: "Not submitted",
+        profileLabel: "Verification not submitted",
+        nextStep: "Finish and submit your evidence in Verification.",
+      };
+    case "submitted":
+      return {
+        label: "Submitted",
+        profileLabel: "Verification submitted",
+        nextStep: "Hungry will review it. There is nothing to do yet.",
+      };
+    case "in_review":
+      return {
+        label: "In review",
+        profileLabel: "Verification in review",
+        nextStep: "Hungry is reviewing it. There is nothing to do yet.",
+      };
+    case "rejected":
+      return {
+        label: "Rejected",
+        profileLabel: "Verification rejected",
+        nextStep: "Open Verification to see why and resubmit.",
+      };
+    case "more_info_needed":
+      return {
+        label: "More info needed",
+        profileLabel: "More info needed for verification",
+        nextStep: "Open Verification to see what to add, then resubmit.",
+      };
+    default:
+      return {
+        label: "Not started",
+        profileLabel: "Not verified yet",
+        nextStep: "Open Verification to start.",
+      };
+  }
+}
+
 export function getMerchantProfileGaps(
   outlet: MerchantOutlet,
   menu: Pick<MerchantDashboardSummary, "menuCount" | "dishesWithoutImages">,
@@ -132,11 +201,38 @@ export function getMetricDelta(
   return { label: "0%", trend: "flat" };
 }
 
+/** Rating tile value: a stall with no reviews in the range has no rating, not a 0.0 one. */
+export function formatAverageRating(average: number, reviewCount: number): string {
+  return reviewCount > 0 ? average.toFixed(1) : "–";
+}
+
+/** Subtext under the rating: "No reviews yet" or the count for the range. */
+export function formatReviewCountLabel(reviewCount: number, rangeLabel: string): string {
+  if (reviewCount <= 0) return "No reviews yet";
+  return `${reviewCount} ${reviewCount === 1 ? "review" : "reviews"} ${rangeLabel}`;
+}
+
+/** Rating change in stars ("+0.2★"), not a percentage; a rating has no percent scale. */
+export function formatRatingChange(
+  current: number,
+  previous: number,
+  currentCount: number,
+  previousCount: number,
+): string {
+  if (currentCount <= 0) return "No reviews yet";
+  if (previousCount <= 0) return "New";
+  const change = Math.round((current - previous) * 10) / 10;
+  if (change > 0) return `+${change.toFixed(1)}★`;
+  if (change < 0) return `-${Math.abs(change).toFixed(1)}★`;
+  return "0.0★";
+}
+
 export function resolvePromotionRuntimeStatus(
   promotion: Pick<MerchantPromotion, "startDate" | "endDate" | "status">,
   now = new Date(),
 ): MerchantPromotion["status"] {
-  if (promotion.status === "draft") return "draft";
+  // "End now" stores status "ended" with the old end date, which can still be in the future.
+  if (promotion.status === "draft" || promotion.status === "ended") return promotion.status;
   const startsAt = new Date(promotion.startDate).getTime();
   const endsAt = new Date(promotion.endDate).getTime();
   const nowMs = now.getTime();

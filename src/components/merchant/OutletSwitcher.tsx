@@ -19,7 +19,8 @@ export const OutletSwitcher: React.FC = () => {
     bottomSheetRef.current?.present();
   }, []);
 
-  if (!account || !activeOutlet) return null;
+  // Nothing to switch to with one outlet.
+  if (!account || !activeOutlet || account.outlets.length <= 1) return null;
 
   return (
     <>

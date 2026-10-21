@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from "react";
-import { View, StyleSheet, Alert } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { Check, Edit2, RefreshCw, X } from "lucide-react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -16,6 +16,7 @@ import {
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { useMerchantDialog } from "@/features/merchant/useMerchantDialog";
 import type { OCRDishDraft } from "@/types/domain";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 
@@ -25,6 +26,7 @@ export function OCRDraftScreen() {
   const { componentRadii, palette, spacing } = useHungryTheme();
   const navigation = useNavigation<NavigationProp>();
   const activeOutlet = useMerchantStore(getActiveOutlet);
+  const { showAlert, dialog } = useMerchantDialog();
 
   const [drafts, setDrafts] = useState<OCRDishDraft[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,7 +49,7 @@ export function OCRDraftScreen() {
       setDrafts(data.filter((draft) => draft.status === "pending"));
     } catch (e) {
       console.error(e);
-      setError(e instanceof Error ? e.message : "Failed to load OCR drafts.");
+      setError(e instanceof Error ? e.message : "Failed to load photo drafts.");
     } finally {
       setIsLoading(false);
     }
@@ -62,10 +64,10 @@ export function OCRDraftScreen() {
 
   if (error) {
     return (
-      <Screen title="Menu Photo Scan">
+      <Screen title="Photo drafts">
         <EmptyState
-          title="Failed to load OCR drafts"
-          body="The OCR draft list is currently unavailable."
+          title="Failed to load photo drafts"
+          body="The photo draft list is currently unavailable."
           icon={<X size={40} color={palette.error} />}
           errorMessage={error}
           sendErrorContext="OCR draft list"
@@ -86,11 +88,11 @@ export function OCRDraftScreen() {
       await getHungryService().merchant.acceptOCRDraft(draftId);
       setDrafts((prev) => prev.filter((d) => d.id !== draftId));
       if (!options.silent) {
-        Alert.alert("Success", "Dish added to your menu.");
+        showAlert("Success", "Dish added to your menu.");
       }
       return true;
     } catch (e) {
-      if (!options.silent) Alert.alert("Error", "Failed to accept draft.");
+      if (!options.silent) showAlert("Error", "Failed to accept draft.");
       return false;
     } finally {
       busyDraftIds.current.delete(draftId);
@@ -107,43 +109,36 @@ export function OCRDraftScreen() {
       await getHungryService().merchant.rejectOCRDraft(draftId);
       setDrafts((prev) => prev.filter((d) => d.id !== draftId));
     } catch (e) {
-      Alert.alert("Error", "Failed to reject draft.");
+      showAlert("Error", "Failed to reject draft.");
     }
   };
 
   const handleBatchAccept = async () => {
-    Alert.alert(
-      "Accept All",
-      `Are you sure you want to add ${drafts.length} dishes to your menu?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Accept All",
-          onPress: async () => {
-            let failed = 0;
-            for (const draft of drafts) {
-              if (!(await handleAccept(draft.id, { silent: true }))) failed += 1;
-            }
-            const added = drafts.length - failed;
-            if (failed === 0) {
-              Alert.alert(
-                "Success",
-                `${added} ${added === 1 ? "dish" : "dishes"} added to your menu.`,
-              );
-            } else {
-              Alert.alert(
-                "Some drafts were not added",
-                `${added} added, ${failed} failed. The failed drafts are still listed so you can try again.`,
-              );
-            }
-          },
+    showAlert("Accept All", `Are you sure you want to add ${drafts.length} dishes to your menu?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Accept All",
+        onPress: async () => {
+          let failed = 0;
+          for (const draft of drafts) {
+            if (!(await handleAccept(draft.id, { silent: true }))) failed += 1;
+          }
+          const added = drafts.length - failed;
+          if (failed === 0) {
+            showAlert("Success", `${added} ${added === 1 ? "dish" : "dishes"} added to your menu.`);
+          } else {
+            showAlert(
+              "Some drafts were not added",
+              `${added} added, ${failed} failed. The failed drafts are still listed so you can try again.`,
+            );
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
 
   return (
-    <Screen title="Menu Photo Scan">
+    <Screen title="Photo drafts">
       <View style={{ gap: spacing[4], width: "100%" }}>
         <View
           style={{
@@ -156,8 +151,8 @@ export function OCRDraftScreen() {
             Review Extracted Dishes
           </AppText>
           <AppText variant="bodySmall" style={{ color: palette.info, marginTop: 4 }}>
-            We scanned your uploaded menu photo and found these dishes. Review them before adding to
-            your menu.
+            Dishes found in your menu photos are listed here. Review them before adding them to your
+            menu.
           </AppText>
         </View>
 
@@ -193,7 +188,7 @@ export function OCRDraftScreen() {
               All caught up!
             </AppText>
             <AppText variant="bodySmall" tone="muted" style={{ marginTop: 4 }}>
-              No pending menu scans to review.
+              No pending photo drafts to review.
             </AppText>
           </View>
         ) : (
@@ -296,6 +291,7 @@ export function OCRDraftScreen() {
           ))
         )}
       </View>
+      {dialog}
     </Screen>
   );
 }
