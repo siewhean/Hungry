@@ -49,6 +49,7 @@ test("19: user/:id links open UserProfile and share URLs use usehungry.com/user"
   assert.equal(screens.UserProfile, "user/:authorId");
   // Signed-in users open a shared profile; unsafe ids are dropped.
   assert.deepEqual(linking.getStateFromPath("user/11111111-2222-3333-4444-555555555555")?.routes, [
+    { name: "MainTabs", params: { screen: "Home" } },
     { name: "UserProfile", params: { authorId: "11111111-2222-3333-4444-555555555555" } },
   ]);
   // The app is sign-in only: a signed-out visitor is sent to sign in, not the profile.

@@ -1,9 +1,14 @@
 import { NEUTRAL_TASTE_PROFILE, NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { flushPendingQuizResponse } from "@/features/profile/pendingQuizResponse";
+import { flushPendingDishSave } from "./pendingDishSave";
 import { mergeDietaryPreferences, recalibrateTasteProfile } from "@/lib/ai/tasteEngine";
 import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
 import { useLocationStore } from "@/store/useLocationStore";
-import { type ProvisionalOnboardingMigration, useProfileStore } from "@/store/useProfileStore";
+import {
+  type ProvisionalOnboardingMigration,
+  takeGuestSnapshotForSignIn,
+  useProfileStore,
+} from "@/store/useProfileStore";
 import type { TasteKey, TasteProfile, TasteVector, UserProfile } from "@/types/domain";
 
 const TASTE_KEYS: TasteKey[] = ["sweet", "spicy", "sour", "salty", "rich", "aromatic"];
@@ -213,11 +218,14 @@ export async function applySignedInProfile(
 ): Promise<ProfileMigrationResult> {
   const profileState = useProfileStore.getState();
   const provisionalFromStore = profileState.provisionalOnboardingMigration;
-  const currentProfile = profileState.profile;
+  // The auth listener may already have replaced the onboarding (guest) profile;
+  // use the copy it set aside for this account (main H1).
+  const guestSnapshot = takeGuestSnapshotForSignIn(sessionProfile.id);
+  const currentProfile = guestSnapshot?.profile ?? profileState.profile;
   // The quiz updates profile.tasteVector; take the vector from there so a stale
   // tasteProfile.vector never overwrites the onboarding answers (main #94).
   const currentTasteProfile = {
-    ...(currentProfile.tasteProfile ?? profileState.tasteProfile),
+    ...(currentProfile.tasteProfile ?? guestSnapshot?.tasteProfile ?? profileState.tasteProfile),
     vector: currentProfile.tasteVector,
   };
   const provisional =
@@ -237,6 +245,8 @@ export async function applySignedInProfile(
     useProfileStore.getState().applyProfile(profile);
     if (provisional)
       useProfileStore.getState().clearProvisionalOnboardingMigration(sessionProfile.id);
+    // After the account's profile is in place, so applying it cannot drop the save.
+    void flushPendingDishSave().catch(() => undefined);
     return { status: "synced", profile };
   }
 
@@ -246,6 +256,8 @@ export async function applySignedInProfile(
     profileMigrationOperations(options),
   );
   useProfileStore.getState().applyProfile(result.profile);
+  // A dish saved on the onboarding result screen is added once the account profile is in place.
+  void flushPendingDishSave().catch(() => undefined);
 
   if (result.status === "synced") {
     useProfileStore.getState().clearProvisionalOnboardingMigration(sessionProfile.id);

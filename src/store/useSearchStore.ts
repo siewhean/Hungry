@@ -28,7 +28,6 @@ interface SearchState {
   filters: SearchFilters;
   recentSearches: string[];
   history: SearchHistoryEntry[];
-  updateQuery: (query: string) => void;
   toggleCategory: (category: SearchCategory) => void;
   toggleDietary: (flag: DietaryFlag) => void;
   rememberSearch: (query: string) => void;
@@ -52,13 +51,6 @@ export const useSearchStore = create<SearchState>()(
       },
       recentSearches: [],
       history: [],
-      updateQuery: (query) =>
-        set((state) => ({
-          filters: {
-            ...state.filters,
-            query: normalizeSearchQuery(query),
-          },
-        })),
       toggleCategory: (category) =>
         set((state) => {
           const selected = !state.filters.categories.includes(category);

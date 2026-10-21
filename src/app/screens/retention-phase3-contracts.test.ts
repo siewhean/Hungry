@@ -29,7 +29,7 @@ test("shared links carry a source tag that is credited on signup", () => {
 
   const linking = createRootLinking("hungry://");
   const state = linking.getStateFromPath("dish/dish-1?src=whatsapp");
-  assert.equal(state?.routes[0]?.name, "DishDetail");
+  assert.equal(state?.routes[1]?.name, "DishDetail");
   assert.deepEqual(getShareAttribution(), { source: "whatsapp", route: "DishDetail" });
 
   assert.match(

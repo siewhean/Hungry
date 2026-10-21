@@ -143,9 +143,10 @@ test("Search hides empty sections and controls the backend ignores", () => {
   assert.doesNotMatch(home, /suggestedDish|collections|TasteFilter|getSearchResultsAsync/);
   assert.match(home, /const CATALOG_CATEGORIES: SearchCategory\[\] = \["noodles", "rice"\]/);
   assert.match(results, /radiusMeters: query\.trim\(\) \? undefined : 3_000/);
+  // Only location browsing is radius-bound, and never with a radius past Postgres int range.
   assert.match(
     repository,
-    /p_radius_meters: hasLocation && !query \? filters\.radius \|\| null : null/,
+    /p_radius_meters:\s*hasLocation && !query && filters\.radius > 0 && filters\.radius <= 2_147_483_647\s*\? Math\.round\(filters\.radius\)\s*: null/,
   );
 });
 

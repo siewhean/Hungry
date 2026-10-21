@@ -44,6 +44,8 @@ interface SessionState {
   passwordRecoveryInProgress: boolean;
   /** One-shot message shown on the Login screen after a signed-out transition. */
   authNotice?: AuthNotice | null;
+  /** Persisted: a sign-out whose Supabase session may still be stored on this device. */
+  signOutPending: boolean;
   completeAuth: (options?: {
     completedOnboarding?: boolean;
     skippedTasteQuiz?: boolean;
@@ -62,6 +64,8 @@ interface SessionState {
   setSkippedTasteQuiz: (skipped: boolean) => void;
   setPasswordRecoveryInProgress: (inProgress: boolean) => void;
   signOut: () => void;
+  /** Finishes a sign-out the app was closed during; bootstrap awaits it before restoring. */
+  finishPendingSignOut: () => Promise<void>;
   clearSession: () => void;
   markHydrated: () => void;
   markAuthReady: () => void;
@@ -87,6 +91,7 @@ const initialState = {
   sessionExpired: false,
   passwordRecoveryInProgress: false,
   authNotice: null,
+  signOutPending: false,
 } as const;
 
 function getProfileStoreState() {
@@ -285,12 +290,17 @@ const PUSH_TOKEN_UNBIND_TIMEOUT_MS = 3000;
 
 // Unbind this device's push token while the session can still authorize it,
 // then end the Supabase session. A slow or failed unbind never blocks sign-out.
-function signOutOfSupabase(): void {
+// signOutPending stays set until the stored session is gone, so a sign-out the
+// app is closed during is finished on the next launch instead of restored.
+function signOutOfSupabase(): Promise<void> {
   const service = getHungryService();
   const unbind = service.push.unregisterPushToken().catch(() => undefined);
   const timeout = new Promise<void>((resolve) => setTimeout(resolve, PUSH_TOKEN_UNBIND_TIMEOUT_MS));
-  void Promise.race([unbind, timeout])
+  return Promise.race([unbind, timeout])
     .then(() => service.auth.signOut())
+    .then(() => {
+      useSessionStore.setState({ signOutPending: false });
+    })
     .catch(() => undefined);
 }
 
@@ -386,16 +396,18 @@ export const useSessionStore = create<SessionState>()(
         const profileId = getSafeProfileId();
         const { hasCompletedOnboarding, hasSkippedTasteQuiz, authNotice }: SessionState =
           useSessionStore.getState();
-        if (getConfiguredDataSource() === "supabase") {
-          signOutOfSupabase();
-        }
+        const isSupabase = getConfiguredDataSource() === "supabase";
         set({
           ...initialState,
           isAuthReady: true,
           hasCompletedOnboarding,
           hasSkippedTasteQuiz,
           authNotice,
+          signOutPending: isSupabase,
         });
+        if (isSupabase) {
+          void signOutOfSupabase();
+        }
         clearAccountScopedStores();
         clearAccountLocalHistory();
         clearAuthenticatedProfile();
@@ -403,6 +415,10 @@ export const useSessionStore = create<SessionState>()(
         resetSignInTracking();
         trackAnalyticsEvent("sign_out", { reason: "manual" }, { userId: profileId });
       },
+      finishPendingSignOut: (): Promise<void> =>
+        useSessionStore.getState().signOutPending && getConfiguredDataSource() === "supabase"
+          ? signOutOfSupabase()
+          : Promise.resolve(),
       clearSession: () => {
         const profileId = getSafeProfileId();
         const { hasCompletedOnboarding, hasSkippedTasteQuiz } = useSessionStore.getState();
@@ -458,6 +474,7 @@ export const useSessionStore = create<SessionState>()(
               state.hasCompletedOnboarding || (session.completedOnboarding ?? false),
             hasSkippedTasteQuiz: session.skippedTasteQuiz ?? state.hasSkippedTasteQuiz,
             sessionExpired: false,
+            signOutPending: false,
           }));
           syncProfileForAuthState(true, session.userId);
 
@@ -519,6 +536,7 @@ export const useSessionStore = create<SessionState>()(
         authDataSource: state.authDataSource,
         hasCompletedOnboarding: state.hasCompletedOnboarding,
         hasSkippedTasteQuiz: state.hasSkippedTasteQuiz,
+        signOutPending: state.signOutPending,
       }),
       // A corrupt persisted value rehydrates with no state; mark hydrated anyway
       // so bootstrap still runs and Splash cannot hang on isAuthReady.

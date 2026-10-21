@@ -37,6 +37,7 @@ import {
   getNearestBuildings,
   singaporeBuildings,
 } from "@/lib/geo/singaporeBuildings";
+import { calculateDistanceMeters } from "@/lib/geo/distance";
 import { getCatalogRawService } from "@/lib/services/serviceProvider";
 import type { CatalogMapItem, CatalogRawVenueCard } from "@/lib/services/catalog";
 import { DiscoverViewToggle } from "@/components/discover/DiscoverViewToggle";
@@ -44,6 +45,7 @@ import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { sanitizeSearchQuery } from "@/lib/security/inputSanitization";
 import { useHungryTheme } from "@/theme";
 
 const DEFAULT_BUILDING_ID = "hc-maxwell";
@@ -51,6 +53,10 @@ type HomeMapFilterId = "nearMe" | "hawkerOnly" | "topRated" | "openNow";
 
 /** Camera moves settle before the catalog is read again. */
 const MAP_REFETCH_DEBOUNCE_MS = 350;
+/** "Near me" reads this radius around the diner's GPS position. */
+const NEAR_ME_RADIUS_METERS = 3_000;
+/** Moving the map centre further than this from the diner turns "Near me" off. */
+const NEAR_ME_PAN_TOLERANCE_METERS = 1_000;
 
 /** "Open · 450m · Maxwell Food Centre" from what the catalog card actually knows. */
 function formatVenueCardDetail(venue: CatalogRawVenueCard) {
@@ -92,8 +98,8 @@ export function HomeMapScreen() {
   const insets = useSafeAreaInsets();
   const { componentRadii, palette, radii, shadows, spacing, zIndex } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
-  const searchQuery = useSearchStore((state) => state.filters.query);
-  const updateSearchQuery = useSearchStore((state) => state.updateQuery);
+  // Raw text stays local so spaces survive typing; it is sanitised only on submit.
+  const [searchText, setSearchText] = useState("");
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
   const searchBarWidth = useMemo(
     () => Math.max(screenWidth - spacing[3] * 2 - 78, 240),
@@ -117,6 +123,15 @@ export function HomeMapScreen() {
   useEffect(() => () => setHighlightedStallVenueId(undefined), [setHighlightedStallVenueId]);
   const mapFilters = useDiscoveryStore((state) => state.mapFilters);
   const toggleMapFilter = useDiscoveryStore((state) => state.toggleMapFilter);
+  // "Near me" needs a real GPS fix; the built-in default point is not the diner.
+  const canUseNearMe = locationPermission === "granted" && !isLocationApproximate;
+  const filterOptions = useMemo(
+    () =>
+      canUseNearMe
+        ? HOME_MAP_FILTER_OPTIONS
+        : HOME_MAP_FILTER_OPTIONS.filter((option) => option.id !== "nearMe"),
+    [canUseNearMe],
+  );
 
   const activeBuildingRecord = useMemo(() => {
     const nameMatch = selectedBuilding?.name
@@ -136,7 +151,6 @@ export function HomeMapScreen() {
   const [showLegend, setShowLegend] = useState(false);
   const [rawMapItems, setRawMapItems] = useState<CatalogMapItem[]>([]);
   const [rawVenueCards, setRawVenueCards] = useState<CatalogRawVenueCard[]>([]);
-  const [rawReleaseId, setRawReleaseId] = useState<string | undefined>();
   const [mapLoadState, setMapLoadState] = useState<"idle" | "loading" | "error">("idle");
   const [mapReloadKey, setMapReloadKey] = useState(0);
 
@@ -160,11 +174,30 @@ export function HomeMapScreen() {
     setMapCenter(activeBuildingRecord.coordinate);
   }, [selectedBuilding?.name]);
 
+  // "Near me" only holds while the map sits on the diner. Panning to another
+  // district (or losing the GPS fix) switches it off so that area's pins show.
+  const nearMeActive =
+    mapFilters.nearMe &&
+    canUseNearMe &&
+    calculateDistanceMeters(mapCenter, currentLocation) <= NEAR_ME_PAN_TOLERANCE_METERS;
+  useEffect(() => {
+    if (mapFilters.nearMe && !nearMeActive) toggleMapFilter("nearMe");
+  }, [mapFilters.nearMe, nearMeActive, toggleMapFilter]);
+
+  const handleFilterSelect = useCallback(
+    (filter: HomeMapFilterId) => {
+      // Turning "Near me" on brings the map back to the diner.
+      if (filter === "nearMe" && !mapFilters.nearMe) setMapCenter(currentLocation);
+      toggleMapFilter(filter);
+    },
+    [currentLocation, mapFilters.nearMe, toggleMapFilter],
+  );
+
   useEffect(() => {
     let active = true;
     const span = currentZoom >= 15 ? 0.018 : currentZoom >= 13 ? 0.08 : 0.3;
     const buildingTypes = mapFilters.hawkerOnly ? ["hawker_centre"] : [];
-    const nearCoordinate = mapFilters.nearMe ? currentLocation : undefined;
+    const nearCoordinate = nearMeActive ? currentLocation : undefined;
     // Debounced so a pan or pinch reads once it settles; both reads run together.
     const timer = setTimeout(() => {
       setMapLoadState("loading");
@@ -176,7 +209,7 @@ export function HomeMapScreen() {
           maxLongitude: mapCenter.longitude + span,
           zoom: currentZoom,
           coordinate: nearCoordinate,
-          radiusMeters: nearCoordinate ? 3_000 : undefined,
+          radiusMeters: nearCoordinate ? NEAR_ME_RADIUS_METERS : undefined,
           buildingTypes,
           openOnly: mapFilters.openNow,
           minRating: mapFilters.topRated ? 4.5 : undefined,
@@ -184,7 +217,7 @@ export function HomeMapScreen() {
         catalogRawService.listVenues({
           coordinate: nearCoordinate ?? mapCenter,
           limit: 24,
-          radiusMeters: nearCoordinate ? 3_000 : undefined,
+          radiusMeters: nearCoordinate ? NEAR_ME_RADIUS_METERS : undefined,
           buildingTypes,
           openOnly: mapFilters.openNow,
           sort: mapFilters.topRated ? "quality" : "nearby",
@@ -194,7 +227,6 @@ export function HomeMapScreen() {
           if (!active) return;
           setRawMapItems(mapPage.items);
           setRawVenueCards(venuePage.items);
-          setRawReleaseId(mapPage.releaseId);
           setMapLoadState("idle");
         })
         .catch(() => {
@@ -206,7 +238,15 @@ export function HomeMapScreen() {
       active = false;
       clearTimeout(timer);
     };
-  }, [catalogRawService, currentLocation, currentZoom, mapCenter, mapFilters, mapReloadKey]);
+  }, [
+    catalogRawService,
+    currentLocation,
+    currentZoom,
+    mapCenter,
+    mapFilters,
+    mapReloadKey,
+    nearMeActive,
+  ]);
 
   const snapTo = (height: number) => {
     Animated.spring(animatedHeight, {
@@ -230,22 +270,19 @@ export function HomeMapScreen() {
         setCurrentZoom((zoom) => Math.max(14, zoom + 1.5));
         return;
       }
-      navigation.navigate("CatalogRawDetail", {
-        kind: "venue",
-        id: item.id,
-        releaseId: rawReleaseId,
-      });
+      // Catalog venue ids are venues.id, so pins open the full stall page.
+      navigation.navigate("StallDetail", { venueId: item.id });
     },
-    [navigation, rawMapItems, rawReleaseId],
+    [navigation, rawMapItems],
   );
 
   const submitSearch = useCallback(() => {
-    const trimmed = searchQuery.trim();
-    if (trimmed) {
-      rememberSearch(trimmed);
+    const query = sanitizeSearchQuery(searchText);
+    if (query) {
+      rememberSearch(query);
     }
-    navigation.navigate("SearchHome");
-  }, [navigation, rememberSearch, searchQuery]);
+    navigation.navigate("SearchResults", { initialQuery: query || undefined });
+  }, [navigation, rememberSearch, searchText]);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -389,10 +426,10 @@ export function HomeMapScreen() {
             }}
           >
             <ExpandableSearchLauncher
-              query={searchQuery}
-              onQueryChange={updateSearchQuery}
+              query={searchText}
+              onQueryChange={setSearchText}
               onSubmit={submitSearch}
-              onClear={() => updateSearchQuery("")}
+              onClear={() => setSearchText("")}
               placeholder="Search dishes or stalls..."
               expandedWidth={searchBarWidth}
               iconAlignment="left"
@@ -432,11 +469,11 @@ export function HomeMapScreen() {
             </Pressable>
           </View>
           <FilterChipRail
-            options={HOME_MAP_FILTER_OPTIONS}
-            selectedIds={HOME_MAP_FILTER_OPTIONS.filter((option) => mapFilters[option.id]).map(
-              (option) => option.id,
-            )}
-            onSelect={toggleMapFilter}
+            options={filterOptions}
+            selectedIds={filterOptions
+              .filter((option) => (option.id === "nearMe" ? nearMeActive : mapFilters[option.id]))
+              .map((option) => option.id)}
+            onSelect={handleFilterSelect}
             gap={spacing[2]}
             renderLeftIcon={(option, selected) =>
               option.id === "nearMe" ? (
@@ -582,14 +619,8 @@ export function HomeMapScreen() {
               <Pressable
                 key={venue.id}
                 accessibilityRole="button"
-                accessibilityLabel={`Open ${venue.name} catalog details`}
-                onPress={() =>
-                  navigation.navigate("CatalogRawDetail", {
-                    kind: "venue",
-                    id: venue.id,
-                    releaseId: rawReleaseId,
-                  })
-                }
+                accessibilityLabel={`Open ${venue.name}`}
+                onPress={() => navigation.navigate("StallDetail", { venueId: venue.id })}
                 style={{
                   backgroundColor: palette.bgSoft,
                   borderRadius: radii.md,
@@ -644,14 +675,8 @@ export function HomeMapScreen() {
                 <Pressable
                   key={venue.id}
                   accessibilityRole="button"
-                  accessibilityLabel={`Preview ${venue.name}`}
-                  onPress={() =>
-                    navigation.navigate("CatalogRawDetail", {
-                      kind: "venue",
-                      id: venue.id,
-                      releaseId: rawReleaseId,
-                    })
-                  }
+                  accessibilityLabel={`Open ${venue.name}`}
+                  onPress={() => navigation.navigate("StallDetail", { venueId: venue.id })}
                   style={[
                     {
                       backgroundColor: palette.surface,

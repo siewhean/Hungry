@@ -22,6 +22,7 @@ export interface LinkingRoute {
 }
 
 interface LinkingState {
+  index?: number;
   routes: LinkingRoute[];
 }
 
@@ -121,6 +122,13 @@ function createState(name: string, params?: Record<string, unknown>): LinkingSta
   return { routes: [params && Object.keys(params).length > 0 ? { name, params } : { name }] };
 }
 
+// Shared content links open on top of Home, so a cold start has a Back button
+// (AppHeader shows Back only when navigation.canGoBack()).
+function createStateOverHome(name: string, params?: Record<string, unknown>): LinkingState {
+  const [target] = createState(name, params).routes;
+  return { index: 1, routes: [{ name: "MainTabs", params: { screen: "Home" } }, target] };
+}
+
 // `pop` makes the nested AuthStack navigate back to an existing Login/SignUp
 // screen instead of pushing a duplicate on every auth deep link.
 function createAuthState(screen: string, params?: Record<string, unknown>): LinkingState {
@@ -177,38 +185,40 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
     return id ? createState("CatalogRawDetail", { kind, id }) : undefined;
   }
   // Lunch and dinner suggestion pushes open https://usehungry.com/decide.
-  if (path === "decide") return createState("DecideForMeResult", { surface: "home" });
+  if (path === "decide") return createStateOverHome("DecideForMeResult", { surface: "home" });
   if (parts[0] === "dish") {
     const dishId = decodePathSegment(parts[1]);
     if (!dishId) return undefined;
     return isCatalogDeepLinkMode()
-      ? createState("CatalogRawDetail", { kind: "dish", id: dishId })
-      : createState("DishDetail", { dishId });
+      ? createStateOverHome("CatalogRawDetail", { kind: "dish", id: dishId })
+      : createStateOverHome("DishDetail", { dishId });
   }
   if (parts[0] === "venue" || parts[0] === "stall") {
     const venueId = decodePathSegment(parts[1]);
     if (!venueId) return undefined;
     return isCatalogDeepLinkMode()
-      ? createState("CatalogRawDetail", { kind: "venue", id: venueId })
-      : createState("StallDetail", { venueId });
+      ? createStateOverHome("CatalogRawDetail", { kind: "venue", id: venueId })
+      : createStateOverHome("StallDetail", { venueId });
   }
   if (FEATURE_FLAGS.activityEnabled && parts[0] === "post") {
     const postId = decodePathSegment(parts[1]);
-    return postId ? createState("ActivityPostDetail", { postId }) : undefined;
+    return postId ? createStateOverHome("ActivityPostDetail", { postId }) : undefined;
   }
   // Shared profiles: https://usehungry.com/user/:id (the screen loads the public name).
   if (FEATURE_FLAGS.socialFeedEnabled && parts[0] === "user") {
     const authorId = decodePathSegment(parts[1]);
-    return authorId ? createState("UserProfile", { authorId }) : undefined;
+    return authorId ? createStateOverHome("UserProfile", { authorId }) : undefined;
   }
   if (FEATURE_FLAGS.postCreationEnabled && path === "order") {
     return createState("Post", parseOrderDeepLinkQuery(rawPath));
   }
   // Shared searches: https://usehungry.com/search?q=laksa&filter=Halal&mode=stalls
-  if (path === "search") return createState("SearchResults", parseSearchDeepLinkQuery(rawPath));
+  if (path === "search") {
+    return createStateOverHome("SearchResults", parseSearchDeepLinkQuery(rawPath));
+  }
   if (FEATURE_FLAGS.portfoliosEnabled && parts[0] === "portfolio") {
     const portfolioId = decodePathSegment(parts[1]);
-    return portfolioId ? createState("PortfolioPublicView", { portfolioId }) : undefined;
+    return portfolioId ? createStateOverHome("PortfolioPublicView", { portfolioId }) : undefined;
   }
   if (FEATURE_FLAGS.merchantCentreEnabled && parts[0] === "merchant") {
     // Merchant notifications link to hungry://merchant/inbox, /analytics and so on.
@@ -285,6 +295,9 @@ export function createRootLinking(
   return {
     prefixes: [prefix, "hungry://", WEB_BASE_URL],
     config: {
+      // With Home as the initial route, a [MainTabs, target] link state on a
+      // running app becomes a navigate to the target instead of a stack reset.
+      initialRouteName: "MainTabs" as const,
       screens: {
         AuthStack: {
           screens: {

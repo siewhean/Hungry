@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Animated, Easing, Pressable, TextInput, View } from "react-native";
-import { ArrowLeft, History, Search as SearchIcon, X } from "lucide-react-native";
+import {
+  ArrowLeft,
+  History,
+  MapPin,
+  Search as SearchIcon,
+  Store,
+  Utensils,
+  X,
+} from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
@@ -8,6 +16,8 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Button, ChipGroup, IconButton, Input, Screen } from "@/components/ui";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { CATALOG_SUGGEST_MIN_CHARS, type CatalogSuggestion } from "@/lib/services/catalog";
+import { getCatalogRawService } from "@/lib/services/serviceProvider";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -21,6 +31,19 @@ const CATEGORY_OPTIONS = CATALOG_CATEGORIES.map((category) => ({
   label: category.replace(/\b\w/g, (char) => char.toUpperCase()),
 }));
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
+type BrowseMode = "dishes" | "stalls";
+
+const SUGGESTION_KIND_LABELS: Record<CatalogSuggestion["kind"], string> = {
+  food_type: "Dish type",
+  place: "Hawker centre or mall",
+  stall: "Stall",
+};
+const SUGGEST_DEBOUNCE_MS = 200;
+
+/** Food types open dish results; stalls and places open stall results. */
+function suggestionMode(suggestion: CatalogSuggestion): BrowseMode {
+  return suggestion.kind === "food_type" ? "dishes" : "stalls";
+}
 
 export function DishSearchScreen() {
   const navigation = useNavigation<RootNavigation>();
@@ -39,6 +62,45 @@ export function DishSearchScreen() {
   const entryY = useRef(new Animated.Value(reduceMotion ? 0 : -28)).current;
   const entryOpacity = useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
   const trimmedSearchText = searchText.trim();
+  // Suggestions are kept with the text they answer, so stale ones never show.
+  const [suggestionResult, setSuggestionResult] = useState<{
+    query: string;
+    items: CatalogSuggestion[];
+  }>({ query: "", items: [] });
+  const [popularFoodTypes, setPopularFoodTypes] = useState<CatalogSuggestion[]>([]);
+  const showSuggestions = trimmedSearchText.length >= CATALOG_SUGGEST_MIN_CHARS;
+  const suggestions = suggestionResult.query === trimmedSearchText ? suggestionResult.items : [];
+
+  // Popular food types fill the empty state; suggestions follow the text as it is typed.
+  useEffect(() => {
+    let active = true;
+    getCatalogRawService()
+      .suggest("")
+      .then((items) => {
+        if (active) setPopularFoodTypes(items);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!showSuggestions) return;
+    let active = true;
+    const timer = setTimeout(() => {
+      getCatalogRawService()
+        .suggest(trimmedSearchText)
+        .then((items) => {
+          if (active) setSuggestionResult({ query: trimmedSearchText, items });
+        })
+        .catch(() => undefined);
+    }, SUGGEST_DEBOUNCE_MS);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [showSuggestions, trimmedSearchText]);
 
   useEffect(() => {
     if (reduceMotion) {
@@ -62,15 +124,22 @@ export function DishSearchScreen() {
     ]).start();
   }, [entryOpacity, entryY, motion.screenTransition, reduceMotion]);
 
-  const openResults = (query: string) => {
+  const openResults = (query: string, browseMode?: BrowseMode) => {
     const trimmedQuery = query.trim();
     if (trimmedQuery) {
       rememberSearch(trimmedQuery);
     }
     navigation.navigate("SearchResults", {
+      browseMode,
       initialQuery: trimmedQuery || undefined,
       foodTypeTag: selectedCategory,
     });
+  };
+
+  const openSuggestion = (suggestion: CatalogSuggestion, surface: "typeahead" | "popular") => {
+    trackAnalyticsEvent("search_suggestion_opened", { kind: suggestion.kind, surface });
+    setSearchText(suggestion.label);
+    openResults(suggestion.label, suggestionMode(suggestion));
   };
 
   const showRecents = allowSearchHistory && recentSearches.length > 0;
@@ -136,6 +205,40 @@ export function DishSearchScreen() {
           onChangeText={setSearchText}
           onSubmitEditing={() => openResults(searchText)}
         />
+        {showSuggestions && suggestions.length > 0 ? (
+          <View accessibilityLabel="Suggestions" style={{ gap: spacing[1] }}>
+            {suggestions.map((suggestion) => {
+              const Icon =
+                suggestion.kind === "food_type"
+                  ? Utensils
+                  : suggestion.kind === "place"
+                    ? MapPin
+                    : Store;
+              return (
+                <Pressable
+                  key={`${suggestion.kind}:${suggestion.label}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Search ${suggestion.label}, ${SUGGESTION_KIND_LABELS[suggestion.kind]}`}
+                  onPress={() => openSuggestion(suggestion, "typeahead")}
+                  style={{
+                    alignItems: "center",
+                    flexDirection: "row",
+                    gap: spacing[3],
+                    minHeight: 44,
+                  }}
+                >
+                  <Icon color={palette.textMuted} size={18} />
+                  <View style={{ flex: 1 }}>
+                    <AppText numberOfLines={1}>{suggestion.label}</AppText>
+                    <AppText tone="secondary" variant="micro">
+                      {SUGGESTION_KIND_LABELS[suggestion.kind]}
+                    </AppText>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
         <ChipGroup
           options={CATEGORY_OPTIONS}
           selectedIds={selectedCategory ? [selectedCategory] : []}
@@ -190,6 +293,20 @@ export function DishSearchScreen() {
                 </AppText>
               </Pressable>
             ))}
+          </View>
+        ) : null}
+        {!trimmedSearchText && popularFoodTypes.length > 0 ? (
+          <View style={{ gap: spacing[2] }}>
+            <AppText variant="bodyBold" accessibilityRole="header">
+              Popular dishes
+            </AppText>
+            <ChipGroup
+              options={popularFoodTypes.map((item) => ({ id: item.label, label: item.label }))}
+              onSelect={(label) => {
+                const suggestion = popularFoodTypes.find((item) => item.label === label);
+                if (suggestion) openSuggestion(suggestion, "popular");
+              }}
+            />
           </View>
         ) : null}
         <Button

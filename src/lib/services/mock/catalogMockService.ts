@@ -1,5 +1,7 @@
 import { calculateDistanceMeters } from "@/lib/geo/distance";
 import {
+  CATALOG_SUGGEST_LIMIT,
+  CATALOG_SUGGEST_MIN_CHARS,
   CatalogAccessError,
   type CatalogMapItem,
   type CatalogMapRequest,
@@ -10,6 +12,7 @@ import {
   type CatalogRawService,
   type CatalogRawVenueCard,
   type CatalogRawVenueDetail,
+  type CatalogSuggestion,
 } from "@/lib/services/catalog";
 import type { DataRepository } from "@/lib/services/types";
 import type { BuildingSummary, Coordinate, DishDetail, VenueSummary } from "@/types/domain";
@@ -136,12 +139,12 @@ function matchesVenueFilters(
   return true;
 }
 
-function matchesDishFilters(dish: DishDetail, request: CatalogPageRequest) {
+function matchesDishFilters(dish: DishDetail, request: CatalogPageRequest, buildingName = "") {
   const query = request.query?.trim().toLowerCase();
   if (
     query &&
-    ![dish.name, dish.venueName, dish.description ?? "", ...dishTags(dish)].some((value) =>
-      value.toLowerCase().includes(query),
+    ![dish.name, dish.venueName, buildingName, dish.description ?? "", ...dishTags(dish)].some(
+      (value) => value.toLowerCase().includes(query),
     )
   ) {
     return false;
@@ -211,7 +214,7 @@ export function createLocalCatalogService(repository: DataRepository): CatalogRa
       .filter((entry) => matchesVenueFilters(entry, request))
       .flatMap((entry) =>
         entry.dishes
-          .filter((dish) => matchesDishFilters(dish, request))
+          .filter((dish) => matchesDishFilters(dish, request, entry.building.name))
           .map((dish) => toDishCard(dish, entry, request.coordinate)),
       )
       .sort((left, right) => compareCards(request.sort, query, left, right));
@@ -235,8 +238,12 @@ export function createLocalCatalogService(repository: DataRepository): CatalogRa
         .filter((entry) => matchesVenueFilters(entry, request))
         .filter((entry) => {
           if (!query && !hasDishFilters) return true;
-          // A stall matches by its own name, or by any dish that passes the filters.
-          const nameMatches = Boolean(query) && entry.venue.name.toLowerCase().includes(query);
+          // A stall matches by its own or its building's name, or by any dish that passes the filters.
+          const nameMatches =
+            Boolean(query) &&
+            [entry.venue.name, entry.building.name].some((value) =>
+              value.toLowerCase().includes(query),
+            );
           if (nameMatches && !hasDishFilters) return true;
           const dishRequest = nameMatches ? { ...request, query: undefined } : request;
           return entry.dishes.some((dish) => matchesDishFilters(dish, dishRequest));
@@ -256,6 +263,48 @@ export function createLocalCatalogService(repository: DataRepository): CatalogRa
         .sort((left, right) => compareCards(request.sort, query, left, right))
         .map(({ card }) => card);
       return paginate(cards, request, totals(catalog));
+    },
+
+    async suggest(prefix) {
+      const catalog = loadCatalog(repository);
+      const text = prefix.trim().toLowerCase();
+      const counts = new Map<string, { suggestion: CatalogSuggestion; weight: number }>();
+      const add = (kind: CatalogSuggestion["kind"], label: string | undefined) => {
+        if (!label) return;
+        const key = `${kind}:${label}`;
+        const current = counts.get(key);
+        if (current) current.weight += 1;
+        else counts.set(key, { suggestion: { kind, label }, weight: 1 });
+      };
+      for (const entry of catalog) {
+        add("place", entry.building.name);
+        add("stall", entry.venue.name);
+        for (const dish of entry.dishes) add("food_type", dish.foodTypeTag);
+      }
+      const kindRank = { food_type: 0, place: 1, stall: 2 } as const;
+      const all = [...counts.values()];
+      if (text.length < CATALOG_SUGGEST_MIN_CHARS) {
+        return all
+          .filter(({ suggestion }) => suggestion.kind === "food_type")
+          .sort((left, right) => right.weight - left.weight)
+          .slice(0, CATALOG_SUGGEST_LIMIT)
+          .map(({ suggestion }) => suggestion);
+      }
+      const startsWith = (label: string) => label.toLowerCase().startsWith(text);
+      return (
+        all
+          // The start of the label or of any word in it, like the RPC.
+          .filter(({ suggestion }) => ` ${suggestion.label.toLowerCase()}`.includes(` ${text}`))
+          .sort(
+            (left, right) =>
+              Number(startsWith(right.suggestion.label)) -
+                Number(startsWith(left.suggestion.label)) ||
+              kindRank[left.suggestion.kind] - kindRank[right.suggestion.kind] ||
+              right.weight - left.weight,
+          )
+          .slice(0, CATALOG_SUGGEST_LIMIT)
+          .map(({ suggestion }) => suggestion)
+      );
     },
 
     async getDish(id) {

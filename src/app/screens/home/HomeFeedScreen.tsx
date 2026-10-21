@@ -40,6 +40,7 @@ import {
 } from "@gorhom/bottom-sheet";
 import {
   useFocusEffect,
+  useIsFocused,
   useNavigation,
   useRoute,
   type CompositeNavigationProp,
@@ -190,13 +191,15 @@ const EMPTY_FEED_DISH_COUNT = 6;
 
 interface HomeEmptyFeedProps {
   title: string;
+  /** Replaces the default body (guests get a sign-in prompt). */
+  body?: string;
   ctaLabel: string;
   onCtaPress: () => void;
   onOpenDish: (dishId: string) => void;
 }
 
 /** Empty feed: a CTA plus the top-rated dishes nearby, so Home is never a dead end. */
-function HomeEmptyFeed({ title, ctaLabel, onCtaPress, onOpenDish }: HomeEmptyFeedProps) {
+function HomeEmptyFeed({ title, body, ctaLabel, onCtaPress, onOpenDish }: HomeEmptyFeedProps) {
   const { spacing, semanticSpacing } = useHungryTheme();
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
@@ -228,9 +231,10 @@ function HomeEmptyFeed({ title, ctaLabel, onCtaPress, onOpenDish }: HomeEmptyFee
       <EmptyState
         title={title}
         body={
-          dishes.length
+          body ??
+          (dishes.length
             ? "While it fills up, here are the top-rated dishes near you."
-            : "Share a dish you loved to get things going."
+            : "Share a dish you loved to get things going.")
         }
         ctaLabel={ctaLabel}
         onPress={onCtaPress}
@@ -385,6 +389,10 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     }
     navigation.navigate("Post");
   }, [isAuthenticated, navigation, setReturnRoute]);
+  const openSignInFromEmptyFeed = useCallback(() => {
+    setReturnRoute({ name: "MainTabs", params: { screen: "Home" } });
+    navigation.navigate("AuthStack", { screen: "Login" });
+  }, [navigation, setReturnRoute]);
   const openDishFromEmptyFeed = useCallback(
     (dishId: string) => navigation.navigate("DishDetail", { dishId }),
     [navigation],
@@ -439,6 +447,8 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   );
   // The one video that may play: the most visible video card.
   const [activeVideoPostId, setActiveVideoPostId] = useState<string | null>(null);
+  // Home stays mounted under pushed screens and other tabs; videos pause there.
+  const isFocused = useIsFocused();
   const [carouselIndexByPostId, setCarouselIndexByPostId] = useState<Record<string, number>>({});
   const [openingUnseenStoryId, setOpeningUnseenStoryId] = useState<string | null>(null);
   const [openingUnseenStoryDisplayName, setOpeningUnseenStoryDisplayName] = useState<string | null>(
@@ -475,6 +485,8 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const activeFeedLoadIdRef = useRef(0);
   const lastLoadedFeedAtRef = useRef(0);
   const lastLoadedFeedKeyRef = useRef<string | null>(null);
+  // home_feed_viewed fires once per focus, not on every reload.
+  const feedViewTrackedRef = useRef(false);
   const socialFeedListRef = useRef<FlashListRef<HomeFeedItem> | null>(null);
   const handleViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: { item?: HomeFeedItem; isViewable: boolean }[] }) => {
@@ -486,15 +498,16 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     [],
   );
   const reviewFeedScrollRef = useRef<ScrollView | null>(null);
+  // Taste changes on every like, save, comment or share tap; read it at load time
+  // so a tap does not reload the feed. The key holds only what changes content.
+  const profileRef = useRef(profile);
+  useEffect(() => {
+    profileRef.current = profile;
+  }, [profile]);
   const profileFeedKey = useMemo(() => {
-    const tasteSignature = Object.entries(profile.tasteVector)
-      .sort(([left], [right]) => left.localeCompare(right))
-      .map(([key, value]) => `${key}:${value}`)
-      .join(",");
     return [
       profile.id,
       profile.dietaryPreferences.join(","),
-      tasteSignature,
       publishedPostsVersion,
       personalisation.openness,
       Object.entries(followedAuthors)
@@ -514,7 +527,6 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     personalisation.openness,
     profile.dietaryPreferences,
     profile.id,
-    profile.tasteVector,
     publishedPostsVersion,
   ]);
 
@@ -540,7 +552,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         setFeedState((current) => (current === "ready" && !options?.force ? current : "loading"));
       }
       try {
-        const bundle = await getHomeFeedBundle(profile, {
+        const bundle = await getHomeFeedBundle(profileRef.current, {
           followedAuthors,
           followedUserIds,
           refreshSeed: feedRefreshSeedRef.current,
@@ -559,7 +571,10 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         lastLoadedFeedAtRef.current = Date.now();
         setFeedError("");
         setFeedState("ready");
-        trackAnalyticsEvent("home_feed_viewed", { post_count: bundle.socialFeed.length });
+        if (!feedViewTrackedRef.current) {
+          feedViewTrackedRef.current = true;
+          trackAnalyticsEvent("home_feed_viewed", { post_count: bundle.socialFeed.length });
+        }
       } catch (error) {
         setFeedError(error instanceof Error ? error.message : "Unable to load home feed.");
         if (activeFeedLoadIdRef.current !== loadId) {
@@ -570,7 +585,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         );
       }
     },
-    [followedAuthors, followedUserIds, initializeInteractions, profile, profileFeedKey],
+    [followedAuthors, followedUserIds, initializeInteractions, profileFeedKey],
   );
 
   const hidePostFromCurrentFeed = useCallback((postId: string) => {
@@ -652,6 +667,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
+      feedViewTrackedRef.current = false;
       const cancelIdle = scheduleIdleWork(() => {
         if (!cancelled) {
           void loadFeed();
@@ -1560,7 +1576,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                   }`}
                   accessibilityHint="Opens this media and supports double tap to like"
                   onPress={(event) => handlePostImagePress(item, event)}
-                  isActive={activeVideoPostId === item.id}
+                  isActive={isFocused && activeVideoPostId === item.id}
                   onDoubleTap={(origin) => {
                     if (!interactions[item.id]?.liked) {
                       handlePostLike(item);
@@ -2109,6 +2125,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       captionOverflowByPostId,
       expandedCaptionByPostId,
       activeVideoPostId,
+      isFocused,
       requireAuthForPostAction,
       runDoubleTapHeartAnimation,
       handleCaptionTextLayout,
@@ -2240,12 +2257,22 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
               viewabilityConfig={VIDEO_VIEWABILITY_CONFIG}
               onViewableItemsChanged={handleViewableItemsChanged}
               ListEmptyComponent={
-                <HomeEmptyFeed
-                  title="No posts yet"
-                  ctaLabel="Share a dish"
-                  onCtaPress={openComposerFromEmptyFeed}
-                  onOpenDish={openDishFromEmptyFeed}
-                />
+                isAuthenticated ? (
+                  <HomeEmptyFeed
+                    title="No posts yet"
+                    ctaLabel="Share a dish"
+                    onCtaPress={openComposerFromEmptyFeed}
+                    onOpenDish={openDishFromEmptyFeed}
+                  />
+                ) : (
+                  <HomeEmptyFeed
+                    title="Sign in to see your feed"
+                    body="Follow foodies to see what they eat. Until then, here are top-rated dishes near you."
+                    ctaLabel="Sign in"
+                    onCtaPress={openSignInFromEmptyFeed}
+                    onOpenDish={openDishFromEmptyFeed}
+                  />
+                )
               }
               contentContainerStyle={{
                 gap: spacing[2],

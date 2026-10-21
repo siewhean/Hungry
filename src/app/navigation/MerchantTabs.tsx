@@ -20,6 +20,11 @@ import type { MerchantTabParamList, RootStackParamList } from "@/app/navigation/
 const Tab = createBottomTabNavigator<MerchantTabParamList>();
 const verifiedOnlyScreens = new Set<string>(VERIFIED_ONLY_SCREENS);
 const MERCHANT_ACCOUNT_SYNC_TTL_MS = 5 * 60 * 1000;
+/**
+ * Editors with an unsaved-changes guard. The guard cannot intercept a tab press (these are
+ * hidden tabs, so beforeRemove never fires), so the tab bar is not shown on them at all.
+ */
+const EDITOR_ROUTES = new Set<string>(["BusinessProfileEditor", "DishEditor", "PromotionBuilder"]);
 
 type MerchantRouteName = keyof MerchantTabParamList;
 
@@ -166,117 +171,149 @@ function createGuardedScreen<Props extends object>(
   };
 }
 
-const loadMerchantDashboardScreen = () =>
+/**
+ * Build each guarded screen once. Navigators may call getComponent on every render; a new
+ * component type each time would remount the screen and drop its scroll and form state.
+ */
+function memoizeLoader<T>(load: () => T): () => T {
+  let loaded: { value: T } | undefined;
+  return () => {
+    loaded ??= { value: load() };
+    return loaded.value;
+  };
+}
+
+const loadMerchantDashboardScreen = memoizeLoader(() =>
   createGuardedScreen(
     "Dashboard",
     (
       require("@/app/screens/merchant/MerchantDashboardScreen") as typeof import("@/app/screens/merchant/MerchantDashboardScreen")
     ).MerchantDashboardScreen,
-  );
-const loadMerchantMenuScreen = () =>
+  ),
+);
+const loadMerchantMenuScreen = memoizeLoader(() =>
   createGuardedScreen(
     "Menu",
     (
       require("@/app/screens/merchant/MerchantMenuScreen") as typeof import("@/app/screens/merchant/MerchantMenuScreen")
     ).MerchantMenuScreen,
-  );
-const loadMerchantAnalyticsScreen = () =>
+  ),
+);
+const loadMerchantAnalyticsScreen = memoizeLoader(() =>
   createGuardedScreen(
     "Analytics",
     (
       require("@/app/screens/merchant/MerchantAnalyticsScreen") as typeof import("@/app/screens/merchant/MerchantAnalyticsScreen")
     ).MerchantAnalyticsScreen,
-  );
-const loadMerchantProfileScreen = () =>
+  ),
+);
+const loadMerchantProfileScreen = memoizeLoader(() =>
   createGuardedScreen(
     "Profile",
     (
       require("@/app/screens/merchant/MerchantProfileScreen") as typeof import("@/app/screens/merchant/MerchantProfileScreen")
     ).MerchantProfileScreen,
-  );
-const loadVerificationCentreScreen = () =>
+  ),
+);
+const loadVerificationCentreScreen = memoizeLoader(() =>
   createGuardedScreen(
     "VerificationCentre",
     (
       require("@/app/screens/merchant/VerificationCentreScreen") as typeof import("@/app/screens/merchant/VerificationCentreScreen")
     ).VerificationCentreScreen,
-  );
-const loadHomeBasedVerificationScreen = () =>
+  ),
+);
+const loadHomeBasedVerificationScreen = memoizeLoader(() =>
   createGuardedScreen(
     "HomeBasedVerification",
     (
       require("@/app/screens/merchant/HomeBasedVerificationScreen") as typeof import("@/app/screens/merchant/HomeBasedVerificationScreen")
     ).HomeBasedVerificationScreen,
-  );
-const loadCustomerInboxScreen = () =>
+  ),
+);
+const loadCustomerInboxScreen = memoizeLoader(() =>
   createGuardedScreen(
     "CustomerInbox",
     (
       require("@/app/screens/merchant/CustomerInboxScreen") as typeof import("@/app/screens/merchant/CustomerInboxScreen")
     ).CustomerInboxScreen,
-  );
-const loadFeaturedVisitorsScreen = () =>
+  ),
+);
+const loadFeaturedVisitorsScreen = memoizeLoader(() =>
   createGuardedScreen(
     "FeaturedVisitors",
     (
       require("@/app/screens/merchant/FeaturedVisitorsScreen") as typeof import("@/app/screens/merchant/FeaturedVisitorsScreen")
     ).FeaturedVisitorsScreen,
-  );
-const loadBusinessProfileEditorScreen = () =>
+  ),
+);
+const loadBusinessProfileEditorScreen = memoizeLoader(() =>
   createGuardedScreen(
     "BusinessProfileEditor",
     (
       require("@/app/screens/merchant/BusinessProfileEditorScreen") as typeof import("@/app/screens/merchant/BusinessProfileEditorScreen")
     ).BusinessProfileEditorScreen,
-  );
-const loadDishEditorScreen = () =>
+  ),
+);
+const loadDishEditorScreen = memoizeLoader(() =>
   createGuardedScreen(
     "DishEditor",
     (
       require("@/app/screens/merchant/DishEditorScreen") as typeof import("@/app/screens/merchant/DishEditorScreen")
     ).DishEditorScreen,
-  );
-const loadOCRDraftScreen = () =>
+  ),
+);
+const loadOCRDraftScreen = memoizeLoader(() =>
   createGuardedScreen(
     "OCRDrafts",
     (
       require("@/app/screens/merchant/OCRDraftScreen") as typeof import("@/app/screens/merchant/OCRDraftScreen")
     ).OCRDraftScreen,
-  );
-const loadPromotionListScreen = () =>
+  ),
+);
+const loadPromotionListScreen = memoizeLoader(() =>
   createGuardedScreen(
     "PromotionList",
     (
       require("@/app/screens/merchant/PromotionListScreen") as typeof import("@/app/screens/merchant/PromotionListScreen")
     ).PromotionListScreen,
-  );
-const loadPromotionBuilderScreen = () =>
+  ),
+);
+const loadPromotionBuilderScreen = memoizeLoader(() =>
   createGuardedScreen(
     "PromotionBuilder",
     (
       require("@/app/screens/merchant/PromotionBuilderScreen") as typeof import("@/app/screens/merchant/PromotionBuilderScreen")
     ).PromotionBuilderScreen,
-  );
-const loadAIAssistantScreen = () =>
+  ),
+);
+const loadAIAssistantScreen = memoizeLoader(() =>
   createGuardedScreen(
     "AIAssistant",
     (
       require("@/app/screens/merchant/AIAssistantScreen") as typeof import("@/app/screens/merchant/AIAssistantScreen")
     ).AIAssistantScreen,
-  );
-const loadMerchantSettingsScreen = () =>
+  ),
+);
+const loadMerchantSettingsScreen = memoizeLoader(() =>
   createGuardedScreen(
     "MerchantSettings",
     (
       require("@/app/screens/merchant/MerchantSettingsScreen") as typeof import("@/app/screens/merchant/MerchantSettingsScreen")
     ).MerchantSettingsScreen,
-  );
+  ),
+);
 
 function MerchantTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const { componentSizes, palette, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const account = useMerchantStore((storeState) => storeState.account);
   const activeOutlet = useMerchantStore(getActiveOutlet);
+
+  // Leaving an editor goes through its back button, which asks before discarding edits.
+  if (EDITOR_ROUTES.has(state.routes[state.index]?.name ?? "")) {
+    return null;
+  }
 
   return (
     <View

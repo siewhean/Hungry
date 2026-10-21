@@ -9,6 +9,7 @@
 
 import { getFloorPlan } from "@/lib/geo/floorPlans";
 import { PROFILE_BIO_MAX_LENGTH } from "@/features/profile/profileBio";
+import { normalizeReviewPatch } from "@/features/review/reviewEdit";
 import { MERCHANT_DEEP_LINKS } from "@/features/merchant/merchantDeepLinks";
 import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
@@ -121,11 +122,13 @@ import { validateMerchantProfileUpdates } from "@/features/merchant/profileValid
 import { filterCustomerVisiblePromotions } from "@/features/merchant/customerPromotions";
 import { validateMerchantPromotionInput } from "@/features/merchant/promotionValidation";
 import { loadMockState, saveMockState } from "./persistence";
+import { POST_CAPTION_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSanitization";
 import { biteToStallPost } from "@/lib/services/postTransforms";
 import {
   appendPublishedStallPost,
   hydratePublishedStallPosts,
   listMockStallPosts,
+  removePublishedStallPost,
 } from "./stallPostState";
 
 type MerchantActionEventInput = Parameters<
@@ -171,6 +174,23 @@ function canViewMockPortfolio(portfolio: Portfolio): boolean {
     portfolio.visibility === "public" ||
     _portfolioFollows.some(
       (follow) => follow.portfolioId === portfolio.id && follow.userId === _profile.id,
+    ) ||
+    _portfolioCollaborators.some(
+      (collaborator) =>
+        collaborator.portfolioId === portfolio.id && collaborator.userId === _profile.id,
+    )
+  );
+}
+
+/** Owner or editor collaborator, like the item RPCs (add/update/delete/reorder). */
+function canEditMockPortfolio(portfolioId: string): boolean {
+  return (
+    _portfolios.some((entry) => entry.id === portfolioId && entry.ownerId === _profile.id) ||
+    _portfolioCollaborators.some(
+      (collaborator) =>
+        collaborator.portfolioId === portfolioId &&
+        collaborator.userId === _profile.id &&
+        collaborator.role === "editor",
     )
   );
 }
@@ -623,6 +643,15 @@ function isMockInboxReviewModerationHidden(interaction: CustomerInteraction): bo
  * Mirrors the Supabase review read policies: hide report-threshold reviews from everyone but
  * their author, blocked authors, and reviews the viewer reported.
  */
+/** The dish holding the signed-in user's own review; throws like the RLS-scoped update. */
+function findMockOwnReviewDish(reviewId: string, action: "edit" | "delete") {
+  const dish = dishes.find((item) =>
+    item.reviews.some((review) => review.id === reviewId && review.authorId === _profile.id),
+  );
+  if (!dish) throw new Error(`Review not found, or it isn't yours to ${action}.`);
+  return dish;
+}
+
 function isMockReviewHiddenForViewer(review: { id: string; authorId?: string }): boolean {
   if (_moderationHiddenReviewIds.has(review.id) && review.authorId !== _profile.id) return true;
   if (review.authorId && _blockedUsers.has(review.authorId)) return true;
@@ -1903,6 +1932,22 @@ export const hungryService: HungryService = {
       else _helpfulReviewIds.delete(reviewId);
       return resolve(undefined);
     },
+
+    async updateReview(reviewId, patch) {
+      const dish = findMockOwnReviewDish(reviewId, "edit");
+      const normalized = normalizeReviewPatch(patch);
+      dish.reviews = dish.reviews.map((review) =>
+        review.id === reviewId ? { ...review, ...normalized } : review,
+      );
+      return resolve(undefined);
+    },
+
+    async deleteReview(reviewId) {
+      const dish = findMockOwnReviewDish(reviewId, "delete");
+      dish.reviews = dish.reviews.filter((review) => review.id !== reviewId);
+      _helpfulReviewIds.delete(reviewId);
+      return resolve(undefined);
+    },
   },
 
   // ── Profile ─────────────────────────────────────────────────────────────────
@@ -2007,6 +2052,23 @@ export const hungryService: HungryService = {
       return resolve([..._profile.favouriteDishIds]);
     },
 
+    async setDishTried(dishId, tried) {
+      // Mirrors set_dish_tried: a dish the user reviewed stays in the Tried list.
+      const hasReview = dishes.some(
+        (dish) =>
+          dish.id === dishId && dish.reviews.some((review) => review.authorId === _profile.id),
+      );
+      const keep = tried || hasReview;
+      const current = _profile.reviewedDishIds;
+      const reviewedDishIds = keep
+        ? current.includes(dishId)
+          ? current
+          : [...current, dishId]
+        : current.filter((id) => id !== dishId);
+      _profile = { ..._profile, reviewedDishIds };
+      return resolve([...reviewedDishIds]);
+    },
+
     async setStallFollow(stallId, following) {
       if (following) _followedStallIds.add(stallId);
       else _followedStallIds.delete(stallId);
@@ -2105,6 +2167,25 @@ export const hungryService: HungryService = {
         (candidate) => candidate.id === postId && !_blockedUsers.has(candidate.authorId),
       );
       return resolve(bite ? withMockViewerReactions(bite) : null);
+    },
+
+    async updatePost(postId: string, patch: { caption: string }) {
+      await hydrateSocial();
+      const bite = MOCK_BITES_FEED.find(
+        (candidate) => candidate.id === postId && candidate.authorId === _profile.id,
+      );
+      if (!bite) throw new Error("This post can no longer be edited.");
+      bite.caption = sanitizeFreeText(patch.caption, POST_CAPTION_MAX_LENGTH);
+    },
+
+    async deletePost(postId: string) {
+      await hydrateSocial();
+      const index = MOCK_BITES_FEED.findIndex(
+        (candidate) => candidate.id === postId && candidate.authorId === _profile.id,
+      );
+      if (index < 0) throw new Error("This post was already deleted.");
+      MOCK_BITES_FEED.splice(index, 1);
+      await removePublishedStallPost(postId);
     },
 
     async listUserPosts(userId: string, page?: { limit?: number; offset?: number }) {
@@ -3740,16 +3821,18 @@ export const hungryService: HungryService = {
       return resolve(clone(portfolio));
     },
 
-    async getPortfolios(filters?: { userId?: string; visibility?: string; type?: string }) {
+    async getPortfolios(filters?: {
+      userId?: string;
+      visibility?: string;
+      type?: string;
+      ids?: string[];
+    }) {
       const visiblePortfolios = _portfolios.filter((portfolio) => {
         if (filters?.userId && portfolio.ownerId !== filters.userId) return false;
         if (filters?.visibility && portfolio.visibility !== filters.visibility) return false;
         if (filters?.type && portfolio.type !== filters.type) return false;
-        if (portfolio.ownerId === _profile.id) return true;
-        if (portfolio.visibility === "public") return true;
-        return _portfolioFollows.some(
-          (follow) => follow.portfolioId === portfolio.id && follow.userId === _profile.id,
-        );
+        if (filters?.ids && !filters.ids.includes(portfolio.id)) return false;
+        return canViewMockPortfolio(portfolio);
       });
       return resolve(
         clone(
@@ -3891,18 +3974,7 @@ export const hungryService: HungryService = {
 
     async addPortfolioItem(input: PortfolioItemCreateInput, options?: PortfolioMutationOptions) {
       assertMockPortfolioVersion(input.portfolioId, options);
-      const portfolio = _portfolios.find(
-        (entry) => entry.id === input.portfolioId && entry.ownerId === _profile.id,
-      );
-      const canEdit =
-        Boolean(portfolio) ||
-        _portfolioCollaborators.some(
-          (collaborator) =>
-            collaborator.portfolioId === input.portfolioId &&
-            collaborator.userId === _profile.id &&
-            collaborator.role === "editor",
-        );
-      if (!canEdit) {
+      if (!canEditMockPortfolio(input.portfolioId)) {
         throw new Error(`Portfolio ${input.portfolioId} not found`);
       }
       const duplicateItem = _portfolioItems.find(
@@ -3983,10 +4055,7 @@ export const hungryService: HungryService = {
         if (item.id !== id) {
           return item;
         }
-        const portfolio = _portfolios.find(
-          (entry) => entry.id === item.portfolioId && entry.ownerId === _profile.id,
-        );
-        if (!portfolio) {
+        if (!canEditMockPortfolio(item.portfolioId)) {
           return item;
         }
         if (typeof updates.score === "number" && (updates.score < 1 || updates.score > 10)) {
@@ -4016,10 +4085,7 @@ export const hungryService: HungryService = {
         throw new Error(`Portfolio item ${id} not found`);
       }
       assertMockPortfolioVersion(item.portfolioId, options);
-      const portfolio = _portfolios.find(
-        (entry) => entry.id === item.portfolioId && entry.ownerId === _profile.id,
-      );
-      if (!portfolio) {
+      if (!canEditMockPortfolio(item.portfolioId)) {
         throw new Error(`Portfolio item ${id} not found`);
       }
       _portfolioItems = _portfolioItems.filter((entry) => entry.id !== id);
@@ -4043,10 +4109,7 @@ export const hungryService: HungryService = {
       options?: PortfolioMutationOptions,
     ) {
       assertMockPortfolioVersion(portfolioId, options);
-      const portfolio = _portfolios.find(
-        (entry) => entry.id === portfolioId && entry.ownerId === _profile.id,
-      );
-      if (!portfolio) {
+      if (!canEditMockPortfolio(portfolioId)) {
         throw new Error(`Portfolio ${portfolioId} not found`);
       }
       const currentItems = _portfolioItems.filter((item) => item.portfolioId === portfolioId);
@@ -4202,6 +4265,18 @@ export const hungryService: HungryService = {
         _portfolioFollows
           .filter((follow) => follow.userId === _profile.id)
           .map((follow) => follow.portfolioId),
+      );
+    },
+
+    async getSharedPortfolioIds(options?: { role?: "viewer" | "editor" }) {
+      return resolve(
+        _portfolioCollaborators
+          .filter(
+            (collaborator) =>
+              collaborator.userId === _profile.id &&
+              (!options?.role || collaborator.role === options.role),
+          )
+          .map((collaborator) => collaborator.portfolioId),
       );
     },
 

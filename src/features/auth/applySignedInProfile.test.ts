@@ -298,3 +298,18 @@ test("guest merge keeps the quiz vector when the guest tasteProfile vector is st
   assert.deepEqual(profile.tasteProfile?.vector, GUEST_VECTOR);
   assert.equal(profile.tasteProfile?.foodOpenness, "adventurous");
 });
+
+test("guest answers survive when the auth listener syncs the account profile first", () => {
+  seedGuestWithQuizAnswers();
+  const account = accountProfile({
+    tasteVector: { ...NEUTRAL_TASTE_VECTOR },
+    dietaryPreferences: [],
+  });
+  // supabase-js fires SIGNED_IN (and so syncProfile) before signIn returns to the screen.
+  useProfileStore.getState().syncProfile(true, account.id);
+  assert.notEqual(useProfileStore.getState().profile.id, "guest-user");
+  applySignedInProfile(account);
+  const profile = useProfileStore.getState().profile;
+  assert.deepEqual(profile.tasteVector, GUEST_VECTOR);
+  assert.deepEqual(profile.dietaryPreferences, ["halal"]);
+});

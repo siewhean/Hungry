@@ -402,6 +402,10 @@ export function createResilientCatalogReadService(
         () => fallback.getMapViewport(request),
       );
     },
+    // Typeahead is best effort: an unavailable live catalog just gives no suggestions.
+    async suggest(prefix) {
+      return primary.suggest(prefix).catch(() => fallback.suggest(prefix));
+    },
   };
 }
 

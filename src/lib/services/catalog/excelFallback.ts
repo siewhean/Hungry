@@ -16,6 +16,7 @@ import type {
   CatalogRawMedia,
   CatalogRawVenueCard,
   CatalogRawVenueDetail,
+  CatalogSuggestion,
 } from "@/lib/services/catalog";
 import { CatalogContractError } from "@/lib/services/catalog";
 import { sanitizeCatalogImageUrl } from "@/lib/services/catalog/media";
@@ -425,5 +426,10 @@ export const excelCatalogFallbackService = {
       ];
     });
     return { releaseId: FALLBACK_RELEASE_ID, items: items.slice(0, 500) };
+  },
+
+  // The offline catalog has no typeahead index; Search home shows no suggestions.
+  async suggest(): Promise<CatalogSuggestion[]> {
+    return [];
   },
 } satisfies CatalogReadService;

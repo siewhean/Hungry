@@ -162,6 +162,15 @@ test("onboarding is five short steps: welcome, location, optional taste quiz, fo
     read("src/app/screens/auth/EmailVerificationScreen.tsx"),
     /completeVerifiedSignUp\(shouldCompleteOnboarding\)/,
   );
+
+  // A signed-out save on the done step is kept on the device and saved after the
+  // required account step finishes; it never opens the account step early.
+  assert.match(done, /rememberPendingDishSave\(dish\);/);
+  assert.doesNotMatch(
+    done,
+    /rememberPendingDishSave\(dish\);\s*navigation\.navigate\("OnboardingAuth"\)/,
+  );
+  assert.match(read("src/features/auth/applySignedInProfile.ts"), /flushPendingDishSave\(\)/);
 });
 
 test("root and nested route targets avoid stale or unregistered screens", () => {

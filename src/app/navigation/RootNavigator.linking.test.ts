@@ -91,7 +91,7 @@ test("onboarded signed-out users are sent to login and retain a safe return rout
   assert.deepEqual(capturedRoute, { name: "Post", params: undefined });
 
   authState = { ...authState, isAuthReady: true, isAuthenticated: true };
-  assert.deepEqual(linking.getStateFromPath("dish/dish-123")?.routes?.[0], {
+  assert.deepEqual(linking.getStateFromPath("dish/dish-123")?.routes?.[1], {
     name: "DishDetail",
     params: { dishId: "dish-123" },
   });
@@ -106,7 +106,7 @@ test("deep-link sanitization rejects unsafe and malformed parameters", () => {
 
 test("venue and dish deep links round-trip with the params callers navigate with", () => {
   const linking = createRootLinking("exp://127.0.0.1:8081/--/");
-  assert.deepEqual(linking.getStateFromPath("venue/venue-tian-tian")?.routes?.[0], {
+  assert.deepEqual(linking.getStateFromPath("venue/venue-tian-tian")?.routes?.[1], {
     name: "StallDetail",
     params: { venueId: "venue-tian-tian" },
   });
@@ -181,7 +181,7 @@ test("catalog detail deep links validate kind and id", () => {
   assert.equal(linking.getStateFromPath("catalog/menu/venue-1"), undefined);
   assert.equal(linking.getStateFromPath("catalog/dish/<script>"), undefined);
   // Mock provider: legacy dish/venue routes stay on the classic detail screens.
-  assert.equal(linking.getStateFromPath("dish/dish-1")?.routes?.[0]?.name, "DishDetail");
+  assert.equal(linking.getStateFromPath("dish/dish-1")?.routes?.[1]?.name, "DishDetail");
   const source = readFileSync(path.join(process.cwd(), "src/app/navigation/linking.ts"), "utf8");
   assert.doesNotMatch(source, /catalogReadV2/);
   assert.match(source, /getServiceProvider\(\)\.mode === "supabase"/);
@@ -194,4 +194,28 @@ test("wheel /join/:code link puts the code on the WheelHome route", () => {
     params: { screen: "WheelHome", params: { code: "ABC123" } },
   });
   assert.equal(linking.getStateFromPath("join/%3Cscript%3E"), undefined);
+});
+
+test("cold-start shared links open on top of Home so Back leads somewhere", () => {
+  // Signed in: the app is sign-in only, so signed-out links go to Login instead.
+  const linking = createRootLinking("exp://127.0.0.1:8081/--/", () => ({
+    isAuthReady: true,
+    isAuthenticated: true,
+  }));
+  const home = { name: "MainTabs", params: { screen: "Home" } };
+  for (const [path, name] of [
+    ["post/post-1", "ActivityPostDetail"],
+    ["dish/dish-1", "DishDetail"],
+    ["venue/venue-1", "StallDetail"],
+    ["user/user-1", "UserProfile"],
+    ["search?q=laksa", "SearchResults"],
+  ]) {
+    const state = linking.getStateFromPath(path);
+    assert.equal(state?.index, 1, path);
+    assert.deepEqual(state?.routes?.[0], home, path);
+    assert.equal(state?.routes?.[1]?.name, name, path);
+  }
+  // Home is the linking initial route, so on a running app the two-route state
+  // becomes a navigate to the target rather than a reset of the whole stack.
+  assert.equal((linking.config as { initialRouteName?: string }).initialRouteName, "MainTabs");
 });

@@ -23,6 +23,7 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { useStallFollowStore } from "@/store/useStallFollowStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
+import type { Portfolio } from "@/types/domain";
 import { isDishDetail } from "./profileGuards";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import type { ProfileStackParamList } from "./ProfileStack";
@@ -442,19 +443,22 @@ function SavedListsSection({
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const portfolios = usePortfolioStore((state) => state.portfolios);
   const items = usePortfolioStore((state) => state.items);
-  const isLoaded = usePortfolioStore((state) => state.isLoaded);
-  const loadPortfolios = usePortfolioStore((state) => state.loadPortfolios);
+  const mineIds = usePortfolioStore((state) => state.scopeIds.mine);
+  const loadPortfolioScope = usePortfolioStore((state) => state.loadPortfolioScope);
   const canLoad = FEATURE_FLAGS.portfoliosEnabled && isAuthenticated;
 
   useEffect(() => {
-    if (!canLoad || isLoaded) return;
-    void loadPortfolios().catch((error) => console.error("Failed to load lists:", error));
-  }, [canLoad, isLoaded, loadPortfolios]);
+    if (!canLoad) return;
+    // Your own lists by owner on the server, not a filter over everyone's newest 100.
+    void loadPortfolioScope("mine").catch((error) => console.error("Failed to load lists:", error));
+  }, [canLoad, loadPortfolioScope, profileId]);
 
-  const ownLists = useMemo(
-    () => portfolios.filter((portfolio) => portfolio.ownerId === profileId),
-    [portfolios, profileId],
-  );
+  const ownLists = useMemo(() => {
+    const byId = new Map(portfolios.map((portfolio) => [portfolio.id, portfolio]));
+    return (mineIds ?? [])
+      .map((id) => byId.get(id))
+      .filter((portfolio): portfolio is Portfolio => Boolean(portfolio));
+  }, [mineIds, portfolios]);
 
   return (
     <View style={{ gap: spacing[3] }}>

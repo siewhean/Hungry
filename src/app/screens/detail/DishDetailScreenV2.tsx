@@ -26,6 +26,9 @@ import { useDetailSaveActions } from "@/features/checklistPortfolio/DetailSaveAc
 import { buildDishGallery } from "@/features/detail/detailTransforms";
 import { formatDishUpdated } from "@/features/detail/dishFreshness";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
+import { DietaryFlagChips } from "@/components/dish/DietaryFlagChips";
+import { OwnReviewActions, ReviewPhotoStrip } from "@/components/review";
+import { isOwnReview } from "@/features/review/reviewEdit";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
 import { sanitizeCatalogImageUrl } from "@/lib/services/catalog/media";
@@ -133,8 +136,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const profile = useProfileStore((state) => state.profile);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
-  const addReviewedDish = useProfileStore((state) => state.addReviewedDish);
-  const removeReviewedDish = useProfileStore((state) => state.removeReviewedDish);
+  const setDishTried = useProfileStore((state) => state.setDishTried);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const requireAccount = useRequireAccount();
@@ -155,7 +157,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [hasMoreReviews, setHasMoreReviews] = useState(false);
   const [isLoadingMoreReviews, setIsLoadingMoreReviews] = useState(false);
-  const { addToPortfolio, isAddingToPortfolio } = useDetailSaveActions({
+  const { addToPortfolio, isAddingToPortfolio, saveToListSheet } = useDetailSaveActions({
     navigation,
     target: {
       itemType: "dish",
@@ -171,6 +173,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   );
   const [hydratedVenue, setHydratedVenue] = useState<typeof cachedVenue>();
   const [hasLoadedVenueDetail, setHasLoadedVenueDetail] = useState(Boolean(cachedVenue));
+  // A failed stall read shows a retry row instead of silently dropping the stall sections.
+  const [venueLoadFailed, setVenueLoadFailed] = useState(false);
+  const [venueReloadKey, setVenueReloadKey] = useState(0);
   const venue = hydratedVenue ?? cachedVenue;
 
   const gallery = useMemo(
@@ -183,6 +188,16 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     [dish],
   );
   const heroImage = gallery[0] ?? sanitizeCatalogImageUrl(dish?.imageUrl);
+  // "Photos from reviews" rail: newest reviews first, at most 12 photos.
+  const reviewPhotos = useMemo(
+    () =>
+      dishReviews
+        .flatMap((review) => review.photos ?? [])
+        .map((photo) => sanitizeCatalogImageUrl(photo))
+        .filter((photo): photo is string => Boolean(photo))
+        .slice(0, 12),
+    [dishReviews],
+  );
   const tasteMatch = useMemo(
     () => (dish ? getTasteSimilarityWithDish(profile, dish) : 0),
     [dish, profile],
@@ -273,6 +288,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   useEffect(() => {
     let active = true;
     setHydratedVenue(undefined);
+    setVenueLoadFailed(false);
     setHasLoadedVenueDetail(Boolean(cachedVenue));
     if (!dish?.venueId || cachedVenue) {
       return () => {
@@ -288,13 +304,15 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
         setHasLoadedVenueDetail(true);
       })
       .catch(() => {
-        if (active) setHasLoadedVenueDetail(true);
+        if (!active) return;
+        setVenueLoadFailed(true);
+        setHasLoadedVenueDetail(true);
       });
 
     return () => {
       active = false;
     };
-  }, [cachedVenue, dish?.venueId]);
+  }, [cachedVenue, dish?.venueId, venueReloadKey]);
 
   // The cached dish carries no reviews, so always read them from the reviews service.
   const reviewDishId = dish?.id;
@@ -645,14 +663,30 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     }
 
     if (isDishTried) {
-      removeReviewedDish(dish.id);
-      showToast({ message: "Removed from your tried dishes.", ...triedToastStyle });
+      setIsTryingFood(true);
+      try {
+        const saved = await setDishTried(dish.id, false);
+        const stillTried = useProfileStore.getState().profile.reviewedDishIds.includes(dish.id);
+        showToast({
+          message: !saved
+            ? "Couldn't update your tried dishes. Try again."
+            : stillTried
+              ? "You reviewed this dish, so it stays in your tried dishes."
+              : "Removed from your tried dishes.",
+          ...triedToastStyle,
+        });
+      } finally {
+        setIsTryingFood(false);
+      }
       return;
     }
 
     setIsTryingFood(true);
     try {
-      addReviewedDish(dish.id);
+      if (!(await setDishTried(dish.id, true))) {
+        showToast({ message: "Couldn't mark this dish as tried. Try again.", ...triedToastStyle });
+        return;
+      }
       trackAnalyticsEvent("dish_marked_tried", { dish_id: dish.id, stall_id: dish.venueId });
       let pointsAwarded = 0;
       if (!isVenueVisited) {
@@ -838,6 +872,15 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         {dishPrice}
                       </AppText>
                     </View>
+                    {dish.dietaryFlags.length > 0 ? (
+                      <View style={{ gap: spacing[1] }}>
+                        <DietaryFlagChips flags={dish.dietaryFlags} />
+                        <AppText variant="micro" tone="muted">
+                          Labels come from the stall or our catalogue. Check with the stall if it
+                          matters to you.
+                        </AppText>
+                      </View>
+                    ) : null}
                     {dish.reviewCount > 0 ? (
                       <View
                         accessible
@@ -968,6 +1011,19 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                     </View>
                   ) : null}
                 </View>
+              ) : null}
+
+              {!venue && venueLoadFailed ? (
+                <Pressable
+                  onPress={() => setVenueReloadKey((key) => key + 1)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Couldn't load stall details. Retry"
+                  style={{ paddingVertical: spacing[3] }}
+                >
+                  <AppText tone="secondary">
+                    Couldn&apos;t load stall details. Tap to retry.
+                  </AppText>
+                </Pressable>
               ) : null}
 
               {venue ? (
@@ -1159,6 +1215,18 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   </View>
                 ) : dishReviews.length > 0 ? (
                   <>
+                    {reviewPhotos.length > 0 ? (
+                      <View style={{ gap: spacing[2] }}>
+                        <AppText variant="bodySmall" style={{ fontWeight: "800" }}>
+                          Photos from reviews
+                        </AppText>
+                        <ReviewPhotoStrip
+                          photos={reviewPhotos}
+                          subject={`${dish.name}, from reviews`}
+                          size={96}
+                        />
+                      </View>
+                    ) : null}
                     {(showAllReviews
                       ? dishReviews
                       : dishReviews.slice(0, DISH_REVIEW_PREVIEW_COUNT)
@@ -1201,6 +1269,27 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         <AppText variant="bodySmall" tone="secondary">
                           {review.text}
                         </AppText>
+                        <ReviewPhotoStrip
+                          photos={review.photos}
+                          subject={`${dish.name}, review by ${review.authorName}`}
+                        />
+                        {isOwnReview(review, isAuthenticated ? profile.id : undefined) ? (
+                          <OwnReviewActions
+                            review={review}
+                            onUpdated={(patch) =>
+                              setDishReviews((current) =>
+                                current.map((entry) =>
+                                  entry.id === review.id ? { ...entry, ...patch } : entry,
+                                ),
+                              )
+                            }
+                            onDeleted={() =>
+                              setDishReviews((current) =>
+                                current.filter((entry) => entry.id !== review.id),
+                              )
+                            }
+                          />
+                        ) : null}
                         {review.merchantReply ? (
                           <View
                             style={{
@@ -1444,6 +1533,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
               onShareCompleted={recordMerchantShare}
             />
           ) : null}
+          {saveToListSheet}
         </View>
       </SafeAreaView>
     </FeedErrorBoundary>

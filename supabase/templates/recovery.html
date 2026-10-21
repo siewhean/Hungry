@@ -1,0 +1,27 @@
+<!-- Reset password. The app asks for this code (ForgotPasswordScreen); the link is a fallback. -->
+<div
+  style="
+    font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, sans-serif;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 24px;
+    color: #1a1a1a;
+  "
+>
+  <h2 style="margin: 0 0 16px">Reset your Hungry password</h2>
+  <p style="margin: 0 0 16px">Enter this code in the Hungry app to choose a new password:</p>
+  <p style="margin: 0 0 24px; font-size: 32px; font-weight: 700; letter-spacing: 6px">
+    {{ .Token }}
+  </p>
+  <p style="margin: 0 0 16px">
+    Or, on the phone with Hungry installed,
+    <a href="{{ .ConfirmationURL }}">tap here to reset it</a>.
+  </p>
+  <p style="margin: 0 0 8px; color: #666; font-size: 13px">
+    The code expires in 1 hour. If you didn't ask to reset your password, you can ignore this email;
+    your password stays the same.
+  </p>
+  <p style="margin: 0; color: #666; font-size: 13px">
+    Questions? Email <a href="mailto:usehungrysingapore@gmail.com">usehungrysingapore@gmail.com</a>.
+  </p>
+</div>

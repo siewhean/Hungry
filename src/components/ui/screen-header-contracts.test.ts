@@ -502,7 +502,8 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(discover, /overflow: "hidden"/);
   assert.match(discover, /onPress=\{handleFoodStylePress\}/);
-  assert.match(discover, /updateSearchQuery\(item\.query\)/);
+  // The map and Quick Bites bars keep their own text, so a chip no longer writes into them (r2 H21).
+  assert.doesNotMatch(discover, /updateSearchQuery/);
   assert.match(discover, /rememberSearch\(item\.query\)/);
   assert.match(discover, /navigation\.navigate\("SearchResults", \{/);
   assert.match(discover, /places to eat in this area/);

@@ -19,8 +19,17 @@ interface PortfolioEditConflict {
   detectedAt: string;
 }
 
+/**
+ * Which server query fills a Lists tab: lists you own, lists shared with you as a
+ * collaborator, lists you follow, and public lists from everyone else.
+ */
+export type PortfolioListScope = "mine" | "shared" | "following" | "discover";
+
 interface PortfolioState {
+  /** Cache of every list loaded so far, by any scope or detail read. */
   portfolios: Portfolio[];
+  /** Ids each tab's own server query returned, newest first. Undefined until loaded. */
+  scopeIds: Partial<Record<PortfolioListScope, string[]>>;
   items: Record<string, PortfolioItem[]>;
   collaborators: Record<string, PortfolioCollaborator[]>;
   follows: Record<string, boolean>;
@@ -32,6 +41,8 @@ interface PortfolioState {
     visibility?: string;
     type?: string;
   }) => Promise<void>;
+  /** Loads one tab's lists with its own server query and caches them by id. */
+  loadPortfolioScope: (scope: PortfolioListScope) => Promise<void>;
   loadPortfolioItems: (portfolioId: string) => Promise<void>;
   loadPortfolioCollaborators: (portfolioId: string) => Promise<void>;
   checkFollowStatus: (portfolioId: string) => Promise<void>;
@@ -121,6 +132,37 @@ function matchesPortfolioFilters(
   return true;
 }
 
+/** Upserts fresh rows into the cache without dropping lists another tab loaded. */
+function mergePortfolios(current: Portfolio[], incoming: Portfolio[]): Portfolio[] {
+  const incomingIds = new Set(incoming.map((portfolio) => portfolio.id));
+  return [...incoming, ...current.filter((portfolio) => !incomingIds.has(portfolio.id))];
+}
+
+function withoutId(ids: string[] | undefined, id: string): string[] | undefined {
+  return ids?.filter((entry) => entry !== id);
+}
+
+async function fetchPortfolioScope(scope: PortfolioListScope): Promise<Portfolio[]> {
+  const service = getHungryService();
+  const profileId = useProfileStore.getState().profile.id;
+  switch (scope) {
+    case "mine":
+      return service.portfolio.getPortfolios({ userId: profileId });
+    case "shared":
+      return service.portfolio.getPortfolios({
+        ids: await service.portfolio.getSharedPortfolioIds(),
+      });
+    case "following":
+      return service.portfolio.getPortfolios({
+        ids: await service.portfolio.getFollowedPortfolioIds(),
+      });
+    case "discover":
+      return (await service.portfolio.searchPortfolios("", { visibility: "public" })).filter(
+        (portfolio) => portfolio.ownerId !== profileId,
+      );
+  }
+}
+
 function getPortfolioIdForItem(itemsByPortfolio: Record<string, PortfolioItem[]>, itemId: string) {
   return Object.entries(itemsByPortfolio).find(([, items]) =>
     items.some((item) => item.id === itemId),
@@ -196,6 +238,7 @@ export const usePortfolioStore = create<PortfolioState>()(
   persist(
     (set, get) => ({
       portfolios: [],
+      scopeIds: {},
       items: {},
       collaborators: {},
       follows: {},
@@ -206,15 +249,38 @@ export const usePortfolioStore = create<PortfolioState>()(
         const service = getHungryService();
         try {
           const portfolios = await service.portfolio.getPortfolios(filters);
-          set({ portfolios, isLoaded: true });
+          // Merge, never replace: a capped read must not drop lists another screen shows.
+          set((state) => ({
+            portfolios: mergePortfolios(state.portfolios, portfolios),
+            isLoaded: true,
+          }));
         } catch (error) {
-          const cachedPortfolios = get().portfolios.filter((portfolio) =>
-            matchesPortfolioFilters(portfolio, filters),
-          );
-          if (cachedPortfolios.length > 0) {
-            set({ portfolios: cachedPortfolios, isLoaded: true });
+          if (get().portfolios.some((portfolio) => matchesPortfolioFilters(portfolio, filters))) {
+            set({ isLoaded: true });
             return;
           }
+          throw error;
+        }
+      },
+
+      loadPortfolioScope: async (scope) => {
+        try {
+          const portfolios = await fetchPortfolioScope(scope);
+          set((state) => ({
+            portfolios: mergePortfolios(state.portfolios, portfolios),
+            scopeIds: { ...state.scopeIds, [scope]: portfolios.map((portfolio) => portfolio.id) },
+            follows:
+              scope === "following"
+                ? {
+                    ...state.follows,
+                    ...Object.fromEntries(portfolios.map((portfolio) => [portfolio.id, true])),
+                  }
+                : state.follows,
+            isLoaded: true,
+          }));
+        } catch (error) {
+          // Offline: keep showing this tab's last result.
+          if (get().scopeIds[scope]) return;
           throw error;
         }
       },
@@ -274,6 +340,9 @@ export const usePortfolioStore = create<PortfolioState>()(
         const portfolio = await service.portfolio.createPortfolio(input);
         set((state) => ({
           portfolios: [...state.portfolios, portfolio],
+          scopeIds: state.scopeIds.mine
+            ? { ...state.scopeIds, mine: [portfolio.id, ...state.scopeIds.mine] }
+            : state.scopeIds,
           conflicts: Object.fromEntries(
             Object.entries(state.conflicts).filter(([key]) => key !== portfolio.id),
           ),
@@ -310,6 +379,9 @@ export const usePortfolioStore = create<PortfolioState>()(
         );
         set((state) => ({
           portfolios: state.portfolios.filter((p) => p.id !== id),
+          scopeIds: Object.fromEntries(
+            Object.entries(state.scopeIds).map(([scope, ids]) => [scope, withoutId(ids, id)]),
+          ),
           items: Object.fromEntries(Object.entries(state.items).filter(([key]) => key !== id)),
           collaborators: Object.fromEntries(
             Object.entries(state.collaborators).filter(([key]) => key !== id),
@@ -486,6 +558,10 @@ export const usePortfolioStore = create<PortfolioState>()(
         await service.portfolio.followPortfolio(portfolioId);
         set((state) => ({
           follows: { ...state.follows, [portfolioId]: true },
+          scopeIds:
+            state.scopeIds.following && !state.scopeIds.following.includes(portfolioId)
+              ? { ...state.scopeIds, following: [portfolioId, ...state.scopeIds.following] }
+              : state.scopeIds,
         }));
         trackAnalyticsEvent(
           "portfolio_followed",
@@ -499,6 +575,9 @@ export const usePortfolioStore = create<PortfolioState>()(
         await service.portfolio.unfollowPortfolio(portfolioId);
         set((state) => ({
           follows: { ...state.follows, [portfolioId]: false },
+          scopeIds: state.scopeIds.following
+            ? { ...state.scopeIds, following: withoutId(state.scopeIds.following, portfolioId) }
+            : state.scopeIds,
         }));
       },
 
@@ -543,6 +622,7 @@ export const usePortfolioStore = create<PortfolioState>()(
       _reset: () =>
         set({
           portfolios: [],
+          scopeIds: {},
           items: {},
           collaborators: {},
           follows: {},
@@ -555,6 +635,7 @@ export const usePortfolioStore = create<PortfolioState>()(
       storage: hungryPersistStorage,
       partialize: (state) => ({
         portfolios: state.portfolios,
+        scopeIds: state.scopeIds,
         items: state.items,
         collaborators: state.collaborators,
         follows: state.follows,

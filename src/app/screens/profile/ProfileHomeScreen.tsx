@@ -34,11 +34,14 @@ import { toChatShareRecipient, type ChatShareRecipient } from "@/features/home/c
 import { prefetchMerchantTab, preloadRoute } from "@/features/navigation/prefetch";
 import { listSharedStallPosts, mergeStallPosts } from "@/features/social/sharedStallPosts";
 import { useVisitedStallIds } from "@/features/profile/visitedStalls";
+import { OwnReviewMenuButton, useOwnReviewEditor } from "@/features/profile/useOwnReviewEditor";
 import { profileShareUrl, shareProfileLink } from "@/features/share/profileShare";
 import { biteToStallPost } from "@/lib/services/postTransforms";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
+import { usePublishedPostStore } from "@/store/usePublishedPostStore";
+import { PendingDeletionBanner } from "@/features/auth/PendingDeletionBanner";
 import { useHungryTheme } from "@/theme";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useStoryStore } from "@/store/useStoryStore";
@@ -187,10 +190,22 @@ export function ProfileHomeScreen({
   const [postsLoadFailed, setPostsLoadFailed] = useState(false);
   const [postsLoaded, setPostsLoaded] = useState(false);
   const [postsReloadKey, setPostsReloadKey] = useState(0);
+  // Bumped when the user deletes a post, so the grid drops it on return.
+  const publishedPostsVersion = usePublishedPostStore((state) => state.version);
   /** Own server reviews; null until the first load finishes. */
   const [ownReviews, setOwnReviews] = useState<Review[] | null>(null);
   const [ownReviewsFailed, setOwnReviewsFailed] = useState(false);
   const [ownReviewsReloadKey, setOwnReviewsReloadKey] = useState(0);
+  const ownReviewEditor = useOwnReviewEditor({
+    onUpdated: (updated) =>
+      setOwnReviews((current) =>
+        current ? current.map((review) => (review.id === updated.id ? updated : review)) : current,
+      ),
+    onDeleted: (reviewId) =>
+      setOwnReviews((current) =>
+        current ? current.filter((review) => review.id !== reviewId) : current,
+      ),
+  });
   const rootNavigation = getRootNavigation(navigation as any);
 
   const openProfileConnections = useCallback(
@@ -373,7 +388,7 @@ export function ProfileHomeScreen({
     return () => {
       isMounted = false;
     };
-  }, [isAuthenticated, loadOwnPostsPage, profile.id, postsReloadKey]);
+  }, [isAuthenticated, loadOwnPostsPage, profile.id, postsReloadKey, publishedPostsVersion]);
 
   const loadMoreProfilePosts = () => {
     if (isLoadingMorePosts || !hasMorePosts) return;
@@ -754,6 +769,7 @@ export function ProfileHomeScreen({
       }
     >
       <View style={{ gap: spacing[1], paddingBottom: spacing[8], position: "relative" }}>
+        {mode === "self" ? <PendingDeletionBanner /> : null}
         {menuOpen && (
           <Pressable
             accessibilityRole="button"
@@ -1166,7 +1182,22 @@ export function ProfileHomeScreen({
                       }
                     >
                       <Card style={{ gap: spacing[2] }}>
-                        <AppText variant="bodyBold">{dishName ?? "Reviewed dish"}</AppText>
+                        <View
+                          style={{
+                            alignItems: "center",
+                            flexDirection: "row",
+                            gap: spacing[2],
+                          }}
+                        >
+                          <AppText variant="bodyBold" style={{ flex: 1 }}>
+                            {dishName ?? "Reviewed dish"}
+                          </AppText>
+                          {ownReviewEditor.enabled ? (
+                            <OwnReviewMenuButton
+                              onPress={() => ownReviewEditor.openActions(review)}
+                            />
+                          ) : null}
+                        </View>
                         <AppText variant="micro" tone="secondary">
                           {`Rated ${review.rating}/5`}
                         </AppText>
@@ -1175,6 +1206,7 @@ export function ProfileHomeScreen({
                     </Pressable>
                   );
                 })}
+                {ownReviewEditor.dialog}
               </View>
             ) : ownReviewsFailed ? (
               <EmptyState

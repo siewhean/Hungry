@@ -5,9 +5,14 @@ import { ArrowLeft, Search } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
-import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { AppText, Button, Card, Input } from "@/components/ui";
-import { getHungryService } from "@/lib/services/serviceProvider";
+import {
+  canShowMorePickerResults,
+  nextPickerLimit,
+  PICKER_PAGE_SIZE,
+  searchPickerDishes,
+  searchPickerVenues,
+} from "@/features/checklistPortfolio/pickerSearch";
 import { usePortfolioStore } from "@/store/usePortfolioStore";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail, VenueSummary } from "@/types/domain";
@@ -34,6 +39,7 @@ export function PortfolioItemPickerScreen({ navigation, route }: Props) {
   const [privateNotes, setPrivateNotes] = useState("");
   const [dishes, setDishes] = useState<DishDetail[]>([]);
   const [venues, setVenues] = useState<VenueSummary[]>([]);
+  const [resultLimit, setResultLimit] = useState(PICKER_PAGE_SIZE);
   const [isSaving, setIsSaving] = useState(false);
   const parsedScore = parsePortfolioScore(score);
   const scoreError =
@@ -46,35 +52,15 @@ export function PortfolioItemPickerScreen({ navigation, route }: Props) {
   useEffect(() => {
     // `mounted` drops results from a superseded search; the timer debounces typing.
     let mounted = true;
-    const service = getHungryService();
 
     async function loadChoices() {
       if (mode === "dish") {
-        const results = await service.discovery.searchDishes(
-          {
-            query,
-            categories: [],
-            dietaryFlags: [],
-            tasteValues: NEUTRAL_TASTE_VECTOR,
-            radius: 5000,
-          },
-          NEUTRAL_TASTE_VECTOR,
-        );
-        if (mounted) setDishes(results.slice(0, 12).map((result) => result.dish));
+        const nextDishes = await searchPickerDishes(query, resultLimit);
+        if (mounted) setDishes(nextDishes);
         return;
       }
-
-      const buildings = await service.discovery.listBuildings();
-      const venueLists = await Promise.all(
-        buildings
-          .slice(0, 6)
-          .map((building) => service.discovery.listVenuesByBuilding(building.id)),
-      );
-      const normalizedQuery = query.trim().toLowerCase();
-      const nextVenues = venueLists
-        .flat()
-        .filter((venue) => venue.name.toLowerCase().includes(normalizedQuery))
-        .slice(0, 16);
+      // Whole catalog via the venue search RPC, not the first few buildings.
+      const nextVenues = await searchPickerVenues(query, resultLimit);
       if (mounted) setVenues(nextVenues);
     }
 
@@ -85,7 +71,7 @@ export function PortfolioItemPickerScreen({ navigation, route }: Props) {
       mounted = false;
       clearTimeout(timer);
     };
-  }, [mode, query]);
+  }, [mode, query, resultLimit]);
 
   async function addDish(dish: DishDetail) {
     setIsSaving(true);
@@ -198,7 +184,10 @@ export function PortfolioItemPickerScreen({ navigation, route }: Props) {
         label="Search"
         placeholder={mode === "dish" ? "Find dishes..." : "Find stalls..."}
         value={query}
-        onChangeText={setQuery}
+        onChangeText={(text) => {
+          setQuery(text);
+          setResultLimit(PICKER_PAGE_SIZE);
+        }}
         leftIcon={<Search color={palette.textMuted} size={18} />}
       />
 
@@ -244,6 +233,14 @@ export function PortfolioItemPickerScreen({ navigation, route }: Props) {
               </Card>
             </Pressable>
           ))}
+
+      {canShowMorePickerResults((mode === "dish" ? dishes : venues).length, resultLimit) ? (
+        <Button
+          label="Show more"
+          variant="secondary"
+          onPress={() => setResultLimit((limit) => nextPickerLimit(limit))}
+        />
+      ) : null}
     </ScrollView>
   );
 }

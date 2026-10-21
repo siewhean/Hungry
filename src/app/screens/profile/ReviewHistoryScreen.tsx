@@ -9,6 +9,7 @@ import {
   getHungryService,
   getServiceProvider,
 } from "@/lib/services/serviceProvider";
+import { OwnReviewMenuButton, useOwnReviewEditor } from "@/features/profile/useOwnReviewEditor";
 import { useProfileStore } from "@/store/useProfileStore";
 import type { Review } from "@/types/domain";
 import { isDishDetail } from "./profileGuards";
@@ -24,6 +25,14 @@ export function ReviewHistoryScreen({ navigation }: Props) {
   const serviceProviderMode = getServiceProvider().mode;
   const [remoteReviews, setRemoteReviews] = useState<Review[]>([]);
   const [remoteLoadFailed, setRemoteLoadFailed] = useState(false);
+  const ownReviewEditor = useOwnReviewEditor({
+    onUpdated: (updated) =>
+      setRemoteReviews((current) =>
+        current.map((review) => (review.id === updated.id ? updated : review)),
+      ),
+    onDeleted: (reviewId) =>
+      setRemoteReviews((current) => current.filter((review) => review.id !== reviewId)),
+  });
   const mockHistory = useMemo(
     () =>
       profile.reviewedDishIds.map((dishId) => repository.getDishById(dishId)).filter(isDishDetail),
@@ -116,7 +125,14 @@ export function ReviewHistoryScreen({ navigation }: Props) {
             const card = (
               <Card>
                 <View style={{ gap: 12 }}>
-                  <AppText variant="h3">{dishName}</AppText>
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                    <AppText variant="h3" style={{ flex: 1 }}>
+                      {dishName}
+                    </AppText>
+                    {review && ownReviewEditor.enabled ? (
+                      <OwnReviewMenuButton onPress={() => ownReviewEditor.openActions(review)} />
+                    ) : null}
+                  </View>
                   <AppText tone="secondary">{reviewText}</AppText>
                   {ratingLine ? (
                     <AppText variant="bodySmall" tone="secondary">
@@ -142,6 +158,7 @@ export function ReviewHistoryScreen({ navigation }: Props) {
               <View key={key}>{card}</View>
             );
           })}
+          {ownReviewEditor.dialog}
         </>
       ) : (
         <EmptyState

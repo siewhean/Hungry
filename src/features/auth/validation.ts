@@ -1,5 +1,5 @@
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-/** Length is the only client rule; Supabase rejects leaked passwords (HIBP). */
+/** Length is the only client rule (also pinned in supabase/config.toml); Supabase rejects leaked passwords once HIBP protection is on in the dashboard. */
 export const MIN_PASSWORD_LENGTH = 10;
 
 /** iOS strong-password rules matching validatePassword, so suggested passwords pass. */

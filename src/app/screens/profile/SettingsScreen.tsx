@@ -56,6 +56,7 @@ import { useSearchStore } from "@/store/useSearchStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { ThemePreference, useUIStore } from "@/store/useUIStore";
 import { hungryPersistStorage } from "@/store/persistStorage";
+import { PendingDeletionBanner } from "@/features/auth/PendingDeletionBanner";
 import { useHungryTheme } from "@/theme";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import { SUPPORT_EMAIL, WEB_LINKS } from "@/constants/links";
@@ -271,7 +272,7 @@ export function SettingsScreen() {
     setAuthNotice({
       message: purgeFailed
         ? "Account deletion requested and you've been signed out. Some data saved on this device could not be cleared; reinstall Hungry to remove it."
-        : `Account deletion requested and you've been signed out. Hungry will delete your account and personal data ${formatDeletionDate(scheduledFor)}; sign back in before then to keep it.`,
+        : `Account deletion requested and you've been signed out. Hungry will delete your account and personal data ${formatDeletionDate(scheduledFor)}. To keep it, sign in before then and choose Keep my account.`,
       tone: "success",
     });
     signOut();
@@ -327,20 +328,24 @@ export function SettingsScreen() {
   };
 
   const showProfileVisibilityDialog = () => {
-    Alert.alert("Profile visibility", "Choose who can see your Hungry profile.", [
-      {
-        text: "Public",
-        onPress: () => void changeProfileVisibility("public"),
-      },
-      {
-        text: "Private",
-        onPress: () => void changeProfileVisibility("private"),
-      },
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-    ]);
+    Alert.alert(
+      "Profile visibility",
+      "Private: only approved followers see your posts and the reviews on your profile. Your reviews still show on dish pages.",
+      [
+        {
+          text: "Public",
+          onPress: () => void changeProfileVisibility("public"),
+        },
+        {
+          text: "Private",
+          onPress: () => void changeProfileVisibility("private"),
+        },
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+      ],
+    );
   };
 
   const openAppSettings = async () => {
@@ -466,6 +471,7 @@ export function SettingsScreen() {
 
   return (
     <ProfileScreenShell title="Settings">
+      <PendingDeletionBanner />
       <SettingsSection title="Account">
         <SettingsRow
           label="Edit profile"
@@ -729,7 +735,7 @@ export function SettingsScreen() {
       <Dialog
         visible={accountDialog === "deleteAccount"}
         title="Delete account"
-        message={`Your account and personal data will be deleted in ${ACCOUNT_DELETION_GRACE_DAYS} days. Sign back in before then to keep your account. After that, deletion is permanent. Menu photos you shared stay on the stall without your name, and some security, moderation, or legal records may remain in anonymized form.`}
+        message={`Your account and personal data will be deleted in ${ACCOUNT_DELETION_GRACE_DAYS} days. To keep your account, sign in before then and choose Keep my account. After that, deletion is permanent. Menu photos you shared stay on the stall without your name, and some security, moderation, or legal records may remain in anonymized form.`}
         buttons={[
           {
             text: "Email me a code",

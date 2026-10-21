@@ -102,7 +102,7 @@ test("home, discover, and quick bites avoid duplicate render-time data work", ()
   assert.match(homeFeed, /const homeFeedBundleCache = new Map/);
   assert.match(homeFeed, /export function getHomeFeedBundleCacheKey/);
   assert.match(homeFeed, /export function clearHomeFeedBundleCache/);
-  assert.match(homeScreen, /getHomeFeedBundle\(profile,\s*\{/);
+  assert.match(homeScreen, /getHomeFeedBundle\(profileRef\.current,\s*\{/);
   assert.match(homeScreen, /followedAuthors,/);
   assert.match(homeScreen, /followedUserIds,/);
   assert.match(homeScreen, /refreshSeed: feedRefreshSeedRef\.current/);
@@ -186,7 +186,7 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   );
   assert.match(
     quickBites,
-    /navigation\.navigate\("SearchHome"\);[\s\S]*scheduleIdleWork\([\s\S]*rememberSearch\(trimmed\)/,
+    /navigation\.navigate\("SearchResults", \{ initialQuery: query \|\| undefined \}\);[\s\S]*scheduleIdleWork\([\s\S]*rememberSearch\(query\)/,
   );
   assert.match(search, /function BrowseGridLoadingState/);
   assert.doesNotMatch(search, /getCachedBrowseIndex|getBrowseIndex/);

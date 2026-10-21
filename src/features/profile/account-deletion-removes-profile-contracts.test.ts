@@ -1,6 +1,6 @@
 // Round-two settings critical: deleting an account must remove the profile so its cascades fire.
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import test from "node:test";
 
@@ -41,4 +41,16 @@ test("the review guard lets only server code detach a review from its author", (
     guard.indexOf("current_user not in") <
       guard.indexOf("raise exception 'authentication required'"),
   );
+});
+
+test("the newest review guard still lets account deletion detach reviews", () => {
+  const dir = resolve(process.cwd(), "supabase/migrations");
+  const latest = readdirSync(dir)
+    .filter((name) => name.endsWith(".sql"))
+    .sort()
+    .map((name) => readFileSync(resolve(dir, name), "utf8"))
+    .filter((sql) => /function public\.enforce_merchant_review_reply_update\(\)/.test(sql))
+    .pop();
+  assert.ok(latest);
+  assert.match(latest, /current_user not in \('anon', 'authenticated'\)/);
 });

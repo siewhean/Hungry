@@ -1071,7 +1071,6 @@ export function DiscoverHomeScreen() {
   );
 
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
-  const updateSearchQuery = useSearchStore((state) => state.updateQuery);
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
   const searchBarWidth = useMemo(
     () => Math.max(screenWidth - spacing[4] * 2, 240),
@@ -1674,13 +1673,12 @@ export function DiscoverHomeScreen() {
             chipId: item.id,
             buttonId: "popular_right_now",
           });
-          updateSearchQuery(item.query);
           rememberSearch(item.query);
         },
         { timeout: 500, fallbackDelayMs: 80 },
       );
     },
-    [navigation, recordTasteInteraction, rememberSearch, updateSearchQuery],
+    [navigation, recordTasteInteraction, rememberSearch],
   );
 
   const prefetchFoodStyle = useCallback(

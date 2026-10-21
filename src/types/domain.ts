@@ -680,6 +680,10 @@ export interface PublicUserProfile {
   displayName: string;
   avatarUrl?: string;
   bio?: string;
+  /** The account is private (only set when the server says so). */
+  isPrivate?: boolean;
+  /** The viewer may see the account's posts and profile reviews. */
+  canViewContent?: boolean;
 }
 
 export interface PublicMerchantProfile {
