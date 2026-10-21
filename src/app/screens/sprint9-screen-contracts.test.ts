@@ -208,8 +208,10 @@ test("Sprint 9 screen contract: stall menu cards expose dish actions", () => {
 
   assert.match(
     stallDetail,
-    /accessibilityRole="button"[\s\S]*accessibilityLabel=\{`Open \$\{dish\.name\}`\}/,
+    /accessibilityRole="button"[\s\S]*accessibilityLabel=\{menuDishAccessibilityLabel\(dish\)\}/,
   );
+  // The label carries the price, or "sold out today" (detail-L24).
+  assert.match(stallDetail, /\$\{dish\.name\}, sold out today/);
   assert.match(stallDetail, /accessibilityHint="Opens this dish detail page"/);
 });
 
@@ -580,8 +582,8 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.match(source, /type Props = NativeStackScreenProps<RootStackParamList, "DishDetail">/);
   assert.match(source, /buildDishGallery\(dish\)/);
   // Unpriced dishes show the range or "Price not listed", never S$0.00.
-  assert.match(source, /function formatDishPrice\(/);
-  assert.match(source, /Price not listed/);
+  assert.match(read("src/features/detail/dishPrice.ts"), /function formatDishPrice\(/);
+  assert.match(read("src/features/detail/dishPrice.ts"), /Price not listed/);
   assert.match(source, /const dishPrice = formatDishPrice\(dish\)/);
   assert.match(source, /fontSize: 28, lineHeight: 34/);
   assert.match(source, /const heroGradientColors: readonly \[ColorValue, ColorValue, ColorValue\]/);
@@ -593,9 +595,9 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.doesNotMatch(source, /Epicurean Discovery/);
   assert.doesNotMatch(source, /borderBottomWidth: 1,[\s\S]*Epicurean Discovery/);
   assert.match(source, /View Taste Profile/);
-  assert.match(source, /Opening Hours/);
+  assert.match(source, /Opening hours/);
   assert.match(source, /More from \{venueName\}/);
-  assert.match(source, /From the Community/);
+  assert.match(source, /<AppText variant="h2">Reviews<\/AppText>/);
   assert.match(source, /const cachedVenueDishes = useMemo/);
   // Never repeats the dish being viewed.
   assert.match(source, /getMoreFromStall\(dish, venueDishes\)/);

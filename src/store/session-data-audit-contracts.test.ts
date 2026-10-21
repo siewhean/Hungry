@@ -109,7 +109,8 @@ test("GPS refreshes on foreground and first follow asks for push inline", () => 
 
   const follow = read("src/components/stall/FollowStallButton.tsx");
   assert.match(follow, /registerForStallAlerts\(\)/);
-  assert.match(follow, /FEATURE_FLAGS\.stallAlertsEnabled && isFirstFollow/);
+  // The prompt only appears when stall alerts can actually fire (detail-M13).
+  assert.match(follow, /STALL_ALERTS_CAN_FIRE && isFirstFollow/);
 
   assert.match(
     read("src/app/screens/profile/SettingsScreen.tsx"),
