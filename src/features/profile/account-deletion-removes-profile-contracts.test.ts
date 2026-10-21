@@ -24,3 +24,21 @@ test("user tables without a foreign key to the profile are cleared explicitly", 
   }
   assert.match(migration, /update portfolio_flags\s+set reviewed_by = null/);
 });
+
+test("the review guard lets only server code detach a review from its author", () => {
+  const guard = readFileSync(
+    resolve(
+      process.cwd(),
+      "supabase/migrations/20261021110000_account_deletion_review_anonymise_guard.sql",
+    ),
+    "utf8",
+  );
+  assert.match(
+    guard,
+    /current_user not in \('anon', 'authenticated'\)\s+and old\.user_id is not null\s+and new\.user_id is null then\s+return new;/,
+  );
+  assert.ok(
+    guard.indexOf("current_user not in") <
+      guard.indexOf("raise exception 'authentication required'"),
+  );
+});
