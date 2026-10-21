@@ -249,25 +249,29 @@ export function DishEditorScreen() {
 
   const handleDelete = () => {
     if (!activeOutlet || !dishId) return;
-    Alert.alert("Delete Dish", `Are you sure you want to delete ${name || "this dish"}?`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          setIsSaving(true);
-          try {
-            await getHungryService().merchant.deleteDish(activeOutlet.id, dishId);
-            trackMerchantEvent("merchant_dish_deleted", activeOutlet.id);
-            navigation.goBack();
-          } catch (e) {
-            Alert.alert("Could not delete dish", errorMessage(e, "Please try again."));
-          } finally {
-            setIsSaving(false);
-          }
+    Alert.alert(
+      "Delete Dish",
+      `Remove ${name || "this dish"} from your menu? Diner reviews and saves are kept.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            setIsSaving(true);
+            try {
+              await getHungryService().merchant.deleteDish(activeOutlet.id, dishId);
+              trackMerchantEvent("merchant_dish_deleted", activeOutlet.id);
+              navigation.goBack();
+            } catch (e) {
+              Alert.alert("Could not delete dish", errorMessage(e, "Please try again."));
+            } finally {
+              setIsSaving(false);
+            }
+          },
         },
-      },
-    ]);
+      ],
+    );
   };
 
   const handleGenerateDescription = async () => {

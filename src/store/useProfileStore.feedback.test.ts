@@ -204,3 +204,48 @@ test("Not for me hides the dish in local food history for 30 days", () => {
   assert.ok(Date.parse(row.dismissedUntil) > Date.now() + 29 * 24 * 60 * 60 * 1000);
   assert.equal(row.evidence, -4);
 });
+
+test("saving food openness after the quiz sends the quiz vector, not a stale neutral one", async () => {
+  const userId = "22222222-2222-4222-8222-222222222222";
+  const sentVectors: unknown[] = [];
+  const supabaseProfileService = {
+    profile: {
+      updateTasteVector: async () => undefined,
+      updateTasteProfile: async (tasteProfile: { vector: unknown }) => {
+        sentVectors.push(tasteProfile.vector);
+      },
+    },
+  } as unknown as HungryService;
+  setServiceProvider({
+    mode: "supabase",
+    repository: dataRepositoryMock,
+    service: supabaseProfileService,
+    similarityScore: () => 1,
+  });
+
+  try {
+    useProfileStore.getState().clearProfile();
+    useProfileStore.setState((state) => ({ profile: { ...state.profile, id: userId } }));
+    useSessionStore.setState((state) => ({
+      ...state,
+      isAuthenticated: true,
+      authenticatedUserId: userId,
+    }));
+    const tasteVector = { sweet: 8, spicy: 9, sour: 3, salty: 6, rich: 7, aromatic: 8 };
+
+    useProfileStore.getState().setTasteVector(tasteVector);
+    assert.deepEqual(useProfileStore.getState().profile.tasteProfile?.vector, tasteVector);
+    useProfileStore.getState().setFoodOpenness("mix", "onboarding");
+    await Promise.resolve();
+
+    assert.deepEqual(sentVectors, [tasteVector]);
+    assert.deepEqual(useProfileStore.getState().profile.tasteVector, tasteVector);
+  } finally {
+    useSessionStore.setState((state) => ({
+      ...state,
+      isAuthenticated: false,
+      authenticatedUserId: null,
+    }));
+    resetServiceProvider();
+  }
+});
