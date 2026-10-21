@@ -200,6 +200,11 @@ export function getSingaporeMinutes(now: Date = new Date()): number {
   return getSingaporeParts(now).minutes;
 }
 
+/** The hour (0-23) in Singapore right now. */
+export function getSingaporeHour(now: Date = new Date()): number {
+  return Math.floor(getSingaporeParts(now).minutes / 60);
+}
+
 /** Today's weekday in Singapore. */
 export function getSingaporeDay(now: Date = new Date()): DayName {
   return getSingaporeParts(now).day;
@@ -214,6 +219,17 @@ export function formatClockMinutes(minutes: number): string {
   return minute === 0
     ? `${displayHour}${suffix}`
     : `${displayHour}:${String(minute).padStart(2, "0")}${suffix}`;
+}
+
+/**
+ * True when the listed hours keep the stall open past `hour` (24h clock) on some
+ * day, false when they close earlier, undefined when no hours can be read.
+ */
+export function runsPastHour(raw: string | undefined, hour: number): boolean | undefined {
+  const rows = parseOperatingHours(raw);
+  if (rows.length === 0) return undefined;
+  const ranges = rows.filter((row) => !row.closed).flatMap((row) => row.ranges);
+  return ranges.some(([start, end]) => start === end || end < start || end >= hour * 60);
 }
 
 function isWithin(minutes: number, [start, end]: MinuteRange) {

@@ -356,6 +356,16 @@ export function createLocalCatalogService(repository: DataRepository): CatalogRa
           return false;
         }
         if (!matchesVenueFilters(entry, request)) return false;
+        const query = request.query?.trim().toLowerCase();
+        if (
+          query &&
+          ![entry.venue.name, entry.building.name].some((value) =>
+            value.toLowerCase().includes(query),
+          ) &&
+          !entry.dishes.some((dish) => matchesDishFilters(dish, { query }, entry.building.name))
+        ) {
+          return false;
+        }
         if (
           request.cuisineTags?.length &&
           !entry.dishes.some((dish) =>
@@ -395,6 +405,7 @@ export function createLocalCatalogService(repository: DataRepository): CatalogRa
           latitude: first.coordinate.latitude,
           longitude: first.coordinate.longitude,
           verificationStatus: verification(first.venue),
+          buildingType: first.building.type,
         };
       });
       return { releaseId: MOCK_RELEASE_ID, items };

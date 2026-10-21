@@ -115,7 +115,7 @@ test("discovery entry points never warm a local catalog index and map passes vie
   assert.doesNotMatch(discoverHome, /catalogReadV2|refreshPopularNearby/);
   assert.match(map, /onViewportChange/);
   assert.match(map, /buildingTypes/);
-  assert.match(map, /openOnly: mapFilters\.openNow/);
+  assert.match(map, /minRating: mapFilters\.topRated \? TOP_RATED_MIN_RATING : undefined/);
   assert.match(map, /onMarkerPress=\{handleRawMarkerPress\}/);
   assert.doesNotMatch(map, /catalogReadV2|handleLegacyMarkerPress|getDataRepository/);
   assert.match(map, /candidate\.kind === "venue" \? "stall" : candidate\.kind/);

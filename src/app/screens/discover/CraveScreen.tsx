@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   PanResponder,
@@ -15,7 +15,7 @@ import * as Haptics from "@/lib/haptics";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AccessibleImage, AppText, Button, HungryLogo } from "@/components/ui";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -51,6 +51,42 @@ export function CraveScreen() {
       .sort(() => Math.random() - 0.5)
       .slice(0, 20);
   });
+  // The saved cache can be empty on a first open. Then the deck comes from the
+  // service, and "You've seen it all" is only ever said after dishes were shown.
+  const [isLoadingDeck, setIsLoadingDeck] = useState(dishes.length === 0);
+  const hadDeckRef = useRef(dishes.length > 0);
+  useEffect(() => {
+    if (hadDeckRef.current) return;
+    let isActive = true;
+    void getHungryService()
+      .discovery.searchDishes(
+        {
+          query: "",
+          categories: [],
+          dietaryFlags: profile.dietaryPreferences,
+          tasteValues: profile.tasteVector,
+          radius: 3000,
+        },
+        profile.tasteVector,
+      )
+      .then((results) => {
+        if (!isActive) return;
+        const deck = results
+          .map((result) => result.dish)
+          .sort(() => Math.random() - 0.5)
+          .slice(0, 20);
+        hadDeckRef.current = deck.length > 0;
+        setDishes(deck);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (isActive) setIsLoadingDeck(false);
+      });
+    return () => {
+      isActive = false;
+    };
+    // Runs once for the empty-cache open; the profile is read as it was then.
+  }, []);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const position = useRef(new Animated.ValueXY()).current;
@@ -162,6 +198,7 @@ export function CraveScreen() {
   });
 
   if (!currentDish) {
+    const hasSwipedDeck = hadDeckRef.current;
     return (
       <SafeAreaView
         style={{
@@ -174,7 +211,11 @@ export function CraveScreen() {
       >
         <Sparkles color={palette.orange} size={48} style={{ marginBottom: spacing[4] }} />
         <AppText variant="h2" style={{ textAlign: "center" }}>
-          You&apos;ve seen it all!
+          {isLoadingDeck
+            ? "Finding dishes for you…"
+            : hasSwipedDeck
+              ? "You've seen it all!"
+              : "No dishes to swipe yet"}
         </AppText>
         <AppText
           tone="secondary"
@@ -184,7 +225,11 @@ export function CraveScreen() {
             marginBottom: spacing[6],
           }}
         >
-          Your taste profile is getting sharper. Go check out your updated Fingerprint.
+          {isLoadingDeck
+            ? "Hang on a moment."
+            : hasSwipedDeck
+              ? "Your taste profile is getting sharper. Go check out your updated Fingerprint."
+              : "Check your connection and try again later."}
         </AppText>
         <Button label="Back to Discover" onPress={() => navigation.goBack()} />
       </SafeAreaView>

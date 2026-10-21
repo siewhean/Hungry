@@ -442,7 +442,9 @@ function mapDiscoveryFeedVenue(row: Row): VenueSummary {
     isOpen: toBool(row.is_open, false),
     liveCrowd: undefined,
     topDishId: toString(row.top_dish_id),
-    operatingHours: "",
+    // Real hours (get_discovery_feed_by_location returns them), so open state is
+    // worked out in Singapore time instead of read from the stored is_open copy.
+    operatingHours: toString(row.operating_hours),
     closureNotice: undefined,
     deliveryLinks: [],
     planningArea: toString(row.planning_area) || undefined,

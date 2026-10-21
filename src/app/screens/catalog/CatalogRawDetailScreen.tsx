@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ArrowLeft, ExternalLink, MapPin } from "lucide-react-native";
+import { ArrowLeft, Clock, ExternalLink, MapPin } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AccessibleImage, AppText, Button, EmptyState, Screen, Skeleton } from "@/components/ui";
@@ -105,6 +105,11 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
         .filter(Boolean)
     : [detail.imageUrl].filter((value): value is string => Boolean(value));
   const sourceUrl = detail.menuSourceUrl ?? detail.mediaSourceUrl;
+  const venueDetail = isDish ? null : (detail as CatalogRawVenueDetail);
+  const venueAddress = venueDetail
+    ? [venueDetail.address, venueDetail.postalCode].filter(Boolean).join(" ")
+    : "";
+  const venueHours = venueDetail?.operatingHours;
 
   return (
     <Screen scroll={false} fullWidth style={{ backgroundColor: palette.bg }}>
@@ -183,20 +188,32 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
               ) : null}
             </>
           ) : (
-            <>
-              <AppText tone="secondary">
-                {(detail as CatalogRawVenueDetail).menuCount} listed dishes
-              </AppText>
-            </>
+            <AppText tone="secondary">
+              {(detail as CatalogRawVenueDetail).menuCount} listed dishes
+            </AppText>
           )}
           {"description" in detail && detail.description ? (
             <AppText>{detail.description}</AppText>
           ) : null}
-          {detail.buildingName ? (
-            <View style={{ flexDirection: "row", gap: spacing[2] }}>
-              <MapPin color={palette.textMuted} size={18} />
+          {/* The building appears once, with the address under it when the catalog has one. */}
+          <View style={{ flexDirection: "row", gap: spacing[2] }}>
+            <MapPin color={palette.textMuted} size={18} />
+            <View style={{ flex: 1, gap: spacing[0.5] }}>
               <AppText tone="muted" variant="bodySmall">
-                {detail.buildingName}
+                {detail.buildingName ?? "Singapore"}
+              </AppText>
+              {venueAddress ? (
+                <AppText tone="muted" variant="bodySmall">
+                  {venueAddress}
+                </AppText>
+              ) : null}
+            </View>
+          </View>
+          {venueHours ? (
+            <View style={{ flexDirection: "row", gap: spacing[2] }}>
+              <Clock color={palette.textMuted} size={18} />
+              <AppText tone="muted" variant="bodySmall" style={{ flex: 1 }}>
+                {venueHours}
               </AppText>
             </View>
           ) : null}

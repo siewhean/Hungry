@@ -55,8 +55,9 @@ test("Two-column image grids cycle images every four seconds with page-scoped sl
   assert.match(cyclingImage, /onScrollBeginDrag=\{handleScrollBeginDrag\}/);
   assert.match(cyclingImage, /onScrollEndDrag=\{handleScrollEndDrag\}/);
 
-  assert.match(quickBites, /getQuickBiteCycleSlides/);
-  assert.match(quickBites, /candidate\.venueId !== item\.venueId/);
+  // A tile cycles only its own dish's photos and always opens that dish.
+  assert.match(quickBites, /getQuickBiteImageUrls/);
+  assert.doesNotMatch(quickBites, /candidate\.venueId !== item\.venueId/);
   assert.match(quickBites, /itemVisiblePercentThreshold: 100/);
   // Visibility reaches cells through extraData so renderItem stays stable.
   assert.match(quickBites, /extraData=\{fullyVisibleBiteIds\}/);

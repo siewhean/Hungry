@@ -26,9 +26,11 @@ test("Discover feed falls back to the radius search and ranks by computed distan
 test("Discover asks for an area instead of asserting the default location", () => {
   const screen = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
 
-  // No OS permission prompt on mount; onboarding and Settings own that.
-  assert.doesNotMatch(screen, /grantLocation/);
-  assert.match(screen, /needsDiscoverAreaChoice \? "WHERE ARE YOU\?" : "YOU ARE AT"/);
+  // No OS permission prompt on mount; only the "Use current location" press asks.
+  assert.doesNotMatch(screen, /useEffect\(\(\) => \{[^}]*grantLocation\(/);
+  assert.match(screen, /const handleUseCurrentLocation = useCallback\(async \(\) => \{/);
+  assert.match(screen, /needsDiscoverAreaChoice\s*\? "WHERE ARE YOU\?"/);
+  assert.match(screen, /: "YOU ARE AT"/);
   assert.match(
     screen,
     /navigation\.navigate\("OnboardingStack", \{ screen: "ManualLocationPicker" \}\)/,
@@ -53,7 +55,7 @@ test("Discover rails no longer claim prep times or curation they do not have", (
   const screen = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
 
   assert.doesNotMatch(screen, /&lt; 15 MIN|★ CURATED|MUST ORDER|Editor&apos;s Choice/);
-  assert.match(screen, /Most reviewed in \{discoverLocationLabel\}/);
+  assert.match(screen, /title=\{`Most reviewed \$\{discoverAreaPhrase\}`\}/);
   assert.match(screen, /Top rated/);
 });
 
@@ -64,7 +66,8 @@ test("Top rated rail never falls back to trending dishes under its 4.4+ label", 
 
   assert.ok(editorChoice, "unfilteredEditorChoiceCards should exist");
   assert.doesNotMatch(editorChoice, /trending/);
-  assert.match(screen, /bite\.rating > 0 \? \(/);
+  // A dish with no reviews shows no rating instead of "0.0".
+  assert.match(screen, /const hasRating = bite\.cravingCount > 0 && bite\.rating > 0;/);
 });
 
 test("Crave swipes act on the current card and record taste signals", () => {

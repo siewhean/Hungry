@@ -118,6 +118,7 @@ export type CatalogMapItem =
       latitude: number;
       longitude: number;
       verificationStatus: CatalogVerificationStatus;
+      buildingType?: string;
     };
 
 export interface CatalogMapRequest {
@@ -133,6 +134,8 @@ export interface CatalogMapRequest {
   cuisineTags?: string[];
   openOnly?: boolean;
   minRating?: number;
+  /** Keeps only pins for stalls matching this text (name, building, dish or food type). */
+  query?: string;
 }
 
 export type CatalogSuggestionKind = "food_type" | "place" | "stall";
@@ -461,6 +464,8 @@ export const catalogRawService = {
       p_cuisine_tags: request.cuisineTags ?? [],
       p_open_only: request.openOnly ?? false,
       p_min_rating: request.minRating ?? null,
+      // Only sent with a query, so the map still reads while the old signature is live.
+      ...(request.query?.trim() ? { p_query: request.query.trim() } : {}),
     };
     const key = catalogRequestKey("map", args);
     const cached = readCache<{ releaseId: string; items: CatalogMapItem[] }>(pageCache, key);
@@ -491,6 +496,7 @@ export const catalogRawService = {
               latitude,
               longitude,
               verificationStatus: verificationStatus(marker.verification_status),
+              buildingType: asString(marker.building_type),
             },
           ];
         })
