@@ -64,7 +64,7 @@ export function EmailCodeField({
     try {
       await onResend();
       setCode("");
-      setFailed(false);
+      setFailure(null);
       setResendState("sent");
       setCooldown(EMAIL_CODE_RESEND_SECONDS);
     } catch {
