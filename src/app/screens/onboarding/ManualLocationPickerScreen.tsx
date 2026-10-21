@@ -9,9 +9,9 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import type { Coordinate } from "@/types/domain";
 import { useHungryTheme } from "@/theme";
-import { OnboardingProgress } from "./OnboardingProgress";
+import { OnboardingProgress, trackOnboardingAreaPickerViewed } from "./OnboardingProgress";
 import type { OnboardingStackParamList } from "./OnboardingStack";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ONBOARDING_ACTIONS_BOTTOM_PADDING,
   ONBOARDING_ACTIONS_GAP,
@@ -20,7 +20,15 @@ import {
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "ManualLocationPicker">;
 
-const SINGAPORE_AREA_LIST = [
+type SingaporeArea = {
+  id: string;
+  name: string;
+  /** Other names people search by (a neighbourhood inside the area, or the planning-area name). */
+  keywords?: string[];
+  coordinate: Coordinate;
+};
+
+const SINGAPORE_AREA_LIST: readonly SingaporeArea[] = [
   { id: "ang-mo-kio", name: "Ang Mo Kio", coordinate: { latitude: 1.3691, longitude: 103.8454 } },
   { id: "bedok", name: "Bedok", coordinate: { latitude: 1.3236, longitude: 103.9273 } },
   { id: "bishan", name: "Bishan", coordinate: { latitude: 1.3509, longitude: 103.835 } },
@@ -44,7 +52,12 @@ const SINGAPORE_AREA_LIST = [
     coordinate: { latitude: 1.3844, longitude: 103.7479 },
   },
   { id: "changi", name: "Changi", coordinate: { latitude: 1.3566, longitude: 103.9897 } },
-  { id: "chinatown", name: "Chinatown", coordinate: { latitude: 1.2836, longitude: 103.8436 } },
+  {
+    id: "chinatown",
+    name: "Chinatown",
+    keywords: ["outram", "tanjong pagar"],
+    coordinate: { latitude: 1.2836, longitude: 103.8436 },
+  },
   { id: "clementi", name: "Clementi", coordinate: { latitude: 1.3151, longitude: 103.7652 } },
   { id: "geylang", name: "Geylang", coordinate: { latitude: 1.3182, longitude: 103.8871 } },
   { id: "hougang", name: "Hougang", coordinate: { latitude: 1.3712, longitude: 103.8922 } },
@@ -79,15 +92,22 @@ const SINGAPORE_AREA_LIST = [
   { id: "rochor", name: "Rochor", coordinate: { latitude: 1.3047, longitude: 103.8519 } },
   { id: "seletar", name: "Seletar", coordinate: { latitude: 1.4149, longitude: 103.8778 } },
   { id: "serangoon", name: "Serangoon", coordinate: { latitude: 1.3508, longitude: 103.8723 } },
+  { id: "sembawang", name: "Sembawang", coordinate: { latitude: 1.4491, longitude: 103.8185 } },
   { id: "sengkang", name: "Sengkang", coordinate: { latitude: 1.3868, longitude: 103.8935 } },
   { id: "sentosa", name: "Sentosa", coordinate: { latitude: 1.2494, longitude: 103.8303 } },
-  { id: "sungei-road", name: "Sungei Road", coordinate: { latitude: 1.319, longitude: 103.8637 } },
+  {
+    id: "sungei-road",
+    name: "Sungei Road",
+    keywords: ["jalan besar", "rochor"],
+    coordinate: { latitude: 1.319, longitude: 103.8637 },
+  },
   { id: "tampines", name: "Tampines", coordinate: { latitude: 1.3526, longitude: 103.9448 } },
   { id: "tanglin", name: "Tanglin", coordinate: { latitude: 1.3039, longitude: 103.8168 } },
+  { id: "tengah", name: "Tengah", coordinate: { latitude: 1.368, longitude: 103.728 } },
   { id: "toa-payoh", name: "Toa Payoh", coordinate: { latitude: 1.3343, longitude: 103.8563 } },
   { id: "woodlands", name: "Woodlands", coordinate: { latitude: 1.4389, longitude: 103.7861 } },
   { id: "yishun", name: "Yishun", coordinate: { latitude: 1.4294, longitude: 103.8393 } },
-] satisfies readonly { id: string; name: string; coordinate: Coordinate }[];
+];
 
 const SINGAPORE_AREAS = [...SINGAPORE_AREA_LIST].sort((left, right) =>
   left.name.localeCompare(right.name),
@@ -111,12 +131,21 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
     () =>
       normalizedQuery.length === 0
         ? SINGAPORE_AREAS
-        : SINGAPORE_AREAS.filter((area) => area.name.toLowerCase().includes(normalizedQuery)),
+        : SINGAPORE_AREAS.filter(
+            (area) =>
+              area.name.toLowerCase().includes(normalizedQuery) ||
+              area.keywords?.some((keyword) => keyword.includes(normalizedQuery)),
+          ),
     [normalizedQuery],
   );
   const selectedArea = SINGAPORE_AREAS.find((area) => area.id === selectedAreaId) ?? null;
   const showNoResults = normalizedQuery.length > 0 && filteredAreas.length === 0;
   const isOnboarding = !isSettingsMode && !hasCompletedOnboarding;
+
+  // The picker is a detour inside the Location step; the funnel should see it.
+  useEffect(() => {
+    if (isOnboarding) trackOnboardingAreaPickerViewed();
+  }, [isOnboarding]);
 
   const handleSubmit = () => {
     if (!selectedArea) return;
@@ -149,9 +178,9 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
               style={{
                 alignItems: "center",
                 borderRadius: radii.pill,
-                height: 40,
+                height: 44,
                 justifyContent: "center",
-                width: 40,
+                width: 44,
               }}
             >
               <ArrowLeft color={palette.text} size={22} />
@@ -193,6 +222,7 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
 
         <View style={{ flex: 1, gap: spacing[2], paddingTop: spacing[3] }}>
           <ScrollView
+            accessibilityRole="radiogroup"
             contentContainerStyle={{ gap: spacing[2], paddingBottom: spacing[1] }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
@@ -206,10 +236,10 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
               ? filteredAreas.map((area) => (
                   <Pressable
                     key={area.id}
-                    accessibilityRole="button"
+                    accessibilityRole="radio"
                     accessibilityLabel={`Choose ${area.name}`}
                     accessibilityHint="Sets this as your Hungry discovery location"
-                    accessibilityState={{ selected: area.id === selectedAreaId }}
+                    accessibilityState={{ checked: area.id === selectedAreaId }}
                     onPress={() => {
                       setSelectedAreaId(area.id);
                     }}
@@ -217,6 +247,8 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
                     <Card
                       style={{
                         borderRadius: radii.md,
+                        justifyContent: "center",
+                        minHeight: 48,
                         padding: spacing[2],
                         borderColor: area.id === selectedAreaId ? palette.orange : "transparent",
                         borderWidth: area.id === selectedAreaId ? 1.5 : 0,

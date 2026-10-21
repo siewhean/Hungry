@@ -150,7 +150,7 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
   // Signed-in users save for real; only guests are sent to the auth prompt.
   assert.match(
     tasteProfileResult,
-    /if \(isAuthenticated\) \{\s*toggleFavourite\(dish\);\s*return;\s*\}[\s\S]*navigation\.navigate\("OnboardingAuth"\)/,
+    /if \(isAuthenticated\) \{\s*toggleFavourite\(dish\);\s*return;\s*\}[\s\S]*navigation\.navigate\("OnboardingAuth", \{ dishName: dish\.name \}\)/,
   );
   // Result is ranked by the quiz taste vector, not a fixed popular list.
   assert.match(tasteProfileResult, /tasteValues: tasteVector/);
@@ -174,18 +174,20 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
     /dishes\.length > 0 && tasteRanked\s*\? "Picked to match your taste/,
   );
   assert.doesNotMatch(tasteProfileResult, /generated food photo/);
+  // The three cards of a question are one radio group (r2 onboarding-L9).
+  assert.match(tasteQuiz, /accessibilityRole="radiogroup"/);
   assert.match(
     tasteQuiz,
-    /accessibilityRole="button"[\s\S]*accessibilityLabel=\{`\$\{QUESTIONS\[currentKey\]\} \$\{labels\[index\]\}`\}/,
+    /accessibilityRole="radio"[\s\S]*accessibilityLabel=\{`\$\{QUESTIONS\[currentKey\]\} \$\{labels\[index\]\}`\}/,
   );
   assert.match(tasteQuiz, /accessibilityHint=\{`For example, \$\{choiceFoods\[index\]\.label\}`\}/);
   assert.match(
     tasteQuiz,
-    /accessibilityState=\{\{ selected: isSelected, disabled: isTransitioning \}\}/,
+    /accessibilityState=\{\{ checked: isSelected, disabled: isTransitioning \}\}/,
   );
   assert.match(
     tasteQuiz,
-    /accessibilityRole="checkbox"[\s\S]*accessibilityLabel=\{`Dietary preference \$\{option\.label\}`\}/,
+    /accessibilityRole="checkbox"[\s\S]*accessibilityLabel=\{`Dietary preference \$\{label\}`\}/,
   );
   assert.match(tasteQuiz, /accessibilityState=\{\{ checked: isSelected \}\}/);
   assert.match(tasteQuiz, /const \{ fontScale, height, width \} = useWindowDimensions\(\)/);

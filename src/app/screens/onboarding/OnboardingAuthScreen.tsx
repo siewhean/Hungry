@@ -50,7 +50,8 @@ type Tab = "signup" | "login";
 type SignUpValues = { displayName: string; email: string; password: string };
 type LoginValues = { email: string; password: string };
 
-export function OnboardingAuthScreen({ navigation }: Props) {
+export function OnboardingAuthScreen({ navigation, route }: Props) {
+  const dishName = route.params?.dishName;
   const { palette, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const oauthEnabled = FEATURE_FLAGS.oauthProvidersEnabled;
@@ -275,10 +276,12 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                 accessibilityRole="header"
                 style={{ marginBottom: spacing[1] }}
               >
-                {"Save your\ntaste profile"}
+                {dishName ? `Sign in to save ${dishName}` : "Save your\ntaste profile"}
               </AppText>
               <AppText variant="bodySmall" tone="secondary">
-                Create an account to keep your preferences and discover more.
+                {dishName
+                  ? "Create an account or sign in, and we'll save it for you."
+                  : "Create an account to keep your preferences and discover more."}
               </AppText>
             </View>
 
@@ -387,13 +390,10 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                           returnKeyType="next"
                           submitBehavior="submit"
                           onSubmitEditing={() => signUpEmailRef.current?.focus()}
+                          error={!!signUpErrors.displayName}
+                          errorText={signUpErrors.displayName?.message}
                           leftIcon={<User color={palette.textMuted} size={18} />}
                         />
-                        {signUpErrors.displayName ? (
-                          <AppText variant="bodySmall" style={{ color: palette.error }}>
-                            {signUpErrors.displayName.message}
-                          </AppText>
-                        ) : null}
                       </View>
                     )}
                   />
@@ -416,13 +416,10 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                           returnKeyType="next"
                           submitBehavior="submit"
                           onSubmitEditing={() => signUpPasswordRef.current?.focus()}
+                          error={!!signUpErrors.email}
+                          errorText={signUpErrors.email?.message}
                           leftIcon={<Mail color={palette.textMuted} size={18} />}
                         />
-                        {signUpErrors.email ? (
-                          <AppText variant="bodySmall" style={{ color: palette.error }}>
-                            {signUpErrors.email.message}
-                          </AppText>
-                        ) : null}
                       </View>
                     )}
                   />
@@ -443,6 +440,8 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                           passwordRules={PASSWORD_RULES}
                           returnKeyType="go"
                           onSubmitEditing={() => void handleSignUp()}
+                          error={!!signUpErrors.password}
+                          errorText={signUpErrors.password?.message}
                           leftIcon={<Lock color={palette.textMuted} size={18} />}
                           rightIcon={
                             <Pressable
@@ -459,11 +458,6 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                             </Pressable>
                           }
                         />
-                        {signUpErrors.password ? (
-                          <AppText variant="bodySmall" style={{ color: palette.error }}>
-                            {signUpErrors.password.message}
-                          </AppText>
-                        ) : null}
                       </View>
                     )}
                   />
@@ -497,13 +491,10 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                           returnKeyType="next"
                           submitBehavior="submit"
                           onSubmitEditing={() => loginPasswordRef.current?.focus()}
+                          error={!!loginErrors.email}
+                          errorText={loginErrors.email?.message}
                           leftIcon={<Mail color={palette.textMuted} size={18} />}
                         />
-                        {loginErrors.email ? (
-                          <AppText variant="bodySmall" style={{ color: palette.error }}>
-                            {loginErrors.email.message}
-                          </AppText>
-                        ) : null}
                       </View>
                     )}
                   />
@@ -523,6 +514,8 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                           autoComplete="current-password"
                           returnKeyType="go"
                           onSubmitEditing={() => void handleLogin()}
+                          error={!!loginErrors.password}
+                          errorText={loginErrors.password?.message}
                           leftIcon={<Lock color={palette.textMuted} size={18} />}
                           rightIcon={
                             <Pressable
@@ -539,11 +532,6 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                             </Pressable>
                           }
                         />
-                        {loginErrors.password ? (
-                          <AppText variant="bodySmall" style={{ color: palette.error }}>
-                            {loginErrors.password.message}
-                          </AppText>
-                        ) : null}
                       </View>
                     )}
                   />

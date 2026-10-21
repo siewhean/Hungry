@@ -29,7 +29,8 @@ export type OnboardingStackParamList = {
   LocationPermission: undefined;
   /** mode "settings": change the location from Settings and go back, without onboarding. */
   ManualLocationPicker: { mode?: "settings" } | undefined;
-  OnboardingAuth: undefined;
+  /** dishName: the dish a guest tapped save on, so the headline can say what the account is for. */
+  OnboardingAuth: { dishName?: string } | undefined;
 };
 export type ProfileStackParamList = {
   ProfileHome: undefined;
