@@ -75,6 +75,7 @@ function loadImageManipulator(): ImageManipulatorModule | null {
 async function reencodeImageWithoutMetadata(
   uri: string,
   contentType: string,
+  maxEdgePx: number = MAX_UPLOAD_IMAGE_EDGE_PX,
 ): Promise<{ blob: Blob; contentType: string } | null> {
   const manipulator = loadImageManipulator();
   if (!manipulator) {
@@ -92,13 +93,9 @@ async function reencodeImageWithoutMetadata(
   try {
     let rendered = await ImageManipulator.manipulate(uri).renderAsync();
     // Full-resolution phone photos are 3-5x larger than any screen shows: cap the long edge.
-    if (Math.max(rendered.width, rendered.height) > MAX_UPLOAD_IMAGE_EDGE_PX) {
+    if (Math.max(rendered.width, rendered.height) > maxEdgePx) {
       rendered = await ImageManipulator.manipulate(uri)
-        .resize(
-          rendered.width >= rendered.height
-            ? { width: MAX_UPLOAD_IMAGE_EDGE_PX }
-            : { height: MAX_UPLOAD_IMAGE_EDGE_PX },
-        )
+        .resize(rendered.width >= rendered.height ? { width: maxEdgePx } : { height: maxEdgePx })
         .renderAsync();
     }
     const saved = await rendered.saveAsync({ format, compress: 0.9 });
@@ -262,13 +259,15 @@ export async function uploadImageFromUri(params: {
   bucket: string;
   path: string;
   uri: string;
+  /** Longest edge to resize to before upload; defaults to the 2048px photo cap. */
+  maxEdgePx?: number;
 }): Promise<UploadedAsset> {
-  const { client, bucket, path: requestedPath, uri } = params;
+  const { client, bucket, path: requestedPath, uri, maxEdgePx } = params;
   const originalBlob = await fetchBlobFromUri(uri);
   const originalContentType = originalBlob.type || guessContentType(uri);
   await assertValidImageBlob(originalBlob, originalContentType);
 
-  const stripped = await reencodeImageWithoutMetadata(uri, originalContentType);
+  const stripped = await reencodeImageWithoutMetadata(uri, originalContentType, maxEdgePx);
   const blob = stripped?.blob ?? originalBlob;
   const contentType = stripped?.contentType ?? originalContentType;
   const path = pathForReencodedImage(requestedPath, originalContentType, contentType);

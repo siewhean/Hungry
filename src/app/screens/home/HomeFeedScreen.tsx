@@ -1850,7 +1850,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                     onTextLayout={(event) => handleCaptionTextLayout(item.id, event)}
                     style={{
                       color: themeTints.text,
-                      textAlign: leftHandedMode ? "right" : "left",
+                      textAlign: "left",
                       marginTop: spacing[1],
                     }}
                   >
@@ -1867,11 +1867,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                     ) : null}
                   </AppText>
                 </Pressable>
-                <AppText
-                  variant="micro"
-                  tone="secondary"
-                  style={{ alignSelf: leftHandedMode ? "flex-end" : "flex-start" }}
-                >
+                <AppText variant="micro" tone="secondary" style={{ alignSelf: "flex-start" }}>
                   {postAgeLabel}
                 </AppText>
               </View>

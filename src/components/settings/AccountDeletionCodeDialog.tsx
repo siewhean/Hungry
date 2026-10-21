@@ -8,6 +8,8 @@ interface AccountDeletionCodeDialogProps {
   visible: boolean;
   email?: string;
   onSubmit: (code: string) => Promise<void>;
+  /** Emails a new code (the dialog waits 60 seconds between sends). */
+  onResend: () => Promise<void>;
   onCancel: () => void;
 }
 
@@ -16,6 +18,7 @@ export function AccountDeletionCodeDialog({
   visible,
   email,
   onSubmit,
+  onResend,
   onCancel,
 }: AccountDeletionCodeDialogProps) {
   const { componentRadii, palette, spacing } = useHungryTheme();
@@ -51,7 +54,12 @@ export function AccountDeletionCodeDialog({
               ? `We emailed a code to ${email}. Enter it to delete your account.`
               : "We emailed you a code. Enter it to delete your account."}
           </AppText>
-          <EmailCodeField onSubmit={onSubmit} submitLabel="Delete account" />
+          <EmailCodeField
+            onSubmit={onSubmit}
+            onResend={onResend}
+            submitLabel="Delete account"
+            submitVariant="destructive"
+          />
           <Button label="Cancel" variant="ghost" onPress={onCancel} />
         </View>
       </KeyboardAvoidingView>

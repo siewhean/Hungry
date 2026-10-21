@@ -41,7 +41,7 @@ test("MVP profile identity uses Supabase storage and public profile sync", () =>
   assert.match(service, /async function uploadAvatarIfNeeded/);
   assert.match(service, /bucket: "avatars"/);
   assert.match(service, /path: `\$\{userId\}\/avatar-\$\{Date\.now\(\)\}\.\$\{extension\}`/);
-  assert.match(service, /payload\.avatar_url = await uploadAvatarIfNeeded/);
+  assert.match(service, /: await uploadAvatarIfNeeded\(client, userId, updates\.avatarUrl\)/);
   assert.match(service, /from\("privacy_settings"\)\.upsert/);
   assert.match(avatarMigration, /\('avatars', 'avatars', true/);
   assert.match(avatarMigration, /avatars_insert_authenticated_own_prefix/);
@@ -67,7 +67,7 @@ test("MVP settings split keeps device-only preferences in local UI storage", () 
   assert.match(settingsScreen, /hapticFeedbackEnabled: state\.hapticFeedbackEnabled/);
   assert.match(settingsScreen, /reducedMotionEnabled: state\.reducedMotionEnabled/);
   assert.match(settingsScreen, /leftHandedMode: state\.leftHandedMode/);
-  assert.match(settingsScreen, /changeProfileVisibility\("private"\)/);
+  assert.match(settingsScreen, /value: "private" as const/);
   assert.match(settingsScreen, /label="Reduce motion"/);
   assert.doesNotMatch(settingsScreen, /label="Analytics sharing"/);
 });
@@ -147,9 +147,11 @@ test("Change Password re-authenticates instead of exchanging a fake recovery cod
 
   assert.doesNotMatch(editProfile, /profile-settings/);
   assert.doesNotMatch(editProfile, /screen: "ResetPassword"/);
-  assert.match(editProfile, /navigate\("ChangePassword"\)/);
-  assert.match(editProfile, /auth\.canChangePassword\(\)/);
-  assert.match(editProfile, /\{canChangePassword \? \(/);
+  // The Change password row moved to Settings > Sign-in and security.
+  const settingsScreen = read("src/app/screens/profile/SettingsScreen.tsx");
+  assert.match(settingsScreen, /navigate\("ChangePassword"\)/);
+  assert.match(settingsScreen, /auth\.canChangePassword\(\)/);
+  assert.match(settingsScreen, /\{canChangePassword && isAuthenticated \? \(/);
   assert.match(changePassword, /auth\.changePassword\(currentPassword, newPassword\)/);
   assert.match(rootNavigator, /name="ChangePassword"/);
 

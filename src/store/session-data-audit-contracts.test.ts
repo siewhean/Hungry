@@ -66,7 +66,10 @@ test("sign_in_completed is logged once per sign-in and identity flags are accura
 
 test("account deletion reports success once queued, and the grace prompt can't be dismissed", () => {
   const service = read("src/lib/services/supabase/supabaseService.ts");
-  assert.match(service, /await this\.signOut\(\)\.catch\(\(\) => undefined\);/);
+  assert.match(
+    service,
+    /await this\.signOut\(\{ scope: "global" \}\)\s*\.catch\(\(\) => this\.signOut\(\)\)\s*\.catch\(\(\) => undefined\);/,
+  );
   assert.match(
     read("src/features/auth/useAccountDeletionGracePrompt.ts"),
     /\{ cancelable: false \}/,

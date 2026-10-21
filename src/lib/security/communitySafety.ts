@@ -75,6 +75,14 @@ export async function loadBlockedAuthorsForSession(): Promise<ReadonlySet<string
   return blockedAuthorIds;
 }
 
+/** Removes a block on the server, then drops it from this session's filters. */
+export async function unblockAccount(blockedUserId: string): Promise<void> {
+  await getHungryService().communitySafety.unblockUser(blockedUserId);
+  const normalized = normalizeAuthorId(blockedUserId);
+  if (normalized) blockedAuthorIds.delete(normalized);
+  trackAnalyticsEvent("user_unblocked", {});
+}
+
 export function isContentHiddenForSession(target: {
   id: string;
   authorId?: string | null;

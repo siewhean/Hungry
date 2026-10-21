@@ -1,18 +1,21 @@
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { View } from "react-native";
+import { Alert, Pressable, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { Eye, EyeOff } from "lucide-react-native";
 
 import { AppText, Button, Card, Input } from "@/components/ui";
 import {
   isWeakPasswordError,
   PASSWORD_REQUIREMENTS_COPY,
+  PASSWORD_RULES,
   validateConfirmPassword,
   validatePassword,
   validateRequired,
   WEAK_PASSWORD_MESSAGE,
 } from "@/features/auth/validation";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { ProfileScreenShell } from "./ProfileScreenShell";
@@ -25,9 +28,11 @@ type FormValues = { currentPassword: string; newPassword: string; confirmPasswor
  */
 export function ChangePasswordScreen() {
   const navigation = useNavigation();
-  const { spacing } = useHungryTheme();
+  const { palette, spacing } = useHungryTheme();
   const showToast = useUIStore((state) => state.showToast);
+  const email = useProfileStore((state) => state.profile.email);
   const [isSaving, setIsSaving] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const {
     control,
     handleSubmit,
@@ -39,6 +44,67 @@ export function ChangePasswordScreen() {
   });
   const newPasswordValue = watch("newPassword");
 
+  // Changing a password does not end sessions already signed in elsewhere.
+  const offerSignOutOfOtherDevices = () => {
+    Alert.alert(
+      "Sign out other devices?",
+      "Your old password no longer works, but phones already signed in to Hungry stay signed in. Sign them out now if someone else may have had access.",
+      [
+        { text: "Not now", style: "cancel", onPress: () => navigation.goBack() },
+        {
+          text: "Sign out other devices",
+          onPress: () => {
+            void getHungryService()
+              .auth.signOut({ scope: "others" })
+              .then(() => showToast({ message: "Other devices signed out.", tone: "success" }))
+              .catch(() =>
+                showToast({
+                  message:
+                    "Couldn't sign out other devices. Try Sign out of all devices in Settings.",
+                  tone: "error",
+                }),
+              );
+            navigation.goBack();
+          },
+        },
+      ],
+      { cancelable: false },
+    );
+  };
+
+  const handleForgotCurrentPassword = () => {
+    const address = email?.trim();
+    if (!address) {
+      showToast({ message: "We couldn't find your email address.", tone: "warning" });
+      return;
+    }
+    void getHungryService()
+      .auth.forgotPassword(address)
+      .then(() => showToast({ message: `Reset instructions sent to ${address}.`, tone: "success" }))
+      .catch(() =>
+        showToast({ message: "Couldn't send the reset email. Please try again.", tone: "error" }),
+      );
+  };
+
+  const revealToggle = (
+    <Pressable
+      accessible
+      accessibilityRole="button"
+      accessibilityLabel={showPassword ? "Hide passwords" : "Show passwords"}
+      accessibilityHint={
+        showPassword ? "Hides the password characters" : "Shows the password characters"
+      }
+      onPress={() => setShowPassword((current) => !current)}
+      hitSlop={8}
+    >
+      {showPassword ? (
+        <EyeOff color={palette.textMuted} size={18} />
+      ) : (
+        <Eye color={palette.textMuted} size={18} />
+      )}
+    </Pressable>
+  );
+
   const handleChange = handleSubmit(async ({ currentPassword, newPassword }) => {
     if (currentPassword === newPassword) {
       setError("newPassword", { message: "Choose a password you have not used here." });
@@ -48,7 +114,7 @@ export function ChangePasswordScreen() {
     try {
       await getHungryService().auth.changePassword(currentPassword, newPassword);
       showToast({ message: "Password updated.", tone: "success" });
-      navigation.goBack();
+      offerSignOutOfOtherDevices();
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
       if (message === "Current password is incorrect.") {
@@ -74,11 +140,14 @@ export function ChangePasswordScreen() {
             render={({ field: { onChange, value } }) => (
               <Input
                 label="Current password"
-                secureTextEntry
+                secureTextEntry={!showPassword}
+                textContentType="password"
+                autoComplete="current-password"
                 value={value}
                 onChangeText={onChange}
                 error={!!errors.currentPassword}
                 errorText={errors.currentPassword?.message}
+                rightIcon={revealToggle}
               />
             )}
           />
@@ -89,7 +158,10 @@ export function ChangePasswordScreen() {
             render={({ field: { onChange, value } }) => (
               <Input
                 label="New password"
-                secureTextEntry
+                secureTextEntry={!showPassword}
+                textContentType="newPassword"
+                autoComplete="new-password"
+                passwordRules={PASSWORD_RULES}
                 value={value}
                 onChangeText={onChange}
                 error={!!errors.newPassword}
@@ -106,7 +178,10 @@ export function ChangePasswordScreen() {
             render={({ field: { onChange, value } }) => (
               <Input
                 label="Confirm new password"
-                secureTextEntry
+                secureTextEntry={!showPassword}
+                textContentType="newPassword"
+                autoComplete="new-password"
+                passwordRules={PASSWORD_RULES}
                 value={value}
                 onChangeText={onChange}
                 error={!!errors.confirmPassword}
@@ -117,6 +192,17 @@ export function ChangePasswordScreen() {
           <AppText variant="bodySmall" tone="muted">
             {PASSWORD_REQUIREMENTS_COPY}
           </AppText>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Forgot your current password?"
+            accessibilityHint="Emails you a link to reset it"
+            onPress={handleForgotCurrentPassword}
+            style={{ minHeight: 44, justifyContent: "center" }}
+          >
+            <AppText style={{ color: palette.orange, fontWeight: "600" }}>
+              Forgot your current password?
+            </AppText>
+          </Pressable>
         </View>
       </Card>
       <Button label="Update password" loading={isSaving} onPress={handleChange} />

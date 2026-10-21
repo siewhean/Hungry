@@ -42,6 +42,8 @@ import {
 } from "@/lib/services/supabase/mediaUpload";
 import { suggestAllergensFromIngredients } from "@/features/merchant/allergenKeywords";
 import { validateMerchantProfileUpdates } from "@/features/merchant/profileValidation";
+import { NO_ACCOUNT_EMAIL_MESSAGE } from "@/features/auth/accountDeletionErrors";
+import { PROFILE_DISPLAY_NAME_MAX_LENGTH, isCheckViolation } from "@/features/profile/profileName";
 import { validateOpeningSchedule } from "@/utils/openingSchedule";
 import { REVIEW_PHOTOS_NOT_ATTACHED, createClientReviewId } from "@/features/review/reviewDraft";
 import { validateMerchantPromotionInput } from "@/features/merchant/promotionValidation";
@@ -625,10 +627,16 @@ async function ensureCurrentUserProfileRow(
     email: user.email ?? null,
   };
   if (!existingDisplayName && providerDisplayName) {
-    payload.display_name = providerDisplayName;
+    // user_profiles caps display names at 40 characters.
+    payload.display_name = providerDisplayName.slice(0, PROFILE_DISPLAY_NAME_MAX_LENGTH).trim();
   }
 
-  const { error } = await client.from("user_profiles").upsert(payload, { onConflict: "id" });
+  let { error } = await client.from("user_profiles").upsert(payload, { onConflict: "id" });
+  if (error && payload.display_name !== undefined && isCheckViolation(error)) {
+    // The server refused the provider's name (reserved or filtered): sign in without a name.
+    delete payload.display_name;
+    ({ error } = await client.from("user_profiles").upsert(payload, { onConflict: "id" }));
+  }
   if (error) {
     throw error;
   }
@@ -1085,6 +1093,8 @@ async function mapSupabaseReviewRows(
   });
 }
 
+const AVATAR_UPLOAD_MAX_EDGE_PX = 512;
+
 async function uploadAvatarIfNeeded(
   client: SupabaseClient,
   userId: string,
@@ -1102,6 +1112,8 @@ async function uploadAvatarIfNeeded(
     bucket: "avatars",
     path: `${userId}/avatar-${Date.now()}.${extension}`,
     uri: avatarUri,
+    // Avatars show at most a few hundred points wide; resize before upload.
+    maxEdgePx: AVATAR_UPLOAD_MAX_EDGE_PX,
   });
   return uploaded.publicUrl;
 }
@@ -3262,14 +3274,25 @@ export const supabaseService: HungryService = {
       return signInWithOAuthProvider("apple");
     },
 
-    async signOut() {
+    async signOut(options) {
       const client = requireSupabaseClient();
+      // supabase-js defaults to "global", which would end every device's session: a
+      // plain sign-out only ends this one. "global" and "others" are explicit
+      // choices, so a failed revoke is reported instead of quietly ending only this device.
+      const scope = options?.scope ?? "local";
+      const { error } = await client.auth.signOut({ scope });
+      if (!error) return;
+      if (scope !== "local") throw error;
       // A failed server revoke (offline) leaves the stored session in place; clear
       // it locally anyway so the next launch does not sign the user back in.
-      const { error } = await client.auth.signOut();
-      if (!error) return;
       const { error: localError } = await client.auth.signOut({ scope: "local" });
       if (localError) throw localError;
+    },
+
+    async getAccountDeletionBlocker() {
+      const { data, error } = await requireSupabaseClient().rpc("get_my_account_deletion_blocker");
+      if (error) throw error;
+      return data === "merchant_owner_must_transfer" ? "merchant_owner_must_transfer" : null;
     },
 
     async sendAccountDeletionCode() {
@@ -3277,7 +3300,7 @@ export const supabaseService: HungryService = {
       const { data, error: userError } = await client.auth.getUser();
       if (userError) throw userError;
       const email = data.user?.email;
-      if (!email) throw new Error("This account has no email address to send a code to.");
+      if (!email) throw new Error(NO_ACCOUNT_EMAIL_MESSAGE);
       // An email OTP (not reauthenticate(), whose nonce only updateUser accepts) so the
       // code can be checked with verifyOtp. Works for Google and Apple accounts too.
       const { error } = await client.auth.signInWithOtp({
@@ -3317,7 +3340,10 @@ export const supabaseService: HungryService = {
       // The request is queued; a failed token unbind or sign-out must not report
       // the deletion itself as failed. The caller clears the local session.
       await unregisterStoredPushToken(client).catch(() => undefined);
-      await this.signOut().catch(() => undefined);
+      // Deletion ends every device's session; fall back to this device if that fails.
+      await this.signOut({ scope: "global" })
+        .catch(() => this.signOut())
+        .catch(() => undefined);
       return { scheduledFor };
     },
 
@@ -3401,6 +3427,15 @@ export const supabaseService: HungryService = {
         { emailRedirectTo: AUTH_REDIRECTS.emailConfirm },
       );
       if (error) throw error;
+    },
+
+    async getPendingEmailChange() {
+      const client = getSupabaseClient();
+      if (!client) return null;
+      const { data, error } = await client.auth.getUser();
+      if (error) return null;
+      // Supabase keeps the requested address in new_email until it is confirmed.
+      return asString((data.user as { new_email?: unknown } | null)?.new_email) ?? null;
     },
 
     async getCurrentSession() {
@@ -3973,13 +4008,20 @@ export const supabaseService: HungryService = {
         payload.reviewed_dish_ids = updates.reviewedDishIds;
       if (updates.tasteProfile !== undefined) payload.taste_profile = updates.tasteProfile;
       if (updates.avatarUrl !== undefined) {
-        payload.avatar_url = await uploadAvatarIfNeeded(client, userId, updates.avatarUrl);
+        // An empty string removes the photo.
+        payload.avatar_url =
+          updates.avatarUrl === ""
+            ? null
+            : await uploadAvatarIfNeeded(client, userId, updates.avatarUrl);
       }
       if (Object.keys(payload).length > 1) {
         const { error } = await client.from("user_profiles").upsert(payload, { onConflict: "id" });
         if (error) throw error;
         if (typeof payload.avatar_url === "string") {
           await removePreviousAvatars(client, userId, payload.avatar_url);
+        } else if (payload.avatar_url === null) {
+          // Photo removed: no avatar file is current any more.
+          await removePreviousAvatars(client, userId, "");
         }
       }
       if (updates.profileVisibility !== undefined) {
@@ -5239,6 +5281,40 @@ export const supabaseService: HungryService = {
         reason: row.reason as string | undefined,
         createdAt: row.created_at as string,
       }));
+    },
+
+    async unblockUser(blockedUserId: string) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to unblock users.");
+      if (!UUID_PATTERN.test(blockedUserId)) {
+        throw new Error("Unblocking requires a valid user id.");
+      }
+      // user_blocks_delete_own lets a blocker delete only their own rows.
+      const { error } = await client
+        .from("user_blocks")
+        .delete()
+        .eq("blocker_id", userId)
+        .eq("blocked_user_key", blockedUserId.toLowerCase());
+      if (error) throw error;
+    },
+
+    async getBlockedAccounts() {
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("list_my_blocked_accounts");
+      if (error) throw error;
+      return (Array.isArray(data) ? (data as Row[]) : []).flatMap((row) => {
+        const blockedUserId = asString(row.blocked_user_id);
+        if (!blockedUserId) return [];
+        return [
+          {
+            blockedUserId,
+            displayName: asString(row.display_name),
+            avatarUrl: asString(row.avatar_url),
+            blockedAt: asString(row.blocked_at) ?? "",
+          },
+        ];
+      });
     },
   },
 

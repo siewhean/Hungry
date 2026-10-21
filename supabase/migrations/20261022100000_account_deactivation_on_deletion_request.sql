@@ -30,7 +30,9 @@
 -- app_private.search_portfolios(text, text, text) (20261020040000),
 -- app_private.request_my_account_deletion(text) (20261020050000).
 -- New: app_private.account_is_deactivated(uuid), restrictive policy
--- portfolios_select_hide_deactivated.
+-- portfolios_select_hide_deactivated, app_private.account_deletion_blocker(uuid),
+-- public.get_my_account_deletion_blocker() (invoker wrapper over a definer body;
+-- returns 'merchant_owner_must_transfer' or null).
 
 create schema if not exists app_private;
 grant usage on schema app_private to anon, authenticated, service_role;
@@ -282,7 +284,62 @@ $$;
 revoke all on function app_private.search_portfolios(text, text, text) from public, anon;
 grant execute on function app_private.search_portfolios(text, text, text) to authenticated, service_role;
 
--- M2: same body as 20261020050000 plus the merchant owner refusal. A repeat
+-- M2: what stops a user from deleting their account, or null. Only one reason
+-- today: they own a merchant account.
+create or replace function app_private.account_deletion_blocker(p_user_id uuid)
+returns text
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  select case
+    when p_user_id is null then null
+    when exists (select 1 from public.merchant_accounts ma where ma.user_id = p_user_id)
+      or exists (
+        select 1 from public.merchant_roles mr
+        where mr.user_id = p_user_id and mr.role = 'owner'
+      )
+      or exists (
+        select 1 from public.merchant_members mm
+        where mm.user_id = p_user_id and mm.role = 'owner' and mm.status = 'active'
+      )
+    then 'merchant_owner_must_transfer'
+    else null
+  end;
+$$;
+
+revoke all on function app_private.account_deletion_blocker(uuid) from public, anon, authenticated;
+grant execute on function app_private.account_deletion_blocker(uuid) to service_role;
+
+-- The app asks before it emails a deletion code, so nobody types a code first.
+create or replace function app_private.get_my_account_deletion_blocker()
+returns text
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  select app_private.account_deletion_blocker(auth.uid());
+$$;
+
+revoke all on function app_private.get_my_account_deletion_blocker() from public, anon, authenticated;
+grant execute on function app_private.get_my_account_deletion_blocker() to authenticated, service_role;
+
+create or replace function public.get_my_account_deletion_blocker()
+returns text
+language sql
+stable
+security invoker
+set search_path = public, app_private
+as $$
+  select app_private.get_my_account_deletion_blocker();
+$$;
+
+revoke all on function public.get_my_account_deletion_blocker() from public, anon;
+grant execute on function public.get_my_account_deletion_blocker() to authenticated, service_role;
+
+-- Same body as 20261020050000 plus the merchant owner refusal. A repeat
 -- request still returns the pending date first, so the refusal only applies to a
 -- new request.
 create or replace function app_private.request_my_account_deletion(p_reason text default null)
@@ -312,15 +369,7 @@ begin
     return v_scheduled_for;
   end if;
 
-  if exists (select 1 from public.merchant_accounts ma where ma.user_id = v_user_id)
-    or exists (
-      select 1 from public.merchant_roles mr
-      where mr.user_id = v_user_id and mr.role = 'owner'
-    )
-    or exists (
-      select 1 from public.merchant_members mm
-      where mm.user_id = v_user_id and mm.role = 'owner' and mm.status = 'active'
-    ) then
+  if app_private.account_deletion_blocker(v_user_id) is not null then
     raise exception 'merchant_owner_must_transfer'
       using errcode = 'P0001',
         hint = 'Transfer the business to another owner or contact support before deleting this account.';

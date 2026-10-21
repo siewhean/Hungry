@@ -184,6 +184,9 @@ set local role authenticated;
 
 do $$
 begin
+  if public.get_my_account_deletion_blocker() is distinct from 'merchant_owner_must_transfer' then
+    raise exception 'The blocker check should name the merchant owner reason';
+  end if;
   perform public.request_my_account_deletion('smoke');
   raise exception 'A merchant owner must not be able to queue deletion';
 exception
@@ -204,6 +207,19 @@ begin
     raise exception 'The refused merchant owner must not have a request row';
   end if;
 end $$;
+
+-- A user who owns no business has no blocker.
+select set_config('request.jwt.claim.sub', '00000000-0000-0200-b000-000000000002', true);
+set local role authenticated;
+
+do $$
+begin
+  if public.get_my_account_deletion_blocker() is not null then
+    raise exception 'A non-merchant has no deletion blocker';
+  end if;
+end $$;
+
+reset role;
 
 select 'account_deactivation_on_deletion_request' as check_name, 'ok' as detail;
 

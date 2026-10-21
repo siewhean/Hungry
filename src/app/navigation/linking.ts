@@ -16,7 +16,6 @@ const PROTECTED_DEEP_LINK_ROUTES = new Set([
   "EditProfile",
   "Favourites",
   "ReviewHistory",
-  "Settings",
   "ReviewStack",
   "AddStory",
   "MusicSelection",

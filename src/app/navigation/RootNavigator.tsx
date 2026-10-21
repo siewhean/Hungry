@@ -78,6 +78,7 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "Settings",
   "EditProfile",
   "ChangePassword",
+  "BlockedAccounts",
   "DesignGallery",
   "PostComposerV2",
   "StoryViewer",
@@ -105,9 +106,9 @@ const PROTECTED_ROOT_ROUTES = new Set<RootRouteName>([
   "DirectMessages",
   "EditProfile",
   "ChangePassword",
+  "BlockedAccounts",
   "Favourites",
   "ReviewHistory",
-  "Settings",
   "ReviewStack",
   "AddStory",
   "MusicSelection",
@@ -204,6 +205,10 @@ const loadChangePasswordScreen = () =>
   (
     require("@/app/screens/profile/ChangePasswordScreen") as typeof import("@/app/screens/profile/ChangePasswordScreen")
   ).ChangePasswordScreen;
+const loadBlockedAccountsScreen = () =>
+  (
+    require("@/app/screens/profile/BlockedAccountsScreen") as typeof import("@/app/screens/profile/BlockedAccountsScreen")
+  ).BlockedAccountsScreen;
 const loadFavouritesScreen = () =>
   (
     require("@/app/screens/profile/FavouritesScreen") as typeof import("@/app/screens/profile/FavouritesScreen")
@@ -740,6 +745,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen getComponent={loadPostComposerScreen} name="Post" />
           <RootStack.Screen getComponent={loadEditProfileScreen} name="EditProfile" />
           <RootStack.Screen getComponent={loadChangePasswordScreen} name="ChangePassword" />
+          <RootStack.Screen getComponent={loadBlockedAccountsScreen} name="BlockedAccounts" />
           <RootStack.Screen getComponent={loadFavouritesScreen} name="Favourites" />
           <RootStack.Screen getComponent={loadReviewHistoryScreen} name="ReviewHistory" />
           <RootStack.Screen getComponent={loadSettingsScreen} name="Settings" />
