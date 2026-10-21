@@ -7,10 +7,10 @@
 --    unlisted until a unique handle and an opt-in exist). The body is in
 --    app_private (SECURITY DEFINER, so it can read user_profiles); the public
 --    name is a SECURITY INVOKER wrapper, granted to signed-in users only.
--- 2. A display name is cut to 50 characters on insert and whenever it changes.
+-- 2. A display name is cut to 40 characters on insert and whenever it changes.
 --    A trigger rather than a check constraint, so sign-up from a provider with
 --    a long name is never refused and old long names do not make unrelated
---    row updates (counters, avatar) fail. The app limits the field to 50.
+--    row updates (counters, avatar) fail. The app limits the field to 40.
 --
 -- Handles (unique usernames) are not built here: that needs a product decision.
 
@@ -91,7 +91,7 @@ set search_path = public, pg_temp
 as $$
 begin
   if new.display_name is not null then
-    new.display_name := left(btrim(new.display_name), 50);
+    new.display_name := left(btrim(new.display_name), 40);
   end if;
   return new;
 end;

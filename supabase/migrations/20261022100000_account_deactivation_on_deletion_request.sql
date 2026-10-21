@@ -190,11 +190,18 @@ as $$
         order by i.position, i.created_at
       )
       from public.portfolio_items i
-      left join public.dishes d on d.id = i.dish_id
+      left join public.dishes d
+        on d.id = i.dish_id
+        and public.catalog_menu_is_displayable(
+          d.menu_approved_for_display,
+          d.menu_rights_status,
+          d.menu_source_url
+        )
       left join public.venues dv on dv.id = d.venue_id
       left join public.venues v on v.id = i.stall_id
       left join public.buildings b on b.id = coalesce(dv.building_id, v.building_id)
       where i.portfolio_id = p.id
+        and (i.dish_id is null or d.id is not null)
     ), '[]'::jsonb)
   )
   from public.portfolios p

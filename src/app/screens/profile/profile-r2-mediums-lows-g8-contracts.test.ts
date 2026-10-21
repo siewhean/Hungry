@@ -230,7 +230,7 @@ test("G8 add stall: all planning areas, nearby stalls, friendly errors, no permi
 
 test("G8 edit profile: display name is capped and the photo can be removed", () => {
   const edit = read("src/app/screens/profile/EditProfileScreen.tsx");
-  assert.match(edit, /label="Display name"[\s\S]*?maxLength=\{50\}/);
+  assert.match(edit, /label="Display name"[\s\S]*?maxLength=\{PROFILE_DISPLAY_NAME_MAX_LENGTH\}/);
   assert.match(edit, /label="Remove photo"/);
   assert.match(edit, /setAvatarUri\(""\)/);
   assert.match(edit, /avatarUrl: avatarUri,/);

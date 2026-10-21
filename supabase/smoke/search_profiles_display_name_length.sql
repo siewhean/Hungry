@@ -1,7 +1,7 @@
 -- Smoke checks for 20261022081000_search_profiles_and_display_name_length.sql.
 -- People search finds public accounts by name, skips private accounts, blocked
 -- pairs and yourself, refuses short queries and guests; a display name is cut to
--- 50 characters. Runs in a transaction and rolls back.
+-- 40 characters. Runs in a transaction and rolls back.
 
 begin;
 
@@ -29,7 +29,7 @@ values (
   'smoke'
 );
 
--- A long name is cut to 50 characters on insert and on update.
+-- A long name is cut to 40 characters on insert and on update.
 do $$
 declare
   v_name text;
@@ -38,8 +38,8 @@ begin
   values ('00000000-0000-0081-b000-000000000005', repeat('x', 80));
   select display_name into v_name
   from user_profiles where id = '00000000-0000-0081-b000-000000000005';
-  if char_length(v_name) <> 50 then
-    raise exception 'Display name should be cut to 50 characters on insert, got %', char_length(v_name);
+  if char_length(v_name) <> 40 then
+    raise exception 'Display name should be cut to 40 characters on insert, got %', char_length(v_name);
   end if;
 
   update user_profiles
@@ -47,8 +47,8 @@ begin
   where id = '00000000-0000-0081-b000-000000000005';
   select display_name into v_name
   from user_profiles where id = '00000000-0000-0081-b000-000000000005';
-  if char_length(v_name) <> 50 or v_name <> repeat('y', 50) then
-    raise exception 'Display name should be trimmed and cut to 50 characters on update';
+  if char_length(v_name) <> 40 or v_name <> repeat('y', 40) then
+    raise exception 'Display name should be trimmed and cut to 40 characters on update';
   end if;
 end $$;
 
