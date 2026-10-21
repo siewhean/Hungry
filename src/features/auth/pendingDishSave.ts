@@ -8,7 +8,7 @@ import { useUIStore } from "@/store/useUIStore";
 import type { DishDetail } from "@/types/domain";
 import { saveDishAfterSignIn } from "./finishGuestAction";
 
-const STORAGE_KEY = "hungry-pending-dish-save-v1";
+const PENDING_SAVE_STORAGE_NAME = "hungry-pending-dish-save-v1";
 // A save older than this is not attached to whichever account signs in later.
 const PENDING_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
@@ -30,7 +30,7 @@ function isPendingDishSave(value: unknown): value is PendingDishSave {
 export function rememberPendingDishSave(dish: DishDetail): void {
   pending = { dish, savedAt: Date.now() };
   void Promise.resolve(
-    hungryPersistStorage?.setItem(STORAGE_KEY, { state: pending, version: 0 }),
+    hungryPersistStorage?.setItem(PENDING_SAVE_STORAGE_NAME, { state: pending, version: 0 }),
   ).catch(() => undefined);
 }
 
@@ -39,7 +39,7 @@ async function takePending(): Promise<PendingDishSave | null> {
   if (pending === undefined) {
     let stored: PendingDishSave | null = null;
     try {
-      const value = (await hungryPersistStorage?.getItem(STORAGE_KEY))?.state;
+      const value = (await hungryPersistStorage?.getItem(PENDING_SAVE_STORAGE_NAME))?.state;
       stored = isPendingDishSave(value) ? value : null;
     } catch {
       stored = null;
@@ -49,7 +49,9 @@ async function takePending(): Promise<PendingDishSave | null> {
   const saved = pending;
   pending = null;
   if (saved) {
-    void Promise.resolve(hungryPersistStorage?.removeItem(STORAGE_KEY)).catch(() => undefined);
+    void Promise.resolve(hungryPersistStorage?.removeItem(PENDING_SAVE_STORAGE_NAME)).catch(
+      () => undefined,
+    );
   }
   return saved;
 }
