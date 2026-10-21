@@ -214,7 +214,12 @@ export async function applySignedInProfile(
   const profileState = useProfileStore.getState();
   const provisionalFromStore = profileState.provisionalOnboardingMigration;
   const currentProfile = profileState.profile;
-  const currentTasteProfile = currentProfile.tasteProfile ?? profileState.tasteProfile;
+  // The quiz updates profile.tasteVector; take the vector from there so a stale
+  // tasteProfile.vector never overwrites the onboarding answers (main #94).
+  const currentTasteProfile = {
+    ...(currentProfile.tasteProfile ?? profileState.tasteProfile),
+    vector: currentProfile.tasteVector,
+  };
   const provisional =
     provisionalFromStore?.userId === sessionProfile.id
       ? provisionalFromStore

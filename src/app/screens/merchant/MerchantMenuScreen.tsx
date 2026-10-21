@@ -594,7 +594,7 @@ export function MerchantMenuScreen() {
         title={dishDialog?.confirmDelete ? "Delete Dish" : "Dish Options"}
         message={
           dishDialog?.confirmDelete
-            ? `Are you sure you want to delete ${dishDialog.dish.name}?`
+            ? `Remove ${dishDialog.dish.name} from your menu? Diner reviews and saves are kept.`
             : dishDialog?.dish.name
         }
         buttons={dishDialogButtons}

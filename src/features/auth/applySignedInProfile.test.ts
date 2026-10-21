@@ -280,3 +280,21 @@ test("a retry after a partial failure writes the stored blend instead of blendin
   assert.equal(retry.status, "synced");
   assert.deepEqual(written[0], first.resolvedTasteProfile);
 });
+
+test("guest merge keeps the quiz vector when the guest tasteProfile vector is stale", () => {
+  seedGuestWithQuizAnswers();
+  const current = useProfileStore.getState().profile;
+  useProfileStore.setState({
+    profile: {
+      ...current,
+      tasteProfile: { ...NEUTRAL_TASTE_PROFILE, foodOpenness: "adventurous" },
+    },
+  });
+  applySignedInProfile(
+    accountProfile({ tasteVector: { ...NEUTRAL_TASTE_VECTOR }, dietaryPreferences: [] }),
+  );
+  const profile = useProfileStore.getState().profile;
+  assert.deepEqual(profile.tasteVector, GUEST_VECTOR);
+  assert.deepEqual(profile.tasteProfile?.vector, GUEST_VECTOR);
+  assert.equal(profile.tasteProfile?.foodOpenness, "adventurous");
+});
