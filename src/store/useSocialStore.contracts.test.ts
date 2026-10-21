@@ -69,8 +69,10 @@ test("social store contract: UUID follows sync to service while local-name fallb
   // Lists are the viewed profile's server lists; the viewer's local follows only drive buttons.
   assert.doesNotMatch(connectionsSource, /Object\.entries\(followedUserIds\)/);
   assert.doesNotMatch(connectionsSource, /followedAuthors/);
-  assert.match(connectionsSource, /const canShowFollowButton = person\.userId !== profile\.id/);
-  assert.match(connectionsSource, /onPress=\{\(\) => toggleFollow\(person\.userId\)\}/);
+  assert.match(connectionsSource, /const canShowFollowButton = person\.userId !== viewerId/);
+  // The row's Follow button goes through the shared follow press (sign-in gate + unfollow confirm).
+  assert.match(connectionsSource, /useFollowPress\(\)/);
+  assert.match(connectionsSource, /followPress\(\{\s*userId: person\.userId,/);
   assert.match(connectionsSource, /`\$\{targetDisplayName\} doesn't have any followers yet\.`/);
   // Other profiles follow by account id only; a name-only author shows "Profile unavailable".
   assert.doesNotMatch(profileContentSource, /canUseAuthorFallbackFollow/);
@@ -85,11 +87,10 @@ test("social store contract: UUID follows sync to service while local-name fallb
     profileContentSource,
     /const canShowFollowButton = Boolean\(resolvedAuthorId\) && !isSelf/,
   );
-  assert.match(profileContentSource, /onPress: \(\) => toggleFollow\(resolvedAuthorId\)/);
   // A guest is asked to sign in before the follow (or unfollow prompt) is sent.
   assert.match(
     profileContentSource,
-    /const handleFollowPress = \(\) => \{\s*if \(!resolvedAuthorId\) return;\s*if \(\s*!requireAccount\([\s\S]*?toggleFollow\(resolvedAuthorId\)/,
+    /const handleFollowPress = \(\) => \{\s*if \(!resolvedAuthorId\) return;\s*followPress\(\{ userId: resolvedAuthorId,/,
   );
 });
 
@@ -199,7 +200,8 @@ test("public profile does not expose the current user's saved card", () => {
   const profileHome = read("src/app/screens/profile/ProfileHomeScreen.tsx");
   const profileContent = read("src/app/screens/profile/UserProfileContent.tsx");
 
-  assert.match(profileHome, /!\s*isOtherUserProfile \? \([\s\S]*label="Saved"/);
+  assert.match(profileHome, /label="Saved"/);
+  assert.doesNotMatch(profileHome, /isOtherUserProfile|import \{ UserProfileContent/);
   assert.doesNotMatch(profileContent, /label="Saved"/);
   assert.doesNotMatch(profileContent, /navigation\.navigate\("Favourites"\)/);
 });

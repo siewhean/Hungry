@@ -147,7 +147,7 @@ test("connections screen pages, explains hidden lists, and profile reconciles bo
 
   assert.match(screen, /const CONNECTIONS_PAGE_SIZE = 100;/);
   assert.match(screen, /setHasMore\(rowCount === CONNECTIONS_PAGE_SIZE\)/);
-  assert.match(screen, /label="Load more"/);
+  assert.match(screen, /onEndReached=\{loadMore\}/);
   assert.match(screen, /service\.canViewFollowLists\(targetUserId\)/);
   assert.match(screen, /This account is private/);
   assert.match(store, /setFollowedUserId: \(userId, isFollowing\) =>/);

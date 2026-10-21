@@ -880,7 +880,14 @@ export interface HungryService {
   // Reviews
   reviews: {
     getReviewsForDish(dishId: string): Promise<DishDetail["reviews"]>;
-    getUserReviews(userId: string): Promise<DishDetail["reviews"]>;
+    /**
+     * One user's reviews for a profile list, newest first, without photos. Paged on the server
+     * (default 200).
+     */
+    getUserReviews(
+      userId: string,
+      page?: { limit?: number; offset?: number },
+    ): Promise<DishDetail["reviews"]>;
     submitReview(draft: SubmitReviewInput): Promise<void>;
     /** Newest-first review feed across all dishes, fetched as one paginated query. */
     listRecentReviews(options?: ListRecentReviewsOptions): Promise<RecentReviewFeedEntry[]>;
@@ -989,6 +996,16 @@ export interface HungryService {
     /** One page of approved followees; `limit` defaults to 100 (max 500). */
     listFollowing(
       userId: string,
+      page?: { limit?: number; offset?: number },
+    ): Promise<{ userId: string; displayName: string; avatarUrl?: string }[]>;
+    /** Removes one of your approved followers. No-op when they do not follow you. */
+    removeFollower(userId: string): Promise<void>;
+    /**
+     * People search by display name (signed-in only; needs 2+ characters). Public accounts only,
+     * never yourself or a blocked pair.
+     */
+    searchProfiles(
+      query: string,
       page?: { limit?: number; offset?: number },
     ): Promise<{ userId: string; displayName: string; avatarUrl?: string }[]>;
     /** False when the viewer may not see this user's follower/following lists (private or blocked). */

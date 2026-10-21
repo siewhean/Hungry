@@ -689,6 +689,8 @@ export interface PublicUserProfile {
   isPrivate?: boolean;
   /** The viewer may see the account's posts and profile reviews. */
   canViewContent?: boolean;
+  /** Stalls visited, counted on the server by the same rule as your own Stalls stat. */
+  stallsVisited?: number;
 }
 
 export interface PublicMerchantProfile {

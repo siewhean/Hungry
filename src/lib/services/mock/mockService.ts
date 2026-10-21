@@ -1857,7 +1857,7 @@ export const hungryService: HungryService = {
       );
     },
 
-    async getUserReviews(_userId) {
+    async getUserReviews(_userId, _page) {
       // Another user's profile: only reviews written by that account, like the Supabase read.
       if (_userId !== _profile.id) {
         return resolve(
@@ -2419,6 +2419,28 @@ export const hungryService: HungryService = {
           page,
         ),
       );
+    },
+
+    async removeFollower(userId: string) {
+      const followersKey = _mockFollowersByUser[_profile.id] ? _profile.id : userProfile.id;
+      _mockFollowersByUser[followersKey] = (_mockFollowersByUser[followersKey] ?? []).filter(
+        (person) => person.userId !== userId,
+      );
+      return resolve(undefined as void);
+    },
+
+    async searchProfiles(query: string, page?: { limit?: number; offset?: number }) {
+      const term = query.trim().toLowerCase();
+      if (term.length < 2) return resolve([]);
+      const known = [...Object.values(_mockFollowersByUser).flat(), ..._incomingFollowRequests];
+      const matches = dedupeMockFollowers(known).filter(
+        (person) =>
+          person.userId !== _profile.id &&
+          !_mockPrivateUserIds.has(person.userId) &&
+          !_blockedUsers.has(person.userId) &&
+          person.displayName.toLowerCase().includes(term),
+      );
+      return resolve(pageMockFollowRows(matches, { limit: page?.limit ?? 20, ...page }));
     },
 
     async canViewFollowLists(_userId: string) {

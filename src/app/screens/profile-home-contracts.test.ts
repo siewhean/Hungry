@@ -77,12 +77,17 @@ test("profile home contract: Taste Fingerprint shows all six dimensions and Save
   assert.doesNotMatch(source, /label="Favourites"|>Favourites</);
 });
 
-test("profile home contract: a preloaded Profile tab never bounces guests to Login", () => {
+test("profile home contract: a signed-out Profile tab shows a sign-in view instead of bouncing to Login", () => {
   const source = read("src/app/screens/profile/ProfileHomeScreen.tsx");
 
-  // The tab navigator mounts Profile in the background, so the guest redirect must wait for focus.
+  // The tab navigator mounts Profile in the background, so nothing may redirect on mount.
   assert.match(source, /const isFocused = useIsFocused\(\);/);
-  assert.match(source, /if \(mode !== "self" \|\| isAuthenticated \|\| !isFocused\) \{/);
+  assert.match(source, /if \(!isAuthenticated\) \{[\s\S]*?testID="profile-signed-out"/);
+  assert.match(
+    source,
+    /setReturnRoute\("Profile"\);\s*rootNavigation\.navigate\("AuthStack", \{ screen: "Login" \}\)/,
+  );
+  assert.doesNotMatch(source, /mode !== "self"/);
 });
 
 test("profile home contract: merchant entry loads on sign-in and switching mode keeps the account", () => {

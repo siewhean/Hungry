@@ -80,6 +80,11 @@ export type AnalyticsEventName =
   | "post_commented"
   | "user_followed"
   | "user_unfollowed"
+  | "profile_viewed"
+  | "profile_shared"
+  | "taste_fingerprint_shared"
+  | "follow_request_approved"
+  | "follow_request_declined"
   | "claim_this_stall_tapped"
 
   // ─── Website Events ────────────────────────────────────────────────────────
