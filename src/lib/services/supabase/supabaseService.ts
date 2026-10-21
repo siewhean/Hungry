@@ -7494,6 +7494,10 @@ export const supabaseService: HungryService = {
       if (filters?.type) {
         query = query.eq("type", filters.type);
       }
+      if (filters?.ids) {
+        if (filters.ids.length === 0) return [];
+        query = query.in("id", filters.ids);
+      }
 
       // Bounded: an unfiltered read must not pull every public list on the platform.
       query = query.order("created_at", { ascending: false }).limit(PORTFOLIO_LIST_LIMIT);
@@ -7753,6 +7757,21 @@ export const supabaseService: HungryService = {
         .from("portfolio_follows")
         .select("portfolio_id")
         .eq("user_id", userId);
+      if (error) throw error;
+      return (data || []).map((row) => String((row as Row).portfolio_id ?? ""));
+    },
+
+    async getSharedPortfolioIds(options?: { role?: "viewer" | "editor" }) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) return [];
+      let query = client
+        .from("portfolio_collaborators")
+        .select("portfolio_id")
+        .eq("user_id", userId);
+      if (options?.role) query = query.eq("role", options.role);
+      const { data, error } = await query;
       if (error) throw error;
       return (data || []).map((row) => String((row as Row).portfolio_id ?? ""));
     },

@@ -39,6 +39,7 @@ import type {
   PopularVisitorPin,
   Portfolio,
   PortfolioCollaborator,
+  PortfolioCollaboratorRole,
   PortfolioFlag,
   PortfolioFollow,
   PortfolioItem,
@@ -1241,6 +1242,8 @@ export interface HungryService {
       userId?: string;
       visibility?: string;
       type?: string;
+      /** Only these list ids (the Following and Shared tabs). */
+      ids?: string[];
     }): Promise<Portfolio[]>;
     getPortfolio(id: string): Promise<Portfolio>;
     /** A public list by id for anyone, signed in or not; null when private or missing. */
@@ -1289,6 +1292,11 @@ export interface HungryService {
     isFollowingPortfolio(portfolioId: string): Promise<boolean>;
     /** Ids of the lists the signed-in user follows (empty when signed out). */
     getFollowedPortfolioIds(): Promise<string[]>;
+    /**
+     * Ids of the lists the signed-in user collaborates on (empty when signed out);
+     * `role: "editor"` keeps only lists they may add items to.
+     */
+    getSharedPortfolioIds(options?: { role?: PortfolioCollaboratorRole }): Promise<string[]>;
 
     flagPortfolio(portfolioId: string, reason: string, details?: string): Promise<void>;
     getPortfolioFlags(filters?: { status?: string }): Promise<PortfolioFlag[]>;

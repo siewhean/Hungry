@@ -17,7 +17,7 @@ export function PortfolioEditScreen({ navigation, route }: Props) {
   const { palette, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const portfolioId = route.params.portfolioId;
-  const { portfolios, loadPortfolios, updatePortfolio, conflicts, clearConflict } =
+  const { portfolios, refreshPortfolio, updatePortfolio, conflicts, clearConflict } =
     usePortfolioStore();
   const portfolio = portfolios.find((entry) => entry.id === portfolioId);
   const conflict = conflicts[portfolioId];
@@ -30,8 +30,11 @@ export function PortfolioEditScreen({ navigation, route }: Props) {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    void loadPortfolios().catch((error) => console.error("Failed to load list:", error));
-  }, [loadPortfolios]);
+    // Load just this list: an unfiltered, capped read could miss it.
+    void refreshPortfolio(portfolioId).catch((error) =>
+      console.error("Failed to load list:", error),
+    );
+  }, [portfolioId, refreshPortfolio]);
 
   useEffect(() => {
     if (!portfolio) return;
