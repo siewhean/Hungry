@@ -16,7 +16,8 @@ Use this when the backend has to be rebuilt on a fresh Supabase project (the old
 export SUPABASE_ACCESS_TOKEN=<personal access token>
 npx supabase link --project-ref <ref> -p '<db password>'
 npx supabase db push                 # all migrations, including the deletion cron
-npx supabase config push             # [auth] redirect allow-list from config.toml
+export SUPABASE_AUTH_SMTP_HOST=<smtp host> SUPABASE_AUTH_SMTP_USER=<user> SUPABASE_AUTH_SMTP_PASS=<password>
+npx supabase config push             # [auth] redirects, password policy, email templates, SMTP
 
 openssl rand -hex 32                 # use as ACCOUNT_DELETION_WORKER_TOKEN
 npx supabase secrets set ACCOUNT_DELETION_WORKER_TOKEN=<token> \
@@ -37,6 +38,13 @@ npx supabase functions deploy send-notifications --no-verify-jwt
 `config push` sets `site_url` and `additional_redirect_urls`
 (`hungry://auth/confirm`, `/reset`, `/oauth`, and the legacy `/callback`). The dashboard path is
 Authentication > URL Configuration if you prefer to set them by hand.
+
+It also sets the password policy (10+ characters, secure password change), the
+Confirm signup, Reset password and Magic Link templates from `supabase/templates/`
+(each shows the 8-digit `{{ .Token }}` code the app asks for), and the custom SMTP
+sender `no-reply@usehungry.com`. Verify the sending domain `usehungry.com` with the
+SMTP provider first. Leaked-password protection has no config key: turn it on in
+Authentication > Providers > Email > Prevent use of leaked passwords.
 
 `config push` applies every auth key, and any key missing from `config.toml` is reset to the
 CLI default. Check that the file pins every setting you care about before pushing, and answer

@@ -15,6 +15,30 @@ test("the code length matches supabase auth.email.otp_length", () => {
   assert.match(read("src/features/auth/EmailCodeField.tsx"), /EMAIL_CODE_LENGTH = 8;/);
 });
 
+test("every email the app asks a code for is a checked-in template with {{ .Token }}", () => {
+  const config = read("supabase/config.toml");
+  for (const template of ["confirmation", "recovery", "magic_link"]) {
+    assert.match(
+      config,
+      new RegExp(
+        `\\[auth\\.email\\.template\\.${template}\\]\\s*subject = "[^"]+"\\s*content_path = "\\./supabase/templates/${template}\\.html"`,
+      ),
+    );
+    assert.match(read(`supabase/templates/${template}.html`), /\{\{ \.Token \}\}/);
+  }
+  // Account deletion uses the Magic Link email; it must not hold a sign-in link.
+  assert.doesNotMatch(read("supabase/templates/magic_link.html"), /ConfirmationURL/);
+  assert.match(config, /\[auth\.email\.smtp\]\s*enabled = true/);
+  assert.match(config, /pass = "env\(SUPABASE_AUTH_SMTP_PASS\)"/);
+});
+
+test("the password policy is pinned in config.toml to match the app", () => {
+  const config = read("supabase/config.toml");
+  assert.match(read("src/features/auth/validation.ts"), /MIN_PASSWORD_LENGTH = 10;/);
+  assert.match(config, /\[auth\][\s\S]*?minimum_password_length = 10\n[\s\S]*?\[auth\.email\]/);
+  assert.match(config, /\[auth\.email\][\s\S]*?secure_password_change = true/);
+});
+
 test("sign-up and reset check-your-email screens verify the emailed code", () => {
   const service = read("src/lib/services/supabase/supabaseService.ts");
   assert.match(
