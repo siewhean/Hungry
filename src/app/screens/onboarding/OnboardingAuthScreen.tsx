@@ -35,6 +35,7 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { AuthProviderButton } from "../auth/AuthProviderButton";
+import { AuthTermsNotice } from "../auth/AuthTermsNotice";
 import {
   AUTH_COPY,
   getProviderErrorMessage,
@@ -474,6 +475,7 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                     variant="primary"
                     style={{ marginTop: spacing[2] }}
                   />
+                  <AuthTermsNotice />
                 </>
               ) : (
                 <>
