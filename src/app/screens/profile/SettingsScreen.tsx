@@ -329,20 +329,24 @@ export function SettingsScreen() {
   };
 
   const showProfileVisibilityDialog = () => {
-    Alert.alert("Profile visibility", "Choose who can see your Hungry profile.", [
-      {
-        text: "Public",
-        onPress: () => void changeProfileVisibility("public"),
-      },
-      {
-        text: "Private",
-        onPress: () => void changeProfileVisibility("private"),
-      },
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-    ]);
+    Alert.alert(
+      "Profile visibility",
+      "Private: only approved followers see your posts and the reviews on your profile. Your reviews still show on dish pages.",
+      [
+        {
+          text: "Public",
+          onPress: () => void changeProfileVisibility("public"),
+        },
+        {
+          text: "Private",
+          onPress: () => void changeProfileVisibility("private"),
+        },
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+      ],
+    );
   };
 
   const openAppSettings = async () => {

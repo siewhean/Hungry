@@ -3643,6 +3643,15 @@ export const supabaseService: HungryService = {
 
     async getUserReviews(userId) {
       const client = requireSupabaseClient();
+      // Someone else's profile list goes through get_user_profile_reviews, which is
+      // empty for a private account unless the viewer follows it (H39). Dish pages
+      // keep showing every review. Older backends without the RPC use the table read.
+      if (userId !== (await getCurrentSupabaseUserId())) {
+        const rpc = await client.rpc("get_user_profile_reviews", { p_user_id: userId });
+        if (!rpc.error) {
+          return Array.isArray(rpc.data) ? mapSupabaseReviewRows(client, rpc.data as Row[]) : [];
+        }
+      }
       const { data, error } = await client
         .from("reviews")
         .select(
@@ -3986,7 +3995,21 @@ export const supabaseService: HungryService = {
       if (error) throw error;
       const row = (data ?? null) as Row | null;
       const id = row ? asString(row.id) : undefined;
-      if (!row || !id) return undefined;
+      if (!row || !id) {
+        // RLS hides a private account from non-followers: fall back to the minimal
+        // card (name, avatar, private flag) so the profile can say it is private.
+        const card = await client.rpc("get_profile_card", { p_user_id: userId });
+        const cardRow = !card.error && Array.isArray(card.data) ? (card.data[0] as Row) : null;
+        const cardId = cardRow ? asString(cardRow.id) : undefined;
+        if (!cardRow || !cardId) return undefined;
+        return {
+          id: cardId,
+          displayName: asString(cardRow.display_name) ?? "Hungry member",
+          avatarUrl: asString(cardRow.avatar_url),
+          isPrivate: cardRow.is_private === true,
+          canViewContent: cardRow.can_view_content === true,
+        };
+      }
       return {
         id,
         displayName: asString(row.display_name) ?? "Hungry member",

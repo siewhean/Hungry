@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Alert, Pressable, View } from "react-native";
 import {
+  Lock,
   MessageCircleMore,
   MoreHorizontal,
   PencilLine,
@@ -271,6 +272,13 @@ export function UserProfileContent({
       ? "Following"
       : "Follow";
   const canShowFollowButton = Boolean(resolvedAuthorId) && !isSelf;
+  // Private account the viewer does not follow: header and follow counts only.
+  const isPrivateLocked =
+    !isSelf &&
+    !isFollowingAuthor &&
+    publicProfile?.id === resolvedAuthorId &&
+    publicProfile?.isPrivate === true &&
+    publicProfile.canViewContent !== true;
   const handleFollowPress = () => {
     if (!resolvedAuthorId) return;
     if (
@@ -465,190 +473,200 @@ export function UserProfileContent({
                   onPress={() => openProfileConnections("UserFollowing")}
                 />
               </View>
-              <View style={{ flexDirection: "row", gap: spacing[2] }}>
-                <StatBlock
-                  icon={<PencilLine color={palette.orange} size={14} />}
-                  label="Reviews"
-                  value={reviewCount}
-                  accessibilityHint={`Shows ${authorName}'s reviews`}
-                  onPress={() => setActiveTab("reviews")}
-                />
-                {/* Count only: the visited-stalls list is the viewer's own and is not shown for others. */}
-                <StatBlock
-                  icon={<Utensils color={palette.orange} size={14} />}
-                  label="Stalls"
-                  value={stallsCount}
-                />
-              </View>
-            </View>
-
-            <View style={{ gap: spacing[4], marginTop: spacing[2] }}>
-              <AppText variant="h2">{activeTab === "posts" ? "Posts" : "Reviews"}</AppText>
-              <View
-                accessibilityRole="tablist"
-                style={{
-                  alignSelf: "stretch",
-                  flexDirection: "row",
-                  borderWidth: 1,
-                  borderRadius: componentRadii.button,
-                  borderColor: palette.border,
-                  backgroundColor: palette.surface,
-                  overflow: "hidden",
-                }}
-              >
-                <Pressable
-                  accessibilityRole="tab"
-                  accessibilityLabel="Show posts"
-                  accessibilityState={{ selected: activeTab === "posts" }}
-                  onPress={() => setActiveTab("posts")}
-                  style={{
-                    flex: 1,
-                    paddingVertical: spacing[2],
-                    alignItems: "center",
-                    backgroundColor: activeTab === "posts" ? palette.orange : "transparent",
-                  }}
-                >
-                  <AppText
-                    style={{
-                      fontWeight: activeTab === "posts" ? 700 : 500,
-                      color: activeTab === "posts" ? palette.white : palette.text,
-                    }}
-                  >
-                    Posts
-                  </AppText>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="tab"
-                  accessibilityLabel="Show reviews"
-                  accessibilityState={{ selected: activeTab === "reviews" }}
-                  onPress={() => setActiveTab("reviews")}
-                  style={{
-                    flex: 1,
-                    paddingVertical: spacing[2],
-                    alignItems: "center",
-                    backgroundColor: activeTab === "reviews" ? palette.orange : "transparent",
-                  }}
-                >
-                  <AppText
-                    style={{
-                      fontWeight: activeTab === "reviews" ? 700 : 500,
-                      color: activeTab === "reviews" ? palette.white : palette.text,
-                    }}
-                  >
-                    Reviews
-                  </AppText>
-                </Pressable>
-              </View>
-
-              {activeItemsCount > 0 ? (
-                activeTab === "posts" ? (
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      flexWrap: "wrap",
-                      marginHorizontal: -spacing[4],
-                    }}
-                  >
-                    {posts.map((post) => {
-                      return (
-                        <Pressable
-                          key={post.id}
-                          accessibilityRole="button"
-                          accessibilityLabel={`Open post ${post.caption || post.id}`}
-                          onPress={() =>
-                            rootNavigation.navigate("ActivityPostDetail", {
-                              postId: post.id,
-                            })
-                          }
-                          style={{ width: "33.333%", aspectRatio: 1 }}
-                        >
-                          <AccessibleImage
-                            source={{ uri: post.mediaUrl }}
-                            decorative
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                            }}
-                            contentFit="cover"
-                          />
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-                ) : (
-                  <View style={{ gap: spacing[3] }}>
-                    {reviews.map((review) => {
-                      const dishName = review.dishId
-                        ? repository.getDishById(review.dishId)?.name
-                        : undefined;
-                      const reviewCard = (
-                        <Card
-                          style={{
-                            borderColor: palette.border,
-                            borderWidth: 1,
-                            gap: spacing[2],
-                            padding: spacing[3],
-                            backgroundColor:
-                              colorScheme === "dark" ? palette.surfaceRaised : palette.surface,
-                          }}
-                        >
-                          {dishName ? <AppText variant="bodyBold">{dishName}</AppText> : null}
-                          <AppText variant="micro" tone="secondary">
-                            {`Rated ${review.rating}/5`}
-                          </AppText>
-                          {review.text ? <AppText>{review.text}</AppText> : null}
-                        </Card>
-                      );
-
-                      return review.dishId ? (
-                        <Pressable
-                          key={review.id}
-                          accessibilityRole="button"
-                          accessibilityLabel={`Review of ${dishName ?? "dish"}, rated ${review.rating} out of 5`}
-                          accessibilityHint="Opens the dish"
-                          onPress={() =>
-                            rootNavigation.navigate("DishDetail", {
-                              dishId: review.dishId as string,
-                            })
-                          }
-                        >
-                          {reviewCard}
-                        </Pressable>
-                      ) : (
-                        <View key={review.id}>{reviewCard}</View>
-                      );
-                    })}
-                  </View>
-                )
-              ) : activeTab === "posts" && postsLoadFailed ? (
-                <EmptyState
-                  title="Couldn't load posts"
-                  body="Check your connection and open this profile again."
-                  icon={<MessageCircleMore color={palette.textSecondary} size={36} />}
-                />
-              ) : activeTab === "reviews" && reviewsLoadFailed ? (
-                <EmptyState
-                  title="Couldn't load reviews"
-                  body="Check your connection and open this profile again."
-                  icon={<MessageCircleMore color={palette.textSecondary} size={36} />}
-                />
-              ) : (
-                <EmptyState
-                  title={`No ${activeTitle.toLowerCase()}s yet`}
-                  body="Shared profile activity will appear here."
-                  icon={<MessageCircleMore color={palette.textSecondary} size={36} />}
-                />
+              {isPrivateLocked ? null : (
+                <View style={{ flexDirection: "row", gap: spacing[2] }}>
+                  <StatBlock
+                    icon={<PencilLine color={palette.orange} size={14} />}
+                    label="Reviews"
+                    value={reviewCount}
+                    accessibilityHint={`Shows ${authorName}'s reviews`}
+                    onPress={() => setActiveTab("reviews")}
+                  />
+                  {/* Count only: the visited-stalls list is the viewer's own and is not shown for others. */}
+                  <StatBlock
+                    icon={<Utensils color={palette.orange} size={14} />}
+                    label="Stalls"
+                    value={stallsCount}
+                  />
+                </View>
               )}
-              {activeTab === "posts" && hasMorePosts ? (
-                <Button
-                  label="Load more"
-                  variant="ghost"
-                  size="sm"
-                  loading={isLoadingMorePosts}
-                  onPress={loadMorePosts}
-                />
-              ) : null}
             </View>
+
+            {isPrivateLocked ? (
+              <EmptyState
+                title="This account is private"
+                body={`Follow ${authorName} to see their posts and reviews.`}
+                icon={<Lock color={palette.textSecondary} size={36} />}
+              />
+            ) : (
+              <View style={{ gap: spacing[4], marginTop: spacing[2] }}>
+                <AppText variant="h2">{activeTab === "posts" ? "Posts" : "Reviews"}</AppText>
+                <View
+                  accessibilityRole="tablist"
+                  style={{
+                    alignSelf: "stretch",
+                    flexDirection: "row",
+                    borderWidth: 1,
+                    borderRadius: componentRadii.button,
+                    borderColor: palette.border,
+                    backgroundColor: palette.surface,
+                    overflow: "hidden",
+                  }}
+                >
+                  <Pressable
+                    accessibilityRole="tab"
+                    accessibilityLabel="Show posts"
+                    accessibilityState={{ selected: activeTab === "posts" }}
+                    onPress={() => setActiveTab("posts")}
+                    style={{
+                      flex: 1,
+                      paddingVertical: spacing[2],
+                      alignItems: "center",
+                      backgroundColor: activeTab === "posts" ? palette.orange : "transparent",
+                    }}
+                  >
+                    <AppText
+                      style={{
+                        fontWeight: activeTab === "posts" ? 700 : 500,
+                        color: activeTab === "posts" ? palette.white : palette.text,
+                      }}
+                    >
+                      Posts
+                    </AppText>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="tab"
+                    accessibilityLabel="Show reviews"
+                    accessibilityState={{ selected: activeTab === "reviews" }}
+                    onPress={() => setActiveTab("reviews")}
+                    style={{
+                      flex: 1,
+                      paddingVertical: spacing[2],
+                      alignItems: "center",
+                      backgroundColor: activeTab === "reviews" ? palette.orange : "transparent",
+                    }}
+                  >
+                    <AppText
+                      style={{
+                        fontWeight: activeTab === "reviews" ? 700 : 500,
+                        color: activeTab === "reviews" ? palette.white : palette.text,
+                      }}
+                    >
+                      Reviews
+                    </AppText>
+                  </Pressable>
+                </View>
+
+                {activeItemsCount > 0 ? (
+                  activeTab === "posts" ? (
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        flexWrap: "wrap",
+                        marginHorizontal: -spacing[4],
+                      }}
+                    >
+                      {posts.map((post) => {
+                        return (
+                          <Pressable
+                            key={post.id}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Open post ${post.caption || post.id}`}
+                            onPress={() =>
+                              rootNavigation.navigate("ActivityPostDetail", {
+                                postId: post.id,
+                              })
+                            }
+                            style={{ width: "33.333%", aspectRatio: 1 }}
+                          >
+                            <AccessibleImage
+                              source={{ uri: post.mediaUrl }}
+                              decorative
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                              }}
+                              contentFit="cover"
+                            />
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  ) : (
+                    <View style={{ gap: spacing[3] }}>
+                      {reviews.map((review) => {
+                        const dishName = review.dishId
+                          ? repository.getDishById(review.dishId)?.name
+                          : undefined;
+                        const reviewCard = (
+                          <Card
+                            style={{
+                              borderColor: palette.border,
+                              borderWidth: 1,
+                              gap: spacing[2],
+                              padding: spacing[3],
+                              backgroundColor:
+                                colorScheme === "dark" ? palette.surfaceRaised : palette.surface,
+                            }}
+                          >
+                            {dishName ? <AppText variant="bodyBold">{dishName}</AppText> : null}
+                            <AppText variant="micro" tone="secondary">
+                              {`Rated ${review.rating}/5`}
+                            </AppText>
+                            {review.text ? <AppText>{review.text}</AppText> : null}
+                          </Card>
+                        );
+
+                        return review.dishId ? (
+                          <Pressable
+                            key={review.id}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Review of ${dishName ?? "dish"}, rated ${review.rating} out of 5`}
+                            accessibilityHint="Opens the dish"
+                            onPress={() =>
+                              rootNavigation.navigate("DishDetail", {
+                                dishId: review.dishId as string,
+                              })
+                            }
+                          >
+                            {reviewCard}
+                          </Pressable>
+                        ) : (
+                          <View key={review.id}>{reviewCard}</View>
+                        );
+                      })}
+                    </View>
+                  )
+                ) : activeTab === "posts" && postsLoadFailed ? (
+                  <EmptyState
+                    title="Couldn't load posts"
+                    body="Check your connection and open this profile again."
+                    icon={<MessageCircleMore color={palette.textSecondary} size={36} />}
+                  />
+                ) : activeTab === "reviews" && reviewsLoadFailed ? (
+                  <EmptyState
+                    title="Couldn't load reviews"
+                    body="Check your connection and open this profile again."
+                    icon={<MessageCircleMore color={palette.textSecondary} size={36} />}
+                  />
+                ) : (
+                  <EmptyState
+                    title={`No ${activeTitle.toLowerCase()}s yet`}
+                    body="Shared profile activity will appear here."
+                    icon={<MessageCircleMore color={palette.textSecondary} size={36} />}
+                  />
+                )}
+                {activeTab === "posts" && hasMorePosts ? (
+                  <Button
+                    label="Load more"
+                    variant="ghost"
+                    size="sm"
+                    loading={isLoadingMorePosts}
+                    onPress={loadMorePosts}
+                  />
+                ) : null}
+              </View>
+            )}
           </>
         )}
       </View>
