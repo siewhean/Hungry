@@ -9,8 +9,13 @@ import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import { AccessibleImage, AppText, Button, Card } from "@/components/ui";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { NEUTRAL_TASTE_VECTOR, TASTE_DIMENSIONS } from "@/constants/taste";
+import { flushPendingDishSave, rememberPendingDishSave } from "@/features/auth/pendingDishSave";
 import { getSearchResultsAsync } from "@/features/search/search";
-import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import {
+  getDataRepository,
+  getHungryService,
+  getServiceProvider,
+} from "@/lib/services/serviceProvider";
 import type { SearchFilters, TasteVector } from "@/types/domain";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -100,15 +105,12 @@ export function TasteProfileResultScreen({ navigation }: Props) {
     // Re-runs only on Retry; a loaded grid is not refetched.
   }, [loadAttempt]);
 
-  // A guest's save tap opens sign-in; the dish is saved once they return signed in.
-  const [pendingSaveDish, setPendingSaveDish] = useState<(typeof dishes)[number] | null>(null);
+  // A guest's save tap opens sign-in. The dish is kept on the device and saved once
+  // sign-in or email verification finishes, even after this screen unmounts:
+  // applySignedInProfile does that on Supabase; mock sign-in does not run it.
   useEffect(() => {
-    if (!isAuthenticated || !pendingSaveDish) return;
-    setPendingSaveDish(null);
-    if (!useProfileStore.getState().profile.favouriteDishIds.includes(pendingSaveDish.id)) {
-      toggleFavourite(pendingSaveDish);
-    }
-  }, [isAuthenticated, pendingSaveDish, toggleFavourite]);
+    if (isAuthenticated && getServiceProvider().mode === "mock") void flushPendingDishSave();
+  }, [isAuthenticated]);
 
   return (
     <View style={{ backgroundColor: palette.bg, flex: 1 }}>
@@ -237,7 +239,7 @@ export function TasteProfileResultScreen({ navigation }: Props) {
                           message: "Create or sign in to an account before saving dishes.",
                           tone: "warning",
                         });
-                        setPendingSaveDish(dish);
+                        rememberPendingDishSave(dish);
                         navigation.navigate("OnboardingAuth");
                       }}
                       style={{

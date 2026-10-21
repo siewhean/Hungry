@@ -145,11 +145,12 @@ test("onboarding is five short steps: welcome, location, optional taste quiz, fo
   );
 
   // Sign-in is not a step: OnboardingAuth opens just-in-time (saving a dish as a
-  // guest) and returns to where the user was; the dish is saved once they are back.
-  assert.match(done, /setPendingSaveDish\(dish\);\s*navigation\.navigate\("OnboardingAuth"\)/);
+  // guest) and returns to where the user was. The dish is kept on the device and saved
+  // after sign-in or email verification, even once this screen has unmounted.
+  assert.match(done, /rememberPendingDishSave\(dish\);\s*navigation\.navigate\("OnboardingAuth"\)/);
   assert.match(
-    done,
-    /if \(!isAuthenticated \|\| !pendingSaveDish\) return;\s*setPendingSaveDish\(null\);[\s\S]*?toggleFavourite\(pendingSaveDish\);/,
+    read("src/features/auth/applySignedInProfile.ts"),
+    /\.then\(\(\) => flushPendingDishSave\(\)\)/,
   );
   assert.match(onboardingAuth, /const finishOnboarding = \(\) => \{\s*navigation\.goBack\(\);/);
   assert.doesNotMatch(onboardingAuth, /navigation\.navigate\("LocationPermission"\)/);

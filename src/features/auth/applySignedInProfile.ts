@@ -4,6 +4,7 @@ import type { TasteKey, TasteProfile, TasteVector, UserProfile } from "@/types/d
 import { takeGuestSnapshotForSignIn, useProfileStore } from "@/store/useProfileStore";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import { flushPendingQuizResponse } from "@/features/profile/pendingQuizResponse";
+import { flushPendingDishSave } from "./pendingDishSave";
 
 const TASTE_KEYS: TasteKey[] = ["sweet", "spicy", "sour", "salty", "rich", "aromatic"];
 
@@ -112,7 +113,9 @@ export function applySignedInProfile(
             useProfileStore.getState().applyProfile(profile);
           }
         })
-        .catch(() => undefined);
+        .catch(() => undefined)
+        // After the account's profile is in place, so the reload cannot drop the save.
+        .then(() => flushPendingDishSave());
     },
     { fallbackDelayMs: 0 },
   );
