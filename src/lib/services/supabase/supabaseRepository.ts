@@ -1,6 +1,7 @@
 import { runRecommendationPipeline } from "@/lib/ai/tasteEngine";
 import { getDistanceMetersFromBuildingId } from "@/lib/geo/distance";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/services/supabase/client";
+import { validateOpeningSchedule } from "@/utils/openingSchedule";
 import type {
   BuildingDetail,
   DataRepository,
@@ -16,6 +17,7 @@ import type {
   DietaryFlag,
   FoodCredAction,
   MissionType,
+  OpeningSchedule,
   SearchFilters,
   StallInteraction,
   StallPost,
@@ -328,6 +330,11 @@ function mapRpcDish(row: Row): DishDetail {
     gallery,
     dietaryFlags: toStringArray(row.dietary_flags) as DietaryFlag[],
     tasteVector: mapTasteVector(toRecord(row.taste_vector)),
+    // get_dish_detail returns null for seed/curated vectors (fully trusted).
+    tasteConfidence:
+      row.taste_confidence === null || row.taste_confidence === undefined
+        ? undefined
+        : toNumber(row.taste_confidence),
   };
   const dish = mapDish(
     {
@@ -340,6 +347,29 @@ function mapRpcDish(row: Row): DishDetail {
   );
   const reviews = mapReviewRows(row.reviews);
   return reviews.length > 0 ? { ...dish, reviews } : dish;
+}
+
+/** A weekly schedule from the venues.opening_schedule column; undefined when absent or malformed. */
+function toVenueOpeningSchedule(value: unknown): OpeningSchedule | undefined {
+  const record = toRecord(value);
+  if (!record.weekly || typeof record.weekly !== "object" || Array.isArray(record.weekly)) {
+    return undefined;
+  }
+  const schedule: OpeningSchedule = {
+    weekly: record.weekly as OpeningSchedule["weekly"],
+    special: Array.isArray(record.special) ? (record.special as OpeningSchedule["special"]) : [],
+  };
+  try {
+    return validateOpeningSchedule(schedule) ? undefined : schedule;
+  } catch {
+    return undefined;
+  }
+}
+
+function toOptionalCoordinate(value: unknown): number | undefined {
+  if (value === null || value === undefined || value === "") return undefined;
+  const number = Number(value);
+  return Number.isFinite(number) && number !== 0 ? number : undefined;
 }
 
 function mapRpcVenue(row: Row): VenueSummary {
@@ -363,11 +393,15 @@ function mapRpcVenue(row: Row): VenueSummary {
       affiliateEligible: toBool(delivery.affiliateEligible ?? delivery.affiliate_eligible),
     })),
     planningArea: toString(row.planning_area, toString(building.planningArea)) || undefined,
-    imageUrl: catalogDisplayImageUrl(row) || undefined,
+    // get_venue_detail sends the already-checked photo as display_image_url.
+    imageUrl: toString(row.display_image_url).trim() || catalogDisplayImageUrl(row) || undefined,
     logoUrl: toString(row.logo_url) || undefined,
     buildingName: toString(row.building_name, toString(building.name)) || undefined,
     address: toString(row.address, toString(building.address)) || undefined,
     postalCode: toString(row.postal_code, toString(building.postalCode)) || undefined,
+    openingSchedule: toVenueOpeningSchedule(row.opening_schedule),
+    latitude: toOptionalCoordinate(row.latitude),
+    longitude: toOptionalCoordinate(row.longitude),
   };
 }
 

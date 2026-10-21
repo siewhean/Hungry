@@ -11,9 +11,9 @@ import {
   getDataRepository,
   getHungryService,
   getServiceProvider,
-  getSimilarityScore,
 } from "@/lib/services/serviceProvider";
 import type { ExplicitFeedbackInput } from "@/lib/services/types";
+import { tasteMatchPercent } from "@/features/detail/tasteMatch";
 import {
   applyAffinityEvent,
   deriveLocalFoodHistory,
@@ -1029,4 +1029,4 @@ export function selectFoodHistoryRows(
 }
 
 export const getTasteSimilarityWithDish = (profile: UserProfile, dish: DishDetail) =>
-  Math.round(getSimilarityScore(profile.tasteVector, dish.tasteVector) * 100);
+  tasteMatchPercent(profile.tasteVector, dish.tasteVector);

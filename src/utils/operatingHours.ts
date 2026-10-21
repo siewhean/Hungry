@@ -195,6 +195,11 @@ function getSingaporeParts(now: Date) {
   };
 }
 
+/** Minutes since midnight in Singapore. */
+export function getSingaporeMinutes(now: Date = new Date()): number {
+  return getSingaporeParts(now).minutes;
+}
+
 /** Today's weekday in Singapore. */
 export function getSingaporeDay(now: Date = new Date()): DayName {
   return getSingaporeParts(now).day;
