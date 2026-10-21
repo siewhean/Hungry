@@ -127,7 +127,7 @@ export type RootStackParamList = {
   BrowseDishes: undefined;
   BrowseStalls: undefined;
   DiscoverMap: undefined;
-  DecideForMeResult: { surface?: "home" | "discover" } | undefined;
+  DecideForMeResult: { surface?: "home" | "discover" | "push" } | undefined;
   MapZoomedIn: { buildingId: string };
   BlogPost: { postId: string };
   ReviewStack: NavigatorScreenParams<ReviewStackParamList>;

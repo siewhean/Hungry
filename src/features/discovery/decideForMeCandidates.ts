@@ -3,6 +3,10 @@ import { getScheduleOpenState, hasWeeklyHours } from "@/utils/openingSchedule";
 import { getVenueOpenState, type OpenState } from "@/utils/operatingHours";
 import type { DietaryFlag, DishDetail, TasteVector, VenueSummary } from "@/types/domain";
 
+/** Decide for Me starts at the first radius and widens one step at a time. */
+export const DECIDE_RADIUS_STEPS_METERS = [500, 1000, 2000, 4000];
+export const DECIDE_INITIAL_RADIUS_METERS = DECIDE_RADIUS_STEPS_METERS[0];
+
 /** Taste-ranked dishes, with the budget treated as a preference rather than a hard rule. */
 export function rankDecideCandidates(
   dishes: DishDetail[],

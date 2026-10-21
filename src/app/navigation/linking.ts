@@ -144,7 +144,7 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
   // Weekly picks push opens https://usehungry.com/home.
   if (path === "home") return createState("MainTabs", { screen: "Home" });
   // Lunch and dinner suggestion pushes open https://usehungry.com/decide.
-  if (path === "decide") return createStateOverHome("DecideForMeResult", { surface: "home" });
+  if (path === "decide") return createStateOverHome("DecideForMeResult", { surface: "push" });
   if (parts[0] === "dish") {
     const id = decodePathSegment(parts[1]);
     return id ? createStateOverHome("DishDetail", { id }) : undefined;
