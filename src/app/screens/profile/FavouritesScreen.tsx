@@ -1,5 +1,5 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
 import { BellRing, Bookmark, Star } from "lucide-react-native";
 
@@ -9,23 +9,27 @@ import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { resolveListItemCount } from "@/features/checklistPortfolio/listLabels";
 import { prefetchDishDetail, preloadRoute } from "@/features/navigation/prefetch";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { useRetryableLoad } from "@/features/profile/useRetryableLoad";
+import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { usePortfolioStore } from "@/store/usePortfolioStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useStallFollowStore } from "@/store/useStallFollowStore";
 import { useHungryTheme } from "@/theme";
+import type { Bite } from "@/lib/services/types";
 import type { Portfolio } from "@/types/domain";
 import { isDishDetail } from "./profileGuards";
+import { ProfileGridSkeleton, ProfileReviewsSkeleton } from "./ProfileGridSkeleton";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import type { ProfileStackParamList } from "./ProfileStack";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "Favourites">;
-type SavedSection = "dishes" | "stalls" | "lists";
+type SavedSection = "dishes" | "stalls" | "posts" | "lists";
 
 const SECTION_LABELS: Record<SavedSection, string> = {
   dishes: "Dishes",
   stalls: "Stalls",
+  posts: "Posts",
   lists: "Lists",
 };
 
@@ -41,7 +45,10 @@ export function FavouritesScreen({ navigation }: Props) {
   const rootNavigation = getRootNavigation(navigation as any);
 
   return (
-    <ProfileScreenShell title="Saved" subtitle="Dishes, stalls and lists you've kept for later.">
+    <ProfileScreenShell
+      title="Saved"
+      subtitle="Dishes, stalls, posts and lists you've kept for later."
+    >
       <View
         accessibilityRole="tablist"
         style={{ flexDirection: "row", gap: spacing[2], marginBottom: spacing[3] }}
@@ -59,6 +66,10 @@ export function FavouritesScreen({ navigation }: Props) {
       {section === "stalls" ? (
         <SavedStallsSection
           onOpenStall={(venueId) => rootNavigation.navigate("StallDetail", { venueId })}
+        />
+      ) : section === "posts" ? (
+        <SavedPostsSection
+          onOpenPost={(postId) => rootNavigation.navigate("ActivityPostDetail", { postId })}
         />
       ) : section === "lists" ? (
         <SavedListsSection
@@ -201,6 +212,62 @@ export function FavouritesScreen({ navigation }: Props) {
   );
 }
 
+/**
+ * Posts you saved from Home or a post page, newest save first. Read by id on the server, so an
+ * older saved post still shows (the feed window does not cut it off).
+ */
+function SavedPostsSection({ onOpenPost }: { onOpenPost: (postId: string) => void }) {
+  const { palette, spacing } = useHungryTheme();
+  const [bites, setBites] = useState<Bite[] | null>(null);
+  const loadSavedPosts = useCallback(
+    () => getHungryService().social.getSavedBites().then(setBites),
+    [],
+  );
+  const { failed: loadFailed, retry } = useRetryableLoad(loadSavedPosts, "saved posts");
+
+  if (bites === null) {
+    if (loadFailed) {
+      return (
+        <EmptyState
+          title="Couldn't load saved posts"
+          body="Check your connection and try again."
+          ctaLabel="Retry"
+          onPress={retry}
+        />
+      );
+    }
+    return <ProfileGridSkeleton />;
+  }
+  if (bites.length === 0) {
+    return (
+      <EmptyState title="No saved posts yet" body="Tap the bookmark on a post to keep it here." />
+    );
+  }
+  return (
+    <View
+      testID="saved-posts-grid"
+      style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -spacing[4] }}
+    >
+      {bites.map((bite) => (
+        <Pressable
+          key={bite.id}
+          accessibilityRole="button"
+          accessibilityLabel={`Open saved post ${bite.caption || bite.dishName || bite.id}`}
+          onPress={() => onOpenPost(bite.id)}
+          style={{ width: "33.333%", aspectRatio: 1, padding: 1, backgroundColor: palette.bgSoft }}
+        >
+          <AccessibleImage
+            source={{ uri: bite.photoUrl }}
+            decorative
+            style={{ width: "100%", height: "100%" }}
+            contentFit="cover"
+          />
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
 /** Stalls you follow: the stall-level "save" (Follow on a stall page). */
 function SavedStallsSection({ onOpenStall }: { onOpenStall: (venueId: string) => void }) {
   const { palette, spacing } = useHungryTheme();
@@ -208,9 +275,8 @@ function SavedStallsSection({ onOpenStall }: { onOpenStall: (venueId: string) =>
   const loadFollowedStalls = useStallFollowStore((state) => state.loadFollowedStalls);
   const repository = getDataRepository();
 
-  useEffect(() => {
-    void loadFollowedStalls().catch(() => {});
-  }, [loadFollowedStalls]);
+  const isLoaded = useStallFollowStore((state) => state.isLoaded);
+  const { failed: loadFailed, retry } = useRetryableLoad(loadFollowedStalls, "saved stalls");
 
   const venues = useMemo(
     () => followedStallIds.map((id) => repository.getVenueById(id)).filter((venue) => !!venue),
@@ -218,11 +284,19 @@ function SavedStallsSection({ onOpenStall }: { onOpenStall: (venueId: string) =>
   );
 
   if (venues.length === 0) {
+    if (!isLoaded && !loadFailed) return <ProfileReviewsSkeleton />;
+    if (loadFailed) {
+      return (
+        <EmptyState
+          title="Couldn't load saved stalls"
+          body="Check your connection and try again."
+          ctaLabel="Retry"
+          onPress={retry}
+        />
+      );
+    }
     return (
-      <EmptyState
-        title="No saved stalls yet"
-        body="Tap Follow on a stall page to keep it here and hear about its menu changes."
-      />
+      <EmptyState title="No saved stalls yet" body="Tap Follow on a stall page to keep it here." />
     );
   }
 

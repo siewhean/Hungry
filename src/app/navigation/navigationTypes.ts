@@ -46,6 +46,8 @@ export type ProfileStackParamList = {
   SocialPostDetail: { postId: string; type: "liked" | "saved" };
   EditProfile: undefined;
   AddStall: undefined;
+  /** Your submitted stalls and their review status. */
+  StallSubmissions: undefined;
   ReviewFlow: undefined;
   ChecklistsHome: undefined;
   ChecklistDetail: { checklistId: string };

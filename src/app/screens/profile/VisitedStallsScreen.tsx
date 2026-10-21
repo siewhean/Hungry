@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { Pressable, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { MapPin } from "lucide-react-native";
@@ -6,12 +6,13 @@ import { MapPin } from "lucide-react-native";
 import { AppText, Card, EmptyState } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { getDataRepository } from "@/lib/services/serviceProvider";
+import { useRetryableLoad } from "@/features/profile/useRetryableLoad";
 import { useVisitedStallIds } from "@/features/profile/visitedStalls";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useHungryTheme } from "@/theme";
-import { isVenueOpenFromHours } from "@/utils/stallStatus";
 import type { ProfileStackParamList } from "./ProfileStack";
+import { ProfileReviewsSkeleton } from "./ProfileGridSkeleton";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "VisitedStalls">;
@@ -21,7 +22,6 @@ type VenueItem = {
   name: string;
   unitNumber?: string;
   floor?: string;
-  isOpen?: boolean;
   operatingHours?: string;
 };
 
@@ -32,13 +32,13 @@ export function VisitedStallsScreen({ navigation }: Props) {
   const rootNavigation = getRootNavigation(navigation as any);
 
   const loadInteractions = useStallInteractionStore((state) => state.loadInteractions);
+  const isLoaded = useStallInteractionStore((state) => state.isLoaded);
   const visitedStallIds = useVisitedStallIds();
-
-  useEffect(() => {
-    void loadInteractions(profile.id).catch((error) => {
-      console.error("Failed to load visited stalls:", error);
-    });
-  }, [loadInteractions, profile.id]);
+  const loadVisited = useCallback(
+    () => loadInteractions(profile.id),
+    [loadInteractions, profile.id],
+  );
+  const { failed: loadFailed, retry } = useRetryableLoad(loadVisited, "visited stalls");
 
   const visitedVenues = useMemo<VenueItem[]>(
     () =>
@@ -51,7 +51,6 @@ export function VisitedStallsScreen({ navigation }: Props) {
             name: venue.name,
             unitNumber: venue.unitNumber,
             floor: venue.floor,
-            isOpen: venue.isOpen,
             operatingHours: venue.operatingHours,
           },
         ];
@@ -88,22 +87,31 @@ export function VisitedStallsScreen({ navigation }: Props) {
                   <MapPin color={palette.orange} size={18} />
                   <View style={{ flex: 1, gap: spacing[1] }}>
                     <AppText variant="bodyBold">{venue.name}</AppText>
-                    <AppText tone="secondary">
-                      {venue.unitNumber
-                        ? `${venue.unitNumber} ${venue.floor ? `· ${venue.floor}` : ""}`
-                        : ""}
-                    </AppText>
-                    <AppText tone="secondary" variant="micro">
-                      {venue.operatingHours ?? "Hours unavailable"} ·{" "}
-                      {isVenueOpenFromHours(venue.operatingHours, !!venue.isOpen)
-                        ? "Open now"
-                        : "Closed"}
-                    </AppText>
+                    {venue.unitNumber ? (
+                      <AppText tone="secondary">
+                        {[venue.unitNumber, venue.floor].filter(Boolean).join(" · ")}
+                      </AppText>
+                    ) : null}
+                    {/* No open/closed here: free-text hours cannot be trusted to say "open now". */}
+                    {venue.operatingHours ? (
+                      <AppText tone="secondary" variant="micro">
+                        {venue.operatingHours}
+                      </AppText>
+                    ) : null}
                   </View>
                 </View>
               </Card>
             </Pressable>
           ))
+        ) : !isLoaded && !loadFailed ? (
+          <ProfileReviewsSkeleton />
+        ) : loadFailed ? (
+          <EmptyState
+            title="Couldn't load visited stalls"
+            body="Check your connection and try again."
+            ctaLabel="Retry"
+            onPress={retry}
+          />
         ) : (
           <EmptyState
             title="No visited stalls yet"
