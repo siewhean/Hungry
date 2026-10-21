@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { stripVideoLocationMetadata } from "./videoMetadata";
+
 export interface UploadedAsset {
   path: string;
   publicUrl: string;
@@ -34,6 +36,22 @@ const MAX_POST_MEDIA_BYTES = 50 * 1024 * 1024;
 const MAGIC_BYTE_SAMPLE_BYTES = 16;
 /** Longest edge an uploaded photo keeps after re-encoding. */
 const MAX_UPLOAD_IMAGE_EDGE_PX = 2048;
+
+/** Machine-readable reason an upload was refused, so screens can show plain copy. */
+export type MediaUploadErrorCode = "metadata_strip_failed" | "upload_failed";
+
+export class MediaUploadError extends Error {
+  readonly code: MediaUploadErrorCode;
+
+  constructor(code: MediaUploadErrorCode, message: string) {
+    super(message);
+    this.name = "MediaUploadError";
+    this.code = code;
+  }
+}
+
+const METADATA_STRIP_FAILED_MESSAGE =
+  "We could not remove location data from this file, so it was not uploaded.";
 
 function guessContentType(uri: string): string {
   const normalized = uri.toLowerCase();
@@ -70,15 +88,16 @@ function loadImageManipulator(): ImageManipulatorModule | null {
 /**
  * Re-encode an already-validated image so EXIF metadata (GPS location, device details)
  * is not uploaded. PNG and WebP keep their format; JPEG and HEIC become JPEG.
- * Returns null when re-encoding is unavailable or fails, so the caller uploads the original.
+ * Throws when re-encoding is unavailable or fails twice: the original file carries the
+ * location tags, so it is never uploaded in its place.
  */
 async function reencodeImageWithoutMetadata(
   uri: string,
   contentType: string,
-): Promise<{ blob: Blob; contentType: string } | null> {
+): Promise<{ blob: Blob; contentType: string }> {
   const manipulator = loadImageManipulator();
   if (!manipulator) {
-    return null;
+    throw new MediaUploadError("metadata_strip_failed", METADATA_STRIP_FAILED_MESSAGE);
   }
 
   const { ImageManipulator, SaveFormat } = manipulator;
@@ -89,7 +108,7 @@ async function reencodeImageWithoutMetadata(
         ? SaveFormat.WEBP
         : SaveFormat.JPEG;
 
-  try {
+  const attempt = async () => {
     let rendered = await ImageManipulator.manipulate(uri).renderAsync();
     // Full-resolution phone photos are 3-5x larger than any screen shows: cap the long edge.
     if (Math.max(rendered.width, rendered.height) > MAX_UPLOAD_IMAGE_EDGE_PX) {
@@ -104,11 +123,62 @@ async function reencodeImageWithoutMetadata(
     const saved = await rendered.saveAsync({ format, compress: 0.9 });
     const blob = await fetchBlobFromUri(saved.uri);
     return { blob, contentType: `image/${format}` };
-  } catch (error) {
-    if (typeof __DEV__ !== "undefined" && __DEV__) {
-      console.warn("Image metadata stripping failed; uploading original image.", error);
+  };
+
+  // One retry covers a transient decoder or file-system hiccup.
+  let lastError: unknown;
+  for (let tries = 0; tries < 2; tries += 1) {
+    try {
+      return await attempt();
+    } catch (error) {
+      lastError = error;
     }
-    return null;
+  }
+  if (typeof __DEV__ !== "undefined" && __DEV__) {
+    console.warn("Image metadata stripping failed; refusing the upload.", lastError);
+  }
+  throw new MediaUploadError("metadata_strip_failed", METADATA_STRIP_FAILED_MESSAGE);
+}
+
+async function readBlobBytes(blob: Blob): Promise<Uint8Array> {
+  const withBuffer = blob as Blob & { arrayBuffer?: () => Promise<ArrayBuffer> };
+  if (typeof withBuffer.arrayBuffer === "function") {
+    return new Uint8Array(await withBuffer.arrayBuffer());
+  }
+  if (typeof FileReader === "function") {
+    const buffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () =>
+        reader.result instanceof ArrayBuffer
+          ? resolve(reader.result)
+          : reject(new Error("Unable to read media bytes in this environment."));
+      reader.onerror = () => reject(reader.error ?? new Error("Unable to read media bytes."));
+      reader.readAsArrayBuffer(blob);
+    });
+    return new Uint8Array(buffer);
+  }
+  throw new Error("Unable to read media bytes in this environment.");
+}
+
+/**
+ * MP4 and QuickTime videos carry the shooting location as atoms in the file. They are
+ * neutralised in place; a file whose structure cannot be read is refused, never uploaded as is.
+ * WebM does not carry phone location tags and passes through.
+ */
+async function stripVideoMetadata(
+  blob: Blob,
+  contentType: string,
+): Promise<{ body: Blob | ArrayBuffer; contentType: string }> {
+  if (contentType !== "video/mp4" && contentType !== "video/quicktime") {
+    return { body: blob, contentType };
+  }
+  try {
+    const { bytes, neutralised } = stripVideoLocationMetadata(await readBlobBytes(blob));
+    if (neutralised === 0) return { body: blob, contentType };
+    const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+    return { body: buffer as ArrayBuffer, contentType };
+  } catch {
+    throw new MediaUploadError("metadata_strip_failed", METADATA_STRIP_FAILED_MESSAGE);
   }
 }
 
@@ -138,7 +208,7 @@ async function uploadViaSignedUrl(
   client: SupabaseClient,
   bucket: string,
   path: string,
-  blob: Blob,
+  blob: Blob | ArrayBuffer,
   contentType: string,
 ): Promise<boolean> {
   try {
@@ -268,14 +338,12 @@ export async function uploadImageFromUri(params: {
   const originalContentType = originalBlob.type || guessContentType(uri);
   await assertValidImageBlob(originalBlob, originalContentType);
 
-  const stripped = await reencodeImageWithoutMetadata(uri, originalContentType);
-  const blob = stripped?.blob ?? originalBlob;
-  const contentType = stripped?.contentType ?? originalContentType;
+  const { blob, contentType } = await reencodeImageWithoutMetadata(uri, originalContentType);
   const path = pathForReencodedImage(requestedPath, originalContentType, contentType);
 
   const signedSucceeded = await uploadViaSignedUrl(client, bucket, path, blob, contentType);
   if (!signedSucceeded) {
-    throw new Error("Signed upload URL creation failed.");
+    throw new MediaUploadError("upload_failed", "Signed upload URL creation failed.");
   }
 
   const { data } = client.storage.from(bucket).getPublicUrl(path);
@@ -296,24 +364,34 @@ export async function uploadPostMediaFromUri(params: {
   const originalContentType = originalBlob.type || guessContentType(uri);
   await assertValidPostMediaBlob(originalBlob, originalContentType);
 
-  const stripped = originalContentType.startsWith("image/")
-    ? await reencodeImageWithoutMetadata(uri, originalContentType)
-    : null;
-  const blob = stripped?.blob ?? originalBlob;
-  const contentType = stripped?.contentType ?? originalContentType;
+  let body: Blob | ArrayBuffer;
+  let contentType: string;
+  if (originalContentType.startsWith("image/")) {
+    const stripped = await reencodeImageWithoutMetadata(uri, originalContentType);
+    body = stripped.blob;
+    contentType = stripped.contentType;
+  } else {
+    ({ body, contentType } = await stripVideoMetadata(originalBlob, originalContentType));
+  }
   const path = pathForReencodedImage(requestedPath, originalContentType, contentType);
 
-  const signedSucceeded = await uploadViaSignedUrl(client, bucket, path, blob, contentType);
+  const signedSucceeded = await uploadViaSignedUrl(client, bucket, path, body, contentType);
   if (!signedSucceeded) {
-    throw new Error("Signed upload URL creation failed.");
+    throw new MediaUploadError("upload_failed", "Signed upload URL creation failed.");
   }
 
   const { data } = client.storage.from(bucket).getPublicUrl(path);
+  const sizeBytes =
+    body instanceof ArrayBuffer
+      ? body.byteLength
+      : typeof body.size === "number"
+        ? body.size
+        : undefined;
   return {
     path,
     publicUrl: data.publicUrl,
     contentType,
-    sizeBytes: typeof blob.size === "number" ? blob.size : undefined,
+    sizeBytes,
   };
 }
 
