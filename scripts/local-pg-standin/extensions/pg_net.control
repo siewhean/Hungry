@@ -1,0 +1,5 @@
+# Local stand-in for pg_net: queues requests in net.http_request_queue, never sends them.
+comment = 'stub pg_net (local Supabase stand-in, requests are recorded but never sent)'
+default_version = '0.14'
+relocatable = false
+superuser = true

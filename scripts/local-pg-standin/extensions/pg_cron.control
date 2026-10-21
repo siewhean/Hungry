@@ -1,0 +1,6 @@
+# Local stand-in for pg_cron: records jobs in cron.job, never runs them.
+comment = 'stub pg_cron (local Supabase stand-in, jobs are recorded but never run)'
+default_version = '1.6'
+relocatable = false
+schema = cron
+superuser = true
