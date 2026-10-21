@@ -12,6 +12,8 @@ test("root linking config exposes public dish, venue, and order entry points", (
   assert.equal(screens.DishDetail, "dish/:id");
   assert.equal(screens.StallDetail, "venue/:id");
   assert.equal(screens.ActivityPostDetail, "post/:postId");
+  assert.equal(screens.ActivityInbox, "activity");
+  assert.equal(screens.FollowRequests, "follow-requests");
   assert.equal(screens.Post, "order");
   assert.equal(screens.MerchantTabs, undefined);
   assert.deepEqual(screens.MainTabs, { screens: { Home: "home" } });

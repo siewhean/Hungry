@@ -464,7 +464,7 @@ function UpdatesTab({
           }}
         >
           <AppText variant="bodySmall" tone="secondary">
-            Couldn't refresh. Showing the last updates we loaded. Tap to try again.
+            Couldn&apos;t refresh. Showing the last updates we loaded. Tap to try again.
           </AppText>
         </Pressable>
       ) : null}

@@ -11,6 +11,7 @@ const PROTECTED_DEEP_LINK_ROUTES = new Set([
   "MerchantTabs",
   "Post",
   "ActivityInbox",
+  "FollowRequests",
   "ChatDetail",
   "DirectMessages",
   "EditProfile",
@@ -266,6 +267,9 @@ export function createRootLinking(
         DishDetail: "dish/:id",
         StallDetail: "venue/:id",
         ActivityPostDetail: "post/:postId",
+        // Social push notifications open the inbox or the follow requests (sign-in required).
+        ActivityInbox: "activity",
+        FollowRequests: "follow-requests",
         UserProfile: "user/:authorId",
         Post: "order",
         SearchResults: "search",

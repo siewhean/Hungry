@@ -135,6 +135,8 @@ export type RootStackParamList = {
   ActivityInbox: { initialTab?: "messages" | "updates" } | undefined;
   ActivityPostDetail: { postId: string; updateId?: string };
   FollowRequests: undefined;
+  /** People the viewer blocked and posts they hid, with Unblock and Unhide. */
+  BlockedAndHidden: undefined;
   /** Another user's follower/following lists, opened from their profile. */
   UserFollowers: { userId: string; userDisplayName?: string };
   UserFollowing: { userId: string; userDisplayName?: string };

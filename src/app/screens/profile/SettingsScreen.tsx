@@ -29,6 +29,7 @@ import {
   SunMoon,
   Trash2,
   User,
+  UserX,
   UtensilsCrossed,
   Vibrate,
 } from "lucide-react-native";
@@ -539,6 +540,15 @@ export function SettingsScreen() {
           busy={isSavingVisibility}
           isLast={false}
         />
+        {isAuthenticated ? (
+          <SettingsRow
+            label="Blocked and hidden"
+            icon={<UserX size={20} color={palette.orange} />}
+            type="navigation"
+            onPress={() => rootNavigation.navigate("BlockedAndHidden")}
+            isLast={false}
+          />
+        ) : null}
         <SettingsRow
           label="Allow search history"
           icon={<History size={20} color={palette.orange} />}

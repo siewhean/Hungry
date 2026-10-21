@@ -77,6 +77,20 @@ export async function loadBlockedAuthorsForSession(): Promise<ReadonlySet<string
   return blockedAuthorIds;
 }
 
+/** Ends a block and lets that person's posts and comments show again this session. */
+export async function unblockUserForSession(blockedUserId: string): Promise<void> {
+  await getHungryService().communitySafety.unblockUser(blockedUserId);
+  blockedAuthorIds.delete(blockedUserId);
+  trackAnalyticsEvent("user_unblocked", { targetId: blockedUserId });
+}
+
+/** Shows a hidden post again, here and in the feed's next load. */
+export async function unhidePostForSession(postId: string): Promise<void> {
+  await getHungryService().communitySafety.unhidePost(postId);
+  hiddenPostIds.delete(postId);
+  trackAnalyticsEvent("post_unhidden", { targetId: postId });
+}
+
 export function isContentHiddenForSession(target: {
   id: string;
   authorId?: string | null;

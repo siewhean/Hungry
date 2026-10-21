@@ -65,6 +65,7 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "ActivityInbox",
   "ActivityPostDetail",
   "FollowRequests",
+  "BlockedAndHidden",
   "UserFollowers",
   "UserFollowing",
   "ChatDetail",
@@ -99,6 +100,7 @@ const PROTECTED_ROOT_ROUTES = new Set<RootRouteName>([
   "PostComposerV2",
   "ActivityInbox",
   "FollowRequests",
+  "BlockedAndHidden",
   "UserFollowers",
   "UserFollowing",
   "ChatDetail",
@@ -250,6 +252,10 @@ const loadFollowRequestsScreen = () =>
   (
     require("@/app/screens/profile/FollowRequestsScreen") as typeof import("@/app/screens/profile/FollowRequestsScreen")
   ).FollowRequestsScreen;
+const loadBlockedAndHiddenScreen = () =>
+  (
+    require("@/app/screens/profile/BlockedAndHiddenScreen") as typeof import("@/app/screens/profile/BlockedAndHiddenScreen")
+  ).BlockedAndHiddenScreen;
 const loadUserFollowersScreen = () =>
   (
     require("@/app/screens/profile/ProfileConnectionsScreen") as typeof import("@/app/screens/profile/ProfileConnectionsScreen")
@@ -764,6 +770,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen getComponent={loadActivityInboxScreen} name="ActivityInbox" />
           <RootStack.Screen getComponent={loadActivityPostDetailScreen} name="ActivityPostDetail" />
           <RootStack.Screen getComponent={loadFollowRequestsScreen} name="FollowRequests" />
+          <RootStack.Screen getComponent={loadBlockedAndHiddenScreen} name="BlockedAndHidden" />
           <RootStack.Screen getComponent={loadUserFollowersScreen} name="UserFollowers" />
           <RootStack.Screen getComponent={loadUserFollowingScreen} name="UserFollowing" />
           {FEATURE_FLAGS.directMessagesEnabled ? (
