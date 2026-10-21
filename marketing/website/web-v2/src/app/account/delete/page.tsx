@@ -6,7 +6,7 @@ export const metadata = routeMetadata("/account/delete");
 const sections = [
   {
     title: "What happens after a request",
-    body: "Hungry schedules deletion 30 days after the request and signs the account out. Signing back in before then lets you keep your account. After that, account-associated personal data is deleted or anonymized. Menu photos you uploaded stay on the stall's page without your name. Some safety, fraud-prevention, moderation, legal, or audit records may be retained in minimized or anonymized form.",
+    body: "Hungry schedules deletion 30 days after the request and signs the account out. To keep your account, sign back in before then and choose Keep my account. After that, account-associated personal data is deleted or anonymized. Menu photos you uploaded stay on the stall's page without your name. Some safety, fraud-prevention, moderation, legal, or audit records may be retained in minimized or anonymized form.",
   },
   {
     title: "Expected timeline",

@@ -41,6 +41,7 @@ import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
+import { PendingDeletionBanner } from "@/features/auth/PendingDeletionBanner";
 import { useHungryTheme } from "@/theme";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useStoryStore } from "@/store/useStoryStore";
@@ -766,6 +767,7 @@ export function ProfileHomeScreen({
       }
     >
       <View style={{ gap: spacing[1], paddingBottom: spacing[8], position: "relative" }}>
+        {mode === "self" ? <PendingDeletionBanner /> : null}
         {menuOpen && (
           <Pressable
             accessibilityRole="button"
