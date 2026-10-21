@@ -51,6 +51,11 @@ function hasNoSavedDietaryPreferences(profile: UserProfile) {
   return profile.dietaryPreferences.length === 0;
 }
 
+// A guest's budget answer is kept like the dietary flags: it fills an account with no budget.
+function hasMeaningfulGuestBudget(profile: UserProfile) {
+  return profile.id === "guest-user" && profile.maxDishBudget !== undefined;
+}
+
 export function applySignedInProfile(
   sessionProfile: UserProfile,
   options: { onSyncWarning?: () => void; profileReady?: Promise<UserProfile> } = {},
@@ -71,8 +76,11 @@ export function applySignedInProfile(
   const shouldMergeDietary =
     hasMeaningfulGuestDietaryPreferences(guestProfile) &&
     hasNoSavedDietaryPreferences(sessionProfile);
+  const shouldMergeBudget =
+    hasMeaningfulGuestBudget(guestProfile) && sessionProfile.maxDishBudget === undefined;
   const mergedProfile: UserProfile = {
     ...sessionProfile,
+    maxDishBudget: shouldMergeBudget ? guestProfile.maxDishBudget : sessionProfile.maxDishBudget,
     tasteVector: shouldMergeTaste ? guestProfile.tasteVector : sessionProfile.tasteVector,
     tasteProfile: shouldMergeTaste ? guestTasteProfile : sessionProfile.tasteProfile,
     dietaryPreferences: shouldMergeDietary
@@ -98,12 +106,16 @@ export function applySignedInProfile(
         .then((serverProfile) => {
           const mergeTaste = shouldMergeTaste && hasNoSavedTaste(serverProfile);
           const mergeDietary = shouldMergeDietary && hasNoSavedDietaryPreferences(serverProfile);
+          const mergeBudget = shouldMergeBudget && serverProfile.maxDishBudget === undefined;
           return Promise.all([
             mergeTaste
               ? getHungryService().profile.updateTasteProfile(guestTasteProfile)
               : Promise.resolve(),
             mergeDietary
               ? getHungryService().profile.updateDietaryPreferences(guestProfile.dietaryPreferences)
+              : Promise.resolve(),
+            mergeBudget && guestProfile.maxDishBudget !== undefined
+              ? getHungryService().profile.updateMaxDishBudget(guestProfile.maxDishBudget)
               : Promise.resolve(),
           ]).catch(() => options.onSyncWarning?.());
         })

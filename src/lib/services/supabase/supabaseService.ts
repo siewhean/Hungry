@@ -730,6 +730,7 @@ async function fetchUserProfile(client: SupabaseClient, userId: string, email?: 
     tasteVector: toTasteVector(row),
     tasteProfile: (row.taste_profile as TasteProfile | undefined) ?? undefined,
     dietaryPreferences: asStringArray(row.dietary_preferences) as DietaryFlag[],
+    maxDishBudget: asNumber(row.max_dish_budget),
     favouriteDishIds,
     reviewedDishIds,
     stats: {
@@ -4058,6 +4059,16 @@ export const supabaseService: HungryService = {
       if (error) throw error;
     },
 
+    async updateMaxDishBudget(maxDishBudget: number | null) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to update your budget.");
+      const { error } = await client
+        .from("user_profiles")
+        .upsert({ id: userId, max_dish_budget: maxDishBudget }, { onConflict: "id" });
+      if (error) throw error;
+    },
+
     async getGuestProfile() {
       return DEFAULT_GUEST_PROFILE;
     },
@@ -4196,14 +4207,16 @@ export const supabaseService: HungryService = {
     async recordQuizResponse(responses: Record<string, unknown>, tasteVector: TasteVector) {
       const client = getSupabaseClient();
       const userId = await getCurrentSupabaseUserId();
-      if (!client || !userId) return;
+      if (!client) return;
+      // Throws (instead of dropping the answers) so a queued guest quiz survives until a write lands.
+      if (!userId) throw new Error("You must be signed in to save quiz answers.");
       const { error } = await client.from("quiz_responses").insert({
         user_id: userId,
         quiz_version: TASTE_QUIZ_VERSION,
         responses,
         generated_taste_vector: tasteVectorToArray(tasteVector),
       });
-      if (error) console.warn("Failed to save quiz responses", error.message);
+      if (error) throw error;
     },
   },
 

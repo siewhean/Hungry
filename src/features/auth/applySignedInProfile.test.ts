@@ -83,3 +83,20 @@ test("guest answers survive when the auth listener syncs the account profile fir
   assert.deepEqual(profile.tasteVector, GUEST_VECTOR);
   assert.deepEqual(profile.dietaryPreferences, ["halal"]);
 });
+
+// r2 onboarding-M4: the budget answer is merged like the dietary flags.
+test("a guest's budget answer fills an account with no budget, and never overwrites a saved one", () => {
+  seedGuestWithQuizAnswers();
+  useProfileStore.setState({
+    profile: { ...useProfileStore.getState().profile, maxDishBudget: 6 },
+  });
+  applySignedInProfile(accountProfile({ maxDishBudget: undefined }));
+  assert.equal(useProfileStore.getState().profile.maxDishBudget, 6);
+
+  seedGuestWithQuizAnswers();
+  useProfileStore.setState({
+    profile: { ...useProfileStore.getState().profile, maxDishBudget: 6 },
+  });
+  applySignedInProfile(accountProfile({ maxDishBudget: 12 }));
+  assert.equal(useProfileStore.getState().profile.maxDishBudget, 12);
+});
