@@ -433,7 +433,8 @@ function mapDiscoveryFeedDish(row: Row, venue: VenueSummary): DishDetail | undef
       availability_flags: [],
     },
     venue,
-    { gallery, dietaryFlags: [] },
+    // Discover's Halal and Dietary Needs chips read these flags on the stall's top dish.
+    { gallery, dietaryFlags: toStringArray(row.top_dish_dietary_flags) as DietaryFlag[] },
   );
 }
 
