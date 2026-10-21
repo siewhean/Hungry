@@ -646,6 +646,9 @@ export interface MerchantClaimSubmissionResult {
   status: "created" | "already_exists";
 }
 
+/** Where the signed-in user's claim for a stall stands, in diner-facing terms. */
+export type MerchantClaimStatus = "none" | "submitted" | "in_review" | "approved" | "rejected";
+
 export interface DraftDishRow {
   id: string;
   venueId: string;
@@ -1137,13 +1140,25 @@ export interface HungryService {
     // Customer Inbox
     getInbox(
       outletId: string,
-      filters?: { type?: InteractionType; unrepliedOnly?: boolean; limit?: number },
+      filters?: {
+        type?: InteractionType;
+        unrepliedOnly?: boolean;
+        limit?: number;
+        /** Keyset page: only items created before this ISO timestamp. */
+        before?: string;
+      },
     ): Promise<CustomerInteraction[]>;
+    /** Posts a public reply, or replaces the existing one. */
     replyToInteraction(interactionId: string, text: string): Promise<void>;
+    /** Takes down the merchant's public reply. */
+    removeInteractionReply(interactionId: string): Promise<void>;
     reportInteraction(interactionId: string, reason: string): Promise<void>;
 
     // Featured Visitors
-    listPopularVisitorCandidates(outletId: string): Promise<PopularVisitorCandidate[]>;
+    listPopularVisitorCandidates(
+      outletId: string,
+      options?: { limit?: number; before?: string },
+    ): Promise<PopularVisitorCandidate[]>;
     listPopularVisitorPins(outletId: string): Promise<PopularVisitorPin[]>;
     pinPopularVisitor(outletId: string, reviewId: string): Promise<PopularVisitorPin>;
     unpinPopularVisitor(pinId: string): Promise<void>;
@@ -1171,8 +1186,6 @@ export interface HungryService {
     getDashboardSummary(outletId: string): Promise<MerchantDashboardSummary>;
     getWeeklySummaryStats(outletId: string): Promise<MerchantWeeklySummary>;
     getMerchantNotifications(merchantAccountId: string): Promise<MerchantNotification[]>;
-    syncLowRatingNotifications(outletId: string): Promise<MerchantNotification[]>;
-    sendWeeklySummaryNotifications(outletId: string): Promise<MerchantNotification[]>;
 
     // AI Tools
     generateDishDescription(dishName: string, ingredients?: string[]): Promise<string>;
@@ -1211,6 +1224,8 @@ export interface HungryService {
     submitMerchantClaimInterest(
       input: SubmitMerchantClaimInterestInput,
     ): Promise<MerchantClaimSubmissionResult>;
+    /** The caller's own claim for this stall ("none" when there is no claim or no session). */
+    getMerchantClaimStatus(venueId: string): Promise<MerchantClaimStatus>;
     listDraftDishesQueue(venueId?: string): Promise<DraftDishRow[]>;
     reviewDraftDish(
       draftDishId: string,

@@ -11,6 +11,7 @@ import { getFloorPlan } from "@/lib/geo/floorPlans";
 import { PROFILE_BIO_MAX_LENGTH } from "@/features/profile/profileBio";
 import { normalizeReviewPatch } from "@/features/review/reviewEdit";
 import { MERCHANT_DEEP_LINKS } from "@/features/merchant/merchantDeepLinks";
+import { MERCHANT_REPLY_MAX_LENGTH } from "@/features/merchant/merchantReadiness";
 import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { similarityScore } from "@/lib/ai/similarityScore";
@@ -1252,35 +1253,6 @@ function createMerchantNotification(
   };
   _merchantNotifications.push(notification);
   return notification;
-}
-
-function getLowRatingNotificationsForOutlet(outletId: string): MerchantNotification[] {
-  const outlet = getMerchantOutlet(outletId);
-  const lowReviews = _merchantInbox.filter(
-    (interaction) =>
-      interaction.outletId === outletId &&
-      interaction.type === "review" &&
-      typeof interaction.rating === "number" &&
-      interaction.rating <= 2,
-  );
-  return lowReviews.map((review) =>
-    createMerchantNotification({
-      merchantAccountId: outlet.merchantAccountId,
-      outletId,
-      kind: "low_rating",
-      title: `${outlet.name} received a low rating`,
-      body: `${review.rating?.toFixed(1)} stars: ${review.text.slice(0, 120)}`,
-      status: "unread",
-      dedupeKey: `low-rating:${review.id}`,
-      deepLink: MERCHANT_DEEP_LINKS.inbox,
-      metadata: {
-        reviewId: review.id,
-        rating: review.rating ?? null,
-        snippet: review.text,
-      },
-      createdAt: review.createdAt,
-    }),
-  );
 }
 
 function buildWeeklySummaryStats(outletId: string): MerchantWeeklySummary {
@@ -2960,6 +2932,14 @@ export const hungryService: HungryService = {
       } as const);
     },
 
+    async getMerchantClaimStatus(venueId) {
+      return resolve(
+        _isAuthenticated && _merchantClaimInterests.has(`${_profile.id}:${venueId}`)
+          ? ("submitted" as const)
+          : ("none" as const),
+      );
+    },
+
     async listDraftDishesQueue() {
       return resolve([]);
     },
@@ -3132,6 +3112,10 @@ export const hungryService: HungryService = {
       if (filters?.unrepliedOnly) {
         interactions = interactions.filter((i) => !i.reply);
       }
+      const before = filters?.before ? new Date(filters.before).getTime() : undefined;
+      if (before !== undefined && Number.isFinite(before)) {
+        interactions = interactions.filter((i) => new Date(i.createdAt).getTime() < before);
+      }
       interactions = [...interactions].sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       );
@@ -3146,10 +3130,20 @@ export const hungryService: HungryService = {
       if (!interaction) throw new Error(`Interaction ${interactionId} not found`);
       const trimmedText = text.trim();
       if (!trimmedText) throw new Error("Reply text is required");
+      if (trimmedText.length > MERCHANT_REPLY_MAX_LENGTH) {
+        throw new Error(`Replies can be up to ${MERCHANT_REPLY_MAX_LENGTH} characters.`);
+      }
       interaction.reply = {
         text: trimmedText,
         repliedAt: new Date().toISOString(),
       };
+      return resolve(undefined);
+    },
+
+    async removeInteractionReply(interactionId) {
+      const interaction = _merchantInbox.find((i) => i.id === interactionId);
+      if (!interaction) throw new Error(`Interaction ${interactionId} not found`);
+      interaction.reply = undefined;
       return resolve(undefined);
     },
 
@@ -3348,35 +3342,6 @@ export const hungryService: HungryService = {
             .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
         ),
       );
-    },
-
-    async syncLowRatingNotifications(outletId) {
-      const notifications = getLowRatingNotificationsForOutlet(outletId);
-      return resolve(clone(notifications));
-    },
-
-    async sendWeeklySummaryNotifications(outletId) {
-      const outlet = getMerchantOutlet(outletId);
-      const summary = buildWeeklySummaryStats(outletId);
-      const members = getTeamMembersForAccount(outlet.merchantAccountId).filter(
-        (member) => member.inviteStatus !== "removed",
-      );
-      const notifications = members.map((member) =>
-        createMerchantNotification({
-          merchantAccountId: outlet.merchantAccountId,
-          outletId,
-          recipientUserId: member.userId,
-          recipientEmail: member.email,
-          kind: "weekly_summary",
-          title: `${outlet.name} weekly summary is ready`,
-          body: `${summary.totalViews.toLocaleString()} views, ${summary.newReviews} new reviews, ${summary.unrepliedReviews} unreplied reviews.`,
-          status: "unread",
-          dedupeKey: `weekly-summary:${summary.id}:${member.id}`,
-          deepLink: MERCHANT_DEEP_LINKS.analytics,
-          metadata: { summaryId: summary.id },
-        }),
-      );
-      return resolve(clone(notifications));
     },
 
     async generateDishDescription(dishName, ingredients) {

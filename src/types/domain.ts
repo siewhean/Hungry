@@ -323,6 +323,11 @@ export interface DishDetail extends DishSummary {
   mustOrder: boolean;
   availabilityFlags: string[];
   reviews: Review[];
+  /**
+   * Merchant menu reads only: false for a dish diners can already see, true for a draft kept
+   * hidden until the outlet is verified. Unset elsewhere.
+   */
+  isMerchantDraft?: boolean;
 }
 
 export interface BlogPost {
@@ -976,6 +981,8 @@ export interface CustomerInteraction {
   text: string;
   tags?: string[];
   createdAt: string;
+  /** Name of the dish the review is about, when it is about one */
+  dishName?: string;
   /** Merchant's reply, if any */
   reply?: {
     text: string;

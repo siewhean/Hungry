@@ -164,7 +164,7 @@ test("Supabase merchant portal readiness covers views, notifications, and promo 
   assert.match(service, /rpc\(\s*"record_merchant_action_event"/);
   assert.match(service, /rpc\(\s*"get_merchant_analytics"/);
   assert.match(service, /mapMerchantAnalyticsPayload/);
-  assert.match(service, /rpc\(\s*"persist_merchant_weekly_summary"/);
+  assert.doesNotMatch(service, /rpc\(\s*"persist_merchant_weekly_summary"/);
   assert.doesNotMatch(service, /context\?\.sessionId \?\? context\?\.userId \?\? "anonymous"/);
   assert.doesNotMatch(service, /profileVisits: Math\.floor\(dishViewTotal \/ 2\)/);
   assert.doesNotMatch(service, /menuViews: dishViewTotal/);
@@ -173,10 +173,8 @@ test("Supabase merchant portal readiness covers views, notifications, and promo 
   assert.doesNotMatch(service, /customerTasteTags: \[\]/);
   assert.match(service, /getWeeklySummaryStats/);
   assert.match(service, /getMerchantNotifications/);
-  assert.match(service, /syncLowRatingNotifications/);
-  assert.match(service, /sendWeeklySummaryNotifications/);
+  assert.doesNotMatch(service, /syncLowRatingNotifications|sendWeeklySummaryNotifications/);
   assert.match(service, /rpc\(\s*"enqueue_merchant_team_invite_email"/);
-  assert.match(service, /rpc\(\s*"enqueue_merchant_weekly_summary_email"/);
   assert.doesNotMatch(service, /from\("merchant_dish_view_events"\)/);
   assert.doesNotMatch(service, /from\("merchant_email_outbox"\)/);
   assert.match(service, /bucket: "merchant-stall-images"/);
