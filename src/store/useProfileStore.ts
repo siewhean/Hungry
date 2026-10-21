@@ -179,6 +179,19 @@ const FEEDBACK_CONFIDENCE_DELTAS: Record<ExplicitFeedbackEvent["type"], number> 
 const pendingFavouriteDishToggles = new Set<string>();
 const activatedProfileIds = new Set<string>();
 
+// supabase-js fires SIGNED_IN before signIn/verifyOtp return, so syncProfile swaps
+// the guest profile for the account's blank one before the screen can merge it.
+// Keep the guest's profile here so applySignedInProfile still sees the guest's
+// diet and taste.
+type GuestSnapshot = { userId: string; profile: UserProfile; tasteProfile: TasteProfile };
+let guestSnapshotBeforeSignIn: GuestSnapshot | null = null;
+
+export function takeGuestSnapshotForSignIn(userId: string) {
+  const snapshot = guestSnapshotBeforeSignIn;
+  guestSnapshotBeforeSignIn = null;
+  return snapshot && snapshot.userId === userId ? snapshot : null;
+}
+
 // "activated": a person's first Tried or first save. `previous` is the profile
 // before the action, so it fires only when nothing was saved or tried yet.
 function trackActivationOnce(previous: UserProfile, trigger: "tried" | "saved", dishId: string) {
@@ -482,6 +495,10 @@ export const useProfileStore = create<ProfileState>()(
           return;
         }
 
+        guestSnapshotBeforeSignIn =
+          isAuthenticated && userId && currentProfile.id === "guest-user"
+            ? { userId, profile: currentProfile, tasteProfile: get().tasteProfile }
+            : null;
         set({
           profile: withNeutralTasteProfile(
             ensureSupabaseCompatibleProfile(
