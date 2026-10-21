@@ -58,16 +58,9 @@ content_path = "./supabase/templates/recovery.html"
 subject = "Your Hungry code: confirm account deletion"
 content_path = "./supabase/templates/magic_link.html"
 
-# Custom sender for auth email (the built-in sender is rate-limited and not for
-# production). Set these env vars before `supabase config push` or `supabase start`.
-[auth.email.smtp]
-enabled = true
-host = "env(SUPABASE_AUTH_SMTP_HOST)"
-port = 587
-user = "env(SUPABASE_AUTH_SMTP_USER)"
-pass = "env(SUPABASE_AUTH_SMTP_PASS)"
-admin_email = "no-reply@usehungry.com"
-sender_name = "Hungry"
+# Production sends auth email through the Send Email Hook (send-email Edge
+# Function on Resend, mail.usehungry.com), set in the dashboard. That hook must
+# include the code (email_data.token) for the three templates above.
 
 [auth.mfa.totp]
 enroll_enabled = true

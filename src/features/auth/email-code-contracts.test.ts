@@ -28,8 +28,8 @@ test("every email the app asks a code for is a checked-in template with {{ .Toke
   }
   // Account deletion uses the Magic Link email; it must not hold a sign-in link.
   assert.doesNotMatch(read("supabase/templates/magic_link.html"), /ConfirmationURL/);
-  assert.match(config, /\[auth\.email\.smtp\]\s*enabled = true/);
-  assert.match(config, /pass = "env\(SUPABASE_AUTH_SMTP_PASS\)"/);
+  // Production sends through the Send Email Hook, so no SMTP block is pinned.
+  assert.doesNotMatch(config, /\[auth\.email\.smtp\]/);
 });
 
 test("the password policy is pinned in config.toml to match the app", () => {

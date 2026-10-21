@@ -6,7 +6,7 @@
 -- merchant_venue_is_verified(), which is tied to the caller's own verified
 -- outlet at the venue.
 --
--- Based on the latest definition in 20261020110000_review_helpful_votes.sql;
+-- Based on the latest definition in 20261021161000_review_edit_delete_latest_rating.sql;
 -- only the verification check is new. The trigger itself is unchanged.
 
 begin;
@@ -25,15 +25,24 @@ begin
     return new;
   end if;
 
+  -- Account deletion: the worker detaches the review from its author.
+  if current_user not in ('anon', 'authenticated')
+    and old.user_id is not null
+    and new.user_id is null then
+    return new;
+  end if;
+
   if auth.uid() is null then
     raise exception 'authentication required' using errcode = '42501';
   end if;
 
+  -- Authors edit rating, text, tags and would_recommend only.
   if old.user_id = auth.uid() then
     if new.id is distinct from old.id
       or new.user_id is distinct from old.user_id
       or new.dish_id is distinct from old.dish_id
       or new.venue_id is distinct from old.venue_id
+      or new.author_name is distinct from old.author_name
       or new.created_at is distinct from old.created_at
       or new.merchant_reply_text is distinct from old.merchant_reply_text
       or new.merchant_replied_at is distinct from old.merchant_replied_at
