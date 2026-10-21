@@ -146,6 +146,8 @@ const INTENDED_AUTHENTICATED_RPCS = [
   // Records today's app open for auth.uid() only (retention lifecycle).
   "record_app_open",
   "register_push_token",
+  // Diner "Something wrong?" reports into the ops queue; checks auth.uid() and rate-limits itself.
+  "submit_catalog_correction",
   "unregister_push_token",
 ];
 
