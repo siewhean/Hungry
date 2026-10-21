@@ -15,7 +15,7 @@ export const WEB_LINKS = {
 // app installed, iOS Universal Links / Android App Links open the matching
 // screen in the app (see linking.ts); otherwise the website page is shown.
 export function webShareUrl(
-  kind: "dish" | "stall" | "post" | "portfolio" | "user",
+  kind: "dish" | "stall" | "post" | "portfolio" | "user" | "review",
   id: string,
 ): string {
   return `${WEB_BASE_URL}/${kind}/${encodeURIComponent(id)}`;

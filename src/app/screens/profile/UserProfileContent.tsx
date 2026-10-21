@@ -736,6 +736,15 @@ export function UserProfileContent({
                     icon={<MessageCircleMore color={palette.textSecondary} size={36} />}
                   />
                 )}
+                {activeTab === "reviews" && hasMoreReviews ? (
+                  <Button
+                    label="Load more"
+                    variant="ghost"
+                    size="sm"
+                    loading={isLoadingMoreReviews}
+                    onPress={loadMoreReviews}
+                  />
+                ) : null}
                 {activeTab === "posts" && hasMorePosts ? (
                   <Button
                     label="Load more"

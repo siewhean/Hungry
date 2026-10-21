@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type RefObject } from "react";
-import { Share } from "react-native";
+import { Platform, Share } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import {
   BottomSheetBackdrop,
@@ -70,7 +70,11 @@ export function ReviewShareSheet({
   // A chat share sends a post card, so it needs a real post id.
   const directMessagesEnabled =
     FEATURE_FLAGS.directMessagesEnabled && inAppSharingEnabled && Boolean(activeReview?.postId);
-  const snapPoints = useMemo(() => ["62%"], []);
+  // Without in-app recipients the sheet holds only the four link actions: keep it short.
+  const snapPoints = useMemo(
+    () => [directMessagesEnabled ? "62%" : "42%"],
+    [directMessagesEnabled],
+  );
 
   const loadChatConversations = useCallback(async () => {
     if (!FEATURE_FLAGS.directMessagesEnabled) {
@@ -113,7 +117,7 @@ export function ReviewShareSheet({
           ...recipients,
         });
       } else {
-        trackAnalyticsEvent("dish_shared", {
+        trackAnalyticsEvent("review_shared", {
           review_id: target.reviewId,
           channel,
           ...recipients,
@@ -189,10 +193,12 @@ export function ReviewShareSheet({
   const shareOutsideHungry = useCallback(async () => {
     if (!activeReview) return;
     const link = withShareSource(activeReview.link, "system_share");
-    const result = await Share.share({
-      message: `${activeReview.message}\n${link}`,
-      url: link,
-    });
+    // iOS shows `url` as its own item, so the link goes there only; Android has no `url`.
+    const result = await Share.share(
+      Platform.OS === "ios"
+        ? { message: activeReview.message, url: link }
+        : { message: `${activeReview.message}\n${link}` },
+    );
     // A cancelled share sheet is not a share.
     if (result.action !== Share.sharedAction) return;
     trackShare(activeReview, "system_share");

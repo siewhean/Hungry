@@ -25,6 +25,7 @@ import {
   Users,
 } from "lucide-react-native";
 
+import { ReviewModerationNotice } from "@/components/review";
 import { AccessibleImage, AppText, Button, Card, EmptyState, Skeleton } from "@/components/ui";
 import { FloatingShareSendButton, InAppShareCard } from "@/components/social";
 import { MissionBanner } from "@/components/gamification/MissionBanner";
@@ -170,6 +171,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
   /** Own server reviews; null until the first load finishes. */
   const [ownReviews, setOwnReviews] = useState<Review[] | null>(null);
   const [ownReviewsFailed, setOwnReviewsFailed] = useState(false);
+  /** The first page was full, so Review history holds more than the list shows. */
   const [ownReviewsReloadKey, setOwnReviewsReloadKey] = useState(0);
   const ownReviewsLoadedRef = useRef<{ at: number; key: string } | null>(null);
   const ownReviewEditor = useOwnReviewEditor({
@@ -883,7 +885,9 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
           <View style={{ flexDirection: "row", gap: spacing[2] }}>
             <StatBlock
               label="Reviews"
-              value={ownReviews?.length ?? null}
+              value={
+                ownReviews === null ? null : ownReviews.length
+              }
               icon={<PencilLine size={14} color={palette.orange} />}
               onPressIn={() => preloadRoute(navigation, "ReviewHistory")}
               onPress={handleReviewsCardPress}
@@ -1164,6 +1168,13 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                             />
                           ) : null}
                         </View>
+                        {review.moderationState ? (
+                          <ReviewModerationNotice
+                            state={review.moderationState}
+                            reviewId={review.id}
+                            dishName={dishName}
+                          />
+                        ) : null}
                         <AppText variant="micro" tone="secondary">
                           {`Rated ${review.rating}/5`}
                         </AppText>
@@ -1494,8 +1505,8 @@ function StatBlock({
   onPress,
 }: {
   label: string;
-  /** null while loading. */
-  value: number | null;
+  /** null while loading; text such as "20+" when only the first page is counted. */
+  value: number | string | null;
   icon: ReactNode;
   onPressIn?: () => void;
   onPress?: () => void;

@@ -18,7 +18,9 @@ import {
 } from "@/components/ui";
 import { publishComposerPost } from "@/features/post/publishing";
 import { useComposerStore, type MediaItem } from "@/features/post/useComposerStore";
-import { confirmGalleryAccess, isGalleryPermissionGranted } from "@/lib/permissions/gallery";
+import { askMediaSource, captureWithCamera } from "@/lib/permissions/mediaSource";
+import { createClientReviewId } from "@/features/review/reviewDraft";
+import { describePublishError } from "@/features/review/publishErrorCopy";
 import { POST_CAPTION_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSanitization";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -52,6 +54,8 @@ function PostComposerScreenInner({ navigation, route }: Props) {
   const [isPublishing, setIsPublishing] = useState(false);
   // Set once the post is published so leaving the screen skips the discard prompt.
   const hasPublishedRef = useRef(false);
+  // Reused when "Publish" is tapped again after a failure, so a retry resumes the same post.
+  const pendingPostIdRef = useRef<string | null>(null);
   const allDishes = useMemo(
     () =>
       repository
@@ -102,46 +106,8 @@ function PostComposerScreenInner({ navigation, route }: Props) {
     return repository.getVenueById(dish.venueId);
   }, [dish, repository, selectedVenueId]);
 
-  const handlePickMedia = async () => {
-    const shouldRequestPermission = await confirmGalleryAccess({
-      title: "Allow gallery access",
-      message: "Hungry needs access to your photo library to add media to your post.",
-      confirmLabel: "Allow",
-      cancelLabel: "Not now",
-    });
-
-    if (!shouldRequestPermission) {
-      return;
-    }
-
-    const remaining = POST_MAX_MEDIA - selectedMedia.length;
-    if (remaining <= 0) {
-      showToast({ message: `Up to ${POST_MAX_MEDIA} photos or videos.`, tone: "info" });
-      return;
-    }
-
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!isGalleryPermissionGranted(permission)) {
-      showToast({
-        message: "Photo permission is required to publish a post.",
-        tone: "warning",
-      });
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images", "videos"],
-      allowsMultipleSelection: true,
-      quality: 0.92,
-      selectionLimit: remaining,
-      videoMaxDuration: 60,
-    });
-
-    if (result.canceled || !result.assets?.length) {
-      return;
-    }
-
-    const media = result.assets.map((asset, index) => ({
+  const addPickedMedia = (assets: ImagePicker.ImagePickerAsset[]) => {
+    const media = assets.map((asset, index) => ({
       id: asset.assetId ?? `${asset.uri}-${index}`,
       uri: asset.uri,
       type: asset.type === "video" ? ("video" as const) : ("image" as const),
@@ -157,11 +123,57 @@ function PostComposerScreenInner({ navigation, route }: Props) {
     showToast({ message: "Media attached.", tone: "success" });
   };
 
+  const handlePickMedia = async () => {
+    const remaining = POST_MAX_MEDIA - selectedMedia.length;
+    if (remaining <= 0) {
+      showToast({ message: `Up to ${POST_MAX_MEDIA} photos or videos.`, tone: "info" });
+      return;
+    }
+
+    const source = await askMediaSource("Add media");
+    if (!source) return;
+
+    if (source === "camera") {
+      const capture = await captureWithCamera({
+        mediaTypes: ["images", "videos"],
+        quality: 0.92,
+        videoMaxDuration: 60,
+      });
+      if (capture.status === "denied") {
+        showToast({ message: "Camera permission is required to take a photo.", tone: "warning" });
+      } else if (capture.status === "ok") {
+        addPickedMedia(capture.assets);
+      }
+      return;
+    }
+
+    // The system photo picker needs no library permission; it only returns what is picked.
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images", "videos"],
+      allowsMultipleSelection: true,
+      quality: 0.92,
+      selectionLimit: remaining,
+      videoMaxDuration: 60,
+    });
+
+    if (result.canceled || !result.assets?.length) {
+      return;
+    }
+    addPickedMedia(result.assets);
+  };
+
   const handleRemoveMedia = (id: string) => {
     setSelectedMedia((current) => current.filter((item) => item.id !== id));
   };
 
   const hasUnsavedWork = caption.trim().length > 0 || selectedMedia.length > 0;
+  // Read when the discard is confirmed, so the listener is not re-registered on every keystroke.
+  const selectedMediaCountRef = useRef(0);
+  const captionLengthRef = useRef(0);
+  useEffect(() => {
+    selectedMediaCountRef.current = selectedMedia.length;
+    captionLengthRef.current = caption.trim().length;
+  }, [selectedMedia.length, caption]);
   useEffect(() => {
     if (!hasUnsavedWork) return undefined;
     return navigation.addListener("beforeRemove", (event) => {
@@ -172,11 +184,18 @@ function PostComposerScreenInner({ navigation, route }: Props) {
         {
           text: "Discard",
           style: "destructive",
-          onPress: () => navigation.dispatch(event.data.action),
+          onPress: () => {
+            trackAnalyticsEvent("post_abandoned", {
+              dish_id: selectedDishId ?? undefined,
+              media_count: selectedMediaCountRef.current,
+              has_caption: captionLengthRef.current > 0,
+            });
+            navigation.dispatch(event.data.action);
+          },
         },
       ]);
     });
-  }, [hasUnsavedWork, navigation]);
+  }, [hasUnsavedWork, navigation, selectedDishId]);
 
   const handlePublish = () => {
     if (!isAuthenticated) {
@@ -207,11 +226,14 @@ function PostComposerScreenInner({ navigation, route }: Props) {
         composer.setActiveTab("post");
         composer.setCaption(sanitizeFreeText(caption, POST_CAPTION_MAX_LENGTH) || targetDish.name);
         composer.addMedia(selectedMedia);
+        pendingPostIdRef.current ??= createClientReviewId();
         await publishComposerPost({
           publishMode: "post",
           routeDishId: targetDish.id,
           routeVenueId: targetVenue?.id ?? targetDish.venueId,
+          clientPostId: pendingPostIdRef.current,
         });
+        pendingPostIdRef.current = null;
         showToast({
           message: "Post published successfully.",
           tone: "success",
@@ -228,10 +250,13 @@ function PostComposerScreenInner({ navigation, route }: Props) {
       } catch (error) {
         // The composer store is shared with the V2 composer: never leave this draft in it.
         useComposerStore.getState().reset();
-        showToast({
-          message: error instanceof Error ? error.message : "Could not publish post right now.",
-          tone: "warning",
+        trackAnalyticsEvent("post_publish_failed", {
+          dish_id: targetDish.id,
+          venue_id: targetVenue?.id ?? targetDish.venueId,
+          media_count: selectedMedia.length,
+          reason: (error as { code?: string } | null)?.code ?? "publish_failed",
         });
+        showToast({ message: describePublishError(error, "post"), tone: "warning" });
       } finally {
         setIsPublishing(false);
       }
@@ -241,6 +266,7 @@ function PostComposerScreenInner({ navigation, route }: Props) {
   if (!dish) {
     return (
       <Screen
+        keyboardAvoiding
         title="Create post"
         subtitle={
           pickerVenue
@@ -314,7 +340,7 @@ function PostComposerScreenInner({ navigation, route }: Props) {
   }
 
   return (
-    <Screen title="Create post" subtitle="Share a photo or video of what you ate.">
+    <Screen keyboardAvoiding title="Create post" subtitle="Share a photo or video of what you ate.">
       <Card>
         <View style={{ gap: spacing[3] }}>
           <Badge label="Photo or video" tone="neutral" />

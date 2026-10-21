@@ -12,7 +12,9 @@ test("root linking config exposes public dish, venue, and order entry points", (
   assert.equal(screens.DishDetail, "dish/:id");
   assert.equal(screens.StallDetail, "venue/:id");
   assert.equal(screens.ActivityPostDetail, "post/:postId");
-  assert.equal(screens.Post, "order");
+  // The composer is named for what it does; /order still works as an alias.
+  assert.equal(screens.Post, "post");
+  assert.equal(screens.ReviewDetail, "review/:reviewId");
   assert.equal(screens.MerchantTabs, undefined);
   assert.deepEqual(screens.MainTabs, { screens: { Home: "home" } });
 });
@@ -178,4 +180,36 @@ test("cold-start shared links open on top of Home so Back leads somewhere", () =
   // Home is the linking initial route, so on a running app the two-route state
   // becomes a navigate to the target rather than a reset of the whole stack.
   assert.equal((linking.config as { initialRouteName?: string }).initialRouteName, "MainTabs");
+});
+
+test("/post opens the composer like /order, while /post/:id still opens a post", () => {
+  const linking = createRootLinking("exp://127.0.0.1:8081/--/");
+  const getStateFromPath = linking.getStateFromPath;
+  assert.deepEqual(getStateFromPath("post?venueId=venue-tian-tian")?.routes?.[0], {
+    name: "Post",
+    params: { venueId: "venue-tian-tian" },
+  });
+  assert.deepEqual(getStateFromPath("order?venueId=venue-tian-tian")?.routes?.[0], {
+    name: "Post",
+    params: { venueId: "venue-tian-tian" },
+  });
+  assert.deepEqual(getStateFromPath("post/abc-123")?.routes?.[1], {
+    name: "ActivityPostDetail",
+    params: { postId: "abc-123" },
+  });
+});
+
+test("review/:id links open the review page for signed-out visitors too", () => {
+  const linking = createRootLinking("exp://127.0.0.1:8081/--/", () => ({
+    isAuthReady: true,
+    isAuthenticated: false,
+  }));
+  const getStateFromPath = linking.getStateFromPath;
+  const id = "11111111-2222-3333-4444-555555555555";
+  assert.deepEqual(getStateFromPath(`review/${id}?src=whatsapp`)?.routes, [
+    { name: "MainTabs", params: { screen: "Home" } },
+    { name: "ReviewDetail", params: { reviewId: id } },
+  ]);
+  assert.equal(getStateFromPath("review/"), undefined);
+  assert.equal(getStateFromPath("review/%3Cscript%3E"), undefined);
 });

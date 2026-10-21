@@ -144,7 +144,8 @@ test("media upload validation rejects unsafe MIME and signed URL failure", async
         path: "user-id/review/photo.png",
         uri: "file:///tmp/photo.png",
       }),
-    /Signed upload URL/,
+    // The test runtime cannot re-encode, and an image that cannot be stripped is refused.
+    /could not remove location data/,
   );
   globalThis.fetch = previousFetch;
 });

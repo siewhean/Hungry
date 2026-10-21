@@ -62,6 +62,10 @@ function sanitizeRouteParams(name: string, params: unknown): Record<string, unkn
     return undefined;
   }
 
+  if (name === "ReviewDetail" && !isSafeDeepLinkId(next.reviewId)) {
+    return undefined;
+  }
+
   if (name === "PortfolioPublicView" && !isSafeDeepLinkId(next.portfolioId)) {
     return undefined;
   }
@@ -170,6 +174,15 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
     const id = decodePathSegment(parts[1]);
     return id ? createStateOverHome("StallDetail", { id }) : undefined;
   }
+  // Shared reviews: https://usehungry.com/review/:id
+  if (parts[0] === "review") {
+    const reviewId = decodePathSegment(parts[1]);
+    return reviewId ? createStateOverHome("ReviewDetail", { reviewId }) : undefined;
+  }
+  // The post composer, named for what it does. /order is the older name, kept as an alias.
+  if (path === "post" || path === "order") {
+    return createState("Post", parseOrderDeepLinkQuery(rawPath));
+  }
   if (parts[0] === "post") {
     const postId = decodePathSegment(parts[1]);
     return postId ? createStateOverHome("ActivityPostDetail", { postId }) : undefined;
@@ -179,7 +192,6 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
     const authorId = decodePathSegment(parts[1]);
     return authorId ? createStateOverHome("UserProfile", { authorId }) : undefined;
   }
-  if (path === "order") return createState("Post", parseOrderDeepLinkQuery(rawPath));
   // Shared searches: https://usehungry.com/search?q=laksa&filter=Halal&mode=stalls
   if (path === "search") {
     return createStateOverHome("SearchResults", parseSearchDeepLinkQuery(rawPath));
@@ -234,6 +246,7 @@ const SHARED_LINK_ROUTES = new Set([
   "DishDetail",
   "StallDetail",
   "ActivityPostDetail",
+  "ReviewDetail",
   "PortfolioPublicView",
   "UserProfile",
   "WheelStack",
@@ -286,8 +299,9 @@ export function createRootLinking(
         DishDetail: "dish/:id",
         StallDetail: "venue/:id",
         ActivityPostDetail: "post/:postId",
+        ReviewDetail: "review/:reviewId",
         UserProfile: "user/:authorId",
-        Post: "order",
+        Post: "post",
         SearchResults: "search",
         ...(FEATURE_FLAGS.portfoliosEnabled
           ? { PortfolioPublicView: "portfolio/:portfolioId" }

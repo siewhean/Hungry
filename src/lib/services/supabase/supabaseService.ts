@@ -51,7 +51,7 @@ import { REVIEW_PHOTOS_NOT_ATTACHED, createClientReviewId } from "@/features/rev
 import { validateMerchantPromotionInput } from "@/features/merchant/promotionValidation";
 import { MERCHANT_DEEP_LINKS } from "@/features/merchant/merchantDeepLinks";
 import { MERCHANT_REPLY_MAX_LENGTH } from "@/features/merchant/merchantReadiness";
-import { normalizeReviewPatch } from "@/features/review/reviewEdit";
+import { normalizeReviewPatch, normalizeReviewTags } from "@/features/review/reviewEdit";
 import type {
   Bite,
   BiteDraft,
@@ -73,7 +73,9 @@ import type {
   SearchResult,
   Session,
   SubmitReviewInput,
+  ListRecentReviewsOptions,
   RecentReviewFeedEntry,
+  RecentReviewFeedPage,
 } from "@/lib/services/types";
 import type {
   AIBusinessInsight,
@@ -980,6 +982,21 @@ function toAppSessionFromAuthSession(
 /** Review photos uploaded at once; more in flight starves slow mobile links. */
 const REVIEW_PHOTO_UPLOAD_CONCURRENCY = 3;
 
+/** Best-effort removal of objects this client just uploaded; a failure is left to the orphan purge. */
+async function removeUploadedObjects(
+  client: SupabaseClient,
+  bucket: string,
+  paths: (string | undefined)[],
+): Promise<void> {
+  const uploaded = paths.filter((path): path is string => Boolean(path));
+  if (uploaded.length === 0) return;
+  try {
+    await client.storage.from(bucket).remove(uploaded);
+  } catch {
+    // Offline or refused: the scheduled purge removes unreferenced objects after 24 hours.
+  }
+}
+
 async function uploadReviewPhotos(
   client: SupabaseClient,
   userId: string,
@@ -1018,9 +1035,19 @@ async function uploadReviewPhotos(
       };
     }
   };
-  await Promise.all(
-    Array.from({ length: Math.min(REVIEW_PHOTO_UPLOAD_CONCURRENCY, jobs.length) }, worker),
-  );
+  try {
+    await Promise.all(
+      Array.from({ length: Math.min(REVIEW_PHOTO_UPLOAD_CONCURRENCY, jobs.length) }, worker),
+    );
+  } catch (error) {
+    // One photo failed: the ones already uploaded would never be attached to a review.
+    await removeUploadedObjects(
+      client,
+      "review-media",
+      uploaded.map((row) => (row ? asString(row.storage_path) : undefined)),
+    );
+    throw error;
+  }
   // Keep the picked order for sort_order.
   return uploaded.filter((row): row is Row => Boolean(row));
 }
@@ -1046,17 +1073,24 @@ async function mapSupabaseReviewRows(
       .order("sort_order", { ascending: true });
 
     if (Array.isArray(photoRows)) {
-      // One signing request for the whole page instead of one per photo.
-      const signedUrlByPath = await createSignedStorageUrls(
-        client,
-        "review-media",
-        (photoRows as Row[])
-          .filter(
-            (photoRow) => (asString(photoRow.storage_bucket) || "review-media") === "review-media",
-          )
-          .map((photoRow) => asString(photoRow.storage_path))
-          .filter((path): path is string => Boolean(path)),
+      // One signing request for the whole page instead of one per photo, and a URL already
+      // signed for a path is reused so refetching the feed does not re-download its images.
+      const reviewMediaPaths = (photoRows as Row[])
+        .filter(
+          (photoRow) => (asString(photoRow.storage_bucket) || "review-media") === "review-media",
+        )
+        .map((photoRow) => asString(photoRow.storage_path))
+        .filter((path): path is string => Boolean(path));
+      const unsignedPaths = reviewMediaPaths.filter(
+        (path) => !cachedSignedMediaUrl("review-media", path),
       );
+      const freshlySigned = await createSignedStorageUrls(client, "review-media", unsignedPaths);
+      freshlySigned.forEach((url, path) => rememberSignedMediaUrl("review-media", path, url));
+      const signedUrlByPath = new Map<string, string>();
+      for (const path of reviewMediaPaths) {
+        const url = cachedSignedMediaUrl("review-media", path);
+        if (url) signedUrlByPath.set(path, url);
+      }
       for (const photoRow of photoRows as Row[]) {
         const reviewId = asString(photoRow.review_id);
         if (!reviewId) continue;
@@ -1109,6 +1143,7 @@ async function mapSupabaseReviewRows(
       wouldRecommend: asBoolean(row.would_recommend) ?? true,
       photos: photosByReviewId.get(id) ?? [],
       helpfulCount: asNumber(row.helpful_count),
+      editedAt: asString(row.edited_at),
       merchantReply: asString(row.merchant_reply_text)
         ? {
             text: asString(row.merchant_reply_text) ?? "",
@@ -1120,6 +1155,162 @@ async function mapSupabaseReviewRows(
 }
 
 const AVATAR_UPLOAD_MAX_EDGE_PX = 512;
+
+/** Moderation state of the viewer's own reviews (hidden or removed after reports), when any. */
+async function attachOwnReviewModeration(
+  client: SupabaseClient,
+  reviews: DishDetail["reviews"],
+  viewerId: string | null,
+): Promise<DishDetail["reviews"]> {
+  const ownIds = viewerId
+    ? reviews.filter((review) => review.authorId === viewerId).map((review) => review.id)
+    : [];
+  if (ownIds.length === 0) return reviews;
+  const { data, error } = await client.rpc("get_my_review_moderation_states", {
+    p_review_ids: ownIds,
+  });
+  // A backend without the RPC simply shows no notice.
+  if (error || !Array.isArray(data)) return reviews;
+  const stateByReviewId = new Map<string, "hidden" | "removed">();
+  for (const row of data as Row[]) {
+    const reviewId = asString(row.review_id);
+    const state = asString(row.state);
+    if (reviewId && (state === "hidden" || state === "removed")) {
+      stateByReviewId.set(reviewId, state);
+    }
+  }
+  if (stateByReviewId.size === 0) return reviews;
+  return reviews.map((review) => {
+    const moderationState = stateByReviewId.get(review.id);
+    return moderationState ? { ...review, moderationState } : review;
+  });
+}
+
+const REVIEW_FEED_COLUMNS =
+  "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend,merchant_reply_text,merchant_replied_at,helpful_count,edited_at";
+
+/** Feed entries for raw review rows. Reviews of a dish the viewer cannot read are dropped. */
+async function buildRecentReviewEntries(
+  client: SupabaseClient,
+  rows: Row[],
+): Promise<RecentReviewFeedEntry[]> {
+  if (rows.length === 0) return [];
+
+  const dishIds = Array.from(
+    new Set(rows.map((row) => asString(row.dish_id)).filter((id): id is string => !!id)),
+  );
+  const { data: dishRows, error: dishError } = await client
+    .from("dishes")
+    .select("id,name,venue_id")
+    .in("id", dishIds);
+  if (dishError) throw dishError;
+  const dishById = new Map<string, { name: string; venueId?: string }>();
+  for (const dishRow of (Array.isArray(dishRows) ? dishRows : []) as Row[]) {
+    const id = asString(dishRow.id);
+    if (!id) continue;
+    dishById.set(id, {
+      name: asString(dishRow.name) ?? "Dish",
+      venueId: asString(dishRow.venue_id),
+    });
+  }
+
+  const venueIds = Array.from(
+    new Set(
+      [
+        ...rows.map((row) => asString(row.venue_id)),
+        ...Array.from(dishById.values()).map((dish) => dish.venueId),
+      ].filter((id): id is string => !!id),
+    ),
+  );
+  const venueNameById = new Map<string, string>();
+  if (venueIds.length > 0) {
+    const { data: venueRows } = await client.from("venues").select("id,name").in("id", venueIds);
+    for (const venueRow of (Array.isArray(venueRows) ? venueRows : []) as Row[]) {
+      const id = asString(venueRow.id);
+      const name = asString(venueRow.name);
+      if (id && name) venueNameById.set(id, name);
+    }
+  }
+
+  // Dish and stall pages show review photos too, so every read signs them.
+  const viewerId = await getCurrentSupabaseUserId();
+  const reviews = await attachOwnReviewModeration(
+    client,
+    await mapSupabaseReviewRows(client, rows, { includePhotos: true }),
+    viewerId,
+  );
+  // The viewer's own helpful votes on this page (RLS returns only their rows).
+  const helpfulReviewIds = new Set<string>();
+  if (viewerId) {
+    const { data: voteRows } = await client
+      .from("review_helpful_votes")
+      .select("review_id")
+      .eq("user_id", viewerId)
+      .in(
+        "review_id",
+        reviews.map((review) => review.id),
+      );
+    for (const voteRow of (Array.isArray(voteRows) ? voteRows : []) as Row[]) {
+      const reviewId = asString(voteRow.review_id);
+      if (reviewId) helpfulReviewIds.add(reviewId);
+    }
+  }
+  return reviews.flatMap((review): RecentReviewFeedEntry[] => {
+    const dish = review.dishId ? dishById.get(review.dishId) : undefined;
+    // Reviews of dishes the catalog cannot display are skipped.
+    if (!review.dishId || !dish) return [];
+    const venueId = review.venueId ?? dish.venueId ?? "";
+    return [
+      {
+        review: { ...review, viewerFoundHelpful: helpfulReviewIds.has(review.id) },
+        dishId: review.dishId,
+        dishName: dish.name,
+        venueId,
+        venueName: venueNameById.get(venueId) ?? "",
+      },
+    ];
+  });
+}
+
+async function fetchRecentReviewsPage(
+  options: ListRecentReviewsOptions | undefined,
+): Promise<RecentReviewFeedPage> {
+  const client = requireSupabaseClient();
+  const limit = Math.min(Math.max(Math.floor(options?.limit ?? 50), 1), 100);
+  if (options?.dishIds && options.dishIds.length === 0) return { entries: [], hasMore: false };
+  let query = client
+    .from("reviews")
+    .select(REVIEW_FEED_COLUMNS)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(limit);
+  if (options?.before && options.beforeId) {
+    // Keyset cursor (created_at, id): rows sharing the boundary timestamp are kept.
+    query = query.or(
+      `created_at.lt."${options.before}",and(created_at.eq."${options.before}",id.lt."${options.beforeId}")`,
+    );
+  } else if (options?.before) {
+    query = query.lt("created_at", options.before);
+  }
+  if (options?.after) {
+    query = query.gte("created_at", options.after);
+  }
+  if (options?.dishIds) {
+    query = query.in("dish_id", options.dishIds);
+  }
+  const { data, error } = await query;
+  if (error) throw error;
+  const rows = Array.isArray(data) ? (data as Row[]) : [];
+  const lastRow = rows[rows.length - 1];
+  const lastCreatedAt = lastRow ? asString(lastRow.created_at) : undefined;
+  const lastId = lastRow ? asString(lastRow.id) : undefined;
+  return {
+    entries: await buildRecentReviewEntries(client, rows),
+    // From the raw rows: a dropped review must not look like the end of the feed.
+    hasMore: rows.length >= limit,
+    nextCursor: lastCreatedAt && lastId ? { before: lastCreatedAt, beforeId: lastId } : undefined,
+  };
+}
 
 async function uploadAvatarIfNeeded(
   client: SupabaseClient,
@@ -1208,26 +1399,28 @@ async function createSignedStorageUrls(
   return signed;
 }
 
-/** Signed post media URLs live 1 hour; reuse one until 5 minutes before it expires. */
+/** Signed media URLs live 1 hour; reuse one until 5 minutes before it expires. */
 const POST_MEDIA_SIGNED_URL_REUSE_MS = 55 * 60 * 1000;
 /**
- * Signed URL per storage path. A refetch reuses the same URL, so the image cache
- * (keyed by URL) does not re-download or flicker on every feed load.
+ * Signed URL per bucket and storage path (post and review media). A refetch reuses the
+ * same URL, so the image cache (keyed by URL) does not re-download or flicker on every
+ * feed load.
  */
-const signedPostMediaUrlCache = new Map<string, { url: string; expiresAt: number }>();
+const signedMediaUrlCache = new Map<string, { url: string; expiresAt: number }>();
 
-function cachedSignedPostMediaUrl(path: string): string | undefined {
-  const cached = signedPostMediaUrlCache.get(path);
+function cachedSignedMediaUrl(bucket: string, path: string): string | undefined {
+  const key = `${bucket}/${path}`;
+  const cached = signedMediaUrlCache.get(key);
   if (!cached) return undefined;
   if (cached.expiresAt <= Date.now()) {
-    signedPostMediaUrlCache.delete(path);
+    signedMediaUrlCache.delete(key);
     return undefined;
   }
   return cached.url;
 }
 
-function rememberSignedPostMediaUrl(path: string, url: string) {
-  signedPostMediaUrlCache.set(path, {
+function rememberSignedMediaUrl(bucket: string, path: string, url: string) {
+  signedMediaUrlCache.set(`${bucket}/${path}`, {
     url,
     expiresAt: Date.now() + POST_MEDIA_SIGNED_URL_REUSE_MS,
   });
@@ -1238,10 +1431,10 @@ async function presignPostMediaRows(client: SupabaseClient, mediaRows: Row[]): P
   const paths = mediaRows
     .filter((row) => asString(row.storage_bucket) === "post-media")
     .map((row) => asString(row.storage_path))
-    .filter((path): path is string => Boolean(path) && !cachedSignedPostMediaUrl(path!));
+    .filter((path): path is string => Boolean(path) && !cachedSignedMediaUrl("post-media", path!));
   if (paths.length === 0) return;
   const signed = await createSignedStorageUrls(client, "post-media", paths);
-  signed.forEach((url, path) => rememberSignedPostMediaUrl(path, url));
+  signed.forEach((url, path) => rememberSignedMediaUrl("post-media", path, url));
 }
 
 async function resolvePostMediaDisplayUrl(client: SupabaseClient, row: Row): Promise<string> {
@@ -1249,10 +1442,10 @@ async function resolvePostMediaDisplayUrl(client: SupabaseClient, row: Row): Pro
   const path = asString(row.storage_path) ?? "";
   const publicUrl = asString(row.public_url);
   if (bucket === "post-media" && path) {
-    const cached = cachedSignedPostMediaUrl(path);
+    const cached = cachedSignedMediaUrl("post-media", path);
     if (cached) return cached;
     const signed = await createSignedStorageUrl(client, bucket, path);
-    if (signed) rememberSignedPostMediaUrl(path, signed);
+    if (signed) rememberSignedMediaUrl("post-media", path, signed);
     return signed ?? publicUrl ?? "";
   }
   return publicUrl ?? path;
@@ -1265,6 +1458,8 @@ async function buildPostMediaRows(
   mediaUrls: string[],
   mediaTypes?: BiteDraft["mediaTypes"],
   fallbackMediaType?: BiteDraft["mediaType"],
+  /** Receives each uploaded storage path, so a caller whose publish fails can remove them. */
+  uploadedPaths?: string[],
 ): Promise<{
   rows: Row[];
   displayUrls: string[];
@@ -1289,6 +1484,7 @@ async function buildPostMediaRows(
         path: storagePath,
         uri,
       });
+      uploadedPaths?.push(uploaded.path);
       rows.push({
         post_id: postId,
         media_type: mediaKind,
@@ -1508,7 +1704,8 @@ async function fetchPublishedPostBites(
         tasteStamp: tasteStampFromPostMeta(meta),
         cravingCount: asNumber(row.like_count) ?? 0,
         savedCount: asNumber(row.save_count) ?? 0,
-        rating: asNumber(meta.rating) ?? asNumber(dishRow?.rating_avg) ?? 0,
+        // The poster's own rating; posts without one show no star (never the dish average).
+        rating: asNumber(meta.rating) ?? 0,
         price: asNumber(dishRow?.price) ?? asNumber(dishMeta.price) ?? 0,
         expiresAt:
           asString(row.published_at) ?? asString(row.created_at) ?? new Date().toISOString(),
@@ -1561,7 +1758,7 @@ async function mapFeedRpcRowToBite(client: SupabaseClient, row: Row): Promise<Bi
     // Only v3 and get_post_by_id return the viewer's own state.
     viewerHasLiked: typeof row.viewer_has_liked === "boolean" ? row.viewer_has_liked : undefined,
     viewerHasSaved: typeof row.viewer_has_saved === "boolean" ? row.viewer_has_saved : undefined,
-    rating: asNumber(meta.rating) ?? asNumber(row.dish_rating) ?? 0,
+    rating: asNumber(meta.rating) ?? 0,
     price: asNumber(row.dish_price) ?? asNumber(dishMeta.price) ?? 0,
     expiresAt: asString(row.published_at) ?? asString(row.created_at) ?? new Date().toISOString(),
     createdAt: asString(row.published_at) ?? asString(row.created_at) ?? new Date().toISOString(),
@@ -3761,26 +3958,31 @@ export const supabaseService: HungryService = {
 
     async getUserReviews(userId, page) {
       const client = requireSupabaseClient();
+      const viewerId = await getCurrentSupabaseUserId();
       const limit = Math.min(Math.max(page?.limit ?? USER_REVIEWS_PAGE_SIZE, 1), 500);
       const offset = Math.max(page?.offset ?? 0, 0);
       // Someone else's profile list goes through get_user_profile_reviews, which is
       // empty for a private account unless the viewer follows it (H39). Dish pages
       // keep showing every review. Older backends without the RPC use the table read.
-      if (userId !== (await getCurrentSupabaseUserId())) {
+      if (userId !== viewerId) {
         const rpc = await client
           .rpc("get_user_profile_reviews", { p_user_id: userId })
           .range(offset, offset + limit - 1);
         if (!rpc.error) {
           // Profile cards never show photos, so no photo rows are read or signed.
           return Array.isArray(rpc.data)
-            ? mapSupabaseReviewRows(client, rpc.data as Row[], { includePhotos: false })
+            ? attachOwnReviewModeration(
+                client,
+                await mapSupabaseReviewRows(client, rpc.data as Row[], { includePhotos: false }),
+                viewerId,
+              )
             : [];
         }
       }
       const { data, error } = await client
         .from("reviews")
         .select(
-          "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend",
+          "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend,edited_at",
         )
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
@@ -3788,7 +3990,11 @@ export const supabaseService: HungryService = {
       // Thrown so a failed read is not shown as "No reviews yet".
       if (error) throw error;
       if (!Array.isArray(data)) return [];
-      return mapSupabaseReviewRows(client, data as Row[], { includePhotos: false });
+      return attachOwnReviewModeration(
+        client,
+        await mapSupabaseReviewRows(client, data as Row[], { includePhotos: false }),
+        viewerId,
+      );
     },
 
     async submitReview(draft: SubmitReviewInput) {
@@ -3806,7 +4012,7 @@ export const supabaseService: HungryService = {
         venue_id: draft.venueId,
         rating: draft.rating,
         text: draft.text,
-        tags: draft.tags,
+        tags: normalizeReviewTags(draft.tags),
         would_recommend: draft.wouldRecommend ?? true,
       };
 
@@ -3835,24 +4041,38 @@ export const supabaseService: HungryService = {
         ? await uploadReviewPhotos(client, userId, reviewId, draft.photos)
         : [];
 
-      if (isResumedSubmission) {
-        // Keep any edits made between attempts.
-        const { error: updateError } = await client
-          .from("reviews")
-          .update({
-            rating: reviewRow.rating,
-            text: reviewRow.text,
-            tags: reviewRow.tags,
-            would_recommend: reviewRow.would_recommend,
-          })
-          .eq("id", reviewId)
-          .eq("user_id", userId);
-        if (updateError) throw updateError;
-      } else {
-        const { error } = await client.from("reviews").insert(reviewRow);
-        // 23505: a parallel attempt already created this review; carry on and
-        // attach the photos to it.
-        if (error && error.code !== "23505") throw error;
+      // A retry uploads under new object names, so photos from a failed attempt would be
+      // left behind: remove them (best effort; the orphan purge catches any that remain).
+      const discardUploadedPhotos = () =>
+        removeUploadedObjects(
+          client,
+          "review-media",
+          uploadedPhotos.map((photo) => asString(photo.storage_path)),
+        );
+
+      try {
+        if (isResumedSubmission) {
+          // Keep any edits made between attempts.
+          const { error: updateError } = await client
+            .from("reviews")
+            .update({
+              rating: reviewRow.rating,
+              text: reviewRow.text,
+              tags: reviewRow.tags,
+              would_recommend: reviewRow.would_recommend,
+            })
+            .eq("id", reviewId)
+            .eq("user_id", userId);
+          if (updateError) throw updateError;
+        } else {
+          const { error } = await client.from("reviews").insert(reviewRow);
+          // 23505: a parallel attempt already created this review; carry on and
+          // attach the photos to it.
+          if (error && error.code !== "23505") throw error;
+        }
+      } catch (error) {
+        await discardUploadedPhotos();
+        throw error;
       }
 
       if (uploadedPhotos.length > 0) {
@@ -3866,6 +4086,7 @@ export const supabaseService: HungryService = {
           })),
         );
         if (photoInsertError) {
+          await discardUploadedPhotos();
           // The review itself is saved; only the photos are missing. A retry
           // with the same clientReviewId attaches them.
           throw Object.assign(new Error("Review saved, but its photos were not attached."), {
@@ -3877,106 +4098,25 @@ export const supabaseService: HungryService = {
     },
 
     async listRecentReviews(options) {
+      return (await fetchRecentReviewsPage(options)).entries;
+    },
+
+    async listRecentReviewsPage(options) {
+      return fetchRecentReviewsPage(options);
+    },
+
+    async getReviewById(reviewId) {
+      if (!UUID_PATTERN.test(reviewId)) return null;
       const client = requireSupabaseClient();
-      const limit = Math.min(Math.max(Math.floor(options?.limit ?? 50), 1), 100);
-      if (options?.dishIds && options.dishIds.length === 0) return [];
-      let query = client
+      const { data, error } = await client
         .from("reviews")
-        .select(
-          "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend,merchant_reply_text,merchant_replied_at,helpful_count",
-        )
-        .order("created_at", { ascending: false })
-        .order("id", { ascending: false })
-        .limit(limit);
-      if (options?.before && options.beforeId) {
-        // Keyset cursor (created_at, id): rows sharing the boundary timestamp are kept.
-        query = query.or(
-          `created_at.lt."${options.before}",and(created_at.eq."${options.before}",id.lt."${options.beforeId}")`,
-        );
-      } else if (options?.before) {
-        query = query.lt("created_at", options.before);
-      }
-      if (options?.dishIds) {
-        query = query.in("dish_id", options.dishIds);
-      }
-      const { data, error } = await query;
+        .select(REVIEW_FEED_COLUMNS)
+        .eq("id", reviewId)
+        .maybeSingle();
       if (error) throw error;
-      const rows = Array.isArray(data) ? (data as Row[]) : [];
-      if (rows.length === 0) return [];
-
-      const dishIds = Array.from(
-        new Set(rows.map((row) => asString(row.dish_id)).filter((id): id is string => !!id)),
-      );
-      const { data: dishRows, error: dishError } = await client
-        .from("dishes")
-        .select("id,name,venue_id")
-        .in("id", dishIds);
-      if (dishError) throw dishError;
-      const dishById = new Map<string, { name: string; venueId?: string }>();
-      for (const dishRow of (Array.isArray(dishRows) ? dishRows : []) as Row[]) {
-        const id = asString(dishRow.id);
-        if (!id) continue;
-        dishById.set(id, {
-          name: asString(dishRow.name) ?? "Dish",
-          venueId: asString(dishRow.venue_id),
-        });
-      }
-
-      const venueIds = Array.from(
-        new Set(
-          [
-            ...rows.map((row) => asString(row.venue_id)),
-            ...Array.from(dishById.values()).map((dish) => dish.venueId),
-          ].filter((id): id is string => !!id),
-        ),
-      );
-      const venueNameById = new Map<string, string>();
-      if (venueIds.length > 0) {
-        const { data: venueRows } = await client
-          .from("venues")
-          .select("id,name")
-          .in("id", venueIds);
-        for (const venueRow of (Array.isArray(venueRows) ? venueRows : []) as Row[]) {
-          const id = asString(venueRow.id);
-          const name = asString(venueRow.name);
-          if (id && name) venueNameById.set(id, name);
-        }
-      }
-
-      // Dish and stall pages show review photos too, so every read signs them.
-      const reviews = await mapSupabaseReviewRows(client, rows, { includePhotos: true });
-      // The viewer's own helpful votes on this page (RLS returns only their rows).
-      const viewerId = await getCurrentSupabaseUserId();
-      const helpfulReviewIds = new Set<string>();
-      if (viewerId) {
-        const { data: voteRows } = await client
-          .from("review_helpful_votes")
-          .select("review_id")
-          .eq("user_id", viewerId)
-          .in(
-            "review_id",
-            reviews.map((review) => review.id),
-          );
-        for (const voteRow of (Array.isArray(voteRows) ? voteRows : []) as Row[]) {
-          const reviewId = asString(voteRow.review_id);
-          if (reviewId) helpfulReviewIds.add(reviewId);
-        }
-      }
-      return reviews.flatMap((review): RecentReviewFeedEntry[] => {
-        const dish = review.dishId ? dishById.get(review.dishId) : undefined;
-        // Reviews of dishes the catalog cannot display are skipped.
-        if (!review.dishId || !dish) return [];
-        const venueId = review.venueId ?? dish.venueId ?? "";
-        return [
-          {
-            review: { ...review, viewerFoundHelpful: helpfulReviewIds.has(review.id) },
-            dishId: review.dishId,
-            dishName: dish.name,
-            venueId,
-            venueName: venueNameById.get(venueId) ?? "",
-          },
-        ];
-      });
+      if (!data) return null;
+      const [entry] = await buildRecentReviewEntries(client, [data as Row]);
+      return entry ?? null;
     },
 
     async setReviewHelpful(reviewId, helpful) {
@@ -4493,7 +4633,8 @@ export const supabaseService: HungryService = {
           buildingName: building?.name ?? "",
         },
         tasteStamp: draft.tasteStamp,
-        rating: draft.rating,
+        // Only the poster's own rating is stored; no rating means no star on the post.
+        rating: draft.rating > 0 ? draft.rating : undefined,
         tags: draft.tags ?? [],
         mediaType: draft.mediaType ?? "photo",
         mediaTypes: draft.mediaTypes ?? [],
@@ -4512,52 +4653,127 @@ export const supabaseService: HungryService = {
         building_id: venue?.buildingId ?? dish?.buildingId ?? null,
       };
 
-      const { data: postData, error: postError } = await client
-        .from("posts")
-        .insert(initialPayload)
-        .select("*")
-        .maybeSingle();
-      if (postError || !postData) throw postError ?? new Error("Failed to create post draft.");
+      // A client post id makes a retry resume this post instead of creating a second one.
+      let clientPostId =
+        draft.clientPostId && UUID_PATTERN.test(draft.clientPostId)
+          ? draft.clientPostId
+          : undefined;
+      let resumeDraft = false;
+      if (clientPostId) {
+        const { data: existing, error: existingError } = await client
+          .from("posts")
+          .select("id,status,deleted_at")
+          .eq("id", clientPostId)
+          .eq("author_id", userId)
+          .maybeSingle();
+        if (existingError) throw existingError;
+        if (existing) {
+          const existingStatus = asString((existing as Row).status);
+          if (existingStatus === "published" && !(existing as Row).deleted_at) {
+            // The earlier attempt published it and only its response was lost.
+            const alreadyPublished = await supabaseService.social.getPostById(clientPostId);
+            if (alreadyPublished) return alreadyPublished;
+          }
+          if (existingStatus === "draft") {
+            resumeDraft = true;
+          } else {
+            // Not reusable (deleted): publish under a new id.
+            clientPostId = undefined;
+          }
+        }
+      }
 
-      const postId = asString((postData as Row).id) ?? "";
-      if (!postId) {
-        throw new Error("Failed to create post id.");
+      let postId = clientPostId ?? "";
+      if (resumeDraft) {
+        const { error: resumeError } = await client
+          .from("posts")
+          .update({
+            caption: initialPayload.caption,
+            generated_content: initialPayload.generated_content,
+            dish_id: initialPayload.dish_id,
+            venue_id: initialPayload.venue_id,
+            building_id: initialPayload.building_id,
+          })
+          .eq("id", postId)
+          .eq("author_id", userId);
+        if (resumeError) throw resumeError;
+        // Media rows from the earlier attempt are replaced by this attempt's uploads.
+        const { error: clearError } = await client
+          .from("post_media")
+          .delete()
+          .eq("post_id", postId);
+        if (clearError) throw clearError;
+      } else {
+        const { data: postData, error: postError } = await client
+          .from("posts")
+          .insert((clientPostId ? { id: clientPostId, ...initialPayload } : initialPayload) as Row)
+          .select("*")
+          .maybeSingle();
+        if (postError || !postData) throw postError ?? new Error("Failed to create post draft.");
+        postId = asString((postData as Row).id) ?? "";
+        if (!postId) {
+          throw new Error("Failed to create post id.");
+        }
       }
 
       const mediaUrls = draft.mediaUrls?.length
         ? draft.mediaUrls
         : [draft.photoUrl].filter(Boolean);
-      const media = await buildPostMediaRows(
-        client,
-        userId,
-        postId,
-        mediaUrls,
-        draft.mediaTypes,
-        draft.mediaType,
-      );
-      if (media.rows.length > 0) {
-        const { error: mediaError } = await client.from("post_media").insert(media.rows);
-        if (mediaError) throw mediaError;
-      }
-
+      const uploadedPaths: string[] = [];
+      let media: Awaited<ReturnType<typeof buildPostMediaRows>>;
+      let publishedPostData: unknown;
       const publishedAt = new Date().toISOString();
-      const postType = postTypeForMedia(media.rows, media.canonicalMediaType);
-      const { data: publishedPostData, error: publishError } = await client
-        .from("posts")
-        .update({
-          post_type: postType,
-          status: "published",
-          published_at: publishedAt,
-          updated_at: publishedAt,
-        })
-        .eq("id", postId)
-        .select("*")
-        .maybeSingle();
-      if (publishError || !publishedPostData) {
-        throw publishError ?? new Error("Failed to publish post.");
+      try {
+        media = await buildPostMediaRows(
+          client,
+          userId,
+          postId,
+          mediaUrls,
+          draft.mediaTypes,
+          draft.mediaType,
+          uploadedPaths,
+        );
+        if (media.rows.length > 0) {
+          const { error: mediaError } = await client.from("post_media").insert(media.rows);
+          if (mediaError) throw mediaError;
+        }
+
+        const postType = postTypeForMedia(media.rows, media.canonicalMediaType);
+        const publishResult = await client
+          .from("posts")
+          .update({
+            post_type: postType,
+            status: "published",
+            published_at: publishedAt,
+            updated_at: publishedAt,
+          })
+          .eq("id", postId)
+          .select("*")
+          .maybeSingle();
+        publishedPostData = publishResult.data;
+        if (publishResult.error || !publishedPostData) {
+          throw publishResult.error ?? new Error("Failed to publish post.");
+        }
+      } catch (error) {
+        // Leave no orphan draft or uploaded files behind (best effort; a scheduled purge
+        // removes whatever is left after 24 hours). A retry starts clean.
+        await removeUploadedObjects(client, "post-media", uploadedPaths);
+        try {
+          await client
+            .from("posts")
+            .delete()
+            .eq("id", postId)
+            .eq("author_id", userId)
+            .eq("status", "draft");
+        } catch {
+          // Offline: the retry resumes this draft by its id.
+        }
+        throw error;
       }
 
-      await refreshSupabaseRepositoryCache();
+      // The post is live: return now. Refreshing the whole catalog only matters for later
+      // detail lookups, so it runs in the background instead of keeping the spinner up.
+      void refreshSupabaseRepositoryCache().catch(() => undefined);
 
       const primaryMediaUrl = media.displayUrls[0] ?? draft.photoUrl;
 

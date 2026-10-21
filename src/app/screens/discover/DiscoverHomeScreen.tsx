@@ -2417,17 +2417,19 @@ export function DiscoverHomeScreen() {
                         <AppText variant="price" style={{ color: palette.orange }}>
                           S${bite.price.toFixed(2)}
                         </AppText>
-                        <View
-                          style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
-                        >
-                          <Star color={palette.amber} size={12} fill={palette.amber} />
-                          <AppText
-                            variant="micro"
-                            style={{ fontWeight: "700", color: themeTints.text }}
+                        {bite.rating > 0 ? (
+                          <View
+                            style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
                           >
-                            {bite.rating.toFixed(1)}
-                          </AppText>
-                        </View>
+                            <Star color={palette.amber} size={12} fill={palette.amber} />
+                            <AppText
+                              variant="micro"
+                              style={{ fontWeight: "700", color: themeTints.text }}
+                            >
+                              {bite.rating.toFixed(1)}
+                            </AppText>
+                          </View>
+                        ) : null}
                       </View>
                     </View>
                   </Pressable>
@@ -2526,21 +2528,23 @@ export function DiscoverHomeScreen() {
                         <AppText variant="price" style={{ color: palette.orange }}>
                           S${bite.price.toFixed(2)}
                         </AppText>
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            gap: spacing[1],
-                          }}
-                        >
-                          <Star color={palette.amber} size={12} fill={palette.amber} />
-                          <AppText
-                            variant="micro"
-                            style={{ fontWeight: "700", color: themeTints.text }}
+                        {bite.rating > 0 ? (
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              gap: spacing[1],
+                            }}
                           >
-                            {bite.rating.toFixed(1)}
-                          </AppText>
-                        </View>
+                            <Star color={palette.amber} size={12} fill={palette.amber} />
+                            <AppText
+                              variant="micro"
+                              style={{ fontWeight: "700", color: themeTints.text }}
+                            >
+                              {bite.rating.toFixed(1)}
+                            </AppText>
+                          </View>
+                        ) : null}
                       </View>
                     </View>
                   </Pressable>
@@ -2679,17 +2683,19 @@ export function DiscoverHomeScreen() {
                         <AppText variant="price" style={{ color: palette.orange }}>
                           S${bite.price.toFixed(2)}
                         </AppText>
-                        <View
-                          style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
-                        >
-                          <Star color={palette.amber} size={12} fill={palette.amber} />
-                          <AppText
-                            variant="micro"
-                            style={{ fontWeight: "700", color: themeTints.text }}
+                        {bite.rating > 0 ? (
+                          <View
+                            style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
                           >
-                            {bite.rating.toFixed(1)}
-                          </AppText>
-                        </View>
+                            <Star color={palette.amber} size={12} fill={palette.amber} />
+                            <AppText
+                              variant="micro"
+                              style={{ fontWeight: "700", color: themeTints.text }}
+                            >
+                              {bite.rating.toFixed(1)}
+                            </AppText>
+                          </View>
+                        ) : null}
                       </View>
                     </View>
                   </Pressable>

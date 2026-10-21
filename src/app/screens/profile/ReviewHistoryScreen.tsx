@@ -3,6 +3,7 @@ import { useIsFocused } from "@react-navigation/native";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
 
+import { ReviewModerationNotice } from "@/components/review";
 import { AppText, Button, Card, EmptyState } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import {
@@ -12,6 +13,7 @@ import {
 } from "@/lib/services/serviceProvider";
 import { OwnReviewMenuButton, useOwnReviewEditor } from "@/features/profile/useOwnReviewEditor";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useUIStore } from "@/store/useUIStore";
 import type { Review } from "@/types/domain";
 import { isDishDetail } from "./profileGuards";
 import { ProfileReviewsSkeleton } from "./ProfileGridSkeleton";
@@ -150,7 +152,11 @@ export function ReviewHistoryScreen({ navigation }: Props) {
             const reviewText = review?.text || entry?.text || "No written notes";
             const dishId = review?.dishId ?? dish?.id;
             const dishName = dish?.name ?? "Reviewed dish";
-            const ratingLine = [rating ? `Rated ${rating}/5` : "", tagSummary]
+            const ratingLine = [
+              rating ? `Rated ${rating}/5` : "",
+              tagSummary,
+              review?.editedAt ? "Edited" : "",
+            ]
               .filter(Boolean)
               .join(" · ");
             const card = (
@@ -164,6 +170,13 @@ export function ReviewHistoryScreen({ navigation }: Props) {
                       <OwnReviewMenuButton onPress={() => ownReviewEditor.openActions(review)} />
                     ) : null}
                   </View>
+                  {review?.moderationState ? (
+                    <ReviewModerationNotice
+                      state={review.moderationState}
+                      reviewId={review.id}
+                      dishName={dishName}
+                    />
+                  ) : null}
                   <AppText tone="secondary">{reviewText}</AppText>
                   {ratingLine ? (
                     <AppText variant="bodySmall" tone="secondary">

@@ -68,6 +68,7 @@ import type {
   SearchResult,
   Session,
   SubmitReviewInput,
+  ListRecentReviewsOptions,
   RecentReviewFeedEntry,
 } from "@/lib/services/types";
 import { ACCOUNT_DELETION_GRACE_DAYS } from "@/lib/services/types";
@@ -78,6 +79,7 @@ import type {
   DishDetail,
   DietaryFlag,
   HawkerTasteTag,
+  Review,
   MerchantAnalytics,
   MerchantDishViewEvent,
   MerchantNotification,
@@ -658,6 +660,52 @@ function findMockOwnReviewDish(reviewId: string, action: "edit" | "delete") {
   );
   if (!dish) throw new Error(`Review not found, or it isn't yours to ${action}.`);
   return dish;
+}
+
+function mockReviewPageLimit(options?: { limit?: number }): number {
+  return Math.min(Math.max(Math.floor(options?.limit ?? 50), 1), 100);
+}
+
+function compareReviewsNewestFirst(a: Review, b: Review): number {
+  return (
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() ||
+    (b.id < a.id ? -1 : b.id > a.id ? 1 : 0)
+  );
+}
+
+/** True for reviews strictly before the (created_at, id) keyset cursor; all when there is none. */
+function isBeforeReviewCursor(review: Review, before: number | undefined, beforeId?: string) {
+  if (before === undefined) return true;
+  const createdAt = new Date(review.createdAt).getTime();
+  if (createdAt < before) return true;
+  return Boolean(beforeId && createdAt === before && review.id < beforeId);
+}
+
+/** Every visible mock review newest first, narrowed by the feed options (not yet limited). */
+function listMockRecentReviews(options?: ListRecentReviewsOptions): RecentReviewFeedEntry[] {
+  const before = options?.before ? new Date(options.before).getTime() : undefined;
+  const after = options?.after ? new Date(options.after).getTime() : undefined;
+  const dishIdFilter = options?.dishIds ? new Set(options.dishIds) : undefined;
+  return dishes
+    .filter((dish) => !dishIdFilter || dishIdFilter.has(dish.id))
+    .flatMap((dish): RecentReviewFeedEntry[] =>
+      dish.reviews
+        .filter((review) => !isMockReviewHiddenForViewer(review))
+        .map((review) => ({
+          review: {
+            ...review,
+            helpfulCount: (review.helpfulCount ?? 0) + (_helpfulReviewIds.has(review.id) ? 1 : 0),
+            viewerFoundHelpful: _helpfulReviewIds.has(review.id),
+          },
+          dishId: dish.id,
+          dishName: dish.name,
+          venueId: dish.venueId,
+          venueName: dish.venueName,
+        })),
+    )
+    .filter((entry) => isBeforeReviewCursor(entry.review, before, options?.beforeId))
+    .filter((entry) => after === undefined || new Date(entry.review.createdAt).getTime() >= after)
+    .sort((a, b) => compareReviewsNewestFirst(a.review, b.review));
 }
 
 function isMockReviewHiddenForViewer(review: { id: string; authorId?: string }): boolean {
@@ -1857,25 +1905,28 @@ export const hungryService: HungryService = {
       );
     },
 
-    async getUserReviews(_userId, _page) {
+    async getUserReviews(_userId, page) {
       // Another user's profile: only reviews written by that account, like the Supabase read.
-      if (_userId !== _profile.id) {
-        return resolve(
-          dishes
+      const own = _userId === _profile.id;
+      // Mock: the demo user's reviews are keyed by reviewedDishIds.
+      const reviews = own
+        ? _profile.reviewedDishIds
+            .map((id) => dishes.find((d) => d.id === id))
+            .filter(Boolean)
+            .flatMap((d) => (d?.reviews ?? []).slice(0, 1))
+            .filter((review) => !isMockReviewHiddenForViewer(review))
+        : dishes
             .flatMap((dish) => dish.reviews ?? [])
             .filter(
               (review) => review.authorId === _userId && !isMockReviewHiddenForViewer(review),
-            ),
-        );
-      }
-      // Mock: return the demo user's reviews (keyed by reviewedDishIds)
-      const reviewedDishes = _profile.reviewedDishIds
-        .map((id) => dishes.find((d) => d.id === id))
-        .filter(Boolean);
-      const reviews = reviewedDishes
-        .flatMap((d) => (d?.reviews ?? []).slice(0, 1))
-        .filter((review) => !isMockReviewHiddenForViewer(review));
-      return resolve(reviews);
+            );
+      if (!page?.limit) return resolve(reviews);
+      const offset = Math.max(page.offset ?? 0, 0);
+      return resolve(
+        [...reviews]
+          .sort(compareReviewsNewestFirst)
+          .slice(offset, offset + Math.max(1, Math.floor(page.limit))),
+      );
     },
 
     async submitReview(draft: SubmitReviewInput) {
@@ -1899,41 +1950,24 @@ export const hungryService: HungryService = {
     },
 
     async listRecentReviews(options) {
-      const limit = Math.min(Math.max(Math.floor(options?.limit ?? 50), 1), 100);
-      const before = options?.before ? new Date(options.before).getTime() : undefined;
-      const dishIdFilter = options?.dishIds ? new Set(options.dishIds) : undefined;
-      const entries = dishes
-        .filter((dish) => !dishIdFilter || dishIdFilter.has(dish.id))
-        .flatMap((dish): RecentReviewFeedEntry[] =>
-          dish.reviews
-            .filter((review) => !isMockReviewHiddenForViewer(review))
-            .map((review) => ({
-              review: {
-                ...review,
-                helpfulCount:
-                  (review.helpfulCount ?? 0) + (_helpfulReviewIds.has(review.id) ? 1 : 0),
-                viewerFoundHelpful: _helpfulReviewIds.has(review.id),
-              },
-              dishId: dish.id,
-              dishName: dish.name,
-              venueId: dish.venueId,
-              venueName: dish.venueName,
-            })),
-        )
-        .filter((entry) => {
-          if (before === undefined) return true;
-          const createdAt = new Date(entry.review.createdAt).getTime();
-          if (createdAt < before) return true;
-          return Boolean(
-            options?.beforeId && createdAt === before && entry.review.id < options.beforeId,
-          );
-        })
-        .sort(
-          (a, b) =>
-            new Date(b.review.createdAt).getTime() - new Date(a.review.createdAt).getTime() ||
-            (b.review.id < a.review.id ? -1 : b.review.id > a.review.id ? 1 : 0),
-        );
-      return resolve(entries.slice(0, limit));
+      return resolve(listMockRecentReviews(options).slice(0, mockReviewPageLimit(options)));
+    },
+
+    async listRecentReviewsPage(options) {
+      const limit = mockReviewPageLimit(options);
+      const matching = listMockRecentReviews(options);
+      const entries = matching.slice(0, limit);
+      const last = entries[entries.length - 1];
+      return resolve({
+        entries,
+        hasMore: matching.length > limit,
+        nextCursor: last ? { before: last.review.createdAt, beforeId: last.review.id } : undefined,
+      });
+    },
+
+    async getReviewById(reviewId) {
+      const entry = listMockRecentReviews().find((candidate) => candidate.review.id === reviewId);
+      return resolve(entry ?? null);
     },
 
     async setReviewHelpful(reviewId, helpful) {
