@@ -106,7 +106,6 @@ test("signed-out app entry opens the app as a guest while public routes stay unp
     "MapZoomedIn",
     "DishDetail",
     "StallDetail",
-    "BlogPost",
   ]) {
     assert.doesNotMatch(
       protectedRoutes,

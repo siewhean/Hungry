@@ -42,6 +42,8 @@ export type SharedPortfolio = {
   name: string;
   description: string | null;
   ownerDisplayName: string | null;
+  /** "ranking" lists show each pick's number and score. */
+  type: string | null;
   updatedAt: string | null;
   items: {
     itemType: "dish" | "stall";
@@ -50,6 +52,7 @@ export type SharedPortfolio = {
     name: string | null;
     stallName: string | null;
     price: number | null;
+    score: number | null;
     publicNotes: string | null;
     imageUrl: string | null;
     mapsUrl: string | null;
@@ -195,6 +198,7 @@ type PortfolioRpcRow = {
   name: string;
   description: string | null;
   owner_display_name: string | null;
+  type?: string | null;
   updated_at: string | null;
   items: {
     item_type: "dish" | "stall";
@@ -203,6 +207,7 @@ type PortfolioRpcRow = {
     name: string | null;
     stall_name: string | null;
     price: number | string | null;
+    score?: number | null;
     public_notes: string | null;
     image_url?: string | null;
     map_query?: string | null;
@@ -223,6 +228,7 @@ export async function getSharedPortfolio(id: string): Promise<SharedPortfolio | 
       name: data.name,
       description: data.description,
       ownerDisplayName: data.owner_display_name,
+      type: data.type ?? null,
       updatedAt: data.updated_at,
       items: (data.items ?? []).map((item) => ({
         itemType: item.item_type,
@@ -231,6 +237,7 @@ export async function getSharedPortfolio(id: string): Promise<SharedPortfolio | 
         name: item.name,
         stallName: item.stall_name,
         price: item.price === null ? null : Number(item.price),
+        score: typeof item.score === "number" ? item.score : null,
         publicNotes: item.public_notes,
         imageUrl: item.image_url ?? null,
         mapsUrl: mapsSearchUrl(item.map_query),
