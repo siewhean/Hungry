@@ -3255,8 +3255,12 @@ export const supabaseService: HungryService = {
 
     async signOut() {
       const client = requireSupabaseClient();
+      // A failed server revoke (offline) leaves the stored session in place; clear
+      // it locally anyway so the next launch does not sign the user back in.
       const { error } = await client.auth.signOut();
-      if (error) throw error;
+      if (!error) return;
+      const { error: localError } = await client.auth.signOut({ scope: "local" });
+      if (localError) throw localError;
     },
 
     async sendAccountDeletionCode() {
