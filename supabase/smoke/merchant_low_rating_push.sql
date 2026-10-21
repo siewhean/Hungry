@@ -183,7 +183,7 @@ values (
   current_setting('smoke.dish_id'),
   current_setting('smoke.venue_id'),
   'Low Rating Reviewer',
-  0.5,
+  1,
   'Unverified outlet.'
 );
 
