@@ -465,7 +465,8 @@ test("store policy controls cover account deletion, UGC moderation, and location
   assert.match(supabaseService, /user_blocks/);
   assert.match(safetyHelper, /promptReportReview/);
   assert.match(safetyHelper, /promptBlockReviewAuthor/);
-  assert.match(locationScreen, /Allowing location helps Hungry curate/);
+  // The copy says what the location is used for, without overselling (onboarding-L5).
+  assert.match(locationScreen, /We use your location to show stalls near you/);
   assert.doesNotMatch(
     locationScreen,
     /Hungry collects your approximate device location only while you use the app/,
