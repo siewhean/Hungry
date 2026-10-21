@@ -116,7 +116,10 @@ test("home, discover, and quick bites avoid duplicate render-time data work", ()
   assert.match(homeScreen, /activeFeedLoadIdRef/);
   assert.doesNotMatch(homeScreen, /const publishedPosts = usePublishedPostStore/);
   assert.match(discover, /getDiscoverBites\(repository\)/);
-  assert.match(discover, /getDiscoverBiteCollections\(discoverBaseBites, repository\)/);
+  assert.match(
+    discover,
+    /getDiscoverBiteCollections\(discoverBaseBites, repository, getVenueHours\)/,
+  );
   assert.match(discover, /const repositoryLookup = useMemo<DiscoverRepositoryLookup>/);
   assert.match(discover, /const dishById = new Map<string, DishDetail \| undefined>\(\)/);
   assert.match(discover, /const dishesByVenue = new Map<string, DishDetail\[\]>\(\)/);
@@ -127,7 +130,8 @@ test("home, discover, and quick bites avoid duplicate render-time data work", ()
   assert.equal((quickBites.match(/getDiscoverBites\(/g) ?? []).length, 1);
   assert.match(quickBites, /const fallbackBites = useMemo\(\(\) => getDiscoverBites\(\), \[\]\)/);
   assert.doesNotMatch(quickBites, /ActivityIndicator/);
-  assert.doesNotMatch(quickBites, /isLoading/);
+  // While the live feed loads, skeletons show, not the whole local cache.
+  assert.match(quickBites, /QuickBitesLoadingGrid/);
 });
 
 test("prefetch layer warms images, data, and route modules without blocking navigation", () => {
@@ -168,7 +172,12 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   assert.match(prefetch, /"preload" in navigation/);
   assert.match(prefetch, /export function prefetchMerchantTab/);
   assert.match(homeScreen, /onPressIn=\{\(\) => prefetchFeedCardRoute\(item\)\}/);
-  assert.match(discover, /onPressIn=\{\(\) => prefetchBiteCard\(bite\)\}/);
+  // The memoised card prefetches on touch-down through the screen's prefetchBiteCard.
+  assert.match(
+    discover,
+    /const handlePressIn = useCallback\(\(\) => onPrefetch\(bite\), \[bite, onPrefetch\]\);/,
+  );
+  assert.match(discover, /onPrefetchBite: prefetchBiteCard/);
   assert.match(discover, /useDeferredValue\(activeDiscoverChipIds\)/);
   assert.match(discover, /renderLeftIcon=\{\(chip, isActive\) =>/);
   assert.match(discover, /prefetchBrowseResults\(item\.query, navigation/);

@@ -209,8 +209,8 @@ test("discover routes diners to details, opens the map from a toggle, and search
       /accessibilityLabel="Search dishes"/,
       /iconAlignment="right"/,
       /navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dishId \}\)/,
-      /accessibilityLabel=\{`Open \$\{activeSlide\.dishName\} at \$\{activeSlide\.venueName\}`\}/,
-      /\{activeSlide\.dishName\}/,
+      /accessibilityLabel=\{`Open \$\{item\.dishName\} at \$\{item\.venueName\}`\}/,
+      /\{item\.dishName\}/,
     ],
     "QuickBitesScreen search icon and card mapping",
   );
