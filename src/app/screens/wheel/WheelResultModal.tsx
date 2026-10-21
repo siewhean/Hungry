@@ -7,7 +7,7 @@
  * CTA dock: "Spin again" (classic) / "Next round" (elimination).
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Animated, Pressable, View, StyleSheet } from "react-native";
 import type {
   NativeStackNavigationProp,
@@ -18,11 +18,13 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import { AccessibleImage, AppText, Button } from "@/components/ui";
 import { trackAnalyticsEvent } from "@/lib/analytics";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import { leaveWheelStack } from "@/features/wheel/leaveWheel";
 import { useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
 import type { WheelStackParamList } from "./WheelStack";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
+import type { VenueSummary } from "@/types/domain";
 
 type Props = NativeStackScreenProps<WheelStackParamList, "WheelResult">;
 
@@ -33,11 +35,28 @@ export function WheelResultModal({ navigation, route }: Props) {
 
   const party = useWheelStore((s) => s.party);
   const entries = useWheelStore((s) => s.entries);
-  const resetParty = useWheelStore((s) => s.reset);
   const resetSpin = useWheelStore((s) => s.resetSpin);
+  const triggerSpin = useWheelStore((s) => s.triggerSpin);
 
   const winnerEntry = entries.find((e) => e.id === winnerEntryId);
-  const venue = winnerEntry ? repository.getVenueById(winnerEntry.venueId) : undefined;
+  const cachedVenue = winnerEntry ? repository.getVenueById(winnerEntry.venueId) : undefined;
+  // The catalog cache is row-capped: a stall beyond it is fetched from the server.
+  const [fetchedVenue, setFetchedVenue] = useState<VenueSummary | undefined>();
+  const winnerVenueId = winnerEntry?.venueId;
+  useEffect(() => {
+    if (!winnerVenueId || cachedVenue) return;
+    let mounted = true;
+    getHungryService()
+      .discovery.getVenue(winnerVenueId)
+      .then((found) => {
+        if (mounted) setFetchedVenue(found);
+      })
+      .catch(() => undefined);
+    return () => {
+      mounted = false;
+    };
+  }, [winnerVenueId, cachedVenue]);
+  const venue = cachedVenue ?? fetchedVenue;
   const dishes = winnerEntry ? repository.listDishesByVenue(winnerEntry.venueId) : [];
   const heroDish = dishes[0];
 
@@ -78,14 +97,15 @@ export function WheelResultModal({ navigation, route }: Props) {
 
   function handleSpinAgain() {
     if (!party) return;
-    // Clear the finished seed/winner so the spin screen waits for a fresh spin.
+    // Clear the finished seed/winner, keep the options, and start the next spin right away.
     resetSpin();
+    triggerSpin();
     navigation.replace("WheelSpin", { partyId: party.id });
   }
 
   function handleDone() {
-    resetParty();
-    navigation.popToTop();
+    // Leave the whole wheel; WheelStack clears the party when it closes.
+    leaveWheelStack(navigation);
   }
 
   const isClassic = party?.spinMode === "classic";
@@ -205,6 +225,15 @@ export function WheelResultModal({ navigation, route }: Props) {
               leftIcon={<Navigation size={18} color={palette.white} />}
             />
 
+            {isClassic ? (
+              <Button
+                label="Spin again"
+                onPress={handleSpinAgain}
+                variant="secondary"
+                leftIcon={<RotateCcw size={18} color={palette.text} />}
+              />
+            ) : null}
+
             {isElimination && remainingActive > 2 ? (
               <Button
                 label={`Next Round (${remainingActive - 1} left)`}
@@ -215,6 +244,8 @@ export function WheelResultModal({ navigation, route }: Props) {
             ) : null}
 
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={isClassic ? "Done" : "Disband party"}
               onPress={handleDone}
               style={({ pressed }) => ({
                 alignItems: "center",
