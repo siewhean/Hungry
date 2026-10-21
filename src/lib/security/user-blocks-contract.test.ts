@@ -55,8 +55,10 @@ test("feeds filter blocked authors by id and drop reported reviews", () => {
     reviewFeed,
     /isContentHiddenForSession\(\{ id: item\.review\.id, authorId: item\.review\.authorId \}\)/,
   );
-  assert.match(reviewFeed, /authorId: item\.review\.authorId,\s*onHidden: onSafetyHidden/);
-  assert.match(reviewFeed, /authorId: item\.review\.authorId,\s*onBlocked: onSafetyHidden/);
+  assert.match(reviewFeed, /authorId: review\.authorId,\s*onHidden: bumpSafetyFilter/);
+  assert.match(reviewFeed, /authorId: review\.authorId,\s*onBlocked: bumpSafetyFilter/);
+  // A guest is sent to sign in (or to email support) instead of a report that would fail.
+  assert.match(reviewFeed, /Sign in to report this review/);
 });
 
 test("migration makes server block checks match and filters review reads", () => {

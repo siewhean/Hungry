@@ -158,7 +158,7 @@ test("social store contract: real post shares sync to Supabase and unsupported i
   // Reviews never borrow a linked post id for share counting.
   assert.match(reviewFeed, /postId: "",/);
   assert.doesNotMatch(reviewFeed, /linkedPost/);
-  assert.match(reviewFeed, /shareCount: 0/);
+  assert.match(reviewFeed, /shareCount=\{reviewReactionsEnabled \?/);
   assert.doesNotMatch(reviewFeed, /postId: linkedPost\?\.id \?\? item\.review\.id/);
   assert.doesNotMatch(reviewFeed, /stallPosts\[0\]/);
 });

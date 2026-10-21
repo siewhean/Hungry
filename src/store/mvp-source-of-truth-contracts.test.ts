@@ -192,7 +192,8 @@ test("production Post route publishes through the canonical composer service pat
   assert.doesNotMatch(swipeTabs, /PostComposerV2/);
   assert.match(postScreen, /import \{ publishComposerPost \}/);
   assert.match(postScreen, /useComposerStore\.getState\(\)/);
-  assert.match(postScreen, /confirmGalleryAccess/);
+  // Camera or library, asked for only when chosen.
+  assert.match(postScreen, /askMediaSource\("Add media"\)/);
   assert.match(postScreen, /import \* as ImagePicker from "expo-image-picker"/);
   assert.match(postScreen, /mediaTypes: \["images", "videos"\]/);
   assert.match(postScreen, /launchImageLibraryAsync/);
@@ -317,16 +318,16 @@ test("Supabase review reads hydrate review_photos and public profile names and a
   assert.match(stallDetail, /reviews\.listRecentReviews\(\{\s*dishIds: dishIdsKey\.split\("\|"\)/);
   assert.doesNotMatch(stallDetail, /getReviewsForDish/);
   assert.match(stallDetail, /<Avatar uri=\{review\.avatarUrl\}/);
-  assert.match(reviewFeed, /getHungryService\(\)\.reviews\.listRecentReviews\(\{/);
+  assert.match(reviewFeed, /getHungryService\(\)\.reviews\.listRecentReviewsPage\(\{/);
   assert.doesNotMatch(reviewFeed, /reviews\.getReviewsForDish\(dish\.id\)/);
   assert.match(
     service,
-    /async listRecentReviews\(options\)[\s\S]*\.order\("created_at", \{ ascending: false \}\)[\s\S]*\.limit\(limit\)/,
+    /async function fetchRecentReviewsPage[\s\S]*\.order\("created_at", \{ ascending: false \}\)[\s\S]*\.limit\(limit\)/,
   );
   // Owner replies must come back with the rows or detail screens drop them in Supabase mode.
   assert.match(
     service,
-    /async listRecentReviews\(options\)[\s\S]{0,400}\.select\(\s*"[^"]*merchant_reply_text,merchant_replied_at,helpful_count"/,
+    /const REVIEW_FEED_COLUMNS =\s*"[^"]*merchant_reply_text,merchant_replied_at,helpful_count[^"]*"/,
   );
   assert.match(
     reviewFeed,
@@ -353,7 +354,7 @@ test("Supabase review feed does not send review ids through post reaction writes
     /const localDish = item\.dish \?\? repository\.getDishById\(item\.dishId\)/,
   );
   assert.match(reviewFeed, /toggleFavourite\(localDish\)/);
-  assert.match(reviewFeed, /saved: favouriteDishIds\.includes\(item\.dishId\)/);
+  assert.match(reviewFeed, /: favouriteDishIds\.includes\(item\.dishId\)/);
   assert.doesNotMatch(reviewFeed, /void toggleSave\(item\.review\.id\);\s*const dish/);
 });
 

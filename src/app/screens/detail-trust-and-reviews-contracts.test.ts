@@ -55,7 +55,7 @@ test("Supabase dish and stall review reads sign photos in one request (H30)", ()
   );
   assert.doesNotMatch(service, /includePhotos: !options\?\.dishIds/);
   assert.match(service, /mapSupabaseReviewRows\(client, rows, \{ includePhotos: true \}\)/);
-  assert.match(service, /One signing request for the whole page instead of one per photo\./);
+  assert.match(service, /One signing request for the whole page instead of one per photo/);
 });
 
 test("stall page has no fake save, timer skeleton, or menu-empty flash while loading", () => {
