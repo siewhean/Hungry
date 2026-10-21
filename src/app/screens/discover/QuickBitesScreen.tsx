@@ -41,6 +41,7 @@ import { getServiceProvider } from "@/lib/services/serviceProvider";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
+import { sanitizeSearchQuery } from "@/lib/security/inputSanitization";
 import {
   DISCOVER_CUISINE_FILTERS,
   getDiscoverBiteCollection,
@@ -285,8 +286,8 @@ export function QuickBitesScreen() {
   const [loadFailed, setLoadFailed] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const [fullyVisibleBiteIds, setFullyVisibleBiteIds] = useState<Set<string>>(() => new Set());
-  const searchQuery = useSearchStore((state) => state.filters.query);
-  const updateSearchQuery = useSearchStore((state) => state.updateQuery);
+  // Raw text stays local so spaces survive typing; it is sanitised only on submit.
+  const [searchText, setSearchText] = useState("");
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
   const searchBarWidth = useMemo(
     () => Math.max(screenWidth - spacing[4] * 2 - 32 - 12, 240),
@@ -294,17 +295,17 @@ export function QuickBitesScreen() {
   );
 
   const submitSearch = useCallback(() => {
-    const trimmed = searchQuery.trim();
-    navigation.navigate("SearchHome");
-    if (trimmed) {
+    const query = sanitizeSearchQuery(searchText);
+    navigation.navigate("SearchResults", { initialQuery: query || undefined });
+    if (query) {
       scheduleIdleWork(
         () => {
-          rememberSearch(trimmed);
+          rememberSearch(query);
         },
         { timeout: 500, fallbackDelayMs: 80 },
       );
     }
-  }, [navigation, rememberSearch, searchQuery]);
+  }, [navigation, rememberSearch, searchText]);
 
   const prefetchBiteRoute = useCallback(
     (bite: Bite) => {
@@ -477,8 +478,8 @@ export function QuickBitesScreen() {
             {collectionCopy.title}
           </AppText>
           <ExpandableSearchLauncher
-            query={searchQuery}
-            onQueryChange={updateSearchQuery}
+            query={searchText}
+            onQueryChange={setSearchText}
             onSubmit={submitSearch}
             accessibilityLabel="Search dishes"
             iconAlignment="right"
@@ -489,7 +490,7 @@ export function QuickBitesScreen() {
             borderColor={palette.border}
             backgroundColor={palette.bgSoft}
             textColor={palette.text}
-            onClear={() => updateSearchQuery("")}
+            onClear={() => setSearchText("")}
           />
         </View>
 

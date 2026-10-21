@@ -135,6 +135,18 @@ export interface CatalogMapRequest {
   minRating?: number;
 }
 
+export type CatalogSuggestionKind = "food_type" | "place" | "stall";
+
+/** A Search home suggestion: a food type, a place (hawker centre or mall) or a stall name. */
+export interface CatalogSuggestion {
+  kind: CatalogSuggestionKind;
+  label: string;
+}
+
+/** Suggestions need at least this many characters; shorter text gets popular food types. */
+export const CATALOG_SUGGEST_MIN_CHARS = 2;
+export const CATALOG_SUGGEST_LIMIT = 8;
+
 type CacheEntry<T> = { expiresAt: number; value: T };
 const PAGE_TTL_MS = 60_000;
 const DETAIL_TTL_MS = 5 * 60_000;
@@ -260,6 +272,17 @@ function mapMedia(value: unknown): CatalogRawMedia {
   };
 }
 
+function mapSuggestions(value: unknown): CatalogSuggestion[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item): CatalogSuggestion[] => {
+    const row = asRecord(item);
+    const label = asString(row.label);
+    const kind = row.kind;
+    if (!label || (kind !== "food_type" && kind !== "place" && kind !== "stall")) return [];
+    return [{ kind, label }];
+  });
+}
+
 function normaliseRequest(request: CatalogPageRequest): Record<string, unknown> {
   return {
     p_query: request.query?.trim() || null,
@@ -357,6 +380,20 @@ export const catalogRawService = {
     if (cached) return cached;
     const page = mapPage(await callRawRpc("catalog_raw_venues_page", args), mapVenueCard);
     return writeCache(pageCache, key, page, PAGE_TTL_MS);
+  },
+
+  /** Typeahead for Search home; under two characters it returns popular food types. */
+  async suggest(prefix: string): Promise<CatalogSuggestion[]> {
+    const trimmed = prefix.trim().slice(0, 64);
+    const args = {
+      p_prefix: trimmed.length >= CATALOG_SUGGEST_MIN_CHARS ? trimmed : null,
+      p_limit: CATALOG_SUGGEST_LIMIT,
+    };
+    const key = catalogRequestKey("suggest", { p_prefix: args.p_prefix?.toLowerCase() ?? null });
+    const cached = readCache<CatalogSuggestion[]>(pageCache, key);
+    if (cached) return cached;
+    const items = mapSuggestions(await callRawRpc("catalog_suggest", args));
+    return writeCache(pageCache, key, items, PAGE_TTL_MS);
   },
 
   async getDish(id: string, releaseId?: string): Promise<CatalogRawDishDetail> {

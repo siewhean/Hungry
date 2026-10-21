@@ -45,6 +45,7 @@ import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { sanitizeSearchQuery } from "@/lib/security/inputSanitization";
 import { useHungryTheme } from "@/theme";
 
 const DEFAULT_BUILDING_ID = "hc-maxwell";
@@ -97,8 +98,8 @@ export function HomeMapScreen() {
   const insets = useSafeAreaInsets();
   const { componentRadii, palette, radii, shadows, spacing, zIndex } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
-  const searchQuery = useSearchStore((state) => state.filters.query);
-  const updateSearchQuery = useSearchStore((state) => state.updateQuery);
+  // Raw text stays local so spaces survive typing; it is sanitised only on submit.
+  const [searchText, setSearchText] = useState("");
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
   const searchBarWidth = useMemo(
     () => Math.max(screenWidth - spacing[3] * 2 - 78, 240),
@@ -276,12 +277,12 @@ export function HomeMapScreen() {
   );
 
   const submitSearch = useCallback(() => {
-    const trimmed = searchQuery.trim();
-    if (trimmed) {
-      rememberSearch(trimmed);
+    const query = sanitizeSearchQuery(searchText);
+    if (query) {
+      rememberSearch(query);
     }
-    navigation.navigate("SearchHome");
-  }, [navigation, rememberSearch, searchQuery]);
+    navigation.navigate("SearchResults", { initialQuery: query || undefined });
+  }, [navigation, rememberSearch, searchText]);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -425,10 +426,10 @@ export function HomeMapScreen() {
             }}
           >
             <ExpandableSearchLauncher
-              query={searchQuery}
-              onQueryChange={updateSearchQuery}
+              query={searchText}
+              onQueryChange={setSearchText}
               onSubmit={submitSearch}
-              onClear={() => updateSearchQuery("")}
+              onClear={() => setSearchText("")}
               placeholder="Search dishes or stalls..."
               expandedWidth={searchBarWidth}
               iconAlignment="left"
