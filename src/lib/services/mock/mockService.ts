@@ -3713,8 +3713,9 @@ export const hungryService: HungryService = {
       return resolve(undefined);
     },
 
-    async markChecklistItemTried(id: string) {
-      const triedAt = new Date().toISOString();
+    async markChecklistItemTried(id: string, tried = true) {
+      const updatedAt = new Date().toISOString();
+      const triedAt = tried ? updatedAt : undefined;
       let updatedChecklistId: string | undefined;
       _checklistItems = _checklistItems.map((item) => {
         if (item.id !== id) {
@@ -3727,13 +3728,13 @@ export const hungryService: HungryService = {
           return item;
         }
         updatedChecklistId = item.checklistId;
-        return { ...item, triedAt, updatedAt: triedAt };
+        return { ...item, triedAt, updatedAt };
       });
       if (!updatedChecklistId) {
         throw new Error(`Checklist item ${id} not found`);
       }
       _checklists = _checklists.map((entry) =>
-        entry.id === updatedChecklistId ? { ...entry, updatedAt: triedAt } : entry,
+        entry.id === updatedChecklistId ? { ...entry, updatedAt } : entry,
       );
       return resolve(undefined);
     },
@@ -3873,17 +3874,44 @@ export const hungryService: HungryService = {
             name: dish?.name ?? venue?.name ?? "Untitled",
             stallName: venue?.name,
             price: dish?.price,
+            score: item.score,
             publicNotes: item.publicNotes,
             imageUrl: dish?.imageUrl || undefined,
+            mapQuery: venue ? [venue.name, venue.unitNumber].filter(Boolean).join(", ") : undefined,
           };
         });
       return resolve({
         id: portfolio.id,
         name: portfolio.name,
         description: portfolio.description,
+        type: portfolio.type,
         updatedAt: portfolio.updatedAt,
         items,
       });
+    },
+
+    async getPortfolioItemDetails(portfolioId: string) {
+      const portfolio = _portfolios.find((entry) => entry.id === portfolioId);
+      if (!portfolio || !canViewMockPortfolio(portfolio)) {
+        throw new Error(`Portfolio ${portfolioId} not found`);
+      }
+      return resolve(
+        _portfolioItems
+          .filter((item) => item.portfolioId === portfolioId)
+          .sort((left, right) => left.position - right.position)
+          .map((item) => {
+            const dish = item.dishId ? mockRepository.getDishById(item.dishId) : undefined;
+            const venue = item.stallId ? mockRepository.getVenueById(item.stallId) : undefined;
+            return {
+              dishId: item.dishId,
+              stallId: item.stallId,
+              name: dish?.name ?? venue?.name,
+              stallName: dish?.venueName ?? venue?.name,
+              price: dish?.price,
+              imageUrl: dish?.imageUrl || venue?.imageUrl || undefined,
+            };
+          }),
+      );
     },
 
     async updatePortfolio(
@@ -3955,7 +3983,8 @@ export const hungryService: HungryService = {
         publishedPortfolioType = portfolio.type;
         return {
           ...portfolio,
-          publishedAt,
+          // Publishing again after Unpublish keeps the first publish date.
+          publishedAt: portfolio.publishedAt ?? publishedAt,
           visibility: "public",
           updatedAt: publishedAt,
         };
@@ -4200,14 +4229,33 @@ export const hungryService: HungryService = {
       options?: PortfolioMutationOptions,
     ) {
       assertMockPortfolioVersion(portfolioId, options);
+      const portfolio = _portfolios.find((entry) => entry.id === portfolioId);
+      // The owner removes anyone; a collaborator can remove only themselves (leave).
+      const isOwner = portfolio?.ownerId === _profile.id;
+      if (!portfolio || (!isOwner && userId !== _profile.id)) {
+        throw new Error(`Portfolio ${portfolioId} not found`);
+      }
+      _portfolioCollaborators = _portfolioCollaborators.filter(
+        (entry) => !(entry.portfolioId === portfolioId && entry.userId === userId),
+      );
+      return resolve(undefined);
+    },
+
+    async updatePortfolioCollaboratorRole(
+      portfolioId: string,
+      userId: string,
+      role: "viewer" | "editor",
+      options?: PortfolioMutationOptions,
+    ) {
+      assertMockPortfolioVersion(portfolioId, options);
       const portfolio = _portfolios.find(
         (entry) => entry.id === portfolioId && entry.ownerId === _profile.id,
       );
       if (!portfolio) {
         throw new Error(`Portfolio ${portfolioId} not found`);
       }
-      _portfolioCollaborators = _portfolioCollaborators.filter(
-        (entry) => !(entry.portfolioId === portfolioId && entry.userId === userId),
+      _portfolioCollaborators = _portfolioCollaborators.map((entry) =>
+        entry.portfolioId === portfolioId && entry.userId === userId ? { ...entry, role } : entry,
       );
       return resolve(undefined);
     },

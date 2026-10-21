@@ -119,6 +119,17 @@ export interface PortfolioMutationOptions {
   portfolioId?: string;
 }
 
+/** Name, photo, stall and price of one list item, as get_portfolio_item_details returns it. */
+export interface PortfolioItemDetailRow {
+  dishId?: string;
+  stallId?: string;
+  /** Absent when the dish or stall is gone or not visible to this viewer. */
+  name?: string;
+  stallName?: string;
+  price?: number;
+  imageUrl?: string;
+}
+
 export interface DataRepository {
   getProfile(isAuthenticated: boolean, userId?: string | null): UserProfile;
   listBuildings(): BuildingSummary[];
@@ -161,7 +172,7 @@ export interface DataRepository {
   insertChecklistItem?(item: ChecklistItemCreateInput): Promise<ChecklistItem>;
   fetchChecklistItems?(checklistId: string): Promise<ChecklistItem[]>;
   updateChecklistItem?(id: string, updates: Partial<ChecklistItemCreateInput>): Promise<void>;
-  markChecklistItemTried?(id: string): Promise<void>;
+  markChecklistItemTried?(id: string, tried?: boolean): Promise<void>;
   deleteChecklistItem?(id: string): Promise<void>;
   reorderChecklistItems?(checklistId: string, itemIds: string[]): Promise<void>;
 
@@ -1230,7 +1241,8 @@ export interface HungryService {
     addChecklistItem(input: ChecklistItemCreateInput): Promise<ChecklistItem>;
     getChecklistItems(checklistId: string): Promise<ChecklistItem[]>;
     updateChecklistItem(id: string, updates: Partial<ChecklistItemCreateInput>): Promise<void>;
-    markChecklistItemTried(id: string): Promise<void>;
+    /** `tried` false undoes a mistaken tap (clears the tried date). */
+    markChecklistItemTried(id: string, tried?: boolean): Promise<void>;
     deleteChecklistItem(id: string): Promise<void>;
     reorderChecklistItems(checklistId: string, itemIds: string[]): Promise<void>;
   };
@@ -1261,6 +1273,8 @@ export interface HungryService {
       options?: PortfolioMutationOptions,
     ): Promise<PortfolioItem>;
     getPortfolioItems(portfolioId: string): Promise<PortfolioItem[]>;
+    /** Names, photos and prices for every item of a list in one call. */
+    getPortfolioItemDetails(portfolioId: string): Promise<PortfolioItemDetailRow[]>;
     updatePortfolioItem(
       id: string,
       updates: Partial<PortfolioItemCreateInput>,
@@ -1282,6 +1296,12 @@ export interface HungryService {
     removePortfolioCollaborator(
       portfolioId: string,
       userId: string,
+      options?: PortfolioMutationOptions,
+    ): Promise<void>;
+    updatePortfolioCollaboratorRole(
+      portfolioId: string,
+      userId: string,
+      role: "viewer" | "editor",
       options?: PortfolioMutationOptions,
     ): Promise<void>;
     getPortfolioCollaborators(portfolioId: string): Promise<PortfolioCollaborator[]>;

@@ -185,14 +185,11 @@ test("media upload validation rejects MIME spoofing before signed upload", async
 test("safe linking routes delivery and article opens through allowlisted helpers", () => {
   const source = readRepoFile("src/lib/security/safeLinking.ts");
   const deliveryButton = readRepoFile("src/components/dish/DeliveryPlatformButton.tsx");
-  const articleScreen = readRepoFile("src/app/screens/reads/BlogPostWebViewScreen.tsx");
 
   assert.match(source, /ALLOWED_DELIVERY_SCHEMES/);
   assert.match(source, /ALLOWED_BLOG_HOSTS/);
   assert.doesNotMatch(deliveryButton, /Linking\.openURL/);
   assert.match(deliveryButton, /openTrustedDeliveryUrl/);
-  assert.doesNotMatch(articleScreen, /openBrowserAsync/);
-  assert.match(articleScreen, /openTrustedBlogUrl/);
 });
 
 test("ingest-menu-photo requires auth and verifies submission ownership", () => {

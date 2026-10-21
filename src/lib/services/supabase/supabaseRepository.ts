@@ -201,6 +201,24 @@ function getVenueByIdIndex(): Map<string, VenueSummary> {
   return venueByIdIndex.byId;
 }
 
+let venuesByBuildingIndex: {
+  source: VenueSummary[];
+  byBuilding: Map<string, VenueSummary[]>;
+} | null = null;
+
+function getVenuesByBuildingIndex(): Map<string, VenueSummary[]> {
+  if (!venuesByBuildingIndex || venuesByBuildingIndex.source !== cachedVenues) {
+    const byBuilding = new Map<string, VenueSummary[]>();
+    for (const venue of cachedVenues) {
+      const list = byBuilding.get(venue.buildingId);
+      if (list) list.push(venue);
+      else byBuilding.set(venue.buildingId, [venue]);
+    }
+    venuesByBuildingIndex = { source: cachedVenues, byBuilding };
+  }
+  return venuesByBuildingIndex.byBuilding;
+}
+
 function getDishByIdIndex(): Map<string, DishDetail> {
   if (!dishByIdIndex || dishByIdIndex.source !== cachedDishes) {
     dishByIdIndex = {
@@ -210,7 +228,6 @@ function getDishByIdIndex(): Map<string, DishDetail> {
   }
   return dishByIdIndex.byId;
 }
-let cachedBlogPosts: BlogPost[] = [];
 let cachedStallPosts: StallPost[] = [];
 
 const REFRESH_TTL_MS = 45_000;
@@ -498,20 +515,6 @@ function mapBuildingDetail(row: Row): BuildingDetail {
   };
 }
 
-function mapBlogPost(row: Row): BlogPost {
-  return {
-    id: toString(row.id),
-    title: toString(row.title),
-    excerpt: toString(row.excerpt),
-    area: toString(row.area),
-    sourceName: toString(row.source_name),
-    sourceLogo: toString(row.source_logo),
-    imageUrl: toString(row.image_url),
-    url: toString(row.url),
-    relatedVenueId: toString(row.related_venue_id) || undefined,
-  };
-}
-
 function mapStallPost(row: Row): StallPost {
   const mediaUrls = toStringArray(row.media_urls);
   const tags = toStringArray(row.tags);
@@ -702,7 +705,6 @@ async function refreshCache(force = false): Promise<void> {
         dishTasteVectorsResult,
         dishDietaryFlagsResult,
         dietaryFlagsResult,
-        blogResult,
         stallResult,
         postsResult,
         hiddenPostsResult,
@@ -719,7 +721,6 @@ async function refreshCache(force = false): Promise<void> {
         client.from("dish_taste_vectors").select("*"),
         client.from("dish_dietary_flags").select("dish_id,dietary_flag_id"),
         client.from("dietary_flags").select("id,slug"),
-        client.from("blog_posts").select("*"),
         client.from("stall_posts").select("*"),
         // Bounded: only the newest posts are cached for detail lookups. The Home
         // feed itself reads the paged RPC.
@@ -817,9 +818,6 @@ async function refreshCache(force = false): Promise<void> {
               presentationByDishId.get(toString(row.id)),
             ),
           );
-      }
-      if (Array.isArray(blogResult.data) && !blogResult.error) {
-        cachedBlogPosts = (blogResult.data as unknown as Row[]).map(mapBlogPost);
       }
       const legacyStallPosts =
         Array.isArray(stallResult.data) && !stallResult.error
@@ -1283,7 +1281,7 @@ const supabaseRepositoryImpl: DataRepository = {
 
   listVenuesByBuilding(buildingId: string): VenueSummary[] {
     ensureHydrated();
-    return cachedVenues.filter((venue) => venue.buildingId === buildingId);
+    return [...(getVenuesByBuildingIndex().get(buildingId) ?? [])];
   },
 
   getVenueById(venueId: string): VenueSummary | undefined {
@@ -1378,9 +1376,9 @@ const supabaseRepositoryImpl: DataRepository = {
     return ranked[0] ? cachedDishes.find((dish) => dish.id === ranked[0]?.dishId) : undefined;
   },
 
+  /** Reads was removed; blog posts are no longer fetched on hydrate. */
   listBlogPosts(): BlogPost[] {
-    ensureHydrated();
-    return cachedBlogPosts;
+    return [];
   },
 
   listStallPosts(): StallPost[] {

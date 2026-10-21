@@ -7428,12 +7428,12 @@ export const supabaseService: HungryService = {
       if (error) throw error;
     },
 
-    async markChecklistItemTried(id: string) {
+    async markChecklistItemTried(id: string, tried = true) {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
       const { error } = await client
         .from("checklist_items")
-        .update({ tried_at: new Date().toISOString() })
+        .update({ tried_at: tried ? new Date().toISOString() : null })
         .eq("id", id);
       if (error) throw error;
     },
@@ -7534,6 +7534,9 @@ export const supabaseService: HungryService = {
         description: typeof row.description === "string" ? row.description : undefined,
         ownerDisplayName:
           typeof row.owner_display_name === "string" ? row.owner_display_name : undefined,
+        type: ["recommendation", "ranking", "trail", "collection"].includes(String(row.type))
+          ? (row.type as Portfolio["type"])
+          : undefined,
         updatedAt: typeof row.updated_at === "string" ? row.updated_at : undefined,
         items: items.map((item) => ({
           itemType: item.item_type === "stall" ? ("stall" as const) : ("dish" as const),
@@ -7542,8 +7545,10 @@ export const supabaseService: HungryService = {
           name: String(item.name ?? "Untitled"),
           stallName: typeof item.stall_name === "string" ? item.stall_name : undefined,
           price: item.price === null || item.price === undefined ? undefined : Number(item.price),
+          score: typeof item.score === "number" ? item.score : undefined,
           publicNotes: typeof item.public_notes === "string" ? item.public_notes : undefined,
           imageUrl: typeof item.image_url === "string" ? item.image_url : undefined,
+          mapQuery: typeof item.map_query === "string" ? item.map_query : undefined,
         })),
       };
     },
@@ -7628,6 +7633,23 @@ export const supabaseService: HungryService = {
       return attachPortfolioPrivateNotes(client, portfolioId, items);
     },
 
+    async getPortfolioItemDetails(portfolioId: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { data, error } = await client.rpc("get_portfolio_item_details", {
+        p_portfolio_id: portfolioId,
+      });
+      if (error) throw error;
+      return (Array.isArray(data) ? (data as Row[]) : []).map((row) => ({
+        dishId: typeof row.dish_id === "string" ? row.dish_id : undefined,
+        stallId: typeof row.stall_id === "string" ? row.stall_id : undefined,
+        name: typeof row.name === "string" ? row.name : undefined,
+        stallName: typeof row.stall_name === "string" ? row.stall_name : undefined,
+        price: row.price === null || row.price === undefined ? undefined : Number(row.price),
+        imageUrl: typeof row.image_url === "string" ? row.image_url : undefined,
+      }));
+    },
+
     async updatePortfolioItem(id: string, updates: any, options?: PortfolioMutationOptions) {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
@@ -7697,6 +7719,26 @@ export const supabaseService: HungryService = {
         .eq("portfolio_id", portfolioId)
         .eq("user_id", userId);
       if (error) throw error;
+    },
+
+    async updatePortfolioCollaboratorRole(
+      portfolioId: string,
+      userId: string,
+      role: any,
+      options?: PortfolioMutationOptions,
+    ) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      await assertSupabasePortfolioVersion(client, portfolioId, options);
+      // Only the owner's update policy matches; anyone else changes zero rows.
+      const { data, error } = await client
+        .from("portfolio_collaborators")
+        .update({ role })
+        .eq("portfolio_id", portfolioId)
+        .eq("user_id", userId)
+        .select("id");
+      if (error) throw error;
+      if (!data || data.length === 0) throw new Error("Couldn't change that role.");
     },
 
     async getPortfolioCollaborators(portfolioId: string) {
