@@ -135,6 +135,11 @@ interface ProfileState {
   addReview: (dish: DishDetail) => void;
   addReviewedDish: (dishId: string) => void;
   removeReviewedDish: (dishId: string) => void;
+  /**
+   * The dish "Tried" button: updates the Tried list at once, saves it on the server and
+   * restores the old list when the save fails. Resolves false on failure.
+   */
+  setDishTried: (dishId: string, tried: boolean) => Promise<boolean>;
   recordReviewEntry: (
     dishId: string,
     entry: { rating: number; text: string; tags: string[] },
@@ -761,7 +766,8 @@ export const useProfileStore = create<ProfileState>()(
               reviewedDishIds,
               stats: {
                 ...state.profile.stats,
-                dishesReviewed: reviewedDishIds.length,
+                // Each posted review counts; "Tried" taps never do.
+                dishesReviewed: state.profile.stats.dishesReviewed + 1,
               },
             },
           };
@@ -776,31 +782,29 @@ export const useProfileStore = create<ProfileState>()(
             trackActivationOnce(state.profile, "tried", dishId);
           }
 
-          return {
-            profile: {
-              ...state.profile,
-              reviewedDishIds,
-              stats: {
-                ...state.profile.stats,
-                dishesReviewed: reviewedDishIds.length,
-              },
-            },
-          };
+          // Tried is not a review: stats.dishesReviewed is left alone.
+          return { profile: { ...state.profile, reviewedDishIds } };
         }),
       removeReviewedDish: (dishId) =>
         set((state) => {
           const reviewedDishIds = state.profile.reviewedDishIds.filter((id) => id !== dishId);
-          return {
-            profile: {
-              ...state.profile,
-              reviewedDishIds,
-              stats: {
-                ...state.profile.stats,
-                dishesReviewed: reviewedDishIds.length,
-              },
-            },
-          };
+          return { profile: { ...state.profile, reviewedDishIds } };
         }),
+      setDishTried: async (dishId, tried) => {
+        const previousIds = get().profile.reviewedDishIds;
+        if (tried) get().addReviewedDish(dishId);
+        else get().removeReviewedDish(dishId);
+        if (!shouldSyncAuthenticatedProfile(get().profile)) return true;
+        try {
+          const savedIds = await getHungryService().profile.setDishTried(dishId, tried);
+          set((state) => ({ profile: { ...state.profile, reviewedDishIds: savedIds } }));
+          return true;
+        } catch (error) {
+          console.error("Failed to save the Tried mark", error);
+          set((state) => ({ profile: { ...state.profile, reviewedDishIds: previousIds } }));
+          return false;
+        }
+      },
       recordReviewEntry: (dishId, entry) => {
         let recordedEvent: TasteInteractionEvent | undefined;
         let interactionInput: RecordTasteInteractionInput | undefined;

@@ -540,6 +540,14 @@ export interface SubmitReviewInput {
   // TODO(api): include upload references (asset ids / signed urls) once media service is wired.
 }
 
+/** Fields an author may change on their own review; identity fields stay locked. */
+export interface UpdateReviewInput {
+  rating?: number;
+  text?: string;
+  tags?: string[];
+  wouldRecommend?: boolean;
+}
+
 export interface RecentReviewFeedEntry {
   review: DishDetail["reviews"][number];
   dishId: string;
@@ -848,6 +856,10 @@ export interface HungryService {
     listRecentReviews(options?: ListRecentReviewsOptions): Promise<RecentReviewFeedEntry[]>;
     /** Marks (helpful=true) or un-marks a review as helpful for the signed-in user. Idempotent. */
     setReviewHelpful(reviewId: string, helpful: boolean): Promise<void>;
+    /** Edits the signed-in author's own review. Throws when it is not theirs or the text is refused. */
+    updateReview(reviewId: string, patch: UpdateReviewInput): Promise<void>;
+    /** Deletes the signed-in author's own review and its photos; it stops counting in the dish rating. */
+    deleteReview(reviewId: string): Promise<void>;
   };
 
   // Profile
@@ -861,6 +873,11 @@ export interface HungryService {
     updateDietaryPreferences(flags: DietaryFlag[]): Promise<void>;
     getGuestProfile(): Promise<UserProfile>;
     toggleFavourite(dishId: string): Promise<boolean>;
+    /**
+     * Saves the dish "Tried" mark on the server and resolves to the updated Tried list.
+     * A dish the user reviewed stays in the list when un-ticked.
+     */
+    setDishTried(dishId: string, tried: boolean): Promise<string[]>;
     getFavouriteDishIds(): Promise<string[]>;
     /** Follow or unfollow a stall; followers get opt-in alerts when its menu changes. */
     setStallFollow(stallId: string, following: boolean): Promise<void>;

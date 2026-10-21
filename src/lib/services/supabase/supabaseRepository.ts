@@ -550,9 +550,9 @@ function mapPostRowToStallPost(
   venue?: VenueSummary,
   building?: BuildingSummary,
   dish?: DishDetail,
+  author?: Row,
 ): StallPost {
   const meta = toRecord(row.generated_content);
-  const authorMeta = toRecord(meta.author);
   const dishMeta = toRecord(meta.dish);
   const venueMeta = toRecord(meta.venue);
   const mediaUrls = mediaRows
@@ -575,9 +575,9 @@ function mapPostRowToStallPost(
       venue?.buildingId ||
       dish?.buildingId ||
       toString(venueMeta.buildingId),
-    authorName: toString(authorMeta.displayName, "Hungry User"),
+    authorName: toString(author?.display_name) || "Hungry User",
     authorLocation: venue?.name || toString(venueMeta.name) || building?.name || "",
-    authorAvatarUrl: toString(authorMeta.avatarUrl) || mediaUrl,
+    authorAvatarUrl: toString(author?.avatar_url) || mediaUrl,
     mediaType,
     mediaUrl,
     mediaUrls: mediaUrls.length > 0 ? mediaUrls : mediaUrl ? [mediaUrl] : undefined,
@@ -757,6 +757,23 @@ async function refreshCache(force = false): Promise<void> {
               .in("post_id", cachedPostIds)
               .order("sort_order", { ascending: true })
           : { data: [] as Row[], error: null };
+      // Post authors come from their profile, never from client-written generated_content.
+      const cachedAuthorIds = [
+        ...new Set(cachedPostRows.map((row) => toString(row.author_id)).filter(Boolean)),
+      ];
+      const postAuthorsResult =
+        cachedAuthorIds.length > 0
+          ? await client
+              .from("public_profiles")
+              .select("id,display_name,avatar_url")
+              .in("id", cachedAuthorIds)
+          : { data: [] as Row[], error: null };
+      const postAuthorById = new Map(
+        (Array.isArray(postAuthorsResult.data) && !postAuthorsResult.error
+          ? (postAuthorsResult.data as unknown as Row[])
+          : []
+        ).map((row) => [toString(row.id), row]),
+      );
 
       if (Array.isArray(buildingsResult.data) && !buildingsResult.error) {
         cachedBuildings = (buildingsResult.data as unknown as Row[]).map(mapBuilding);
@@ -829,6 +846,7 @@ async function refreshCache(force = false): Promise<void> {
             venue,
             building,
             dish,
+            postAuthorById.get(toString(row.author_id)),
           );
         });
         const publishedIds = new Set(postStallPosts.map((post) => post.id));
@@ -1051,8 +1069,21 @@ function getVenueDetailRows(venueId: string): Promise<Row[] | undefined> {
   return rows;
 }
 
-export async function getVenueByIdViaRpc(venueId: string): Promise<VenueSummary | undefined> {
+/** Throws when the configured get_venue_detail RPC failed (offline, timeout). */
+async function getVenueDetailRowsOrThrow(venueId: string): Promise<Row[] | undefined> {
   const rows = await getVenueDetailRows(venueId);
+  if (!rows && isSupabaseConfigured() && getSupabaseClient()) {
+    throw new Error("Couldn't load this stall.");
+  }
+  return rows;
+}
+
+/**
+ * Undefined means "no such stall". Throws when the configured RPC failed, so a
+ * network error is never shown as "Stall not found".
+ */
+export async function getVenueByIdViaRpc(venueId: string): Promise<VenueSummary | undefined> {
+  const rows = await getVenueDetailRowsOrThrow(venueId);
   return rows?.[0] ? mapRpcVenue(rows[0]) : undefined;
 }
 
@@ -1125,8 +1156,23 @@ export async function listVenuesByBuildingViaRpc(
   return rows.map(mapRpcVenue);
 }
 
+/**
+ * search_dishes rows put the stall photo in image_url/gallery when the dish has
+ * none. A dish without its own photo shows NoDishPhoto, never the stall photo.
+ */
+function withoutVenuePhotoFallback(row: Row, venueImageUrl: string): Row {
+  if (!venueImageUrl) return row;
+  const gallery = toStringArray(row.gallery).filter((url) => url !== venueImageUrl);
+  return {
+    ...row,
+    image_url: toString(row.image_url) === venueImageUrl ? null : row.image_url,
+    gallery,
+  };
+}
+
+/** Throws when the configured RPC failed, so offline never reads as "No menu". */
 export async function listDishesByVenueViaRpc(venueId: string): Promise<DishDetail[] | undefined> {
-  const rows = await getVenueDetailRows(venueId);
+  const rows = await getVenueDetailRowsOrThrow(venueId);
   const venue = rows?.[0];
   if (!venue) return rows ? [] : undefined;
   // Copy: the venue row is shared with getVenue through the request cache.
@@ -1160,7 +1206,8 @@ export async function listDishesByVenueViaRpc(venueId: string): Promise<DishDeta
     dishRows.push(...fresh);
     lastPage = next;
   }
-  return dishRows.map(mapRpcDish);
+  const venueImageUrl = catalogDisplayImageUrl(venue);
+  return dishRows.map((row) => mapRpcDish(withoutVenuePhotoFallback(row, venueImageUrl)));
 }
 
 export async function listPopularNearbyViaRpc(

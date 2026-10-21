@@ -9,6 +9,7 @@
 
 import { getFloorPlan } from "@/lib/geo/floorPlans";
 import { PROFILE_BIO_MAX_LENGTH } from "@/features/profile/profileBio";
+import { normalizeReviewPatch } from "@/features/review/reviewEdit";
 import { MERCHANT_DEEP_LINKS } from "@/features/merchant/merchantDeepLinks";
 import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
@@ -623,6 +624,15 @@ function isMockInboxReviewModerationHidden(interaction: CustomerInteraction): bo
  * Mirrors the Supabase review read policies: hide report-threshold reviews from everyone but
  * their author, blocked authors, and reviews the viewer reported.
  */
+/** The dish holding the signed-in user's own review; throws like the RLS-scoped update. */
+function findMockOwnReviewDish(reviewId: string, action: "edit" | "delete") {
+  const dish = dishes.find((item) =>
+    item.reviews.some((review) => review.id === reviewId && review.authorId === _profile.id),
+  );
+  if (!dish) throw new Error(`Review not found, or it isn't yours to ${action}.`);
+  return dish;
+}
+
 function isMockReviewHiddenForViewer(review: { id: string; authorId?: string }): boolean {
   if (_moderationHiddenReviewIds.has(review.id) && review.authorId !== _profile.id) return true;
   if (review.authorId && _blockedUsers.has(review.authorId)) return true;
@@ -1903,6 +1913,22 @@ export const hungryService: HungryService = {
       else _helpfulReviewIds.delete(reviewId);
       return resolve(undefined);
     },
+
+    async updateReview(reviewId, patch) {
+      const dish = findMockOwnReviewDish(reviewId, "edit");
+      const normalized = normalizeReviewPatch(patch);
+      dish.reviews = dish.reviews.map((review) =>
+        review.id === reviewId ? { ...review, ...normalized } : review,
+      );
+      return resolve(undefined);
+    },
+
+    async deleteReview(reviewId) {
+      const dish = findMockOwnReviewDish(reviewId, "delete");
+      dish.reviews = dish.reviews.filter((review) => review.id !== reviewId);
+      _helpfulReviewIds.delete(reviewId);
+      return resolve(undefined);
+    },
   },
 
   // ── Profile ─────────────────────────────────────────────────────────────────
@@ -2005,6 +2031,23 @@ export const hungryService: HungryService = {
 
     async getFavouriteDishIds() {
       return resolve([..._profile.favouriteDishIds]);
+    },
+
+    async setDishTried(dishId, tried) {
+      // Mirrors set_dish_tried: a dish the user reviewed stays in the Tried list.
+      const hasReview = dishes.some(
+        (dish) =>
+          dish.id === dishId && dish.reviews.some((review) => review.authorId === _profile.id),
+      );
+      const keep = tried || hasReview;
+      const current = _profile.reviewedDishIds;
+      const reviewedDishIds = keep
+        ? current.includes(dishId)
+          ? current
+          : [...current, dishId]
+        : current.filter((id) => id !== dishId);
+      _profile = { ..._profile, reviewedDishIds };
+      return resolve([...reviewedDishIds]);
     },
 
     async setStallFollow(stallId, following) {
