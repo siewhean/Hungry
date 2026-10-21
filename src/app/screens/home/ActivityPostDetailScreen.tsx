@@ -16,11 +16,17 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { ZoomableMedia } from "@/components/social";
+import { OwnContentEditDialog, ZoomableMedia } from "@/components/social";
 import { AppText, Avatar, EmptyState, Screen, Skeleton } from "@/components/ui";
 import { ACTIVITY_UPDATES } from "@/features/home/activity";
 import { listSharedStallPostsSync } from "@/features/social/sharedStallPosts";
-import { isContentHiddenForSession, promptPostSafetyActions } from "@/lib/security/communitySafety";
+import { promptOwnContentActions } from "@/features/profile/ownContentActions";
+import {
+  isContentHiddenForSession,
+  markPostRemovedForSession,
+  promptPostSafetyActions,
+} from "@/lib/security/communitySafety";
+import { POST_CAPTION_MAX_LENGTH } from "@/lib/security/inputSanitization";
 import { biteToStallPost } from "@/lib/services/postTransforms";
 import {
   getDataRepository,
@@ -31,6 +37,7 @@ import type { Bite } from "@/lib/services/types";
 import { ReviewCommentsSheet, type ActiveReviewCommentTarget } from "@/components/social";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
 import { useActivityStore } from "@/store/useActivityStore";
+import { useProfileStore } from "@/store/useProfileStore";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useSocialStore, type SocialComment } from "@/store/useSocialStore";
@@ -98,6 +105,43 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const showToast = useUIStore((state) => state.showToast);
+  const viewerId = useProfileStore((state) => state.profile.id);
+  const removePublishedPost = usePublishedPostStore((state) => state.removePost);
+  const isOwnPost = Boolean(isAuthenticated && post?.authorId && post.authorId === viewerId);
+  const [isEditingCaption, setIsEditingCaption] = useState(false);
+  const deleteOwnPost = useCallback(async () => {
+    try {
+      await getHungryService().social.deletePost(postId);
+      markPostRemovedForSession(postId);
+      removePublishedPost(postId);
+      showToast({ message: "Post deleted.", tone: "success" });
+      if (navigation.canGoBack()) navigation.goBack();
+      else navigation.navigate("MainTabs", { screen: "Home" });
+    } catch (error) {
+      showToast({
+        message: error instanceof Error ? error.message : "Could not delete this post.",
+        tone: "error",
+      });
+    }
+  }, [navigation, postId, removePublishedPost, showToast]);
+  const saveOwnCaption = useCallback(
+    async ({ text }: { text: string }) => {
+      try {
+        await getHungryService().social.updatePost(postId, { caption: text });
+      } catch (error) {
+        showToast({
+          message: error instanceof Error ? error.message : "Could not save your caption.",
+          tone: "error",
+        });
+        throw error;
+      }
+      setIsEditingCaption(false);
+      // Re-read the post so the caption shows what the server stored.
+      setFetchAttempt((attempt) => attempt + 1);
+      showToast({ message: "Caption updated.", tone: "success" });
+    },
+    [postId, showToast],
+  );
   const activityUpdates = useActivityStore((state) => state.activityUpdates);
   const dbActivityEvents = useActivityStore((state) => state.dbActivityEvents);
   const fetchActivityEvents = useActivityStore((state) => state.fetchActivityEvents);
@@ -326,18 +370,24 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
             accessibilityLabel={`Manage ${post.authorName}'s post`}
             hitSlop={10}
             onPress={() =>
-              requireSignIn() &&
-              promptPostSafetyActions({
-                postId: post.id,
-                authorName: post.authorName,
-                authorId: post.authorId,
-                label: "post",
-                onHidden: () => {
-                  onSafetyHidden();
-                  if (navigation.canGoBack()) navigation.goBack();
-                },
-                onBlocked: onSafetyHidden,
-              })
+              isOwnPost
+                ? promptOwnContentActions({
+                    label: "post",
+                    onEdit: () => setIsEditingCaption(true),
+                    onDelete: () => void deleteOwnPost(),
+                  })
+                : requireSignIn() &&
+                  promptPostSafetyActions({
+                    postId: post.id,
+                    authorName: post.authorName,
+                    authorId: post.authorId,
+                    label: "post",
+                    onHidden: () => {
+                      onSafetyHidden();
+                      if (navigation.canGoBack()) navigation.goBack();
+                    },
+                    onBlocked: onSafetyHidden,
+                  })
             }
             style={[styles.imageMenuButton, { right: spacing[2], top: spacing[2] }]}
           >
@@ -478,6 +528,16 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
           onDismiss={() => setActiveCommentReview(null)}
         />
       ) : null}
+
+      <OwnContentEditDialog
+        visible={isEditingCaption}
+        title="Edit caption"
+        textLabel="Caption"
+        maxLength={POST_CAPTION_MAX_LENGTH}
+        initialText={post.caption ?? ""}
+        onCancel={() => setIsEditingCaption(false)}
+        onSave={saveOwnCaption}
+      />
 
       <ReviewShareSheet
         activeReview={activeShareReview}

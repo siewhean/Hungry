@@ -917,6 +917,13 @@ export interface HungryService {
     postBite(draft: BiteDraft): Promise<Bite>;
     /** One readable post for shared links; null when missing or not visible. Works signed out. */
     getPostById(postId: string): Promise<Bite | null>;
+    /** Edits the caption of the signed-in user's own post. Throws when it is not theirs. */
+    updatePost(postId: string, patch: { caption: string }): Promise<void>;
+    /**
+     * Deletes the signed-in user's own post. Soft delete: it disappears from every
+     * read at once, and the row stays for moderation. Throws when it is not theirs.
+     */
+    deletePost(postId: string): Promise<void>;
     /** Idempotent: sets the viewer's like/save to `active` (never toggles server state). */
     reactToBite(biteId: string, reaction: "craving" | "save", active: boolean): Promise<void>;
     shareBite(

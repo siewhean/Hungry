@@ -38,6 +38,11 @@ export function getHiddenPostIdsForSession(): ReadonlySet<string> {
   return hiddenPostIds;
 }
 
+/** A post the viewer deleted: every surface that honours session hides drops it at once. */
+export function markPostRemovedForSession(postId: string): void {
+  hiddenPostIds.add(postId);
+}
+
 export function getBlockedAuthorIdsForSession(): ReadonlySet<string> {
   return blockedAuthorIds;
 }

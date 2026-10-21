@@ -122,11 +122,13 @@ import { validateMerchantProfileUpdates } from "@/features/merchant/profileValid
 import { filterCustomerVisiblePromotions } from "@/features/merchant/customerPromotions";
 import { validateMerchantPromotionInput } from "@/features/merchant/promotionValidation";
 import { loadMockState, saveMockState } from "./persistence";
+import { POST_CAPTION_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSanitization";
 import { biteToStallPost } from "@/lib/services/postTransforms";
 import {
   appendPublishedStallPost,
   hydratePublishedStallPosts,
   listMockStallPosts,
+  removePublishedStallPost,
 } from "./stallPostState";
 
 type MerchantActionEventInput = Parameters<
@@ -2148,6 +2150,25 @@ export const hungryService: HungryService = {
         (candidate) => candidate.id === postId && !_blockedUsers.has(candidate.authorId),
       );
       return resolve(bite ? withMockViewerReactions(bite) : null);
+    },
+
+    async updatePost(postId: string, patch: { caption: string }) {
+      await hydrateSocial();
+      const bite = MOCK_BITES_FEED.find(
+        (candidate) => candidate.id === postId && candidate.authorId === _profile.id,
+      );
+      if (!bite) throw new Error("This post can no longer be edited.");
+      bite.caption = sanitizeFreeText(patch.caption, POST_CAPTION_MAX_LENGTH);
+    },
+
+    async deletePost(postId: string) {
+      await hydrateSocial();
+      const index = MOCK_BITES_FEED.findIndex(
+        (candidate) => candidate.id === postId && candidate.authorId === _profile.id,
+      );
+      if (index < 0) throw new Error("This post was already deleted.");
+      MOCK_BITES_FEED.splice(index, 1);
+      await removePublishedStallPost(postId);
     },
 
     async listUserPosts(userId: string, page?: { limit?: number; offset?: number }) {

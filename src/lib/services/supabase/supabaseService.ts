@@ -9,6 +9,7 @@ import { getFloorPlan } from "@/lib/geo/floorPlans";
 import { similarityScore } from "@/lib/ai/similarityScore";
 import { computeTasteProfileFromQuiz } from "@/lib/ai/tasteQuiz";
 import { STORY_GALLERY_ASSETS } from "@/lib/services/storyGalleryAssets";
+import { POST_CAPTION_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSanitization";
 import {
   averageTasteVectors,
   processExplicitFeedback as processExplicitFeedbackCore,
@@ -4439,6 +4440,39 @@ export const supabaseService: HungryService = {
       if (error) throw error;
       const row = Array.isArray(data) ? (data[0] as Row | undefined) : undefined;
       return row ? mapFeedRpcRowToBite(client, row) : null;
+    },
+
+    async updatePost(postId, patch) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to edit a post.");
+      const caption = sanitizeFreeText(patch.caption, POST_CAPTION_MAX_LENGTH);
+      // posts_update_own RLS limits this to the author; the author filter makes a
+      // foreign id a zero-row update, reported below instead of silently passing.
+      const { error, count } = await client
+        .from("posts")
+        .update({ caption }, { count: "exact" })
+        .eq("id", postId)
+        .eq("author_id", userId)
+        .is("deleted_at", null);
+      if (error) throw error;
+      if (count === 0) throw new Error("This post can no longer be edited.");
+    },
+
+    async deletePost(postId) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to delete a post.");
+      // Soft delete: every read filters deleted_at, the Home feed trigger drops the
+      // row, and reports and moderation history stay attached for review.
+      const { error, count } = await client
+        .from("posts")
+        .update({ deleted_at: new Date().toISOString() }, { count: "exact" })
+        .eq("id", postId)
+        .eq("author_id", userId)
+        .is("deleted_at", null);
+      if (error) throw error;
+      if (count === 0) throw new Error("This post was already deleted.");
     },
 
     async reactToBite(biteId, reaction, active) {

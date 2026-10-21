@@ -35,6 +35,12 @@ export async function appendPublishedStallPost(post: StallPost) {
   await saveMockState(PUBLISHED_STALL_POSTS_KEY, publishedStallPosts);
 }
 
+export async function removePublishedStallPost(postId: string) {
+  await hydratePublishedStallPosts();
+  publishedStallPosts = publishedStallPosts.filter((post) => post.id !== postId);
+  await saveMockState(PUBLISHED_STALL_POSTS_KEY, publishedStallPosts);
+}
+
 export function resetPublishedStallPostsForTest() {
   publishedStallPosts = [];
   isHydrated = true;
