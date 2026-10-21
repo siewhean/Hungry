@@ -171,7 +171,7 @@ test("H32/H33/H34: list screens avoid render loops, show load errors and report 
   const checklistDetail = read("src/app/screens/checklist/ChecklistDetailScreen.tsx");
   const portfolioDetail = read("src/app/screens/portfolio/PortfolioDetailScreen.tsx");
   for (const source of [checklistDetail, portfolioDetail]) {
-    assert.match(source, /useItemLabels(State)?\(/);
+    assert.match(source, /useItem(Labels|Details)(State)?\(/);
     assert.doesNotMatch(source, /items\[(checklistId|portfolioId)\] \?\? \[\]/);
   }
   assert.match(read("src/app/screens/checklist/ChecklistsHomeScreen.tsx"), /label="Retry"/);
@@ -201,7 +201,11 @@ test("H36: collaborators are picked from people you follow and shown by name", a
   assert.match(row, /collaborator\.displayName\?\.trim\(\) \|\| "Hungry member"/);
 
   assert.match(supabaseService, /client\.rpc\("list_portfolio_collaborators"/);
-  assert.doesNotMatch(supabaseService, /from\("portfolio_collaborators"\)\s*\.select/);
+  // Only the viewer's own list ids are read from the table (Shared with me tab).
+  assert.doesNotMatch(
+    supabaseService,
+    /from\("portfolio_collaborators"\)\s*\.select\("(?!portfolio_id")/,
+  );
   assert.match(
     migration,
     /function app_private\.list_portfolio_collaborators[\s\S]*security definer/,

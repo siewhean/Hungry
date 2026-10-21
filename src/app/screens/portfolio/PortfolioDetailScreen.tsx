@@ -5,12 +5,13 @@ import { ArrowLeft, Flag, Plus, Share2 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useShallow } from "zustand/react/shallow";
 
+import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import { PortfolioItemRow } from "@/components/portfolio";
 import { AppText, Button, Card, Input } from "@/components/ui";
 import { webShareUrl } from "@/constants/links";
 import { formatPortfolioSummary, isPortfolioLive } from "@/features/checklistPortfolio/listLabels";
-import { useItemLabelsState } from "@/features/checklistPortfolio/useItemLabels";
+import { useItemDetailsState, type ItemDetail } from "@/features/checklistPortfolio/useItemLabels";
 import { runListMutation } from "@/features/checklistPortfolio/runListMutation";
 import { shareLink, type ShareChannel } from "@/features/share/messagingShare";
 import { usePortfolioStore } from "@/store/usePortfolioStore";
@@ -24,12 +25,14 @@ const EMPTY_PORTFOLIO_ITEMS: PortfolioItem[] = [];
 
 function formatPortfolioItemLabel(
   item: PortfolioItem,
-  labels: Record<string, string>,
+  details: Record<string, ItemDetail>,
   labelsLoaded: boolean,
 ) {
   // Until the name lookup finishes, say so instead of flashing "Deleted dish".
-  if (item.dishId) return labels[item.dishId] ?? (labelsLoaded ? "Deleted dish" : "Loading…");
-  if (item.stallId) return labels[item.stallId] ?? (labelsLoaded ? "Deleted stall" : "Loading…");
+  if (item.dishId)
+    return details[item.dishId]?.name ?? (labelsLoaded ? "Deleted dish" : "Loading…");
+  if (item.stallId)
+    return details[item.stallId]?.name ?? (labelsLoaded ? "Deleted stall" : "Loading…");
   return "Portfolio item";
 }
 
@@ -47,10 +50,12 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
   const {
     portfolios,
     items,
+    collaborators,
     follows,
     refreshPortfolio,
     checkFollowStatus,
     loadPortfolioItems,
+    loadPortfolioCollaborators,
     updatePortfolio,
     publishPortfolio,
     deletePortfolio,
@@ -65,10 +70,12 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
     useShallow((state) => ({
       portfolios: state.portfolios,
       items: state.items,
+      collaborators: state.collaborators,
       follows: state.follows,
       refreshPortfolio: state.refreshPortfolio,
       checkFollowStatus: state.checkFollowStatus,
       loadPortfolioItems: state.loadPortfolioItems,
+      loadPortfolioCollaborators: state.loadPortfolioCollaborators,
       updatePortfolio: state.updatePortfolio,
       publishPortfolio: state.publishPortfolio,
       deletePortfolio: state.deletePortfolio,
@@ -86,6 +93,13 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
   // Stable fallback: a new [] each render re-ran effects keyed on the items (render loop).
   const portfolioItems = items[portfolioId] ?? EMPTY_PORTFOLIO_ITEMS;
   const isOwner = portfolio?.ownerId === profile.id;
+  // Editors may add, reorder and remove items (the item RPCs allow them); publish,
+  // edit details, collaborators and delete stay owner-only.
+  const myRole = collaborators[portfolioId]?.find(
+    (collaborator) => collaborator.userId === profile.id,
+  )?.role;
+  const canEdit = isOwner || myRole === "editor";
+  const rootNavigation = getRootNavigation(navigation as any);
   const isFollowing = follows[portfolioId] === true;
   const [draftName, setDraftName] = useState(portfolio?.name ?? "");
   const [draftDescription, setDraftDescription] = useState(portfolio?.description ?? "");
@@ -104,14 +118,24 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
     void checkFollowStatus(portfolioId).catch((error) =>
       console.error("Failed to load follow status:", error),
     );
-  }, [checkFollowStatus, loadPortfolioItems, portfolioId, refreshPortfolio]);
+    // Your own collaborator row says whether you can edit (only members get rows).
+    void loadPortfolioCollaborators(portfolioId).catch((error) =>
+      console.error("Failed to load collaborators:", error),
+    );
+  }, [
+    checkFollowStatus,
+    loadPortfolioCollaborators,
+    loadPortfolioItems,
+    portfolioId,
+    refreshPortfolio,
+  ]);
 
   useEffect(() => {
     setDraftName(portfolio?.name ?? "");
     setDraftDescription(portfolio?.description ?? "");
   }, [portfolio?.description, portfolio?.name]);
 
-  const { labels, isLoaded: labelsLoaded } = useItemLabelsState(portfolioItems);
+  const { details, isLoaded: labelsLoaded } = useItemDetailsState(portfolioItems);
 
   const statsLabel = useMemo(
     () => (portfolio ? formatPortfolioSummary(portfolio, portfolioItems.length) : ""),
@@ -251,7 +275,7 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
           </>
         )}
         <View style={styles.actionRow}>
-          {isOwner ? (
+          {canEdit ? (
             <>
               <Button
                 label="Dish"
@@ -271,6 +295,10 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
                   navigation.navigate("PortfolioItemPicker", { portfolioId, mode: "stall" })
                 }
               />
+            </>
+          ) : null}
+          {isOwner ? (
+            <>
               <Button
                 label={isLive ? "Unpublish" : "Publish"}
                 size="sm"
@@ -406,10 +434,17 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
           <PortfolioItemRow
             key={item.id}
             item={item}
-            label={formatPortfolioItemLabel(item, labels, labelsLoaded)}
+            label={formatPortfolioItemLabel(item, details, labelsLoaded)}
+            detail={details[item.dishId ?? item.stallId ?? ""]}
             index={index}
             totalCount={portfolioItems.length}
-            isOwner={isOwner}
+            showRank={portfolio.type === "ranking"}
+            canEdit={canEdit}
+            onOpen={() => {
+              if (item.dishId) rootNavigation.navigate("DishDetail", { dishId: item.dishId });
+              else if (item.stallId)
+                rootNavigation.navigate("StallDetail", { venueId: item.stallId });
+            }}
             onMoveUp={() => moveItem(item.id, -1)}
             onMoveDown={() => moveItem(item.id, 1)}
             onDelete={() => {
