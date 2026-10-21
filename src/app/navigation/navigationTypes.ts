@@ -2,12 +2,28 @@ import type { NavigatorScreenParams } from "@react-navigation/native";
 import type { TasteVector } from "@/types/domain";
 
 export type AuthStackParamList = {
-  Login: undefined;
+  /**
+   * title: why the user is signing in ("Sign in to save Chicken Rice"), from the guest sheet.
+   * email: fills the email field (from the verify screen).
+   */
+  Login: { title?: string; email?: string } | undefined;
   SignUp: undefined;
   EmailVerification: { email?: string; completedOnboarding?: boolean; code?: string } | undefined;
+  /** The link a signed-in user opens to confirm a new sign-in email (hungry://auth/email-change). */
+  EmailChange: { code?: string } | undefined;
   ForgotPassword: undefined;
-  /** recoveryVerified: the emailed code was already verified (ForgotPassword). */
-  ResetPassword: { email?: string; code?: string; recoveryVerified?: boolean } | undefined;
+  /**
+   * recoveryVerified: the emailed code was already verified (ForgotPassword).
+   * linkError: the reset link came back with an error (expired, already used).
+   */
+  ResetPassword:
+    | {
+        email?: string;
+        code?: string;
+        recoveryVerified?: boolean;
+        linkError?: "expired" | "invalid";
+      }
+    | undefined;
   ResetPasswordSuccess: undefined;
 };
 

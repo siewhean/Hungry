@@ -8,6 +8,11 @@
  */
 
 import { getFloorPlan } from "@/lib/geo/floorPlans";
+import {
+  getMockLoginFailure,
+  getMockSignUpFailure,
+  type MockAuthFailure,
+} from "@/features/auth/mockAuth";
 import { PROFILE_BIO_MAX_LENGTH } from "@/features/profile/profileBio";
 import { normalizeReviewPatch } from "@/features/review/reviewEdit";
 import { MERCHANT_DEEP_LINKS } from "@/features/merchant/merchantDeepLinks";
@@ -1486,6 +1491,19 @@ const BUILDING_DETAILS: Record<string, Omit<BuildingDetail, keyof (typeof buildi
   },
 };
 
+// Mirrors the error shapes supabase-js gives the auth screens (code, or the retryable
+// network error), so the screens map real and mock failures the same way.
+function mockAuthError(failure: MockAuthFailure): Error {
+  if (failure.reason === "network_unavailable") {
+    return Object.assign(new Error(failure.message), {
+      name: "AuthRetryableFetchError",
+      status: 0,
+    });
+  }
+  const code = failure.reason === "email_taken" ? "user_already_exists" : "invalid_credentials";
+  return Object.assign(new Error(failure.message), { code });
+}
+
 // ─── Full HungryService implementation ───────────────────────────────────────
 
 export const hungryService: HungryService = {
@@ -1493,6 +1511,8 @@ export const hungryService: HungryService = {
 
   auth: {
     async signUp(email, _password, name) {
+      const failure = getMockSignUpFailure(email);
+      if (failure) throw mockAuthError(failure);
       _isAuthenticated = true;
       _authProvider = "email";
       _profile = {
@@ -1530,7 +1550,9 @@ export const hungryService: HungryService = {
       return resolve(type === "signup" ? mockSession(_profile) : null);
     },
 
-    async signIn(email, _password) {
+    async signIn(email, password) {
+      const failure = getMockLoginFailure(email, password);
+      if (failure) throw mockAuthError(failure);
       _isAuthenticated = true;
       _authProvider = "email";
       _profile = { ...userProfile, email };
@@ -1614,6 +1636,11 @@ export const hungryService: HungryService = {
       if (!_isAuthenticated) throw new Error("You must be signed in to change your email.");
       if (!newEmail.trim()) throw new Error("Enter a new email address.");
       // Like Supabase, nothing changes until the user confirms from the new inbox.
+      return resolve(undefined);
+    },
+
+    async markOnboarded() {
+      // Mock sessions have no auth user to stamp.
       return resolve(undefined);
     },
 

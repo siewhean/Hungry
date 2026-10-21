@@ -778,6 +778,12 @@ export interface HungryService {
      * sent to the new inbox; until then the current email stays in effect.
      */
     requestEmailChange(newEmail: string): Promise<void>;
+    /**
+     * Stamps the signed-in account as having finished first-run onboarding, so a later
+     * sign-in (on another phone, hours after confirming elsewhere) is not taken for a
+     * sign-up. Safe to repeat; a no-op once stamped.
+     */
+    markOnboarded(): Promise<void>;
     getCurrentSession(): Promise<Session | null>;
     refreshSession(): Promise<Session | null>;
   };

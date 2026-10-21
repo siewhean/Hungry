@@ -25,11 +25,11 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
   assertSourceIncludes(
     types,
     [
-      /Login: undefined/,
+      /Login: \{ title\?: string; email\?: string \} \| undefined/,
       /SignUp: undefined/,
       /EmailVerification:\s*\|?\s*\{ email\?: string; completedOnboarding\?: boolean; code\?: string \}\s*\|\s*undefined/,
       /ForgotPassword: undefined/,
-      /ResetPassword: \{ email\?: string; code\?: string; recoveryVerified\?: boolean \} \| undefined/,
+      /ResetPassword:\s*\|\s*\{\s*email\?: string;\s*code\?: string;\s*recoveryVerified\?: boolean;\s*linkError\?: "expired" \| "invalid";\s*\}\s*\|\s*undefined/,
       /TasteQuiz: \{ mode\?: "onboarding" \| "profile"; initialPhase\?: "taste" \| "dietary" \} \| undefined/,
       /LocationPermission: undefined/,
       /ManualLocationPicker: \{ mode\?: "settings" \} \| undefined/,
@@ -64,7 +64,7 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
       /service\.auth\.signInWithGoogle\(/,
       /service\.auth\.signInWithApple\(/,
       // Email sign-in is an existing account; the quiz state is not overwritten.
-      /completeAuth\(\{ completedOnboarding: true \}\)/,
+      /completeAuth\(\{\s*completedOnboarding: getConfiguredDataSource\(\) !== "supabase"\s*\}\)/,
     ],
     "LoginScreen",
   );

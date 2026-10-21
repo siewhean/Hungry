@@ -3,6 +3,7 @@ import { View } from "react-native";
 
 import { AppText, Button, Input } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
+import { getAuthFailureMessage } from "./authErrors";
 
 /** Supabase auth.email.otp_length (supabase/config.toml). */
 export const EMAIL_CODE_LENGTH = 8;
@@ -29,17 +30,18 @@ export function EmailCodeField({
   const { spacing } = useHungryTheme();
   const [code, setCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [failed, setFailed] = useState(false);
+  // The message to show; a dropped connection or rate limit is not "wrong code".
+  const [failure, setFailure] = useState<string | null>(null);
   const isComplete = code.length === EMAIL_CODE_LENGTH;
 
   const submit = async () => {
     if (!isComplete || isSubmitting) return;
     setIsSubmitting(true);
-    setFailed(false);
+    setFailure(null);
     try {
       await onSubmit(code);
-    } catch {
-      setFailed(true);
+    } catch (error) {
+      setFailure(getAuthFailureMessage(error, errorText));
     } finally {
       setIsSubmitting(false);
     }
@@ -59,8 +61,8 @@ export function EmailCodeField({
         maxLength={EMAIL_CODE_LENGTH}
         returnKeyType="done"
         onSubmitEditing={() => void submit()}
-        error={failed}
-        errorText={failed ? errorText : undefined}
+        error={failure !== null}
+        errorText={failure ?? undefined}
       />
       <Button
         label={submitLabel}

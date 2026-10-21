@@ -66,7 +66,7 @@ test("Email edits go through the auth email-change flow, not the profile column"
   assert.doesNotMatch(updateProfile, /payload\.email/);
   assert.match(
     supabase,
-    /auth\.updateUser\(\s*\{ email: newEmail\.trim\(\)\.toLowerCase\(\) \},\s*\{ emailRedirectTo: AUTH_REDIRECTS\.emailConfirm \},?\s*\)/,
+    /auth\.updateUser\(\s*\{ email: newEmail\.trim\(\)\.toLowerCase\(\) \},\s*\{ emailRedirectTo: AUTH_REDIRECTS\.emailChange \},?\s*\)/,
   );
   assert.match(editProfile, /current and new addresses/);
   assert.match(

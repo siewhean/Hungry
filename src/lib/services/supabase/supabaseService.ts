@@ -18,6 +18,7 @@ import {
 import { parseMoodIntent } from "@/lib/ai/moodSearch";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { AUTH_REDIRECTS } from "@/constants/links";
+import { getAuthErrorCode } from "@/features/auth/authErrors";
 import {
   countVenuesInAreaViaRpc,
   getDishByIdViaRpc,
@@ -912,9 +913,26 @@ async function toAppSession(client: SupabaseClient): Promise<Session | null> {
   }
   const session = data.session;
   if (!session?.user) return null;
-  await ensureCurrentUserProfileRow(client);
-  const profile = await fetchUserProfile(client, session.user.id, session.user.email ?? undefined);
-  return toAppSessionFromAuthSession(session, profile);
+  const hydrateProfile = () =>
+    ensureCurrentUserProfileRow(client, session.user).then(() =>
+      fetchUserProfile(client, session.user.id, session.user.email ?? undefined),
+    );
+  try {
+    return toAppSessionFromAuthSession(session, await hydrateProfile());
+  } catch {
+    // Authentication already succeeded and the SIGNED_IN listener has let the user in, so a
+    // profile read that fails (a network blip) must not surface as "Sign in failed". Return
+    // the session with a provisional profile and finish hydrating in the background, as the
+    // OAuth path does.
+    const profileReady = hydrateProfile();
+    // Callers that ignore profileReady (a session refresh) must not leave an unhandled rejection.
+    profileReady.catch(() => undefined);
+    return toAppSessionFromAuthSession(
+      session,
+      provisionalProfileFromAuthSession(session),
+      profileReady,
+    );
+  }
 }
 
 function provisionalProfileFromAuthSession(session: SupabaseAuthSession): UserProfile {
@@ -3387,7 +3405,14 @@ export const supabaseService: HungryService = {
         email: user.email,
         password: currentPassword,
       });
-      if (reauthError) throw new Error("Current password is incorrect.");
+      if (reauthError) {
+        // Only a wrong password is "incorrect"; a network error or rate limit must reach the
+        // screen as itself.
+        if (getAuthErrorCode(reauthError) === "invalid_credentials") {
+          throw new Error("Current password is incorrect.");
+        }
+        throw reauthError;
+      }
       const { error } = await client.auth.updateUser({ password: newPassword });
       if (error) throw error;
     },
@@ -3398,8 +3423,20 @@ export const supabaseService: HungryService = {
       // auth.users.email changes only after they are opened.
       const { error } = await client.auth.updateUser(
         { email: newEmail.trim().toLowerCase() },
-        { emailRedirectTo: AUTH_REDIRECTS.emailConfirm },
+        { emailRedirectTo: AUTH_REDIRECTS.emailChange },
       );
+      if (error) throw error;
+    },
+
+    async markOnboarded() {
+      const client = requireSupabaseClient();
+      // The stored session already carries user_metadata, so the check costs no request.
+      const { data } = await client.auth.getSession();
+      const user = data.session?.user;
+      if (!user || user.user_metadata?.onboarded_at) return;
+      const { error } = await client.auth.updateUser({
+        data: { onboarded_at: new Date().toISOString() },
+      });
       if (error) throw error;
     },
 

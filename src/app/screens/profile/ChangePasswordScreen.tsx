@@ -1,12 +1,17 @@
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { View } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { Pressable, View } from "react-native";
+import { useNavigation, type NavigationProp } from "@react-navigation/native";
+import { Eye, EyeOff } from "lucide-react-native";
 
 import { AppText, Button, Card, Input } from "@/components/ui";
+import { AUTH_EYE_BUTTON_STYLE } from "@/app/screens/auth/authEyeButton";
+import type { RootStackParamList } from "@/app/navigation/navigationTypes";
+import { getAuthFailureMessage } from "@/features/auth/authErrors";
 import {
   isWeakPasswordError,
   PASSWORD_REQUIREMENTS_COPY,
+  PASSWORD_RULES,
   validateConfirmPassword,
   validatePassword,
   validateRequired,
@@ -24,10 +29,11 @@ type FormValues = { currentPassword: string; newPassword: string; confirmPasswor
  * updates it. Unlike ResetPassword it never exchanges a recovery code.
  */
 export function ChangePasswordScreen() {
-  const navigation = useNavigation();
-  const { spacing } = useHungryTheme();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const { palette, spacing } = useHungryTheme();
   const showToast = useUIStore((state) => state.showToast);
   const [isSaving, setIsSaving] = useState(false);
+  const [showPasswords, setShowPasswords] = useState(false);
   const {
     control,
     handleSubmit,
@@ -38,6 +44,22 @@ export function ChangePasswordScreen() {
     defaultValues: { currentPassword: "", newPassword: "", confirmPassword: "" },
   });
   const newPasswordValue = watch("newPassword");
+  const visibilityToggle = (
+    <Pressable
+      accessible
+      accessibilityRole="button"
+      accessibilityLabel={showPasswords ? "Hide passwords" : "Show passwords"}
+      onPress={() => setShowPasswords((current) => !current)}
+      hitSlop={8}
+      style={AUTH_EYE_BUTTON_STYLE}
+    >
+      {showPasswords ? (
+        <EyeOff color={palette.textMuted} size={18} />
+      ) : (
+        <Eye color={palette.textMuted} size={18} />
+      )}
+    </Pressable>
+  );
 
   const handleChange = handleSubmit(async ({ currentPassword, newPassword }) => {
     if (currentPassword === newPassword) {
@@ -56,7 +78,14 @@ export function ChangePasswordScreen() {
       } else if (isWeakPasswordError(error)) {
         setError("newPassword", { message: WEAK_PASSWORD_MESSAGE });
       } else {
-        showToast({ message: "Could not update your password. Please try again.", tone: "error" });
+        // A dropped connection or rate limit is not "wrong password"; say what happened.
+        showToast({
+          message: getAuthFailureMessage(
+            error,
+            "Could not update your password. Please try again.",
+          ),
+          tone: "error",
+        });
       }
     } finally {
       setIsSaving(false);
@@ -74,7 +103,10 @@ export function ChangePasswordScreen() {
             render={({ field: { onChange, value } }) => (
               <Input
                 label="Current password"
-                secureTextEntry
+                secureTextEntry={!showPasswords}
+                textContentType="password"
+                autoComplete="current-password"
+                rightIcon={visibilityToggle}
                 value={value}
                 onChangeText={onChange}
                 error={!!errors.currentPassword}
@@ -89,7 +121,11 @@ export function ChangePasswordScreen() {
             render={({ field: { onChange, value } }) => (
               <Input
                 label="New password"
-                secureTextEntry
+                secureTextEntry={!showPasswords}
+                textContentType="newPassword"
+                autoComplete="new-password"
+                passwordRules={PASSWORD_RULES}
+                rightIcon={visibilityToggle}
                 value={value}
                 onChangeText={onChange}
                 error={!!errors.newPassword}
@@ -106,7 +142,11 @@ export function ChangePasswordScreen() {
             render={({ field: { onChange, value } }) => (
               <Input
                 label="Confirm new password"
-                secureTextEntry
+                secureTextEntry={!showPasswords}
+                textContentType="newPassword"
+                autoComplete="new-password"
+                passwordRules={PASSWORD_RULES}
+                rightIcon={visibilityToggle}
                 value={value}
                 onChangeText={onChange}
                 error={!!errors.confirmPassword}
@@ -117,6 +157,18 @@ export function ChangePasswordScreen() {
           <AppText variant="bodySmall" tone="muted">
             {PASSWORD_REQUIREMENTS_COPY}
           </AppText>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Forgot current password?"
+            accessibilityHint="Opens password reset"
+            onPress={() => navigation.navigate("AuthStack", { screen: "ForgotPassword" })}
+            hitSlop={8}
+            style={{ alignSelf: "flex-start", justifyContent: "center", minHeight: 44 }}
+          >
+            <AppText variant="bodySmall" tone="accent">
+              Forgot current password?
+            </AppText>
+          </Pressable>
         </View>
       </Card>
       <Button label="Update password" loading={isSaving} onPress={handleChange} />

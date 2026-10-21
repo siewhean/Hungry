@@ -362,6 +362,6 @@ test("sign-out clears the stored Supabase session before any restore", () => {
   const bootstrap = read("src/hooks/useAppBootstrap.ts");
   assert.match(
     bootstrap,
-    /\.finishPendingSignOut\(\)\s*\.then\(\(\) => client\.auth\.getSession\(\)\)/,
+    /\.finishPendingSignOut\(\)\s*\.then\(\(\) => getSessionWithTimeout\(client\)\)/,
   );
 });
