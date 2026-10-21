@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Animated,
   Easing,
   Linking,
@@ -22,6 +23,11 @@ import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import { AccessibleImage, AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
 import { formatDishUpdated } from "@/features/detail/dishFreshness";
 import { findBuildingById } from "@/features/discovery/discovery";
+import {
+  preferOpenStalls,
+  rankDecideCandidates,
+  type OpenAwareCandidates,
+} from "@/features/discovery/decideForMeCandidates";
 import { buildMapsSearchUrl, formatFullStallAddress } from "@/features/detail/stallLocation";
 import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
 import { shareLink } from "@/features/share/messagingShare";
@@ -147,16 +153,24 @@ function nextRadius(currentRadius: number) {
   return RADIUS_STEPS_METERS.find((value) => value > currentRadius);
 }
 
-function getCandidates(
+/** Stalls whose hours are read for the open-now check (one read each when not cached). */
+const MAX_OPEN_STATE_VENUES = 12;
+
+/**
+ * Picks come from the server search (search_dishes in Supabase mode), not the
+ * capped local cache, then are ranked by taste and checked against opening hours.
+ */
+async function loadCandidates(
   repository: DataRepository,
   tasteVector: TasteVector,
   dietaryFlags: DietaryFlag[],
   radius: number,
   location: Coordinate,
   maxDishBudget?: number,
-) {
+): Promise<OpenAwareCandidates> {
+  const service = getHungryService();
   // Pass the user's location so the radius is measured from them, matching the radius chip.
-  const results = repository.searchDishes(
+  const results = await service.discovery.searchDishes(
     {
       query: "",
       categories: [],
@@ -168,12 +182,20 @@ function getCandidates(
     },
     tasteVector,
   );
-  if (maxDishBudget === undefined) {
-    return results;
-  }
-  // Budget is a preference, not a hard rule: fall back to every match when nothing fits it.
-  const withinBudget = results.filter((dish) => dish.price <= maxDishBudget);
-  return withinBudget.length ? withinBudget : results;
+  const ranked = rankDecideCandidates(
+    results.map((result) => result.dish),
+    { tasteVector, dietaryFlags, radiusMeters: radius, maxDishBudget },
+  );
+  const venueIds = [...new Set(ranked.map((dish) => dish.venueId))].slice(0, MAX_OPEN_STATE_VENUES);
+  const venues = await Promise.all(
+    venueIds.map(async (venueId) => {
+      const venue =
+        repository.getVenueById(venueId) ??
+        (await service.discovery.getVenue(venueId).catch(() => undefined));
+      return [venueId, venue] as const;
+    }),
+  );
+  return preferOpenStalls(ranked, new Map(venues));
 }
 
 function formatDistance(distanceMeters: number) {
@@ -280,33 +302,60 @@ export function DecideForMeResultScreen() {
   const scrollY = useRef(new Animated.Value(0)).current;
 
   const { history: foodHistory, openness } = useFoodHistory();
+  // The last finished load stays on screen while a wider radius loads.
+  const [candidatePool, setCandidatePool] = useState<OpenAwareCandidates>();
+  const [isLoadingCandidates, setIsLoadingCandidates] = useState(true);
+  const locationLatitude = effectiveLocation.latitude;
+  const locationLongitude = effectiveLocation.longitude;
+  useEffect(() => {
+    let active = true;
+    setIsLoadingCandidates(true);
+    loadCandidates(
+      repository,
+      profile.tasteVector,
+      profile.dietaryPreferences,
+      searchRadius,
+      { latitude: locationLatitude, longitude: locationLongitude },
+      profile.maxDishBudget,
+    )
+      .catch(
+        (): OpenAwareCandidates => ({
+          candidates: [],
+          onlyClosed: false,
+          openStateByVenueId: new Map(),
+        }),
+      )
+      .then((pool) => {
+        if (!active) return;
+        setCandidatePool(pool);
+        setIsLoadingCandidates(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [
+    locationLatitude,
+    locationLongitude,
+    profile.dietaryPreferences,
+    profile.maxDishBudget,
+    profile.tasteVector,
+    repository,
+    searchRadius,
+  ]);
   const candidates = useMemo(
     () =>
       // Openness sets how often a pick is a dish they know versus something new.
-      mixByFoodHistory(
-        getCandidates(
-          repository,
-          profile.tasteVector,
-          profile.dietaryPreferences,
-          searchRadius,
-          effectiveLocation,
-          profile.maxDishBudget,
-        ),
-        { history: foodHistory, openness, lookup: (dishId) => repository.getDishById(dishId) },
-      ),
-    [
-      effectiveLocation,
-      foodHistory,
-      openness,
-      profile.dietaryPreferences,
-      profile.maxDishBudget,
-      profile.tasteVector,
-      repository,
-      searchRadius,
-    ],
+      mixByFoodHistory(candidatePool?.candidates ?? [], {
+        history: foodHistory,
+        openness,
+        lookup: (dishId) => repository.getDishById(dishId),
+      }),
+    [candidatePool, foodHistory, openness, repository],
   );
 
   useEffect(() => {
+    // Nothing is decided until the first load finishes.
+    if (!candidatePool) return;
     if (!candidates.length) {
       setResultIndex(0);
       if (selectedDish) {
@@ -328,7 +377,7 @@ export function DecideForMeResultScreen() {
     if (nextDish && nextDish.id !== selectedDish?.id) {
       setDecideForMe(nextDish);
     }
-  }, [candidates, resultIndex, selectedDish, setDecideForMe]);
+  }, [candidatePool, candidates, resultIndex, selectedDish, setDecideForMe]);
 
   const dish = candidates[resultIndex] ?? selectedDish;
   const dishVenueId = dish?.venueId;
@@ -404,7 +453,8 @@ export function DecideForMeResultScreen() {
     ],
   };
 
-  const hasNoMatch = candidates.length === 0 && !selectedDish;
+  // A cold open (such as the meal-time push) waits for the server instead of saying "no match".
+  const hasNoMatch = !isLoadingCandidates && candidates.length === 0 && !selectedDish;
   useEffect(() => {
     if (!hasNoMatch) return;
     trackAnalyticsEvent("decide_for_me_no_match", {
@@ -463,6 +513,21 @@ export function DecideForMeResultScreen() {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
   };
 
+  if (!dish && isLoadingCandidates) {
+    return (
+      <Screen title="Recommended for you" subtitle="Finding a dish near you…">
+        <View
+          accessible
+          accessibilityLabel="Finding a dish near you"
+          accessibilityLiveRegion="polite"
+          style={{ alignItems: "center", paddingVertical: spacing[8] }}
+        >
+          <ActivityIndicator color={palette.orange} size="large" />
+        </View>
+      </Screen>
+    );
+  }
+
   if (!dish) {
     const upcomingRadius = nextRadius(searchRadius);
     return (
@@ -500,6 +565,14 @@ export function DecideForMeResultScreen() {
   // Distance from the built-in default point is not distance from the user.
   const distanceLabel = isLocationApproximate ? undefined : formatDistance(dish.distanceMeters);
   const isSaved = profile.favouriteDishIds.includes(dish.id);
+  // Open now in Singapore time; a closed pick says when it opens.
+  const openState = candidatePool?.openStateByVenueId.get(dish.venueId);
+  const openLabel =
+    openState?.status === "open"
+      ? ["Open now", openState.detail].filter(Boolean).join(" · ")
+      : openState?.status === "closed"
+        ? ["Closed", openState.detail].filter(Boolean).join(" · ")
+        : undefined;
 
   const handleDirections = () => {
     if (!stallAddress) return;
@@ -605,6 +678,12 @@ export function DecideForMeResultScreen() {
           <View style={{ gap: spacing[2] }}>
             <View style={{ flexDirection: "row", gap: spacing[2] }}>
               <Badge label={`Radius ${(searchRadius / 1000).toFixed(1)} km`} tone="neutral" />
+              {openLabel ? (
+                <Badge
+                  label={openLabel}
+                  tone={openState?.status === "open" ? "success" : "warning"}
+                />
+              ) : null}
               {dish.mustOrder && <Badge label="Must order" tone="amber" />}
             </View>
             <AppText variant="displayBold">{dish.name}</AppText>

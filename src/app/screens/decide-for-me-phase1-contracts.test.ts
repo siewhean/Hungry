@@ -18,7 +18,9 @@ test("Decide For Me shows distance, Directions and Save, and respects the budget
   assert.match(screen, /trackAnalyticsEvent\("directions_opened"/);
   assert.match(screen, /openTrustedMapsUrl\(buildMapsSearchUrl\(stallAddress\)\)/);
   assert.match(screen, /toggleFavourite\(dish\)/);
-  assert.match(screen, /withinBudget\.length \? withinBudget : results/);
+  // Budget logic lives in the candidate helper.
+  const candidates = read("src/features/discovery/decideForMeCandidates.ts");
+  assert.match(candidates, /withinBudget\.length \? withinBudget : ranked/);
 });
 
 test("Decide For Me has no fake cart, routes back to Discover, and tracks its funnel", () => {
