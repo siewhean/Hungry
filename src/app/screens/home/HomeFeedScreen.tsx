@@ -88,6 +88,7 @@ import {
 import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { getBuildingById, toSummary } from "@/lib/geo/singaporeBuildings";
+import { formatDistanceFromUser } from "@/features/detail/stallLocation";
 import {
   isContentHiddenForSession,
   promptCommentSafetyActions,
@@ -243,7 +244,15 @@ function HomeEmptyFeed({ title, body, ctaLabel, onCtaPress, onOpenDish }: HomeEm
         <View style={{ gap: spacing[3], paddingHorizontal: semanticSpacing.screenEdge }}>
           <AppText variant="h3">Top rated near you</AppText>
           {dishes.map((dish) => (
-            <DishCard key={dish.id} dish={dish} onPress={() => onOpenDish(dish.id)} />
+            <DishCard
+              key={dish.id}
+              dish={dish}
+              distanceLabel={formatDistanceFromUser(
+                coordinate,
+                getBuildingById(dish.buildingId)?.coordinate,
+              )}
+              onPress={() => onOpenDish(dish.id)}
+            />
           ))}
         </View>
       ) : null}
