@@ -251,6 +251,55 @@ export function getActivityUnreadCount(
   ).length;
 }
 
+/** One inbox row: a single update, or several likes on the same post folded together. */
+export type ActivityRow = ActivityUpdate & {
+  /** Ids of every update shown by this row, the row's own id first. */
+  memberIds: string[];
+  /** Any member still unread (server read_at, or a local read mark). */
+  isUnread: boolean;
+  /** People folded into the row; 1 for a plain update. */
+  actorCount: number;
+};
+
+/**
+ * Folds likes on the same post into one row ("Ahmad and 4 others liked your post").
+ * Input order is kept: a group sits where its newest like was. Other kinds stay one
+ * row each.
+ */
+export function groupActivityUpdates(
+  updates: ActivityUpdate[],
+  readActivityIds: string[] = [],
+): ActivityRow[] {
+  const readIds = new Set(readActivityIds);
+  const isUnread = (update: ActivityUpdate) =>
+    Boolean(update.unread) && !readIds.has(getActivityReadKey("update", update.id));
+  const rows: ActivityRow[] = [];
+  const likeRowByPost = new Map<string, ActivityRow>();
+  for (const update of updates) {
+    const groupKey = update.kind === "like" && update.postId ? update.postId : null;
+    const existing = groupKey ? likeRowByPost.get(groupKey) : undefined;
+    if (existing) {
+      existing.memberIds.push(update.id);
+      existing.actorCount += 1;
+      existing.isUnread = existing.isUnread || isUnread(update);
+      existing.unread = existing.isUnread;
+      existing.text = `and ${existing.actorCount - 1} ${
+        existing.actorCount === 2 ? "other" : "others"
+      } liked your post`;
+      continue;
+    }
+    const row: ActivityRow = {
+      ...update,
+      memberIds: [update.id],
+      isUnread: isUnread(update),
+      actorCount: 1,
+    };
+    rows.push(row);
+    if (groupKey) likeRowByPost.set(groupKey, row);
+  }
+  return rows;
+}
+
 export function getActivityMessageUnreadCount(
   message: ActivityMessage,
   readActivityIds: string[] = [],

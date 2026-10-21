@@ -544,7 +544,10 @@ test("UGC surfaces expose report, hide, and block safety actions", () => {
   assert.match(helper, /hiddenPostIds\.add\(postId\)/);
   assert.match(home, /promptPostSafetyActions/);
   assert.match(home, /promptCommentSafetyActions/);
-  assert.match(home, /accessibilityLabel=\{`Comment on \$\{actionTargetName\}`\}/);
+  assert.match(
+    readRepoFile("src/components/social/FeedPostCard.tsx"),
+    /accessibilityLabel=\{`Comment on \$\{actionTargetName\}`\}/,
+  );
   assert.match(activity, /promptPostSafetyActions/);
   assert.match(socialPost, /promptPostSafetyActions/);
   assert.match(comments, /promptCommentSafetyActions/);
@@ -558,7 +561,7 @@ test("shared post reads apply session hide and block filters before rendering", 
     sharedPosts,
     /if \(isContentHiddenForSession\(\{ id: post\.id, authorId: post\.authorId \}\)\) return false;/,
   );
-  assert.match(sharedPosts, /return mergeStallPosts\(localPublishedPosts, bitePosts, servicePosts/);
+  assert.match(sharedPosts, /mergeStallPosts\(\s*localPublishedPosts,\s*bitePosts,\s*servicePosts/);
 });
 
 test("merchant portal RLS hardening protects merchant-only surfaces", () => {

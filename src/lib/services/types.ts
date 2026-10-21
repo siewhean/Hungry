@@ -347,6 +347,9 @@ export interface Bite {
   tasteStamp: TasteStamp;
   cravingCount: number;
   savedCount: number;
+  /** Server comment and share totals, when the read returns them. */
+  commentCount?: number;
+  shareCount?: number;
   /** Server distance from the query point, when the read computed one. */
   distanceMeters?: number;
   /** The viewer's own like/save, when the read returns it (undefined = unknown). */
@@ -619,6 +622,31 @@ export interface ContentReportRequest {
   targetId: string;
   targetAuthorKey?: string;
   reason: string;
+}
+
+export interface BitesFeedPage {
+  /** Rows per page (default 40). */
+  limit?: number;
+  /** Continue after this post; omit for the newest page. */
+  cursor?: { createdAt: string; postId: string };
+}
+
+export interface BlockedUserEntry {
+  blockedUserId: string;
+  displayName?: string;
+  avatarUrl?: string;
+  reason?: string;
+  createdAt: string;
+}
+
+export interface HiddenPostEntry {
+  postId: string;
+  caption?: string;
+  authorId?: string;
+  authorName?: string;
+  dishName?: string;
+  venueName?: string;
+  hiddenAt: string;
 }
 
 export interface BlockUserRequest {
@@ -912,7 +940,8 @@ export interface HungryService {
 
   // Social (Bites)
   social: {
-    getBitesFeed(lat?: number, lng?: number): Promise<Bite[]>;
+    /** Newest posts first. `page.cursor` is the last post of the previous page (createdAt + id). */
+    getBitesFeed(lat?: number, lng?: number, page?: BitesFeedPage): Promise<Bite[]>;
     /** One author's published posts, newest first, paged on the server (default 60). */
     listUserPosts(userId: string, page?: { limit?: number; offset?: number }): Promise<Bite[]>;
     postBite(draft: BiteDraft): Promise<Bite>;
@@ -1031,6 +1060,12 @@ export interface HungryService {
     hidePost(postId: string, reason?: string): Promise<void>;
     unhidePost(postId: string): Promise<void>;
     getBlockedUsers(): Promise<{ blockedUserId: string; reason?: string; createdAt: string }[]>;
+    /** Removes a block (the follows it removed do not come back). */
+    unblockUser(blockedUserId: string): Promise<void>;
+    /** The viewer's blocks with the blocked person's name, newest first. */
+    listBlockedUsers(): Promise<BlockedUserEntry[]>;
+    /** Posts the viewer hid, newest first. */
+    listHiddenPosts(): Promise<HiddenPostEntry[]>;
   };
 
   contributions: {
@@ -1321,7 +1356,7 @@ export interface HungryService {
 
   // Notifications / Activity
   notifications: {
-    listActivityEvents(): Promise<
+    listActivityEvents(page?: { limit?: number; offset?: number }): Promise<
       {
         id: string;
         actorId: string;
@@ -1337,5 +1372,7 @@ export interface HungryService {
       }[]
     >;
     markActivityRead(eventId: string): Promise<void>;
+    /** Marks every unread update read in one call; resolves with how many changed. */
+    markAllActivityRead(): Promise<number>;
   };
 }

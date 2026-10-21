@@ -50,7 +50,10 @@ import { normalizeReviewPatch } from "@/features/review/reviewEdit";
 import type {
   Bite,
   BiteDraft,
+  BitesFeedPage,
   BlockUserRequest,
+  BlockedUserEntry,
+  HiddenPostEntry,
   BuildingDetail,
   DiscoveryLocationFeed,
   ChatConversation,
@@ -1518,6 +1521,8 @@ async function mapFeedRpcRowToBite(client: SupabaseClient, row: Row): Promise<Bi
     tasteStamp: tasteStampFromPostMeta(meta),
     cravingCount: asNumber(row.like_count) ?? 0,
     savedCount: asNumber(row.save_count) ?? 0,
+    commentCount: asNumber(row.comment_count),
+    shareCount: asNumber(row.share_count),
     // Only v3 and get_post_by_id return the viewer's own state.
     viewerHasLiked: typeof row.viewer_has_liked === "boolean" ? row.viewer_has_liked : undefined,
     viewerHasSaved: typeof row.viewer_has_saved === "boolean" ? row.viewer_has_saved : undefined,
@@ -1528,28 +1533,33 @@ async function mapFeedRpcRowToBite(client: SupabaseClient, row: Row): Promise<Bi
   } satisfies Bite;
 }
 
+const HOME_FEED_PAGE_SIZE = 40;
+
 async function fetchHomeSocialFeedBitesViaRpc(
   client: SupabaseClient,
-  limit = 40,
+  page: BitesFeedPage = {},
 ): Promise<Bite[] | undefined> {
+  const limit = page.limit ?? HOME_FEED_PAGE_SIZE;
+  const cursorCreatedAt = page.cursor?.createdAt ?? null;
+  const cursorPostId = page.cursor?.postId ?? null;
   // v3 adds the viewer's like/save state; fall back to v2, then the legacy RPC.
   const v3Result = await client.rpc("get_home_social_feed_v3", {
     p_limit: limit,
-    p_cursor_feed_created_at: null,
-    p_cursor_post_id: null,
+    p_cursor_feed_created_at: cursorCreatedAt,
+    p_cursor_post_id: cursorPostId,
   });
   const v2Result = v3Result.error
     ? await client.rpc("get_home_social_feed_v2", {
         p_limit: limit,
-        p_cursor_feed_created_at: null,
-        p_cursor_post_id: null,
+        p_cursor_feed_created_at: cursorCreatedAt,
+        p_cursor_post_id: cursorPostId,
       })
     : v3Result;
   const legacyResult = v2Result.error
     ? await client.rpc("get_home_social_feed", {
         p_limit: limit,
-        p_cursor_published_at: null,
-        p_cursor_id: null,
+        p_cursor_published_at: cursorCreatedAt,
+        p_cursor_id: cursorPostId,
       })
     : v2Result;
 
@@ -1570,12 +1580,12 @@ async function fetchHomeSocialFeedBitesViaRpc(
 /** Guests have no session, so the signed-in feed RPCs and posts RLS return nothing. */
 async function fetchPublicHomeFeedBites(
   client: SupabaseClient,
-  limit = 40,
+  page: BitesFeedPage = {},
 ): Promise<Bite[] | undefined> {
   const { data, error } = await client.rpc("get_public_home_feed", {
-    p_limit: limit,
-    p_cursor_feed_created_at: null,
-    p_cursor_post_id: null,
+    p_limit: page.limit ?? HOME_FEED_PAGE_SIZE,
+    p_cursor_feed_created_at: page.cursor?.createdAt ?? null,
+    p_cursor_post_id: page.cursor?.postId ?? null,
   });
   if (error) {
     console.warn("Failed to fetch public Home feed RPC", error.message);
@@ -1928,6 +1938,9 @@ function confidenceDeltaForFeedback(feedback: ExplicitFeedbackInput): number {
 function isMissingPgVectorTypeError(error: { message?: string } | null | undefined): boolean {
   return /type "vector" does not exist/i.test(error?.message ?? "");
 }
+
+/** Inbox rows per read; the inbox pages through older ones with `offset`. */
+const ACTIVITY_EVENTS_PAGE_SIZE = 50;
 
 function isMissingActivityEventsSchemaError(error: PostgrestError | null | undefined): boolean {
   if (!error) return false;
@@ -4322,15 +4335,16 @@ export const supabaseService: HungryService = {
   },
 
   social: {
-    async getBitesFeed() {
+    async getBitesFeed(_lat?: number, _lng?: number, page?: BitesFeedPage) {
       const client = requireSupabaseClient();
       if (!(await getCurrentSupabaseUserId())) {
-        const publicBites = await fetchPublicHomeFeedBites(client);
+        const publicBites = await fetchPublicHomeFeedBites(client, page);
         if (publicBites) return publicBites;
       }
-      const rpcBites = await fetchHomeSocialFeedBitesViaRpc(client);
+      const rpcBites = await fetchHomeSocialFeedBitesViaRpc(client, page);
       if (rpcBites) return rpcBites;
-      return fetchPublishedPostBites(client);
+      // The plain posts read has no cursor: a later page would repeat the first.
+      return page?.cursor ? [] : fetchPublishedPostBites(client);
     },
 
     async listUserPosts(userId: string, page?: { limit?: number; offset?: number }) {
@@ -5190,16 +5204,55 @@ export const supabaseService: HungryService = {
       }
       if (request.blockedUserId === userId) throw new Error("You cannot block yourself.");
 
-      const { error } = await client.from("user_blocks").upsert(
-        {
-          blocker_id: userId,
-          blocked_user_key: request.blockedUserId.toLowerCase(),
-          reason: request.reason ?? "user_initiated_block",
-        },
-        // There is no update policy on user_blocks, so re-blocking is a no-op.
-        { onConflict: "blocker_id,blocked_user_key", ignoreDuplicates: true },
-      );
+      // One transaction: the block row, and the follows (both directions) it ends.
+      const { error } = await client.rpc("block_user", {
+        p_blocked_user_id: request.blockedUserId.toLowerCase(),
+        p_reason: request.reason ?? "user_initiated_block",
+      });
       if (error) throw error;
+    },
+
+    async unblockUser(blockedUserId: string) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to unblock users.");
+      if (!UUID_PATTERN.test(blockedUserId)) {
+        throw new Error("Unblocking requires a valid user id.");
+      }
+      const { error } = await client
+        .from("user_blocks")
+        .delete()
+        .eq("blocker_id", userId)
+        .eq("blocked_user_key", blockedUserId.toLowerCase());
+      if (error) throw error;
+    },
+
+    async listBlockedUsers(): Promise<BlockedUserEntry[]> {
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("list_my_blocked_users");
+      if (error) throw error;
+      return asRowArray(data).map((row) => ({
+        blockedUserId: asString(row.blocked_user_id) ?? "",
+        displayName: asString(row.display_name),
+        avatarUrl: asString(row.avatar_url),
+        reason: asString(row.reason),
+        createdAt: asString(row.created_at) ?? new Date().toISOString(),
+      }));
+    },
+
+    async listHiddenPosts(): Promise<HiddenPostEntry[]> {
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("list_my_hidden_posts");
+      if (error) throw error;
+      return asRowArray(data).map((row) => ({
+        postId: asString(row.post_id) ?? "",
+        caption: asString(row.caption),
+        authorId: asString(row.author_id),
+        authorName: asString(row.author_display_name),
+        dishName: asString(row.dish_name),
+        venueName: asString(row.venue_name),
+        hiddenAt: asString(row.hidden_at) ?? new Date().toISOString(),
+      }));
     },
 
     async hidePost(postId: string, reason?: string) {
@@ -7889,9 +7942,11 @@ export const supabaseService: HungryService = {
   },
 
   notifications: {
-    async listActivityEvents() {
+    async listActivityEvents(page?: { limit?: number; offset?: number }) {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
+      const limit = Math.min(Math.max(page?.limit ?? ACTIVITY_EVENTS_PAGE_SIZE, 1), 100);
+      const offset = Math.max(page?.offset ?? 0, 0);
       const { data, error } = await client
         .from("activity_events")
         .select(
@@ -7910,7 +7965,7 @@ export const supabaseService: HungryService = {
         `,
         )
         .order("created_at", { ascending: false })
-        .limit(50);
+        .range(offset, offset + limit - 1);
       if (isMissingActivityEventsSchemaError(error)) return [];
       if (error) throw error;
       // Reply events target a comment; resolve each to its post so the inbox
@@ -7964,6 +8019,14 @@ export const supabaseService: HungryService = {
       const { error } = await client.rpc("mark_activity_read", { p_event_id: eventId });
       if (isMissingMarkActivityReadRpcError(error)) return;
       if (error) throw error;
+    },
+
+    async markAllActivityRead() {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { data, error } = await client.rpc("mark_all_activity_read");
+      if (error) throw error;
+      return typeof data === "number" ? data : 0;
     },
   },
 };
