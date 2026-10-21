@@ -1,6 +1,10 @@
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { AppText } from "@/components/ui";
+import {
+  PORTFOLIO_TYPE_DESCRIPTIONS,
+  PORTFOLIO_TYPE_LABELS,
+} from "@/features/checklistPortfolio/listLabels";
 import { useHungryTheme } from "@/theme";
 import type { PortfolioType } from "@/types/domain";
 
@@ -12,55 +16,50 @@ interface PortfolioTypeSelectorProps {
 }
 
 export function PortfolioTypeSelector({ value, onChange }: PortfolioTypeSelectorProps) {
-  return <OptionRow values={PORTFOLIO_TYPES} activeValue={value} onSelect={onChange} />;
-}
-
-function OptionRow<T extends string>({
-  values,
-  activeValue,
-  onSelect,
-}: {
-  values: T[];
-  activeValue: T;
-  onSelect: (value: T) => void;
-}) {
   const { palette } = useHungryTheme();
   return (
-    <View style={styles.optionRow}>
-      {values.map((option) => (
-        <Pressable
-          key={option}
-          accessibilityRole="radio"
-          accessibilityState={{ checked: activeValue === option }}
-          accessibilityLabel={option.replaceAll("_", " ")}
-          onPress={() => onSelect(option)}
-          style={[
-            styles.option,
-            {
-              backgroundColor: activeValue === option ? palette.orangeLight : palette.surfaceRaised,
-              borderColor: activeValue === option ? palette.orange : palette.border,
-            },
-          ]}
-        >
-          <AppText variant="bodySmallBold" tone={activeValue === option ? "accent" : "secondary"}>
-            {option.replaceAll("_", " ")}
-          </AppText>
-        </Pressable>
-      ))}
+    <View accessibilityRole="radiogroup" style={styles.group}>
+      {PORTFOLIO_TYPES.map((option) => {
+        const active = value === option;
+        return (
+          <Pressable
+            key={option}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: active }}
+            accessibilityLabel={PORTFOLIO_TYPE_LABELS[option]}
+            accessibilityHint={PORTFOLIO_TYPE_DESCRIPTIONS[option]}
+            onPress={() => onChange(option)}
+            style={[
+              styles.option,
+              {
+                backgroundColor: active ? palette.orangeLight : palette.surfaceRaised,
+                borderColor: active ? palette.orange : palette.border,
+              },
+            ]}
+          >
+            <AppText variant="bodySmallBold" tone={active ? "accent" : "secondary"}>
+              {PORTFOLIO_TYPE_LABELS[option]}
+            </AppText>
+            <AppText variant="micro" tone="secondary">
+              {PORTFOLIO_TYPE_DESCRIPTIONS[option]}
+            </AppText>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  group: {
+    gap: 8,
+  },
   option: {
-    borderRadius: 999,
+    borderRadius: 16,
     borderWidth: 1,
+    gap: 2,
+    minHeight: 44,
     paddingHorizontal: 14,
     paddingVertical: 10,
-  },
-  optionRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
   },
 });

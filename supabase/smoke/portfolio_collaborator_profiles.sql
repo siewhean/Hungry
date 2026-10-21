@@ -30,6 +30,14 @@ values (
   'viewer'
 );
 
+-- Owners can add only people they follow (20261022070000_lists_extras_mediums_lows.sql).
+insert into follows (follower_id, followee_id, status)
+values (
+  '00000000-0000-0047-a000-000000000001',
+  '00000000-0000-0047-a000-000000000004',
+  'approved'
+);
+
 set local role authenticated;
 
 -- Owner: sees the collaborator by name, can add an editor and remove them again.

@@ -124,11 +124,11 @@ export function ChecklistItemRow({
           <GripVertical color={palette.textMuted} size={18} />
         </View>
         <Button
-          label={item.triedAt ? "Tried" : "Mark tried"}
+          label={item.triedAt ? "Tried (undo)" : "Mark tried"}
+          accessibilityLabel={item.triedAt ? "Undo marked as tried" : "Mark as tried"}
           size="sm"
           fullWidth={false}
           variant={item.triedAt ? "secondary" : "primary"}
-          disabled={Boolean(item.triedAt)}
           onPress={onMarkTried}
         />
         <Pressable

@@ -847,6 +847,7 @@ export interface PublicPortfolio {
   name: string;
   description?: string;
   ownerDisplayName?: string;
+  type?: PortfolioType;
   updatedAt?: string;
   items: PublicPortfolioItem[];
 }
@@ -858,8 +859,11 @@ export interface PublicPortfolioItem {
   name: string;
   stallName?: string;
   price?: number;
+  score?: number;
   publicNotes?: string;
   imageUrl?: string;
+  /** Free-text place for a maps search ("Get directions"). */
+  mapQuery?: string;
 }
 
 export interface PortfolioCollaborator {

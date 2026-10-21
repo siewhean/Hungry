@@ -147,7 +147,6 @@ export type RootStackParamList = {
   DiscoverMap: undefined;
   DecideForMeResult: { surface?: "home" | "discover" } | undefined;
   MapZoomedIn: { buildingId: string };
-  BlogPost: { postId: string };
   ReviewStack: NavigatorScreenParams<ReviewStackParamList>;
   WheelStack: NavigatorScreenParams<WheelStackParamList>;
   ActivityInbox: { initialTab?: "messages" | "updates" } | undefined;
@@ -194,9 +193,8 @@ export type RootStackParamList = {
   // Gamification
   PassportScreen: undefined;
   MissionsScreen: undefined;
-  // Checklist & Portfolio (root-level access)
-  ChecklistDetail: { checklistId: string };
-  PortfolioDetail: { portfolioId: string };
-  PortfolioPublicView: { portfolioId: string };
+  // Shared list (root-level access); list detail screens live in ProfileStack only.
+  // `follow` finishes the Save tap that sent a signed-out visitor to sign in.
+  PortfolioPublicView: { portfolioId: string; follow?: boolean };
   AdminPortfolioFlags: undefined;
 };

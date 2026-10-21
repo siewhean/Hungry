@@ -97,8 +97,6 @@ interface WheelState {
   ): Promise<void>;
   addEntry(venueId: string, buildingId: string, label: string, imageUrl: string): void;
   removeEntry(entryId: string): void;
-  updateTrigger(triggerMode: WheelTriggerMode, triggerValue?: TriggerValue): void;
-  updateEntryLimit(limit: number): void;
   triggerSpin(): void;
   /** Settles a finished spin: classic resolves the winner, elimination drops the landed entry. */
   completeSpin(landedEntryId: string): void;
@@ -271,26 +269,6 @@ export const useWheelStore = create<WheelState>((set, get) => ({
     _channel.broadcast({ type: "entry_removed", entryId });
     set((state) => ({
       entries: state.entries.filter((e) => e.id !== entryId),
-    }));
-  },
-
-  // ── updateTrigger ──────────────────────────────────────────────────────────
-
-  updateTrigger(triggerMode, triggerValue) {
-    const { _channel } = get();
-    if (!_channel) return;
-
-    set((state) => ({
-      party: state.party ? { ...state.party, triggerMode, triggerValue } : state.party,
-    }));
-    _channel.broadcast({ type: "trigger_update", triggerMode, triggerValue });
-  },
-
-  updateEntryLimit(limit) {
-    const { _channel } = get();
-    if (!_channel) return;
-    set((state) => ({
-      party: state.party ? { ...state.party, maxEntriesPerMember: limit } : state.party,
     }));
   },
 

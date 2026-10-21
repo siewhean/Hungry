@@ -59,7 +59,6 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "DecideForMeResult",
   "MapZoomedIn",
   "Post",
-  "BlogPost",
   "ReviewStack",
   "WheelStack",
   "ActivityInbox",
@@ -335,21 +334,6 @@ const loadAdminPortfolioFlagsScreen = () =>
   (
     require("@/app/screens/portfolio/AdminPortfolioFlagsScreen") as typeof import("@/app/screens/portfolio/AdminPortfolioFlagsScreen")
   ).AdminPortfolioFlagsScreen;
-
-function BlogPostRouteScreen({
-  navigation,
-  route,
-}: NativeStackScreenProps<RootStackParamList, "BlogPost">) {
-  const { BlogPostWebViewScreen } =
-    require("@/app/screens/reads/BlogPostWebViewScreen") as typeof import("@/app/screens/reads/BlogPostWebViewScreen");
-
-  return (
-    <BlogPostWebViewScreen
-      onOpenVenue={(venueId) => navigation.navigate("StallDetail", { venueId })}
-      postId={route.params?.postId}
-    />
-  );
-}
 
 function GlobalScrollBackButton() {
   const insets = useSafeAreaInsets();
@@ -769,7 +753,6 @@ export function RootNavigator({ theme }: { theme: Theme }) {
               }}
             />
           ) : null}
-          <RootStack.Screen component={BlogPostRouteScreen} name="BlogPost" />
           <RootStack.Screen getComponent={loadReviewStack} name="ReviewStack" />
           <RootStack.Screen getComponent={loadWheelStack} name="WheelStack" />
           <RootStack.Screen getComponent={loadActivityInboxScreen} name="ActivityInbox" />
