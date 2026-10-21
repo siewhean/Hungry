@@ -1,7 +1,14 @@
 import { getSupabaseClient } from "@/lib/services/supabase/client";
 
 export type CatalogVerificationStatus = "raw" | "verified" | "approved";
-export type CatalogSort = "nearby" | "relevance" | "quality";
+/** "price" lists the cheapest first; dishes and stalls without a price come last. */
+export type CatalogSort = "nearby" | "relevance" | "quality" | "price";
+
+/** Typed text shorter than this is not searched (the RPCs return an empty page); longer is cut. */
+export const CATALOG_QUERY_MIN_CHARS = 2;
+export const CATALOG_QUERY_MAX_CHARS = 80;
+/** The server counts matches up to this many, so "100" means "100 or more". */
+export const CATALOG_MATCH_COUNT_CAP = 100;
 
 export interface CatalogCoordinate {
   latitude: number;
@@ -14,6 +21,8 @@ export interface CatalogPageRequest {
   radiusMeters?: number;
   cuisineTags?: string[];
   dietaryFlags?: string[];
+  /** Food-type or dish-name fragments, any of which may match (the Noodles and Rice chips). */
+  foodKeywords?: string[];
   buildingTypes?: string[];
   maxPrice?: number;
   openOnly?: boolean;
@@ -27,6 +36,8 @@ export interface CatalogPage<T> {
   items: T[];
   nextCursor?: string;
   releaseId: string;
+  /** Matches for the request, capped at CATALOG_MATCH_COUNT_CAP; absent from local data. */
+  matchCount?: number;
   totals: {
     venues: number;
     dishes: number;
@@ -288,7 +299,7 @@ function mapSuggestions(value: unknown): CatalogSuggestion[] {
 
 function normaliseRequest(request: CatalogPageRequest): Record<string, unknown> {
   return {
-    p_query: request.query?.trim() || null,
+    p_query: request.query?.trim().slice(0, CATALOG_QUERY_MAX_CHARS) || null,
     p_lat: request.coordinate?.latitude ?? null,
     p_lng: request.coordinate?.longitude ?? null,
     p_radius_meters: request.radiusMeters ?? null,
@@ -302,6 +313,15 @@ function normaliseRequest(request: CatalogPageRequest): Record<string, unknown> 
     p_release_id: request.releaseId ?? null,
     p_limit: Math.max(1, Math.min(request.limit ?? 24, 50)),
   };
+}
+
+/** Only the two paged search RPCs take food keywords; sent only when there are some. */
+function withFoodKeywords(
+  args: Record<string, unknown>,
+  request: CatalogPageRequest,
+): Record<string, unknown> {
+  const keywords = request.foodKeywords?.filter((keyword) => keyword.trim()) ?? [];
+  return keywords.length ? { ...args, p_food_keywords: keywords } : args;
 }
 
 export function catalogRequestKey(prefix: string, value: Record<string, unknown>): string {
@@ -354,6 +374,7 @@ function mapPage<T>(value: unknown, mapItem: (item: unknown) => T): CatalogPage<
     items: Array.isArray(row.items) ? row.items.map(mapItem) : [],
     nextCursor: asString(row.next_cursor),
     releaseId: asString(row.release_id) ?? "",
+    matchCount: asNumber(row.match_count),
     totals: {
       venues: asNumber(totals.venues) ?? 0,
       dishes: asNumber(totals.dishes) ?? 0,
@@ -368,7 +389,7 @@ export const catalogRawService = {
   },
 
   async listDishes(request: CatalogPageRequest): Promise<CatalogPage<CatalogRawDishCard>> {
-    const args = normaliseRequest(request);
+    const args = withFoodKeywords(normaliseRequest(request), request);
     const key = catalogRequestKey("dishes", args);
     const cached = readCache<CatalogPage<CatalogRawDishCard>>(pageCache, key);
     if (cached) return cached;
@@ -377,7 +398,7 @@ export const catalogRawService = {
   },
 
   async listVenues(request: CatalogPageRequest): Promise<CatalogPage<CatalogRawVenueCard>> {
-    const args = normaliseRequest(request);
+    const args = withFoodKeywords(normaliseRequest(request), request);
     const key = catalogRequestKey("venues", args);
     const cached = readCache<CatalogPage<CatalogRawVenueCard>>(pageCache, key);
     if (cached) return cached;

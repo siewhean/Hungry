@@ -978,6 +978,8 @@ export interface HungryService {
     /** Every category of the signed-in user's own data. Throws instead of returning partial data. */
     exportMyData(): Promise<MyDataExport>;
     updateDietaryPreferences(flags: DietaryFlag[]): Promise<void>;
+    /** Saves the usual max price per dish (SGD); null clears it ("Any price"). */
+    updateMaxDishBudget(maxDishBudget: number | null): Promise<void>;
     getGuestProfile(): Promise<UserProfile>;
     toggleFavourite(dishId: string): Promise<boolean>;
     /**

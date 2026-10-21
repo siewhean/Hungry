@@ -125,11 +125,13 @@ test("a guest's taste quiz stays on the device and uploads on sign-in", () => {
   }
 });
 
-test("guests can search and browse the catalog; only the search taste signal is skipped", () => {
+test("guests can search and browse the catalog; only the search taste signal needs a session", () => {
   const search = read("src/app/screens/search/SearchResultsScreen.tsx");
   assert.doesNotMatch(search, /Sign in to browse the full directory/);
   assert.doesNotMatch(search, /if \(!isAuthenticated\) return;\s*const version/);
-  assert.match(search, /if \(!isAuthenticated \|\| initialQueryRecordedRef\.current\) return;/);
+  // Guests and members log the same search event; the taste signal needs a session.
+  assert.match(search, /if \(initialQueryRecordedRef\.current\) return;/);
+  assert.match(search, /recordTaste: isAuthenticated && !fromDiscoverChip/);
 });
 
 test("a guest swipe-right on Crave asks to sign in instead of saving", () => {

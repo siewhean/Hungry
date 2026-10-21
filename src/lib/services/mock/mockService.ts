@@ -2039,6 +2039,11 @@ export const hungryService: HungryService = {
       return resolve({ id: userId, ...person });
     },
 
+    async updateMaxDishBudget(maxDishBudget: number | null) {
+      _profile = { ..._profile, maxDishBudget: maxDishBudget ?? undefined };
+      return resolve(undefined);
+    },
+
     async updateDietaryPreferences(flags: DietaryFlag[]) {
       _profile = { ..._profile, dietaryPreferences: flags };
       return resolve(undefined);

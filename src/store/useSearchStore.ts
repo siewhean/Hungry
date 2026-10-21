@@ -1,15 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
-import { trackAnalyticsEvent } from "@/lib/analytics";
 import { sanitizeSearchQuery } from "@/lib/security/inputSanitization";
-import type {
-  DietaryFlag,
-  SearchCategory,
-  SearchFilters,
-  SearchHistoryEntry,
-} from "@/types/domain";
 import { hungryPersistStorage } from "./persistStorage";
 import { useUIStore } from "./useUIStore";
 
@@ -25,16 +17,12 @@ function normalizeSearchQuery(query: string) {
 }
 
 interface SearchState {
-  filters: SearchFilters;
   recentSearches: string[];
-  history: SearchHistoryEntry[];
-  toggleCategory: (category: SearchCategory) => void;
-  toggleDietary: (flag: DietaryFlag) => void;
+  /** Saves a committed search (Search home, or Enter in the results field) as a recent. */
   rememberSearch: (query: string) => void;
-  addHistoryEntry: (entry: Omit<SearchHistoryEntry, "id" | "timestamp">) => void;
-  removeHistoryEntry: (id: string) => void;
-  clearHistory: () => void;
-  /** Drops recent searches and history, e.g. when search history is turned off. */
+  /** Removes one recent search. */
+  removeRecentSearch: (query: string) => void;
+  /** Drops recent searches, e.g. when search history is turned off. */
   clearSearchHistory: () => void;
   clearSearchState: () => void;
 }
@@ -42,59 +30,12 @@ interface SearchState {
 export const useSearchStore = create<SearchState>()(
   persist(
     (set) => ({
-      filters: {
-        query: "",
-        categories: [],
-        dietaryFlags: [],
-        tasteValues: NEUTRAL_TASTE_VECTOR,
-        radius: 1000,
-      },
       recentSearches: [],
-      history: [],
-      toggleCategory: (category) =>
-        set((state) => {
-          const selected = !state.filters.categories.includes(category);
-          trackAnalyticsEvent("category_chip_tapped", {
-            category,
-            selected,
-          });
-          return {
-            filters: {
-              ...state.filters,
-              categories: state.filters.categories.includes(category)
-                ? state.filters.categories.filter((value) => value !== category)
-                : [...state.filters.categories, category],
-            },
-          };
-        }),
-      toggleDietary: (flag) =>
-        set((state) => {
-          const selected = !state.filters.dietaryFlags.includes(flag);
-          trackAnalyticsEvent("dietary_chip_tapped", {
-            flag,
-            selected,
-          });
-          return {
-            filters: {
-              ...state.filters,
-              dietaryFlags: state.filters.dietaryFlags.includes(flag)
-                ? state.filters.dietaryFlags.filter((value) => value !== flag)
-                : [...state.filters.dietaryFlags, flag],
-            },
-          };
-        }),
       rememberSearch: (query) =>
         set((state) => {
           const normalizedQuery = normalizeSearchQuery(query);
-          if (!normalizedQuery) {
-            return state;
-          }
-
-          trackAnalyticsEvent("search_submitted", {
-            query_length: normalizedQuery.length,
-          });
-
-          if (!isSearchHistoryAllowed()) {
+          // Searches are counted by the results grid's single search_query event, not here.
+          if (!normalizedQuery || !isSearchHistoryAllowed()) {
             return state;
           }
 
@@ -107,48 +48,31 @@ export const useSearchStore = create<SearchState>()(
             ].slice(0, MAX_RECENT_SEARCHES),
           };
         }),
-      addHistoryEntry: (entry) =>
-        set((state) => {
-          if (!isSearchHistoryAllowed()) {
-            return state;
-          }
-          const newEntry: SearchHistoryEntry = {
-            ...entry,
-            id: `sh-${Date.now()}`,
-            timestamp: new Date().toISOString(),
-          };
-          return {
-            history: [newEntry, ...state.history].slice(0, 100),
-          };
-        }),
-      removeHistoryEntry: (id) =>
+      removeRecentSearch: (query) =>
         set((state) => ({
-          history: state.history.filter((h) => h.id !== id),
+          recentSearches: state.recentSearches.filter(
+            (value) => value.toLowerCase() !== query.toLowerCase(),
+          ),
         })),
-      clearHistory: () => set({ history: [] }),
-      clearSearchHistory: () => set({ recentSearches: [], history: [] }),
-      clearSearchState: () =>
-        set({
-          filters: {
-            query: "",
-            categories: [],
-            dietaryFlags: [],
-            tasteValues: NEUTRAL_TASTE_VECTOR,
-            radius: 1000,
-          },
-          recentSearches: [],
-          history: [],
-        }),
+      clearSearchHistory: () => set({ recentSearches: [] }),
+      clearSearchState: () => set({ recentSearches: [] }),
     }),
     {
       name: "hungry-search-v1",
+      // v2 dropped the unused filters and history that v1 wrote to storage.
+      version: 2,
       storage: hungryPersistStorage,
-      // The typed query and categories are per search (route params), never restored on launch.
-      partialize: (state) => ({
-        filters: { ...state.filters, query: "", categories: [] },
-        recentSearches: state.recentSearches,
-        history: state.history,
-      }),
+      migrate: (persisted) => {
+        const recent = (persisted as { recentSearches?: unknown } | undefined)?.recentSearches;
+        return {
+          recentSearches: Array.isArray(recent)
+            ? recent
+                .filter((value): value is string => typeof value === "string")
+                .slice(0, MAX_RECENT_SEARCHES)
+            : [],
+        } as SearchState;
+      },
+      partialize: (state) => ({ recentSearches: state.recentSearches }),
     },
   ),
 );

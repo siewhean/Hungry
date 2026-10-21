@@ -121,16 +121,14 @@ test("Allow search history gates recording and clears history when turned off", 
   assert.match(searchStore, /useUIStore\.getState\(\)\.allowSearchHistory/);
   assert.match(
     searchStore,
-    /rememberSearch:[\s\S]*?if \(!isSearchHistoryAllowed\(\)\) \{\s*return state;/,
+    /rememberSearch:[\s\S]*?!isSearchHistoryAllowed\(\)\) \{\s*return state;/,
   );
-  assert.match(
+  // The unused filters and history are gone from the store; only recent searches are kept.
+  assert.doesNotMatch(
     searchStore,
-    /addHistoryEntry:[\s\S]*?if \(!isSearchHistoryAllowed\(\)\) \{\s*return state;/,
+    /addHistoryEntry|removeHistoryEntry|clearHistory|toggleCategory/,
   );
-  assert.match(
-    searchStore,
-    /clearSearchHistory: \(\) => set\(\{ recentSearches: \[\], history: \[\] \}\)/,
-  );
+  assert.match(searchStore, /clearSearchHistory: \(\) => set\(\{ recentSearches: \[\] \}\)/);
   assert.match(settingsScreen, /onToggle=\{handleSearchHistoryToggle\}/);
   assert.match(
     settingsScreen,
@@ -424,11 +422,9 @@ test("MVP browse surfaces do not show obvious fake trust claims", () => {
   assert.doesNotMatch(feed, /Nearby picks/);
   assert.doesNotMatch(feed, /Fastest Near You|Mock distance logic/);
   assert.doesNotMatch(searchScreen, /fallbackPost|Heart\b|likeCount/);
-  // Only positive verification is badged; unverified rows carry no pill.
-  assert.match(
-    searchScreen,
-    /item\.verificationStatus === "approved" \? "Verified" : "Source verified"/,
-  );
+  // Only positive verification is badged, with one label; unverified rows carry no pill.
+  assert.match(searchScreen, /item\.verificationStatus === "approved"/);
+  assert.doesNotMatch(searchScreen, /Source verified/);
   assert.doesNotMatch(searchScreen, /"Unverified"/);
   assert.match(supabaseRepository, /isOpen: toBool\(row\.is_open, false\)/);
 });

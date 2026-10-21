@@ -19,7 +19,7 @@ test("Browse Dishes and Stalls page the active catalog service with a loading st
   assert.match(source, /<ActivityIndicator color=\{palette\.orange\}/);
   assert.match(
     source,
-    /const loadingLabel = mode === "dishes" \? "Preparing dishes" : "Preparing stalls"/,
+    /const loadingLabel = mode === "dishes" \? "Finding dishes" : "Finding stalls"/,
   );
   assert.match(source, /accessibilityLabel=\{loadingLabel\}/);
   assert.match(
@@ -33,7 +33,7 @@ test("Browse grid cards open the matching catalog record", () => {
 
   assert.match(
     source,
-    /navigation\.navigate\("CatalogRawDetail", \{\s*kind: mode === "dishes" \? "dish" : "venue",\s*id: item\.id,/,
+    /navigation\.navigate\("CatalogRawDetail", \{\s*kind: openedMode === "dishes" \? "dish" : "venue",\s*id: item\.id,/,
   );
   assert.match(source, /item\.imageUrl \?\? \("representativeDish" in item/);
 });
