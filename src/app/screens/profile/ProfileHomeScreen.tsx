@@ -1352,7 +1352,7 @@ function StallContributionCard({
           <View style={{ flex: 1, gap: spacing[0.5] }}>
             <AppText variant="h3">Add a stall</AppText>
             <AppText variant="bodySmall" tone="muted">
-              Submit a stall name, photos, menu notes, hours and a source link for review.
+              Submit a stall name, photos, menu notes, hours and an ordering link for review.
             </AppText>
           </View>
           <ChevronRight color={palette.textMuted} size={18} />

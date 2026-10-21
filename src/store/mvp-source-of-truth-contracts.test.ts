@@ -41,7 +41,10 @@ test("MVP profile identity uses Supabase storage and public profile sync", () =>
   assert.match(service, /async function uploadAvatarIfNeeded/);
   assert.match(service, /bucket: "avatars"/);
   assert.match(service, /path: `\$\{userId\}\/avatar-\$\{Date\.now\(\)\}\.\$\{extension\}`/);
-  assert.match(service, /payload\.avatar_url = await uploadAvatarIfNeeded/);
+  assert.match(
+    service,
+    /payload\.avatar_url =\s*updates\.avatarUrl === ""\s*\? null\s*: await uploadAvatarIfNeeded/,
+  );
   assert.match(service, /from\("privacy_settings"\)\.upsert/);
   assert.match(avatarMigration, /\('avatars', 'avatars', true/);
   assert.match(avatarMigration, /avatars_insert_authenticated_own_prefix/);

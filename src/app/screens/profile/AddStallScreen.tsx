@@ -34,10 +34,7 @@ import { ProfileScreenShell } from "./ProfileScreenShell";
 type Props = NativeStackScreenProps<ProfileStackParamList, "AddStall">;
 
 type FormErrors = Partial<
-  Record<
-    "stallName" | "imageUri" | "openingHours" | "postalCode" | "deliveryLink" | "sourceUrl",
-    string
-  >
+  Record<"stallName" | "imageUri" | "openingHours" | "postalCode" | "deliveryLink", string>
 >;
 
 const SINGAPORE_POSTAL_CODE_PATTERN = /^\d{6}$/;
@@ -283,7 +280,6 @@ export function AddStallScreen({ navigation }: Props) {
     { id: "menu-item-1", name: "", priceRange: "" },
   ]);
   const [deliveryLink, setDeliveryLink] = useState("");
-  const [sourceUrl, setSourceUrl] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
   const [isPhotoDragging, setIsPhotoDragging] = useState(false);
 
@@ -334,8 +330,7 @@ export function AddStallScreen({ navigation }: Props) {
     floor.trim() ||
     timeSlots.length ||
     menuItemDrafts.some((item) => item.name.trim() || item.priceRange.trim()) ||
-    deliveryLink.trim() ||
-    sourceUrl.trim(),
+    deliveryLink.trim(),
   );
 
   // Leaving with a half-filled form asks first, so details are not lost by a stray swipe.
@@ -579,9 +574,6 @@ export function AddStallScreen({ navigation }: Props) {
     if (deliveryLink.trim() && !isHttpUrl(deliveryLink.trim())) {
       nextErrors.deliveryLink = "Enter a full link starting with https://";
     }
-    if (sourceUrl.trim() && !isHttpUrl(sourceUrl.trim())) {
-      nextErrors.sourceUrl = "Enter a full link starting with https://";
-    }
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
@@ -601,7 +593,6 @@ export function AddStallScreen({ navigation }: Props) {
       imageMimeType: coverImage?.mimeType,
       imageUris: selectedImages.map((image) => image.uri),
       imageMimeTypes: selectedImages.map((image) => image.mimeType ?? ""),
-      sourceUrl: sourceUrl.trim() || undefined,
       buildingName: buildingName.trim() || undefined,
       area: area.trim() || undefined,
       address: address.trim() || undefined,
@@ -1216,20 +1207,6 @@ export function AddStallScreen({ navigation }: Props) {
         >
           <Plus color={palette.orange} size={22} />
         </Pressable>
-        <Input
-          label="Source link (where you found it)"
-          placeholder="https://"
-          value={sourceUrl}
-          onChangeText={(value) => {
-            setSourceUrl(value);
-            setErrors((current) => ({ ...current, sourceUrl: undefined }));
-          }}
-          autoCapitalize="none"
-          keyboardType="url"
-          maxLength={500}
-          error={Boolean(errors.sourceUrl)}
-          errorText={errors.sourceUrl}
-        />
         <Input
           label="Ordering or delivery link"
           placeholder="https://"

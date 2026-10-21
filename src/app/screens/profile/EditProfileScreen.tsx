@@ -43,7 +43,8 @@ export function EditProfileScreen({ navigation }: Props) {
   const [avatarUri, setAvatarUri] = useState<string | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
   const [canChangePassword, setCanChangePassword] = useState(false);
-  const avatarPreviewUri = avatarUri ?? profile.avatarUrl;
+  // undefined = unchanged, "" = remove the photo, anything else = a newly picked photo.
+  const avatarPreviewUri = avatarUri === "" ? undefined : (avatarUri ?? profile.avatarUrl);
   const avatarSize = spacing[20];
   const avatarInitials = useMemo(
     () =>
@@ -66,6 +67,7 @@ export function EditProfileScreen({ navigation }: Props) {
     bioChanged ||
     email.trim().toLowerCase() !== (profile.email ?? "").trim().toLowerCase() ||
     avatarUri !== undefined;
+  const hasAvatar = Boolean(avatarPreviewUri);
   // Saving (or leaving after a save) must not trigger the unsaved-changes prompt.
   const allowLeaveRef = useRef(false);
 
@@ -193,6 +195,16 @@ export function EditProfileScreen({ navigation }: Props) {
             <Camera size={16} color={palette.surface} />
           </View>
         </Pressable>
+        {hasAvatar ? (
+          <Button
+            label="Remove photo"
+            variant="ghost"
+            onPress={() => {
+              setAvatarUri("");
+              showToast({ message: "Photo removed. Tap Save changes to confirm.", tone: "info" });
+            }}
+          />
+        ) : null}
       </View>
 
       <Card>
@@ -201,6 +213,7 @@ export function EditProfileScreen({ navigation }: Props) {
             label="Display name"
             value={displayName}
             onChangeText={setDisplayName}
+            maxLength={50}
             errorText={nameError}
             error={Boolean(nameError)}
           />
@@ -276,6 +289,7 @@ export function EditProfileScreen({ navigation }: Props) {
                 name_changed: trimmedName !== profile.displayName.trim(),
                 bio_changed: bioChanged,
                 avatar_changed: avatarUri !== undefined,
+                avatar_removed: avatarUri === "",
                 email_change_requested: emailChanged,
               });
               if (emailChanged) {
