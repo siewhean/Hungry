@@ -497,6 +497,8 @@ export interface DiscoveryLocationFeedRequest {
   lng?: number;
   radiusMeters?: number;
   limit?: number;
+  /** The mall, hawker centre or food court the viewer is in: its stalls come first. */
+  buildingId?: string;
 }
 
 export interface DiscoveryLocationFeed {

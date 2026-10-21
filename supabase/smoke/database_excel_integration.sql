@@ -74,14 +74,14 @@ where not has_function_privilege(
 select 'missing_anon_execute' as check_name, 'get_discovery_feed_by_location' as detail
 where not has_function_privilege(
   'anon',
-  'public.get_discovery_feed_by_location(text,double precision,double precision,integer,integer)',
+  'public.get_discovery_feed_by_location(text,double precision,double precision,integer,integer,text)',
   'execute'
 );
 
 select 'missing_authenticated_execute' as check_name, 'get_discovery_feed_by_location' as detail
 where not has_function_privilege(
   'authenticated',
-  'public.get_discovery_feed_by_location(text,double precision,double precision,integer,integer)',
+  'public.get_discovery_feed_by_location(text,double precision,double precision,integer,integer,text)',
   'execute'
 );
 
@@ -168,14 +168,14 @@ begin
     select 1
     where not has_function_privilege(
       'anon',
-      'public.get_discovery_feed_by_location(text,double precision,double precision,integer,integer)',
+      'public.get_discovery_feed_by_location(text,double precision,double precision,integer,integer,text)',
       'execute'
     )
     union all
     select 1
     where not has_function_privilege(
       'authenticated',
-      'public.get_discovery_feed_by_location(text,double precision,double precision,integer,integer)',
+      'public.get_discovery_feed_by_location(text,double precision,double precision,integer,integer,text)',
       'execute'
     )
     union all

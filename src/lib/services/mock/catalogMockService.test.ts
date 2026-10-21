@@ -116,7 +116,7 @@ test("local catalog finds dishes and stalls by their building name (r2 H23)", as
 test("local catalog suggests places and stalls by word start, food types when empty (r2 H24)", async () => {
   const suggestions = await catalog.suggest("max");
   assert.ok(suggestions.length > 0 && suggestions.length <= 8);
-  assert.deepEqual(suggestions[0], { kind: "place", label: maxwell.name });
+  assert.deepEqual(suggestions[0], { kind: "place", label: maxwell.name, placeId: maxwell.id });
   const wordStart = await catalog.suggest("food cen");
   assert.ok(wordStart.some((item) => item.kind === "place" && item.label === maxwell.name));
   const midWord = await catalog.suggest("axwell");
@@ -126,4 +126,47 @@ test("local catalog suggests places and stalls by word start, food types when em
   );
   const empty = await catalog.suggest("m");
   assert.ok(empty.every((item) => item.kind === "food_type"));
+});
+
+test("local catalog lists places (buildings with 3+ stalls) by name and by position", async () => {
+  const byName = await catalog.listPlaces({ query: "max" });
+  assert.deepEqual(
+    byName.map((place) => place.id),
+    [maxwell.id],
+  );
+  assert.equal(byName[0].venueCount, 3);
+
+  // Two-stall buildings are not places.
+  const amoy = buildings.find((building) => building.name === "Amoy Street Food Centre")!;
+  assert.deepEqual(await catalog.listPlaces({ query: amoy.name }), []);
+
+  const here = await catalog.listPlaces({
+    coordinate: maxwell.coordinate,
+    radiusMeters: 100,
+    limit: 1,
+  });
+  assert.equal(here[0]?.id, maxwell.id);
+  assert.ok((here[0]?.distanceMeters ?? Infinity) <= 100);
+
+  const farAway = await catalog.listPlaces({
+    coordinate: { latitude: 1.45, longitude: 103.6 },
+    radiusMeters: 100,
+  });
+  assert.deepEqual(farAway, []);
+});
+
+test("local catalog keeps a place's stalls and dishes inside that building", async () => {
+  const stalls = await catalog.listVenues({ buildingId: maxwell.id, limit: 50 });
+  assert.equal(stalls.items.length, 3);
+  assert.ok(stalls.items.every((item) => item.buildingId === maxwell.id));
+
+  const dishesThere = await catalog.listDishes({ buildingId: maxwell.id, limit: 50 });
+  assert.ok(dishesThere.items.length > 0);
+  assert.ok(dishesThere.items.every((item) => item.buildingId === maxwell.id));
+
+  // A query composes with the place: a dish sold only elsewhere does not appear.
+  const elsewhere = await catalog.listVenues({ buildingId: maxwell.id, query: "no such stall" });
+  assert.deepEqual(elsewhere.items, []);
+
+  assert.deepEqual((await catalog.listVenues({ buildingId: "no-such-building" })).items, []);
 });

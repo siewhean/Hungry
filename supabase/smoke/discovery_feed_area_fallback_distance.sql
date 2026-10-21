@@ -25,13 +25,13 @@ declare
   near_rank double precision;
   far_rank double precision;
 begin
-  select pg_get_functiondef('public.get_discovery_feed_by_location(text, double precision, double precision, integer, integer)'::regprocedure)
+  select pg_get_functiondef('public.get_discovery_feed_by_location(text, double precision, double precision, integer, integer, text)'::regprocedure)
   into feed_def;
 
   if (
     select p.prosecdef
     from pg_proc p
-    where p.oid = 'public.get_discovery_feed_by_location(text, double precision, double precision, integer, integer)'::regprocedure
+    where p.oid = 'public.get_discovery_feed_by_location(text, double precision, double precision, integer, integer, text)'::regprocedure
   ) then
     raise exception 'get_discovery_feed_by_location must stay security invoker';
   end if;
@@ -74,6 +74,23 @@ begin
 
   if near_rank is null or far_rank is null or near_rank <= far_rank then
     raise exception 'Nearer venue should get a higher proximity score (near %, far %)', near_rank, far_rank;
+  end if;
+
+  -- Place-first: with p_building_id the far building's stall leads the feed even though the
+  -- near one is closer; without it the near one leads.
+  if (
+    select feed.venue_id
+    from public.get_discovery_feed_by_location(null, 1.4501, 103.6001, 2000, 100, 'discovery-fallback-smoke-far') feed
+    limit 1
+  ) is distinct from 'discovery-fallback-smoke-venue-far' then
+    raise exception 'The stall in p_building_id should come first in the feed';
+  end if;
+  if (
+    select feed.venue_id
+    from public.get_discovery_feed_by_location(null, 1.4501, 103.6001, 2000, 100) feed
+    limit 1
+  ) is distinct from 'discovery-fallback-smoke-venue-near' then
+    raise exception 'Without p_building_id the nearer stall should lead the feed';
   end if;
 end $$;
 

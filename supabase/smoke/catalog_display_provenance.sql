@@ -262,7 +262,7 @@ begin
 
   select pg_get_functiondef('public.search_dishes(text, double precision, double precision, integer, text[], integer, double precision, text, text, text, text[], numeric, boolean)'::regprocedure)
     into search_def;
-  select pg_get_functiondef('public.get_discovery_feed_by_location(text, double precision, double precision, integer, integer)'::regprocedure)
+  select pg_get_functiondef('public.get_discovery_feed_by_location(text, double precision, double precision, integer, integer, text)'::regprocedure)
     into discovery_def;
   select pg_get_functiondef('public.get_dish_detail(text)'::regprocedure)
     into dish_detail_def;

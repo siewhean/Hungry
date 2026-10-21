@@ -122,13 +122,14 @@ begin
   end if;
 
   -- H24: suggestions by word start, typed text taken literally, popular food types when short.
+  -- A building with fewer than 3 stalls is not a place suggestion (see catalog_places_and_place_scope.sql).
   v_items := public.catalog_suggest('Smoke Fo');
-  if not v_items @> '[{"kind": "place", "label": "Zyxwv Smoke Food Centre"}]'::jsonb then
-    raise exception 'suggest should match a word start in the place name, got %', v_items;
+  if v_items @> '[{"kind": "place"}]'::jsonb then
+    raise exception 'a one-stall building must not be suggested as a place, got %', v_items;
   end if;
-  v_items := public.catalog_suggest('Zy');
-  if v_items->0 <> '{"kind": "place", "label": "Zyxwv Smoke Food Centre"}'::jsonb then
-    raise exception 'suggest should return the place first, got %', v_items;
+  v_items := public.catalog_suggest('Smoke Uncle');
+  if not v_items @> '[{"kind": "stall", "label": "Smoke Uncle Stall"}]'::jsonb then
+    raise exception 'suggest should match a stall by word start, got %', v_items;
   end if;
   if jsonb_array_length(public.catalog_suggest('%%')) <> 0 then
     raise exception 'suggest must treat %% literally';
@@ -150,10 +151,10 @@ begin
   if not has_function_privilege('anon', 'public.catalog_suggest(text,integer)', 'execute') then
     raise exception 'guests must be able to call catalog_suggest';
   end if;
-  if not has_function_privilege('anon', 'public.catalog_raw_dishes_page(text,double precision,double precision,integer,text[],text[],numeric,boolean,text,text,uuid,integer,text,text[])', 'execute') then
+  if not has_function_privilege('anon', 'public.catalog_raw_dishes_page(text,double precision,double precision,integer,text[],text[],numeric,boolean,text,text,uuid,integer,text,text[],text)', 'execute') then
     raise exception 'anon must execute catalog_raw_dishes_page';
   end if;
-  if not has_function_privilege('anon', 'public.catalog_raw_venues_page(text,double precision,double precision,integer,text[],text[],numeric,boolean,text,text,uuid,integer,text[])', 'execute') then
+  if not has_function_privilege('anon', 'public.catalog_raw_venues_page(text,double precision,double precision,integer,text[],text[],numeric,boolean,text,text,uuid,integer,text[],text)', 'execute') then
     raise exception 'anon must execute catalog_raw_venues_page';
   end if;
   if has_function_privilege('anon', 'app_private.catalog_dish_display_image(text)', 'execute') then
