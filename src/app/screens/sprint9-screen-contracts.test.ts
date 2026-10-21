@@ -155,8 +155,24 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
   // Result is ranked by the quiz taste vector, not a fixed popular list.
   assert.match(tasteProfileResult, /tasteValues: tasteVector/);
   assert.match(tasteProfileResult, /searchDishes\(getResultFilters\(\), tasteVector\)/);
-  // Supabase has no cached catalog during onboarding, so the screen asks the server.
-  assert.match(tasteProfileResult, /getSearchResultsAsync\(getResultFilters\(\), tasteVector\)/);
+  // Supabase has no cached catalog during onboarding, so the screen asks the server's
+  // taste ranking (with the user's vector and a real radius that widens), and only says
+  // "Picked to match your taste" when the list came from taste ranking.
+  assert.match(
+    tasteProfileResult,
+    /recommendations\.getSlate\(\{[\s\S]*?tasteProfile: tasteVector,/,
+  );
+  assert.match(tasteProfileResult, /TASTE_PICK_RADII_METERS = \[3000, 10000, undefined\]/);
+  assert.doesNotMatch(tasteProfileResult, /getSearchResultsAsync/);
+  // p_radius_meters is an integer: a "no limit" MAX_SAFE_INTEGER radius is sent as null.
+  assert.match(
+    read("src/lib/services/supabase/supabaseService.ts"),
+    /p_radius_meters: toRpcRadiusMeters\(request\.radiusMeters\)/,
+  );
+  assert.match(
+    tasteProfileResult,
+    /dishes\.length > 0 && tasteRanked\s*\? "Picked to match your taste/,
+  );
   assert.doesNotMatch(tasteProfileResult, /generated food photo/);
   assert.match(
     tasteQuiz,
@@ -222,7 +238,7 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
   assert.match(source, /togglePostSave/);
   assert.match(source, /addPostComment/);
   assert.match(source, /addPostReply/);
-  assert.match(source, /const bundle = await getHomeFeedBundle\(profile,\s*\{/);
+  assert.match(source, /const bundle = await getHomeFeedBundle\(profileRef\.current,\s*\{/);
   assert.match(source, /followedAuthors,/);
   assert.match(source, /followedUserIds,/);
   assert.match(source, /refreshSeed: feedRefreshSeedRef\.current/);
@@ -623,6 +639,6 @@ test("search home hands every query to the paged results and keeps a see-all act
   assert.match(search, /"See all results"/);
   assert.match(
     search,
-    /navigation\.navigate\("SearchResults", \{\s*initialQuery: trimmedQuery \|\| undefined,/,
+    /navigation\.navigate\("SearchResults", \{[\s\S]*?initialQuery: trimmedQuery \|\| undefined,/,
   );
 });

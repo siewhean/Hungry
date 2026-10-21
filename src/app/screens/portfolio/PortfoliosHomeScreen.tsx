@@ -11,34 +11,36 @@ import { useShallow } from "zustand/react/shallow";
 
 import { resolveListItemCount } from "@/features/checklistPortfolio/listLabels";
 import { trackAnalyticsEvent } from "@/lib/analytics";
-import { usePortfolioStore } from "@/store/usePortfolioStore";
-import { useProfileStore } from "@/store/useProfileStore";
+import { usePortfolioStore, type PortfolioListScope } from "@/store/usePortfolioStore";
 import { useHungryTheme } from "@/theme";
+import type { Portfolio } from "@/types/domain";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "PortfoliosHome">;
-type PortfolioTab = "mine" | "following" | "discover";
+type PortfolioTab = PortfolioListScope;
 
 const TAB_LABELS: Record<PortfolioTab, string> = {
   mine: "My",
+  shared: "Shared with me",
   following: "Following",
   discover: "Discover",
 };
 
 export function PortfoliosHomeScreen({ navigation }: Props) {
   const { palette, spacing } = useHungryTheme();
-  const profile = useProfileStore((state) => state.profile);
-  const { portfolios, items, follows, isLoaded, loadPortfolios, loadFollowedPortfolios } =
+  const [activeTab, setActiveTab] = useState<PortfolioTab>("mine");
+  const { portfolios, items, scopeIds, loadPortfolioScope, loadFollowedPortfolios } =
     usePortfolioStore(
       useShallow((state) => ({
         portfolios: state.portfolios,
         items: state.items,
-        follows: state.follows,
-        isLoaded: state.isLoaded,
-        loadPortfolios: state.loadPortfolios,
+        scopeIds: state.scopeIds,
+        loadPortfolioScope: state.loadPortfolioScope,
         loadFollowedPortfolios: state.loadFollowedPortfolios,
       })),
     );
-  const [activeTab, setActiveTab] = useState<PortfolioTab>("mine");
+  // Each tab runs its own server query, so a busy Discover feed can't push your lists out.
+  const tabIds = scopeIds[activeTab];
+  const isLoaded = tabIds !== undefined;
   const [query, setQuery] = useState("");
   const insets = useSafeAreaInsets();
   // A failed load with no cache shows an error with Retry instead of "Loading..." forever.
@@ -52,13 +54,13 @@ export function PortfoliosHomeScreen({ navigation }: Props) {
       console.error("Failed to load followed lists:", error),
     );
     try {
-      await loadPortfolios();
+      await loadPortfolioScope(activeTab);
     } catch (error) {
       console.error("Failed to load portfolios:", error);
       trackAnalyticsEvent("list_load_failed", { list_kind: "portfolio" });
       setLoadFailed(true);
     }
-  }, [loadFollowedPortfolios, loadPortfolios]);
+  }, [activeTab, loadFollowedPortfolios, loadPortfolioScope]);
 
   const refresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -72,16 +74,17 @@ export function PortfoliosHomeScreen({ navigation }: Props) {
 
   const visiblePortfolios = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    return portfolios.filter((portfolio) => {
-      if (activeTab === "mine" && portfolio.ownerId !== profile.id) return false;
-      if (activeTab === "following" && !follows[portfolio.id]) return false;
-      if (activeTab === "discover" && portfolio.ownerId === profile.id) return false;
-      if (!normalizedQuery) return true;
-      return `${portfolio.name} ${portfolio.description ?? ""} ${portfolio.type}`
-        .toLowerCase()
-        .includes(normalizedQuery);
-    });
-  }, [activeTab, follows, portfolios, profile.id, query]);
+    const byId = new Map(portfolios.map((portfolio) => [portfolio.id, portfolio]));
+    return (tabIds ?? [])
+      .map((id) => byId.get(id))
+      .filter((portfolio): portfolio is Portfolio => Boolean(portfolio))
+      .filter((portfolio) => {
+        if (!normalizedQuery) return true;
+        return `${portfolio.name} ${portfolio.description ?? ""} ${portfolio.type}`
+          .toLowerCase()
+          .includes(normalizedQuery);
+      });
+  }, [portfolios, query, tabIds]);
 
   return (
     <ScrollView
@@ -174,7 +177,9 @@ export function PortfoliosHomeScreen({ navigation }: Props) {
           <AppText variant="body" tone="secondary">
             {activeTab === "mine"
               ? "Create a Hungry Portfolio when you want to organise places worth recommending."
-              : "Try another tab or search term."}
+              : activeTab === "shared"
+                ? "Lists a friend adds you to as a collaborator show up here."
+                : "Try another tab or search term."}
           </AppText>
         </Card>
       ) : (

@@ -68,7 +68,7 @@ test("primary user filter surfaces use shared chip primitives", () => {
   );
   assertSourceIncludes(
     homeMap,
-    [/<FilterChipRail[\s\S]*options=\{HOME_MAP_FILTER_OPTIONS\}/],
+    [/<FilterChipRail[\s\S]*options=\{filterOptions\}/],
     "Home Map filters",
   );
   assertSourceIncludes(

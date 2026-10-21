@@ -10,6 +10,15 @@ begin;
 --   reporters: 00000000-0000-0043-b000-00000000000{2,3,4}
 --   bystander: 00000000-0000-0043-b000-000000000005
 --   review:    00000000-0000-0043-e000-000000000001
+-- Reporters are established accounts (20261021162000 counts only accounts at
+-- least 7 days old).
+insert into auth.users (id, email, created_at)
+values
+  ('00000000-0000-0043-b000-000000000002', 'auto-hide-r1@example.test', now() - interval '30 days'),
+  ('00000000-0000-0043-b000-000000000003', 'auto-hide-r2@example.test', now() - interval '30 days'),
+  ('00000000-0000-0043-b000-000000000004', 'auto-hide-r3@example.test', now() - interval '30 days')
+on conflict (id) do nothing;
+
 insert into user_profiles (id, display_name)
 values
   ('00000000-0000-0043-b000-000000000001', 'Auto Hide Author'),

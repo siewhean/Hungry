@@ -4,7 +4,7 @@ import path from "node:path";
 import test from "node:test";
 
 import { setConfiguredDataSource } from "@/lib/services/supabase/client";
-import { setMockServiceProvider } from "@/lib/services/serviceProvider";
+import { getHungryService, setMockServiceProvider } from "@/lib/services/serviceProvider";
 import { userProfile } from "@/lib/services/mock/data";
 import type { ActivityUpdate } from "@/features/home/activity";
 import type { StallPost } from "@/types/domain";
@@ -40,6 +40,7 @@ function resetAuthStores() {
     authDataSource: null,
     returnRoute: undefined,
     sessionExpired: false,
+    signOutPending: false,
   });
 }
 
@@ -316,4 +317,51 @@ test("visible sign-out actions reset to login instead of onboarding", () => {
     );
     assert.doesNotMatch(source, /name: "OnboardingStack"/);
   });
+});
+
+test("a Supabase sign-out that does not finish is remembered and finished on next launch", async () => {
+  setConfiguredDataSource("supabase");
+  const auth = getHungryService().auth;
+  const originalSignOut = auth.signOut;
+  let signOutCalls = 0;
+  auth.signOut = () => {
+    signOutCalls += 1;
+    return Promise.reject(new Error("offline"));
+  };
+  try {
+    useSessionStore.setState({
+      isAuthenticated: true,
+      authenticatedUserId: SUPABASE_USER_ID,
+      authDataSource: "supabase",
+    });
+    useSessionStore.getState().signOut();
+    assert.equal(useSessionStore.getState().isAuthenticated, false);
+    assert.equal(useSessionStore.getState().signOutPending, true);
+
+    // Next launch: bootstrap finishes the sign-out before restoring a stored session.
+    auth.signOut = () => {
+      signOutCalls += 1;
+      return Promise.resolve();
+    };
+    await useSessionStore.getState().finishPendingSignOut();
+    assert.equal(useSessionStore.getState().signOutPending, false);
+    assert.ok(signOutCalls >= 2);
+  } finally {
+    auth.signOut = originalSignOut;
+  }
+});
+
+test("sign-out clears the stored Supabase session before any restore", () => {
+  const service = read("src/lib/services/supabase/supabaseService.ts");
+  assert.match(
+    service,
+    /async signOut\(\) \{[\s\S]*?if \(!error\) return;\s*const \{ error: localError \} = await client\.auth\.signOut\(\{ scope: "local" \}\);/,
+  );
+  const store = read("src/store/useSessionStore.ts");
+  assert.match(store, /signOutPending: state\.signOutPending/);
+  const bootstrap = read("src/hooks/useAppBootstrap.ts");
+  assert.match(
+    bootstrap,
+    /\.finishPendingSignOut\(\)\s*\.then\(\(\) => client\.auth\.getSession\(\)\)/,
+  );
 });

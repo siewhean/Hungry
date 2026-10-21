@@ -18,7 +18,6 @@ import {
   validateRequired,
   WEAK_PASSWORD_MESSAGE,
 } from "@/features/auth/validation";
-import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -27,13 +26,13 @@ import { useHungryTheme } from "@/theme";
 import type { AuthStackParamList } from "./AuthStack";
 import { AuthProviderButton } from "./AuthProviderButton";
 import { AuthScreenShell } from "./AuthScreenShell";
+import { AuthTermsNotice } from "./AuthTermsNotice";
 import {
   AUTH_COPY,
   getProviderErrorMessage,
   getSignUpProviderSuccessMessage,
   type AuthProvider,
 } from "./authCopy";
-import { WEB_LINKS } from "@/constants/links";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "SignUp">;
 type FormValues = { displayName: string; email: string; password: string };
@@ -185,46 +184,7 @@ export function SignUpScreen({ navigation }: Props) {
         wordmarkColor={colorScheme === "dark" ? palette.white : palette.navy}
         footer={
           <View style={{ alignItems: "center", gap: spacing[4] }}>
-            <View style={{ alignItems: "center" }}>
-              <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
-                {AUTH_COPY.signUp.termsPrefix}
-              </AppText>
-              {/* Separate links so each has its own 44pt target and link role. */}
-              <View
-                style={{
-                  alignItems: "center",
-                  flexDirection: "row",
-                  flexWrap: "wrap",
-                  justifyContent: "center",
-                }}
-              >
-                <Pressable
-                  accessibilityRole="link"
-                  accessibilityLabel={AUTH_COPY.signUp.termsLabel}
-                  accessibilityHint={AUTH_COPY.signUp.termsLinkHint}
-                  onPress={() => void openTrustedExternalUrl(WEB_LINKS.terms)}
-                  style={{ justifyContent: "center", minHeight: 44, paddingHorizontal: spacing[1] }}
-                >
-                  <AppText variant="bodySmall" tone="accent">
-                    {AUTH_COPY.signUp.termsLabel}
-                  </AppText>
-                </Pressable>
-                <AppText variant="bodySmall" tone="secondary">
-                  {AUTH_COPY.signUp.privacyJoiner}
-                </AppText>
-                <Pressable
-                  accessibilityRole="link"
-                  accessibilityLabel={AUTH_COPY.signUp.privacyLabel}
-                  accessibilityHint={AUTH_COPY.signUp.privacyLinkHint}
-                  onPress={() => void openTrustedExternalUrl(WEB_LINKS.privacy)}
-                  style={{ justifyContent: "center", minHeight: 44, paddingHorizontal: spacing[1] }}
-                >
-                  <AppText variant="bodySmall" tone="accent">
-                    {AUTH_COPY.signUp.privacyLabel}
-                  </AppText>
-                </Pressable>
-              </View>
-            </View>
+            <AuthTermsNotice />
 
             <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "center" }}>
               <AppText tone="secondary">{AUTH_COPY.signUp.footerPrompt}</AppText>

@@ -3,8 +3,11 @@ import type { DishDetail } from "@/types/domain";
 
 export interface StallCommunityReview {
   id: string;
+  /** The review row id (id is unique per dish row). */
+  reviewId: string;
   dishId: string;
   dishName: string;
+  authorId?: string;
   authorName: string;
   rating: number;
   text: string;
@@ -12,6 +15,8 @@ export interface StallCommunityReview {
   /** The author's own photo; without one the Avatar falls back to the Hungry logo. */
   avatarUrl?: string;
   merchantReply?: { text: string; repliedAt: string };
+  /** Signed review photo URLs. */
+  photos: string[];
 }
 
 export const STALL_COMMUNITY_REVIEW_LIMIT = 6;
@@ -36,14 +41,17 @@ export function deriveStallCommunityReviews(
       ({ review, dishId, dishName }) =>
         ({
           id: `${dishId}-${review.id}`,
+          reviewId: review.id,
           dishId,
           dishName,
+          authorId: review.authorId,
           authorName: review.authorName,
           rating: review.rating,
           text: review.text,
           createdAt: review.createdAt,
           avatarUrl: review.authorAvatarUrl,
           merchantReply: review.merchantReply,
+          photos: review.photos ?? [],
         }) satisfies StallCommunityReview,
     );
 }

@@ -5,9 +5,10 @@ useDefault = true
 
 # Legacy single [allowlist] table so older gitleaks releases in CI also apply it.
 [allowlist]
-description = "SFA venue identifiers in the generated Excel catalog; the Supabase anon key (public by design, shipped in every app build, role=anon, RLS enforced)"
+description = "SFA venue identifiers in the generated Excel catalog; the Supabase anon key (public by design, shipped in every app build, role=anon, RLS enforced); the AsyncStorage name of the pending dish save (an identifier, not a secret)"
 regexTarget = "secret"
 regexes = [
   '''^ven-SFA-[A-Z0-9]+$''',
+  '''^hungry-pending-dish-save-v1$''',
   '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlybHhqZW92d3NsaXJzZWFqb216Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIyNDc3ODIsImV4cCI6MjEwNzgyMzc4Mn0\.HChJVQe3BIoDuuDG_ruT6XedpVuqJjB9oeyB40bYZPk''',
 ]

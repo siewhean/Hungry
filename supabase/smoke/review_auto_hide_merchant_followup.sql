@@ -13,6 +13,15 @@ begin;
 --   account:   00000000-0000-0044-a000-000000000001
 --   outlet:    00000000-0000-0044-d000-000000000001
 --   review:    00000000-0000-0044-e000-000000000001
+-- Reporters are established accounts (20261021162000 counts only accounts at
+-- least 7 days old).
+insert into auth.users (id, email, created_at)
+values
+  ('00000000-0000-0044-b000-000000000002', 'pin-hide-r1@example.test', now() - interval '30 days'),
+  ('00000000-0000-0044-b000-000000000003', 'pin-hide-r2@example.test', now() - interval '30 days'),
+  ('00000000-0000-0044-b000-000000000004', 'pin-hide-r3@example.test', now() - interval '30 days')
+on conflict (id) do nothing;
+
 insert into user_profiles (id, display_name)
 values
   ('00000000-0000-0044-b000-000000000001', 'Pin Hide Author'),

@@ -56,6 +56,7 @@ import { useSearchStore } from "@/store/useSearchStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { ThemePreference, useUIStore } from "@/store/useUIStore";
 import { hungryPersistStorage } from "@/store/persistStorage";
+import { PendingDeletionBanner } from "@/features/auth/PendingDeletionBanner";
 import { useHungryTheme } from "@/theme";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import { SUPPORT_EMAIL, WEB_LINKS } from "@/constants/links";
@@ -246,14 +247,14 @@ export function SettingsScreen() {
     });
     Alert.alert(
       "Deletion scheduled",
-      `Your account will be deleted ${formatDeletionDate(scheduledFor)}. Sign in before then to keep it.`,
+      `Your account will be deleted ${formatDeletionDate(scheduledFor)}. To keep it, sign in before then and choose Keep my account.`,
     );
   };
 
   const handleDeleteAccount = () => {
     Alert.alert(
       "Delete account",
-      `Your account and personal data will be deleted in ${ACCOUNT_DELETION_GRACE_DAYS} days. Sign back in before then to keep your account. After that, deletion is permanent. Menu photos you shared stay on the stall without your name, and some security, moderation, or legal records may remain in anonymized form.`,
+      `Your account and personal data will be deleted in ${ACCOUNT_DELETION_GRACE_DAYS} days. To keep your account, sign in before then and choose Keep my account. After that, deletion is permanent. Menu photos you shared stay on the stall without your name, and some security, moderation, or legal records may remain in anonymized form.`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -329,20 +330,24 @@ export function SettingsScreen() {
   };
 
   const showProfileVisibilityDialog = () => {
-    Alert.alert("Profile visibility", "Choose who can see your Hungry profile.", [
-      {
-        text: "Public",
-        onPress: () => void changeProfileVisibility("public"),
-      },
-      {
-        text: "Private",
-        onPress: () => void changeProfileVisibility("private"),
-      },
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-    ]);
+    Alert.alert(
+      "Profile visibility",
+      "Private: only approved followers see your posts and the reviews on your profile. Your reviews still show on dish pages.",
+      [
+        {
+          text: "Public",
+          onPress: () => void changeProfileVisibility("public"),
+        },
+        {
+          text: "Private",
+          onPress: () => void changeProfileVisibility("private"),
+        },
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+      ],
+    );
   };
 
   const openAppSettings = async () => {
@@ -476,6 +481,7 @@ export function SettingsScreen() {
 
   return (
     <ProfileScreenShell title="Settings">
+      <PendingDeletionBanner />
       <SettingsSection title="Account">
         <SettingsRow
           label="Edit profile"

@@ -27,12 +27,40 @@ additional_redirect_urls = [
   "https://hungry-*-siewheans-projects.vercel.app",
   "https://hungry-*-siewheans-projects.vercel.app/**",
 ]
+# Matches MIN_PASSWORD_LENGTH in src/features/auth/validation.ts. Leaked-password
+# (HIBP) protection has no config.toml key; it is a dashboard setting.
+minimum_password_length = 10
+password_requirements = ""
 
 # Pinned so `supabase config push` cannot reset them to CLI defaults.
 [auth.email]
 enable_confirmations = true
 otp_length = 8
+otp_expiry = 3600
 max_frequency = "60s"
+# Changing the password needs a recent sign-in (changePassword re-signs in first).
+secure_password_change = true
+# An email change is confirmed from both the old and the new address.
+double_confirm_changes = true
+
+# The app asks for the emailed code ({{ .Token }}) on these screens:
+# confirmation (EmailVerificationScreen), recovery (ForgotPasswordScreen) and
+# magic_link (account deletion, AccountDeletionCodeDialog).
+[auth.email.template.confirmation]
+subject = "Your Hungry code: confirm your email"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "Your Hungry code: reset your password"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.magic_link]
+subject = "Your Hungry code: confirm account deletion"
+content_path = "./supabase/templates/magic_link.html"
+
+# Production sends auth email through the Send Email Hook (send-email Edge
+# Function on Resend, mail.usehungry.com), set in the dashboard. That hook must
+# include the code (email_data.token) for the three templates above.
 
 [auth.mfa.totp]
 enroll_enabled = true

@@ -18,12 +18,14 @@ import {
   AccessibleImage,
   AppText,
   Button,
+  Chip,
   EmptyState,
   FilterChipRail,
   IconButton,
   Screen,
   Skeleton,
 } from "@/components/ui";
+import { StallLogoMark } from "@/components/stall/StallLogoMark";
 import { getCatalogRawService } from "@/lib/services/serviceProvider";
 import type {
   CatalogPageRequest,
@@ -39,13 +41,14 @@ import { useHungryTheme } from "@/theme";
 
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 type SearchResultsRoute = RouteProp<RootStackParamList, "SearchResults">;
-// "Open now" and the price cap map onto p_open_only / p_max_price in the catalog RPCs.
-const OPEN_NOW_FILTER = "Open now";
+// The price cap maps onto p_max_price in the catalog RPCs. There is no Open now chip:
+// release cards only carry venues.is_open, which tracks temporary closures, not opening
+// hours, so it would list every stall at 3 am. It returns once open status is computed
+// from the weekly schedule at query time (decision 25).
 const BUDGET_FILTER = "Under S$6";
 const BUDGET_MAX_PRICE = 6;
 const RAW_BROWSE_FILTER_OPTIONS = [
   "All",
-  OPEN_NOW_FILTER,
   BUDGET_FILTER,
   "Halal",
   "Japanese",
@@ -54,10 +57,9 @@ const RAW_BROWSE_FILTER_OPTIONS = [
   "Rice",
 ].map((filter) => ({ id: filter, label: filter }));
 
-/** Maps a route/link filter or food-type tag onto one of the chips ("Local" was the old open-now chip). */
+/** Maps a route/link filter or food-type tag onto one of the chips ("Local", the old open-now chip, falls back to All). */
 function resolveInitialFilter(value?: string) {
   if (!value) return undefined;
-  if (value.toLowerCase() === "local") return OPEN_NOW_FILTER;
   return RAW_BROWSE_FILTER_OPTIONS.find((option) => option.id.toLowerCase() === value.toLowerCase())
     ?.id;
 }
@@ -125,7 +127,6 @@ function rawCatalogRequest(
     sort: query.trim() ? "relevance" : "nearby",
     dietaryFlags: filter === "halal" ? ["halal"] : [],
     cuisineTags: ["japanese", "western", "noodles", "rice"].includes(filter) ? [filter] : [],
-    openOnly: selectedFilter === OPEN_NOW_FILTER,
     maxPrice: selectedFilter === BUDGET_FILTER ? BUDGET_MAX_PRICE : undefined,
   };
 }
@@ -150,6 +151,7 @@ const RawCatalogCard = memo(function RawCatalogCard({
     ? (item as CatalogRawDishCard).venueName
     : ((item as CatalogRawVenueCard).representativeDish?.name ?? "Menu details available");
   const price = isDish ? (item as CatalogRawDishCard).price : undefined;
+  const stallName = isDish ? (item as CatalogRawDishCard).venueName : title;
 
   return (
     <Pressable
@@ -177,10 +179,9 @@ const RawCatalogCard = memo(function RawCatalogCard({
               accessibilityLabel={`${title} image`}
             />
           ) : (
+            // Most catalog rows have no cleared photo; show the stall's initials, not a grey caption.
             <View style={{ alignItems: "center", flex: 1, justifyContent: "center" }}>
-              <AppText tone="muted" variant="micro">
-                Image unavailable
-              </AppText>
+              <StallLogoMark name={stallName} size={Math.round(itemWidth * 0.3)} />
             </View>
           )}
           {/* Only positive verification is badged; most catalog rows are unverified. */}
@@ -227,11 +228,15 @@ const RawCatalogCard = memo(function RawCatalogCard({
   );
 });
 
+const MODE_LABELS = { dishes: "Dishes", stalls: "Stalls" } as const;
+
 function RawCatalogBrowseGrid({
+  allowModeSwitch = false,
   initialFilter,
   initialSearchQuery = "",
-  mode,
+  mode: initialMode,
 }: {
+  allowModeSwitch?: boolean;
   initialFilter?: string;
   initialSearchQuery?: string;
   mode: "dishes" | "stalls";
@@ -244,6 +249,7 @@ function RawCatalogBrowseGrid({
   const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
+  const [mode, setMode] = useState(initialMode);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const lastRecordedQueryRef = useRef("");
   const [selectedFilter, setSelectedFilter] = useState(
@@ -263,6 +269,9 @@ function RawCatalogBrowseGrid({
   const itemWidth = width / 2;
 
   // A link or a new navigation with other params replaces what the grid shows.
+  useEffect(() => {
+    setMode(initialMode);
+  }, [initialMode]);
   useEffect(() => {
     setSearchQuery(initialSearchQuery);
   }, [initialSearchQuery]);
@@ -463,6 +472,24 @@ function RawCatalogBrowseGrid({
               ) : null}
             </View>
           </View>
+          {allowModeSwitch ? (
+            <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: spacing[2] }}>
+              {(["dishes", "stalls"] as const).map((option) => (
+                <Chip
+                  key={option}
+                  label={MODE_LABELS[option]}
+                  accessibilityLabel={`Show ${MODE_LABELS[option].toLowerCase()}`}
+                  selected={mode === option}
+                  onPress={() => {
+                    if (option === mode) return;
+                    setItems([]);
+                    setMode(option);
+                    trackAnalyticsEvent("search_mode_changed", { mode: option });
+                  }}
+                />
+              ))}
+            </View>
+          ) : null}
           <FilterChipRail
             options={RAW_BROWSE_FILTER_OPTIONS}
             selectedId={selectedFilter}
@@ -563,6 +590,7 @@ export function SearchResultsScreen() {
   // Everything comes from route params, so a search never inherits an older persisted query.
   return (
     <RawCatalogBrowseGrid
+      allowModeSwitch
       mode={route.params?.browseMode ?? "dishes"}
       initialFilter={route.params?.initialFilter ?? route.params?.foodTypeTag}
       initialSearchQuery={route.params?.initialQuery ?? ""}

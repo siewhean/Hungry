@@ -39,6 +39,7 @@ import type {
   PopularVisitorPin,
   Portfolio,
   PortfolioCollaborator,
+  PortfolioCollaboratorRole,
   PortfolioFlag,
   PortfolioFollow,
   PortfolioItem,
@@ -540,6 +541,14 @@ export interface SubmitReviewInput {
   // TODO(api): include upload references (asset ids / signed urls) once media service is wired.
 }
 
+/** Fields an author may change on their own review; identity fields stay locked. */
+export interface UpdateReviewInput {
+  rating?: number;
+  text?: string;
+  tags?: string[];
+  wouldRecommend?: boolean;
+}
+
 export interface RecentReviewFeedEntry {
   review: DishDetail["reviews"][number];
   dishId: string;
@@ -848,6 +857,10 @@ export interface HungryService {
     listRecentReviews(options?: ListRecentReviewsOptions): Promise<RecentReviewFeedEntry[]>;
     /** Marks (helpful=true) or un-marks a review as helpful for the signed-in user. Idempotent. */
     setReviewHelpful(reviewId: string, helpful: boolean): Promise<void>;
+    /** Edits the signed-in author's own review. Throws when it is not theirs or the text is refused. */
+    updateReview(reviewId: string, patch: UpdateReviewInput): Promise<void>;
+    /** Deletes the signed-in author's own review and its photos; it stops counting in the dish rating. */
+    deleteReview(reviewId: string): Promise<void>;
   };
 
   // Profile
@@ -861,6 +874,11 @@ export interface HungryService {
     updateDietaryPreferences(flags: DietaryFlag[]): Promise<void>;
     getGuestProfile(): Promise<UserProfile>;
     toggleFavourite(dishId: string): Promise<boolean>;
+    /**
+     * Saves the dish "Tried" mark on the server and resolves to the updated Tried list.
+     * A dish the user reviewed stays in the list when un-ticked.
+     */
+    setDishTried(dishId: string, tried: boolean): Promise<string[]>;
     getFavouriteDishIds(): Promise<string[]>;
     /** Follow or unfollow a stall; followers get opt-in alerts when its menu changes. */
     setStallFollow(stallId: string, following: boolean): Promise<void>;
@@ -900,6 +918,13 @@ export interface HungryService {
     postBite(draft: BiteDraft): Promise<Bite>;
     /** One readable post for shared links; null when missing or not visible. Works signed out. */
     getPostById(postId: string): Promise<Bite | null>;
+    /** Edits the caption of the signed-in user's own post. Throws when it is not theirs. */
+    updatePost(postId: string, patch: { caption: string }): Promise<void>;
+    /**
+     * Deletes the signed-in user's own post. Soft delete: it disappears from every
+     * read at once, and the row stays for moderation. Throws when it is not theirs.
+     */
+    deletePost(postId: string): Promise<void>;
     /** Idempotent: sets the viewer's like/save to `active` (never toggles server state). */
     reactToBite(biteId: string, reaction: "craving" | "save", active: boolean): Promise<void>;
     shareBite(
@@ -1217,6 +1242,8 @@ export interface HungryService {
       userId?: string;
       visibility?: string;
       type?: string;
+      /** Only these list ids (the Following and Shared tabs). */
+      ids?: string[];
     }): Promise<Portfolio[]>;
     getPortfolio(id: string): Promise<Portfolio>;
     /** A public list by id for anyone, signed in or not; null when private or missing. */
@@ -1265,6 +1292,11 @@ export interface HungryService {
     isFollowingPortfolio(portfolioId: string): Promise<boolean>;
     /** Ids of the lists the signed-in user follows (empty when signed out). */
     getFollowedPortfolioIds(): Promise<string[]>;
+    /**
+     * Ids of the lists the signed-in user collaborates on (empty when signed out);
+     * `role: "editor"` keeps only lists they may add items to.
+     */
+    getSharedPortfolioIds(options?: { role?: PortfolioCollaboratorRole }): Promise<string[]>;
 
     flagPortfolio(portfolioId: string, reason: string, details?: string): Promise<void>;
     getPortfolioFlags(filters?: { status?: string }): Promise<PortfolioFlag[]>;

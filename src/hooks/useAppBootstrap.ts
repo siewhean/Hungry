@@ -301,10 +301,19 @@ export function useAppBootstrap() {
 
     let active = true;
 
-    void client.auth
-      .getSession()
+    // A sign-out the app was closed during is finished before any stored session
+    // is restored, so the user is not signed straight back in.
+    void useSessionStore
+      .getState()
+      .finishPendingSignOut()
+      .then(() => client.auth.getSession())
       .then(({ data, error }) => {
         if (!active) return;
+        if (useSessionStore.getState().signOutPending) {
+          // The stored session could not be cleared; stay signed out in the app.
+          applyAuthStateFromSession({ isAuthenticated: false, userId: null });
+          return;
+        }
         const user = data.session?.user;
         if (!user) {
           // No session is final (expired or revoked) unless the refresh only
@@ -349,6 +358,10 @@ export function useAppBootstrap() {
 
     const { data: subscription } = client.auth.onAuthStateChange((event, session) => {
       const user = session?.user;
+      // The session being signed out may still refresh; only a new sign-in counts.
+      if (user && event !== "SIGNED_IN" && useSessionStore.getState().signOutPending) {
+        return;
+      }
       if (!user) {
         // getSession() above settles the startup session (and keeps it on a
         // network failure); any later null session means signed out.

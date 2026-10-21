@@ -39,6 +39,7 @@ interface LinkingRoute {
 }
 
 interface LinkingState {
+  index?: number;
   routes: LinkingRoute[];
 }
 
@@ -98,6 +99,13 @@ function createState(name: string, params?: Record<string, unknown>): LinkingSta
   return { routes: [params && Object.keys(params).length > 0 ? { name, params } : { name }] };
 }
 
+// Shared content links open on top of Home, so a cold start has a Back button
+// (AppHeader shows Back only when navigation.canGoBack()).
+function createStateOverHome(name: string, params?: Record<string, unknown>): LinkingState {
+  const [target] = createState(name, params).routes;
+  return { index: 1, routes: [{ name: "MainTabs", params: { screen: "Home" } }, target] };
+}
+
 // `pop` makes the nested AuthStack navigate back to an existing Login/SignUp
 // screen instead of pushing a duplicate on every auth deep link.
 function createAuthState(screen: string, params?: Record<string, unknown>): LinkingState {
@@ -136,29 +144,33 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
   // Weekly picks push opens https://usehungry.com/home.
   if (path === "home") return createState("MainTabs", { screen: "Home" });
   // Lunch and dinner suggestion pushes open https://usehungry.com/decide.
-  if (path === "decide") return createState("DecideForMeResult", { surface: "home" });
+  if (path === "decide") return createStateOverHome("DecideForMeResult", { surface: "home" });
   if (parts[0] === "dish") {
     const id = decodePathSegment(parts[1]);
-    return id ? createState("DishDetail", { id }) : undefined;
+    return id ? createStateOverHome("DishDetail", { id }) : undefined;
   }
   if (parts[0] === "venue" || parts[0] === "stall") {
     const id = decodePathSegment(parts[1]);
-    return id ? createState("StallDetail", { id }) : undefined;
+    return id ? createStateOverHome("StallDetail", { id }) : undefined;
   }
   if (parts[0] === "post") {
     const postId = decodePathSegment(parts[1]);
-    return postId ? createState("ActivityPostDetail", { postId }) : undefined;
+    return postId ? createStateOverHome("ActivityPostDetail", { postId }) : undefined;
   }
   // Shared profiles: https://usehungry.com/user/:id (the screen loads the public name).
   if (parts[0] === "user") {
     const authorId = decodePathSegment(parts[1]);
-    return authorId ? createState("UserProfile", { authorId }) : undefined;
+    return authorId ? createStateOverHome("UserProfile", { authorId }) : undefined;
   }
   if (path === "order") return createState("Post", parseOrderDeepLinkQuery(rawPath));
   // Shared searches: https://usehungry.com/search?q=laksa&filter=Halal&mode=stalls
-  if (path === "search") return createState("SearchResults", parseSearchDeepLinkQuery(rawPath));
+  if (path === "search") {
+    return createStateOverHome("SearchResults", parseSearchDeepLinkQuery(rawPath));
+  }
   if (FEATURE_FLAGS.portfoliosEnabled && parts[0] === "portfolio") {
-    return createState("PortfolioPublicView", { portfolioId: decodePathSegment(parts[1]) });
+    return createStateOverHome("PortfolioPublicView", {
+      portfolioId: decodePathSegment(parts[1]),
+    });
   }
   if (FEATURE_FLAGS.merchantCentreEnabled && parts[0] === "merchant") {
     // Merchant notifications link to hungry://merchant/inbox, /analytics and so on.
@@ -233,6 +245,9 @@ export function createRootLinking(
   return {
     prefixes: [prefix, "hungry://", WEB_BASE_URL],
     config: {
+      // With Home as the initial route, a [MainTabs, target] link state on a
+      // running app becomes a navigate to the target instead of a stack reset.
+      initialRouteName: "MainTabs" as const,
       screens: {
         AuthStack: {
           screens: {
