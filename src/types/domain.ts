@@ -164,6 +164,9 @@ export interface VenueSummary {
   buildingName?: string;
   address?: string;
   postalCode?: string;
+  /** The stall's own map pin (a merchant-set pin, or the stored venue coordinate). */
+  latitude?: number;
+  longitude?: number;
 }
 
 export type UserStallSubmissionStatus =

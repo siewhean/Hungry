@@ -599,6 +599,8 @@ export interface ListRecentReviewsOptions {
   beforeId?: string;
   /** Only reviews of these dishes (for example one stall's menu). An empty list returns none. */
   dishIds?: string[];
+  /** Only reviews written for this stall (read by its indexed venue column, not a long dish-id list). */
+  venueId?: string;
 }
 
 export interface SubmitMenuPhotoInput {
@@ -608,6 +610,21 @@ export interface SubmitMenuPhotoInput {
   photoFileSizeBytes?: number;
   dishId?: string;
   reviewText?: string;
+}
+
+export type CatalogCorrectionKind =
+  | "closed"
+  | "wrong_price"
+  | "wrong_hours"
+  | "wrong_dish_info"
+  | "other";
+
+/** A diner's "Something wrong?" report on a stall or dish, queued for ops. */
+export interface SubmitCatalogCorrectionInput {
+  venueId: string;
+  dishId?: string;
+  kind: CatalogCorrectionKind;
+  note?: string;
 }
 
 /** PDPA access export. `categories` lists every key in `data`; nothing is silently skipped. */
@@ -1302,6 +1319,7 @@ export interface HungryService {
   // Supply priming (developer/ops-only)
   supply: {
     submitMenuPhoto(input: SubmitMenuPhotoInput): Promise<MenuPhotoSubmissionResult>;
+    submitCatalogCorrection(input: SubmitCatalogCorrectionInput): Promise<void>;
     submitMerchantClaimInterest(
       input: SubmitMerchantClaimInterestInput,
     ): Promise<MerchantClaimSubmissionResult>;

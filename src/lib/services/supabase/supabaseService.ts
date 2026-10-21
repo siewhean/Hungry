@@ -1295,6 +1295,9 @@ async function fetchRecentReviewsPage(
   if (options?.after) {
     query = query.gte("created_at", options.after);
   }
+  if (options?.venueId) {
+    query = query.eq("venue_id", options.venueId);
+  }
   if (options?.dishIds) {
     query = query.in("dish_id", options.dishIds);
   }
@@ -6125,6 +6128,17 @@ export const supabaseService: HungryService = {
   },
 
   supply: {
+    async submitCatalogCorrection(input) {
+      const client = requireSupabaseClient();
+      const { error } = await client.rpc("submit_catalog_correction", {
+        p_venue_id: input.venueId,
+        p_kind: input.kind,
+        p_dish_id: input.dishId ?? null,
+        p_note: input.note?.trim() || null,
+      });
+      if (error) throw error;
+    },
+
     async submitMenuPhoto(input) {
       const client = requireSupabaseClient();
       const userId = await getCurrentSupabaseUserId();

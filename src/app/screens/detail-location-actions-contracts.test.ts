@@ -12,9 +12,9 @@ test("detail screens show full food-centre location, weekly hours, and maps acti
   const locationHelpers = read("src/features/detail/stallLocation.ts");
   const safeLinking = read("src/lib/security/safeLinking.ts");
 
-  assert.match(stallDetail, /parseOperatingHours\(venue\.operatingHours\)/);
-  assert.match(stallDetail, /weeklyOperatingHours\.map/);
-  assert.match(stallDetail, /openTrustedMapsUrl\(buildMapsSearchUrl\(stallAddress\)\)/);
+  assert.match(stallDetail, /resolveStallOpenInfo\(\{\s*venue,/);
+  assert.match(stallDetail, /hoursRows\.map/);
+  assert.match(stallDetail, /openTrustedMapsUrl\(buildMapsSearchUrl\(stallAddress, stallPin\)\)/);
 
   // One listed range is never repeated as "Monday: ... Sunday: ...".
   assert.doesNotMatch(locationHelpers, /WEEKDAYS\.map/);

@@ -20,7 +20,7 @@ const dishDetail = read("src/app/screens/detail/DishDetailScreenV2.tsx");
 
 test("stall reviews are one newest-first query naming each dish, with a write-review path", () => {
   assert.doesNotMatch(stallDetail, /getReviewsForDish/);
-  assert.match(stallDetail, /reviews\.listRecentReviews\(\{\s*dishIds: dishIdsKey\.split\("\|"\)/);
+  assert.match(stallDetail, /reviews\.listRecentReviews\(\{\s*venueId: sideLoadVenueId,/);
   assert.match(stallDetail, /on \{review\.dishName\}/);
   assert.match(stallDetail, /navigation\.navigate\("DishDetail", \{ dishId: review\.dishId \}\)/);
   assert.match(stallDetail, /Couldn&apos;t load reviews for this stall\./);
@@ -60,10 +60,10 @@ test("Supabase dish and stall review reads sign photos in one request (H30)", ()
 
 test("stall page has no fake save, timer skeleton, or menu-empty flash while loading", () => {
   assert.doesNotMatch(stallDetail, /toggleFavourite/);
-  // Signed-out visitors keep a Save entry point that asks them to sign in.
+  // One fixed action bar for everyone; a guest is asked to sign in on tap (detail-L13).
   assert.match(
     stallDetail,
-    /!isAuthenticated \? \(\s*<Chip\s*label="Save"[\s\S]{0,240}requireAuthForProtectedAction\("Sign in to save this stall\."\)/,
+    /<StallInteractionBar[\s\S]{0,400}isAuthenticated=\{isAuthenticated\}[\s\S]{0,200}onRequireAuth=/,
   );
   assert.doesNotMatch(stallDetail, /<Heart/);
   assert.doesNotMatch(stallDetail, /setTimeout\(\(\) => setIsLoading\(false\), 800\)/);
@@ -81,13 +81,16 @@ test("stall header shows rating, price, status, actions and delivery links", () 
   assert.match(stallDetail, /label="Call"/);
   assert.match(stallDetail, /<DeliveryPlatformButton/);
   assert.match(stallDetail, /cachedVenue && serviceProviderMode !== "supabase"/);
-  assert.match(stallDetail, /merchantProfile\?\.coverPhotoUrl \|\|\s*venue\.imageUrl/);
+  assert.match(stallDetail, /merchantProfile\?\.coverPhotoUrl,\s*venue\.imageUrl/);
   assert.doesNotMatch(stallDetail, /hero dish photo/);
 });
 
 test("stall distance is measured from the user and hidden when unknown", () => {
   assert.doesNotMatch(stallDetail, /leadDish\.distanceMeters/);
-  assert.match(stallDetail, /formatDistanceFromUser\(userOrigin, buildingCoordinate\)/);
+  assert.match(
+    stallDetail,
+    /formatDistanceFromUser\(userOrigin, stallPin \?\? buildingCoordinate\)/,
+  );
 
   const building = { latitude: 1.3, longitude: 103.85 };
   assert.equal(formatDistanceFromUser(undefined, building), undefined);
@@ -118,7 +121,7 @@ test("dish detail always reads its reviews and only says 'No reviews yet' at zer
   assert.match(dishDetail, /See all \$\{dishReviews\.length\} reviews/);
   // Past the first page the button pages with the createdAt cursor instead of claiming a total.
   assert.match(dishDetail, /setHasMoreReviews\(entries\.length === DISH_REVIEW_PAGE_SIZE\)/);
-  assert.match(dishDetail, /before,\s*\}\)/);
+  assert.match(dishDetail, /before: last\.createdAt,\s*beforeId: last\.id,/);
   assert.match(dishDetail, /label="Show more reviews"/);
   assert.match(dishDetail, /dish\.reviewCount === 0 \? \(\s*<EmptyState\s*title="No reviews yet"/);
   assert.match(dishDetail, /formatTimeAgo\(review\.createdAt\)/);
@@ -136,7 +139,10 @@ test("dish attributes never present placeholder taste data as fact", () => {
 });
 
 test("dish Tried is per dish and never clears the stall; Food Cred copy uses awarded points", () => {
-  assert.match(dishDetail, /if \(!isVenueVisited\) \{\s*const result = await markTried/);
+  assert.match(
+    dishDetail,
+    /getInteraction\(dish\.venueId\)\?\.isTried\) \{\s*try \{\s*const result = await markTried/,
+  );
   assert.doesNotMatch(dishDetail, /-5 Food Cred|"\+5 Food Cred"|adjustPoints/);
   assert.match(dishDetail, /FEATURE_FLAGS\.gamificationEnabled && pointsAwarded > 0/);
   const store = read("src/store/useStallInteractionStore.ts");

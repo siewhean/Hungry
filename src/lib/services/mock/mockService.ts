@@ -688,6 +688,7 @@ function listMockRecentReviews(options?: ListRecentReviewsOptions): RecentReview
   const dishIdFilter = options?.dishIds ? new Set(options.dishIds) : undefined;
   return dishes
     .filter((dish) => !dishIdFilter || dishIdFilter.has(dish.id))
+    .filter((dish) => !options?.venueId || dish.venueId === options.venueId)
     .flatMap((dish): RecentReviewFeedEntry[] =>
       dish.reviews
         .filter((review) => !isMockReviewHiddenForViewer(review))
@@ -3027,6 +3028,13 @@ export const hungryService: HungryService = {
         submissionId: `mock-menu-photo-${Date.now()}`,
         storagePath: `menu-photos/mock/${input.venueId}/${Date.now()}.jpg`,
       });
+    },
+
+    async submitCatalogCorrection() {
+      if (!_isAuthenticated) {
+        throw new Error("Sign in to report a problem.");
+      }
+      return resolve(undefined);
     },
 
     async submitMerchantClaimInterest(input) {

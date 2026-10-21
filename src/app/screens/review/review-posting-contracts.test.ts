@@ -149,9 +149,8 @@ test("prototype-only review features stay out of production", () => {
   assert.match(review, /\{reviewMusicEnabled \? \(/);
   assert.match(review, /const hasVideo = reviewVideoEnabled && Boolean\(draft\.videoUri\)/);
   assert.doesNotMatch(review, /\(draft\.videoUri \? 20 : 0\)/);
-  assert.match(stallDetail, /const reviewRepliesEnabled = FEATURE_FLAGS\.prototypeRoutesEnabled/);
-  assert.match(stallDetail, /\{reviewRepliesEnabled \? \(/);
-  assert.match(stallDetail, /reviewRepliesEnabled && activeReplyReviewId === review\.id/);
+  // The local-only reply prototype was deleted outright (detail-L21).
+  assert.doesNotMatch(stallDetail, /reviewRepliesEnabled|activeReplyReviewId|submitReviewReply/);
 });
 
 test("review tab loads one paginated page with refresh, error and empty states", () => {

@@ -2,12 +2,14 @@
  * StallInteractionBar — Save / Visited / Add to List actions for a stall.
  *
  * Mounted inside StallDetailScreen. Uses useStallInteractionStore + useFoodCredStore.
- * Save and Visited both toggle. Visited needs a tried or reviewed dish from this
- * stall first (the same rule the dish page's "Tried" feeds).
+ * Save and Visited both toggle. Marking Visited needs a tried or reviewed dish from
+ * this stall first (the same rule the dish page's "Tried" feeds); clearing it never does.
+ * The buttons wait for the user's saved stalls to load, so a stall they already saved
+ * or visited never shows "Save" again.
  */
 
 import { View, Pressable, StyleSheet, ActivityIndicator } from "react-native";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Bookmark, CheckCircle, ListPlus } from "lucide-react-native";
 import * as Haptics from "@/lib/haptics";
 
@@ -20,6 +22,9 @@ import { useMissionStore } from "@/store/useMissionStore";
 interface StallInteractionBarProps {
   userId: string;
   stallId: string;
+  /** False for guests: the same buttons show, and a tap goes through onRequireAuth. */
+  isAuthenticated?: boolean;
+  onRequireAuth?: (message: string) => void;
   reviewPromptText?: string;
   hasReviewedDishAtVenue?: boolean;
   onReviewRequired?: () => void;
@@ -33,6 +38,8 @@ interface StallInteractionBarProps {
 export function StallInteractionBar({
   userId,
   stallId,
+  isAuthenticated = true,
+  onRequireAuth,
   reviewPromptText,
   hasReviewedDishAtVenue,
   onReviewRequired,
@@ -42,19 +49,64 @@ export function StallInteractionBar({
 }: StallInteractionBarProps) {
   const { componentRadii, palette, spacing, typography } = useHungryTheme();
   const interactions = useStallInteractionStore((state) => state.interactions);
+  const storeLoaded = useStallInteractionStore((state) => state.isLoaded);
+  // Guests have nothing to load.
+  const isLoaded = storeLoaded || !isAuthenticated;
+  const loadInteractions = useStallInteractionStore((state) => state.loadInteractions);
   const interaction = interactions[stallId];
   const toggleSaved = useStallInteractionStore((s) => s.toggleSaved);
   const markTried = useStallInteractionStore((s) => s.markTried);
   const incrementProgress = useMissionStore((s) => s.incrementProgress);
 
-  const isSaved = interaction?.isSaved ?? false;
-  const isTried = interaction?.isTried ?? false;
+  const isSaved = isAuthenticated && (interaction?.isSaved ?? false);
+  const isTried = isAuthenticated && (interaction?.isTried ?? false);
 
   const [savingInProgress, setSavingInProgress] = useState(false);
   const [tryingInProgress, setTryingInProgress] = useState(false);
+  const [isLoadingInteractions, setIsLoadingInteractions] = useState(false);
+  const isMounted = useRef(true);
   const showToast = useUIStore((state) => state.showToast);
 
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  const loadSavedState = useCallback(
+    async (announceFailure: boolean) => {
+      setIsLoadingInteractions(true);
+      try {
+        await loadInteractions(userId);
+      } catch {
+        if (announceFailure) {
+          showToast({
+            message: "Couldn't load your saved stalls. Try again.",
+            tone: "error",
+            duration: 3000,
+          });
+        }
+      } finally {
+        if (isMounted.current) setIsLoadingInteractions(false);
+      }
+    },
+    [loadInteractions, showToast, userId],
+  );
+
+  useEffect(() => {
+    if (!isLoaded) void loadSavedState(false);
+  }, [isLoaded, loadSavedState]);
+
   async function handleSave() {
+    if (!isAuthenticated) {
+      onRequireAuth?.("Sign in to save this stall.");
+      return;
+    }
+    if (!isLoaded) {
+      void loadSavedState(true);
+      return;
+    }
     if (savingInProgress) return;
     setSavingInProgress(true);
     try {
@@ -65,17 +117,29 @@ export function StallInteractionBar({
         onSaved?.();
         await incrementProgress(userId, "save_stalls");
       }
+    } catch {
+      // The store rolled the button back: say so instead of leaving a silent rejection.
+      showToast({ message: "Couldn't update your saved stalls. Try again.", tone: "error" });
     } finally {
-      setSavingInProgress(false);
+      if (isMounted.current) setSavingInProgress(false);
     }
   }
 
   async function handleTried() {
+    if (!isAuthenticated) {
+      onRequireAuth?.("Sign in to mark this stall visited.");
+      return;
+    }
+    if (!isLoaded) {
+      void loadSavedState(true);
+      return;
+    }
     if (tryingInProgress) return;
     setTryingInProgress(true);
     try {
       const hasReviewed = hasReviewedDishAtVenue ?? false;
-      if (!hasReviewed) {
+      // The tried-a-dish rule only gates marking; a stall already marked can always be cleared.
+      if (!isTried && !hasReviewed) {
         // One toast only: the screen's handler shows its own when it is given.
         if (onReviewRequired) {
           onReviewRequired();
@@ -96,8 +160,10 @@ export function StallInteractionBar({
       }
 
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch {
+      showToast({ message: "Couldn't update your visited stalls. Try again.", tone: "error" });
     } finally {
-      setTryingInProgress(false);
+      if (isMounted.current) setTryingInProgress(false);
     }
   }
 
@@ -116,7 +182,7 @@ export function StallInteractionBar({
       icon: Bookmark,
       active: isSaved,
       onPress: handleSave,
-      loading: savingInProgress,
+      loading: savingInProgress || (!isLoaded && isLoadingInteractions),
     },
     {
       id: "tried",
@@ -124,7 +190,7 @@ export function StallInteractionBar({
       icon: CheckCircle,
       active: isTried,
       onPress: handleTried,
-      loading: tryingInProgress,
+      loading: tryingInProgress || (!isLoaded && isLoadingInteractions),
     },
     ...(onAddToList
       ? [

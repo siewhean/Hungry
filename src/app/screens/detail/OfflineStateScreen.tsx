@@ -14,7 +14,7 @@ export function OfflineStateScreen() {
     <Screen title="Offline mode">
       <EmptyState
         title="You're offline"
-        body="Nearby results, building detail, and saved content stay visible. Submit actions wait until the connection returns."
+        body="Content you already opened stays visible. Reconnect to post reviews, save dishes or load new results."
       />
       <Button label="Retry connection" onPress={() => void retryConnection()} />
     </Screen>

@@ -274,6 +274,19 @@ export function promptReportReview(target: ReviewSafetyTarget): void {
   );
 }
 
+/** Report / Block menu for a review, shared by the stall and dish pages (the Review feed has its own copy). */
+export function promptReviewSafetyActions(target: ReviewSafetyTarget): void {
+  Alert.alert(`Review by ${target.authorName}`, undefined, [
+    { text: "Report review", onPress: () => promptReportReview(target) },
+    {
+      text: `Block ${target.authorName}`,
+      style: "destructive",
+      onPress: () => promptBlockReviewAuthor(target),
+    },
+    { text: "Cancel", style: "cancel" },
+  ]);
+}
+
 export function promptBlockReviewAuthor(target: ReviewSafetyTarget): void {
   const blockedAuthorId = normalizeAuthorId(target.authorId);
   if (!blockedAuthorId) {

@@ -33,6 +33,7 @@ test("V2 detail screens do not ship fabricated trust claims", () => {
 test("V2 screens bind trust surfaces to venue and dish data", () => {
   const dish = read("src/app/screens/detail/DishDetailScreenV2.tsx");
 
-  assert.match(dish, /if \(liveCrowd === "low"\) return "< 15 min";/);
-  assert.match(dish, /return null;/);
+  // No wait estimate on the dish page; hours come from the shared open-state helper.
+  assert.doesNotMatch(dish, /liveCrowd|< 15 min/);
+  assert.match(dish, /resolveStallOpenInfo\(/);
 });
