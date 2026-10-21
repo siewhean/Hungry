@@ -205,6 +205,8 @@ export function prefetchPostDetail(
  */
 export const NON_PRELOADABLE_ROUTES: ReadonlySet<string> = new Set([
   "DecideForMeResult",
+  // Mounting the Mapbox screen off screen starts two catalog reads, even for a light press.
+  "DiscoverMap",
   "MapZoomedIn",
   "QuickBites",
 ]);

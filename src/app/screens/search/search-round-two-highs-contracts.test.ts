@@ -45,12 +45,16 @@ test("H21: map and Quick Bites keep raw text locally and open results with the q
     assert.match(source, /const \[searchText, setSearchText\] = useState\(""\)/);
     assert.match(source, /onQueryChange=\{setSearchText\}/);
     assert.match(source, /const query = sanitizeSearchQuery\(searchText\)/);
-    assert.match(
-      source,
-      /navigation\.navigate\("SearchResults", \{ initialQuery: query \|\| undefined \}\)/,
-    );
     assert.doesNotMatch(source, /state\.filters\.query|navigate\("SearchHome"\)/);
   }
+  assert.match(
+    read("src/app/screens/discover/QuickBitesScreen.tsx"),
+    /navigation\.navigate\("SearchResults", \{ initialQuery: query \|\| undefined \}\)/,
+  );
+  // The map keeps the query on the map; "See all results" is the way out to Search.
+  const map = read("src/app/screens/discover/HomeMapScreen.tsx");
+  assert.match(map, /setMapQuery\(query\)/);
+  assert.match(map, /navigation\.navigate\("SearchResults", \{ initialQuery: mapQuery \}\)/);
   assert.doesNotMatch(read("src/app/screens/discover/DiscoverHomeScreen.tsx"), /updateQuery/);
 });
 
