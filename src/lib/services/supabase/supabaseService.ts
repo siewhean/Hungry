@@ -1566,6 +1566,29 @@ async function fetchHomeSocialFeedBitesViaRpc(
   return Promise.all(rows.map((row) => mapFeedRpcRowToBite(client, row)));
 }
 
+/** Guests have no session, so the signed-in feed RPCs and posts RLS return nothing. */
+async function fetchPublicHomeFeedBites(
+  client: SupabaseClient,
+  limit = 40,
+): Promise<Bite[] | undefined> {
+  const { data, error } = await client.rpc("get_public_home_feed", {
+    p_limit: limit,
+    p_cursor_feed_created_at: null,
+    p_cursor_post_id: null,
+  });
+  if (error) {
+    console.warn("Failed to fetch public Home feed RPC", error.message);
+    return undefined;
+  }
+  if (!Array.isArray(data)) return undefined;
+  const rows = data as Row[];
+  await presignPostMediaRows(
+    client,
+    rows.flatMap((row) => asRowArray(row.media)),
+  );
+  return Promise.all(rows.map((row) => mapFeedRpcRowToBite(client, row)));
+}
+
 function listAllDishesFromRepository(): DishDetail[] {
   return supabaseRepository
     .listBuildings()
@@ -4264,6 +4287,10 @@ export const supabaseService: HungryService = {
   social: {
     async getBitesFeed() {
       const client = requireSupabaseClient();
+      if (!(await getCurrentSupabaseUserId())) {
+        const publicBites = await fetchPublicHomeFeedBites(client);
+        if (publicBites) return publicBites;
+      }
       const rpcBites = await fetchHomeSocialFeedBitesViaRpc(client);
       if (rpcBites) return rpcBites;
       return fetchPublishedPostBites(client);

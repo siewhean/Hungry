@@ -77,15 +77,15 @@ test("usehungry.com share links open the matching app screen", () => {
   };
   const linking = createRootLinking("exp://127.0.0.1:8081/--/", () => authState);
 
-  assert.deepEqual(linking.getStateFromPath("dish/dish-1")?.routes?.[0], {
+  assert.deepEqual(linking.getStateFromPath("dish/dish-1")?.routes?.[1], {
     name: "DishDetail",
     params: { id: "dish-1" },
   });
-  assert.deepEqual(linking.getStateFromPath("stall/venue-1")?.routes?.[0], {
+  assert.deepEqual(linking.getStateFromPath("stall/venue-1")?.routes?.[1], {
     name: "StallDetail",
     params: { id: "venue-1" },
   });
-  assert.deepEqual(linking.getStateFromPath("post/post-1")?.routes?.[0], {
+  assert.deepEqual(linking.getStateFromPath("post/post-1")?.routes?.[1], {
     name: "ActivityPostDetail",
     params: { postId: "post-1" },
   });
@@ -94,7 +94,7 @@ test("usehungry.com share links open the matching app screen", () => {
   // A shared post opens without an account (public posts only, enforced by
   // get_post_by_id); liking or saving asks the visitor to sign in.
   authState = { ...authState, isAuthenticated: false };
-  assert.deepEqual(linking.getStateFromPath("post/post-1")?.routes?.[0], {
+  assert.deepEqual(linking.getStateFromPath("post/post-1")?.routes?.[1], {
     name: "ActivityPostDetail",
     params: { postId: "post-1" },
   });
@@ -155,4 +155,27 @@ test("wheel /join/:code link puts the code on the WheelHome route", () => {
     params: { screen: "WheelHome", params: { code: "ABC123" } },
   });
   assert.equal(linking.getStateFromPath("join/%3Cscript%3E"), undefined);
+});
+
+test("cold-start shared links open on top of Home so Back leads somewhere", () => {
+  const linking = createRootLinking("exp://127.0.0.1:8081/--/", () => ({
+    isAuthReady: true,
+    isAuthenticated: false,
+  }));
+  const home = { name: "MainTabs", params: { screen: "Home" } };
+  for (const [path, name] of [
+    ["post/post-1", "ActivityPostDetail"],
+    ["dish/dish-1", "DishDetail"],
+    ["venue/venue-1", "StallDetail"],
+    ["user/user-1", "UserProfile"],
+    ["search?q=laksa", "SearchResults"],
+  ]) {
+    const state = linking.getStateFromPath(path);
+    assert.equal(state?.index, 1, path);
+    assert.deepEqual(state?.routes?.[0], home, path);
+    assert.equal(state?.routes?.[1]?.name, name, path);
+  }
+  // Home is the linking initial route, so on a running app the two-route state
+  // becomes a navigate to the target rather than a reset of the whole stack.
+  assert.equal((linking.config as { initialRouteName?: string }).initialRouteName, "MainTabs");
 });

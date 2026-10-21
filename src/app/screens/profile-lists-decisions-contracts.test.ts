@@ -49,6 +49,7 @@ test("19: user/:id links open UserProfile and share URLs use usehungry.com/user"
   assert.equal(screens.UserProfile, "user/:authorId");
   // Guests can open a shared profile; unsafe ids are dropped.
   assert.deepEqual(linking.getStateFromPath("user/11111111-2222-3333-4444-555555555555")?.routes, [
+    { name: "MainTabs", params: { screen: "Home" } },
     { name: "UserProfile", params: { authorId: "11111111-2222-3333-4444-555555555555" } },
   ]);
   assert.equal(linking.getStateFromPath("user/%3Cscript%3E"), undefined);

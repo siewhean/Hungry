@@ -84,11 +84,11 @@ test("deep links expose only public discovery routes and redirect protected acti
   // Shared public lists open for signed-out visitors too.
   assert.equal(screens.PortfolioPublicView, "portfolio/:portfolioId");
   assert.deepEqual(linking.getStateFromPath("merchant"), undefined);
-  assert.deepEqual(linking.getStateFromPath("portfolio/example")?.routes?.[0], {
+  assert.deepEqual(linking.getStateFromPath("portfolio/example")?.routes?.[1], {
     name: "PortfolioPublicView",
     params: { portfolioId: "example" },
   });
-  assert.equal(linking.getStateFromPath("stall/v1")?.routes?.[0]?.name, "StallDetail");
+  assert.equal(linking.getStateFromPath("stall/v1")?.routes?.[1]?.name, "StallDetail");
   assert.deepEqual(linking.getStateFromPath("order")?.routes?.[0], {
     name: "AuthStack",
     params: { screen: "Login", pop: true },

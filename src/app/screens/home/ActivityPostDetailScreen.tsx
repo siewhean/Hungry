@@ -11,6 +11,7 @@ import {
   PlayCircle,
   Send,
 } from "lucide-react-native";
+import { useIsFocused } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -44,6 +45,8 @@ type Props = NativeStackScreenProps<RootStackParamList, "ActivityPostDetail">;
 
 export function ActivityPostDetailScreen({ navigation, route }: Props) {
   const { palette, spacing, semanticSpacing } = useHungryTheme();
+  // Pause the video when DishDetail or another screen is pushed on top.
+  const isFocused = useIsFocused();
   const { width: screenWidth } = useWindowDimensions();
   const repository = getDataRepository();
   const commentsEnabled = FEATURE_FLAGS.commentsEnabled;
@@ -280,6 +283,7 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
             accessibilityLabel={`${dishName ?? venue?.name ?? "Post"} ${
               post.mediaType === "video" ? "video" : "image"
             }`}
+            isActive={isFocused}
             style={styles.heroImage}
           />
 
