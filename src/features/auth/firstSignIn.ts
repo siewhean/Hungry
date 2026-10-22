@@ -1,17 +1,18 @@
-// Supabase has no "account created" auth event. A brand-new account's first
-// session is signed in within moments of the account being confirmed (email
-// link, auto-confirm) or created (OAuth), so a SIGNED_IN whose last_sign_in_at
-// sits next to confirmed_at/created_at is that account's first sign-in.
-// The stored session keeps that last_sign_in_at, and auth-js re-emits SIGNED_IN
-// for it on every launch (and on web tab focus), so the sign-in must also be
-// recent; otherwise a new user would be counted as a sign-up on every launch.
-const FIRST_SIGN_IN_WINDOW_MS = 2 * 60 * 1000;
+// Supabase has no "account created" auth event, and a new user may confirm their email on
+// a computer and first sign in on the phone hours later, so a clock window around
+// confirmed_at is not a fact about the account. Instead the app writes
+// user_metadata.onboarded_at once an account has finished first-run onboarding
+// (markAccountOnboarded in the session store; the service stamps it on the auth user).
+// A SIGNED_IN for an account without that stamp is a new account that still owes onboarding.
+//
+// Accounts created before the stamp existed carry none, so they count as existing: only
+// accounts created on or after this date can be "new". Set it to the release date of the
+// build that first writes the stamp.
+export const ONBOARDED_STAMP_STARTS_AT = Date.parse("2026-11-01T00:00:00Z");
 
 export interface AuthUserTimestamps {
   created_at?: string | null;
-  confirmed_at?: string | null;
-  email_confirmed_at?: string | null;
-  last_sign_in_at?: string | null;
+  user_metadata?: { onboarded_at?: unknown } | null;
   app_metadata?: { provider?: unknown } | null;
 }
 
@@ -21,14 +22,10 @@ function toTime(value?: string | null): number | null {
   return Number.isFinite(time) ? time : null;
 }
 
-export function isFirstSignIn(user: AuthUserTimestamps, now: number = Date.now()): boolean {
-  const lastSignIn = toTime(user.last_sign_in_at);
-  if (lastSignIn === null) return false;
-  if (Math.abs(now - lastSignIn) > FIRST_SIGN_IN_WINDOW_MS) return false;
-  const anchor =
-    toTime(user.confirmed_at) ?? toTime(user.email_confirmed_at) ?? toTime(user.created_at);
-  if (anchor === null) return false;
-  return Math.abs(lastSignIn - anchor) <= FIRST_SIGN_IN_WINDOW_MS;
+export function isNewAccount(user: AuthUserTimestamps): boolean {
+  if (user.user_metadata?.onboarded_at) return false;
+  const createdAt = toTime(user.created_at);
+  return createdAt !== null && createdAt >= ONBOARDED_STAMP_STARTS_AT;
 }
 
 export function getAuthUserProvider(user: AuthUserTimestamps): string {

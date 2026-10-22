@@ -77,9 +77,9 @@ export function FoodOpennessScreen({ navigation, route }: Props) {
           style={{
             alignItems: "center",
             borderRadius: radii.pill,
-            height: 40,
+            height: 44,
             justifyContent: "center",
-            width: 40,
+            width: 44,
           }}
         >
           <ArrowLeft color={palette.text} size={22} />
@@ -148,8 +148,9 @@ export function FoodOpennessScreen({ navigation, route }: Props) {
             label="Skip"
             variant="ghost"
             onPress={() => {
+              // Skip saves nothing: the default applies until the user picks one in Settings.
               trackOnboardingStepSkipped("openness");
-              finish(DEFAULT_FOOD_OPENNESS);
+              navigation.navigate("TasteProfileResult");
             }}
           />
         )}

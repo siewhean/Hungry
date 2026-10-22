@@ -103,7 +103,7 @@ end $$;
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0d33-b000-000000000001', true);
 update reviews
-set rating = 4, text = 'Good, not great', tags = array['rich'], would_recommend = true
+set rating = 4, text = 'Good, not great', tags = array['Rich'], would_recommend = true
 where id = '00000000-0000-0d33-e000-000000000002';
 
 -- A cannot change identity fields.

@@ -8,6 +8,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { MemberAvatarRow } from "@/components/wheel/MemberAvatarRow";
+import { leaveWheelStack } from "@/features/wheel/leaveWheel";
 import { selectActiveWheelEntries, useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
 import type { WheelEntry } from "@/types/domain";
@@ -26,7 +27,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
   const entries = useWheelStore((s) => s.entries);
   const myMemberId = useWheelStore((s) => s.myMemberId);
   const removeEntry = useWheelStore((s) => s.removeEntry);
-  const leaveParty = useWheelStore((s) => s.leaveParty);
+  const triggerSpin = useWheelStore((s) => s.triggerSpin);
 
   const [addSheetOpen, setAddSheetOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -52,12 +53,14 @@ export function WheelLobbyScreen({ navigation }: Props) {
   }
 
   function handleSpin() {
+    // Start the spin now: the spin screen animates it on arrival, so it is one tap, not two.
+    triggerSpin();
     navigation.navigate("WheelSpin", { partyId: party!.id });
   }
 
   function handleLeave() {
-    leaveParty();
-    navigation.popToTop();
+    // WheelStack clears the party when it closes; popToTop would only land back here.
+    leaveWheelStack(navigation);
   }
 
   function renderEntry({ item }: { item: WheelEntry }) {
@@ -255,7 +258,11 @@ export function WheelLobbyScreen({ navigation }: Props) {
               ListEmptyComponent={
                 <EmptyState
                   title="The wheel is empty"
-                  body="Add some spots to start the party."
+                  body={
+                    PARTY_ENABLED
+                      ? "Add some spots to start the party."
+                      : "Add some spots, then spin to decide."
+                  }
                   icon={<Plus size={36} color={palette.textMuted} />}
                 />
               }

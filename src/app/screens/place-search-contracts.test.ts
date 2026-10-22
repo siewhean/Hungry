@@ -60,7 +60,7 @@ test("place suggestions open the stalls of that building, not a fuzzy text searc
   assert.match(search, /placeId: suggestion\.placeId/);
   const results = read("src/app/screens/search/SearchResultsScreen.tsx");
   assert.match(results, /buildingId: place\?\.id/);
-  assert.match(results, /\.listPlaces\(\{ query: trimmedQuery, coordinate, limit: 3 \}\)/);
+  assert.match(results, /\.listPlaces\(\{ query, coordinate, limit: 3 \}\)/);
 });
 
 test("Discover names the mall the phone is inside and lists its stalls first", () => {
@@ -71,6 +71,6 @@ test("Discover names the mall the phone is inside and lists its stalls first", (
   assert.match(discover, /buildingId: currentPlaceId/);
   assert.match(discover, /preferBuildingId: currentPlaceId/);
   assert.match(discover, /Number\(isInCurrentPlace\(b\)\) - Number\(isInCurrentPlace\(a\)\)/);
-  // The area label still drives the feed query and the count; only the header changes.
-  assert.match(discover, /areaName: discoverLocationLabel/);
+  // Only a manual area pick drives the feed query by area name; the header only changes label.
+  assert.match(discover, /areaName: discoverAreaRequest/);
 });

@@ -5,7 +5,9 @@ import { ArrowLeft, Search } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
+import { PortfolioItemEditSheet, type PortfolioItemDetailsInput } from "@/components/portfolio";
 import { AppText, Button, Card, Input } from "@/components/ui";
+import { listErrorMessage } from "@/features/checklistPortfolio/listLoadState";
 import {
   canShowMorePickerResults,
   nextPickerLimit,
@@ -19,13 +21,10 @@ import type { DishDetail, VenueSummary } from "@/types/domain";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "PortfolioItemPicker">;
 
-function parsePortfolioScore(value: string): number | undefined {
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
-  // Whole numbers only: the stored score is an integer, so 8.5 would be silently rounded.
-  if (!/^\d+$/.test(trimmed)) return Number.NaN;
-  return Number.parseInt(trimmed, 10);
-}
+/** The dish or stall just tapped, waiting for its score and notes. */
+type PendingItem =
+  | { kind: "dish"; id: string; label: string }
+  | { kind: "stall"; id: string; label: string };
 
 export function PortfolioItemPickerScreen({ navigation, route }: Props) {
   const { palette, spacing } = useHungryTheme();
@@ -34,19 +33,12 @@ export function PortfolioItemPickerScreen({ navigation, route }: Props) {
   const conflict = usePortfolioStore((state) => state.conflicts[portfolioId]);
   const clearConflict = usePortfolioStore((state) => state.clearConflict);
   const [query, setQuery] = useState("");
-  const [score, setScore] = useState("");
-  const [publicNotes, setPublicNotes] = useState("");
-  const [privateNotes, setPrivateNotes] = useState("");
+  const [pending, setPending] = useState<PendingItem | null>(null);
   const [dishes, setDishes] = useState<DishDetail[]>([]);
   const [venues, setVenues] = useState<VenueSummary[]>([]);
   const [resultLimit, setResultLimit] = useState(PICKER_PAGE_SIZE);
   const [isSaving, setIsSaving] = useState(false);
-  const parsedScore = parsePortfolioScore(score);
-  const scoreError =
-    parsedScore !== undefined && (Number.isNaN(parsedScore) || parsedScore < 1 || parsedScore > 10)
-      ? "Use a whole number from 1 to 10."
-      : undefined;
-  const canAddItem = !scoreError && !isSaving;
+  const canAddItem = !isSaving;
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
@@ -73,45 +65,22 @@ export function PortfolioItemPickerScreen({ navigation, route }: Props) {
     };
   }, [mode, query, resultLimit]);
 
-  async function addDish(dish: DishDetail) {
+  async function addPending(details: PortfolioItemDetailsInput) {
+    if (!pending) return;
     setIsSaving(true);
     try {
       await addItem({
         portfolioId,
-        itemType: "dish",
-        dishId: dish.id,
-        score: parsedScore,
-        publicNotes,
-        privateNotes,
+        itemType: pending.kind,
+        ...(pending.kind === "dish" ? { dishId: pending.id } : { stallId: pending.id }),
+        score: details.score,
+        publicNotes: details.publicNotes.trim(),
+        privateNotes: details.privateNotes.trim(),
       });
+      setPending(null);
       navigation.goBack();
     } catch (error) {
-      Alert.alert(
-        "Portfolio update failed",
-        error instanceof Error ? error.message : "Please refresh and try again.",
-      );
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
-  async function addVenue(venue: VenueSummary) {
-    setIsSaving(true);
-    try {
-      await addItem({
-        portfolioId,
-        itemType: "stall",
-        stallId: venue.id,
-        score: parsedScore,
-        publicNotes,
-        privateNotes,
-      });
-      navigation.goBack();
-    } catch (error) {
-      Alert.alert(
-        "Portfolio update failed",
-        error instanceof Error ? error.message : "Please refresh and try again.",
-      );
+      Alert.alert("List update failed", listErrorMessage(error, "Please refresh and try again."));
     } finally {
       setIsSaving(false);
     }
@@ -134,35 +103,10 @@ export function PortfolioItemPickerScreen({ navigation, route }: Props) {
         <View style={{ flex: 1 }}>
           <AppText variant="h1">{mode === "dish" ? "Add dish" : "Add stall"}</AppText>
           <AppText variant="bodySmall" tone="secondary">
-            Add a score and notes, then pick an item.
+            Pick an item, then add a score and notes if you like.
           </AppText>
         </View>
       </View>
-
-      <Card>
-        <Input
-          label="Score"
-          value={score}
-          onChangeText={setScore}
-          keyboardType="number-pad"
-          placeholder="Optional"
-          helperText={scoreError ?? "Optional. A whole number from 1 to 10 for rankings."}
-        />
-        <Input
-          label="Public note"
-          value={publicNotes}
-          onChangeText={setPublicNotes}
-          placeholder="Visible when this portfolio is shared"
-          multiline
-        />
-        <Input
-          label="Private note"
-          value={privateNotes}
-          onChangeText={setPrivateNotes}
-          placeholder="Only for you and collaborators"
-          multiline
-        />
-      </Card>
 
       {conflict ? (
         <Card>
@@ -205,9 +149,9 @@ export function PortfolioItemPickerScreen({ navigation, route }: Props) {
             <Pressable
               key={dish.id}
               accessibilityRole="button"
-              accessibilityLabel={`Add ${dish.name} to portfolio`}
+              accessibilityLabel={`Add ${dish.name} to list`}
               disabled={!canAddItem}
-              onPress={() => addDish(dish)}
+              onPress={() => setPending({ kind: "dish", id: dish.id, label: dish.name })}
             >
               <Card>
                 <AppText variant="bodyBold">{dish.name}</AppText>
@@ -221,9 +165,9 @@ export function PortfolioItemPickerScreen({ navigation, route }: Props) {
             <Pressable
               key={venue.id}
               accessibilityRole="button"
-              accessibilityLabel={`Add ${venue.name} to portfolio`}
+              accessibilityLabel={`Add ${venue.name} to list`}
               disabled={!canAddItem}
-              onPress={() => addVenue(venue)}
+              onPress={() => setPending({ kind: "stall", id: venue.id, label: venue.name })}
             >
               <Card>
                 <AppText variant="bodyBold">{venue.name}</AppText>
@@ -241,6 +185,15 @@ export function PortfolioItemPickerScreen({ navigation, route }: Props) {
           onPress={() => setResultLimit((limit) => nextPickerLimit(limit))}
         />
       ) : null}
+
+      <PortfolioItemEditSheet
+        visible={pending !== null}
+        title={pending?.label ?? ""}
+        confirmLabel="Add to list"
+        isSaving={isSaving}
+        onClose={() => setPending(null)}
+        onSubmit={(details) => void addPending(details)}
+      />
     </ScrollView>
   );
 }

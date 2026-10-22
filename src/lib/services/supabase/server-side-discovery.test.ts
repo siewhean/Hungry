@@ -46,6 +46,11 @@ const discoverSource = readFileSync(
   "utf8",
 );
 
+const discoverBitesSource = readFileSync(
+  resolve(process.cwd(), "src/features/discover/bites.ts"),
+  "utf8",
+);
+
 const serviceSource = readFileSync(
   resolve(process.cwd(), "src/lib/services/supabase/supabaseService.ts"),
   "utf8",
@@ -239,10 +244,10 @@ test("Discover feed ratings are sourced from the same dish aggregates as details
     /const imageUrl = gallery\[0\] \?\? asString\(row\.image_url\) \?\? "";/,
   );
   assert.match(
-    discoverSource,
+    discoverBitesSource,
     /const normalizedRating = Number\.isFinite\(dish\.rating\) \? dish\.rating : 0;/,
   );
-  assert.doesNotMatch(discoverSource, /dish\.rating > 0 \? dish\.rating : 4/);
+  assert.doesNotMatch(discoverBitesSource, /dish\.rating > 0 \? dish\.rating : 4/);
 });
 
 test("server-side discovery smoke SQL checks functions, grants, indexes, and sample calls", () => {

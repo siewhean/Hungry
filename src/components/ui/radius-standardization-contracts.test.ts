@@ -61,7 +61,6 @@ test("UI radius contract: high-traffic app surfaces consume componentRadii", () 
     "src/app/screens/profile/ProfileHomeScreen.tsx",
     "src/features/post/components/PostTab.tsx",
     "src/features/post/components/MediaManager.tsx",
-    "src/components/social/BiteCard.tsx",
     "src/app/screens/merchant/MerchantDashboardScreen.tsx",
     "src/app/screens/merchant/MerchantMenuScreen.tsx",
   ];

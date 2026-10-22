@@ -1,14 +1,16 @@
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { Pressable, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { BellRing } from "lucide-react-native";
 
 import { AppText, Card, EmptyState } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
+import { useRetryableLoad } from "@/features/profile/useRetryableLoad";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useStallFollowStore } from "@/store/useStallFollowStore";
 import { useHungryTheme } from "@/theme";
 import type { ProfileStackParamList } from "./ProfileStack";
+import { ProfileReviewsSkeleton } from "./ProfileGridSkeleton";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "FollowedStalls">;
@@ -20,9 +22,8 @@ export function FollowedStallsScreen({ navigation }: Props) {
   const repository = getDataRepository();
   const rootNavigation = getRootNavigation(navigation as any);
 
-  useEffect(() => {
-    void loadFollowedStalls().catch(() => {});
-  }, [loadFollowedStalls]);
+  const isLoaded = useStallFollowStore((state) => state.isLoaded);
+  const { failed: loadFailed, retry } = useRetryableLoad(loadFollowedStalls, "followed stalls");
 
   const venues = useMemo(
     () => followedStallIds.map((id) => repository.getVenueById(id)).filter((venue) => !!venue),
@@ -32,7 +33,7 @@ export function FollowedStallsScreen({ navigation }: Props) {
   return (
     <ProfileScreenShell
       title="Followed stalls"
-      subtitle="Get an alert when these stalls add a dish, change a price or restock."
+      subtitle="We'll let you know when a stall updates its menu on Hungry."
     >
       <View style={{ gap: spacing[3], paddingBottom: spacing[5] }}>
         {venues.length ? (
@@ -67,6 +68,15 @@ export function FollowedStallsScreen({ navigation }: Props) {
               </Card>
             </Pressable>
           ))
+        ) : !isLoaded && !loadFailed ? (
+          <ProfileReviewsSkeleton />
+        ) : loadFailed ? (
+          <EmptyState
+            title="Couldn't load followed stalls"
+            body="Check your connection and try again."
+            ctaLabel="Retry"
+            onPress={retry}
+          />
         ) : (
           <EmptyState
             title="No followed stalls yet"

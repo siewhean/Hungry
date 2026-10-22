@@ -30,6 +30,6 @@ test("Weekly picks rail falls back to NoDishPhoto and drops the Sparkles icon", 
     rail,
     /dish\.imageUrl \? \([\s\S]*<AccessibleImage[\s\S]*\) : \([\s\S]*<NoDishPhoto/,
   );
-  assert.match(rail, /personalised \? "Picked for your taste\." : "Popular near you\."/);
+  assert.match(rail, /personalised \? "Picked for your taste\." : "Popular on Hungry\."/);
   assert.doesNotMatch(rail, /Sparkles/);
 });

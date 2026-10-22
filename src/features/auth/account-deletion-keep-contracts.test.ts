@@ -44,8 +44,5 @@ test("Profile and Settings show a Keep my account banner while deletion is pendi
   assert.match(banner, /auth\.cancelAccountDeletion\(\)/);
   assert.match(banner, /label="Keep my account"/);
   assert.match(read("src/app/screens/profile/SettingsScreen.tsx"), /<PendingDeletionBanner \/>/);
-  assert.match(
-    read("src/app/screens/profile/ProfileHomeScreen.tsx"),
-    /mode === "self" \? <PendingDeletionBanner \/> : null/,
-  );
+  assert.match(read("src/app/screens/profile/ProfileHomeScreen.tsx"), /<PendingDeletionBanner \/>/);
 });

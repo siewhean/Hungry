@@ -6,6 +6,10 @@ import { ArrowLeft, Search } from "lucide-react-native";
 
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Button, Card, Input } from "@/components/ui";
+import {
+  PORTFOLIO_TYPE_LABELS,
+  PORTFOLIO_VISIBILITY_LABELS,
+} from "@/features/checklistPortfolio/listLabels";
 import { usePortfolioStore } from "@/store/usePortfolioStore";
 import { useHungryTheme } from "@/theme";
 import type { Portfolio } from "@/types/domain";
@@ -20,13 +24,18 @@ export function PortfolioSearchScreen({ navigation }: Props) {
   const [results, setResults] = useState<Portfolio[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchFailed, setSearchFailed] = useState(false);
 
   async function runSearch() {
     setIsSearching(true);
+    setSearchFailed(false);
     try {
       const nextResults = await searchPortfolios(query);
       setResults(nextResults);
       setHasSearched(true);
+    } catch (error) {
+      console.error("Failed to search lists:", error);
+      setSearchFailed(true);
     } finally {
       setIsSearching(false);
     }
@@ -47,9 +56,9 @@ export function PortfolioSearchScreen({ navigation }: Props) {
           <ArrowLeft color={palette.text} size={22} />
         </Pressable>
         <View style={{ flex: 1 }}>
-          <AppText variant="h1">Search portfolios</AppText>
+          <AppText variant="h1">Search lists</AppText>
           <AppText variant="bodySmall" tone="secondary">
-            Find public Hungry Portfolios by title, notes, or type.
+            Find public lists by title, notes, or type.
           </AppText>
         </View>
       </View>
@@ -59,16 +68,25 @@ export function PortfolioSearchScreen({ navigation }: Props) {
           label="Search"
           value={query}
           onChangeText={setQuery}
-          placeholder="Search public portfolios..."
+          placeholder="Search public lists..."
           leftIcon={<Search color={palette.textMuted} size={18} />}
           onSubmitEditing={runSearch}
         />
         <Button label="Search" loading={isSearching} onPress={runSearch} />
       </Card>
 
-      {hasSearched && results.length === 0 ? (
+      {searchFailed ? (
         <Card>
-          <AppText variant="h3">No portfolios found</AppText>
+          <AppText variant="h3">{"Couldn't search lists"}</AppText>
+          <AppText variant="body" tone="secondary">
+            Check your connection and try again.
+          </AppText>
+        </Card>
+      ) : null}
+
+      {hasSearched && !searchFailed && results.length === 0 ? (
+        <Card>
+          <AppText variant="h3">No lists found</AppText>
           <AppText variant="body" tone="secondary">
             Try a broader food or cuisine term.
           </AppText>
@@ -85,7 +103,8 @@ export function PortfolioSearchScreen({ navigation }: Props) {
           <Card>
             <AppText variant="bodyBold">{portfolio.name}</AppText>
             <AppText variant="bodySmall" tone="secondary">
-              {portfolio.type} · {portfolio.visibility}
+              {PORTFOLIO_TYPE_LABELS[portfolio.type] ?? portfolio.type} ·{" "}
+              {PORTFOLIO_VISIBILITY_LABELS[portfolio.visibility] ?? portfolio.visibility}
             </AppText>
             {portfolio.description ? (
               <AppText variant="bodySmall" tone="secondary" numberOfLines={2}>

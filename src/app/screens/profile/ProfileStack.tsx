@@ -4,6 +4,7 @@ import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 
 import { EditProfileScreen } from "./EditProfileScreen";
 import { AddStallScreen } from "./AddStallScreen";
+import { StallSubmissionsScreen } from "./StallSubmissionsScreen";
 import { FavouritesScreen } from "./FavouritesScreen";
 import { ListsHomeScreen } from "./ListsHomeScreen";
 import { ProfileHomeScreen } from "./ProfileHomeScreen";
@@ -77,6 +78,7 @@ export function ProfileStack() {
         <Stack.Screen name="ProfileHome" component={ProfileHomeScreen} />
         <Stack.Screen name="EditProfile" component={EditProfileScreen} />
         <Stack.Screen name="AddStall" component={AddStallScreen} />
+        <Stack.Screen name="StallSubmissions" component={StallSubmissionsScreen} />
         <Stack.Screen name="Followers" component={FollowersScreen} />
         <Stack.Screen name="Following" component={FollowingScreen} />
         <Stack.Screen name="VisitedStalls" component={VisitedStallsScreen} />

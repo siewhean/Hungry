@@ -1,10 +1,19 @@
 import React, { useState } from "react";
 import { View, ScrollView, Pressable } from "react-native";
-import { Camera, CheckCircle2, ArrowLeft, Square, CheckSquare, Home } from "lucide-react-native";
+import { Camera, CheckCircle2, ArrowLeft, Square, CheckSquare, Home, X } from "lucide-react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { useHungryTheme } from "@/theme";
-import { AppText, Button, EmptyState, Screen, IconButton, Input, Card } from "@/components/ui";
+import {
+  AccessibleImage,
+  AppText,
+  Button,
+  EmptyState,
+  Screen,
+  IconButton,
+  Input,
+  Card,
+} from "@/components/ui";
 import { confirmGalleryAccess, isGalleryPermissionGranted } from "@/lib/permissions/gallery";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
@@ -24,6 +33,7 @@ type ImagePickerModule = {
 
 /** The copy asks for 2 food photos and 1 menu photo. */
 const MIN_HOME_BASED_PHOTOS = 3;
+const MAX_HOME_BASED_PHOTOS = 8;
 
 function loadImagePickerModule(): ImagePickerModule | null {
   try {
@@ -39,7 +49,10 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
   const activeOutlet = useMerchantStore(getActiveOutlet);
 
   const [displayName, setDisplayName] = useState(activeOutlet?.name || "");
-  const [privacy, setPrivacy] = useState<LocationPrivacy>("approximate");
+  // Starts from the outlet's current setting; home-based is never "exact".
+  const [privacy, setPrivacy] = useState<LocationPrivacy>(
+    activeOutlet?.locationPrivacy === "hidden" ? "hidden" : "approximate",
+  );
   const [photoUris, setPhotoUris] = useState<string[]>([]);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [safetyChecked, setSafetyChecked] = useState(false);
@@ -101,8 +114,12 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
         return;
       }
 
-      setPhotoUris(
-        result.assets.map((asset) => asset.uri).filter((uri): uri is string => Boolean(uri)),
+      // Added to the photos already picked (without repeats), not a replacement for them.
+      const picked = result.assets
+        .map((asset) => asset.uri)
+        .filter((uri): uri is string => Boolean(uri));
+      setPhotoUris((current) =>
+        Array.from(new Set([...current, ...picked])).slice(0, MAX_HOME_BASED_PHOTOS),
       );
     } catch {
       setPhotoError("Unable to open the photo library right now.");
@@ -279,6 +296,45 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
             </AppText>
           </Card>
         </Pressable>
+        {photoUris.length > 0 ? (
+          <View
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: spacing[2],
+              marginTop: spacing[3],
+            }}
+          >
+            {photoUris.map((uri, index) => (
+              <View key={uri} style={{ width: 72, height: 72 }}>
+                <AccessibleImage
+                  source={{ uri }}
+                  accessibilityLabel={`Verification photo ${index + 1}`}
+                  style={{ width: 72, height: 72, borderRadius: componentRadii.input }}
+                />
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Remove photo ${index + 1}`}
+                  hitSlop={8}
+                  onPress={() => setPhotoUris((current) => current.filter((item) => item !== uri))}
+                  style={{
+                    position: "absolute",
+                    top: -6,
+                    right: -6,
+                    width: 24,
+                    height: 24,
+                    borderRadius: 12,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: palette.text,
+                  }}
+                >
+                  <X size={14} color={palette.bg} />
+                </Pressable>
+              </View>
+            ))}
+          </View>
+        ) : null}
         {photoError ? (
           <AppText variant="micro" style={{ color: palette.error, marginTop: spacing[1] }}>
             {photoError}

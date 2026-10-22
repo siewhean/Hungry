@@ -106,7 +106,6 @@ test("signed-out app entry opens the app as a guest while public routes stay unp
     "MapZoomedIn",
     "DishDetail",
     "StallDetail",
-    "BlogPost",
   ]) {
     assert.doesNotMatch(
       protectedRoutes,
@@ -163,7 +162,6 @@ test("protected actions preserve return routes before auth", () => {
     "EditProfile",
     "Favourites",
     "ReviewHistory",
-    "Settings",
     "ReviewStack",
     "AddStory",
     "MusicSelection",
@@ -171,6 +169,8 @@ test("protected actions preserve return routes before auth", () => {
   ]) {
     assert.match(protectedRoutes, new RegExp(`"${protectedRoute}"`));
   }
+  // Guests can open Settings (theme, accessibility, legal links); account rows hide for them.
+  assert.doesNotMatch(protectedRoutes, /"Settings"/);
   // Shared post links open for visitors; the screen gates like/save itself.
   assert.doesNotMatch(protectedRoutes, /"ActivityPostDetail"/);
 

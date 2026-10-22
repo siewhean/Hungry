@@ -164,6 +164,9 @@ export interface VenueSummary {
   buildingName?: string;
   address?: string;
   postalCode?: string;
+  /** The stall's own map pin (a merchant-set pin, or the stored venue coordinate). */
+  latitude?: number;
+  longitude?: number;
 }
 
 export type UserStallSubmissionStatus =
@@ -278,6 +281,10 @@ export interface Review {
   helpfulCount?: number;
   /** The signed-in viewer marked this review helpful. */
   viewerFoundHelpful?: boolean;
+  /** Set only on the viewer's own review when it was hidden or removed after reports. */
+  moderationState?: "hidden" | "removed";
+  /** ISO time the author last changed the rating, text or tags (undefined when never edited). */
+  editedAt?: string;
 }
 
 export interface PopularVisitorPin {
@@ -323,6 +330,11 @@ export interface DishDetail extends DishSummary {
   mustOrder: boolean;
   availabilityFlags: string[];
   reviews: Review[];
+  /**
+   * Merchant menu reads only: false for a dish diners can already see, true for a draft kept
+   * hidden until the outlet is verified. Unset elsewhere.
+   */
+  isMerchantDraft?: boolean;
 }
 
 export interface BlogPost {
@@ -478,6 +490,8 @@ export interface StallPost {
   likeCount?: number;
   commentCount?: number;
   savedCount?: number;
+  /** Server share total from the feed read, when it returned one. */
+  shareCount?: number;
   /** The viewer's own like/save from the server read; undefined when the read did not say. */
   viewerHasLiked?: boolean;
   viewerHasSaved?: boolean;
@@ -684,6 +698,8 @@ export interface PublicUserProfile {
   isPrivate?: boolean;
   /** The viewer may see the account's posts and profile reviews. */
   canViewContent?: boolean;
+  /** Stalls visited, counted on the server by the same rule as your own Stalls stat. */
+  stallsVisited?: number;
 }
 
 export interface PublicMerchantProfile {
@@ -840,6 +856,7 @@ export interface PublicPortfolio {
   name: string;
   description?: string;
   ownerDisplayName?: string;
+  type?: PortfolioType;
   updatedAt?: string;
   items: PublicPortfolioItem[];
 }
@@ -851,8 +868,11 @@ export interface PublicPortfolioItem {
   name: string;
   stallName?: string;
   price?: number;
+  score?: number;
   publicNotes?: string;
   imageUrl?: string;
+  /** Free-text place for a maps search ("Get directions"). */
+  mapQuery?: string;
 }
 
 export interface PortfolioCollaborator {
@@ -976,6 +996,8 @@ export interface CustomerInteraction {
   text: string;
   tags?: string[];
   createdAt: string;
+  /** Name of the dish the review is about, when it is about one */
+  dishName?: string;
   /** Merchant's reply, if any */
   reply?: {
     text: string;

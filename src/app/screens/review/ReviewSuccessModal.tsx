@@ -5,6 +5,8 @@ import * as Haptics from "@/lib/haptics";
 
 import { AppText, Badge, Button, Card } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { webShareUrl } from "@/constants/links";
+import { shareLink } from "@/features/share/messagingShare";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 
@@ -59,7 +61,8 @@ export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
               <View style={{ flex: 1, gap: spacing[1] }}>
                 <AppText variant="h3">Review posted</AppText>
                 <AppText tone="secondary">
-                  {payload?.dishName ?? "Dish review"} · {payload?.venueName ?? "Nearby stall"}
+                  Your review is live on {payload?.dishName ?? "this dish"}
+                  {payload?.venueName ? ` · ${payload.venueName}` : ""}
                 </AppText>
               </View>
             </View>
@@ -95,12 +98,31 @@ export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
           <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
             <Sparkles color={palette.orange} size={16} />
             <AppText variant="bodySmall" tone="secondary">
-              Profile updated. Your review has been added to your history.
+              {"It's also in your review history."}
             </AppText>
           </View>
 
+          {payload?.reviewId ? (
+            <Button
+              label="Share your review"
+              onPress={() => {
+                const reviewId = payload.reviewId;
+                if (!reviewId) return;
+                void shareLink(
+                  {
+                    kind: "review",
+                    id: reviewId,
+                    message: `I reviewed ${payload.dishName}${payload.venueName ? ` at ${payload.venueName}` : ""} on Hungry`,
+                    url: webShareUrl("review", reviewId),
+                  },
+                  "system_share",
+                );
+              }}
+            />
+          ) : null}
           <Button
             label="Open review history"
+            variant={payload?.reviewId ? "secondary" : "primary"}
             onPress={() => {
               hideReviewSuccess();
               onOpenHistory();

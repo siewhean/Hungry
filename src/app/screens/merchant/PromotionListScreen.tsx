@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { Alert, View, StyleSheet, Pressable } from "react-native";
+import React, { useState, useCallback } from "react";
+import { View, StyleSheet, Pressable } from "react-native";
 import { Plus, Calendar, Target, BarChart2, X } from "lucide-react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import {
@@ -18,6 +18,7 @@ import {
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { useMerchantDialog } from "@/features/merchant/useMerchantDialog";
 import type { MerchantPromotion, PromotionStatus } from "@/types/domain";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import {
@@ -53,6 +54,7 @@ export function PromotionListScreen() {
   const { componentRadii, palette, spacing } = useHungryTheme();
   const navigation = useNavigation<NavigationProp>();
   const activeOutlet = useMerchantStore(getActiveOutlet);
+  const { showAlert, dialog } = useMerchantDialog();
 
   const [promotions, setPromotions] = useState<MerchantPromotion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -71,10 +73,7 @@ export function PromotionListScreen() {
       });
       updateOutletProfile(activeOutlet.id, updated);
     } catch (e) {
-      Alert.alert(
-        "Could not show your stall",
-        e instanceof Error ? e.message : "Please try again.",
-      );
+      showAlert("Could not show your stall", e instanceof Error ? e.message : "Please try again.");
     } finally {
       setIsGoingLive(false);
     }
@@ -99,16 +98,12 @@ export function PromotionListScreen() {
     }
   }, [activeOutlet]);
 
-  useEffect(() => {
-    void loadPromotions();
-  }, [loadPromotions]);
-
-  useEffect(() => {
-    const unsubscribe = navigation.addListener("focus", () => {
+  // One fetch per focus (this also covers the first time the screen opens).
+  useFocusEffect(
+    useCallback(() => {
       void loadPromotions();
-    });
-    return unsubscribe;
-  }, [navigation, loadPromotions]);
+    }, [loadPromotions]),
+  );
 
   if (error) {
     return (
@@ -333,6 +328,7 @@ export function PromotionListScreen() {
           )}
         </View>
       </View>
+      {dialog}
     </Screen>
   );
 }

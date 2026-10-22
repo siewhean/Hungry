@@ -247,10 +247,10 @@ test("repo wiring exposes validation, import, smoke checks, and app discovery RP
   assert.match(discoverSource, /listDiscoveryFeedByLocation\(\{/);
   assert.match(discoverSource, /supabaseDiscoveryFeed\?\.venues/);
   assert.match(quickBitesSource, /getServiceProvider\(\)\.mode\s+===\s+"supabase"/);
-  assert.match(quickBitesSource, /getDiscoverBitesFromSearch\(collection/);
-  assert.match(discoverBitesSource, /getHungryService\(\)\.discovery\.searchDishes/);
-  assert.match(discoverBitesSource, /latitude:\s+options\.latitude/);
-  assert.match(discoverBitesSource, /maxPrice/);
+  // See all reads the same feed RPC as the Discover rails, so the two lists agree.
+  assert.match(quickBitesSource, /getDiscoverFeedBites\(\{/);
+  assert.match(discoverBitesSource, /getHungryService\(\)\.discovery\.listDiscoveryFeedByLocation/);
+  assert.match(discoverBitesSource, /lat:\s+options\.latitude/);
 });
 
 test("location stall search exposes logo URLs for BrowseStalls", () => {

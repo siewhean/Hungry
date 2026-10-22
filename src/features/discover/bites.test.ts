@@ -133,10 +133,15 @@ test("Discover food collections prioritise real Supabase images before local fal
     getDishById: () => undefined,
   } as never);
 
-  for (const collectionName of ["quickBites", "trending", "editorChoice", "budget"] as const) {
+  for (const collectionName of ["quickBites", "editorChoice", "budget"] as const) {
     assert.equal(collections[collectionName][0]?.id, "bite-real-image", collectionName);
     assert.equal(collections[collectionName][1]?.id, "bite-fallback", collectionName);
   }
+  // "Most reviewed" ranks on reviews alone, so the 100-review dish leads despite no photo.
+  assert.deepEqual(
+    collections.trending.map((bite) => bite.id),
+    ["bite-fallback", "bite-real-image"],
+  );
 });
 
 test("Discover source does not hardcode demo image URL fallbacks", () => {

@@ -133,7 +133,8 @@ begin
 end $$;
 
 -- 3. Home-based: the pin never reaches the venue; 'hidden' drops address too.
-set local role authenticated;
+-- Changing the type of a verified outlet is ops-only now (merchant-M2), so the setup runs
+-- as the database owner; the privacy coercion below does not depend on the role.
 update merchant_outlets
 set business_type = 'home_based', latitude = 1.29, longitude = 103.85
 where id = '00000000-0000-0130-d000-000000000001';

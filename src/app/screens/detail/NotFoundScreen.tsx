@@ -18,14 +18,16 @@ export function NotFoundScreen({ navigation, route }: Props) {
   const title = route.params?.title ?? "The kitchen is currently quiet.";
   const body =
     route.params?.body ??
-    "We couldn't find the recipe or page you're looking for. It might have been taken off the menu.";
+    "We couldn't find the dish, stall or page you're looking for. It might have been taken off the menu.";
   const searchBarWidth = useMemo(
     () => Math.max(screenWidth - spacing[4] * 2, 240),
     [screenWidth, spacing],
   );
 
   const submitSearch = () => {
-    navigation.navigate("SearchHome");
+    const query = searchQuery.trim();
+    // Keep what was typed: the results screen runs the search.
+    navigation.navigate("SearchResults", { initialQuery: query || undefined });
     setSearchQuery("");
   };
 
@@ -75,7 +77,7 @@ export function NotFoundScreen({ navigation, route }: Props) {
             onQueryChange={setSearchQuery}
             onSubmit={submitSearch}
             onClear={() => setSearchQuery("")}
-            placeholder="Search for recipes"
+            placeholder="Search for dishes"
             expandedWidth={searchBarWidth}
             barHeight={44}
             iconAlignment="left"

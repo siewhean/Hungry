@@ -56,7 +56,7 @@ export function PortfoliosHomeScreen({ navigation }: Props) {
     try {
       await loadPortfolioScope(activeTab);
     } catch (error) {
-      console.error("Failed to load portfolios:", error);
+      console.error("Failed to load lists:", error);
       trackAnalyticsEvent("list_load_failed", { list_kind: "portfolio" });
       setLoadFailed(true);
     }
@@ -102,7 +102,7 @@ export function PortfoliosHomeScreen({ navigation }: Props) {
           <ArrowLeft color={palette.text} size={22} />
         </Pressable>
         <View style={{ flex: 1 }}>
-          <AppText variant="h1">Hungry Portfolios</AppText>
+          <AppText variant="h1">Your lists</AppText>
           <AppText variant="bodySmall" tone="secondary">
             Curate rankings, trails, and recommendations.
           </AppText>
@@ -115,7 +115,7 @@ export function PortfoliosHomeScreen({ navigation }: Props) {
             key={tab}
             accessibilityRole="tab"
             accessibilityState={{ selected: activeTab === tab }}
-            accessibilityLabel={`${TAB_LABELS[tab]} portfolios`}
+            accessibilityLabel={`${TAB_LABELS[tab]} lists`}
             onPress={() => setActiveTab(tab)}
             style={[
               styles.tab,
@@ -133,7 +133,7 @@ export function PortfoliosHomeScreen({ navigation }: Props) {
       </View>
 
       <Input
-        label="Search portfolios"
+        label="Search your lists"
         placeholder="Search by title, type, or description..."
         value={query}
         onChangeText={setQuery}
@@ -143,7 +143,7 @@ export function PortfoliosHomeScreen({ navigation }: Props) {
       {activeTab === "mine" ? (
         <View style={styles.actionRow}>
           <Button
-            label="Create portfolio"
+            label="Create list"
             fullWidth={false}
             leftIcon={<Plus color={palette.textOnOrange} size={18} />}
             onPress={() => navigation.navigate("PortfolioCreate")}
@@ -159,7 +159,7 @@ export function PortfoliosHomeScreen({ navigation }: Props) {
 
       {!isLoaded && loadFailed ? (
         <Card>
-          <AppText variant="h3">{"Couldn't load portfolios"}</AppText>
+          <AppText variant="h3">{"Couldn't load lists"}</AppText>
           <AppText variant="body" tone="secondary">
             Check your connection and try again.
           </AppText>
@@ -168,15 +168,15 @@ export function PortfoliosHomeScreen({ navigation }: Props) {
       ) : !isLoaded ? (
         <Card>
           <AppText variant="body" tone="secondary">
-            Loading portfolios...
+            Loading lists...
           </AppText>
         </Card>
       ) : visiblePortfolios.length === 0 ? (
         <Card>
-          <AppText variant="h3">No portfolios here yet</AppText>
+          <AppText variant="h3">No lists here yet</AppText>
           <AppText variant="body" tone="secondary">
             {activeTab === "mine"
-              ? "Create a Hungry Portfolio when you want to organise places worth recommending."
+              ? "Create a list when you want to organise places worth recommending."
               : activeTab === "shared"
                 ? "Lists a friend adds you to as a collaborator show up here."
                 : "Try another tab or search term."}

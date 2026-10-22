@@ -8,9 +8,16 @@
  */
 
 import { getFloorPlan } from "@/lib/geo/floorPlans";
+import {
+  getMockLoginFailure,
+  getMockSignUpFailure,
+  type MockAuthFailure,
+} from "@/features/auth/mockAuth";
 import { PROFILE_BIO_MAX_LENGTH } from "@/features/profile/profileBio";
+import { validateDisplayName } from "@/features/profile/profileName";
 import { normalizeReviewPatch } from "@/features/review/reviewEdit";
 import { MERCHANT_DEEP_LINKS } from "@/features/merchant/merchantDeepLinks";
+import { MERCHANT_REPLY_MAX_LENGTH } from "@/features/merchant/merchantReadiness";
 import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { similarityScore } from "@/lib/ai/similarityScore";
@@ -61,6 +68,7 @@ import type {
   SearchResult,
   Session,
   SubmitReviewInput,
+  ListRecentReviewsOptions,
   RecentReviewFeedEntry,
 } from "@/lib/services/types";
 import { ACCOUNT_DELETION_GRACE_DAYS } from "@/lib/services/types";
@@ -71,6 +79,7 @@ import type {
   DishDetail,
   DietaryFlag,
   HawkerTasteTag,
+  Review,
   MerchantAnalytics,
   MerchantDishViewEvent,
   MerchantNotification,
@@ -327,6 +336,7 @@ const _activityDates = new Set<string>();
 let _isAuthenticated = false;
 let _authProvider: "email" | "google" | "apple" = "email";
 let _pendingDeletionScheduledFor: string | undefined;
+let _pendingEmailChange: string | null = null;
 let _merchantAccount: MerchantAccount = clone(merchantAccount);
 let _merchantDishCounter = 0;
 let _merchantPromotionCounter = 0;
@@ -614,6 +624,8 @@ const _contentReports: {
 }[] = [];
 /** Blocked author ids, keyed like the Supabase user_blocks.blocked_user_key column. */
 const _blockedUsers = new Map<string, { reason?: string; createdAt: string }>();
+/** Posts the viewer hid, with when. */
+const _hiddenPosts = new Map<string, string>();
 
 /** Distinct reporters that auto-hide a review, like report_content on the server. */
 const REVIEW_REPORT_AUTO_HIDE_THRESHOLD = 3;
@@ -650,6 +662,53 @@ function findMockOwnReviewDish(reviewId: string, action: "edit" | "delete") {
   );
   if (!dish) throw new Error(`Review not found, or it isn't yours to ${action}.`);
   return dish;
+}
+
+function mockReviewPageLimit(options?: { limit?: number }): number {
+  return Math.min(Math.max(Math.floor(options?.limit ?? 50), 1), 100);
+}
+
+function compareReviewsNewestFirst(a: Review, b: Review): number {
+  return (
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() ||
+    (b.id < a.id ? -1 : b.id > a.id ? 1 : 0)
+  );
+}
+
+/** True for reviews strictly before the (created_at, id) keyset cursor; all when there is none. */
+function isBeforeReviewCursor(review: Review, before: number | undefined, beforeId?: string) {
+  if (before === undefined) return true;
+  const createdAt = new Date(review.createdAt).getTime();
+  if (createdAt < before) return true;
+  return Boolean(beforeId && createdAt === before && review.id < beforeId);
+}
+
+/** Every visible mock review newest first, narrowed by the feed options (not yet limited). */
+function listMockRecentReviews(options?: ListRecentReviewsOptions): RecentReviewFeedEntry[] {
+  const before = options?.before ? new Date(options.before).getTime() : undefined;
+  const after = options?.after ? new Date(options.after).getTime() : undefined;
+  const dishIdFilter = options?.dishIds ? new Set(options.dishIds) : undefined;
+  return dishes
+    .filter((dish) => !dishIdFilter || dishIdFilter.has(dish.id))
+    .filter((dish) => !options?.venueId || dish.venueId === options.venueId)
+    .flatMap((dish): RecentReviewFeedEntry[] =>
+      dish.reviews
+        .filter((review) => !isMockReviewHiddenForViewer(review))
+        .map((review) => ({
+          review: {
+            ...review,
+            helpfulCount: (review.helpfulCount ?? 0) + (_helpfulReviewIds.has(review.id) ? 1 : 0),
+            viewerFoundHelpful: _helpfulReviewIds.has(review.id),
+          },
+          dishId: dish.id,
+          dishName: dish.name,
+          venueId: dish.venueId,
+          venueName: dish.venueName,
+        })),
+    )
+    .filter((entry) => isBeforeReviewCursor(entry.review, before, options?.beforeId))
+    .filter((entry) => after === undefined || new Date(entry.review.createdAt).getTime() >= after)
+    .sort((a, b) => compareReviewsNewestFirst(a.review, b.review));
 }
 
 function isMockReviewHiddenForViewer(review: { id: string; authorId?: string }): boolean {
@@ -1254,35 +1313,6 @@ function createMerchantNotification(
   return notification;
 }
 
-function getLowRatingNotificationsForOutlet(outletId: string): MerchantNotification[] {
-  const outlet = getMerchantOutlet(outletId);
-  const lowReviews = _merchantInbox.filter(
-    (interaction) =>
-      interaction.outletId === outletId &&
-      interaction.type === "review" &&
-      typeof interaction.rating === "number" &&
-      interaction.rating <= 2,
-  );
-  return lowReviews.map((review) =>
-    createMerchantNotification({
-      merchantAccountId: outlet.merchantAccountId,
-      outletId,
-      kind: "low_rating",
-      title: `${outlet.name} received a low rating`,
-      body: `${review.rating?.toFixed(1)} stars: ${review.text.slice(0, 120)}`,
-      status: "unread",
-      dedupeKey: `low-rating:${review.id}`,
-      deepLink: MERCHANT_DEEP_LINKS.inbox,
-      metadata: {
-        reviewId: review.id,
-        rating: review.rating ?? null,
-        snippet: review.text,
-      },
-      createdAt: review.createdAt,
-    }),
-  );
-}
-
 function buildWeeklySummaryStats(outletId: string): MerchantWeeklySummary {
   const analytics = buildMockMerchantAnalytics(outletId, "7d");
   const interactions = _merchantInbox.filter((interaction) => interaction.outletId === outletId);
@@ -1486,6 +1516,19 @@ const BUILDING_DETAILS: Record<string, Omit<BuildingDetail, keyof (typeof buildi
   },
 };
 
+// Mirrors the error shapes supabase-js gives the auth screens (code, or the retryable
+// network error), so the screens map real and mock failures the same way.
+function mockAuthError(failure: MockAuthFailure): Error {
+  if (failure.reason === "network_unavailable") {
+    return Object.assign(new Error(failure.message), {
+      name: "AuthRetryableFetchError",
+      status: 0,
+    });
+  }
+  const code = failure.reason === "email_taken" ? "user_already_exists" : "invalid_credentials";
+  return Object.assign(new Error(failure.message), { code });
+}
+
 // ─── Full HungryService implementation ───────────────────────────────────────
 
 export const hungryService: HungryService = {
@@ -1493,6 +1536,8 @@ export const hungryService: HungryService = {
 
   auth: {
     async signUp(email, _password, name) {
+      const failure = getMockSignUpFailure(email);
+      if (failure) throw mockAuthError(failure);
       _isAuthenticated = true;
       _authProvider = "email";
       _profile = {
@@ -1530,7 +1575,9 @@ export const hungryService: HungryService = {
       return resolve(type === "signup" ? mockSession(_profile) : null);
     },
 
-    async signIn(email, _password) {
+    async signIn(email, password) {
+      const failure = getMockLoginFailure(email, password);
+      if (failure) throw mockAuthError(failure);
       _isAuthenticated = true;
       _authProvider = "email";
       _profile = { ...userProfile, email };
@@ -1555,6 +1602,10 @@ export const hungryService: HungryService = {
       _isAuthenticated = false;
       _profile = { ...guestProfile };
       return resolve(undefined);
+    },
+
+    async getAccountDeletionBlocker() {
+      return resolve(null);
     },
 
     async sendAccountDeletionCode() {
@@ -1614,7 +1665,16 @@ export const hungryService: HungryService = {
       if (!_isAuthenticated) throw new Error("You must be signed in to change your email.");
       if (!newEmail.trim()) throw new Error("Enter a new email address.");
       // Like Supabase, nothing changes until the user confirms from the new inbox.
+      _pendingEmailChange = newEmail.trim().toLowerCase();
       return resolve(undefined);
+    },
+
+    async markOnboarded() {
+      // Mock sessions have no auth user to stamp.
+      return resolve(undefined);
+    },
+    async getPendingEmailChange() {
+      return resolve(_isAuthenticated ? _pendingEmailChange : null);
     },
 
     async getCurrentSession() {
@@ -1848,25 +1908,28 @@ export const hungryService: HungryService = {
       );
     },
 
-    async getUserReviews(_userId) {
+    async getUserReviews(_userId, page) {
       // Another user's profile: only reviews written by that account, like the Supabase read.
-      if (_userId !== _profile.id) {
-        return resolve(
-          dishes
+      const own = _userId === _profile.id;
+      // Mock: the demo user's reviews are keyed by reviewedDishIds.
+      const reviews = own
+        ? _profile.reviewedDishIds
+            .map((id) => dishes.find((d) => d.id === id))
+            .filter(Boolean)
+            .flatMap((d) => (d?.reviews ?? []).slice(0, 1))
+            .filter((review) => !isMockReviewHiddenForViewer(review))
+        : dishes
             .flatMap((dish) => dish.reviews ?? [])
             .filter(
               (review) => review.authorId === _userId && !isMockReviewHiddenForViewer(review),
-            ),
-        );
-      }
-      // Mock: return the demo user's reviews (keyed by reviewedDishIds)
-      const reviewedDishes = _profile.reviewedDishIds
-        .map((id) => dishes.find((d) => d.id === id))
-        .filter(Boolean);
-      const reviews = reviewedDishes
-        .flatMap((d) => (d?.reviews ?? []).slice(0, 1))
-        .filter((review) => !isMockReviewHiddenForViewer(review));
-      return resolve(reviews);
+            );
+      if (!page?.limit) return resolve(reviews);
+      const offset = Math.max(page.offset ?? 0, 0);
+      return resolve(
+        [...reviews]
+          .sort(compareReviewsNewestFirst)
+          .slice(offset, offset + Math.max(1, Math.floor(page.limit))),
+      );
     },
 
     async submitReview(draft: SubmitReviewInput) {
@@ -1890,41 +1953,24 @@ export const hungryService: HungryService = {
     },
 
     async listRecentReviews(options) {
-      const limit = Math.min(Math.max(Math.floor(options?.limit ?? 50), 1), 100);
-      const before = options?.before ? new Date(options.before).getTime() : undefined;
-      const dishIdFilter = options?.dishIds ? new Set(options.dishIds) : undefined;
-      const entries = dishes
-        .filter((dish) => !dishIdFilter || dishIdFilter.has(dish.id))
-        .flatMap((dish): RecentReviewFeedEntry[] =>
-          dish.reviews
-            .filter((review) => !isMockReviewHiddenForViewer(review))
-            .map((review) => ({
-              review: {
-                ...review,
-                helpfulCount:
-                  (review.helpfulCount ?? 0) + (_helpfulReviewIds.has(review.id) ? 1 : 0),
-                viewerFoundHelpful: _helpfulReviewIds.has(review.id),
-              },
-              dishId: dish.id,
-              dishName: dish.name,
-              venueId: dish.venueId,
-              venueName: dish.venueName,
-            })),
-        )
-        .filter((entry) => {
-          if (before === undefined) return true;
-          const createdAt = new Date(entry.review.createdAt).getTime();
-          if (createdAt < before) return true;
-          return Boolean(
-            options?.beforeId && createdAt === before && entry.review.id < options.beforeId,
-          );
-        })
-        .sort(
-          (a, b) =>
-            new Date(b.review.createdAt).getTime() - new Date(a.review.createdAt).getTime() ||
-            (b.review.id < a.review.id ? -1 : b.review.id > a.review.id ? 1 : 0),
-        );
-      return resolve(entries.slice(0, limit));
+      return resolve(listMockRecentReviews(options).slice(0, mockReviewPageLimit(options)));
+    },
+
+    async listRecentReviewsPage(options) {
+      const limit = mockReviewPageLimit(options);
+      const matching = listMockRecentReviews(options);
+      const entries = matching.slice(0, limit);
+      const last = entries[entries.length - 1];
+      return resolve({
+        entries,
+        hasMore: matching.length > limit,
+        nextCursor: last ? { before: last.review.createdAt, beforeId: last.review.id } : undefined,
+      });
+    },
+
+    async getReviewById(reviewId) {
+      const entry = listMockRecentReviews().find((candidate) => candidate.review.id === reviewId);
+      return resolve(entry ?? null);
     },
 
     async setReviewHelpful(reviewId, helpful) {
@@ -1960,6 +2006,14 @@ export const hungryService: HungryService = {
     async updateProfile(updates) {
       // The sign-in email changes only through auth.requestEmailChange.
       const { email: _ignoredEmail, ...profileUpdates } = updates;
+      // Mirrors the user_profiles_display_name_length check and the reserved-name guard.
+      if (profileUpdates.displayName !== undefined) {
+        const nameError = validateDisplayName(profileUpdates.displayName);
+        if (nameError) throw new Error(nameError);
+        profileUpdates.displayName = profileUpdates.displayName.trim();
+      }
+      // An empty avatarUrl removes the photo.
+      if (profileUpdates.avatarUrl === "") profileUpdates.avatarUrl = undefined;
       // Mirrors the user_profiles_bio_length check constraint.
       if (profileUpdates.bio !== undefined) {
         const bio = profileUpdates.bio.trim();
@@ -1983,6 +2037,11 @@ export const hungryService: HungryService = {
       }
       const person = findMockPerson(userId);
       return resolve({ id: userId, ...person });
+    },
+
+    async updateMaxDishBudget(maxDishBudget: number | null) {
+      _profile = { ..._profile, maxDishBudget: maxDishBudget ?? undefined };
+      return resolve(undefined);
     },
 
     async updateDietaryPreferences(flags: DietaryFlag[]) {
@@ -2150,7 +2209,7 @@ export const hungryService: HungryService = {
   // ── Social (Bites) ──────────────────────────────────────────────────────────
 
   social: {
-    async getBitesFeed(_lat?, _lng?) {
+    async getBitesFeed(_lat?, _lng?, _page?) {
       await hydrateSocial();
       // Mirrors the Supabase feed read: blocked authors never reach the client,
       // and each row carries the viewer's own like/save state.
@@ -2404,6 +2463,28 @@ export const hungryService: HungryService = {
       );
     },
 
+    async removeFollower(userId: string) {
+      const followersKey = _mockFollowersByUser[_profile.id] ? _profile.id : userProfile.id;
+      _mockFollowersByUser[followersKey] = (_mockFollowersByUser[followersKey] ?? []).filter(
+        (person) => person.userId !== userId,
+      );
+      return resolve(undefined as void);
+    },
+
+    async searchProfiles(query: string, page?: { limit?: number; offset?: number }) {
+      const term = query.trim().toLowerCase();
+      if (term.length < 2) return resolve([]);
+      const known = [...Object.values(_mockFollowersByUser).flat(), ..._incomingFollowRequests];
+      const matches = dedupeMockFollowers(known).filter(
+        (person) =>
+          person.userId !== _profile.id &&
+          !_mockPrivateUserIds.has(person.userId) &&
+          !_blockedUsers.has(person.userId) &&
+          person.displayName.toLowerCase().includes(term),
+      );
+      return resolve(pageMockFollowRows(matches, { limit: page?.limit ?? 20, ...page }));
+    },
+
     async canViewFollowLists(_userId: string) {
       return resolve(true);
     },
@@ -2623,7 +2704,42 @@ export const hungryService: HungryService = {
       return resolve(undefined);
     },
 
+    async unblockUser(blockedUserId) {
+      _blockedUsers.delete(blockedUserId);
+      return resolve(undefined);
+    },
+
+    async listBlockedUsers() {
+      return resolve(
+        Array.from(_blockedUsers.entries()).map(([blockedUserId, entry]) => ({
+          blockedUserId,
+          reason: entry.reason,
+          createdAt: entry.createdAt,
+        })),
+      );
+    },
+
+    async listHiddenPosts() {
+      return resolve(
+        Array.from(_hiddenPosts.entries())
+          .map(([postId, hiddenAt]) => {
+            const bite = MOCK_BITES_FEED.find((candidate) => candidate.id === postId);
+            return {
+              postId,
+              caption: bite?.caption,
+              authorId: bite?.authorId,
+              authorName: bite?.authorName,
+              dishName: bite?.dishName,
+              venueName: bite?.venueName,
+              hiddenAt,
+            };
+          })
+          .reverse(),
+      );
+    },
+
     async hidePost(postId, reason) {
+      _hiddenPosts.set(postId, new Date().toISOString());
       _contentReports.push({
         reporterId: _profile.id,
         targetType: "post",
@@ -2634,6 +2750,7 @@ export const hungryService: HungryService = {
     },
 
     async unhidePost(postId) {
+      _hiddenPosts.delete(postId);
       _contentReports.push({
         reporterId: _profile.id,
         targetType: "post",
@@ -2940,6 +3057,13 @@ export const hungryService: HungryService = {
       });
     },
 
+    async submitCatalogCorrection() {
+      if (!_isAuthenticated) {
+        throw new Error("Sign in to report a problem.");
+      }
+      return resolve(undefined);
+    },
+
     async submitMerchantClaimInterest(input) {
       if (!_isAuthenticated) {
         throw new Error("You must be signed in to claim a stall.");
@@ -2958,6 +3082,14 @@ export const hungryService: HungryService = {
         claimId: `mock-merchant-claim-${Date.now()}`,
         status: "created",
       } as const);
+    },
+
+    async getMerchantClaimStatus(venueId) {
+      return resolve(
+        _isAuthenticated && _merchantClaimInterests.has(`${_profile.id}:${venueId}`)
+          ? ("submitted" as const)
+          : ("none" as const),
+      );
     },
 
     async listDraftDishesQueue() {
@@ -3132,6 +3264,10 @@ export const hungryService: HungryService = {
       if (filters?.unrepliedOnly) {
         interactions = interactions.filter((i) => !i.reply);
       }
+      const before = filters?.before ? new Date(filters.before).getTime() : undefined;
+      if (before !== undefined && Number.isFinite(before)) {
+        interactions = interactions.filter((i) => new Date(i.createdAt).getTime() < before);
+      }
       interactions = [...interactions].sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       );
@@ -3146,10 +3282,20 @@ export const hungryService: HungryService = {
       if (!interaction) throw new Error(`Interaction ${interactionId} not found`);
       const trimmedText = text.trim();
       if (!trimmedText) throw new Error("Reply text is required");
+      if (trimmedText.length > MERCHANT_REPLY_MAX_LENGTH) {
+        throw new Error(`Replies can be up to ${MERCHANT_REPLY_MAX_LENGTH} characters.`);
+      }
       interaction.reply = {
         text: trimmedText,
         repliedAt: new Date().toISOString(),
       };
+      return resolve(undefined);
+    },
+
+    async removeInteractionReply(interactionId) {
+      const interaction = _merchantInbox.find((i) => i.id === interactionId);
+      if (!interaction) throw new Error(`Interaction ${interactionId} not found`);
+      interaction.reply = undefined;
       return resolve(undefined);
     },
 
@@ -3348,35 +3494,6 @@ export const hungryService: HungryService = {
             .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
         ),
       );
-    },
-
-    async syncLowRatingNotifications(outletId) {
-      const notifications = getLowRatingNotificationsForOutlet(outletId);
-      return resolve(clone(notifications));
-    },
-
-    async sendWeeklySummaryNotifications(outletId) {
-      const outlet = getMerchantOutlet(outletId);
-      const summary = buildWeeklySummaryStats(outletId);
-      const members = getTeamMembersForAccount(outlet.merchantAccountId).filter(
-        (member) => member.inviteStatus !== "removed",
-      );
-      const notifications = members.map((member) =>
-        createMerchantNotification({
-          merchantAccountId: outlet.merchantAccountId,
-          outletId,
-          recipientUserId: member.userId,
-          recipientEmail: member.email,
-          kind: "weekly_summary",
-          title: `${outlet.name} weekly summary is ready`,
-          body: `${summary.totalViews.toLocaleString()} views, ${summary.newReviews} new reviews, ${summary.unrepliedReviews} unreplied reviews.`,
-          status: "unread",
-          dedupeKey: `weekly-summary:${summary.id}:${member.id}`,
-          deepLink: MERCHANT_DEEP_LINKS.analytics,
-          metadata: { summaryId: summary.id },
-        }),
-      );
-      return resolve(clone(notifications));
     },
 
     async generateDishDescription(dishName, ingredients) {
@@ -3713,8 +3830,9 @@ export const hungryService: HungryService = {
       return resolve(undefined);
     },
 
-    async markChecklistItemTried(id: string) {
-      const triedAt = new Date().toISOString();
+    async markChecklistItemTried(id: string, tried = true) {
+      const updatedAt = new Date().toISOString();
+      const triedAt = tried ? updatedAt : undefined;
       let updatedChecklistId: string | undefined;
       _checklistItems = _checklistItems.map((item) => {
         if (item.id !== id) {
@@ -3727,13 +3845,13 @@ export const hungryService: HungryService = {
           return item;
         }
         updatedChecklistId = item.checklistId;
-        return { ...item, triedAt, updatedAt: triedAt };
+        return { ...item, triedAt, updatedAt };
       });
       if (!updatedChecklistId) {
         throw new Error(`Checklist item ${id} not found`);
       }
       _checklists = _checklists.map((entry) =>
-        entry.id === updatedChecklistId ? { ...entry, updatedAt: triedAt } : entry,
+        entry.id === updatedChecklistId ? { ...entry, updatedAt } : entry,
       );
       return resolve(undefined);
     },
@@ -3873,17 +3991,44 @@ export const hungryService: HungryService = {
             name: dish?.name ?? venue?.name ?? "Untitled",
             stallName: venue?.name,
             price: dish?.price,
+            score: item.score,
             publicNotes: item.publicNotes,
             imageUrl: dish?.imageUrl || undefined,
+            mapQuery: venue ? [venue.name, venue.unitNumber].filter(Boolean).join(", ") : undefined,
           };
         });
       return resolve({
         id: portfolio.id,
         name: portfolio.name,
         description: portfolio.description,
+        type: portfolio.type,
         updatedAt: portfolio.updatedAt,
         items,
       });
+    },
+
+    async getPortfolioItemDetails(portfolioId: string) {
+      const portfolio = _portfolios.find((entry) => entry.id === portfolioId);
+      if (!portfolio || !canViewMockPortfolio(portfolio)) {
+        throw new Error(`Portfolio ${portfolioId} not found`);
+      }
+      return resolve(
+        _portfolioItems
+          .filter((item) => item.portfolioId === portfolioId)
+          .sort((left, right) => left.position - right.position)
+          .map((item) => {
+            const dish = item.dishId ? mockRepository.getDishById(item.dishId) : undefined;
+            const venue = item.stallId ? mockRepository.getVenueById(item.stallId) : undefined;
+            return {
+              dishId: item.dishId,
+              stallId: item.stallId,
+              name: dish?.name ?? venue?.name,
+              stallName: dish?.venueName ?? venue?.name,
+              price: dish?.price,
+              imageUrl: dish?.imageUrl || venue?.imageUrl || undefined,
+            };
+          }),
+      );
     },
 
     async updatePortfolio(
@@ -3955,7 +4100,8 @@ export const hungryService: HungryService = {
         publishedPortfolioType = portfolio.type;
         return {
           ...portfolio,
-          publishedAt,
+          // Publishing again after Unpublish keeps the first publish date.
+          publishedAt: portfolio.publishedAt ?? publishedAt,
           visibility: "public",
           updatedAt: publishedAt,
         };
@@ -4200,14 +4346,33 @@ export const hungryService: HungryService = {
       options?: PortfolioMutationOptions,
     ) {
       assertMockPortfolioVersion(portfolioId, options);
+      const portfolio = _portfolios.find((entry) => entry.id === portfolioId);
+      // The owner removes anyone; a collaborator can remove only themselves (leave).
+      const isOwner = portfolio?.ownerId === _profile.id;
+      if (!portfolio || (!isOwner && userId !== _profile.id)) {
+        throw new Error(`Portfolio ${portfolioId} not found`);
+      }
+      _portfolioCollaborators = _portfolioCollaborators.filter(
+        (entry) => !(entry.portfolioId === portfolioId && entry.userId === userId),
+      );
+      return resolve(undefined);
+    },
+
+    async updatePortfolioCollaboratorRole(
+      portfolioId: string,
+      userId: string,
+      role: "viewer" | "editor",
+      options?: PortfolioMutationOptions,
+    ) {
+      assertMockPortfolioVersion(portfolioId, options);
       const portfolio = _portfolios.find(
         (entry) => entry.id === portfolioId && entry.ownerId === _profile.id,
       );
       if (!portfolio) {
         throw new Error(`Portfolio ${portfolioId} not found`);
       }
-      _portfolioCollaborators = _portfolioCollaborators.filter(
-        (entry) => !(entry.portfolioId === portfolioId && entry.userId === userId),
+      _portfolioCollaborators = _portfolioCollaborators.map((entry) =>
+        entry.portfolioId === portfolioId && entry.userId === userId ? { ...entry, role } : entry,
       );
       return resolve(undefined);
     },
@@ -4397,11 +4562,14 @@ export const hungryService: HungryService = {
   },
 
   notifications: {
-    async listActivityEvents() {
+    async listActivityEvents(_page?: { limit?: number; offset?: number }) {
       return resolve([]);
     },
     async markActivityRead(_eventId: string) {
       return resolve(undefined);
+    },
+    async markAllActivityRead() {
+      return resolve(0);
     },
   },
 };

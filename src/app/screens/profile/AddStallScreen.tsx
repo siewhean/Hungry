@@ -26,7 +26,9 @@ import { useStallSubmissionStore } from "@/store/useStallSubmissionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { SubmitUserStallSubmissionInput } from "@/types/domain";
-import { confirmGalleryAccess, isGalleryPermissionGranted } from "@/lib/permissions/gallery";
+import { searchPickerVenues } from "@/features/checklistPortfolio/pickerSearch";
+import { getRootNavigation } from "@/app/navigation/getRootNavigation";
+import type { VenueSummary } from "@/types/domain";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "AddStall">;
@@ -52,32 +54,75 @@ type SelectedStallImage = {
   mimeType?: string;
 };
 
-const SINGAPORE_AREA_OPTIONS = [
-  { label: "Select area", value: "" },
-  { label: "Pioneer", value: "Pioneer" },
-  { label: "Jurong West", value: "Jurong West" },
-  { label: "Jurong East", value: "Jurong East" },
-  { label: "Tampines", value: "Tampines" },
-  { label: "Bedok", value: "Bedok" },
-  { label: "Pasir Ris", value: "Pasir Ris" },
-  { label: "Woodlands", value: "Woodlands" },
-  { label: "Yishun", value: "Yishun" },
-  { label: "Ang Mo Kio", value: "Ang Mo Kio" },
-  { label: "Hougang", value: "Hougang" },
-  { label: "Punggol", value: "Punggol" },
-  { label: "Serangoon", value: "Serangoon" },
-  { label: "Toa Payoh", value: "Toa Payoh" },
-  { label: "Clementi", value: "Clementi" },
-  { label: "Bukit Timah", value: "Bukit Timah" },
-  { label: "Queenstown", value: "Queenstown" },
-  { label: "Tiong Bahru", value: "Tiong Bahru" },
-  { label: "Chinatown", value: "Chinatown" },
-  { label: "Orchard", value: "Orchard" },
-  { label: "Marina Bay", value: "Marina Bay" },
-  { label: "Geylang", value: "Geylang" },
+// The URA planning areas, plus a few well-known neighbourhoods people search by, and "Other".
+const SINGAPORE_AREAS = [
+  "Ang Mo Kio",
+  "Bedok",
+  "Bishan",
+  "Boon Lay",
+  "Bukit Batok",
+  "Bukit Merah",
+  "Bukit Panjang",
+  "Bukit Timah",
+  "Central Water Catchment",
+  "Changi",
+  "Changi Bay",
+  "Chinatown",
+  "Choa Chu Kang",
+  "Clementi",
+  "Downtown Core",
+  "Geylang",
+  "Hougang",
+  "Jurong East",
+  "Jurong West",
+  "Kallang",
+  "Lim Chu Kang",
+  "Mandai",
+  "Marina Bay",
+  "Marina East",
+  "Marina South",
+  "Marine Parade",
+  "Museum",
+  "Newton",
+  "North-Eastern Islands",
+  "Novena",
+  "Orchard",
+  "Outram",
+  "Pasir Ris",
+  "Paya Lebar",
+  "Pioneer",
+  "Punggol",
+  "Queenstown",
+  "River Valley",
+  "Rochor",
+  "Seletar",
+  "Sembawang",
+  "Sengkang",
+  "Serangoon",
+  "Simpang",
+  "Singapore River",
+  "Southern Islands",
+  "Straits View",
+  "Sungei Kadut",
+  "Tampines",
+  "Tanglin",
+  "Tengah",
+  "Tiong Bahru",
+  "Toa Payoh",
+  "Tuas",
+  "Western Islands",
+  "Western Water Catchment",
+  "Woodlands",
+  "Yishun",
+  "Other",
 ] as const;
 
-type SingaporeAreaValue = (typeof SINGAPORE_AREA_OPTIONS)[number]["value"];
+type SingaporeAreaValue = "" | (typeof SINGAPORE_AREAS)[number];
+
+const SINGAPORE_AREA_OPTIONS: { label: string; value: SingaporeAreaValue }[] = [
+  { label: "Select area", value: "" },
+  ...SINGAPORE_AREAS.map((area) => ({ label: area, value: area })),
+];
 type Weekday = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
 type TimeRange = {
   id: string;
@@ -99,35 +144,19 @@ function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
+const SUBMIT_FAILED_MESSAGE = "Couldn't submit the stall. Please try again.";
+
 function resolveSubmitErrorMessage(error: unknown): string {
-  const asText = findErrorMessage(error);
-
-  if (
-    asText &&
-    asText.toLowerCase().includes("could not find the function public.submit_user_stall_submission")
-  ) {
-    return "Unable to submit stall right now. Please retry after syncing the latest backend migration.";
+  const asText = findErrorMessage(error)?.toLowerCase() ?? "";
+  // Our own server limits say something a person can act on; everything else (migration or
+  // schema-cache errors, permission errors, raw codes) is not for them.
+  if (asText.includes("daily limit for stall submissions")) {
+    return "You've reached today's limit for stall submissions. Try again tomorrow.";
   }
-
-  if (
-    asText &&
-    asText.toLowerCase().includes("could not find the") &&
-    asText.toLowerCase().includes("column") &&
-    asText.toLowerCase().includes("schema cache")
-  ) {
-    return "Unable to submit stall right now. Please retry after syncing the latest backend migration.";
+  if (asText.includes("too long") || asText.includes("too many items")) {
+    return "Some details are too long. Shorten them and try again.";
   }
-
-  if (
-    asText &&
-    asText.toLowerCase().includes("permission denied") &&
-    asText.toLowerCase().includes("user_stall_submissions")
-  ) {
-    return "Unable to submit stall right now. Please retry shortly.";
-  }
-
-  if (asText) return asText;
-  return "Unable to submit stall right now.";
+  return SUBMIT_FAILED_MESSAGE;
 }
 
 function findErrorMessage(value: unknown, depth = 0): string | null {
@@ -247,7 +276,6 @@ export function AddStallScreen({ navigation }: Props) {
     isOpen: boolean;
   } | null>(null);
   const [timePickerDraftDate, setTimePickerDraftDate] = useState<Date | null>(null);
-  const shouldApplyTimePickerDraftOnDismissRef = useRef(true);
   const [menuItemDrafts, setMenuItemDrafts] = useState<MenuItemDraft[]>([
     { id: "menu-item-1", name: "", priceRange: "" },
   ]);
@@ -255,9 +283,33 @@ export function AddStallScreen({ navigation }: Props) {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isPhotoDragging, setIsPhotoDragging] = useState(false);
 
+  // Stalls Hungry already lists with a similar name, so people open them instead of re-adding.
+  const rootNavigation = getRootNavigation(navigation as any);
+  const [similarVenues, setSimilarVenues] = useState<VenueSummary[]>([]);
+  const similarQuery = stallName.trim();
+  useEffect(() => {
+    if (similarQuery.length < 3) {
+      setSimilarVenues([]);
+      return;
+    }
+    let isActive = true;
+    const timer = setTimeout(() => {
+      void searchPickerVenues(similarQuery, 3)
+        .then((venues) => {
+          if (isActive) setSimilarVenues(venues.slice(0, 3));
+        })
+        .catch(() => {
+          if (isActive) setSimilarVenues([]);
+        });
+    }, 400);
+    return () => {
+      isActive = false;
+      clearTimeout(timer);
+    };
+  }, [similarQuery]);
+
   const coverImage = selectedImages[0];
   const selectedImagesRef = useRef<SelectedStallImage[]>(selectedImages);
-  const hasRequestedGalleryDialog = useRef(false);
   const dragSourceIndexRef = useRef<number>(-1);
   const dragTargetIndexRef = useRef<number>(-1);
 
@@ -355,32 +407,7 @@ export function AddStallScreen({ navigation }: Props) {
   );
 
   const pickImages = async () => {
-    let permission = await ImagePicker.getMediaLibraryPermissionsAsync();
-    if (!isGalleryPermissionGranted(permission)) {
-      if (!hasRequestedGalleryDialog.current) {
-        const shouldRequestPermission = await confirmGalleryAccess({
-          title: "Allow gallery access",
-          message: "Hungry needs access to your gallery to let you add stall photos.",
-          confirmLabel: "Allow",
-          cancelLabel: "Not now",
-        });
-        hasRequestedGalleryDialog.current = true;
-        if (!shouldRequestPermission) {
-          return;
-        }
-      }
-
-      permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!isGalleryPermissionGranted(permission)) {
-        showToast({ message: "Allow photo access to add stall photos.", tone: "warning" });
-        return;
-      }
-    }
-
-    if (!isGalleryPermissionGranted(permission)) {
-      return;
-    }
-
+    // The system photo picker needs no library permission, so there is no pre-prompt.
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
       allowsMultipleSelection: true,
@@ -490,15 +517,9 @@ export function AddStallScreen({ navigation }: Props) {
   const openTimePicker = (slotId: string, type: "start" | "end") => {
     setActiveTimePicker({ slotId, type, isOpen: true });
     setTimePickerDraftDate(parsePickerDateForSlot(slotId, type));
-    shouldApplyTimePickerDraftOnDismissRef.current = true;
     if (Platform.OS !== "android") {
       requestAnimationFrame(() => timePickerSheetRef.current?.present());
     }
-  };
-
-  const applyTimePickerDraft = () => {
-    if (!activeTimePicker || !timePickerDraftDate) return;
-    setTimeForSlot(activeTimePicker.slotId, activeTimePicker.type, timePickerDraftDate);
   };
 
   const setTimeForSlot = (slotId: string, type: "start" | "end", date: Date) => {
@@ -535,7 +556,6 @@ export function AddStallScreen({ navigation }: Props) {
   const applyIosTimeSelection = () => {
     if (!activeTimePicker || !timePickerDraftDate) return;
     setTimeForSlot(activeTimePicker.slotId, activeTimePicker.type, timePickerDraftDate);
-    shouldApplyTimePickerDraftOnDismissRef.current = false;
     setActiveTimePicker((current) => (current ? { ...current, isOpen: false } : null));
     timePickerSheetRef.current?.dismiss();
   };
@@ -805,7 +825,38 @@ export function AddStallScreen({ navigation }: Props) {
           }}
           error={Boolean(errors.stallName)}
           errorText={errors.stallName}
+          maxLength={120}
         />
+        {similarVenues.length > 0 ? (
+          <View
+            testID="add-stall-similar-venues"
+            style={{
+              backgroundColor: palette.bgSoft,
+              borderRadius: componentRadii.card,
+              gap: spacing[2],
+              padding: spacing[3],
+            }}
+          >
+            <AppText variant="bodySmallBold">Already on Hungry? Open it</AppText>
+            {similarVenues.map((venue) => (
+              <Pressable
+                key={venue.id}
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${venue.name}`}
+                accessibilityHint="Opens the stall page"
+                onPress={() => rootNavigation.navigate("StallDetail", { venueId: venue.id })}
+                style={{ minHeight: 44, justifyContent: "center" }}
+              >
+                <AppText variant="bodyBold">{venue.name}</AppText>
+                {[venue.buildingName, venue.unitNumber].filter(Boolean).length ? (
+                  <AppText variant="micro" tone="secondary">
+                    {[venue.buildingName, venue.unitNumber].filter(Boolean).join(" · ")}
+                  </AppText>
+                ) : null}
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
 
         <View style={{ flexDirection: "row", gap: spacing[3] }}>
           <View style={{ flex: 1 }}>
@@ -1181,13 +1232,10 @@ export function AddStallScreen({ navigation }: Props) {
         ref={timePickerSheetRef}
         accessibilityLabel="Choose opening time"
         snapPoints={["52%"]}
+        // Swiping the sheet away, like Cancel, discards the draft: only Done saves the time.
         onDismiss={() => {
-          if (shouldApplyTimePickerDraftOnDismissRef.current) {
-            applyTimePickerDraft();
-          }
           setActiveTimePicker(null);
           setTimePickerDraftDate(null);
-          shouldApplyTimePickerDraftOnDismissRef.current = true;
         }}
       >
         <View style={{ gap: spacing[4], padding: spacing[4] }}>
@@ -1249,10 +1297,7 @@ export function AddStallScreen({ navigation }: Props) {
               variant="secondary"
               fullWidth={false}
               style={{ flex: 1 }}
-              onPress={() => {
-                shouldApplyTimePickerDraftOnDismissRef.current = false;
-                timePickerSheetRef.current?.dismiss();
-              }}
+              onPress={() => timePickerSheetRef.current?.dismiss()}
             />
             <Button
               label="Done"

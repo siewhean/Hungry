@@ -7,28 +7,34 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 
 test("consumer feed posts lead to the dish, the stall and the post", () => {
   const home = read("src/app/screens/home/HomeFeedScreen.tsx");
+  const card = read("src/components/social/FeedPostCard.tsx");
   // Overlay dish title opens the dish (or stall when no dish is linked).
-  assert.match(home, /onPress=\{\(\) => navigateToDish\(item\)\}\s*>\s*<AppText variant="h3"/);
+  assert.match(card, /onPress=\{\(\) => actions\.openDish\(item\)\}\s*>\s*<AppText variant="h3"/);
+  assert.match(home, /openDish: navigateToDish/);
   // Without map access the venue line opens the stall instead of being plain text.
-  assert.equal(
-    home.match(
-      /onPress=\{\(\) =>\s*navigation\.navigate\("StallDetail", \{ venueId: item\.venueId \}\)/g,
-    )?.length,
-    2,
+  assert.match(
+    home,
+    /canAccessMap\s*\? openVenueOnMap\(item\)\s*: navigation\.navigate\("StallDetail", \{ venueId: item\.venueId \}\)/,
   );
+  assert.match(card, /onPress=\{\(\) => actions\.openVenue\(item\)\}/);
   // With comments off, the caption opens the post detail.
   assert.match(home, /navigation\.navigate\("ActivityPostDetail", \{ postId: item\.id \}\)/);
 });
 
 test("carousel index is not written to screen state on every scroll frame", () => {
-  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
-  assert.doesNotMatch(home, /contentOffset\.x \/ viewportWidth;\n/);
+  const card = read("src/components/social/FeedPostCard.tsx");
+  // The index lives in the card, not the screen: a swipe re-renders only that card.
+  assert.doesNotMatch(read("src/app/screens/home/HomeFeedScreen.tsx"), /carouselIndexByPostId/);
+  assert.doesNotMatch(card, /contentOffset\.x \/ viewportWidth;\n/);
   // Rounded page index, and the state setter bails out when it is unchanged.
   assert.match(
-    home,
+    card,
     /const nextIndex = Math\.round\(event\.nativeEvent\.contentOffset\.x \/ viewportWidth\)/,
   );
-  assert.match(home, /if \(current\[carouselPostKey\] === clampedIndex\) \{\s*return current;/);
+  assert.match(
+    card,
+    /setCarouselIndex\(\(current\) => \(current === clamped \? current : clamped\)\)/,
+  );
 });
 
 test("repository post cache is bounded and honours the viewer's hidden posts", () => {

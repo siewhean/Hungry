@@ -101,10 +101,13 @@ test("H41: editors get item controls and shared lists have their own tab", async
   const detail = read("src/app/screens/portfolio/PortfolioDetailScreen.tsx");
   assert.match(detail, /const canEdit = isOwner \|\| myRole === "editor";/);
   assert.match(detail, /loadPortfolioCollaborators\(portfolioId\)/);
-  assert.match(detail, /\{canEdit \? \(\s*<>\s*<Button\s*label="Dish"/);
+  assert.match(detail, /\{canEdit \? \(\s*<Button\s*label="Add"/);
   assert.match(detail, /canEdit=\{canEdit\}/);
-  // Publish, Edit, Collaborators and Delete stay owner-only.
-  assert.match(detail, /\{isOwner \? \(\s*<>\s*<Button\s*label=\{isLive/);
+  // Publish and the More menu (Edit, Collaborators, Delete) stay owner-only.
+  assert.match(
+    detail,
+    /\{isOwner \? \(\s*<>\s*<Button\s*label=\{isLive \? "Unpublish" : "Publish"\}/,
+  );
   assert.match(
     read("src/components/portfolio/PortfolioItemRow.tsx"),
     /\{canEdit \? \(\s*<View style=\{styles\.actionRow\}>/,
@@ -222,5 +225,5 @@ test("H45: list rows open the dish or stall and show a photo, stall and rank", (
   assert.match(detail, /rootNavigation\.navigate\("DishDetail", \{ dishId: item\.dishId \}\)/);
   assert.match(detail, /rootNavigation\.navigate\("StallDetail", \{ venueId: item\.stallId \}\)/);
   assert.match(detail, /showRank=\{portfolio\.type === "ranking"\}/);
-  assert.match(detail, /useItemDetailsState\(portfolioItems\)/);
+  assert.match(detail, /useItemDetailsState\(portfolioItems, portfolioId\)/);
 });

@@ -99,7 +99,7 @@ export function PopularVisitorsSection({
     <View style={[{ gap: spacing[3] }, style]}>
       <View style={{ paddingHorizontal: sectionPadding }}>
         <AppText variant="h3" style={{ fontWeight: "800" }}>
-          Popular visitors
+          Picked by the owner
         </AppText>
       </View>
 

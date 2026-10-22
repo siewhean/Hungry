@@ -52,7 +52,7 @@ test("H39: private profiles hide their review list and say they are private", ()
   assert.doesNotMatch(sql, /create policy|drop policy/i);
 
   const service = read("src/lib/services/supabase/supabaseService.ts");
-  assert.match(service, /client\.rpc\("get_user_profile_reviews", \{ p_user_id: userId \}\)/);
+  assert.match(service, /\.rpc\("get_user_profile_reviews", \{ p_user_id: userId \}\)/);
   assert.match(service, /client\.rpc\("get_profile_card", \{ p_user_id: userId \}\)/);
 
   const content = read("src/app/screens/profile/UserProfileContent.tsx");

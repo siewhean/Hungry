@@ -184,7 +184,7 @@ function scheduleMainTabScreensWarmup(onComplete: () => void) {
 }
 
 function HomeWrapper() {
-  return <HomeFeedScreen mode="social" />;
+  return <HomeFeedScreen />;
 }
 
 const ReviewWrapper = createDeferredTabScreen(reviewScreenLoader);
@@ -322,7 +322,8 @@ export function SwipeableTabNavigator() {
         lazyPreloadDistance: tabPreloadEnabled ? MAIN_TAB_PRELOAD_DISTANCE : 0,
       }}
     >
-      <Tab.Screen name="Home" component={HomeWrapper} />
+      {/* No pager swipe on Home: its photo carousels own horizontal swipes. */}
+      <Tab.Screen name="Home" component={HomeWrapper} options={{ swipeEnabled: false }} />
       <Tab.Screen name="Discover" component={DiscoverWrapper} />
       <Tab.Screen name="Review" component={ReviewWrapper} />
       <Tab.Screen name="Profile" component={ProfileWrapper} />

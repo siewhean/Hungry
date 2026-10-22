@@ -154,8 +154,11 @@ test("decision 25: the merchant badge says Open now or Closed when hours exist",
   assert.match(editor, /<OpeningHoursEditor/);
   assert.match(editor, /operatingHours: formatScheduleText\(data\.openingSchedule\)/);
   const stall = read("src/app/screens/detail/StallDetailScreen.tsx");
-  assert.match(stall, /discovery\.getVenueOpeningSchedule\(venue\.id\)/);
-  assert.match(stall, /getScheduleOpenState\(schedule, venue\.isOpen\)/);
+  assert.match(stall, /discovery\.getVenueOpeningSchedule\(sideLoadVenueId\)/);
+  assert.match(
+    read("src/features/detail/stallOpenState.ts"),
+    /getScheduleOpenState\(schedule, venue\.isOpen, now\)/,
+  );
 });
 
 test("decision 27: unverified merchants can open the menu screens; live dishes stay locked", () => {

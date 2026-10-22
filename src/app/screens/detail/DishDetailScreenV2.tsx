@@ -23,19 +23,26 @@ import {
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { useDetailSaveActions } from "@/features/checklistPortfolio/DetailSaveActions";
+import { resolveStallOpenInfo } from "@/features/detail/stallOpenState";
+import { tasteMatchLabel } from "@/features/detail/tasteMatch";
+import { isSoldOut } from "@/features/merchant/menuSections";
+import { DeliveryPlatformButton } from "@/components/dish/DeliveryPlatformButton";
+import { PhotoPager } from "@/components/dish/PhotoPager";
+import { ReportProblemLink } from "@/components/stall/ReportProblemLink";
 import { buildDishGallery } from "@/features/detail/detailTransforms";
 import { formatDishUpdated } from "@/features/detail/dishFreshness";
+import { formatDishPrice } from "@/features/detail/dishPrice";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import { DietaryFlagChips } from "@/components/dish/DietaryFlagChips";
-import { OwnReviewActions, ReviewPhotoStrip } from "@/components/review";
+import { OwnReviewActions, ReviewPhotoStrip, ReviewReaderActions } from "@/components/review";
 import { isOwnReview } from "@/features/review/reviewEdit";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
-import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore, getTasteSimilarityWithDish } from "@/store/useProfileStore";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { saveDishAfterSignIn } from "@/features/auth/finishGuestAction";
+import { rememberPendingDishSave } from "@/features/auth/pendingDishSave";
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
 import { useUIStore } from "@/store/useUIStore";
 import { useSocialStore } from "@/store/useSocialStore";
@@ -51,22 +58,19 @@ import {
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useHungryTheme } from "@/theme";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
-import type { DishDetail, Review } from "@/types/domain";
+import type { DishDetail, OpeningSchedule, PublicMerchantProfile, Review } from "@/types/domain";
 import { hasDishTasteSignal, isNeutralTasteVector } from "@/lib/ai/tasteEngine";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
-import {
-  formatHoursRows,
-  getHoursForDay,
-  getSingaporeDay,
-  getVenueOpenState,
-  parseOperatingHours,
-} from "@/utils/operatingHours";
 import { webShareUrl } from "@/constants/links";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { firstDishTimingProps } from "@/lib/analytics/firstDishTiming";
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
 import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
-import { buildMapsSearchUrl, formatFullStallAddress } from "@/features/detail/stallLocation";
+import {
+  buildMapsSearchUrl,
+  formatFullStallAddress,
+  getStallPin,
+} from "@/features/detail/stallLocation";
 
 const CommentIcon = MessageCircle ?? MessageCircleMore;
 /** Reviews shown before "See all". */
@@ -96,20 +100,6 @@ function getDominantTaste(dish: DishDetail) {
   );
 }
 
-function formatWaitTime(liveCrowd?: "low" | "medium" | "high") {
-  if (liveCrowd === "high") return "25-40 min";
-  if (liveCrowd === "medium") return "15-25 min";
-  if (liveCrowd === "low") return "< 15 min";
-  return null;
-}
-
-/** A missing price maps to 0: show the listed range or "Price not listed", never "S$0.00". */
-function formatDishPrice(dish: Pick<DishDetail, "price" | "priceRange">) {
-  if (dish.price > 0) return `S$${dish.price.toFixed(2)}`;
-  const range = dish.priceRange?.trim();
-  return range && !/^S?\$?\s*0(?:\.0+)?$/.test(range) ? range : "Price not listed";
-}
-
 /** Other dishes from the same stall; never the dish being viewed. */
 function getMoreFromStall(currentDish: DishDetail, venueDishes: DishDetail[]) {
   const byId = new Map<string, DishDetail>();
@@ -129,7 +119,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const [dishReloadKey, setDishReloadKey] = useState(0);
   const dish = hydratedDish ?? cachedDish;
   const { componentRadii, palette, radii, spacing, shadows } = useHungryTheme();
-  const waitEstimateDisclosure = getDataTrustDisclosure("waitEstimate");
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const profile = useProfileStore((state) => state.profile);
@@ -139,9 +128,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const requireAccount = useRequireAccount();
   const showToast = useUIStore((state) => state.showToast);
-  const stallInteractions = useStallInteractionStore((state) => state.interactions);
-  const stallInteraction = dish?.venueId ? stallInteractions[dish.venueId] : undefined;
   const markTried = useStallInteractionStore((state) => state.markTried);
+  const loadStallInteractions = useStallInteractionStore((state) => state.loadInteractions);
   const incrementShare = useSocialStore((state) => state.incrementShare);
   const [tasteProfileOpen, setTasteProfileOpen] = useState(false);
   const [operatingHoursOpen, setOperatingHoursOpen] = useState(false);
@@ -149,6 +137,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const shareSheetRef = useRef<BottomSheetModal>(null);
   const lastRecordedDishViewId = useRef<string | null>(null);
   const [isTryingFood, setIsTryingFood] = useState(false);
+  const [openingSchedule, setOpeningSchedule] = useState<OpeningSchedule>();
+  const [merchantProfile, setMerchantProfile] = useState<PublicMerchantProfile>();
   const [dishReviews, setDishReviews] = useState<Review[]>([]);
   const [reviewsStatus, setReviewsStatus] = useState<"loading" | "error" | "ready">("loading");
   const [reviewsReloadKey, setReviewsReloadKey] = useState(0);
@@ -170,14 +160,12 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     [dish, repository],
   );
   const [hydratedVenue, setHydratedVenue] = useState<typeof cachedVenue>();
-  const [hasLoadedVenueDetail, setHasLoadedVenueDetail] = useState(Boolean(cachedVenue));
   // A failed stall read shows a retry row instead of silently dropping the stall sections.
   const [venueLoadFailed, setVenueLoadFailed] = useState(false);
   const [venueReloadKey, setVenueReloadKey] = useState(0);
   const venue = hydratedVenue ?? cachedVenue;
 
   const gallery = useMemo(() => (dish ? buildDishGallery(dish) : []), [dish]);
-  const heroImage = gallery[0] ?? dish?.imageUrl;
   // "Photos from reviews" rail: newest reviews first, at most 12 photos.
   const reviewPhotos = useMemo(
     () => dishReviews.flatMap((review) => review.photos ?? []).slice(0, 12),
@@ -197,27 +185,21 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     () => (dish ? getMoreFromStall(dish, venueDishes) : []),
     [dish, venueDishes],
   );
-  const hoursRows = useMemo(() => parseOperatingHours(venue?.operatingHours), [venue]);
-  const rawHours = venue?.operatingHours?.trim() ?? "";
-  // Unreadable text is still shown as written rather than dropped.
-  const listedHours = useMemo(
+  // One shared helper decides open/closed for both pages: the owner's temporary closure,
+  // then the weekly schedule with special hours, then the listed hours text.
+  const openInfo = useMemo(
     () =>
-      hoursRows.length > 0
-        ? formatHoursRows(hoursRows)
-        : rawHours
-          ? [{ label: "Hours", text: rawHours }]
-          : [],
-    [hoursRows, rawHours],
+      venue
+        ? resolveStallOpenInfo({
+            venue,
+            schedule: openingSchedule,
+            temporaryClosure: merchantProfile?.temporaryClosure,
+          })
+        : undefined,
+    [merchantProfile?.temporaryClosure, openingSchedule, venue],
   );
-  const today = getSingaporeDay();
-  const currentDayRows = useMemo(() => {
-    if (hoursRows.length === 0) return listedHours;
-    const todayRow = getHoursForDay(hoursRows, today);
-    // No row for today (a weekday-only listing on a Sunday) means closed today.
-    return [
-      { label: "Today", text: todayRow && !todayRow.closed ? todayRow.text : "Closed today" },
-    ];
-  }, [hoursRows, listedHours, today]);
+  const listedHours = openInfo?.weekRows ?? [];
+  const currentDayRows = openInfo?.todayRows ?? [];
 
   useEffect(() => {
     let active = true;
@@ -274,7 +256,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     let active = true;
     setHydratedVenue(undefined);
     setVenueLoadFailed(false);
-    setHasLoadedVenueDetail(Boolean(cachedVenue));
     if (!dish?.venueId || cachedVenue) {
       return () => {
         active = false;
@@ -286,12 +267,10 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       .then((nextVenue) => {
         if (!active) return;
         setHydratedVenue(nextVenue);
-        setHasLoadedVenueDetail(true);
       })
       .catch(() => {
         if (!active) return;
         setVenueLoadFailed(true);
-        setHasLoadedVenueDetail(true);
       });
 
     return () => {
@@ -299,8 +278,45 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     };
   }, [cachedVenue, dish?.venueId, venueReloadKey]);
 
+  // The saved/visited map loads here too, so "Tried" never re-marks a stall already visited.
+  useEffect(() => {
+    if (isAuthenticated) void loadStallInteractions(profile.id).catch(() => undefined);
+  }, [isAuthenticated, loadStallInteractions, profile.id]);
+
+  // The owner's schedule (special hours) and temporary closure decide "Open now", as on the stall page.
+  const hoursVenueId = dish?.venueId;
+  useEffect(() => {
+    let active = true;
+    setOpeningSchedule(undefined);
+    setMerchantProfile(undefined);
+    if (!hoursVenueId) {
+      return () => {
+        active = false;
+      };
+    }
+    void getHungryService()
+      .discovery.getVenueOpeningSchedule(hoursVenueId)
+      .then((schedule) => {
+        if (active) setOpeningSchedule(schedule);
+      })
+      .catch(() => undefined);
+    void getHungryService()
+      .discovery.getPublicMerchantProfile(hoursVenueId)
+      .then((nextProfile) => {
+        if (active) setMerchantProfile(nextProfile);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [hoursVenueId]);
+
   // The cached dish carries no reviews, so always read them from the reviews service.
   const reviewDishId = dish?.id;
+  const reviewDishIdRef = useRef(reviewDishId);
+  useEffect(() => {
+    reviewDishIdRef.current = reviewDishId;
+  }, [reviewDishId]);
   useEffect(() => {
     let active = true;
     setShowAllReviews(false);
@@ -327,20 +343,33 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   }, [reviewDishId, reviewsReloadKey]);
 
   const loadMoreReviews = () => {
-    const before = dishReviews[dishReviews.length - 1]?.createdAt;
-    if (!reviewDishId || !before || isLoadingMoreReviews) return;
+    const last = dishReviews[dishReviews.length - 1];
+    if (!reviewDishId || !last?.createdAt || isLoadingMoreReviews) return;
+    const requestedDishId = reviewDishId;
     setIsLoadingMoreReviews(true);
     getHungryService()
       .reviews.listRecentReviews({
-        dishIds: [reviewDishId],
+        dishIds: [requestedDishId],
         limit: DISH_REVIEW_PAGE_SIZE,
-        before,
+        // Both cursor parts: reviews sharing the boundary timestamp are not skipped.
+        before: last.createdAt,
+        beforeId: last.id,
       })
       .then((entries) => {
-        setDishReviews((current) => [...current, ...entries.map((entry) => entry.review)]);
+        // The viewer moved to another dish while this page loaded.
+        if (requestedDishId !== reviewDishIdRef.current) return;
+        setDishReviews((current) => {
+          const known = new Set(current.map((review) => review.id));
+          return [
+            ...current,
+            ...entries.map((entry) => entry.review).filter((review) => !known.has(review.id)),
+          ];
+        });
         setHasMoreReviews(entries.length === DISH_REVIEW_PAGE_SIZE);
       })
-      .catch(() => undefined)
+      .catch(() => {
+        showToast({ message: "Couldn't load more reviews. Try again.", tone: "error" });
+      })
       .finally(() => setIsLoadingMoreReviews(false));
   };
 
@@ -357,9 +386,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     });
   }, [dish, isAuthenticated, profile.id]);
 
-  const isDetailLoading =
-    (Boolean(dishId) && !dish && !hasLoadedDishDetail) ||
-    (Boolean(dish?.venueId) && !venue && !hasLoadedVenueDetail);
+  // The dish renders as soon as it arrives; stall-only sections fill in when the venue read lands.
+  const isDetailLoading = Boolean(dishId) && !dish && !hasLoadedDishDetail;
 
   if (isDetailLoading) {
     return (
@@ -429,19 +457,10 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   // The venue read can fail on its own: keep the dish page and drop venue-only sections.
   const venueName = venue?.name ?? dish.venueName ?? "This stall";
   const venueUnit = venue?.unitNumber?.trim();
-  const waitTime = formatWaitTime(venue?.liveCrowd ?? dish.liveCrowd);
-  const openState = venue
-    ? getVenueOpenState(venue.operatingHours, venue.isOpen)
-    : { status: "unknown" as const };
-  const isVenueOpen = openState.status === "open";
-  const openStatusLabel =
-    openState.status === "open"
-      ? ["Open now", openState.detail].filter(Boolean).join(" · ")
-      : openState.status === "closed"
-        ? ["Closed", openState.detail].filter(Boolean).join(" · ")
-        : rawHours
-          ? "Check listed hours"
-          : "Hours not listed";
+  const openState = openInfo?.openState ?? { status: "unknown" as const };
+  const openStatusLabel = openInfo?.statusLabel ?? "Hours not listed";
+  const deliveryLinks = venue?.deliveryLinks ?? [];
+  const isDishSoldOut = isSoldOut(dish.availabilityFlags);
   const building = venue ? getBuildingById(venue.buildingId) : undefined;
   const stallAddress = venue
     ? formatFullStallAddress(venue, {
@@ -478,23 +497,17 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       ? [
           {
             label: "Your Taste",
-            value: `${tasteMatch}% match`,
+            // Words, not a percentage: the match is an estimate from a few taste tags.
+            value: tasteMatchLabel(tasteMatch),
             helper: "Compared with your taste profile",
           },
         ]
       : []),
-    ...(waitTime
-      ? [
-          {
-            label: "Estimated Wait",
-            value: waitTime,
-            helper: isVenueOpen
-              ? `${waitEstimateDisclosure} · based on listed crowd level`
-              : "Stall closed now",
-          },
-        ]
-      : []),
   ];
+  // Dish photos first, then photos from reviews, swipeable in the hero.
+  const heroPhotos = Array.from(
+    new Set([...gallery, ...(dish.imageUrl ? [dish.imageUrl] : []), ...reviewPhotos]),
+  ).slice(0, 8);
   const heroHeight = Math.min(Math.max(width * 1.12, 420), 530);
   const cardWidth = (width - spacing[4] * 2 - spacing[3]) / 2;
   const signatureGridItemWidth = width / 2;
@@ -536,7 +549,21 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const openStallMaps = () => {
     if (!stallAddress) return;
     trackAnalyticsEvent("directions_opened", { stall_id: dish.venueId, source: "dish_detail" });
-    void openTrustedMapsUrl(buildMapsSearchUrl(stallAddress));
+    void openTrustedMapsUrl(
+      buildMapsSearchUrl(
+        stallAddress,
+        venue ? getStallPin(venue, building?.coordinate) : undefined,
+      ),
+    );
+  };
+
+  const openReviewerProfile = (review: Review) => {
+    if (!review.authorId) return;
+    navigation.navigate("UserProfile", {
+      authorId: review.authorId,
+      authorName: review.authorName,
+      authorAvatarUrl: review.authorAvatarUrl,
+    });
   };
 
   const openShareSheet = () => {
@@ -547,6 +574,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   };
 
   const handleSave = () => {
+    // Also kept on the device: a sign-up that goes out to the email app and returns through a
+    // cold-start link has lost the closure below, but still finishes the save.
+    if (!isAuthenticated) rememberPendingDishSave(dish);
     if (
       !requireAccount(
         `Sign in to save ${dish.name}`,
@@ -558,6 +588,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     }
 
     toggleFavourite(dish);
+    // toggleFavourite ignores a tap while a toggle is pending: toast only when the save changed.
+    const nowSaved = useProfileStore.getState().profile.favouriteDishIds.includes(dish.id);
+    if (nowSaved === isSaved) return;
     if (!isSaved) {
       void getHungryService().discovery.recordMerchantActionEvent({
         eventType: "save",
@@ -597,7 +630,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   };
 
   const isDishTried = profile.reviewedDishIds.includes(dish.id);
-  const isVenueVisited = stallInteraction?.isTried ?? false;
 
   const triedToastStyle = {
     tone: "success" as const,
@@ -650,13 +682,22 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       }
       trackAnalyticsEvent("dish_marked_tried", { dish_id: dish.id, stall_id: dish.venueId });
       let pointsAwarded = 0;
-      if (!isVenueVisited) {
-        const result = await markTried(profile.id, dish.venueId, "DishDetail");
-        pointsAwarded = result.pointsAwarded;
+      let stallMarkFailed = false;
+      // Read the saved stalls first so an already-visited stall is never marked again.
+      await loadStallInteractions(profile.id).catch(() => undefined);
+      if (!useStallInteractionStore.getState().getInteraction(dish.venueId)?.isTried) {
+        try {
+          const result = await markTried(profile.id, dish.venueId, "DishDetail");
+          pointsAwarded = result.pointsAwarded;
+        } catch {
+          // The store rolled the stall mark back; the dish itself is marked.
+          stallMarkFailed = true;
+        }
       }
       showToast({
-        message:
-          FEATURE_FLAGS.gamificationEnabled && pointsAwarded > 0
+        message: stallMarkFailed
+          ? "Marked as tried, but couldn't mark the stall visited. Try again from the stall page."
+          : FEATURE_FLAGS.gamificationEnabled && pointsAwarded > 0
             ? `Marked as tried. +${pointsAwarded} Food Cred`
             : "Marked as tried.",
         ...triedToastStyle,
@@ -675,39 +716,51 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             contentContainerStyle={{ paddingBottom: insets.bottom + 104 }}
           >
             <View style={{ height: heroHeight }}>
-              {heroImage ? (
-                <AccessibleImage
-                  source={{ uri: heroImage }}
-                  contentFit="cover"
-                  style={{ flex: 1 }}
-                  accessibilityLabel={`${dish.name} photo`}
-                />
-              ) : (
-                <View
-                  accessibilityRole="image"
-                  accessibilityLabel={`${dish.name} photo unavailable`}
-                  style={{
-                    alignItems: "center",
-                    backgroundColor: palette.surfaceRaised,
-                    flex: 1,
-                    justifyContent: "center",
-                    padding: spacing[6],
-                  }}
+              {heroPhotos.length > 0 ? (
+                <PhotoPager
+                  photos={heroPhotos}
+                  width={width}
+                  height={heroHeight}
+                  subject={dish.name}
+                  countBottomOffset={spacing[12] + spacing[2]}
                 >
-                  <Utensils color={palette.orange} size={44} />
-                  <AppText variant="h2" style={{ marginTop: spacing[3], textAlign: "center" }}>
-                    {dish.name}
-                  </AppText>
-                  <AppText tone="secondary" style={{ marginTop: spacing[1], textAlign: "center" }}>
-                    {venueName}
-                  </AppText>
-                </View>
+                  <LinearGradient
+                    colors={heroGradientColors}
+                    locations={[0, 0.58, 1]}
+                    style={{ bottom: 0, height: 260, left: 0, position: "absolute", right: 0 }}
+                  />
+                </PhotoPager>
+              ) : (
+                <>
+                  <View
+                    accessibilityRole="image"
+                    accessibilityLabel={`${dish.name} photo unavailable`}
+                    style={{
+                      alignItems: "center",
+                      backgroundColor: palette.surfaceRaised,
+                      flex: 1,
+                      justifyContent: "center",
+                      padding: spacing[6],
+                    }}
+                  >
+                    <Utensils color={palette.orange} size={44} />
+                    <AppText variant="h2" style={{ marginTop: spacing[3], textAlign: "center" }}>
+                      {dish.name}
+                    </AppText>
+                    <AppText
+                      tone="secondary"
+                      style={{ marginTop: spacing[1], textAlign: "center" }}
+                    >
+                      {venueName}
+                    </AppText>
+                  </View>
+                  <LinearGradient
+                    colors={heroGradientColors}
+                    locations={[0, 0.58, 1]}
+                    style={{ bottom: 0, height: 260, left: 0, position: "absolute", right: 0 }}
+                  />
+                </>
               )}
-              <LinearGradient
-                colors={heroGradientColors}
-                locations={[0, 0.58, 1]}
-                style={{ bottom: 0, height: 260, left: 0, position: "absolute", right: 0 }}
-              />
             </View>
 
             <View
@@ -793,6 +846,18 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                     {openStatusLabel}
                   </AppText>
                 ) : null}
+                {venue && deliveryLinks.length > 0 ? (
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+                    {deliveryLinks.map((link) => (
+                      <DeliveryPlatformButton
+                        key={`${link.platform}:${link.webUrl}`}
+                        link={link}
+                        compact
+                        venueId={venue.id}
+                      />
+                    ))}
+                  </View>
+                ) : null}
 
                 <View
                   style={{
@@ -825,6 +890,26 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         {dishPrice}
                       </AppText>
                     </View>
+                    {isDishSoldOut ? (
+                      <View
+                        accessible
+                        accessibilityRole="text"
+                        accessibilityLabel="Sold out today"
+                        style={{
+                          alignSelf: "flex-start",
+                          backgroundColor: palette.bgSoft,
+                          borderColor: palette.border,
+                          borderRadius: radii.pill,
+                          borderWidth: 1,
+                          paddingHorizontal: spacing[3],
+                          paddingVertical: spacing[1],
+                        }}
+                      >
+                        <AppText variant="bodySmallBold" tone="secondary">
+                          Sold out today
+                        </AppText>
+                      </View>
+                    ) : null}
                     {dish.dietaryFlags.length > 0 ? (
                       <View style={{ gap: spacing[1] }}>
                         <DietaryFlagChips flags={dish.dietaryFlags} />
@@ -843,16 +928,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         } ${dish.reviewCount === 1 ? "review" : "reviews"}`}
                         style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
                       >
-                        {[0, 1, 2, 3, 4].map((index) => (
-                          <Star
-                            key={index}
-                            color={palette.ratingStar}
-                            fill={
-                              index < Math.round(dish.rating) ? palette.ratingStar : "transparent"
-                            }
-                            size={17}
-                          />
-                        ))}
+                        {/* One star and the exact score: five rounded stars hid 4.4 vs 3.6. */}
+                        <Star color={palette.ratingStar} fill={palette.ratingStar} size={17} />
                         <AppText variant="bodySmall" style={{ fontWeight: "800" }}>
                           {dish.rating.toFixed(1)}
                         </AppText>
@@ -998,7 +1075,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
                     <Clock3 color={palette.orange} size={20} />
                     <AppText variant="h2" style={{ flex: 1 }}>
-                      Opening Hours
+                      Opening hours
                     </AppText>
                     {operatingHoursOpen ? (
                       <ChevronUp color={palette.textSecondary} size={22} />
@@ -1039,8 +1116,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                     ) : (
                       <AppText tone="secondary">Hours not listed.</AppText>
                     )}
-                    {venue.closureNotice ? (
-                      <AppText tone="secondary">{venue.closureNotice}</AppText>
+                    {openInfo?.closureNotice ? (
+                      <AppText tone="secondary">{openInfo.closureNotice}</AppText>
                     ) : null}
                   </View>
                 </Pressable>
@@ -1072,7 +1149,11 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                       <Pressable
                         key={item.id}
                         accessibilityRole="button"
-                        accessibilityLabel={`Open ${item.name}`}
+                        accessibilityLabel={`Open ${item.name}, ${
+                          isSoldOut(item.availabilityFlags)
+                            ? "sold out today"
+                            : formatDishPrice(item)
+                        }`}
                         // push, not navigate: each dish gets its own screen, so Back returns here.
                         onPress={() => navigation.push("DishDetail", { dishId: item.id })}
                         style={{
@@ -1147,7 +1228,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
               ) : null}
 
               <View style={{ gap: spacing[3] }}>
-                <AppText variant="h2">From the Community</AppText>
+                <AppText variant="h2">Reviews</AppText>
                 {reviewsStatus === "loading" ? (
                   <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
                     <ActivityIndicator color={palette.orange} />
@@ -1198,11 +1279,30 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         <View
                           style={{ alignItems: "center", flexDirection: "row", gap: spacing[3] }}
                         >
-                          <Avatar uri={review.authorAvatarUrl} name={review.authorName} size={36} />
+                          <Pressable
+                            accessibilityRole={review.authorId ? "link" : undefined}
+                            accessibilityLabel={`Open ${review.authorName}'s profile`}
+                            disabled={!review.authorId}
+                            onPress={() => openReviewerProfile(review)}
+                          >
+                            <Avatar
+                              uri={review.authorAvatarUrl}
+                              name={review.authorName}
+                              size={36}
+                            />
+                          </Pressable>
                           <View style={{ flex: 1 }}>
-                            <AppText style={{ fontWeight: "900" }} numberOfLines={1}>
-                              {review.authorName}
-                            </AppText>
+                            <Pressable
+                              accessibilityRole={review.authorId ? "link" : undefined}
+                              accessibilityLabel={`Open ${review.authorName}'s profile`}
+                              disabled={!review.authorId}
+                              hitSlop={{ top: 8, bottom: 4, left: 8, right: 8 }}
+                              onPress={() => openReviewerProfile(review)}
+                            >
+                              <AppText style={{ fontWeight: "900" }} numberOfLines={1}>
+                                {review.authorName}
+                              </AppText>
+                            </Pressable>
                             <AppText variant="micro" tone="muted">
                               {formatTimeAgo(review.createdAt)}
                             </AppText>
@@ -1260,6 +1360,17 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                             </AppText>
                           </View>
                         ) : null}
+                        <ReviewReaderActions
+                          key={review.id}
+                          review={review}
+                          isOwn={isOwnReview(review, isAuthenticated ? profile.id : undefined)}
+                          returnRoute={{ name: "DishDetail", params: { dishId: dish.id } }}
+                          onRemoved={() =>
+                            setDishReviews((current) =>
+                              current.filter((entry) => entry.id !== review.id),
+                            )
+                          }
+                        />
                       </View>
                     ))}
                     {dishReviews.length > DISH_REVIEW_PREVIEW_COUNT ? (
@@ -1298,6 +1409,12 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   </AppText>
                 )}
               </View>
+
+              <ReportProblemLink
+                venueId={dish.venueId}
+                dishId={dish.id}
+                returnRoute={{ name: "DishDetail", params: { dishId: dish.id } }}
+              />
             </View>
           </ScrollView>
 

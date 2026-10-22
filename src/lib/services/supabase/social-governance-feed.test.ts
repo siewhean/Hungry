@@ -238,7 +238,7 @@ test("Supabase service uses v2 feed first and routes post safety actions to RPCs
   assert.match(serviceSource, /if\s+\(legacyResult\.error\)/);
   assert.match(
     serviceSource,
-    /const\s+rpcBites\s+=\s+await\s+fetchHomeSocialFeedBitesViaRpc\(client\)/,
+    /const\s+rpcBites\s+=\s+await\s+fetchHomeSocialFeedBitesViaRpc\(client,\s+page\)/,
   );
   assert.match(serviceSource, /if\s+\(request\.targetType\s+===\s+"post"\)/);
   assert.match(serviceSource, /Post reports require a valid post id/);

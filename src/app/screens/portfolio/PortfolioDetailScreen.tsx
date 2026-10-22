@@ -1,16 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ArrowLeft, Flag, Plus, Share2 } from "lucide-react-native";
+import { ArrowLeft, Flag, MoreHorizontal, Plus, Share2 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useShallow } from "zustand/react/shallow";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
-import { PortfolioItemRow } from "@/components/portfolio";
-import { AppText, Button, Card, Input } from "@/components/ui";
+import { PortfolioItemEditSheet, PortfolioItemRow, ReportListSheet } from "@/components/portfolio";
+import { AppText, Button, Card, Dialog, Skeleton } from "@/components/ui";
 import { webShareUrl } from "@/constants/links";
 import { formatPortfolioSummary, isPortfolioLive } from "@/features/checklistPortfolio/listLabels";
+import {
+  listErrorMessage,
+  listLoadStateForError,
+  type ListLoadState,
+} from "@/features/checklistPortfolio/listLoadState";
 import { useItemDetailsState, type ItemDetail } from "@/features/checklistPortfolio/useItemLabels";
 import { runListMutation } from "@/features/checklistPortfolio/runListMutation";
 import { shareLink, type ShareChannel } from "@/features/share/messagingShare";
@@ -27,20 +32,20 @@ function formatPortfolioItemLabel(
   item: PortfolioItem,
   details: Record<string, ItemDetail>,
   labelsLoaded: boolean,
+  failedIds: ReadonlySet<string>,
 ) {
+  const id = item.dishId ?? item.stallId;
+  if (!id) return "List item";
+  if (details[id]) return details[id].name;
+  // A failed lookup is not a deleted row: say so, and the screen offers a retry.
+  if (failedIds.has(id)) return "Couldn't load name";
   // Until the name lookup finishes, say so instead of flashing "Deleted dish".
-  if (item.dishId)
-    return details[item.dishId]?.name ?? (labelsLoaded ? "Deleted dish" : "Loading…");
-  if (item.stallId)
-    return details[item.stallId]?.name ?? (labelsLoaded ? "Deleted stall" : "Loading…");
-  return "Portfolio item";
+  if (!labelsLoaded) return "Loading…";
+  return item.dishId ? "Deleted dish" : "Deleted stall";
 }
 
-function showPortfolioError(error: unknown) {
-  Alert.alert(
-    "Portfolio update failed",
-    error instanceof Error ? error.message : "Please refresh and try again.",
-  );
+function showListError(error: unknown) {
+  Alert.alert("List update failed", listErrorMessage(error, "Please refresh and try again."));
 }
 
 export function PortfolioDetailScreen({ navigation, route }: Props) {
@@ -57,12 +62,14 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
     loadPortfolioItems,
     loadPortfolioCollaborators,
     updatePortfolio,
+    updateItem,
     publishPortfolio,
     deletePortfolio,
     deleteItem,
     reorderItems,
     followPortfolio,
     unfollowPortfolio,
+    leavePortfolio,
     flagPortfolio,
     conflicts,
     clearConflict,
@@ -77,12 +84,14 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
       loadPortfolioItems: state.loadPortfolioItems,
       loadPortfolioCollaborators: state.loadPortfolioCollaborators,
       updatePortfolio: state.updatePortfolio,
+      updateItem: state.updateItem,
       publishPortfolio: state.publishPortfolio,
       deletePortfolio: state.deletePortfolio,
       deleteItem: state.deleteItem,
       reorderItems: state.reorderItems,
       followPortfolio: state.followPortfolio,
       unfollowPortfolio: state.unfollowPortfolio,
+      leavePortfolio: state.leavePortfolio,
       flagPortfolio: state.flagPortfolio,
       conflicts: state.conflicts,
       clearConflict: state.clearConflict,
@@ -101,20 +110,36 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
   const canEdit = isOwner || myRole === "editor";
   const rootNavigation = getRootNavigation(navigation as any);
   const isFollowing = follows[portfolioId] === true;
-  const [draftName, setDraftName] = useState(portfolio?.name ?? "");
-  const [draftDescription, setDraftDescription] = useState(portfolio?.description ?? "");
   const [isSaving, setIsSaving] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [isReporting, setIsReporting] = useState(false);
+  const [editingItem, setEditingItem] = useState<PortfolioItem | null>(null);
+  // Loading, failed and missing are different screens: only a confirmed miss says "not found".
+  const [listState, setListState] = useState<ListLoadState>(portfolio ? "ready" : "loading");
+  const [itemsState, setItemsState] = useState<ListLoadState>(
+    items[portfolioId] ? "ready" : "loading",
+  );
+  const [reloadKey, setReloadKey] = useState(0);
   const insets = useSafeAreaInsets();
   const topSpacing = Math.max(insets.top, spacing[4]);
 
   useEffect(() => {
+    let mounted = true;
     // Load just this list (not every list) and the viewer's follow state for it.
-    void refreshPortfolio(portfolioId).catch((error) =>
-      console.error("Failed to load list:", error),
-    );
-    void loadPortfolioItems(portfolioId).catch((error) =>
-      console.error("Failed to load list:", error),
-    );
+    void refreshPortfolio(portfolioId)
+      .then(() => mounted && setListState("ready"))
+      .catch((error) => {
+        console.error("Failed to load list:", error);
+        if (mounted) setListState(listLoadStateForError(error));
+      });
+    void loadPortfolioItems(portfolioId)
+      .then(() => mounted && setItemsState("ready"))
+      .catch((error) => {
+        console.error("Failed to load list items:", error);
+        if (mounted) setItemsState("error");
+      });
     void checkFollowStatus(portfolioId).catch((error) =>
       console.error("Failed to load follow status:", error),
     );
@@ -122,20 +147,24 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
     void loadPortfolioCollaborators(portfolioId).catch((error) =>
       console.error("Failed to load collaborators:", error),
     );
+    return () => {
+      mounted = false;
+    };
   }, [
     checkFollowStatus,
     loadPortfolioCollaborators,
     loadPortfolioItems,
     portfolioId,
     refreshPortfolio,
+    reloadKey,
   ]);
 
-  useEffect(() => {
-    setDraftName(portfolio?.name ?? "");
-    setDraftDescription(portfolio?.description ?? "");
-  }, [portfolio?.description, portfolio?.name]);
-
-  const { details, isLoaded: labelsLoaded } = useItemDetailsState(portfolioItems);
+  const {
+    details,
+    isLoaded: labelsLoaded,
+    failedIds,
+    retry: retryLabels,
+  } = useItemDetailsState(portfolioItems, portfolioId);
 
   const statsLabel = useMemo(
     () => (portfolio ? formatPortfolioSummary(portfolio, portfolioItems.length) : ""),
@@ -148,29 +177,11 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
     try {
       await action();
     } catch (error) {
-      showPortfolioError(error);
+      showListError(error);
     } finally {
       setIsSaving(false);
     }
   }, []);
-
-  const saveMetadata = useCallback(async () => {
-    if (!portfolio || !isOwner) return;
-    const nextName = draftName.trim();
-    const nextDescription = draftDescription.trim();
-    if (!nextName) return;
-    if (nextName === portfolio.name && nextDescription === (portfolio.description ?? "")) return;
-    try {
-      await updatePortfolio(portfolio.id, {
-        name: nextName,
-        description: nextDescription || undefined,
-        type: portfolio.type,
-        visibility: portfolio.visibility,
-      });
-    } catch (error) {
-      showPortfolioError(error);
-    }
-  }, [draftDescription, draftName, isOwner, portfolio, updatePortfolio]);
 
   const moveItem = useCallback(
     async (itemId: string, direction: -1 | 1) => {
@@ -181,13 +192,20 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
       const [movedItem] = nextIds.splice(currentIndex, 1);
       nextIds.splice(nextIndex, 0, movedItem);
       try {
+        // The store moves the row right away, queues the write, and puts it back on failure.
         await reorderItems(portfolioId, nextIds);
       } catch (error) {
-        showPortfolioError(error);
+        showListError(error);
       }
     },
     [portfolioId, portfolioItems, reorderItems],
   );
+
+  const retry = () => {
+    setListState("loading");
+    setItemsState("loading");
+    setReloadKey((key) => key + 1);
+  };
 
   if (!portfolio) {
     return (
@@ -197,12 +215,34 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
           { backgroundColor: palette.bg, padding: spacing[5], paddingTop: topSpacing },
         ]}
       >
-        <AppText variant="h2">Portfolio not found</AppText>
-        <Button
-          label="Go back"
-          onPress={() => navigation.goBack()}
-          style={{ marginTop: spacing[4] }}
-        />
+        {listState === "loading" ? (
+          <View style={{ alignSelf: "stretch", gap: spacing[3] }}>
+            <Skeleton height={28} width="60%" />
+            <Skeleton height={16} width="40%" />
+            <Skeleton height={72} />
+            <Skeleton height={72} />
+          </View>
+        ) : (
+          <>
+            <AppText variant="h2">
+              {listState === "error" ? "Couldn't load this list" : "List not found"}
+            </AppText>
+            <AppText variant="body" tone="secondary" style={{ textAlign: "center" }}>
+              {listState === "error"
+                ? "Check your connection and try again."
+                : "It may be private now or no longer on Hungry."}
+            </AppText>
+            {listState === "error" ? (
+              <Button label="Retry" onPress={retry} style={{ marginTop: spacing[4] }} />
+            ) : null}
+            <Button
+              label="Go back"
+              variant={listState === "error" ? "secondary" : "primary"}
+              onPress={() => navigation.goBack()}
+              style={{ marginTop: spacing[3] }}
+            />
+          </>
+        )}
       </View>
     );
   }
@@ -248,54 +288,20 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
       ) : null}
 
       <Card>
-        {isOwner ? (
-          <>
-            <Input
-              label="Title"
-              value={draftName}
-              onChangeText={setDraftName}
-              onBlur={saveMetadata}
-            />
-            <Input
-              label="Description"
-              value={draftDescription}
-              onChangeText={setDraftDescription}
-              onBlur={saveMetadata}
-              multiline
-            />
-          </>
-        ) : (
-          <>
-            <AppText variant="h2">{portfolio.name}</AppText>
-            {portfolio.description ? (
-              <AppText variant="body" tone="secondary">
-                {portfolio.description}
-              </AppText>
-            ) : null}
-          </>
-        )}
+        {portfolio.description ? (
+          <AppText variant="body" tone="secondary">
+            {portfolio.description}
+          </AppText>
+        ) : null}
         <View style={styles.actionRow}>
           {canEdit ? (
-            <>
-              <Button
-                label="Dish"
-                size="sm"
-                fullWidth={false}
-                leftIcon={<Plus color={palette.textOnOrange} size={16} />}
-                onPress={() =>
-                  navigation.navigate("PortfolioItemPicker", { portfolioId, mode: "dish" })
-                }
-              />
-              <Button
-                label="Stall"
-                size="sm"
-                fullWidth={false}
-                variant="secondary"
-                onPress={() =>
-                  navigation.navigate("PortfolioItemPicker", { portfolioId, mode: "stall" })
-                }
-              />
-            </>
+            <Button
+              label="Add"
+              size="sm"
+              fullWidth={false}
+              leftIcon={<Plus color={palette.textOnOrange} size={16} />}
+              onPress={() => setAddOpen(true)}
+            />
           ) : null}
           {isOwner ? (
             <>
@@ -303,7 +309,7 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
                 label={isLive ? "Unpublish" : "Publish"}
                 size="sm"
                 fullWidth={false}
-                variant={isLive ? "secondary" : "primary"}
+                variant="secondary"
                 disabled={isSaving}
                 onPress={() => {
                   if (isLive) {
@@ -333,39 +339,13 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
                 }}
               />
               <Button
-                label="Edit"
+                label="More"
                 size="sm"
                 fullWidth={false}
                 variant="secondary"
-                onPress={() => navigation.navigate("PortfolioEdit", { portfolioId })}
-              />
-              <Button
-                label="Collaborators"
-                size="sm"
-                fullWidth={false}
-                variant="secondary"
-                onPress={() => navigation.navigate("PortfolioCollaborators", { portfolioId })}
-              />
-              <Button
-                label="Delete"
-                size="sm"
-                fullWidth={false}
-                variant="secondary"
-                disabled={isSaving}
-                onPress={() => {
-                  Alert.alert("Delete this list?", "This can't be undone.", [
-                    { text: "Cancel", style: "cancel" },
-                    {
-                      text: "Delete",
-                      style: "destructive",
-                      onPress: () =>
-                        void runOwnerAction(async () => {
-                          await deletePortfolio(portfolio.id);
-                          navigation.goBack();
-                        }),
-                    },
-                  ]);
-                }}
+                accessibilityLabel="More list options"
+                leftIcon={<MoreHorizontal color={palette.text} size={16} />}
+                onPress={() => setMenuOpen(true)}
               />
             </>
           ) : (
@@ -386,6 +366,33 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
                   )
                 }
               />
+              {myRole ? (
+                <Button
+                  label="Leave list"
+                  size="sm"
+                  fullWidth={false}
+                  variant="secondary"
+                  disabled={isSaving}
+                  onPress={() => {
+                    Alert.alert(
+                      "Leave this list?",
+                      "You'll stop seeing it under Shared with me. The owner can add you again.",
+                      [
+                        { text: "Cancel", style: "cancel" },
+                        {
+                          text: "Leave",
+                          style: "destructive",
+                          onPress: () =>
+                            void runOwnerAction(async () => {
+                              await leavePortfolio(portfolio.id, profile.id);
+                              navigation.goBack();
+                            }),
+                        },
+                      ],
+                    );
+                  }}
+                />
+              ) : null}
               {/* Only public lists can be reported (portfolio_flags insert policy). */}
               {portfolio.visibility === "public" ? (
                 <Button
@@ -394,20 +401,7 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
                   fullWidth={false}
                   variant="secondary"
                   leftIcon={<Flag color={palette.text} size={16} />}
-                  onPress={() => {
-                    Alert.alert("Report portfolio?", "This sends the portfolio to moderation.", [
-                      { text: "Cancel", style: "cancel" },
-                      {
-                        text: "Report",
-                        style: "destructive",
-                        onPress: () =>
-                          void runListMutation(() => flagPortfolio(portfolio.id, "inappropriate"), {
-                            success: "Thanks. We'll review this list.",
-                            failure: "Couldn't send the report.",
-                          }),
-                      },
-                    ]);
-                  }}
+                  onPress={() => setReportOpen(true)}
                 />
               ) : null}
             </>
@@ -422,7 +416,21 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
         </AppText>
       </View>
 
-      {portfolioItems.length === 0 ? (
+      {portfolioItems.length === 0 && itemsState === "loading" ? (
+        <View style={{ gap: spacing[3] }}>
+          <Skeleton height={72} />
+          <Skeleton height={72} />
+          <Skeleton height={72} />
+        </View>
+      ) : portfolioItems.length === 0 && itemsState === "error" ? (
+        <Card>
+          <AppText variant="h3">{"Couldn't load the items"}</AppText>
+          <AppText variant="body" tone="secondary">
+            Check your connection and try again.
+          </AppText>
+          <Button label="Retry" variant="secondary" onPress={retry} />
+        </Card>
+      ) : portfolioItems.length === 0 ? (
         <Card>
           <AppText variant="h3">No items yet</AppText>
           <AppText variant="body" tone="secondary">
@@ -430,38 +438,53 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
           </AppText>
         </Card>
       ) : (
-        portfolioItems.map((item, index) => (
-          <PortfolioItemRow
-            key={item.id}
-            item={item}
-            label={formatPortfolioItemLabel(item, details, labelsLoaded)}
-            detail={details[item.dishId ?? item.stallId ?? ""]}
-            index={index}
-            totalCount={portfolioItems.length}
-            showRank={portfolio.type === "ranking"}
-            canEdit={canEdit}
-            onOpen={() => {
-              if (item.dishId) rootNavigation.navigate("DishDetail", { dishId: item.dishId });
-              else if (item.stallId)
-                rootNavigation.navigate("StallDetail", { venueId: item.stallId });
-            }}
-            onMoveUp={() => moveItem(item.id, -1)}
-            onMoveDown={() => moveItem(item.id, 1)}
-            onDelete={() => {
-              Alert.alert("Remove item?", "This removes it from this portfolio.", [
-                { text: "Cancel", style: "cancel" },
-                {
-                  text: "Remove",
-                  style: "destructive",
-                  onPress: () =>
-                    void deleteItem(item.id, portfolioId).catch((error) =>
-                      showPortfolioError(error),
-                    ),
-                },
-              ]);
-            }}
-          />
-        ))
+        <>
+          {failedIds.size > 0 ? (
+            <Card>
+              <AppText variant="bodySmall" tone="secondary">
+                {"Couldn't load some dish and stall names."}
+              </AppText>
+              <Button
+                label="Retry"
+                size="sm"
+                fullWidth={false}
+                variant="secondary"
+                onPress={retryLabels}
+              />
+            </Card>
+          ) : null}
+          {portfolioItems.map((item, index) => (
+            <PortfolioItemRow
+              key={item.id}
+              item={item}
+              label={formatPortfolioItemLabel(item, details, labelsLoaded, failedIds)}
+              detail={details[item.dishId ?? item.stallId ?? ""]}
+              index={index}
+              totalCount={portfolioItems.length}
+              showRank={portfolio.type === "ranking"}
+              canEdit={canEdit}
+              onOpen={() => {
+                if (item.dishId) rootNavigation.navigate("DishDetail", { dishId: item.dishId });
+                else if (item.stallId)
+                  rootNavigation.navigate("StallDetail", { venueId: item.stallId });
+              }}
+              onMoveUp={() => moveItem(item.id, -1)}
+              onMoveDown={() => moveItem(item.id, 1)}
+              onEdit={() => setEditingItem(item)}
+              onDelete={() => {
+                Alert.alert("Remove item?", "This removes it from this list.", [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: "Remove",
+                    style: "destructive",
+                    onPress: () =>
+                      void deleteItem(item.id, portfolioId).catch((error) => showListError(error)),
+                  },
+                ]);
+              }}
+            />
+          ))}
+        </>
       )}
 
       <Card>
@@ -499,6 +522,105 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
           </View>
         ) : null}
       </Card>
+
+      <Dialog
+        visible={addOpen}
+        title="Add to this list"
+        buttons={[
+          {
+            text: "A dish",
+            onPress: () =>
+              navigation.navigate("PortfolioItemPicker", { portfolioId, mode: "dish" }),
+          },
+          {
+            text: "A stall",
+            onPress: () =>
+              navigation.navigate("PortfolioItemPicker", { portfolioId, mode: "stall" }),
+          },
+          { text: "Cancel", style: "cancel" },
+        ]}
+        onClose={() => setAddOpen(false)}
+      />
+
+      <Dialog
+        visible={menuOpen}
+        title="List options"
+        buttons={[
+          {
+            text: "Edit title and details",
+            onPress: () => navigation.navigate("PortfolioEdit", { portfolioId }),
+          },
+          {
+            text: "Collaborators",
+            onPress: () => navigation.navigate("PortfolioCollaborators", { portfolioId }),
+          },
+          {
+            text: "Delete list",
+            style: "destructive",
+            // The menu is a modal that is still closing: let it finish before the alert opens.
+            onPress: () =>
+              setTimeout(() => {
+                Alert.alert("Delete this list?", "This can't be undone.", [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: () =>
+                      void runOwnerAction(async () => {
+                        await deletePortfolio(portfolio.id);
+                        navigation.goBack();
+                      }),
+                  },
+                ]);
+              }, 300),
+          },
+          { text: "Cancel", style: "cancel" },
+        ]}
+        onClose={() => setMenuOpen(false)}
+      />
+
+      <ReportListSheet
+        visible={reportOpen}
+        isSending={isReporting}
+        onClose={() => setReportOpen(false)}
+        onSubmit={(reason, reportDetails) => {
+          setIsReporting(true);
+          void runListMutation(() => flagPortfolio(portfolio.id, reason, reportDetails), {
+            success: "Thanks. We'll review this list.",
+            failure: "Couldn't send the report.",
+          })
+            .then((sent) => {
+              if (sent) setReportOpen(false);
+            })
+            .finally(() => setIsReporting(false));
+        }}
+      />
+
+      <PortfolioItemEditSheet
+        visible={editingItem !== null}
+        title={
+          editingItem ? formatPortfolioItemLabel(editingItem, details, labelsLoaded, failedIds) : ""
+        }
+        confirmLabel="Save"
+        initialScore={editingItem?.score}
+        initialPublicNotes={editingItem?.publicNotes}
+        initialPrivateNotes={editingItem?.privateNotes}
+        isSaving={isSaving}
+        onClose={() => setEditingItem(null)}
+        onSubmit={(next) => {
+          const target = editingItem;
+          if (!target) return;
+          void runOwnerAction(async () => {
+            // The server keeps the old value for anything left out; "" clears a note.
+            await updateItem(target.id, {
+              score: next.score,
+              publicNotes: next.publicNotes.trim(),
+              privateNotes: next.privateNotes.trim(),
+            });
+            setEditingItem(null);
+          });
+        }}
+      />
     </ScrollView>
   );
 }

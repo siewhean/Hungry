@@ -55,6 +55,18 @@ export async function registerForStallAlerts({ askPermission = true } = {}): Pro
   return true;
 }
 
+/**
+ * The phone's notification permission for Hungry, read without asking. "denied" means the
+ * user turned notifications off (or declined) in system settings.
+ */
+export async function getNotificationPermissionState(): Promise<
+  "granted" | "denied" | "undetermined"
+> {
+  const permissions = await Notifications.getPermissionsAsync();
+  if (permissions.granted) return "granted";
+  return permissions.status === "denied" ? "denied" : "undetermined";
+}
+
 const handledNotificationIds = new Set<string>();
 
 function getOpenedUrl(response: Notifications.NotificationResponse): string | null {

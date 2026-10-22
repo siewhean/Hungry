@@ -1,8 +1,11 @@
-import React from "react";
-import { Switch, View } from "react-native";
+import React, { useState } from "react";
+import { Platform, Pressable, Switch, View } from "react-native";
+import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
+import { Clock } from "lucide-react-native";
 
 import { AppText, Button, Input } from "@/components/ui";
 import { PromotionDateField } from "@/components/merchant/PromotionDateField";
+import { useMerchantDialog } from "@/features/merchant/useMerchantDialog";
 import { useHungryTheme } from "@/theme";
 import type { OpeningSchedule, OpeningTimeRange } from "@/types/domain";
 import { DAY_ORDER } from "@/utils/operatingHours";
@@ -14,6 +17,110 @@ const DEFAULT_RANGE: OpeningTimeRange = { open: "09:00", close: "21:00" };
 
 function todaySingapore(): string {
   return new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+/** A new special day starts tomorrow (SGT): today's hours are already running. */
+function tomorrowSingapore(): string {
+  return new Date(Date.now() + 32 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+/** "HH:MM" as a Date on today's calendar day; "24:00" (midnight close) shows as 00:00. */
+function parseTime(value: string): Date {
+  const match = /^(\d{1,2}):(\d{2})$/.exec(value);
+  const date = new Date();
+  date.setHours(match ? Number(match[1]) % 24 : 9, match ? Number(match[2]) : 0, 0, 0);
+  return date;
+}
+
+function formatTime(date: Date): string {
+  return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+}
+
+/**
+ * One opening/closing time. Native builds use the platform time picker so a merchant cannot type
+ * an invalid time; web keeps the typed HH:MM field.
+ */
+function TimeField({
+  label,
+  accessibilityLabel,
+  value,
+  onChange,
+}: {
+  label: string;
+  accessibilityLabel: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const { componentRadii, palette, spacing } = useHungryTheme();
+  const [isAndroidPickerOpen, setIsAndroidPickerOpen] = useState(false);
+
+  if (Platform.OS === "web") {
+    return (
+      <Input
+        label={label}
+        accessibilityLabel={accessibilityLabel}
+        value={value}
+        onChangeText={onChange}
+        placeholder="09:00"
+        keyboardType="numbers-and-punctuation"
+        maxLength={5}
+      />
+    );
+  }
+
+  const handleChange = (event: DateTimePickerEvent, date?: Date) => {
+    setIsAndroidPickerOpen(false);
+    if (event.type === "set" && date) onChange(formatTime(date));
+  };
+
+  if (Platform.OS === "ios") {
+    return (
+      <View style={{ gap: spacing[1] }}>
+        <AppText variant="bodySmallBold">{label}</AppText>
+        <DateTimePicker
+          accessibilityLabel={accessibilityLabel}
+          value={parseTime(value)}
+          mode="time"
+          display="compact"
+          onChange={handleChange}
+          style={{ alignSelf: "flex-start" }}
+        />
+      </View>
+    );
+  }
+
+  return (
+    <View style={{ gap: spacing[1] }}>
+      <AppText variant="bodySmallBold">{label}</AppText>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${accessibilityLabel}: ${value}. Change time`}
+        onPress={() => setIsAndroidPickerOpen(true)}
+        style={{
+          alignItems: "center",
+          borderColor: palette.border,
+          borderRadius: componentRadii.input,
+          borderWidth: 1,
+          flexDirection: "row",
+          gap: spacing[2],
+          minHeight: 44,
+          paddingHorizontal: spacing[3],
+        }}
+      >
+        <Clock size={18} color={palette.textSecondary} />
+        <AppText variant="body">{value}</AppText>
+      </Pressable>
+      {isAndroidPickerOpen ? (
+        <DateTimePicker
+          value={parseTime(value)}
+          mode="time"
+          display="default"
+          is24Hour
+          onChange={handleChange}
+        />
+      ) : null}
+    </View>
+  );
 }
 
 function OpenSwitch({
@@ -57,25 +164,19 @@ function RangeRows({
       {ranges.map((range, index) => (
         <View key={index} style={{ flexDirection: "row", alignItems: "flex-end", gap: spacing[2] }}>
           <View style={{ flex: 1 }}>
-            <Input
+            <TimeField
               label="Opens"
               accessibilityLabel={`${label} opens, range ${index + 1}`}
               value={range.open}
-              onChangeText={(open) => update(index, { open })}
-              placeholder="09:00"
-              keyboardType="numbers-and-punctuation"
-              maxLength={5}
+              onChange={(open) => update(index, { open })}
             />
           </View>
           <View style={{ flex: 1 }}>
-            <Input
+            <TimeField
               label="Closes"
               accessibilityLabel={`${label} closes, range ${index + 1}`}
               value={range.close}
-              onChangeText={(close) => update(index, { close })}
-              placeholder="21:00"
-              keyboardType="numbers-and-punctuation"
-              maxLength={5}
+              onChange={(close) => update(index, { close })}
             />
           </View>
           {ranges.length > 1 ? (
@@ -118,6 +219,7 @@ export function OpeningHoursEditor({
 }) {
   const { componentRadii, palette, spacing } = useHungryTheme();
   const special = value.special ?? [];
+  const { showAlert, dialog } = useMerchantDialog();
 
   const setDay = (key: (typeof OPENING_DAY_KEYS)[number], ranges: OpeningTimeRange[]) =>
     onChange({ ...value, weekly: { ...value.weekly, [key]: ranges } });
@@ -140,6 +242,16 @@ export function OpeningHoursEditor({
         24-hour Singapore time. Diners see &quot;Open now&quot; or &quot;Closed&quot; from these
         hours. A closing time before the opening time runs past midnight.
       </AppText>
+
+      {error ? (
+        <AppText
+          variant="bodySmall"
+          style={{ color: palette.error }}
+          accessibilityLiveRegion="polite"
+        >
+          {error}
+        </AppText>
+      ) : null}
 
       {OPENING_DAY_KEYS.map((key, index) => {
         const dayLabel = DAY_ORDER[index];
@@ -172,12 +284,23 @@ export function OpeningHoursEditor({
         variant="secondary"
         size="sm"
         onPress={() =>
-          onChange({
-            ...value,
-            weekly: Object.fromEntries(
-              OPENING_DAY_KEYS.map((key) => [key, [...(value.weekly.mon ?? [])]]),
-            ),
-          })
+          showAlert(
+            "Copy Monday to every day?",
+            "This replaces the hours you set for the other six days.",
+            [
+              { text: "Cancel", style: "cancel" },
+              {
+                text: "Copy",
+                onPress: () =>
+                  onChange({
+                    ...value,
+                    weekly: Object.fromEntries(
+                      OPENING_DAY_KEYS.map((key) => [key, [...(value.weekly.mon ?? [])]]),
+                    ),
+                  }),
+              },
+            ],
+          )
         }
       />
 
@@ -232,19 +355,11 @@ export function OpeningHoursEditor({
           label="Add special day"
           variant="secondary"
           size="sm"
-          onPress={() => setSpecial([...special, { date: todaySingapore(), ranges: [] }])}
+          onPress={() => setSpecial([...special, { date: tomorrowSingapore(), ranges: [] }])}
         />
       ) : null}
 
-      {error ? (
-        <AppText
-          variant="bodySmall"
-          style={{ color: palette.error }}
-          accessibilityLiveRegion="polite"
-        >
-          {error}
-        </AppText>
-      ) : null}
+      {dialog}
     </View>
   );
 }

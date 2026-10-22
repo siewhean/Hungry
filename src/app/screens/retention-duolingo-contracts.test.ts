@@ -37,7 +37,7 @@ test("meal-time suggestions: opt-in, skip users already active today, open Decid
   }));
   assert.deepEqual(linking.getStateFromPath("decide")?.routes?.[1], {
     name: "DecideForMeResult",
-    params: { surface: "home" },
+    params: { surface: "push" },
   });
 
   const settings = read("src/components/settings/StallAlertsSettings.tsx");

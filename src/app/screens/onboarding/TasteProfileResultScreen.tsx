@@ -8,14 +8,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import { AccessibleImage, AppText, Button, Card } from "@/components/ui";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { NEUTRAL_TASTE_VECTOR, TASTE_DIMENSIONS } from "@/constants/taste";
 import { flushPendingDishSave, rememberPendingDishSave } from "@/features/auth/pendingDishSave";
 import {
   getDataRepository,
   getHungryService,
   getServiceProvider,
 } from "@/lib/services/serviceProvider";
-import type { DishDetail, SearchFilters, TasteVector } from "@/types/domain";
+import type { DishDetail, SearchFilters } from "@/types/domain";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -23,22 +22,11 @@ import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { OnboardingProgress, trackOnboardingStepViewed } from "./OnboardingProgress";
 import type { OnboardingStackParamList } from "./OnboardingStack";
+import { describeTaste, matchesAllDietaryFlags, noDietaryPicksMessage } from "./resultPicks";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "TasteProfileResult">;
 
 const RESULT_COUNT = 4;
-
-/** "You lean spicy and rich": the strongest answers above neutral, or null. */
-function describeTaste(vector: TasteVector): string | null {
-  const leaning = TASTE_DIMENSIONS.filter(
-    (dimension) => vector[dimension.key] > NEUTRAL_TASTE_VECTOR[dimension.key],
-  )
-    .sort((left, right) => vector[right.key] - vector[left.key])
-    .slice(0, 2)
-    .map((dimension) => dimension.label.toLowerCase());
-  if (leaning.length === 0) return "You like your flavours balanced.";
-  return `You lean ${leaning.join(" and ")}.`;
-}
 
 // Local catalog search only (mock, or a cached catalog): no radius limit.
 function getResultFilters(): SearchFilters {
@@ -96,16 +84,25 @@ export function TasteProfileResultScreen({ navigation }: Props) {
   // Rank the catalog by the quiz taste vector (and dietary picks) instead of a fixed popular list.
   // Fetched once so saving a dish (which nudges the vector) does not reshuffle the grid.
   const [initialPicks] = useState(() => {
-    const { tasteVector } = useProfileStore.getState().profile;
+    const { tasteVector, dietaryPreferences } = useProfileStore.getState().profile;
     const repository = getDataRepository();
     const ranked = repository.searchDishes(getResultFilters(), tasteVector);
+    // The popular fallback must respect the diet too: a halal user never sees a non-halal dish here.
     return ranked.length > 0
       ? { dishes: ranked.slice(0, RESULT_COUNT), tasteRanked: true }
-      : { dishes: repository.listPopularNearby().slice(0, RESULT_COUNT), tasteRanked: false };
+      : {
+          dishes: repository
+            .listPopularNearby()
+            .filter((dish) => matchesAllDietaryFlags(dish, dietaryPreferences))
+            .slice(0, RESULT_COUNT),
+          tasteRanked: false,
+        };
   });
   const [dishes, setDishes] = useState(initialPicks.dishes);
   // "Picked to match your taste" only when the list really is taste-ranked.
   const [tasteRanked, setTasteRanked] = useState(initialPicks.tasteRanked);
+  // True when the diet left nothing to show, so the screen says so instead of looking broken.
+  const [noDietaryMatch, setNoDietaryMatch] = useState(false);
 
   // The Supabase repository has no cached catalog during onboarding, so ask the server.
   const [loadState, setLoadState] = useState<"idle" | "loading" | "error">(() =>
@@ -117,16 +114,23 @@ export function TasteProfileResultScreen({ navigation }: Props) {
     if (dishes.length > 0) return;
     let active = true;
     setLoadState("loading");
+    const { dietaryPreferences } = useProfileStore.getState().profile;
     void loadTastePicks()
       .then(async (picks) =>
         picks.length > 0
           ? { results: picks, ranked: true }
-          : { results: await getHungryService().discovery.listPopularNearby(), ranked: false },
+          : {
+              results: (await getHungryService().discovery.listPopularNearby()).filter((dish) =>
+                matchesAllDietaryFlags(dish, dietaryPreferences),
+              ),
+              ranked: false,
+            },
       )
       .then(({ results, ranked }) => {
         if (!active) return;
         setDishes(results.slice(0, RESULT_COUNT));
         setTasteRanked(ranked);
+        setNoDietaryMatch(results.length === 0 && dietaryPreferences.length > 0);
         setLoadState("idle");
       })
       .catch(() => {
@@ -168,7 +172,9 @@ export function TasteProfileResultScreen({ navigation }: Props) {
                 ? "Picked to match your taste. We'll keep ranking Home the same way."
                 : dishes.length > 0
                   ? "Popular dishes to start with. We'll use your taste to rank Home."
-                  : "We'll use your taste to rank dishes for you on Home."}
+                  : noDietaryMatch
+                    ? noDietaryPicksMessage(useProfileStore.getState().profile.dietaryPreferences)
+                    : "We'll use your taste to rank dishes for you on Home."}
           </AppText>
         </View>
 
@@ -223,11 +229,15 @@ export function TasteProfileResultScreen({ navigation }: Props) {
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={`Open ${dish.name}`}
-                  onPress={() =>
+                  onPress={() => {
                     navigation
                       .getParent<NavigationProp<RootStackParamList>>()
-                      ?.navigate("DishDetail", { dishId: dish.id })
-                  }
+                      ?.navigate("DishDetail", { dishId: dish.id });
+                    // Opening a dish is leaving the flow: if the app is closed while the user
+                    // browses, the next launch must not start onboarding again. Done after
+                    // navigating, so the root navigator sees DishDetail on top and stays put.
+                    completeOnboarding(hasSkippedTasteQuiz);
+                  }}
                 >
                   {/* The dish's own photo, or the shared no-photo tile; never a stand-in dish. */}
                   {dish.imageUrl ? (
@@ -275,7 +285,7 @@ export function TasteProfileResultScreen({ navigation }: Props) {
                           tone: "warning",
                         });
                         rememberPendingDishSave(dish);
-                        navigation.navigate("OnboardingAuth");
+                        navigation.navigate("OnboardingAuth", { dishName: dish.name });
                       }}
                       style={{
                         alignItems: "center",

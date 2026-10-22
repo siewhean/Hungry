@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { clearShareAttribution, getShareAttribution } from "@/features/share/shareAttribution";
+import { deleteExportFile } from "@/features/profile/exportFile";
 import type { AuthProvider } from "@/lib/services/types";
 import { getConfiguredDataSource, type HungryDataSource } from "@/lib/services/supabase/client";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -56,6 +57,8 @@ interface SessionState {
     skippedTasteQuiz?: boolean;
     authProvider?: string;
     isNewUser?: boolean;
+    /** The session ended without the user asking (revoked or expired refresh token). */
+    sessionExpired?: boolean;
   }) => void;
 }
 
@@ -160,6 +163,8 @@ function clearAccountLocalHistory(): void {
     require("./useReviewDraftStore") as typeof import("./useReviewDraftStore");
   useSearchStore.getState().clearSearchState();
   useReviewDraftStore.getState().resetDraft();
+  // The data export is a full copy of the account's personal data; it must not outlive sign-out.
+  deleteExportFile();
 }
 
 /** Account whose follow state was already loaded during this app launch. */
@@ -266,6 +271,40 @@ function trackSignUpCompletedOnce(profileId: string, method: string): void {
   if (shareAttribution) clearShareAttribution();
 }
 
+// A server sign-out the app asked for itself (account deletion signs out inside the service,
+// before the screen clears the session) must not be reported as an expired session.
+const EXPECTED_SIGN_OUT_WINDOW_MS = 15_000;
+let expectedSignOutUntil = 0;
+
+export function expectSignOut(): void {
+  expectedSignOutUntil = Date.now() + EXPECTED_SIGN_OUT_WINDOW_MS;
+}
+
+// Stamps the account as onboarded (service.auth.markOnboarded) once the user is signed in
+// and has finished first-run onboarding, so the next sign-in knows it is an existing account.
+let onboardedStampedForUserId: string | null = null;
+
+function markAccountOnboarded(): void {
+  const state = useSessionStore.getState();
+  const userId = state.authenticatedUserId;
+  if (
+    getConfiguredDataSource() !== "supabase" ||
+    !state.isAuthenticated ||
+    !state.hasCompletedOnboarding ||
+    !userId ||
+    onboardedStampedForUserId === userId
+  ) {
+    return;
+  }
+  onboardedStampedForUserId = userId;
+  void getHungryService()
+    .auth.markOnboarded()
+    .catch(() => {
+      // Try again on the next auth event.
+      onboardedStampedForUserId = null;
+    });
+}
+
 const PUSH_TOKEN_UNBIND_TIMEOUT_MS = 3000;
 
 // Unbind this device's push token while the session can still authorize it,
@@ -313,6 +352,7 @@ export const useSessionStore = create<SessionState>()(
         if (!shouldAuthenticate) {
           return;
         }
+        markAccountOnboarded();
         const syncedProfile = getProfileStoreState().profile;
         const profileId = syncedProfile?.id ?? "guest-user";
         scheduleIdleWork(
@@ -344,6 +384,7 @@ export const useSessionStore = create<SessionState>()(
         trackAnalyticsEvent("onboarding_completed", {
           skipped_quiz: skippedQuiz,
         });
+        markAccountOnboarded();
       },
       expireSession: () => {
         const profileId = getSafeProfileId();
@@ -437,6 +478,7 @@ export const useSessionStore = create<SessionState>()(
             signOutPending: false,
           }));
           syncProfileForAuthState(true, session.userId);
+          markAccountOnboarded();
 
           const profile = getProfileStoreState().profile;
           const profileId = session.userId ?? profile?.id ?? "guest-user";
@@ -467,12 +509,16 @@ export const useSessionStore = create<SessionState>()(
         }
 
         const profileId = getSafeProfileId();
+        const expired =
+          (session.sessionExpired ?? false) &&
+          !useSessionStore.getState().signOutPending &&
+          Date.now() >= expectedSignOutUntil;
         set({
           isAuthenticated: false,
           isAuthReady: true,
           authenticatedUserId: null,
           authDataSource: null,
-          sessionExpired: false,
+          sessionExpired: expired,
         });
         clearAccountScopedStores();
         getProfileStoreState().syncProfile(false);
@@ -480,7 +526,7 @@ export const useSessionStore = create<SessionState>()(
         resetSignInTracking();
         trackAnalyticsEvent(
           "sign_out",
-          { reason: "supabase_auth_state_change" },
+          { reason: expired ? "session_expired" : "supabase_auth_state_change" },
           { userId: profileId },
         );
       },
@@ -498,6 +544,9 @@ export const useSessionStore = create<SessionState>()(
         hasCompletedOnboarding: state.hasCompletedOnboarding,
         hasSkippedTasteQuiz: state.hasSkippedTasteQuiz,
         signOutPending: state.signOutPending,
+        // Where a guest was headed when sign-up sent them to the email app: a cold-start
+        // confirmation link still returns them there.
+        returnRoute: state.returnRoute,
       }),
       // A corrupt persisted value rehydrates with no state; mark hydrated anyway
       // so bootstrap still runs and Splash cannot hang on isAuthReady.

@@ -148,7 +148,8 @@ test("full project audit P1: numeric trust surfaces disclose live or preview dat
   assert.match(foodCredBadge, /getDataTrustDisclosure\("foodCred"\)/);
   assert.match(missionBanner, /getDataTrustDisclosure\("missions"\)/);
   assert.match(missionsScreen, /getDataTrustDisclosure\("missions"\)/);
-  assert.match(dishDetail, /getDataTrustDisclosure\("waitEstimate"\)/);
+  // The dish page no longer shows any wait estimate (detail-M6).
+  assert.doesNotMatch(dishDetail, /waitEstimate|formatWaitTime/);
 });
 
 test("full project audit P1: user-facing data trust copy avoids live-result overclaims", () => {

@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useEffect, useMemo } from "react";
-import { View, StyleSheet, Alert, Pressable } from "react-native";
+import { View, StyleSheet, Pressable } from "react-native";
 import { X } from "lucide-react-native";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
@@ -15,6 +15,7 @@ import {
   FormSwitchRow,
   Input,
   Screen,
+  Skeleton,
 } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
@@ -28,6 +29,7 @@ import type {
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { resolvePromotionRuntimeStatus } from "@/features/merchant/merchantReadiness";
 import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
+import { useMerchantDialog } from "@/features/merchant/useMerchantDialog";
 import { useUnsavedChangesGuard } from "@/features/merchant/useUnsavedChangesGuard";
 import {
   promotionBoundaryToDateOnly,
@@ -43,6 +45,9 @@ const PROMOTION_ITEM_TYPE_OPTIONS: readonly { id: PromotionItemType; label: stri
   { id: "new_item", label: "New item" },
   { id: "existing_menu_item", label: "Existing menu item" },
 ];
+
+/** Dishes shown in the picker before "Show more": a long menu is not rendered in one go. */
+const DISH_PICKER_PAGE_SIZE = 20;
 
 /** Discount implied by the two prices, so the merchant never has to make three fields agree. */
 function computeDiscount(originalPrice: string, finalPrice: string): number | undefined {
@@ -64,6 +69,7 @@ export function PromotionBuilderScreen() {
   const duplicateFromId = promotionId ? undefined : route.params?.duplicateFromId;
   const activeOutlet = useMerchantStore(getActiveOutlet);
   const updateOutletProfile = useMerchantStore((state) => state.updateOutletProfile);
+  const { showAlert, dialog } = useMerchantDialog();
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -89,6 +95,13 @@ export function PromotionBuilderScreen() {
     new Set(["nearby_users"]),
   );
   const [dateErrors, setDateErrors] = useState({ start: false, end: false });
+  const [fieldErrors, setFieldErrors] = useState<{
+    title?: string;
+    description?: string;
+    dates?: string;
+    price?: string;
+  }>({});
+  const [visibleDishCount, setVisibleDishCount] = useState(DISH_PICKER_PAGE_SIZE);
   const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
 
   const loadPromotion = useCallback(async () => {
@@ -173,12 +186,15 @@ export function PromotionBuilderScreen() {
   }, [formSnapshot, isLoading, savedSnapshot]);
   const isDirty = savedSnapshot !== null && savedSnapshot !== formSnapshot && !isSaving;
   const leaveEditor = useCallback(() => navigation.goBack(), [navigation]);
-  const confirmLeave = useUnsavedChangesGuard(isDirty, leaveEditor);
+  const confirmLeave = useUnsavedChangesGuard(isDirty, leaveEditor, showAlert);
   const runtimeStatus = resolvePromotionRuntimeStatus({
     startDate: toSingaporePromotionBoundary(startDate, "start"),
     endDate: toSingaporePromotionBoundary(endDate, "end"),
     status,
   });
+  // Saving a live or scheduled promotion as a draft takes it down, so it is offered as Unpublish.
+  const isLivePromotion =
+    Boolean(promotionId) && (runtimeStatus === "active" || runtimeStatus === "scheduled");
 
   const runPromotionAction = async (action: () => Promise<unknown>, failureTitle: string) => {
     setIsSaving(true);
@@ -187,7 +203,7 @@ export function PromotionBuilderScreen() {
       setSavedSnapshot(formSnapshot);
       navigation.goBack();
     } catch (e) {
-      Alert.alert(failureTitle, e instanceof Error ? e.message : "Please try again.");
+      showAlert(failureTitle, e instanceof Error ? e.message : "Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -195,7 +211,7 @@ export function PromotionBuilderScreen() {
 
   const handleEndNow = () => {
     if (!promotionId) return;
-    Alert.alert("End promotion now?", "Diners will stop seeing it straight away.", [
+    showAlert("End promotion now?", "Diners will stop seeing it straight away.", [
       { text: "Cancel", style: "cancel" },
       {
         text: "End now",
@@ -217,9 +233,20 @@ export function PromotionBuilderScreen() {
     );
   };
 
+  const handleUnpublish = () => {
+    showAlert(
+      "Unpublish this promotion?",
+      "Diners will stop seeing it straight away. It is saved as a draft, and you can publish it again later.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Unpublish", style: "destructive", onPress: () => void handleSave(false) },
+      ],
+    );
+  };
+
   const handleDelete = () => {
     if (!promotionId) return;
-    Alert.alert("Delete promotion?", "This permanently removes it and its numbers.", [
+    showAlert("Delete promotion?", "This permanently removes it and its numbers.", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete",
@@ -235,21 +262,18 @@ export function PromotionBuilderScreen() {
 
   const handleSave = async (publish: boolean) => {
     if (!activeOutlet) return;
-    if (!title || !description || !startDate || !endDate) {
-      Alert.alert("Missing Fields", "Please fill out all required fields.");
-      return;
-    }
-
+    // Problems are shown next to the fields, not in an alert.
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     const isStartValid = dateRegex.test(startDate);
     const isEndValid = dateRegex.test(endDate);
-
+    const nextErrors = {
+      title: title.trim() ? undefined : "Add a title.",
+      description: description.trim() ? undefined : "Add a description.",
+      dates: isStartValid && isEndValid ? undefined : "Enter both dates as YYYY-MM-DD.",
+    };
     setDateErrors({ start: !isStartValid, end: !isEndValid });
-
-    if (!isStartValid || !isEndValid) {
-      Alert.alert("Invalid Date", "Please ensure dates are in YYYY-MM-DD format.");
-      return;
-    }
+    setFieldErrors(nextErrors);
+    if (nextErrors.title || nextErrors.description || nextErrors.dates) return;
 
     setIsSaving(true);
     try {
@@ -263,7 +287,7 @@ export function PromotionBuilderScreen() {
           (value) => value !== undefined && !Number.isFinite(value),
         )
       ) {
-        Alert.alert("Invalid price", "Enter valid numbers for price and discount fields.");
+        setFieldErrors({ price: "Enter valid numbers for price and discount fields." });
         return;
       }
       const newStatus = publish
@@ -308,7 +332,7 @@ export function PromotionBuilderScreen() {
       if (publish && !activeOutlet.isLive) {
         // Diners only see promotions of stalls shown on Hungry: offer the one-tap fix.
         const outletId = activeOutlet.id;
-        Alert.alert(
+        showAlert(
           "Published, but not visible to diners",
           'Your stall is hidden, so diners will not see this promotion until you turn on "Show on Hungry".',
           [
@@ -323,7 +347,7 @@ export function PromotionBuilderScreen() {
                   );
                   updateOutletProfile(outletId, updated);
                 } catch (e) {
-                  Alert.alert(
+                  showAlert(
                     "Could not show your stall",
                     e instanceof Error ? e.message : "Please try again.",
                   );
@@ -335,10 +359,11 @@ export function PromotionBuilderScreen() {
         );
         return;
       }
-      Alert.alert("Success", `Promotion ${publish ? "published" : "saved as draft"}!`);
-      navigation.goBack();
+      showAlert("Success", `Promotion ${publish ? "published" : "saved as draft"}!`, [
+        { text: "OK", onPress: () => navigation.goBack() },
+      ]);
     } catch (e) {
-      Alert.alert("Error", e instanceof Error ? e.message : "Failed to save promotion.");
+      showAlert("Error", e instanceof Error ? e.message : "Failed to save promotion.");
       console.error(e);
     } finally {
       setIsSaving(false);
@@ -348,7 +373,12 @@ export function PromotionBuilderScreen() {
   if (isLoading) {
     return (
       <Screen title={promotionId ? "Edit Promotion" : "New Promotion"}>
-        <AppText tone="muted">Loading promotion details...</AppText>
+        <View accessibilityLabel="Loading promotion details" style={{ gap: spacing[4] }}>
+          <Skeleton height={140} borderRadius={componentRadii.card} />
+          <Skeleton height={56} borderRadius={componentRadii.input} />
+          <Skeleton height={96} borderRadius={componentRadii.input} />
+          <Skeleton height={56} borderRadius={componentRadii.input} />
+        </View>
       </Screen>
     );
   }
@@ -424,6 +454,8 @@ export function PromotionBuilderScreen() {
             label="Promotion Title *"
             value={title}
             onChangeText={setTitle}
+            error={Boolean(fieldErrors.title)}
+            errorText={fieldErrors.title}
             placeholder="e.g. 20% off all noodles"
           />
         </View>
@@ -433,6 +465,8 @@ export function PromotionBuilderScreen() {
             label="Description *"
             value={description}
             onChangeText={setDescription}
+            error={Boolean(fieldErrors.description)}
+            errorText={fieldErrors.description}
             multiline
             placeholder="e.g. Show this post to get 20% off your total bill when you order any noodle dish."
             style={{ minHeight: 80, textAlignVertical: "top" }}
@@ -452,7 +486,7 @@ export function PromotionBuilderScreen() {
               <AppText variant="bodySmall" tone="muted">
                 Select the dish this promotion applies to.
               </AppText>
-              {menu.map((dish) => (
+              {menu.slice(0, visibleDishCount).map((dish) => (
                 <Pressable
                   key={dish.id}
                   accessibilityRole="radio"
@@ -481,6 +515,13 @@ export function PromotionBuilderScreen() {
                   <AppText variant="bodySmallBold">{dish.priceRange}</AppText>
                 </Pressable>
               ))}
+              {menu.length > visibleDishCount ? (
+                <Button
+                  label={`Show more dishes (${menu.length - visibleDishCount})`}
+                  variant="ghost"
+                  onPress={() => setVisibleDishCount((count) => count + DISH_PICKER_PAGE_SIZE)}
+                />
+              ) : null}
             </View>
           ) : null}
 
@@ -504,6 +545,16 @@ export function PromotionBuilderScreen() {
               />
             </View>
           </View>
+
+          {fieldErrors.price ? (
+            <AppText
+              variant="bodySmall"
+              style={{ color: palette.errorText }}
+              accessibilityLiveRegion="polite"
+            >
+              {fieldErrors.price}
+            </AppText>
+          ) : null}
 
           <View style={{ flexDirection: "row", gap: spacing[3] }}>
             <View style={{ flex: 1 }}>
@@ -562,6 +613,16 @@ export function PromotionBuilderScreen() {
           </View>
         </View>
 
+        {fieldErrors.dates ? (
+          <AppText
+            variant="bodySmall"
+            style={{ color: palette.errorText }}
+            accessibilityLiveRegion="polite"
+          >
+            {fieldErrors.dates}
+          </AppText>
+        ) : null}
+
         <AppText variant="bodySmall" tone="muted">
           Runs all day on Singapore time, from 00:00 on the start date to 23:59 on the end date.
           Live promotions are shown to everyone who views your stall or the promoted dish.
@@ -569,10 +630,10 @@ export function PromotionBuilderScreen() {
 
         <View style={{ flexDirection: "row", gap: spacing[3], marginTop: spacing[4] }}>
           <Button
-            label={isSaving ? "Saving..." : "Save as Draft"}
+            label={isSaving ? "Saving..." : isLivePromotion ? "Unpublish" : "Save as Draft"}
             variant="secondary"
             style={{ flex: 1 }}
-            onPress={() => void handleSave(false)}
+            onPress={isLivePromotion ? handleUnpublish : () => void handleSave(false)}
             disabled={isSaving}
           />
           <Button
@@ -619,6 +680,7 @@ export function PromotionBuilderScreen() {
           </View>
         ) : null}
       </View>
+      {dialog}
     </Screen>
   );
 }

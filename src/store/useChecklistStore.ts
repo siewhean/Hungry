@@ -21,7 +21,7 @@ interface ChecklistState {
 
   addItem: (input: ChecklistItemCreateInput) => Promise<ChecklistItem>;
   updateItem: (id: string, updates: Partial<ChecklistItemCreateInput>) => Promise<void>;
-  markItemTried: (id: string) => Promise<void>;
+  markItemTried: (id: string, tried?: boolean) => Promise<void>;
   deleteItem: (id: string, checklistId: string) => Promise<void>;
   reorderItems: (checklistId: string, itemIds: string[]) => Promise<void>;
 
@@ -163,13 +163,13 @@ export const useChecklistStore = create<ChecklistState>()(
         });
       },
 
-      markItemTried: async (id: string) => {
+      markItemTried: async (id: string, tried = true) => {
         const existingItem = Object.values(get().items)
           .flat()
           .find((item) => item.id === id);
         const service = getHungryService();
-        await service.checklist.markChecklistItemTried(id);
-        const triedAt = existingItem?.triedAt ?? new Date().toISOString();
+        await service.checklist.markChecklistItemTried(id, tried);
+        const triedAt = tried ? (existingItem?.triedAt ?? new Date().toISOString()) : undefined;
         set((state) => {
           const newItems = { ...state.items };
           for (const checklistId in newItems) {
@@ -179,7 +179,7 @@ export const useChecklistStore = create<ChecklistState>()(
           }
           return { items: newItems };
         });
-        if (existingItem && !existingItem.triedAt) {
+        if (tried && existingItem && !existingItem.triedAt) {
           trackAnalyticsEvent(
             "checklist_item_tried",
             {

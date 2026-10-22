@@ -1,6 +1,6 @@
 import type { PropsWithChildren, ReactNode } from "react";
 import { Pressable, View } from "react-native";
-import { X } from "lucide-react-native";
+import { ArrowLeft, X } from "lucide-react-native";
 
 import { Screen, AppText, HungryLogo } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
@@ -10,11 +10,15 @@ interface AuthScreenShellProps {
   title: string;
   subtitle?: string;
   footer?: ReactNode;
+  /** Overrides the wordmark colour; the default follows the theme's text colour. */
   wordmarkColor?: string;
   compact?: boolean;
   /** Shows a close (X) control so the screen is never a dead end. */
   onClose?: () => void;
   closeLabel?: string;
+  /** Shows a back chevron on pushed screens that have no close control. */
+  onBack?: () => void;
+  backLabel?: string;
 }
 
 export function AuthScreenShell({
@@ -26,6 +30,8 @@ export function AuthScreenShell({
   compact = false,
   onClose,
   closeLabel = "Close",
+  onBack,
+  backLabel = "Back",
 }: PropsWithChildren<AuthScreenShellProps>) {
   const { componentSizes, palette, spacing } = useHungryTheme();
   const gap = compact ? spacing[3] : spacing[6];
@@ -33,17 +39,18 @@ export function AuthScreenShell({
   const innerGap = compact ? spacing[3] : spacing[4];
   const footerTopGap = compact ? spacing[2] : spacing[3];
   const logoSize = HUNGRY_LOGO_STANDARD_SIZE;
-  const effectiveWordmarkColor = wordmarkColor ?? palette.navy;
+  // The navy token is near-black in dark mode; the text colour follows the theme.
+  const effectiveWordmarkColor = wordmarkColor ?? palette.text;
 
   return (
     // Auth forms always scroll and lift above the keyboard so the submit button stays reachable.
     <Screen keyboardAvoiding>
       <View style={{ gap, paddingVertical: spacing[3], marginTop: spacing[3] }}>
-        {onClose ? (
+        {onClose || onBack ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={closeLabel}
-            onPress={onClose}
+            accessibilityLabel={onClose ? closeLabel : backLabel}
+            onPress={onClose ?? onBack}
             hitSlop={8}
             style={{
               alignItems: "center",
@@ -53,7 +60,11 @@ export function AuthScreenShell({
               minWidth: componentSizes.touchTarget,
             }}
           >
-            <X color={palette.text} size={22} />
+            {onClose ? (
+              <X color={palette.text} size={22} />
+            ) : (
+              <ArrowLeft color={palette.text} size={22} />
+            )}
           </Pressable>
         ) : null}
         <View style={{ alignItems: "center", gap: titleGap, marginBottom: innerGap }}>

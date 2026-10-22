@@ -17,8 +17,9 @@ test("review editor subscribes with selectors and never picks a dish for the use
   assert.match(review, /<Screen title="Write a review"/);
   assert.doesNotMatch(review, /title="Create Post"/);
   assert.doesNotMatch(review, /dishes\[0\]/);
-  assert.match(review, /onPress=\{\(\) => setPickerVenueId\(item\.id\)\}/);
-  assert.match(review, /selectDish\(pickerVenue\.id, item\.id\)/);
+  assert.match(review, /setPickerVenueId\(item\.venue\.id\)/);
+  assert.match(review, /chooseDish\(pickerVenue\.id, item\.id\)/);
+  assert.match(review, /selectDish\(venueId, dishId\)/);
   // Cold legacy cache falls back to the async service.
   assert.match(review, /\.discovery\.getDish\(selectedDishId\)/);
 });
@@ -28,7 +29,10 @@ test("review submit sends the recommend choice and a retry-stable client review 
   const service = read("src/lib/services/supabase/supabaseService.ts");
 
   assert.match(review, /wouldRecommend: resolveWouldRecommend\(draft\.recommend, draft\.rating\)/);
-  assert.match(review, /clientReviewId: ensurePendingReviewId\(\)/);
+  assert.match(
+    review,
+    /const reviewId = ensurePendingReviewId\(\);[\s\S]*clientReviewId: reviewId/,
+  );
   assert.match(service, /would_recommend: draft\.wouldRecommend \?\? true/);
   assert.doesNotMatch(service, /would_recommend: true,/);
   assert.match(service, /error\.code !== "23505"/);
@@ -78,7 +82,10 @@ test("review editor: dish first, helper text, modal picker, route wins over a st
   assert.match(review, /<Modal\s+visible=\{isSearching\}/);
   assert.match(review, /onRequestClose=/);
   assert.doesNotMatch(review, /StyleSheet\.absoluteFill/);
-  assert.match(review, /No stalls match/);
+  assert.match(review, /No dishes or stalls match/);
+  // The saved draft loads asynchronously: the route effect waits for it.
+  assert.match(review, /const draftHydrated = useReviewDraftHydrated\(\)/);
+  assert.match(review, /if \(!draftHydrated\) return;/);
   assert.match(review, /"Unfinished review"/);
   assert.match(review, /\{ text: "Start new", onPress: startFromRoute \}/);
   // A draft with content but no dish still counts; a manual dish switch asks first.
@@ -142,15 +149,14 @@ test("prototype-only review features stay out of production", () => {
   assert.match(review, /\{reviewMusicEnabled \? \(/);
   assert.match(review, /const hasVideo = reviewVideoEnabled && Boolean\(draft\.videoUri\)/);
   assert.doesNotMatch(review, /\(draft\.videoUri \? 20 : 0\)/);
-  assert.match(stallDetail, /const reviewRepliesEnabled = FEATURE_FLAGS\.prototypeRoutesEnabled/);
-  assert.match(stallDetail, /\{reviewRepliesEnabled \? \(/);
-  assert.match(stallDetail, /reviewRepliesEnabled && activeReplyReviewId === review\.id/);
+  // The local-only reply prototype was deleted outright (detail-L21).
+  assert.doesNotMatch(stallDetail, /reviewRepliesEnabled|activeReplyReviewId|submitReviewReply/);
 });
 
 test("review tab loads one paginated page with refresh, error and empty states", () => {
   const feed = read("src/app/screens/review/ReviewFeedScreen.tsx");
 
-  assert.match(feed, /reviews\.listRecentReviews\(\{\s*limit: REVIEW_FEED_PAGE_SIZE/);
+  assert.match(feed, /reviews\.listRecentReviewsPage\(\{\s*limit: REVIEW_FEED_PAGE_SIZE/);
   assert.doesNotMatch(feed, /getReviewsForDish/);
   assert.match(feed, /<RefreshControl/);
   assert.match(feed, /title="Couldn't load reviews"[\s\S]*ctaLabel="Try again"/);
@@ -173,7 +179,9 @@ test("review medium/low fixes: sign-out clears the draft, feed pages by (created
     service,
     /created_at\.eq\."\$\{options\.before\}",id\.lt\."\$\{options\.beforeId\}"/,
   );
-  assert.match(feed, /beforeId: oldest\.id/);
+  // The next page starts at the last raw row of the last page, so a dropped review is no end.
+  assert.match(feed, /feedCursorRef\.current = page\.nextCursor/);
+  assert.match(feed, /beforeId: cursor\?\.beforeId/);
   // Refetch on focus so a just-posted review shows without pull-to-refresh.
   assert.match(feed, /useFocusEffect\(/);
   assert.doesNotMatch(feed, /setTimeout\(\(\) => setIsInitialLoading\(false\), 0\)/);

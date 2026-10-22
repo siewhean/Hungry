@@ -1,22 +1,20 @@
 const SCRIPT_TAG_REGEX = /<\s*\/?\s*script\b[^>]*>/gi;
 const HTML_TAG_REGEX = /<[^>]+>/g;
-const SQL_META_REGEX =
-  /\b(select|insert|update|delete|drop|union|truncate|alter|exec|execute)\b|(--|;|\/\*|\*\/)/gi;
 
 function collapseWhitespace(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
 
-function removeDangerousPatterns(value: string): string {
-  return value
-    .replace(SCRIPT_TAG_REGEX, "")
-    .replace(HTML_TAG_REGEX, "")
-    .replace(SQL_META_REGEX, "");
-}
-
+/**
+ * Search text keeps every real word ("Union Farm Chicken Rice"): it travels to the catalog
+ * RPCs as a bound parameter, so stripping SQL keywords added no safety. It only drops markup,
+ * collapses whitespace and caps the length.
+ */
 export function sanitizeSearchQuery(query: string, maxLength = 120): string {
-  const sanitized = collapseWhitespace(removeDangerousPatterns(query));
-  return sanitized.slice(0, maxLength);
+  const sanitized = collapseWhitespace(
+    query.replace(SCRIPT_TAG_REGEX, "").replace(HTML_TAG_REGEX, ""),
+  );
+  return sanitized.slice(0, maxLength).trim();
 }
 
 /**

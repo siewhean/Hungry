@@ -25,7 +25,8 @@ export function biteToStallPost(
     buildingId: bite.buildingId,
     authorName: bite.authorName,
     authorLocation: bite.venueName || bite.buildingName,
-    authorAvatarUrl: options.authorAvatarUrl ?? bite.authorAvatar ?? mediaUrl,
+    // No avatar: leave it empty so Avatar shows initials, never the food photo.
+    authorAvatarUrl: options.authorAvatarUrl ?? bite.authorAvatar ?? "",
     mediaType: options.mediaType ?? bite.mediaType ?? "photo",
     mediaUrl,
     mediaUrls,
@@ -43,7 +44,8 @@ export function biteToStallPost(
     savedCount: bite.savedCount,
     viewerHasLiked: bite.viewerHasLiked,
     viewerHasSaved: bite.viewerHasSaved,
-    commentCount: 0,
+    commentCount: bite.commentCount ?? 0,
+    shareCount: bite.shareCount,
     isStallAccount: false,
   };
 }

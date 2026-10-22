@@ -5,7 +5,7 @@
  * Feedback-driven for 'Uncle Tan' and 'Ahmad'.
  */
 import { useCallback, useRef, useState } from "react";
-import { View, ScrollView, Pressable } from "react-native";
+import { View, ScrollView, Pressable, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   TrendingUp,
@@ -22,7 +22,7 @@ import {
   X,
 } from "lucide-react-native";
 
-import { AppText, Skeleton, EmptyState, FilterChipRail } from "@/components/ui";
+import { AppText, Skeleton, EmptyState, FilterChipRail, InlineBanner } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { OutletSwitcher } from "@/components/merchant/OutletSwitcher";
@@ -35,6 +35,8 @@ import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
 import type { MerchantAnalytics, MerchantDashboardSummary } from "@/types/domain";
 import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
 import {
+  formatAverageRating,
+  formatReviewCountLabel,
   getMetricDelta,
   type MetricTrend,
   getMerchantOutletStatus,
@@ -164,7 +166,6 @@ function ActionCard({
   actionText,
   onPress,
   onPressIn,
-  isUrgent = false,
 }: {
   title: string;
   description: string;
@@ -172,7 +173,6 @@ function ActionCard({
   actionText: string;
   onPress: () => void;
   onPressIn?: () => void;
-  isUrgent?: boolean;
 }) {
   const { componentRadii, palette, spacing } = useHungryTheme();
   return (
@@ -184,11 +184,11 @@ function ActionCard({
       onPress={onPress}
       style={({ pressed }) => [
         {
-          backgroundColor: isUrgent ? palette.amber + "10" : palette.surface,
+          backgroundColor: palette.surface,
           borderRadius: componentRadii.button,
           padding: spacing[4],
           borderWidth: 1,
-          borderColor: isUrgent ? palette.amber : palette.border,
+          borderColor: palette.border,
           flexDirection: "row",
           gap: spacing[3],
           opacity: pressed ? 0.8 : 1,
@@ -200,7 +200,7 @@ function ActionCard({
           width: 40,
           height: 40,
           borderRadius: componentRadii.iconButton,
-          backgroundColor: isUrgent ? palette.amber + "20" : palette.bgSoft,
+          backgroundColor: palette.bgSoft,
           alignItems: "center",
           justifyContent: "center",
         }}
@@ -215,13 +215,10 @@ function ActionCard({
           {description}
         </AppText>
         <View style={{ flexDirection: "row", alignItems: "center", marginTop: spacing[2], gap: 4 }}>
-          <AppText
-            variant="bodySmallBold"
-            style={{ color: isUrgent ? palette.amber : palette.orange }}
-          >
+          <AppText variant="bodySmallBold" style={{ color: palette.orangeText }}>
             {actionText}
           </AppText>
-          <ChevronRight size={14} color={isUrgent ? palette.amber : palette.orange} />
+          <ChevronRight size={14} color={palette.orangeText} />
         </View>
       </View>
     </Pressable>
@@ -239,6 +236,7 @@ export function MerchantDashboardScreen() {
   const [analytics, setAnalytics] = useState<MerchantAnalytics | null>(null);
   const [summary, setSummary] = useState<MerchantDashboardSummary | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Only the newest request may write state: a slow "30 Days" reply must not overwrite "Today".
   const latestRequestId = useRef(0);
@@ -297,7 +295,18 @@ export function MerchantDashboardScreen() {
     }, [activeOutletId]),
   );
 
-  if (error) {
+  const refreshDashboard = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await loadDashboard();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [loadDashboard]);
+
+  // A failed refresh with numbers already on screen shows a banner; only a first load that
+  // failed replaces the screen.
+  if (error && !analytics) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top"]}>
         <EmptyState
@@ -330,17 +339,14 @@ export function MerchantDashboardScreen() {
     );
   }
 
+  // One headline number, named the same as on Performance: profile visits.
   const views = analytics ? (
-    (analytics.profileVisits + analytics.menuViews).toLocaleString()
+    analytics.profileVisits.toLocaleString()
   ) : (
     <Skeleton height={24} width={80} borderRadius={radii.sm} />
   );
   const viewsDelta = analytics
-    ? getMetricDelta(
-        analytics.profileVisits + analytics.menuViews,
-        analytics.previousPeriodComparison.profileVisits +
-          analytics.previousPeriodComparison.menuViews,
-      )
+    ? getMetricDelta(analytics.profileVisits, analytics.previousPeriodComparison.profileVisits)
     : undefined;
   const viewsComparison = RANGE_COMPARISON_LABELS[dateRange];
   const viewsSubtext = viewsDelta ? (
@@ -350,12 +356,12 @@ export function MerchantDashboardScreen() {
   );
 
   const rating = analytics ? (
-    analytics.averageRating.toFixed(1)
+    formatAverageRating(analytics.averageRating, analytics.reviewCount)
   ) : (
     <Skeleton height={24} width={40} borderRadius={radii.sm} />
   );
   const ratingSubtext = analytics ? (
-    `${analytics.reviewCount} ${analytics.reviewCount === 1 ? "review" : "reviews"} ${RANGE_LABELS[dateRange]}`
+    formatReviewCountLabel(analytics.reviewCount, RANGE_LABELS[dateRange])
   ) : (
     <Skeleton height={12} width={80} borderRadius={radii.sm} />
   );
@@ -366,7 +372,7 @@ export function MerchantDashboardScreen() {
     outletStatus === "open" || outletStatus === "live"
       ? palette.success
       : outletStatus === "closed"
-        ? palette.amber
+        ? palette.warning
         : palette.textMuted;
   const statusBg =
     outletStatus === "open" || outletStatus === "live"
@@ -376,16 +382,25 @@ export function MerchantDashboardScreen() {
         : palette.bgSoft;
   const profileGaps = activeOutlet && summary ? getMerchantProfileGaps(activeOutlet, summary) : [];
   const unrepliedCount = summary?.unrepliedReviews ?? 0;
-  const hasActionCards =
-    activeOutlet?.verification.status !== "verified" ||
-    profileGaps.length > 0 ||
-    unrepliedCount > 0;
+  const hasActionCards = profileGaps.length > 0 || unrepliedCount > 0;
   const latestFeedback = summary?.latestReview;
   const analyticsDisclosure = getDataTrustDisclosure("merchantAnalytics");
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top"]}>
-      <ScrollView contentContainerStyle={{ padding: spacing[4], gap: spacing[6] }}>
+      <ScrollView
+        contentContainerStyle={{ padding: spacing[4], gap: spacing[6] }}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={() => void refreshDashboard()}
+            tintColor={palette.orange}
+          />
+        }
+      >
+        {error ? (
+          <InlineBanner tone="error" message={`Couldn't refresh the dashboard. ${error}`} />
+        ) : null}
         {/* Header */}
         <View
           style={{
@@ -435,7 +450,7 @@ export function MerchantDashboardScreen() {
         <View style={{ flexDirection: "row", gap: spacing[4] }}>
           <View style={{ flex: 1 }}>
             <MetricCard
-              title="Views"
+              title="Profile visits"
               value={views}
               subtext={viewsSubtext}
               trend={viewsDelta?.trend}
@@ -459,18 +474,6 @@ export function MerchantDashboardScreen() {
           <AppText variant="h3" style={{ fontWeight: "800" }}>
             Actionable Insights
           </AppText>
-
-          {activeOutlet?.verification.status !== "verified" ? (
-            <ActionCard
-              title="Verification Required"
-              description="Verify your stall to make it discoverable to customers on the map."
-              icon={<ClipboardList size={20} color={palette.amber} />}
-              actionText="Complete Verification"
-              onPressIn={() => prefetchMerchantRoute("VerificationCentre")}
-              onPress={() => navigation.navigate("VerificationCentre")}
-              isUrgent={true}
-            />
-          ) : null}
 
           {profileGaps.length > 0 ? (
             <ActionCard

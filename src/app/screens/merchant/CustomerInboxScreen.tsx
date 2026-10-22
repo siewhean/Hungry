@@ -1,23 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import {
-  View,
-  StyleSheet,
-  Pressable,
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-} from "react-native";
-import {
-  MessageSquare,
-  Star,
-  Send,
-  MoreVertical,
-  CheckCircle2,
-  Sparkles,
-  X,
-} from "lucide-react-native";
+import { View, StyleSheet, Pressable, KeyboardAvoidingView, Modal, Platform } from "react-native";
+import { MessageSquare, Star, Send, MoreVertical, CheckCircle2, X } from "lucide-react-native";
 
 import {
   AppText,
@@ -33,10 +16,15 @@ import {
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { MERCHANT_REPLY_MAX_LENGTH } from "@/features/merchant/merchantReadiness";
 import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
+import { useMerchantDialog, type ShowMerchantAlert } from "@/features/merchant/useMerchantDialog";
 import type { CustomerInteraction, InteractionType } from "@/types/domain";
 
 type InboxFilter = InteractionType | "all" | "unreplied";
+
+/** Reviews loaded per page; "Load more" fetches the next older page. */
+const INBOX_PAGE_SIZE = 30;
 
 // The inbox is fed by reviews only; comments and mentions are not collected yet.
 const INBOX_FILTER_OPTIONS: { id: InboxFilter; label: string }[] = [
@@ -54,12 +42,22 @@ const INBOX_EMPTY_LABELS: Record<InboxFilter, string> = {
   question: "No questions to show.",
 };
 
+const REPORT_REASONS = [
+  "Spam or fake review",
+  "Abusive or hateful language",
+  "Contains personal information",
+  "Not about this stall",
+];
+
 export function CustomerInboxScreen() {
-  const { componentRadii, palette, radii, spacing } = useHungryTheme();
+  const { palette, radii, spacing } = useHungryTheme();
   const activeOutlet = useMerchantStore(getActiveOutlet);
+  const { showAlert, dialog } = useMerchantDialog();
 
   const [interactions, setInteractions] = useState<CustomerInteraction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [filter, setFilter] = useState<InboxFilter>("all");
   const [replyingTo, setReplyingTo] = useState<CustomerInteraction | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -74,42 +72,99 @@ export function CustomerInboxScreen() {
     setError(null);
     try {
       const data = await getHungryService().merchant.getInbox(activeOutlet.id, {
-        type: filter === "all" || filter === "unreplied" ? undefined : filter,
-        unrepliedOnly: filter === "unreplied",
+        type: "review",
+        limit: INBOX_PAGE_SIZE,
       });
       setInteractions(data);
+      setHasMore(data.length >= INBOX_PAGE_SIZE);
     } catch (e) {
       console.error("Failed to fetch interactions", e);
       setError(e instanceof Error ? e.message : "Unable to load customer interactions.");
     } finally {
       setIsLoading(false);
     }
-  }, [activeOutlet, filter]);
+  }, [activeOutlet]);
 
   useEffect(() => {
     void fetchInteractions();
   }, [fetchInteractions]);
 
-  const handleReportInteraction = useCallback((interaction: CustomerInteraction) => {
-    Alert.alert("Report Interaction", "Flag this interaction for moderation review?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Report",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await getHungryService().merchant.reportInteraction(
-              interaction.id,
-              "Merchant reported from customer inbox",
-            );
-            Alert.alert("Reported", "Interaction sent for moderation review.");
-          } catch (e) {
-            Alert.alert("Error", "Failed to report interaction.");
-          }
+  const loadMore = async () => {
+    const oldest = interactions[interactions.length - 1];
+    if (!activeOutlet || !oldest || isLoadingMore) return;
+    setIsLoadingMore(true);
+    try {
+      const data = await getHungryService().merchant.getInbox(activeOutlet.id, {
+        type: "review",
+        limit: INBOX_PAGE_SIZE,
+        before: oldest.createdAt,
+      });
+      setInteractions((current) => {
+        const known = new Set(current.map((item) => item.id));
+        return [...current, ...data.filter((item) => !known.has(item.id))];
+      });
+      setHasMore(data.length >= INBOX_PAGE_SIZE);
+    } catch (e) {
+      showAlert("Could not load more", e instanceof Error ? e.message : "Please try again.");
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
+  const reportWithReason = useCallback(
+    async (interaction: CustomerInteraction, reason: string) => {
+      try {
+        await getHungryService().merchant.reportInteraction(interaction.id, reason);
+        trackMerchantEvent(
+          "merchant_customer_interaction_reported",
+          useMerchantStore.getState().activeOutletId ?? undefined,
+        );
+        showAlert("Reported", "Interaction sent for moderation review.");
+      } catch {
+        showAlert("Error", "Failed to report interaction.");
+      }
+    },
+    [showAlert],
+  );
+
+  const handleReportInteraction = useCallback(
+    (interaction: CustomerInteraction) => {
+      showAlert("Why are you reporting this?", "Moderators review every report.", [
+        ...REPORT_REASONS.map((reason) => ({
+          text: reason,
+          onPress: () => void reportWithReason(interaction, reason),
+        })),
+        { text: "Cancel", style: "cancel" as const },
+      ]);
+    },
+    [reportWithReason, showAlert],
+  );
+
+  const handleRemoveReply = useCallback(
+    (interaction: CustomerInteraction) => {
+      showAlert("Remove your reply?", "Diners will no longer see it under this review.", [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove reply",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await getHungryService().merchant.removeInteractionReply(interaction.id);
+              void fetchInteractions();
+            } catch {
+              showAlert("Error", "Failed to remove the reply.");
+            }
+          },
         },
-      },
-    ]);
-  }, []);
+      ]);
+    },
+    [fetchInteractions, showAlert],
+  );
+
+  const visibleInteractions = useMemo(
+    () => (filter === "unreplied" ? interactions.filter((item) => !item.reply) : interactions),
+    [filter, interactions],
+  );
 
   return (
     <Screen title="Customer Inbox">
@@ -122,8 +177,8 @@ export function CustomerInboxScreen() {
           gap={spacing[2]}
         />
 
-        {/* Sentiment Summary */}
-        <SentimentSummary interactions={interactions} />
+        {/* Sentiment Summary: all the reviews loaded, whatever the filter shows. */}
+        <SentimentSummary interactions={interactions} hasMore={hasMore} />
 
         {/* Interaction List */}
         <View style={{ gap: spacing[3], paddingBottom: 100 }}>
@@ -143,7 +198,7 @@ export function CustomerInboxScreen() {
               ctaLabel="Retry"
               onPress={fetchInteractions}
             />
-          ) : interactions.length === 0 ? (
+          ) : visibleInteractions.length === 0 ? (
             <View style={[styles.emptyContainer, { padding: 60 }]}>
               <CheckCircle2 size={48} color={palette.success} />
               <AppText variant="bodyBold" style={{ marginTop: spacing[3] }}>
@@ -154,15 +209,26 @@ export function CustomerInboxScreen() {
               </AppText>
             </View>
           ) : (
-            interactions.map((item) => (
+            visibleInteractions.map((item) => (
               <InteractionCard
                 key={item.id}
                 interaction={item}
                 onReply={setReplyingTo}
+                onRemoveReply={handleRemoveReply}
                 onReport={handleReportInteraction}
+                showAlert={showAlert}
               />
             ))
           )}
+          {hasMore && !error && interactions.length > 0 ? (
+            <Button
+              label={isLoadingMore ? "Loading..." : "Load older reviews"}
+              variant="secondary"
+              loading={isLoadingMore}
+              disabled={isLoadingMore}
+              onPress={() => void loadMore()}
+            />
+          ) : null}
         </View>
       </View>
 
@@ -177,11 +243,18 @@ export function CustomerInboxScreen() {
           }}
         />
       )}
+      {dialog}
     </Screen>
   );
 }
 
-function SentimentSummary({ interactions }: { interactions: CustomerInteraction[] }) {
+function SentimentSummary({
+  interactions,
+  hasMore,
+}: {
+  interactions: CustomerInteraction[];
+  hasMore: boolean;
+}) {
   const { componentRadii, palette, spacing } = useHungryTheme();
 
   const stats = useMemo(() => {
@@ -191,6 +264,7 @@ function SentimentSummary({ interactions }: { interactions: CustomerInteraction[
     const negative = interactions.filter((i) => (i.rating || 0) > 0 && (i.rating || 0) <= 2).length;
     const neutral = total - positive - negative;
     return {
+      total,
       positive: Math.round((positive / total) * 100),
       negative: Math.round((negative / total) * 100),
       neutral: Math.round((neutral / total) * 100),
@@ -213,6 +287,11 @@ function SentimentSummary({ interactions }: { interactions: CustomerInteraction[
       ]}
     >
       <AppText variant="bodyBold">Sentiment Summary</AppText>
+      <AppText variant="micro" tone="muted">
+        {hasMore
+          ? `Your ${stats.total} most recent reviews`
+          : `All ${stats.total} ${stats.total === 1 ? "review" : "reviews"}`}
+      </AppText>
       <View
         style={{
           flexDirection: "row",
@@ -256,17 +335,21 @@ function SentimentSummary({ interactions }: { interactions: CustomerInteraction[
 function InteractionCard({
   interaction,
   onReply,
+  onRemoveReply,
   onReport,
+  showAlert,
 }: {
   interaction: CustomerInteraction;
   onReply: (item: CustomerInteraction) => void;
+  onRemoveReply: (item: CustomerInteraction) => void;
   onReport: (item: CustomerInteraction) => void;
+  showAlert: ShowMerchantAlert;
 }) {
-  const { componentRadii, palette, radii, spacing } = useHungryTheme();
+  const { componentRadii, palette, spacing } = useHungryTheme();
 
   const typeLabel = interaction.type.charAt(0).toUpperCase() + interaction.type.slice(1);
   const showMoreActions = () => {
-    Alert.alert("Interaction Actions", interaction.authorName, [
+    showAlert("Interaction Actions", interaction.authorName, [
       { text: "Report", style: "destructive" as const, onPress: () => onReport(interaction) },
       { text: "Cancel", style: "cancel" as const },
     ]);
@@ -308,6 +391,12 @@ function InteractionCard({
         />
       </View>
 
+      {interaction.dishName ? (
+        <AppText variant="bodySmallBold" tone="muted" style={{ marginBottom: spacing[1] }}>
+          About: {interaction.dishName}
+        </AppText>
+      ) : null}
+
       {typeof interaction.rating === "number" && interaction.rating > 0 ? (
         <View
           accessible
@@ -318,8 +407,8 @@ function InteractionCard({
             <Star
               key={s}
               size={14}
-              color={s <= interaction.rating! ? palette.amber : palette.border}
-              fill={s <= interaction.rating! ? palette.amber : "transparent"}
+              color={s <= interaction.rating! ? palette.ratingStar : palette.border}
+              fill={s <= interaction.rating! ? palette.ratingStar : "transparent"}
             />
           ))}
         </View>
@@ -352,6 +441,22 @@ function InteractionCard({
             </AppText>
           </View>
           <AppText variant="bodySmall">{interaction.reply.text}</AppText>
+          <View style={{ flexDirection: "row", gap: spacing[2], marginTop: spacing[3] }}>
+            <Button
+              label="Edit reply"
+              variant="secondary"
+              size="sm"
+              fullWidth={false}
+              onPress={() => onReply(interaction)}
+            />
+            <Button
+              label="Remove reply"
+              variant="ghost"
+              size="sm"
+              fullWidth={false}
+              onPress={() => onRemoveReply(interaction)}
+            />
+          </View>
         </View>
       ) : (
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
@@ -361,7 +466,7 @@ function InteractionCard({
             size="sm"
             fullWidth={false}
             onPress={() => onReply(interaction)}
-            leftIcon={<MessageSquare size={16} color={palette.orange} />}
+            leftIcon={<MessageSquare size={16} color={palette.orangeText} />}
           />
         </View>
       )}
@@ -378,20 +483,12 @@ function ReplyComposer({
   onClose: () => void;
   onSent: () => void;
 }) {
-  const { componentRadii, palette, spacing, radii } = useHungryTheme();
-  const [text, setText] = useState("");
+  const { componentRadii, palette, spacing } = useHungryTheme();
+  // Editing starts from the current reply.
+  const [text, setText] = useState(interaction.reply?.text ?? "");
   const [isSending, setIsSending] = useState(false);
-  const [suggestion, setSuggestion] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function loadSuggestion() {
-      try {
-        const res = await getHungryService().merchant.generateAIReply(interaction.id);
-        setSuggestion(res);
-      } catch (e) {}
-    }
-    void loadSuggestion();
-  }, [interaction.id]);
+  // Its own dialog: the composer is a Modal, and a dialog from the screen would sit behind it.
+  const { showAlert, dialog } = useMerchantDialog();
 
   const handleSend = async () => {
     if (!text.trim()) return;
@@ -405,7 +502,7 @@ function ReplyComposer({
       );
       onSent();
     } catch (e) {
-      Alert.alert("Error", "Failed to send reply.");
+      showAlert("Error", e instanceof Error ? e.message : "Failed to send reply.");
     } finally {
       setIsSending(false);
     }
@@ -445,7 +542,7 @@ function ReplyComposer({
             }}
           >
             <AppText variant="h3" style={{ fontWeight: "bold" }}>
-              Reply to {interaction.authorName}
+              {interaction.reply ? "Edit your reply" : `Reply to ${interaction.authorName}`}
             </AppText>
             <IconButton
               accessibilityLabel="Close reply composer"
@@ -454,47 +551,23 @@ function ReplyComposer({
             />
           </View>
 
-          {suggestion && (
-            <Pressable
-              onPress={() => setText(suggestion)}
-              style={[
-                styles.aiChip,
-                {
-                  backgroundColor: palette.orangeLight,
-                  borderColor: palette.orange,
-                  borderRadius: componentRadii.card,
-                  padding: spacing[3],
-                  marginBottom: spacing[4],
-                },
-              ]}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                <Sparkles size={14} color={palette.orange} />
-                <AppText variant="bodySmallBold" style={{ color: palette.orange }}>
-                  Suggested reply
-                </AppText>
-              </View>
-              <AppText variant="bodySmall" numberOfLines={2}>
-                {suggestion}
-              </AppText>
-            </Pressable>
-          )}
-
           <Input
             placeholder="Type your message..."
             multiline
             value={text}
             onChangeText={setText}
+            maxLength={MERCHANT_REPLY_MAX_LENGTH}
             autoFocus
             style={{ minHeight: 120, textAlignVertical: "top" }}
           />
 
           <AppText variant="micro" tone="muted" style={{ marginTop: spacing[2] }}>
-            Your reply is public. Diners see it under this review.
+            Your reply is public. Diners see it under this review. {text.length}/
+            {MERCHANT_REPLY_MAX_LENGTH}
           </AppText>
 
           <Button
-            label={isSending ? "Sending..." : "Send Reply"}
+            label={isSending ? "Sending..." : interaction.reply ? "Save Reply" : "Send Reply"}
             variant="primary"
             fullWidth
             disabled={!text.trim() || isSending}
@@ -504,6 +577,7 @@ function ReplyComposer({
           />
         </View>
       </KeyboardAvoidingView>
+      {dialog}
     </Modal>
   );
 }
@@ -522,8 +596,5 @@ const styles = StyleSheet.create({
   composerBackdrop: {
     flex: 1,
     justifyContent: "flex-end",
-  },
-  aiChip: {
-    borderWidth: 1,
   },
 });

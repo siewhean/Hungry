@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Alert, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
 import {
   Lock,
   MessageCircleMore,
@@ -21,17 +21,19 @@ import {
   Skeleton,
 } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
+import { FollowPillButton } from "@/components/social/FollowPillButton";
 import { listSharedStallPosts, mergeStallPosts } from "@/features/social/sharedStallPosts";
 import { shareProfileLink } from "@/features/share/profileShare";
 import { biteToStallPost } from "@/lib/services/postTransforms";
 import { promptContentSafetyActions } from "@/lib/security/communitySafety";
 import { useProfileStore } from "@/store/useProfileStore";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
-import { followUserAfterSignIn } from "@/features/auth/finishGuestAction";
-import { useRequireAccount } from "@/features/auth/useRequireAccount";
+import { useFollowPress } from "@/features/profile/useFollowPress";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { useSocialStore } from "@/store/useSocialStore";
 import { useHungryTheme } from "@/theme";
 import type { PublicUserProfile, Review, StallPost } from "@/types/domain";
+import { ProfileGridSkeleton, ProfileReviewsSkeleton } from "./ProfileGridSkeleton";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 
 type UserProfileContentProps = {
@@ -43,6 +45,8 @@ type UserProfileContentProps = {
 };
 /** Posts per server page; matches listUserPosts' default page size. */
 const USER_POSTS_PAGE_SIZE = 60;
+/** Reviews per server page. */
+const USER_REVIEWS_PAGE_SIZE = 50;
 
 function haveSamePosts(left: StallPost[], right: StallPost[]) {
   if (left.length !== right.length) return false;
@@ -72,8 +76,7 @@ export function UserProfileContent({
   const repository = getDataRepository();
   const rootNavigation = getRootNavigation(navigation);
   const followedUserIds = useSocialStore((state) => state.followedUserIds);
-  const toggleFollow = useSocialStore((state) => state.toggleFollow);
-  const requireAccount = useRequireAccount();
+  const followPress = useFollowPress();
   const setFollowedUserId = useSocialStore((state) => state.setFollowedUserId);
   const requestedUserIds = useSocialStore((state) => state.requestedUserIds);
   const setFollowRequested = useSocialStore((state) => state.setFollowRequested);
@@ -84,14 +87,23 @@ export function UserProfileContent({
   const [hasMorePosts, setHasMorePosts] = useState(false);
   const [isLoadingMorePosts, setIsLoadingMorePosts] = useState(false);
   const [postsLoadFailed, setPostsLoadFailed] = useState(false);
+  // Empty lists show a skeleton until the first read finishes, so "No posts yet" never flashes.
+  const [postsLoaded, setPostsLoaded] = useState(false);
+  const [postsReloadKey, setPostsReloadKey] = useState(0);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [loadedReviewRows, setLoadedReviewRows] = useState(0);
+  const [hasMoreReviews, setHasMoreReviews] = useState(false);
+  const [isLoadingMoreReviews, setIsLoadingMoreReviews] = useState(false);
   const [reviewsLoadFailed, setReviewsLoadFailed] = useState(false);
-  // Server follow counts plus whether the server already had the viewer following this user,
-  // so a local follow/unfollow afterwards can adjust the follower count without refetching.
+  const [reviewsLoaded, setReviewsLoaded] = useState(false);
+  const [reviewsReloadKey, setReviewsReloadKey] = useState(0);
+  // Server follow counts (null when the server hides them) plus whether the server already had
+  // the viewer following this user, so a local follow/unfollow afterwards can adjust the
+  // follower count without refetching.
   const [serverFollowState, setServerFollowState] = useState<{
     userId: string;
-    followersCount: number;
-    followingCount: number;
+    followersCount: number | null;
+    followingCount: number | null;
     viewerIsFollowing: boolean;
   } | null>(null);
 
@@ -99,26 +111,48 @@ export function UserProfileContent({
   const normalizedAuthorId = authorId?.trim() || undefined;
   // Name, avatar and bio from public_profiles (RLS hides private accounts from non-followers).
   const [publicProfile, setPublicProfile] = useState<PublicUserProfile | null>(null);
+  // "missing": the account does not exist, was deleted, or is hidden from this viewer.
+  const [publicProfileStatus, setPublicProfileStatus] = useState<
+    "loading" | "loaded" | "missing" | "failed"
+  >("loading");
+  const [publicProfileReloadKey, setPublicProfileReloadKey] = useState(0);
   useEffect(() => {
     if (!normalizedAuthorId) return;
     let isMounted = true;
+    setPublicProfileStatus("loading");
     void getHungryService()
       .profile.getPublicProfile(normalizedAuthorId)
       .then((row) => {
-        if (isMounted) setPublicProfile(row ?? null);
+        if (!isMounted) return;
+        setPublicProfile(row ?? null);
+        setPublicProfileStatus(row ? "loaded" : "missing");
       })
-      .catch((error) => console.error("Failed to load public profile:", error));
+      .catch((error) => {
+        console.error("Failed to load public profile:", error);
+        if (isMounted) setPublicProfileStatus("failed");
+      });
     return () => {
       isMounted = false;
     };
-  }, [normalizedAuthorId]);
+  }, [normalizedAuthorId, publicProfileReloadKey]);
   const authorName =
-    authorNameParam.trim() || publicProfile?.displayName?.trim() || "Hungry member";
+    authorNameParam.trim() ||
+    publicProfile?.displayName?.trim() ||
+    (publicProfileStatus === "loading" ? "Profile" : "Hungry member");
   const authorBio = publicProfile?.id === normalizedAuthorId ? publicProfile?.bio : undefined;
   const resolvedAuthorId = normalizedAuthorId;
   const viewerId = useProfileStore((state) => state.profile.id);
   // Your own posts can link here: never offer Follow, Report or Block on yourself.
   const isSelf = Boolean(resolvedAuthorId && resolvedAuthorId === viewerId);
+
+  useEffect(() => {
+    if (!resolvedAuthorId || isSelf) return;
+    trackAnalyticsEvent("profile_viewed", {
+      self: false,
+      target_user_id: resolvedAuthorId,
+      source: "navigation",
+    });
+  }, [isSelf, resolvedAuthorId]);
 
   const openProfileConnections = useCallback(
     (target: "UserFollowers" | "UserFollowing") => {
@@ -161,6 +195,7 @@ export function UserProfileContent({
       const nextPosts = mergeStallPosts(authorPage?.nextPosts ?? [], matchingSharedPosts);
       setPosts((current) => (haveSamePosts(current, nextPosts) ? current : nextPosts));
       setPostsLoadFailed(authorPage === null);
+      setPostsLoaded(true);
       setLoadedPostRows(authorPage?.rowCount ?? 0);
       setHasMorePosts(authorPage?.rowCount === USER_POSTS_PAGE_SIZE);
     })();
@@ -168,7 +203,7 @@ export function UserProfileContent({
     return () => {
       isMounted = false;
     };
-  }, [loadAuthorPosts, normalizedAuthorId, repository]);
+  }, [loadAuthorPosts, normalizedAuthorId, postsReloadKey, repository]);
 
   const loadMorePosts = () => {
     if (isLoadingMorePosts || !hasMorePosts) return;
@@ -185,25 +220,56 @@ export function UserProfileContent({
       .finally(() => setIsLoadingMorePosts(false));
   };
 
-  // The Reviews tab lists this user's own dish reviews from the server.
+  // The Reviews tab lists this user's own dish reviews from the server, a page at a time.
+  const loadAuthorReviews = useCallback(
+    (offset: number) =>
+      getHungryService().reviews.getUserReviews(normalizedAuthorId as string, {
+        limit: USER_REVIEWS_PAGE_SIZE,
+        offset,
+      }),
+    [normalizedAuthorId],
+  );
+
   useEffect(() => {
     if (!normalizedAuthorId) return;
     let isMounted = true;
-    void getHungryService()
-      .reviews.getUserReviews(normalizedAuthorId)
+    setReviewsLoadFailed(false);
+    void loadAuthorReviews(0)
       .then((rows) => {
         if (!isMounted) return;
         setReviews(rows);
-        setReviewsLoadFailed(false);
+        setLoadedReviewRows(rows.length);
+        setHasMoreReviews(rows.length === USER_REVIEWS_PAGE_SIZE);
+        setReviewsLoaded(true);
       })
       .catch((error) => {
         console.error("Failed to load user reviews:", error);
-        if (isMounted) setReviewsLoadFailed(true);
+        if (!isMounted) return;
+        setReviewsLoadFailed(true);
+        setReviewsLoaded(true);
       });
     return () => {
       isMounted = false;
     };
-  }, [normalizedAuthorId]);
+  }, [loadAuthorReviews, normalizedAuthorId, reviewsReloadKey]);
+
+  const loadMoreReviews = () => {
+    if (isLoadingMoreReviews || !hasMoreReviews) return;
+    setIsLoadingMoreReviews(true);
+    void loadAuthorReviews(loadedReviewRows)
+      .then((rows) => {
+        setReviews((current) => {
+          const seen = new Set(current.map((review) => review.id));
+          return [...current, ...rows.filter((review) => !seen.has(review.id))];
+        });
+        setLoadedReviewRows((current) => current + rows.length);
+        setHasMoreReviews(rows.length === USER_REVIEWS_PAGE_SIZE);
+      })
+      .catch((error) => {
+        console.error("Failed to load more reviews:", error);
+      })
+      .finally(() => setIsLoadingMoreReviews(false));
+  };
 
   const resolvedAuthorAvatarUrl = useMemo(() => {
     if (authorAvatarUrl?.trim()) return authorAvatarUrl.trim();
@@ -234,8 +300,8 @@ export function UserProfileContent({
           serverIsFollowing ?? Boolean(useSocialStore.getState().followedUserIds[resolvedAuthorId]);
         setServerFollowState({
           userId: resolvedAuthorId,
-          followersCount: counts?.followersCount ?? 0,
-          followingCount: counts?.followingCount ?? 0,
+          followersCount: counts?.followersCount ?? null,
+          followingCount: counts?.followingCount ?? null,
           viewerIsFollowing,
         });
       })
@@ -244,8 +310,8 @@ export function UserProfileContent({
         if (!isActive) return;
         setServerFollowState({
           userId: resolvedAuthorId,
-          followersCount: 0,
-          followingCount: 0,
+          followersCount: null,
+          followingCount: null,
           viewerIsFollowing: false,
         });
       });
@@ -255,11 +321,19 @@ export function UserProfileContent({
     };
   }, [resolvedAuthorId, setFollowRequested, setFollowedUserId]);
 
-  const reviewCount = reviews.length;
-  const stallsCount = useMemo(
-    () => new Set(posts.map((post) => post.venueId).filter(Boolean)).size,
-    [posts],
-  );
+  // null while loading (shows a skeleton); "12+" when more pages exist.
+  const reviewCount = !reviewsLoaded
+    ? null
+    : hasMoreReviews
+      ? `${reviews.length}+`
+      : reviews.length;
+  // The server counts stalls the same way as your own Stalls stat (tried or reviewed). Without
+  // it (mock data), fall back to the venues of the posts loaded so far.
+  const stallsCount =
+    publicProfile?.stallsVisited ??
+    (postsLoaded && publicProfileStatus !== "loading"
+      ? new Set(posts.map((post) => post.venueId).filter(Boolean)).size
+      : null);
   const isFollowingAuthor = resolvedAuthorId ? Boolean(followedUserIds[resolvedAuthorId]) : false;
   // Pending request to a private account: tapping again cancels it.
   const isFollowRequested = Boolean(
@@ -281,28 +355,7 @@ export function UserProfileContent({
     publicProfile.canViewContent !== true;
   const handleFollowPress = () => {
     if (!resolvedAuthorId) return;
-    if (
-      !requireAccount(
-        `Sign in to follow ${authorName}`,
-        { name: "UserProfile", params: { authorName, authorAvatarUrl, authorId } },
-        () => followUserAfterSignIn(resolvedAuthorId),
-      )
-    ) {
-      return;
-    }
-    if (!isFollowingAuthor) {
-      toggleFollow(resolvedAuthorId);
-      return;
-    }
-    // Unfollowing is easy to mis-tap, so it asks first.
-    Alert.alert(`Unfollow ${authorName}?`, undefined, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Unfollow",
-        style: "destructive",
-        onPress: () => toggleFollow(resolvedAuthorId),
-      },
-    ]);
+    followPress({ userId: resolvedAuthorId, name: authorName, avatarUrl: authorAvatarUrl });
   };
   const openProfileSafetyActions = () => {
     if (!resolvedAuthorId) return;
@@ -321,23 +374,55 @@ export function UserProfileContent({
   const loadedFollowState =
     serverFollowState && serverFollowState.userId === resolvedAuthorId ? serverFollowState : null;
   // No account id (name-only author): there is no server follow data to show.
-  const followersCount = !resolvedAuthorId
+  // "–" when the server hides the counts (blocked, or an older backend); never a made-up 0.
+  const followersCount: number | string | null = !resolvedAuthorId
     ? 0
     : loadedFollowState
-      ? Math.max(
-          0,
-          loadedFollowState.followersCount +
-            (isFollowingAuthor === loadedFollowState.viewerIsFollowing
-              ? 0
-              : isFollowingAuthor
-                ? 1
-                : -1),
-        )
+      ? loadedFollowState.followersCount === null
+        ? "–"
+        : Math.max(
+            0,
+            loadedFollowState.followersCount +
+              (isFollowingAuthor === loadedFollowState.viewerIsFollowing
+                ? 0
+                : isFollowingAuthor
+                  ? 1
+                  : -1),
+          )
       : null;
-  const followingCount = !resolvedAuthorId ? 0 : (loadedFollowState?.followingCount ?? null);
+  const followingCount: number | string | null = !resolvedAuthorId
+    ? 0
+    : loadedFollowState
+      ? (loadedFollowState.followingCount ?? "–")
+      : null;
 
   const activeTitle = activeTab === "posts" ? "Post" : "Review";
   const activeItemsCount = activeTab === "posts" ? posts.length : reviews.length;
+
+  // A wrong or deleted id (or an account hidden from this viewer) is not a profile: no fake
+  // "Hungry member" with a Follow button. A failed read keeps the name from the link, if any.
+  if (
+    resolvedAuthorId &&
+    (publicProfileStatus === "missing" ||
+      (publicProfileStatus === "failed" && !authorNameParam.trim()))
+  ) {
+    const failed = publicProfileStatus === "failed";
+    return (
+      <ProfileScreenShell title="Profile">
+        <EmptyState
+          title={failed ? "Couldn't load this profile" : "Profile not found"}
+          body={
+            failed
+              ? "Check your connection and try again."
+              : "This profile doesn't exist or isn't available."
+          }
+          icon={<MessageCircleMore color={palette.textSecondary} size={36} />}
+          ctaLabel={failed ? "Retry" : undefined}
+          onPress={failed ? () => setPublicProfileReloadKey((key) => key + 1) : undefined}
+        />
+      </ProfileScreenShell>
+    );
+  }
 
   return (
     <ProfileScreenShell
@@ -402,47 +487,28 @@ export function UserProfileContent({
           </View>
 
           <View style={{ flex: 1, gap: spacing[1] }}>
-            <AppText variant="h1">{authorName}</AppText>
+            <AppText variant="h1" numberOfLines={2}>
+              {authorName}
+            </AppText>
             {authorBio ? (
               <AppText variant="bodySmall" tone="secondary">
                 {authorBio}
               </AppText>
             ) : null}
             {canShowFollowButton ? (
-              <Pressable
-                accessibilityRole="button"
+              <FollowPillButton
+                label={followButtonLabel}
                 accessibilityLabel={
                   isFollowRequested
                     ? `Follow request sent to ${authorName}`
                     : `${followButtonLabel} ${authorName}`
                 }
                 accessibilityHint={isFollowRequested ? "Cancels your follow request" : undefined}
-                hitSlop={8}
+                muted={isFollowMuted}
+                minWidth={92}
                 onPress={handleFollowPress}
-                style={{
-                  alignItems: "center",
-                  borderRadius: componentRadii.button,
-                  borderWidth: 1,
-                  justifyContent: "center",
-                  minHeight: 36,
-                  minWidth: 92,
-                  paddingHorizontal: spacing[3],
-                  marginTop: spacing[1],
-                  alignSelf: "flex-start",
-                  backgroundColor: isFollowMuted ? palette.surface : palette.orange,
-                  borderColor: isFollowMuted ? palette.border : palette.orange,
-                }}
-              >
-                <AppText
-                  variant="micro"
-                  style={{
-                    color: isFollowMuted ? palette.text : palette.white,
-                    fontWeight: "800",
-                  }}
-                >
-                  {followButtonLabel}
-                </AppText>
-              </Pressable>
+                style={{ marginTop: spacing[1], alignSelf: "flex-start" }}
+              />
             ) : null}
           </View>
         </View>
@@ -528,7 +594,7 @@ export function UserProfileContent({
                     <AppText
                       style={{
                         fontWeight: activeTab === "posts" ? 700 : 500,
-                        color: activeTab === "posts" ? palette.white : palette.text,
+                        color: activeTab === "posts" ? palette.textOnOrange : palette.text,
                       }}
                     >
                       Posts
@@ -549,7 +615,7 @@ export function UserProfileContent({
                     <AppText
                       style={{
                         fontWeight: activeTab === "reviews" ? 700 : 500,
-                        color: activeTab === "reviews" ? palette.white : palette.text,
+                        color: activeTab === "reviews" ? palette.textOnOrange : palette.text,
                       }}
                     >
                       Reviews
@@ -637,17 +703,31 @@ export function UserProfileContent({
                       })}
                     </View>
                   )
+                ) : activeTab === "posts" && !postsLoaded ? (
+                  <ProfileGridSkeleton />
+                ) : activeTab === "reviews" && !reviewsLoaded ? (
+                  <ProfileReviewsSkeleton />
                 ) : activeTab === "posts" && postsLoadFailed ? (
                   <EmptyState
                     title="Couldn't load posts"
-                    body="Check your connection and open this profile again."
+                    body="Check your connection and try again."
                     icon={<MessageCircleMore color={palette.textSecondary} size={36} />}
+                    ctaLabel="Retry"
+                    onPress={() => {
+                      setPostsLoaded(false);
+                      setPostsReloadKey((key) => key + 1);
+                    }}
                   />
                 ) : activeTab === "reviews" && reviewsLoadFailed ? (
                   <EmptyState
                     title="Couldn't load reviews"
-                    body="Check your connection and open this profile again."
+                    body="Check your connection and try again."
                     icon={<MessageCircleMore color={palette.textSecondary} size={36} />}
+                    ctaLabel="Retry"
+                    onPress={() => {
+                      setReviewsLoaded(false);
+                      setReviewsReloadKey((key) => key + 1);
+                    }}
                   />
                 ) : (
                   <EmptyState
@@ -656,6 +736,15 @@ export function UserProfileContent({
                     icon={<MessageCircleMore color={palette.textSecondary} size={36} />}
                   />
                 )}
+                {activeTab === "reviews" && hasMoreReviews ? (
+                  <Button
+                    label="Load more"
+                    variant="ghost"
+                    size="sm"
+                    loading={isLoadingMoreReviews}
+                    onPress={loadMoreReviews}
+                  />
+                ) : null}
                 {activeTab === "posts" && hasMorePosts ? (
                   <Button
                     label="Load more"
@@ -663,6 +752,15 @@ export function UserProfileContent({
                     size="sm"
                     loading={isLoadingMorePosts}
                     onPress={loadMorePosts}
+                  />
+                ) : null}
+                {activeTab === "reviews" && hasMoreReviews ? (
+                  <Button
+                    label="Load more"
+                    variant="ghost"
+                    size="sm"
+                    loading={isLoadingMoreReviews}
+                    onPress={loadMoreReviews}
                   />
                 ) : null}
               </View>
@@ -684,7 +782,7 @@ function StatBlock({
   icon: ReactNode;
   label: string;
   /** null while loading. */
-  value: number | null;
+  value: number | string | null;
   accessibilityHint?: string;
   onPress?: () => void;
 }) {

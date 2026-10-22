@@ -1,13 +1,7 @@
-import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
-import type { Bite, DataRepository } from "@/lib/services/types";
-import type {
-  DietaryFlag,
-  DishDetail,
-  SearchCategory,
-  StallPost,
-  TasteVector,
-} from "@/types/domain";
+import type { Bite, DataRepository, SearchResult } from "@/lib/services/types";
+import type { DishDetail, StallPost } from "@/types/domain";
+import { runsPastHour } from "@/utils/operatingHours";
 
 export type DiscoverCollection =
   | "quickBites"
@@ -30,21 +24,39 @@ export const DISCOVER_CUISINE_FILTERS = [
   "Dessert",
 ];
 
-const COLLECTION_SEARCH_CATEGORIES: Record<DiscoverCollection, SearchCategory[]> = {
-  quickBites: ["local favourites"],
-  trending: ["local favourites"],
-  editorChoice: ["local favourites"],
-  budget: ["local favourites"],
-  lateNight: ["late night"],
-};
+/** Dishes cost less than this for the Budget rail and its "See all". */
+export const BUDGET_PRICE_CEILING = 8;
+/** "Top rated" needs this rating and at least this many reviews behind it. */
+export const TOP_RATED_MIN_RATING = 4.4;
+export const TOP_RATED_MIN_REVIEWS = 3;
+/** The late-night rail shows from 21:00 to 04:00 Singapore time. */
+export const LATE_NIGHT_START_HOUR = 21;
+export const LATE_NIGHT_END_HOUR = 4;
+/** A stall counts as late-night when its listed hours run past this hour. */
+const LATE_NIGHT_CLOSING_HOUR = 22;
+/** How many stalls the Discover feed (and so every rail and "See all") reads. */
+export const DISCOVER_FEED_LIMIT = 100;
 
-const COLLECTION_SEARCH_QUERY: Record<DiscoverCollection, string> = {
-  quickBites: "",
-  trending: "",
-  editorChoice: "",
-  budget: "",
-  lateNight: "late night",
-};
+/** True from 21:00 to 03:59; pass the Singapore hour, not the device's. */
+export function isLateNightHour(hour: number) {
+  return hour >= LATE_NIGHT_START_HOUR || hour < LATE_NIGHT_END_HOUR;
+}
+
+/** Venue opening hours by venue id, for rails built from a live feed. */
+export type VenueHoursLookup = (venueId: string) => string | undefined;
+
+/**
+ * Late night = the stall's listed hours run past 22:00. When the hours cannot be
+ * read, a dinner flag on the dish is the only signal left.
+ */
+export function isLateNightDish(
+  dish: Pick<DishDetail, "availabilityFlags"> | undefined,
+  operatingHours: string | undefined,
+) {
+  const byHours = runsPastHour(operatingHours, LATE_NIGHT_CLOSING_HOUR);
+  if (byHours !== undefined) return byHours;
+  return Boolean(dish?.availabilityFlags?.some((flag) => flag.toLowerCase().includes("dinner")));
+}
 
 const HUNGRY_LOGO_IMAGE_URL =
   "https://raw.githubusercontent.com/siewhean/Hungry/main/assets/images/Logo/hungry_logo_icon_transparent.png";
@@ -232,40 +244,68 @@ export function getDiscoverBites(repository: DataRepository = getDataRepository(
   );
 }
 
-export async function getDiscoverBitesFromSearch(
-  collection: DiscoverCollection,
-  options: {
-    latitude?: number;
-    longitude?: number;
-    radiusMeters?: number;
-    tasteVector?: TasteVector;
-    dietaryFlags?: DietaryFlag[];
-  } = {},
-): Promise<Bite[]> {
-  const tasteVector = options.tasteVector ?? NEUTRAL_TASTE_VECTOR;
-  const maxPrice = collection === "budget" ? 8 : undefined;
-  const results = await getHungryService().discovery.searchDishes(
-    {
-      query: COLLECTION_SEARCH_QUERY[collection],
-      categories: COLLECTION_SEARCH_CATEGORIES[collection],
-      dietaryFlags: options.dietaryFlags ?? [],
-      tasteValues: tasteVector,
-      radius: options.radiusMeters ?? 3000,
-      latitude: options.latitude,
-      longitude: options.longitude,
-      maxPrice,
-      openOnly: collection === "lateNight" ? false : undefined,
-    },
-    tasteVector,
-  );
+/** One card per stall: the Discover feed gives each stall's top dish. */
+export function searchResultToDiscoverBite(result: SearchResult, index: number): Bite {
+  const { dish } = result;
+  const createdAt = new Date(Date.now() - (index + 1) * 15 * 60_000).toISOString();
+  const normalizedRating = Number.isFinite(dish.rating) ? dish.rating : 0;
+  const reviewCount = Number.isFinite(dish.reviewCount) ? dish.reviewCount : 0;
+  const image = getDiscoverCardImage(getDishImageCandidates(dish));
 
-  return results
-    .map((result) => result.dish)
-    .filter((dish) => (maxPrice ? dish.price <= maxPrice : true))
-    .map((dish, index) => ({
-      ...dishToBite(dish, undefined, index),
-      distanceMeters: dish.distanceMeters,
-    }));
+  return {
+    id: `discover-${dish.id}`,
+    authorId: `venue-${dish.venueId}`,
+    authorName: dish.venueName,
+    authorAvatar: image.imageUrl,
+    dishId: dish.id,
+    dishName: dish.name,
+    venueId: dish.venueId,
+    venueName: dish.venueName,
+    unitNumber: dish.unitNumber,
+    buildingId: dish.buildingId,
+    buildingName: dish.venueName,
+    photoUrl: image.imageUrl,
+    mediaUrls: image.candidateUrls,
+    imageSourceType: image.imageSourceType,
+    caption: dish.description ?? dish.name,
+    tasteStamp: dish.tasteVector,
+    // Reviews only: "Most reviewed" must not rank on a ranking score.
+    cravingCount: reviewCount,
+    savedCount: Math.max(0, Math.floor(reviewCount / 4)),
+    rating: normalizedRating,
+    price: dish.price,
+    expiresAt: new Date(new Date(createdAt).getTime() + 24 * 60 * 60 * 1000).toISOString(),
+    createdAt,
+    distanceMeters: dish.distanceMeters,
+  };
+}
+
+/**
+ * The bites behind a rail's "See all": the same feed read the Discover rails use,
+ * so the list holds the same stalls in the same order. `isFallback` is true when
+ * the live read failed and the saved cache answered.
+ */
+export async function getDiscoverFeedBites(options: {
+  areaName?: string;
+  latitude?: number;
+  longitude?: number;
+  radiusMeters: number;
+}): Promise<{ bites: Bite[]; venueHours: VenueHoursLookup; isFallback: boolean }> {
+  const feed = await getHungryService().discovery.listDiscoveryFeedByLocation({
+    areaName: options.areaName,
+    lat: options.latitude,
+    lng: options.longitude,
+    radiusMeters: options.radiusMeters,
+    limit: DISCOVER_FEED_LIMIT,
+  });
+  const hoursByVenueId = new Map(
+    (feed?.venues ?? []).map((venue) => [venue.id, venue.operatingHours] as const),
+  );
+  return {
+    bites: (feed?.results ?? []).map(searchResultToDiscoverBite),
+    venueHours: (venueId) => hoursByVenueId.get(venueId) || undefined,
+    isFallback: Boolean(feed?.isFallback),
+  };
 }
 
 export function syncBiteWithDish(
@@ -305,8 +345,9 @@ export function getDiscoverBiteCollection(
   collection: DiscoverCollection,
   bites: Bite[] = getDiscoverBites(),
   repository: DataRepository = getDataRepository(),
+  venueHours?: VenueHoursLookup,
 ) {
-  return getDiscoverBiteCollections(bites, repository)[collection];
+  return getDiscoverBiteCollections(bites, repository, venueHours)[collection];
 }
 
 /** Bites from this building first; both groups keep their order. */
@@ -321,9 +362,10 @@ export function preferBuildingBites(bites: Bite[], buildingId?: string): Bite[] 
 export function getDiscoverBiteCollections(
   bites: Bite[] = getDiscoverBites(),
   repository: DataRepository = getDataRepository(),
+  venueHours: VenueHoursLookup = (venueId) => repository.getVenueById?.(venueId)?.operatingHours,
   options: { preferBuildingId?: string } = {},
 ): DiscoverBiteCollections {
-  const collections = buildDiscoverBiteCollections(bites, repository);
+  const collections = buildDiscoverBiteCollections(bites, repository, venueHours);
   const { preferBuildingId } = options;
   if (!preferBuildingId) return collections;
   return {
@@ -338,6 +380,7 @@ export function getDiscoverBiteCollections(
 function buildDiscoverBiteCollections(
   bites: Bite[],
   repository: DataRepository,
+  venueHours: VenueHoursLookup,
 ): DiscoverBiteCollections {
   const syncedBites = bites.map((bite) => {
     const dish = repository.getDishById(bite.dishId);
@@ -372,6 +415,7 @@ function buildDiscoverBiteCollections(
         imageSourceType: image.imageSourceType,
         price: dish.price,
         rating: dish.rating,
+        cravingCount: dish.reviewCount,
         unitNumber: dish.unitNumber,
         venueId: dish.venueId,
         venueName: dish.venueName,
@@ -383,26 +427,25 @@ function buildDiscoverBiteCollections(
   const imagePriorityBites = sortBitesByImagePriority(bitesWithImages);
 
   const lateNight = syncedBites
-    .filter(({ bite, dish }) => {
-      return (
-        dish?.availabilityFlags.some((flag) => flag.toLowerCase().includes("dinner")) ||
-        bite.dishName.toLowerCase().includes("satay") ||
-        bite.dishName.toLowerCase().includes("laksa") ||
-        bite.dishName.toLowerCase().includes("mala")
-      );
-    })
+    .filter(({ bite, dish }) => isLateNightDish(dish, venueHours(bite.venueId)))
     .map(({ bite }) => bite);
 
   return {
+    // Every dish near the diner, photos first. The rail is called "Near you".
     quickBites: imagePriorityBites,
-    budget: sortBitesByImagePriority(bitesWithImages.filter((bite) => bite.price < 8)),
-    editorChoice: sortBitesByImagePriority(bitesWithImages.filter((bite) => bite.rating >= 4.4)),
-    trending: [...bitesWithImages].sort((a, b) => {
-      const imagePriority =
-        Number(hasRealDiscoverBiteImage(b)) - Number(hasRealDiscoverBiteImage(a));
-      if (imagePriority !== 0) return imagePriority;
-      return b.cravingCount - a.cravingCount;
-    }),
+    budget: sortBitesByImagePriority(
+      bitesWithImages.filter((bite) => bite.price < BUDGET_PRICE_CEILING),
+    ),
+    // A rating only counts with some reviews behind it: one 5-star review is not "top rated".
+    editorChoice: sortBitesByImagePriority(
+      bitesWithImages.filter(
+        (bite) => bite.rating >= TOP_RATED_MIN_RATING && bite.cravingCount >= TOP_RATED_MIN_REVIEWS,
+      ),
+    ),
+    // Review count only; a dish with no reviews is not "most reviewed".
+    trending: bitesWithImages
+      .filter((bite) => bite.cravingCount > 0)
+      .sort((a, b) => b.cravingCount - a.cravingCount || b.rating - a.rating),
     lateNight: sortBitesByImagePriority(lateNight),
   };
 }

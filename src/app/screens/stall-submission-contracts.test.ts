@@ -17,19 +17,23 @@ test("Profile exposes the add-stall contribution section and route", () => {
   assert.match(profileStack, /<Stack\.Screen name="AddStall" component=\{AddStallScreen\}/);
   assert.match(profileHome, /function StallContributionCard/);
   assert.match(profileHome, /loadStallSubmissions/);
-  assert.match(profileHome, /label="Add Discovered Stall"/);
+  // One name everywhere: "Add a stall" (menu, card and screen).
+  assert.match(profileHome, /label="Add a stall"/);
+  assert.doesNotMatch(profileHome, /Add Discovered Stall|Add stalls from online finds/);
   assert.match(profileHome, /navigation\.navigate\("AddStall"\)/);
-  assert.match(profileHome, /Add stalls from online finds/);
+  assert.match(profileHome, /navigation\.navigate\("StallSubmissions"\)/);
   assert.match(profileHome, /Submitted/);
   assert.match(profileHome, /With menu/);
-  assert.match(profileHome, /Scout/);
+  // The Scout level tile is a gamification surface and stays behind its flag.
+  assert.match(profileHome, /FEATURE_FLAGS\.gamificationEnabled/);
 });
 
 test("AddStall form requires stall name and image while preserving optional detail fields", () => {
   const screen = read("src/app/screens/profile/AddStallScreen.tsx");
 
   assert.match(screen, /import \* as ImagePicker from "expo-image-picker"/);
-  assert.match(screen, /requestMediaLibraryPermissionsAsync/);
+  // The system photo picker needs no library permission, so there is no pre-prompt.
+  assert.doesNotMatch(screen, /requestMediaLibraryPermissionsAsync|confirmGalleryAccess/);
   assert.match(screen, /launchImageLibraryAsync/);
   assert.match(screen, /mediaTypes: \["images"\]/);
   assert.match(screen, /allowsMultipleSelection: true/);

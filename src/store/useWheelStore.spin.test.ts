@@ -88,5 +88,5 @@ test("spin screen resolves via completeSpin and offers a close control", () => {
   assert.match(spinScreen, /getSpinWinnerIndex\(seed, activeEntries\.length\)/);
   assert.match(spinScreen, /completeSpin\(winnerEntry\.id\)/);
   assert.match(spinScreen, /accessibilityLabel="Close wheel"/);
-  assert.match(resultModal, /resetSpin\(\);\s*navigation\.replace\("WheelSpin"/);
+  assert.match(resultModal, /resetSpin\(\);\s*triggerSpin\(\);\s*navigation\.replace\("WheelSpin"/);
 });

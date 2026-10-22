@@ -156,7 +156,7 @@ test("follow button shows Requested and tapping it cancels the request", () => {
   const store = read("src/store/useSocialStore.ts");
   const profile = read("src/app/screens/profile/UserProfileContent.tsx");
   const connections = read("src/app/screens/profile/ProfileConnectionsScreen.tsx");
-  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
+  const home = read("src/components/social/FeedPostCard.tsx");
 
   assert.match(store, /requestedUserIds: Record<string, boolean>/);
   assert.match(

@@ -3,6 +3,7 @@ import { Heart } from "lucide-react-native";
 
 import type { DishDetail } from "@/types/domain";
 import { formatDishUpdated } from "@/features/detail/dishFreshness";
+import { formatDishPrice } from "@/features/detail/dishPrice";
 import { useHungryTheme, type HungryTheme } from "@/theme";
 import { AccessibleImage, AppText, Badge, Card } from "../ui";
 import { NoDishPhoto } from "./NoDishPhoto";
@@ -23,6 +24,11 @@ interface DishCardProps {
   favourited?: boolean;
   onPress?: () => void;
   onFavouritePress?: () => void;
+  /**
+   * "450m away" from the viewer (see formatDistanceFromUser). dishes.distance_meters is a
+   * stored column, not the distance from the viewer, so without a label no distance shows.
+   */
+  distanceLabel?: string;
 }
 
 export function DishCard({
@@ -31,12 +37,15 @@ export function DishCard({
   favourited = false,
   onPress,
   onFavouritePress,
+  distanceLabel,
 }: DishCardProps) {
   const { palette, radii, spacing } = useHungryTheme();
   const styles = createStyles(spacing);
 
   const isHorizontal = variant === "horizontal";
   const updatedLabel = formatDishUpdated(dish.updatedAt);
+  const hasRating = dish.reviewCount > 0 && dish.rating > 0;
+  const priceLabel = formatDishPrice(dish);
   const imageStyle = [
     styles.image,
     {
@@ -58,7 +67,11 @@ export function DishCard({
     >
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`${dish.name}, ${dish.priceRange}, ${dish.rating.toFixed(1)} stars`}
+        accessibilityLabel={[
+          dish.name,
+          priceLabel,
+          hasRating ? `${dish.rating.toFixed(1)} stars` : "No ratings yet",
+        ].join(", ")}
         onPress={onPress}
         style={({ pressed }) => [
           styles.content,
@@ -108,11 +121,13 @@ export function DishCard({
             ) : null}
           </View>
           <View style={styles.rowWrap}>
-            <AppText variant="price">S${dish.price.toFixed(2)}</AppText>
-            <Badge label={`${dish.rating.toFixed(1)} ★`} tone="amber" />
-            <AppText variant="bodySmall" tone="secondary">
-              {Math.round(dish.distanceMeters)} m away
-            </AppText>
+            <AppText variant="price">{priceLabel}</AppText>
+            {hasRating ? <Badge label={`${dish.rating.toFixed(1)} ★`} tone="amber" /> : null}
+            {distanceLabel ? (
+              <AppText variant="bodySmall" tone="secondary">
+                {distanceLabel}
+              </AppText>
+            ) : null}
             {updatedLabel ? (
               <AppText variant="bodySmall" tone="muted">
                 {updatedLabel}

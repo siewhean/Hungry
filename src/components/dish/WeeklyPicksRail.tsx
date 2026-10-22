@@ -3,13 +3,16 @@ import { Pressable, ScrollView, View } from "react-native";
 
 import {
   buildWeeklyPicks,
+  getWeeklyPicksCacheKey,
   getWeeklyPicksKey,
   isWeeklyPicksPersonalised,
+  resolveStoredWeeklyPicks,
 } from "@/features/home/weeklyPicks";
 import { useFoodHistory } from "@/hooks/useFoodHistory";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useWeeklyPicksStore } from "@/store/useWeeklyPicksStore";
 import { useHungryTheme } from "@/theme";
 import { AccessibleImage, AppText, Button } from "../ui";
 import { NoDishPhoto } from "./NoDishPhoto";
@@ -33,23 +36,54 @@ export function WeeklyPicksRail({
   const weekKey = getWeeklyPicksKey();
   const lastTrackedWeek = useRef<string | null>(null);
   const personalisation = useFoodHistory();
+  const stored = useWeeklyPicksStore((state) => state.stored);
+  const savePicks = useWeeklyPicksStore((state) => state.save);
+  // Taste changes on every like or save; the picks are read from here at compute time only.
+  const inputsRef = useRef({ profile, personalisation });
+  useEffect(() => {
+    inputsRef.current = { profile, personalisation };
+  }, [profile, personalisation]);
+  const cacheKey = getWeeklyPicksCacheKey(profile.id, weekKey, profile.dietaryPreferences);
 
-  const { picks, personalised } = useMemo(() => {
-    const candidates = getDataRepository().searchDishes(
+  // Picks are computed once per account, week and dietary filter, then reused all week.
+  const { picks, personalised, isFresh } = useMemo(() => {
+    const repository = getDataRepository();
+    if (stored?.key === cacheKey) {
+      const resolved = resolveStoredWeeklyPicks(stored, (dishId) => repository.getDishById(dishId));
+      if (resolved) return { picks: resolved, personalised: stored.personalised, isFresh: false };
+    }
+    const current = inputsRef.current;
+    const candidates = repository.searchDishes(
       {
         query: "",
         categories: [],
-        dietaryFlags: profile.dietaryPreferences,
-        tasteValues: profile.tasteVector,
+        dietaryFlags: current.profile.dietaryPreferences,
+        tasteValues: current.profile.tasteVector,
         radius: Number.MAX_SAFE_INTEGER,
       },
-      profile.tasteVector,
+      current.profile.tasteVector,
     );
     return {
-      picks: buildWeeklyPicks(candidates, profile, weekKey, undefined, personalisation),
-      personalised: isWeeklyPicksPersonalised(profile.tasteVector, candidates),
+      picks: buildWeeklyPicks(
+        candidates,
+        current.profile,
+        weekKey,
+        undefined,
+        current.personalisation,
+      ),
+      personalised: isWeeklyPicksPersonalised(current.profile.tasteVector, candidates),
+      isFresh: true,
     };
-  }, [personalisation, profile, weekKey]);
+  }, [cacheKey, stored, weekKey]);
+
+  useEffect(() => {
+    if (!isFresh || !picks.length) return;
+    savePicks({
+      key: cacheKey,
+      personalised,
+      picks: picks.map(({ dish, explanation }) => ({ dishId: dish.id, explanation })),
+    });
+  }, [cacheKey, isFresh, personalised, picks, savePicks]);
 
   useEffect(() => {
     if (!picks.length || lastTrackedWeek.current === weekKey) return;
@@ -59,18 +93,30 @@ export function WeeklyPicksRail({
 
   return (
     <View style={{ gap: spacing[3], paddingBottom: spacing[4], paddingTop: spacing[2] }}>
-      <View style={{ paddingHorizontal: horizontalPadding }}>
-        <Button label="Decide for me" onPress={onDecideForMe} />
-      </View>
-      {picks.length ? (
-        <>
-          <View style={{ gap: spacing[1], paddingHorizontal: horizontalPadding }}>
+      <View
+        style={{
+          alignItems: "center",
+          flexDirection: "row",
+          gap: spacing[3],
+          justifyContent: "space-between",
+          paddingHorizontal: horizontalPadding,
+        }}
+      >
+        {picks.length ? (
+          <View style={{ flex: 1, gap: spacing[1] }}>
             <AppText variant="h3">Your {picks.length} dishes to try this week</AppText>
             <AppText variant="bodySmall" tone="muted">
-              {personalised ? "Picked for your taste." : "Popular near you."} New picks every
+              {personalised ? "Picked for your taste." : "Popular on Hungry."} New picks every
               Monday.
             </AppText>
           </View>
+        ) : (
+          <View style={{ flex: 1 }} />
+        )}
+        <Button label="Decide for me" size="sm" onPress={onDecideForMe} />
+      </View>
+      {picks.length ? (
+        <>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -101,12 +147,12 @@ export function WeeklyPicksRail({
                 {dish.imageUrl ? (
                   <AccessibleImage
                     source={{ uri: dish.imageUrl }}
-                    style={{ height: 100, width: "100%" }}
+                    style={{ height: 84, width: "100%" }}
                     contentFit="cover"
                     decorative
                   />
                 ) : (
-                  <NoDishPhoto dishName={dish.name} style={{ height: 100, width: "100%" }} />
+                  <NoDishPhoto dishName={dish.name} style={{ height: 84, width: "100%" }} />
                 )}
                 <View style={{ gap: spacing[1], padding: spacing[2] }}>
                   <AppText variant="bodyBold" numberOfLines={1}>

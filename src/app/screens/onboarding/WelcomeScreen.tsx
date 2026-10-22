@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { View, Animated, Pressable, useWindowDimensions } from "react-native";
+import { View, Animated, Pressable, ScrollView, useWindowDimensions } from "react-native";
 import type { NavigationProp } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -11,13 +11,13 @@ import { useReduceMotion } from "@/hooks/useReduceMotion";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
-import { OnboardingProgress, trackOnboardingStepViewed } from "./OnboardingProgress";
+import { trackOnboardingStepViewed } from "./OnboardingProgress";
 import type { OnboardingStackParamList } from "./OnboardingStack";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "OnboardingWelcome">;
 
 const VALUE_PROPS = [
-  { emoji: "🍜", text: "Discover dishes, not just restaurants" },
+  { emoji: "🍜", text: "Ranked by people who ate it" },
   { emoji: "📍", text: "Find the best hawker stalls near you" },
   { emoji: "🎯", text: "Personalised to your taste" },
 ];
@@ -70,117 +70,119 @@ export function WelcomeScreen({ navigation }: Props) {
   };
 
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: palette.bg,
-        paddingTop: insets.top + 24,
-        paddingBottom: insets.bottom + 24,
-        paddingHorizontal: 28,
-      }}
-    >
-      <OnboardingProgress step="welcome" />
-
-      {/* Logo + wordmark */}
-      <Animated.View
-        style={{
-          alignItems: "center",
-          marginTop: SCREEN_H * 0.06,
-          opacity: logoAnim,
-          transform: [
-            {
-              translateY: logoAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [16, 0],
-              }),
-            },
-          ],
+    <View style={{ flex: 1, backgroundColor: palette.bg }}>
+      {/* The content scrolls (large text sizes); the Get started button stays pinned below it. */}
+      <ScrollView
+        style={{ flex: 1 }}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingTop: insets.top + 24,
+          paddingBottom: 16,
+          paddingHorizontal: 28,
         }}
       >
-        <Animated.Image
-          source={HUNGRY_LOGO_ICON}
-          resizeMode="contain"
-          accessible
-          accessibilityLabel="Hungry logo"
-          accessibilityRole="image"
+        {/* Logo + wordmark */}
+        <Animated.View
           style={{
-            width: HUNGRY_LOGO_STANDARD_SIZE,
-            height: HUNGRY_LOGO_STANDARD_SIZE,
-            marginBottom: 12,
+            alignItems: "center",
+            marginTop: SCREEN_H * 0.06,
+            opacity: logoAnim,
+            transform: [
+              {
+                translateY: logoAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [16, 0],
+                }),
+              },
+            ],
           }}
-        />
-        <AppText variant="displaySm" style={{ letterSpacing: -0.5 }}>
-          Hungry
-        </AppText>
-        <AppText variant="bodySmall" tone="secondary" style={{ marginTop: 4 }}>
-          {"Singapore's dish-first food app"}
-        </AppText>
-      </Animated.View>
-
-      {/* Headline */}
-      <Animated.View
-        style={{
-          marginTop: SCREEN_H * 0.07,
-          opacity: headlineAnim,
-          transform: [
-            {
-              translateY: headlineAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [12, 0],
-              }),
-            },
-          ],
-        }}
-      >
-        <AppText variant="display" accessibilityRole="header" style={{ marginBottom: 10 }}>
-          {"Find the dish.\nNot just the\nrestaurant."}
-        </AppText>
-      </Animated.View>
-
-      {/* Value props */}
-      <View style={{ marginTop: 28, gap: 14 }}>
-        {VALUE_PROPS.map((item, i) => (
-          <Animated.View
-            key={item.text}
+        >
+          <Animated.Image
+            source={HUNGRY_LOGO_ICON}
+            resizeMode="contain"
+            accessible
+            accessibilityLabel="Hungry logo"
+            accessibilityRole="image"
             style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 14,
-              opacity: pillsAnim[i],
-              transform: [
-                {
-                  translateX: pillsAnim[i]!.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [-12, 0],
-                  }),
-                },
-              ],
+              width: HUNGRY_LOGO_STANDARD_SIZE,
+              height: HUNGRY_LOGO_STANDARD_SIZE,
+              marginBottom: 12,
             }}
-          >
-            {/* Decorative emoji: screen readers read the text beside it only. */}
-            <View
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
+          />
+          <AppText variant="displaySm" style={{ letterSpacing: -0.5 }}>
+            Hungry
+          </AppText>
+          <AppText variant="bodySmall" tone="secondary" style={{ marginTop: 4 }}>
+            {"Singapore's dish-first food app"}
+          </AppText>
+        </Animated.View>
+
+        {/* Headline */}
+        <Animated.View
+          style={{
+            marginTop: SCREEN_H * 0.07,
+            opacity: headlineAnim,
+            transform: [
+              {
+                translateY: headlineAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [12, 0],
+                }),
+              },
+            ],
+          }}
+        >
+          <AppText variant="display" accessibilityRole="header" style={{ marginBottom: 10 }}>
+            {"Find the dish.\nNot just the\nrestaurant."}
+          </AppText>
+        </Animated.View>
+
+        {/* Value props */}
+        <View style={{ marginTop: 28, gap: 14 }}>
+          {VALUE_PROPS.map((item, i) => (
+            <Animated.View
+              key={item.text}
               style={{
-                width: 40,
-                height: 40,
-                borderRadius: 12,
-                backgroundColor: `${palette.orange}18`,
+                flexDirection: "row",
                 alignItems: "center",
-                justifyContent: "center",
+                gap: 14,
+                opacity: pillsAnim[i],
+                transform: [
+                  {
+                    translateX: pillsAnim[i]!.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-12, 0],
+                    }),
+                  },
+                ],
               }}
             >
-              <AppText style={{ fontSize: 20 }}>{item.emoji}</AppText>
-            </View>
-            <AppText variant="bodyBold" style={{ flex: 1 }}>
-              {item.text}
-            </AppText>
-          </Animated.View>
-        ))}
-      </View>
+              {/* Decorative emoji: screen readers read the text beside it only. */}
+              <View
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 12,
+                  backgroundColor: `${palette.orange}18`,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <AppText style={{ fontSize: 20 }}>{item.emoji}</AppText>
+              </View>
+              <AppText variant="bodyBold" style={{ flex: 1 }}>
+                {item.text}
+              </AppText>
+            </Animated.View>
+          ))}
+        </View>
+      </ScrollView>
 
       {/* CTA: visible and tappable immediately. */}
-      <View style={{ marginTop: "auto", paddingTop: 32 }}>
+      <View style={{ paddingBottom: insets.bottom + 24, paddingHorizontal: 28, paddingTop: 16 }}>
         <Button label="Get started" onPress={handleStart} variant="primary" />
         {isAuthenticated ? null : (
           <Pressable
