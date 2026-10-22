@@ -2,9 +2,13 @@
 --   20261022020100_search_dishes_all_dietary_flags.sql (onboarding-M5 server part)
 --   20261022020200_catalog_search_quality_hardening.sql (search-M1, M3, M4, M11, L2)
 --   20261022020300_catalog_suggest_fuzzy_food_types.sql (search-M10)
+--   20261022110000_catalog_relevance_cursor_rounding.sql (cursor survives extra_float_digits = 0)
 -- Runs in a transaction and rolls back; nothing it inserts survives.
 
 begin;
+
+-- Some clients and poolers run with extra_float_digits = 0; paging must still work.
+set local extra_float_digits = 0;
 
 -- search_dishes: every requested dietary flag must hold (no "any one flag" overlap).
 do $$
