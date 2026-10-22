@@ -88,17 +88,19 @@ apply_guarded() {
   driver="$(mktemp)"
   {
     echo '\set ON_ERROR_STOP on'
-    echo "\\i $DB_DIR/sql/rowstats.sql"
     echo 'begin;'
     echo 'set local statement_timeout = 0;'
-    echo 'create temp table _before as select * from pg_temp.hungry_rowstats(false);'
+    # Everything session-local is created inside the transaction and dropped at its end: behind a
+    # transaction pooler (Supabase port 6543) a later psql call can reuse this backend connection.
+    echo "\\i $DB_DIR/sql/rowstats.sql"
+    echo 'create temp table _before on commit drop as select * from pg_temp.hungry_rowstats(false);'
     echo "\\i $file"
     if [ "$ledger" = insert ]; then
       echo "insert into supabase_migrations.schema_migrations(version, name) values ('$VERSION', '${MIG_NAME#*_}') on conflict do nothing;"
     else
       echo "delete from supabase_migrations.schema_migrations where version = '$VERSION';"
     fi
-    echo 'create temp table _after as select * from pg_temp.hungry_rowstats(false);'
+    echo 'create temp table _after on commit drop as select * from pg_temp.hungry_rowstats(false);'
     echo "select count(*) > 0 as rows_lost from _before b left join _after a using (tbl) where b.n >= 0 and coalesce(a.n, 0) < b.n and b.tbl <> all (string_to_array('$allowed', ',')) \\gset"
     echo '\if :rows_lost'
     echo "select b.tbl, b.n as rows_before, coalesce(a.n, 0) as rows_after from _before b left join _after a using (tbl) where b.n >= 0 and coalesce(a.n, 0) < b.n and b.tbl <> all (string_to_array('$allowed', ','));"

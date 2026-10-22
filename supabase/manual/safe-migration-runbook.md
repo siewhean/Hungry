@@ -47,7 +47,9 @@ The free Supabase plan has **no managed backups or point-in-time restore**, so t
      `rollback_archive` schema, or say `-- down-loses-data: <reason>`.
    - If the up legitimately removes rows (a cleanup), declare the tables:
      `-- expect-row-loss: public.table_a, public.table_b` at the top of that file. Without it, any
-     table that ends with fewer rows rolls the whole migration back.
+     table that ends with fewer rows rolls the whole migration back. The same applies to a down file
+     that deletes rows the up inserted (for example rate-limit rule rows): declare that table in the
+     down file's own `-- expect-row-loss:` header.
 3. Header `-- smoke: supabase/smoke/<file>.sql` (repeatable) naming the smoke(s) that prove the new behaviour,
    or `-- smoke: none <reason>`.
 4. Waivers, `-- no-down: <reason>` and `-- no-rehearsal: <reason>` (10+ characters), exist for emergencies.

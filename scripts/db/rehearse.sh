@@ -30,7 +30,7 @@ sort_acl_runs() {
 dump_schema() { # dump_schema <url> <password> <out>
   PGPASSWORD="$2" pg_dump "$1" --schema-only --no-owner -n public $(PGPASSWORD="$2" psql "$1" -X -At -c "select '-n app_private' where exists (select 1 from pg_namespace where nspname = 'app_private')") | grep -Ev '^\\(un)?restrict ' | sort_acl_runs >"$3"
 }
-stats() { psql_db -X -At -F $'\t' -f "$DB_DIR/sql/rowstats.sql" -c "select tbl, n, h from pg_temp.hungry_rowstats(true) order by 1" >"$1"; }
+stats() { psql_db -1 -X -At -F $'\t' -f "$DB_DIR/sql/rowstats.sql" -c "select tbl, n, h from pg_temp.hungry_rowstats(true) order by 1" >"$1"; }
 
 # Staging must look exactly like production before the migration, or the rehearsal proves nothing.
 # Production is the reference: migrations shipped to prod since the last rehearsal are applied to
@@ -40,7 +40,8 @@ if [ -n "${PROD_DB_URL:-}" ]; then
   say "0/6 catching staging up with production's migration ledger (read-only on prod)"
   PROD_VERSIONS="$(PGPASSWORD="${PROD_PGPASSWORD:-}" psql "$PROD_DB_URL" -X -At -c "select version from supabase_migrations.schema_migrations order by version")"
   STAGING_VERSIONS="$(psql_db -At -c "select version from supabase_migrations.schema_migrations order by version")"
-  AHEAD="$(comm -13 <(echo "$PROD_VERSIONS") <(echo "$STAGING_VERSIONS") | tr '\n' ' ')"
+  # A leftover of this very migration (an interrupted rehearsal) is undone below; anything else ahead of prod is an error.
+  AHEAD="$(comm -13 <(echo "$PROD_VERSIONS") <(echo "$STAGING_VERSIONS") | grep -vx "$VERSION" | tr '\n' ' ' || true)"
   [ -z "${AHEAD// /}" ] || die "staging has migrations production lacks: $AHEAD. Undo them with scripts/db/rollback.sh staging <version> (newest first), or recreate staging."
   SAVE_VERSION="$VERSION"; SAVE_NAME="$MIG_NAME"
   for v in $(comm -23 <(echo "$PROD_VERSIONS") <(echo "$STAGING_VERSIONS")); do
@@ -52,6 +53,11 @@ if [ -n "${PROD_DB_URL:-}" ]; then
     apply_guarded "$f" insert || die "could not bring staging up to production: $MIG_NAME failed"
   done
   VERSION="$SAVE_VERSION"; MIG_NAME="$SAVE_NAME"
+  if ledger_has "$VERSION" && ! grep -qx "$VERSION" <<<"$PROD_VERSIONS"; then
+    [ -n "$DOWN" ] || die "$VERSION is applied on staging (interrupted rehearsal) but has no down file to undo it. Recreate staging."
+    say "   $VERSION is left over on staging from an interrupted rehearsal: undoing it with its down file"
+    apply_guarded "$DOWN" delete || die "could not undo the leftover $VERSION on staging. Recreate staging."
+  fi
 fi
 
 MISSING="$(missing_older_migrations "$VERSION")"
