@@ -57,7 +57,33 @@ def copy_one(obj):
     return f"{bucket}/{name}: {last}"
 
 
+def ensure_buckets():
+    """Create buckets the migrations do not (brand-logos was made by hand), copying their settings."""
+    def api(base, key, method="GET", body=None):
+        req = urllib.request.Request(
+            f"{base}/storage/v1/bucket",
+            data=json.dumps(body).encode() if body else None,
+            method=method,
+            headers={"Authorization": f"Bearer {key}", "apikey": key, "Content-Type": "application/json"},
+        )
+        return json.loads(request(req) or b"null")
+
+    have = {b["id"] for b in api(DST, DST_KEY)}
+    for bucket in api(SRC, SRC_KEY):
+        if bucket["id"] in have:
+            continue
+        api(DST, DST_KEY, "POST", {
+            "id": bucket["id"],
+            "name": bucket["name"],
+            "public": bucket["public"],
+            "file_size_limit": bucket.get("file_size_limit"),
+            "allowed_mime_types": bucket.get("allowed_mime_types"),
+        })
+        print(f"==> created bucket {bucket['id']}", flush=True)
+
+
 def main():
+    ensure_buckets()
     with open(sys.argv[1], encoding="utf-8") as f:
         objects = json.load(f)
     print(f"==> copying {len(objects)} storage objects", flush=True)
