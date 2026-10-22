@@ -112,6 +112,15 @@ export class FakeSupabase {
   }
 }
 
+export interface SentryEvent {
+  kind: "init" | "exception" | "message";
+  error?: unknown;
+  message?: string;
+  level?: string;
+  tags: Record<string, unknown>;
+  extras: Record<string, unknown>;
+}
+
 export interface FakeAnthropic {
   messages: { create: (params: unknown) => Promise<unknown> };
 }
@@ -123,6 +132,8 @@ export interface LoadOptions {
   fetch?: typeof fetch;
   /** Freezes `new Date()` and `Date.now()` inside the function. */
   now?: Date;
+  /** Collects what the function sends to Sentry (set `SENTRY_DSN` in `env` to switch reporting on). */
+  sentryEvents?: SentryEvent[];
 }
 
 const bundles = new Map<string, Promise<string>>();
@@ -149,6 +160,20 @@ function bundle(name: string): Promise<string> {
             b.onResolve({ filter: /^npm:@anthropic-ai\/sdk/ }, () => ({
               path: "anthropic",
               namespace: "fake",
+            }));
+            b.onResolve({ filter: /^npm:@sentry\/deno/ }, () => ({
+              path: "sentry",
+              namespace: "fake",
+            }));
+            b.onLoad({ filter: /^sentry$/, namespace: "fake" }, () => ({
+              contents: [
+                "export const init = (...a) => __edge.sentry.init(...a);",
+                "export const withScope = (...a) => __edge.sentry.withScope(...a);",
+                "export const captureException = (...a) => __edge.sentry.captureException(...a);",
+                "export const captureMessage = (...a) => __edge.sentry.captureMessage(...a);",
+                "export const flush = (...a) => __edge.sentry.flush(...a);",
+              ].join("\n"),
+              loader: "js",
             }));
             b.onLoad({ filter: /^supabase-js$/, namespace: "fake" }, () => ({
               contents: "export const createClient = (...args) => __edge.createClient(...args);",
@@ -185,6 +210,26 @@ export async function loadEdgeFunction(
       supabase.clientsCreated.push({ url, key, options: clientOptions });
       return supabase.client();
     },
+    sentry: (() => {
+      const events = options.sentryEvents ?? [];
+      let scope = { tags: {} as Record<string, unknown>, extras: {} as Record<string, unknown> };
+      return {
+        init: () => void events.push({ kind: "init", tags: {}, extras: {} }),
+        withScope: (callback: (scope: unknown) => void) => {
+          scope = { tags: {}, extras: {} };
+          callback({
+            setTag: (key: string, value: unknown) => void (scope.tags[key] = value),
+            setExtras: (extras: Record<string, unknown>) =>
+              void Object.assign(scope.extras, extras),
+          });
+        },
+        captureException: (error: unknown) =>
+          void events.push({ kind: "exception", error, ...scope }),
+        captureMessage: (message: string, level?: string) =>
+          void events.push({ kind: "message", message, level, ...scope }),
+        flush: async () => true,
+      };
+    })(),
     anthropic: () => {
       if (!options.anthropic)
         throw new Error(`${name} created an Anthropic client but the test gave none`);
