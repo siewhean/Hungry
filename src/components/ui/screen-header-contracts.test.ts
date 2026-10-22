@@ -194,7 +194,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /const DiscoverBiteCard = memo\(function DiscoverBiteCard/);
   assert.match(
     discover,
-    /Stalls \{discoverAreaPhrase\}[\s\S]*areaStallCards\.length \? \([\s\S]*areaStallCards\.map[\s\S]*\) : isDiscoverFiltering \?/,
+    /Stalls \$\{discoverAreaPhrase\}[\s\S]*areaStallCards\.length \? \([\s\S]*areaStallCards\.map[\s\S]*\) : isDiscoverFiltering \?/,
   );
   assert.match(
     discover,
@@ -281,7 +281,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /onPrefetchCard=\{prefetchStallShowcaseCard\}/);
   assert.match(
     discover,
-    /Stalls \{discoverAreaPhrase\}[\s\S]*areaStallCards\.map[\s\S]*stallShowcaseCards\.length \? \([\s\S]*<VerticalStallShowcaseSection/,
+    /Stalls \$\{discoverAreaPhrase\}[\s\S]*areaStallCards\.map[\s\S]*stallShowcaseCards\.length \? \([\s\S]*<VerticalStallShowcaseSection/,
   );
   assert.match(discover, /No matching results/);
   assert.match(discover, /Try removing a filter\./);
@@ -328,10 +328,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     discover,
     /const discoverBaseBites = useMemo\([\s\S]*getDiscoverBites\(repository\)\.filter/,
   );
-  assert.match(
-    discover,
-    /getDiscoverBiteCollections\(discoverBaseBites, repository, getVenueHours\)/,
-  );
+  assert.match(discover, /getDiscoverBiteCollections\(\s*discoverBaseBites,\s*repository,/);
   assert.match(discover, /const discoverDishById = useMemo/);
   assert.match(discover, /discoverDishById\.get\(bite\.dishId\)/);
   assert.match(discover, /function PopularFoodStyleSkeleton/);
@@ -573,8 +570,8 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /numberOfLines=\{2\}/);
   assert.doesNotMatch(discover, /height: 72,[\s\S]{0,40}width: decisionCardWidth/);
   assert.doesNotMatch(discover, /height: 52/);
-  assert.match(discover, /Most reviewed \$\{discoverAreaPhrase\}/);
-  assert.match(discover, /Stalls \{discoverAreaPhrase\}/);
+  assert.match(discover, /Most reviewed \$\{trendingAreaPhrase\}/);
+  assert.match(discover, /Stalls \$\{discoverAreaPhrase\}/);
   assert.match(discover, /const DISCOVER_AREA_RADIUS_METERS = 3000/);
   assert.match(
     discover,
@@ -617,7 +614,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /Stalls \{discoverAreaPhrase\}[\s\S]*<View style=\{\{ gap: discoverContentGap \}\}>[\s\S]*areaStallCards\.map/,
+    /Stalls \$\{discoverAreaPhrase\}[\s\S]*<View style=\{\{ gap: discoverContentGap \}\}>[\s\S]*areaStallCards\.map/,
   );
   assert.match(
     discover,
@@ -728,10 +725,7 @@ test("Discover V1 contract: browse cards open the image-feed browse mode", () =>
     /BROWSE_ALL_FILTER = "All"[\s\S]*"Halal"/,
   );
   assert.match(searchResults, /<Screen scroll=\{false\} fullWidth/);
-  assert.match(
-    searchResults,
-    /placeholder=\{mode === "dishes" \? "Search all dishes" : "Search all stalls"\}/,
-  );
+  assert.match(searchResults, /"Search all dishes"[\s\S]*"Search all stalls"/);
   assert.doesNotMatch(searchResults, /useMovingSearchPlaceholder|movingSearchPlaceholder/);
   assert.match(searchResults, /<FlashList[\s\S]*numColumns=\{2\}/);
   assert.match(searchResults, /const itemWidth = width \/ 2/);

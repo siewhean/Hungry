@@ -1,6 +1,7 @@
 import { calculateDistanceMeters } from "@/lib/geo/distance";
 import {
   CATALOG_MATCH_COUNT_CAP,
+  CATALOG_PLACE_MIN_STALLS,
   CATALOG_QUERY_MIN_CHARS,
   CATALOG_SUGGEST_LIMIT,
   CATALOG_SUGGEST_MIN_CHARS,
@@ -9,6 +10,7 @@ import {
   type CatalogMapRequest,
   type CatalogPage,
   type CatalogPageRequest,
+  type CatalogPlace,
   type CatalogRawDishCard,
   type CatalogRawDishDetail,
   type CatalogRawService,
@@ -127,8 +129,12 @@ function toVenueCard(entry: LocalVenue, coordinate?: Coordinate): CatalogRawVenu
 
 function matchesVenueFilters(
   entry: LocalVenue,
-  request: Pick<CatalogPageRequest, "buildingTypes" | "openOnly" | "coordinate" | "radiusMeters">,
+  request: Pick<
+    CatalogPageRequest,
+    "buildingId" | "buildingTypes" | "openOnly" | "coordinate" | "radiusMeters"
+  >,
 ) {
+  if (request.buildingId && entry.building.id !== request.buildingId) return false;
   if (request.buildingTypes?.length && !request.buildingTypes.includes(entry.building.type)) {
     return false;
   }
@@ -196,6 +202,14 @@ function compareCards(
   return (
     (right.rating ?? 0) - (left.rating ?? 0) || (right.reviewCount ?? 0) - (left.reviewCount ?? 0)
   );
+}
+
+function countStallsPerBuilding(catalog: LocalVenue[]) {
+  const counts = new Map<string, number>();
+  for (const entry of catalog) {
+    counts.set(entry.building.id, (counts.get(entry.building.id) ?? 0) + 1);
+  }
+  return counts;
 }
 
 function paginate<T>(
@@ -301,15 +315,26 @@ export function createLocalCatalogService(repository: DataRepository): CatalogRa
       const catalog = loadCatalog(repository);
       const text = prefix.trim().toLowerCase();
       const counts = new Map<string, { suggestion: CatalogSuggestion; weight: number }>();
-      const add = (kind: CatalogSuggestion["kind"], label: string | undefined) => {
+      const add = (
+        kind: CatalogSuggestion["kind"],
+        label: string | undefined,
+        placeId?: string,
+      ) => {
         if (!label) return;
         const key = `${kind}:${label}`;
         const current = counts.get(key);
         if (current) current.weight += 1;
-        else counts.set(key, { suggestion: { kind, label }, weight: 1 });
+        else
+          counts.set(key, {
+            suggestion: placeId ? { kind, label, placeId } : { kind, label },
+            weight: 1,
+          });
       };
+      const stallsPerBuilding = countStallsPerBuilding(catalog);
       for (const entry of catalog) {
-        add("place", entry.building.name);
+        if ((stallsPerBuilding.get(entry.building.id) ?? 0) >= CATALOG_PLACE_MIN_STALLS) {
+          add("place", entry.building.name, entry.building.id);
+        }
         add("stall", entry.venue.name);
         for (const dish of entry.dishes) add("food_type", dish.foodTypeTag);
       }
@@ -337,6 +362,52 @@ export function createLocalCatalogService(repository: DataRepository): CatalogRa
           .slice(0, CATALOG_SUGGEST_LIMIT)
           .map(({ suggestion }) => suggestion)
       );
+    },
+
+    async listPlaces(request) {
+      const catalog = loadCatalog(repository);
+      const stallsPerBuilding = countStallsPerBuilding(catalog);
+      const query = request.query?.trim().toLowerCase() ?? "";
+      const places = new Map<string, CatalogPlace>();
+      for (const entry of catalog) {
+        const { building } = entry;
+        if ((stallsPerBuilding.get(building.id) ?? 0) < CATALOG_PLACE_MIN_STALLS) continue;
+        if (query && !` ${building.name.toLowerCase()}`.includes(` ${query}`)) continue;
+        const distanceMeters = request.coordinate
+          ? calculateDistanceMeters(request.coordinate, entry.coordinate)
+          : undefined;
+        if (
+          request.coordinate &&
+          request.radiusMeters !== undefined &&
+          (distanceMeters ?? Infinity) > request.radiusMeters
+        ) {
+          continue;
+        }
+        const known = places.get(building.id);
+        places.set(building.id, {
+          id: building.id,
+          name: building.name,
+          buildingType: building.type,
+          venueCount: stallsPerBuilding.get(building.id) ?? 0,
+          latitude: building.coordinate.latitude,
+          longitude: building.coordinate.longitude,
+          distanceMeters:
+            known?.distanceMeters !== undefined && distanceMeters !== undefined
+              ? Math.min(known.distanceMeters, distanceMeters)
+              : (distanceMeters ?? known?.distanceMeters),
+        });
+      }
+      const startsWith = (place: CatalogPlace) =>
+        query && place.name.toLowerCase().startsWith(query) ? 0 : 1;
+      return [...places.values()]
+        .sort(
+          (left, right) =>
+            startsWith(left) - startsWith(right) ||
+            (left.distanceMeters ?? Infinity) - (right.distanceMeters ?? Infinity) ||
+            right.venueCount - left.venueCount ||
+            left.name.localeCompare(right.name),
+        )
+        .slice(0, Math.max(1, Math.min(request.limit ?? 8, 20)));
     },
 
     async getDish(id) {

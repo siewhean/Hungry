@@ -29,9 +29,9 @@ test("H20: both page RPCs return the computed distance, not the stored column", 
     /grant execute on function public\.catalog_raw_venues_page\([^)]*\) to anon, authenticated;/,
   );
   assert.equal(sql.match(/returns jsonb language plpgsql security definer/g)?.length, 2);
-  // The client already maps distance_meters for both card kinds.
+  // The client already maps distance_meters for both card kinds (and for places).
   const service = read("src/lib/services/catalog/index.ts");
-  assert.equal(service.match(/distanceMeters: asNumber\(row\.distance_meters\)/g)?.length, 2);
+  assert.equal(service.match(/distanceMeters: asNumber\(row\.distance_meters\)/g)?.length, 3);
 });
 
 test("H21: map and Quick Bites keep raw text locally and open results with the query", () => {

@@ -132,6 +132,9 @@ export type RootStackParamList = {
         browseMode?: "dishes" | "stalls";
         initialQuery?: string;
         foodTypeTag?: string;
+        /** Scopes the results to one mall, hawker centre or food court (a catalog building id). */
+        placeId?: string;
+        placeName?: string;
         /** One chip or several, comma separated: "Halal", "Halal,Rice" or "Under S$6". */
         initialFilter?: string;
         /** Where the search came from; Discover chips already logged their own signal. */

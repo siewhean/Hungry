@@ -55,7 +55,7 @@ test("Discover rails no longer claim prep times or curation they do not have", (
   const screen = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
 
   assert.doesNotMatch(screen, /&lt; 15 MIN|★ CURATED|MUST ORDER|Editor&apos;s Choice/);
-  assert.match(screen, /title=\{`Most reviewed \$\{discoverAreaPhrase\}`\}/);
+  assert.match(screen, /title=\{`Most reviewed \$\{trendingAreaPhrase\}`\}/);
   assert.match(screen, /Top rated/);
 });
 
@@ -146,7 +146,10 @@ test("Search hides empty sections and controls the backend ignores", () => {
   assert.doesNotMatch(home, /suggestedDish|collections|TasteFilter|getSearchResultsAsync/);
   assert.match(home, /const CATALOG_CATEGORIES: SearchCategory\[\] = \["noodles", "rice"\]/);
   const browseGrid = readRepoFile("src/features/search/browseGrid.ts");
-  assert.match(browseGrid, /radiusMeters: query \? undefined : BROWSE_RADIUS_METERS/);
+  assert.match(
+    browseGrid,
+    /radiusMeters: query \|\| input\.buildingId \? undefined : BROWSE_RADIUS_METERS/,
+  );
   assert.match(browseGrid, /BROWSE_RADIUS_METERS = 3_000/);
   assert.doesNotMatch(results, /rawCatalogRequest/);
   // Only location browsing is radius-bound, and never with a radius past Postgres int range.

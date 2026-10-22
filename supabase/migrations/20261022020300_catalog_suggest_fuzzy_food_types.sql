@@ -2,8 +2,9 @@
 -- catalog_suggest is unchanged except for one fallback: when no label starts with the typed
 -- text, it returns the closest food types by trigram similarity (kind 'food_type'), which the
 -- results screen offers as a spelling suggestion. Body copied from
--- 20261021150200_catalog_suggest.sql; SECURITY DEFINER, stable, search_path and the grant
--- to anon and authenticated are unchanged.
+-- 20261021190000_catalog_places_and_place_scoped_reads.sql (place suggestions carry the
+-- building id); SECURITY DEFINER, stable, search_path and the grant to anon and authenticated
+-- are unchanged.
 
 create or replace function public.catalog_suggest(p_prefix text default null, p_limit integer default 8)
 returns jsonb
@@ -40,30 +41,33 @@ begin
   v_escaped := replace(replace(replace(v_prefix, '\', '\\'), '%', '\%'), '_', '\_');
 
   with matches as (
-    select 'food_type'::text as kind, c.food_type as label, count(*) as weight, 0 as kind_rank
+    select 'food_type'::text as kind, c.food_type as label, count(*) as weight, 0 as kind_rank, null::text as ref
     from public.catalog_raw_dish_cards c
     where c.release_id = v_release and c.food_type is not null
       and (c.food_type ilike v_escaped || '%' or c.food_type ilike '% ' || v_escaped || '%')
     group by c.food_type
     union all
-    select 'place', c.building_name, count(*), 1
+    -- Places are buildings with several stalls (malls, hawker centres, food courts); the id
+    -- lets the app scope results to that building (20261021190000).
+    select 'place', max(c.building_name), count(*), 1, c.building_id
     from public.catalog_raw_venue_cards c
     where c.release_id = v_release and c.building_name is not null
       and (c.building_name ilike v_escaped || '%' or c.building_name ilike '% ' || v_escaped || '%')
-    group by c.building_name
+    group by c.building_id
+    having count(*) >= 3
     union all
-    select 'stall', c.name, count(*), 2
+    select 'stall', c.name, count(*), 2, null::text
     from public.catalog_raw_venue_cards c
     where c.release_id = v_release
       and (c.name ilike v_escaped || '%' or c.name ilike '% ' || v_escaped || '%')
     group by c.name
   ), ranked as (
-    select kind, label, kind_rank, weight, (label ilike v_escaped || '%') as starts_with
+    select kind, label, kind_rank, weight, ref, (label ilike v_escaped || '%') as starts_with
     from matches
     order by (label ilike v_escaped || '%') desc, kind_rank, weight desc, label
     limit v_limit
   )
-  select coalesce(jsonb_agg(jsonb_build_object('kind', kind, 'label', label)
+  select coalesce(jsonb_agg(jsonb_build_object('kind', kind, 'label', label) || case when ref is null then '{}'::jsonb else jsonb_build_object('id', ref) end
     order by starts_with desc, kind_rank, weight desc, label), '[]'::jsonb)
   into v_items
   from ranked;

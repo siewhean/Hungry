@@ -350,10 +350,37 @@ export function getDiscoverBiteCollection(
   return getDiscoverBiteCollections(bites, repository, venueHours)[collection];
 }
 
+/** Bites from this building first; both groups keep their order. */
+export function preferBuildingBites(bites: Bite[], buildingId?: string): Bite[] {
+  if (!buildingId) return bites;
+  return [
+    ...bites.filter((bite) => bite.buildingId === buildingId),
+    ...bites.filter((bite) => bite.buildingId !== buildingId),
+  ];
+}
+
 export function getDiscoverBiteCollections(
   bites: Bite[] = getDiscoverBites(),
   repository: DataRepository = getDataRepository(),
   venueHours: VenueHoursLookup = (venueId) => repository.getVenueById?.(venueId)?.operatingHours,
+  options: { preferBuildingId?: string } = {},
+): DiscoverBiteCollections {
+  const collections = buildDiscoverBiteCollections(bites, repository, venueHours);
+  const { preferBuildingId } = options;
+  if (!preferBuildingId) return collections;
+  return {
+    quickBites: preferBuildingBites(collections.quickBites, preferBuildingId),
+    budget: preferBuildingBites(collections.budget, preferBuildingId),
+    editorChoice: preferBuildingBites(collections.editorChoice, preferBuildingId),
+    trending: preferBuildingBites(collections.trending, preferBuildingId),
+    lateNight: preferBuildingBites(collections.lateNight, preferBuildingId),
+  };
+}
+
+function buildDiscoverBiteCollections(
+  bites: Bite[],
+  repository: DataRepository,
+  venueHours: VenueHoursLookup,
 ): DiscoverBiteCollections {
   const syncedBites = bites.map((bite) => {
     const dish = repository.getDishById(bite.dishId);

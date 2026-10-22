@@ -11,7 +11,7 @@
 -- * M11    New p_food_keywords: the Noodles and Rice chips match dishes by food type or name
 --          (and stalls that sell such a dish) instead of exact cuisine tags.
 -- Bodies are copied from 20261021150000_catalog_search_distance_places_stall_dishes.sql with
--- only those changes. Both functions stay SECURITY DEFINER with search_path public, extensions
+-- only those changes, plus p_building_id from 20261021190000 (place-scoped results). Both functions stay SECURITY DEFINER with search_path public, extensions
 -- and are executable by anon and authenticated. Adding a parameter changes the signature, so
 -- the previous signatures are dropped first (PostgREST would otherwise see two overloads).
 --
@@ -21,13 +21,16 @@
 
 drop function if exists public.catalog_raw_dishes_page(text, double precision, double precision, integer, text[], text[], numeric, boolean, text, text, uuid, integer, text, text[]);
 drop function if exists public.catalog_raw_venues_page(text, double precision, double precision, integer, text[], text[], numeric, boolean, text, text, uuid, integer, text[]);
+-- Place search (20261021190000) added p_building_id; drop those signatures too.
+drop function if exists public.catalog_raw_dishes_page(text, double precision, double precision, integer, text[], text[], numeric, boolean, text, text, uuid, integer, text, text[], text);
+drop function if exists public.catalog_raw_venues_page(text, double precision, double precision, integer, text[], text[], numeric, boolean, text, text, uuid, integer, text[], text);
 
 create or replace function public.catalog_raw_dishes_page(
   p_query text default null, p_lat double precision default null, p_lng double precision default null,
   p_radius_meters integer default null, p_cuisine_tags text[] default '{}', p_dietary_flags text[] default '{}',
   p_max_price numeric default null, p_open_only boolean default false, p_sort text default 'quality',
   p_cursor text default null, p_release_id uuid default null, p_limit integer default 24, p_venue_id text default null,
-  p_building_types text[] default '{}', p_food_keywords text[] default '{}'
+  p_building_types text[] default '{}', p_food_keywords text[] default '{}', p_building_id text default null
 )
 returns jsonb language plpgsql security definer set search_path = public, extensions as $$
 declare
@@ -55,7 +58,7 @@ begin
       limit 12
     ) k
   ), '{}');
-  v_fingerprint := md5(concat_ws('|', coalesce(lower(v_query), ''), coalesce(p_lat::text, ''), coalesce(p_lng::text, ''), coalesce(p_radius_meters::text, ''), array_to_string(coalesce(p_cuisine_tags, '{}'), ','), array_to_string(coalesce(p_dietary_flags, '{}'), ','), array_to_string(coalesce(p_building_types, '{}'), ','), array_to_string(v_food_patterns, ','), coalesce(p_max_price::text, ''), p_open_only::text, p_sort, coalesce(p_venue_id, '')));
+  v_fingerprint := md5(concat_ws('|', coalesce(lower(v_query), ''), coalesce(p_lat::text, ''), coalesce(p_lng::text, ''), coalesce(p_radius_meters::text, ''), array_to_string(coalesce(p_cuisine_tags, '{}'), ','), array_to_string(coalesce(p_dietary_flags, '{}'), ','), array_to_string(coalesce(p_building_types, '{}'), ','), array_to_string(v_food_patterns, ','), coalesce(p_max_price::text, ''), p_open_only::text, p_sort, coalesce(p_venue_id, ''), coalesce(p_building_id, '')));
   v_cursor := case when p_cursor is null then null else public.catalog_raw_cursor_value(p_cursor) end;
   if v_cursor is not null and (v_cursor->>'release_id')::uuid <> v_release then raise exception 'catalog cursor release mismatch' using errcode = '22023'; end if;
   if v_cursor is not null and v_cursor->>'fingerprint' <> v_fingerprint then raise exception 'catalog cursor query mismatch' using errcode = '22023'; end if;
@@ -75,6 +78,7 @@ begin
     from public.catalog_raw_dish_cards c
     where c.release_id = v_release
       and (p_venue_id is null or c.venue_id = p_venue_id)
+      and (p_building_id is null or c.building_id = p_building_id)
       and (cardinality(coalesce(p_building_types, '{}')) = 0 or c.building_type = any(p_building_types))
       and (p_open_only = false or c.is_open)
       and (p_max_price is null or c.price <= p_max_price)
@@ -141,14 +145,14 @@ end;
 $$;
 
 -- Guests browse the catalog too (20261019210000_guest_catalog_raw_reads.sql).
-revoke all on function public.catalog_raw_dishes_page(text, double precision, double precision, integer, text[], text[], numeric, boolean, text, text, uuid, integer, text, text[], text[]) from public;
-grant execute on function public.catalog_raw_dishes_page(text, double precision, double precision, integer, text[], text[], numeric, boolean, text, text, uuid, integer, text, text[], text[]) to anon, authenticated;
+revoke all on function public.catalog_raw_dishes_page(text, double precision, double precision, integer, text[], text[], numeric, boolean, text, text, uuid, integer, text, text[], text[], text) from public;
+grant execute on function public.catalog_raw_dishes_page(text, double precision, double precision, integer, text[], text[], numeric, boolean, text, text, uuid, integer, text, text[], text[], text) to anon, authenticated;
 
 create or replace function public.catalog_raw_venues_page(
   p_query text default null, p_lat double precision default null, p_lng double precision default null, p_radius_meters integer default null,
   p_cuisine_tags text[] default '{}', p_dietary_flags text[] default '{}', p_max_price numeric default null, p_open_only boolean default false,
   p_sort text default 'quality', p_cursor text default null, p_release_id uuid default null, p_limit integer default 24,
-  p_building_types text[] default '{}', p_food_keywords text[] default '{}'
+  p_building_types text[] default '{}', p_food_keywords text[] default '{}', p_building_id text default null
 ) returns jsonb language plpgsql security definer set search_path = public, extensions as $$
 declare
   v_release uuid; v_limit integer := least(greatest(coalesce(p_limit, 24), 1), 50); v_items jsonb; v_next text; v_fingerprint text; v_cursor jsonb;
@@ -173,7 +177,7 @@ begin
       limit 12
     ) k
   ), '{}');
-  v_fingerprint := md5(concat_ws('|', coalesce(lower(v_query), ''), coalesce(p_lat::text, ''), coalesce(p_lng::text, ''), coalesce(p_radius_meters::text, ''), array_to_string(coalesce(p_cuisine_tags, '{}'), ','), array_to_string(coalesce(p_dietary_flags, '{}'), ','), array_to_string(coalesce(p_building_types, '{}'), ','), array_to_string(v_food_patterns, ','), coalesce(p_max_price::text, ''), p_open_only::text, p_sort));
+  v_fingerprint := md5(concat_ws('|', coalesce(lower(v_query), ''), coalesce(p_lat::text, ''), coalesce(p_lng::text, ''), coalesce(p_radius_meters::text, ''), array_to_string(coalesce(p_cuisine_tags, '{}'), ','), array_to_string(coalesce(p_dietary_flags, '{}'), ','), array_to_string(coalesce(p_building_types, '{}'), ','), array_to_string(v_food_patterns, ','), coalesce(p_max_price::text, ''), p_open_only::text, p_sort, coalesce(p_building_id, '')));
   v_cursor := case when p_cursor is null then null else public.catalog_raw_cursor_value(p_cursor) end;
   if v_cursor is not null and ((v_cursor->>'release_id')::uuid <> v_release or v_cursor->>'fingerprint' <> v_fingerprint) then raise exception 'catalog cursor mismatch' using errcode = '22023'; end if;
   with dish_matches as materialized (
@@ -206,6 +210,7 @@ begin
     left join dish_matches dm on dm.venue_id = c.id
     left join food_matches fm on fm.venue_id = c.id
     where c.release_id = v_release and (p_open_only = false or c.is_open)
+      and (p_building_id is null or c.building_id = p_building_id)
       and (cardinality(coalesce(p_building_types, '{}')) = 0 or c.building_type = any(p_building_types))
       and (cardinality(coalesce(p_cuisine_tags, '{}')) = 0 or c.cuisine_tags && p_cuisine_tags)
       and (cardinality(coalesce(p_dietary_flags, '{}')) = 0 or c.dietary_flags @> p_dietary_flags)
@@ -257,5 +262,5 @@ end;
 $$;
 
 -- Guests browse the catalog too (20261019210000_guest_catalog_raw_reads.sql).
-revoke all on function public.catalog_raw_venues_page(text, double precision, double precision, integer, text[], text[], numeric, boolean, text, text, uuid, integer, text[], text[]) from public;
-grant execute on function public.catalog_raw_venues_page(text, double precision, double precision, integer, text[], text[], numeric, boolean, text, text, uuid, integer, text[], text[]) to anon, authenticated;
+revoke all on function public.catalog_raw_venues_page(text, double precision, double precision, integer, text[], text[], numeric, boolean, text, text, uuid, integer, text[], text[], text) from public;
+grant execute on function public.catalog_raw_venues_page(text, double precision, double precision, integer, text[], text[], numeric, boolean, text, text, uuid, integer, text[], text[], text) to anon, authenticated;

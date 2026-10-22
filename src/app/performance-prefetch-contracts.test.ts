@@ -116,10 +116,7 @@ test("home, discover, and quick bites avoid duplicate render-time data work", ()
   assert.match(homeScreen, /activeFeedLoadIdRef/);
   assert.doesNotMatch(homeScreen, /const publishedPosts = usePublishedPostStore/);
   assert.match(discover, /getDiscoverBites\(repository\)/);
-  assert.match(
-    discover,
-    /getDiscoverBiteCollections\(discoverBaseBites, repository, getVenueHours\)/,
-  );
+  assert.match(discover, /getDiscoverBiteCollections\(\s*discoverBaseBites,\s*repository,/);
   assert.match(discover, /const repositoryLookup = useMemo<DiscoverRepositoryLookup>/);
   assert.match(discover, /const dishById = new Map<string, DishDetail \| undefined>\(\)/);
   assert.match(discover, /const dishesByVenue = new Map<string, DishDetail\[\]>\(\)/);

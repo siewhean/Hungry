@@ -54,11 +54,11 @@ test("the old RPC signatures are dropped and the new ones stay guest-callable de
   assert.equal(sql.match(/security definer set search_path = public, extensions/g)?.length, 2);
   assert.match(
     sql,
-    /grant execute on function public\.catalog_raw_dishes_page\([^)]*text\[\], text\[\]\) to anon, authenticated;/,
+    /grant execute on function public\.catalog_raw_dishes_page\([^)]*text\[\], text\[\], text\) to anon, authenticated;/,
   );
   assert.match(
     sql,
-    /grant execute on function public\.catalog_raw_venues_page\([^)]*text\[\], text\[\]\) to anon, authenticated;/,
+    /grant execute on function public\.catalog_raw_venues_page\([^)]*text\[\], text\[\], text\) to anon, authenticated;/,
   );
   assert.match(sql, /revoke all on function public\.catalog_raw_dishes_page\([^)]*\) from public;/);
   // No other migration or smoke file may still name the old 14-argument dish signature.
@@ -180,8 +180,10 @@ test("L6/L7: recents come from submitted queries, and a Discover chip logs only 
   assert.match(discover, /source: "discover_chip"/);
   assert.doesNotMatch(discover, /rememberSearch/);
   assert.match(types, /source\?: "discover_chip"/);
-  // Search home no longer saves on its own, and each recent has a remove button.
-  assert.doesNotMatch(home, /rememberSearch/);
+  // Search home no longer saves typed queries on its own; only opening a place (which skips the
+  // results grid's committed-query path) saves its name. Each recent has a remove button.
+  assert.equal(home.match(/rememberSearch\(/g)?.length, 1);
+  assert.match(home, /rememberSearch\(suggestion\.label\)/);
   assert.match(home, /removeRecentSearch\(query\)/);
   assert.match(home, /accessibilityLabel=\{`Remove \$\{query\} from recent searches`\}/);
 });

@@ -55,8 +55,9 @@ export const BROWSE_SORT_OPTIONS: readonly { id: BrowseSortId; label: string }[]
 ];
 
 /** Without typed text there is nothing to match, so "Best match" falls back to nearest. */
-export function effectiveSort(sort: BrowseSortId, hasQuery: boolean): CatalogSort {
-  return sort === "relevance" && !hasQuery ? "nearby" : sort;
+export function effectiveSort(sort: BrowseSortId, hasQuery: boolean, inPlace = false): CatalogSort {
+  if (sort === "relevance" && !hasQuery) return inPlace ? "quality" : "nearby";
+  return sort;
 }
 
 /** Typed text as sent to the catalog: markup out, whitespace collapsed, at most 80 characters. */
@@ -76,6 +77,8 @@ interface BrowseRequestInput {
   coordinate: { latitude: number; longitude: number };
   cursor?: string;
   releaseId?: string;
+  /** A mall, hawker centre or food court: lists its whole building, however far away. */
+  buildingId?: string;
 }
 
 export function buildBrowseRequest(input: BrowseRequestInput): CatalogPageRequest {
@@ -84,11 +87,12 @@ export function buildBrowseRequest(input: BrowseRequestInput): CatalogPageReques
   return {
     query: query || undefined,
     coordinate: input.coordinate,
-    radiusMeters: query ? undefined : BROWSE_RADIUS_METERS,
+    buildingId: input.buildingId,
+    radiusMeters: query || input.buildingId ? undefined : BROWSE_RADIUS_METERS,
     cursor: input.cursor,
     releaseId: input.cursor ? input.releaseId : undefined,
     limit: 24,
-    sort: effectiveSort(input.sort, Boolean(query)),
+    sort: effectiveSort(input.sort, Boolean(query), Boolean(input.buildingId)),
     dietaryFlags: input.filters.includes("Halal") ? ["halal"] : [],
     cuisineTags: input.filters
       .filter((id) => CUISINE_FILTERS.has(id))

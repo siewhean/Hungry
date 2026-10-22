@@ -6,10 +6,10 @@
 --     lose it); the app works out open state from hours in Singapore time.
 --   * return venues.operating_hours (null when empty) as operating_hours.
 -- Body otherwise unchanged from the latest definition
--- (20261021140100_discovery_feed_top_dish_dietary_flags.sql).
+-- (20261021190000_catalog_places_and_place_scoped_reads.sql, which added p_building_id).
 --
 -- Redefines: public.get_discovery_feed_by_location(text, double precision,
--- double precision, integer, integer)  SECURITY INVOKER (unchanged).
+-- double precision, integer, integer, text)  SECURITY INVOKER (unchanged).
 
 begin;
 
@@ -19,7 +19,8 @@ drop function if exists public.get_discovery_feed_by_location(
   double precision,
   double precision,
   integer,
-  integer
+  integer,
+  text
 );
 
 create or replace function public.get_discovery_feed_by_location(
@@ -27,7 +28,8 @@ create or replace function public.get_discovery_feed_by_location(
   p_lat double precision default null,
   p_lng double precision default null,
   p_radius_meters integer default 3000,
-  p_limit integer default 50
+  p_limit integer default 50,
+  p_building_id text default null
 )
 returns table (
   venue_id text,
@@ -45,7 +47,6 @@ returns table (
   top_dish_rating numeric,
   top_dish_review_count integer,
   top_dish_price numeric,
-  top_dish_dietary_flags text[],
   cuisine_tags text[],
   rank_score double precision
 )
@@ -239,7 +240,7 @@ as $$
           )
         )
     ) filtered
-    order by filtered.has_menu desc, filtered.request_distance_meters asc nulls last
+    order by coalesce(filtered.building_id = p_building_id, false) desc, filtered.has_menu desc, filtered.request_distance_meters asc nulls last
     limit 500
   ),
   candidates as (
@@ -264,15 +265,6 @@ as $$
       top_dish.rating_avg as top_dish_rating,
       top_dish.review_count as top_dish_review_count,
       top_dish.price as top_dish_price,
-      coalesce(
-        (
-          select array_agg(df.slug order by df.slug)
-          from dish_dietary_flags ddf
-          join dietary_flags df on df.id = ddf.dietary_flag_id
-          where ddf.dish_id = top_dish.id
-        ),
-        '{}'::text[]
-      ) as top_dish_dietary_flags,
       coalesce(cv.venue_cuisine_tags, '{}'::text[]) as cuisine_tags,
       (
         case when not cv.is_closed_today then 0.320 else 0 end
@@ -351,11 +343,26 @@ as $$
     candidates.top_dish_rating,
     candidates.top_dish_review_count,
     candidates.top_dish_price,
-    candidates.top_dish_dietary_flags,
     candidates.cuisine_tags,
     candidates.rank_score
-  from candidates
+  from (
+    select
+      candidates.*,
+      row_number() over (
+        partition by coalesce(candidates.building_id = p_building_id, false)
+        order by
+          (nullif(trim(candidates.top_dish_image), '') is not null) desc,
+          (candidates.top_dish_id is not null) desc,
+          candidates.rank_score desc,
+          candidates.distance_meters,
+          candidates.venue_id
+      ) as place_rank
+    from candidates
+  ) candidates
   order by
+    -- Stalls in the viewer's own building first, but at most 60 of them, so a big mall
+    -- never crowds out everything else in the feed.
+    (coalesce(candidates.building_id = p_building_id, false) and candidates.place_rank <= 60) desc,
     (nullif(trim(candidates.top_dish_image), '') is not null) desc,
     (candidates.top_dish_id is not null) desc,
     candidates.rank_score desc,
@@ -369,7 +376,8 @@ grant execute on function public.get_discovery_feed_by_location(
   double precision,
   double precision,
   integer,
-  integer
+  integer,
+  text
 ) to anon, authenticated;
 
 commit;

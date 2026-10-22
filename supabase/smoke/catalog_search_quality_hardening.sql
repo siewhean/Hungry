@@ -169,16 +169,16 @@ begin
   if to_regprocedure('public.catalog_raw_venues_page(text,double precision,double precision,integer,text[],text[],numeric,boolean,text,text,uuid,integer,text[])') is not null then
     raise exception 'the old catalog_raw_venues_page signature should be gone (PostgREST overload)';
   end if;
-  if not has_function_privilege('anon', 'public.catalog_raw_dishes_page(text,double precision,double precision,integer,text[],text[],numeric,boolean,text,text,uuid,integer,text,text[],text[])', 'execute')
-     or not has_function_privilege('authenticated', 'public.catalog_raw_dishes_page(text,double precision,double precision,integer,text[],text[],numeric,boolean,text,text,uuid,integer,text,text[],text[])', 'execute') then
+  if not has_function_privilege('anon', 'public.catalog_raw_dishes_page(text,double precision,double precision,integer,text[],text[],numeric,boolean,text,text,uuid,integer,text,text[],text[],text)', 'execute')
+     or not has_function_privilege('authenticated', 'public.catalog_raw_dishes_page(text,double precision,double precision,integer,text[],text[],numeric,boolean,text,text,uuid,integer,text,text[],text[],text)', 'execute') then
     raise exception 'anon and authenticated must execute catalog_raw_dishes_page';
   end if;
-  if not has_function_privilege('anon', 'public.catalog_raw_venues_page(text,double precision,double precision,integer,text[],text[],numeric,boolean,text,text,uuid,integer,text[],text[])', 'execute')
-     or not has_function_privilege('authenticated', 'public.catalog_raw_venues_page(text,double precision,double precision,integer,text[],text[],numeric,boolean,text,text,uuid,integer,text[],text[])', 'execute') then
+  if not has_function_privilege('anon', 'public.catalog_raw_venues_page(text,double precision,double precision,integer,text[],text[],numeric,boolean,text,text,uuid,integer,text[],text[],text)', 'execute')
+     or not has_function_privilege('authenticated', 'public.catalog_raw_venues_page(text,double precision,double precision,integer,text[],text[],numeric,boolean,text,text,uuid,integer,text[],text[],text)', 'execute') then
     raise exception 'anon and authenticated must execute catalog_raw_venues_page';
   end if;
-  if not (select p.prosecdef from pg_proc p where p.oid = 'public.catalog_raw_dishes_page(text,double precision,double precision,integer,text[],text[],numeric,boolean,text,text,uuid,integer,text,text[],text[])'::regprocedure)
-     or not (select p.prosecdef from pg_proc p where p.oid = 'public.catalog_raw_venues_page(text,double precision,double precision,integer,text[],text[],numeric,boolean,text,text,uuid,integer,text[],text[])'::regprocedure)
+  if not (select p.prosecdef from pg_proc p where p.oid = 'public.catalog_raw_dishes_page(text,double precision,double precision,integer,text[],text[],numeric,boolean,text,text,uuid,integer,text,text[],text[],text)'::regprocedure)
+     or not (select p.prosecdef from pg_proc p where p.oid = 'public.catalog_raw_venues_page(text,double precision,double precision,integer,text[],text[],numeric,boolean,text,text,uuid,integer,text[],text[],text)'::regprocedure)
      or not (select p.prosecdef from pg_proc p where p.oid = 'public.catalog_suggest(text,integer)'::regprocedure) then
     raise exception 'the catalog read RPCs must stay SECURITY DEFINER';
   end if;

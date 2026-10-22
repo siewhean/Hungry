@@ -18,6 +18,7 @@ import {
   Check,
   ChevronDown,
   Info,
+  MapPin,
   MapPinOff,
   Share2,
   Star,
@@ -65,6 +66,8 @@ import { getCatalogRawService } from "@/lib/services/serviceProvider";
 import {
   CATALOG_QUERY_MAX_CHARS,
   CATALOG_QUERY_MIN_CHARS,
+  CATALOG_SUGGEST_MIN_CHARS,
+  type CatalogPlace,
   type CatalogRawDishCard,
   type CatalogRawVenueCard,
 } from "@/lib/services/catalog";
@@ -257,15 +260,19 @@ const RawCatalogCard = memo(function RawCatalogCard({
 
 const MODE_LABELS = { dishes: "Dishes", stalls: "Stalls" } as const;
 
+type BrowsePlace = { id: string; name: string };
+
 function RawCatalogBrowseGrid({
   allowModeSwitch = false,
   initialFilter,
+  initialPlace,
   initialSearchQuery = "",
   initialSource,
   mode: initialMode,
 }: {
   allowModeSwitch?: boolean;
   initialFilter?: string;
+  initialPlace?: BrowsePlace;
   initialSearchQuery?: string;
   initialSource?: SearchSource;
   mode: BrowseMode;
@@ -281,6 +288,14 @@ function RawCatalogBrowseGrid({
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
   const [mode, setMode] = useState(initialMode);
   const [searchText, setSearchText] = useState(initialSearchQuery);
+  // A picked mall, hawker centre or food court: only its stalls and dishes are listed.
+  const [place, setPlace] = useState<BrowsePlace | undefined>(initialPlace);
+  const initialPlaceId = initialPlace?.id;
+  const initialPlaceName = initialPlace?.name;
+  const [placeMatches, setPlaceMatches] = useState<{ query: string; items: CatalogPlace[] }>({
+    query: "",
+    items: [],
+  });
   const [filters, setFilters] = useState<readonly BrowseFilterId[]>(() =>
     parseFilterIds(initialFilter),
   );
@@ -319,6 +334,9 @@ function RawCatalogBrowseGrid({
     setSearchText(initialSearchQuery);
   }, [initialSearchQuery]);
   useEffect(() => {
+    setPlace(initialPlaceId ? { id: initialPlaceId, name: initialPlaceName ?? "" } : undefined);
+  }, [initialPlaceId, initialPlaceName]);
+  useEffect(() => {
     setFilters(parseFilterIds(initialFilter));
   }, [initialFilter]);
 
@@ -330,8 +348,8 @@ function RawCatalogBrowseGrid({
   const coordinate = useMemo(() => ({ latitude, longitude }), [latitude, longitude]);
 
   const requestKey = useMemo(
-    () => JSON.stringify([mode, query, filters, sort, latitude, longitude, widenRadius]),
-    [filters, latitude, longitude, mode, query, sort, widenRadius],
+    () => JSON.stringify([mode, query, filters, sort, latitude, longitude, widenRadius, place?.id]),
+    [filters, latitude, longitude, mode, place?.id, query, sort, widenRadius],
   );
 
   const loadPage = useCallback(
@@ -349,8 +367,9 @@ function RawCatalogBrowseGrid({
           coordinate,
           cursor,
           releaseId: releaseIdRef.current,
+          buildingId: place?.id,
         });
-        if (widenRadius && !query) request.radiusMeters = WIDE_RADIUS_METERS;
+        if (widenRadius && !query && !place) request.radiusMeters = WIDE_RADIUS_METERS;
         const page =
           mode === "dishes" ? await service.listDishes(request) : await service.listVenues(request);
         if (requestVersion.current !== version) return;
@@ -387,7 +406,7 @@ function RawCatalogBrowseGrid({
         }
       }
     },
-    [coordinate, filters, mode, query, requestKey, service, sort, widenRadius],
+    [coordinate, filters, mode, place, query, requestKey, service, sort, widenRadius],
   );
 
   // A search is committed by Enter, a suggestion or a link, not by typing pauses: one search
@@ -452,6 +471,43 @@ function RawCatalogBrowseGrid({
     );
     return () => clearTimeout(timer);
   }, [loadPage, query, tooShort]);
+
+  // Typing a mall or hawker centre name offers the place itself, so its stalls can be listed
+  // without the fuzzy name matches from other buildings.
+  useEffect(() => {
+    if (place || tooShort || query.length < CATALOG_SUGGEST_MIN_CHARS) return;
+    let active = true;
+    const timer = setTimeout(() => {
+      service
+        .listPlaces({ query, coordinate, limit: 3 })
+        .then((matches) => {
+          if (active) setPlaceMatches({ query, items: matches });
+        })
+        .catch(() => undefined);
+    }, 300);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [coordinate, place, query, service, tooShort]);
+  const offeredPlaces =
+    !place && placeMatches.query === query && query.length >= CATALOG_SUGGEST_MIN_CHARS
+      ? placeMatches.items
+      : [];
+
+  const selectPlace = useCallback(
+    (next: BrowsePlace) => {
+      trackAnalyticsEvent("search_place_selected", { mode });
+      setItems([]);
+      setSearchText("");
+      setPlace(next);
+    },
+    [mode],
+  );
+  const clearPlace = useCallback(() => {
+    setItems([]);
+    setPlace(undefined);
+  }, []);
 
   // Zero results are logged only for a submitted query, once, with the (capped) text so
   // "what did people fail to find" can be answered. Partial typing is never logged.
@@ -608,7 +664,13 @@ function RawCatalogBrowseGrid({
                     source: "results",
                   })
                 }
-                placeholder={mode === "dishes" ? "Search all dishes" : "Search all stalls"}
+                placeholder={
+                  place
+                    ? `Search ${mode} at ${place.name}`
+                    : mode === "dishes"
+                      ? "Search all dishes"
+                      : "Search all stalls"
+                }
                 placeholderTextColor={palette.textMuted}
                 returnKeyType="search"
                 testID="browse-results-search-input"
@@ -652,6 +714,65 @@ function RawCatalogBrowseGrid({
             <AppText tone="secondary" variant="micro">
               {`Type at least ${CATALOG_QUERY_MIN_CHARS} letters to search.`}
             </AppText>
+          ) : null}
+          {place ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Showing only ${place.name}. Tap to show everywhere`}
+              onPress={clearPlace}
+              style={{
+                alignItems: "center",
+                alignSelf: "flex-start",
+                backgroundColor: palette.surface,
+                borderColor: palette.orange,
+                borderRadius: 18,
+                borderWidth: 1,
+                flexDirection: "row",
+                gap: spacing[2],
+                minHeight: 36,
+                paddingHorizontal: spacing[3],
+              }}
+            >
+              <MapPin color={palette.orange} size={16} />
+              <AppText numberOfLines={1} variant="bodySmall" style={{ flexShrink: 1 }}>
+                {place.name}
+              </AppText>
+              <X color={palette.textMuted} size={16} />
+            </Pressable>
+          ) : null}
+          {offeredPlaces.length > 0 ? (
+            <View accessibilityLabel="Places" style={{ gap: spacing[1] }}>
+              <AppText tone="secondary" variant="micro">
+                Malls, hawker centres and food courts
+              </AppText>
+              {offeredPlaces.map((offered) => (
+                <Pressable
+                  key={offered.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Show stalls at ${offered.name}`}
+                  onPress={() => selectPlace({ id: offered.id, name: offered.name })}
+                  style={{
+                    alignItems: "center",
+                    flexDirection: "row",
+                    gap: spacing[2],
+                    minHeight: 44,
+                  }}
+                >
+                  <MapPin color={palette.orange} size={18} />
+                  <View style={{ flex: 1 }}>
+                    <AppText numberOfLines={1} variant="bodyBold">
+                      {offered.name}
+                    </AppText>
+                    <AppText tone="secondary" variant="micro">
+                      {`${offered.venueCount} stalls`}
+                      {offered.distanceMeters !== undefined
+                        ? ` · ${formatBrowseDistance(offered.distanceMeters)}`
+                        : ""}
+                    </AppText>
+                  </View>
+                </Pressable>
+              ))}
+            </View>
           ) : null}
           {allowModeSwitch ? (
             <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: spacing[2] }}>
@@ -907,6 +1028,11 @@ export function SearchResultsScreen() {
       allowModeSwitch
       mode={route.params?.browseMode ?? "dishes"}
       initialFilter={route.params?.initialFilter ?? route.params?.foodTypeTag}
+      initialPlace={
+        route.params?.placeId
+          ? { id: route.params.placeId, name: route.params.placeName ?? "this place" }
+          : undefined
+      }
       initialSearchQuery={route.params?.initialQuery ?? ""}
       initialSource={route.params?.source}
     />
