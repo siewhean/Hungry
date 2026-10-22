@@ -1,7 +1,7 @@
 # Safe migration runbook
 
 Every schema change goes: **write up + down -> back up -> rehearse on staging -> ship to prod -> smokes**.
-CI enforces the first and third steps for every migration newer than `20261022120000` (the rate-limit migration, merged before this process existed)
+CI enforces the first and third steps for every migration newer than `20261022130000` (the two rate-limit migrations were written before this process existed and are exempt)
 (`scripts/check-migration-safety.mjs`). The scripts live in `scripts/db/`.
 
 The free Supabase plan has **no managed backups or point-in-time restore**, so the dump taken by
