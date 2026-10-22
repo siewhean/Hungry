@@ -76,6 +76,11 @@ jobs:
       - name: Race condition harness (two-session Postgres checks)
         run: npm run test:races
 
+      - name: Migration safety (down file and staging rehearsal for every new migration)
+        run: |
+          npm run test:migration-safety
+          npm run audit:supabase:migration-safety
+
       - name: Link Supabase project
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
