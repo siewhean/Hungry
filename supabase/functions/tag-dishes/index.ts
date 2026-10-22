@@ -61,7 +61,7 @@ function tagDish(apiKey: string, dish: JsonObject): Promise<JsonObject | null> {
     system: SYSTEM_PROMPT,
     user: describeDish(dish),
     schema: OUTPUT_SCHEMA,
-    maxOutputTokens: 2000,
+    maxOutputTokens: 4000,
   });
 }
 

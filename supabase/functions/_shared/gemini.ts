@@ -36,7 +36,6 @@ export async function generateJson(options: {
           responseSchema: toGeminiSchema(options.schema),
           maxOutputTokens: options.maxOutputTokens,
           temperature: 0,
-          thinkingConfig: { thinkingBudget: 0 },
         },
       }),
     },

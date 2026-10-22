@@ -38,7 +38,7 @@ async function scoreDish(apiKey, { dish, description }) {
     system: SYSTEM_PROMPT,
     user: lines.join("\n"),
     schema: OUTPUT_SCHEMA,
-    maxOutputTokens: 2000,
+    maxOutputTokens: 4000,
   });
   if (!result) throw new Error("stopped before finishing");
   return result;

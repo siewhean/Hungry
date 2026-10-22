@@ -91,7 +91,7 @@ async function parseMood(apiKey: string, query: string): Promise<JsonObject | nu
     system: SYSTEM_PROMPT,
     user: query,
     schema: OUTPUT_SCHEMA,
-    maxOutputTokens: 1000,
+    maxOutputTokens: 4000,
   });
   return result ? toIntent(result) : null;
 }
