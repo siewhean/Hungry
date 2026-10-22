@@ -1,5 +1,6 @@
 // @ts-nocheck
 /* eslint-disable import/no-unresolved */
+import { reportFunctionError, serveWithSentry } from "../_shared/sentry.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
 import Anthropic from "npm:@anthropic-ai/sdk@0.135.0";
 import { MODEL, TASTE_AXES } from "../_shared/tasteTagging.ts";
@@ -92,7 +93,7 @@ async function parseMood(anthropic: Anthropic, query: string): Promise<JsonObjec
   return toIntent(JSON.parse(text) as JsonObject);
 }
 
-Deno.serve(async (request) => {
+serveWithSentry("mood-search", async (request) => {
   if (request.method !== "POST") {
     return toJson(405, { error: "method_not_allowed" });
   }
@@ -177,7 +178,7 @@ Deno.serve(async (request) => {
     await client.from("mood_search_queries").update({ intent, pending: false }).eq("id", slotId);
     return toJson(200, { ok: true, cached: false, intent });
   } catch (error) {
-    console.error("mood-search failed", String(error?.message ?? error));
+    await reportFunctionError("mood-search", error, {}, request);
     await client.from("mood_search_queries").delete().eq("id", slotId);
     return toJson(502, { error: "parse_failed" });
   }
