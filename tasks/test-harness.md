@@ -79,7 +79,7 @@ The app keeps "every page, store, service and Edge Function is tested" true auto
 |------|---------|------------|
 | Unit and behaviour tests | `npm run test` | Any test fails |
 | Screen and component render tests | `npm run test:render` | A screen has no row in `src/test/render/screenMatrix.ts`, a screen shows the wrong thing or logs an unexpected console error, or a shared component test fails |
-| Coverage ratchet | `npm run test:coverage` | Line coverage drops more than 0.3 points, a file drops more than 3 points, or a new file under `src/` starts below 70% (baseline in `tests/coverage-baseline.json`) |
+| Coverage ratchet | `npm run test:coverage` | Line coverage drops more than 0.3 points, a file drops more than 3 points (or 2 lines, for small files), or a new file under `src/` starts below 70% (baseline in `tests/coverage-baseline.json`) |
 | Test-presence guard | `src/app/test-coverage-guard-contracts.test.ts` (part of `npm run test`) | A new screen, store, service, hook, feature module, shared component or Edge Function is not named by any test |
 
 Rules for all new work:

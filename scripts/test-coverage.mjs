@@ -5,7 +5,8 @@
 //
 // The check fails when
 //   - total line, branch or function coverage drops below the baseline,
-//   - a file that was already covered loses more than FILE_DROP_TOLERANCE points of line coverage, or
+//   - a file that was already covered loses more than FILE_DROP_TOLERANCE points (or
+//     FILE_DROP_TOLERANCE_LINES lines, for small files) of line coverage, or
 //   - a file that is new to the report has less than NEW_FILE_MINIMUM percent line coverage.
 // Together that means new logic ships with tests, and old logic cannot quietly lose them.
 
@@ -20,6 +21,9 @@ const update = process.argv.includes("--update");
 
 const GLOBAL_TOLERANCE = 0.3;
 const FILE_DROP_TOLERANCE = 3;
+// V8 sometimes reports a function's closing brace as uncovered, and which Node patch version does so
+// differs between machines. A small file would fail the percentage rule over one such line.
+const FILE_DROP_TOLERANCE_LINES = 2;
 const NEW_FILE_MINIMUM = 70;
 
 function walk(dir, found = []) {
@@ -116,7 +120,10 @@ for (const [file, value] of Object.entries(filePct)) {
         `${file} is new to the coverage report at ${value}% lines; add tests that run it (need ${NEW_FILE_MINIMUM}%)`,
       );
     }
-  } else if (value < before - FILE_DROP_TOLERANCE) {
+  } else if (
+    value <
+    before - Math.max(FILE_DROP_TOLERANCE, (FILE_DROP_TOLERANCE_LINES / files[file].lf) * 100)
+  ) {
     failures.push(`${file} fell from ${before}% to ${value}% line coverage`);
   }
 }
