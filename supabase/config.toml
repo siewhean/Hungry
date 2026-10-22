@@ -22,15 +22,24 @@ additional_redirect_urls = [
   "hungry://auth/reset",
   "hungry://auth/oauth",
   "hungry://auth/callback",
-  # Website. The Vercel preview wildcards (hungry-*-...) are gone: production sign-in
-  # must not redirect to a preview deployment (medium-low decision 2).
-  "https://hungry-siewheans-projects.vercel.app/",
-  "https://hungry-siewheans-projects.vercel.app/**",
+  # No hungry-*.vercel.app addresses: production sign-in must not redirect to a Vercel
+  # deployment (medium-low decision 2). Add usehungry.com URLs here if the website needs them.
 ]
 # Matches MIN_PASSWORD_LENGTH in src/features/auth/validation.ts. Leaked-password
 # (HIBP) protection has no config.toml key; it is a dashboard setting.
 minimum_password_length = 10
 password_requirements = ""
+
+# Limits on the Auth endpoints (sign-up, sign-in, OTP / code verify, refresh, email sending).
+# email_sent is per hour for the whole project; the others are per 5 minutes per IP address.
+# Pinned like [auth.email] so `supabase config push` cannot reset them. Compare with Dashboard >
+# Authentication > Rate Limits before pushing config.
+[auth.rate_limit]
+email_sent = 30
+sign_in_sign_ups = 30
+token_verifications = 30
+token_refresh = 150
+anonymous_users = 30
 
 # Pinned so `supabase config push` cannot reset them to CLI defaults.
 [auth.email]
@@ -83,6 +92,9 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.purge-orphan-media]
+verify_jwt = false
+
+[functions.send-email]
 verify_jwt = false
 
 [functions.send-notifications]

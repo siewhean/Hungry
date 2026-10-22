@@ -1,0 +1,14 @@
+{
+  "version": "20261022150000",
+  "name": "20261022150000_race_condition_fixes",
+  "result": "pass",
+  "rehearsed_at": "2026-10-22T18:31:56Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "7f265d997b64fb52eaa9683e9de0110ad8fe8a16",
+  "up_sha256": "99d670bc52f1878aadf8f1f78c5ec4cdaf5eb16ef9c466002918e54880749265",
+  "down_sha256": "6d30c0bf84ba9d806b8160684ea38b1f748c3609bc706f5e49606284dfc78d76",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/race_conditions.sql"]
+}

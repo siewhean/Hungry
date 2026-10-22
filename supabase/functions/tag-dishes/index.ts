@@ -3,7 +3,7 @@
 import { reportFunctionError, serveWithSentry } from "../_shared/sentry.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
 import { timingSafeEqual } from "../_shared/timingSafeEqual.ts";
-import Anthropic from "npm:@anthropic-ai/sdk@0.135.0";
+import { generateJson } from "../_shared/gemini.ts";
 import {
   DIETARY_FLAGS,
   FLAVOR_TAGS,
@@ -15,6 +15,7 @@ import {
 
 type JsonObject = Record<string, unknown>;
 
+// The name predates the move to Gemini. Kept so dishes that are already tagged are not tagged again.
 const SOURCE = "claude_tagging_v1";
 const AUTO_APPLY_CONFIDENCE = 0.7;
 const MAX_BATCH_SIZE = 50;
@@ -53,17 +54,15 @@ function describeDish(dish: JsonObject): string {
   return lines.join("\n");
 }
 
-async function tagDish(anthropic: Anthropic, dish: JsonObject): Promise<JsonObject | null> {
-  const response = await anthropic.messages.create({
+function tagDish(apiKey: string, dish: JsonObject): Promise<JsonObject | null> {
+  return generateJson({
+    apiKey,
     model: MODEL,
-    max_tokens: 2000,
-    output_config: { effort: "low", format: { type: "json_schema", schema: OUTPUT_SCHEMA } },
     system: SYSTEM_PROMPT,
-    messages: [{ role: "user", content: describeDish(dish) }],
+    user: describeDish(dish),
+    schema: OUTPUT_SCHEMA,
+    maxOutputTokens: 4000,
   });
-  if (response.stop_reason !== "end_turn") return null;
-  const text = response.content.find((block) => block.type === "text")?.text ?? "";
-  return JSON.parse(text) as JsonObject;
 }
 
 serveWithSentry("tag-dishes", async (request) => {
@@ -81,8 +80,9 @@ serveWithSentry("tag-dishes", async (request) => {
   if (!supabaseUrl || !serviceRoleKey) {
     return toJson(500, { error: "missing_supabase_env" });
   }
-  if (!Deno.env.get("ANTHROPIC_API_KEY")) {
-    return toJson(500, { error: "missing_anthropic_api_key" });
+  const geminiApiKey = Deno.env.get("GEMINI_API_KEY") ?? "";
+  if (!geminiApiKey) {
+    return toJson(500, { error: "missing_gemini_api_key" });
   }
 
   const payload = (await request.json().catch(() => ({}))) as JsonObject;
@@ -90,7 +90,6 @@ serveWithSentry("tag-dishes", async (request) => {
   const client = createClient(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
-  const anthropic = new Anthropic();
 
   const { data: dishes, error: listError } = await client.rpc("dishes_needing_taste_tags", {
     p_limit: limit,
@@ -101,9 +100,10 @@ serveWithSentry("tag-dishes", async (request) => {
   }
 
   const summary = { tagged: 0, auto_applied: 0, needs_review: 0, skipped: 0, failed: 0 };
+  // n-plus-one-ok: the model call per dish dominates; writing each result as it arrives keeps progress if the function times out.
   for (const dish of (dishes ?? []) as JsonObject[]) {
     try {
-      const result = await tagDish(anthropic, dish);
+      const result = await tagDish(geminiApiKey, dish);
       if (!result) {
         summary.skipped += 1;
         continue;

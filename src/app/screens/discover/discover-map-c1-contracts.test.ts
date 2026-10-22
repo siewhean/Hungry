@@ -91,7 +91,7 @@ test("H18/H19: Decide for Me picks from the server and prefers open stalls", () 
   const decide = readRepoFile("src/app/screens/discover/DecideForMeResultScreen.tsx");
   assert.match(decide, /service\.discovery\.searchDishes\(/);
   assert.doesNotMatch(decide, /repository\.searchDishes\(/);
-  assert.match(decide, /preferOpenStalls\(ranked, new Map\(venues\)\)/);
+  assert.match(decide, /preferOpenStalls\(ranked, new Map\(venues\.map\(/);
   assert.match(
     decide,
     /const hasNoMatch =\s*!isLocationApproximate && !isLoadingCandidates && candidates\.length === 0 && !selectedDish;/,

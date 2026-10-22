@@ -2,6 +2,8 @@
 
 Scope: Hungry staging and production Supabase migrations.
 
+> The default process is now `supabase/manual/safe-migration-runbook.md` (down file, backup, staging rehearsal, `scripts/db/ship.sh`). This file stays as the incident guide.
+
 ## Principles
 
 - Prefer forward-fix migrations over destructive rollback.

@@ -205,13 +205,20 @@ export function MerchantMenuScreen() {
     if (!activeOutlet || soldOutDishes.length === 0) return;
     const ids = new Set(soldOutDishes.map((dish) => dish.id));
     setMenu((prev) => prev.map((d) => (ids.has(d.id) ? withSoldOut(d, false) : d)));
-    const results = await Promise.allSettled(
-      soldOutDishes.map((dish) =>
-        getHungryService().merchant.toggleSoldOut(activeOutlet.id, dish.id, false),
-      ),
-    );
+    let changedIds = new Set<string>();
+    try {
+      changedIds = new Set(
+        await getHungryService().merchant.setDishesSoldOut(
+          activeOutlet.id,
+          soldOutDishes.map((dish) => dish.id),
+          false,
+        ),
+      );
+    } catch {
+      // Every dish is put back below.
+    }
     const failedIds = new Set(
-      soldOutDishes.filter((_, index) => results[index]?.status === "rejected").map((d) => d.id),
+      soldOutDishes.filter((dish) => !changedIds.has(dish.id)).map((d) => d.id),
     );
     trackMerchantEvent("merchant_dish_sold_out_toggled", activeOutlet.id, {
       sold_out: false,

@@ -93,8 +93,22 @@ Treat these as high blast-radius. Read before editing, patch narrowly, and run a
 6. Append a short line to `tasks/session-log.md` after focused task work.
 7. Update `tasks/lessons.md` only after a correction or repeated mistake.
 8. Keep final responses short: what changed, what passed, what remains.
-
+9. Every new Supabase migration (anything after `20261022130000`) needs a matching `supabase/rollbacks/<name>.down.sql`, a `-- smoke:` header, no `begin;`/`commit;`, and staging rehearsal evidence from `scripts/db/rehearse.sh <version>` committed at `supabase/rehearsals/<version>.json`. Prod only via `scripts/db/ship.sh` (it backs up first; Supabase's GitHub auto-deploy must stay off); never apply a migration to prod through the Supabase MCP or hand-paste migration SQL into it, and never use a `-- no-down:` / `-- no-rehearsal:` waiver without sh's explicit approval. CI fails otherwise (`npm run audit:supabase:migration-safety`). Runbook: `supabase/manual/safe-migration-runbook.md`.
+10. Rate limits: every new RPC the anon role can execute, every new table or RPC a signed-in user can hit in a loop, and every new Edge Function needs a cap (`app_private.request_rate_rules` row in a migration; Edge Functions call `app_can_make_ip_request` / `app_can_make_user_request`) or an entry with a reason in `supabase/rate-limit-allowlist.json`. `npm run check:rate-limits` fails CI otherwise. Details in `supabase/README.md` (Rate limits).
 11. Error tracking is mandatory (enforced by `src/lib/monitoring/error-reporting-contracts.test.ts` in CI): every Edge Function is served with `serveWithSentry("<name>", handler)` from `supabase/functions/_shared/sentry.ts` (never bare `Deno.serve`), handled failures call `reportFunctionError`, and screens that catch errors call `reportError` from `@/lib/monitoring/reportError`. Do not add a screen to `screen-error-reporting-baseline.json`; the list only shrinks.
+12. Never query inside a loop. A database, RPC, service or storage-signing call inside `for`/`while`/`.map`/`.forEach` is an N+1: fetch the whole set once (`.in("id", ids)`, a join, or a batched RPC such as `get_item_details`, `get_venue_summaries`) and look rows up from a `Map`. If one call per item is truly required (a file upload, a cursor-paged read, one transaction per row), add `// n-plus-one-ok: <reason>` on or just above the call. CI runs `npm run check:n-plus-one`; `scripts/n-plus-one-baseline.json` may only shrink.
+
+---
+
+## 4a. Workflow rule 14: concurrency (race conditions)
+
+Any code that reads a value and then writes based on it (caps, counts, "next position", dedupe, counters, approve/report thresholds) must be atomic. Two requests will arrive together.
+
+- Prefer one statement: `UPDATE .. SET n = n + 1`, `INSERT .. ON CONFLICT`, or a compare-and-set `UPDATE .. WHERE status = 'x'`.
+- Otherwise lock before the read: `pg_advisory_xact_lock(hashtextextended('<what>:' || <owner id>, 0))` for per-user/per-outlet caps, or `SELECT .. FOR NO KEY UPDATE` on the parent row. In READ COMMITTED the statement after the lock sees committed rows, so a counter recomputed from a snapshot must lock the parent first.
+- Do not read in the app and write back (`.update({ n: row.n + 1 })`, `activeCount >= 6` then insert). Move it into a database function or trigger.
+- Add `-- race-ok: <reason>` (or `// race-ok:` in TS) only when a single caller is guaranteed, with the reason.
+- CI runs `npm run audit:races` (pattern check) and `npm run test:races` (`supabase/race-harness/run.sh`, two overlapping transactions per race). Add a scenario there for each new race you fix.
 
 13. Everything ships tested, and CI enforces it. A new screen gets a row in `src/test/render/screenMatrix.ts`; a new store, service, hook, feature module, shared component or Edge Function gets a behaviour test (the guard in `src/app/test-coverage-guard-contracts.test.ts` fails otherwise; never add to its allowlists). Edge Functions use `src/test/edge/harness.ts`, service methods use `src/test/supabase/appClient.ts`. Run `npm run test:coverage` and `npm run test:render` before pushing; after adding tests run `npm run test:coverage:update` and commit `tests/coverage-baseline.json`. See `tasks/test-harness.md` Gate 3a.
 
