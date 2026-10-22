@@ -14,5 +14,7 @@
     "merchant_normalize_availability_flag": "Immutable string helper; no table access. Too cheap to need its own cap.",
     "merchant_outlet_matches_catalog_link": "Row-level-security helper; cheap indexed lookup. Too cheap to need its own cap."
   },
-  "edgeFunctions": {}
+  "edgeFunctions": {
+    "send-email": "Supabase Auth Send Email hook. Every request must carry a valid Standard Webhooks signature from the project's hook secret, so only Auth can call it; Auth's own email rate limits cap volume."
+  }
 }

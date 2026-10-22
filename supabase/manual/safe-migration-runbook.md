@@ -9,7 +9,7 @@ The free Supabase plan has **no managed backups or point-in-time restore**, so t
 
 ## One-time setup (owner)
 
-1. The staging project exists: `hungry-staging`, ref `uuylnktiipkmcweyqnpd`, Free plan, same region as production (ap-northeast-2). Reset its database password in the dashboard (Project Settings > Database) before first use.
+1. The staging project exists: `hungry-staging`, ref `uuylnktiipkmcweyqnpd`, Free plan, in ap-northeast-2 (Seoul); production moved to Singapore (ap-southeast-1) on 2026-10-22. Reset its database password in the dashboard (Project Settings > Database) before first use.
    Never copy production keys, secrets or user data into it.
 2. In a Terminal, from the Hungry repo, set the connection details for this shell (zsh). Use the
    session/transaction pooler URL from Project Settings > Database; the URL has no password.
@@ -17,7 +17,7 @@ The free Supabase plan has **no managed backups or point-in-time restore**, so t
 
    ```bash
    export STAGING_DB_URL='postgresql://postgres.uuylnktiipkmcweyqnpd@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?sslmode=require&connect_timeout=15'
-   export PROD_DB_URL='postgresql://postgres.yrlxjeovwslirseajomz@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?sslmode=require&connect_timeout=15'
+   export PROD_DB_URL='postgresql://postgres.frluxwpqqyomiqmjzavd@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?sslmode=require&connect_timeout=15'
    ```
 
    Then, each on its own line (pasting them in a block swallows the next line):
@@ -75,6 +75,26 @@ scripts/db/ship.sh <version>
 ```
 
 `rehearse.sh` first applies to staging any migration that prod already has (read from prod's ledger, read-only), then rehearses, then runs the down once more so staging ends at prod's state (`KEEP_APPLIED=1` skips that last step). That makes rehearsals independent: two PRs can each be rehearsed without waiting for the other to ship. If prod has a migration your branch lacks, it stops and tells you to merge `origin/main` first.
+
+## Auto-deploy must stay off
+
+Supabase's GitHub integration can deploy migrations and Edge Functions to prod when a PR merges to `main`.
+That skips the backup and the row-loss guard, and it shipped 20261022140000 once. In the dashboard
+(prod project, Settings, Integrations, GitHub) "Deploy to production" must be off. Check the ledger if in
+doubt: a row whose `statements` column is filled was applied by Supabase tooling, not by `ship.sh` or psql.
+With it off, Edge Functions are deployed by hand (`supabase functions deploy <name>`).
+
+## Moving to another project or region
+
+Use `scripts/db/move-project.sh` to move production to a new, empty Supabase project (for example Seoul to Singapore). The old project is only read, so it stays a working fallback until you delete it. Set `SRC_*` (old) and `DST_*` (new) as the script header describes, then run in order:
+
+1. `bootstrap` applies every migration to the new project (about 35 minutes over the pooler; no seed data).
+2. `data` copies public, app_private, auth.users and auth.identities in one transaction and rewrites logo URLs to the new project. Run it at cutover, because it replaces whatever the new project holds.
+3. `storage` copies every storage file with both service_role keys, then compares counts per bucket.
+4. `secrets` creates the account-deletion Vault secrets and prints the matching Edge Function secret.
+5. `verify` compares row counts and hashes, old versus new.
+
+By hand, in the dashboard or CLI: deploy the Edge Functions, set their secrets (they are write-only, so copy them from the password manager), recreate the Send Email hook and the Auth settings from `supabase/config.toml`, then point the app's `EXPO_PUBLIC_SUPABASE_URL` and key at the new project and ship a build. Sessions are not copied: everyone signs in again. After cutover, change `PROD_REF` in `scripts/db/common.sh` and `scripts/check-migration-safety.mjs`, and re-run `scripts/db/backup.sh prod`.
 
 ## Undoing
 
