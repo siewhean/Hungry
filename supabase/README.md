@@ -112,7 +112,9 @@ every route without a row). `service_role` is never limited, GET on `/rpc/*` is 
 transaction cannot write the counter), and a counter error fails open.
 
 - New anon-callable RPC: insert a rule row with an anon cap in a new migration, or list it in
-  `rate-limit-allowlist.json` with a reason (the `*` default still applies).
+  `rate-limit-allowlist.json` with a reason. A limited RPC must be `VOLATILE` (`alter function ... volatile`):
+  PostgREST runs POST on a STABLE or IMMUTABLE function in a READ ONLY transaction, where the counter cannot
+  be written, so the limit would silently never apply (found on prod; migration 20261022130000). CI checks this.
 - New table or signed-in RPC that can be abused in a loop: add a rule row with a `user_per_minute` cap.
 - New Edge Function: call `app_can_make_ip_request(ip, action, limit)` before auth and
   `app_can_make_user_request(user, action, limit)` after it, guard it with a worker token, or list it in

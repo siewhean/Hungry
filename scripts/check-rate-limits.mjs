@@ -52,7 +52,7 @@ export function analyzeMigrations(migrationsDir) {
     .filter((f) => f.endsWith(".sql"))
     .sort();
 
-  const functions = new Map(); // name -> { anon: boolean, trigger: boolean }
+  const functions = new Map(); // name -> { anon, trigger, notVolatile }
   const rules = new Map(); // route -> { anon: number | null, user: number | null }
   let hookOn = false;
 
@@ -63,14 +63,34 @@ export function analyzeMigrations(migrationsDir) {
     for (const m of sql.matchAll(
       /create\s+(?:or\s+replace\s+)?function\s+(?:public\.)?"?([a-z_][a-z0-9_]*)"?\s*\(/gi,
     )) {
-      const after = sql.slice(m.index + m[0].length, m.index + m[0].length + 3000);
-      const bodyStart = after.search(/\bas\s+(?:\$|')/i);
-      const head = bodyStart === -1 ? after : after.slice(0, bodyStart);
+      const after = sql.slice(m.index + m[0].length);
+      const body = after.match(/\bas\s+(\$[a-z0-9_]*\$|')/i);
+      const head = body ? after.slice(0, body.index) : after.slice(0, 3000);
+      // Attributes (language, stable, ...) can come before or after the body.
+      let tail = "";
+      if (body && body[1] !== "'") {
+        const bodyEnd = after.indexOf(body[1], body.index + body[0].length);
+        if (bodyEnd !== -1) {
+          const rest = after.slice(bodyEnd + body[1].length);
+          tail = rest.slice(0, Math.max(rest.indexOf(";"), 0));
+        }
+      }
       events.push({
         at: m.index,
         type: "create",
         name: m[1].toLowerCase(),
         trigger: /\breturns\s+trigger\b/i.test(head),
+        notVolatile: /\b(stable|immutable)\b/i.test(head + " " + tail),
+      });
+    }
+    for (const m of sql.matchAll(
+      /alter\s+function\s+(?:public\.)?"?([a-z_][a-z0-9_]*)"?\s*\([^)]*\)\s+(volatile|stable|immutable)\b/gi,
+    )) {
+      events.push({
+        at: m.index,
+        type: "volatility",
+        name: m[1].toLowerCase(),
+        notVolatile: m[2].toLowerCase() !== "volatile",
       });
     }
     for (const m of sql.matchAll(
@@ -126,7 +146,14 @@ export function analyzeMigrations(migrationsDir) {
         const known = functions.get(e.name);
         // A function created for the first time is executable by anon through default privileges;
         // replacing an existing one keeps whatever grants it had.
-        functions.set(e.name, { anon: known ? known.anon : true, trigger: e.trigger });
+        functions.set(e.name, {
+          anon: known ? known.anon : true,
+          trigger: e.trigger,
+          notVolatile: e.notVolatile,
+        });
+      } else if (e.type === "volatility") {
+        const known = functions.get(e.name);
+        if (known) known.notVolatile = e.notVolatile;
       } else if (e.type === "drop") {
         functions.delete(e.name);
       } else if (e.type === "grant-anon" || e.type === "revoke-anon") {
@@ -148,7 +175,10 @@ export function analyzeMigrations(migrationsDir) {
     .filter(([, fn]) => fn.anon && !fn.trigger)
     .map(([name]) => name)
     .sort();
-  return { anonRpcs, allFunctions: new Set(functions.keys()), rules, hookOn };
+  const notVolatile = new Set(
+    [...functions.entries()].filter(([, fn]) => fn.notVolatile).map(([name]) => name),
+  );
+  return { anonRpcs, allFunctions: new Set(functions.keys()), notVolatile, rules, hookOn };
 }
 
 export function listEdgeFunctions(functionsDir) {
@@ -203,9 +233,16 @@ export function findProblems({ migrations, edgeFunctions, allowlist }) {
       );
     }
   }
-  for (const route of migrations.rules.keys()) {
-    if (route.startsWith("rpc/") && !migrations.allFunctions.has(route.slice(4))) {
+  for (const [route, rule] of migrations.rules) {
+    if (!route.startsWith("rpc/")) continue;
+    const name = route.slice(4);
+    if (!migrations.allFunctions.has(name)) {
       problems.push(`Rate rule '${route}' names a function no migration creates (typo?).`);
+    } else if (migrations.notVolatile.has(name) && (rule.anon !== null || rule.user !== null)) {
+      problems.push(
+        `RPC ${name} has a rate rule but is STABLE or IMMUTABLE. PostgREST runs POST on those read-only, so the counter cannot be written and the limit never applies. ` +
+          `Add \`alter function public.${name}(<args>) volatile;\` in a migration.`,
+      );
     }
   }
 
