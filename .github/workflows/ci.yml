@@ -80,6 +80,11 @@ jobs:
       - name: Supabase static audit
         run: npm run audit:supabase:static
 
+      - name: Migration safety (down file and staging rehearsal for every new migration)
+        run: |
+          npm run test:migration-safety
+          npm run audit:supabase:migration-safety
+
       - name: Edge Function static check
         run: npm run check:edge-functions
 

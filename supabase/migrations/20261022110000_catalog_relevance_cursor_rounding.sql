@@ -1,3 +1,4 @@
+-- smoke: supabase/smoke/catalog_search_quality_hardening.sql
 -- Relevance paging must not depend on the session's extra_float_digits.
 -- The cursor stores the relevance score as JSON and compares it with the recomputed score on
 -- the next page. With extra_float_digits = 0 (some clients and poolers) the stored value is cut
