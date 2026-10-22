@@ -96,6 +96,18 @@ Treat these as high blast-radius. Read before editing, patch narrowly, and run a
 
 ---
 
+## 4a. Workflow rule 14: concurrency (race conditions)
+
+Any code that reads a value and then writes based on it (caps, counts, "next position", dedupe, counters, approve/report thresholds) must be atomic. Two requests will arrive together.
+
+- Prefer one statement: `UPDATE .. SET n = n + 1`, `INSERT .. ON CONFLICT`, or a compare-and-set `UPDATE .. WHERE status = 'x'`.
+- Otherwise lock before the read: `pg_advisory_xact_lock(hashtextextended('<what>:' || <owner id>, 0))` for per-user/per-outlet caps, or `SELECT .. FOR NO KEY UPDATE` on the parent row. In READ COMMITTED the statement after the lock sees committed rows, so a counter recomputed from a snapshot must lock the parent first.
+- Do not read in the app and write back (`.update({ n: row.n + 1 })`, `activeCount >= 6` then insert). Move it into a database function or trigger.
+- Add `-- race-ok: <reason>` (or `// race-ok:` in TS) only when a single caller is guaranteed, with the reason.
+- CI runs `npm run audit:races` (pattern check) and `npm run test:races` (`supabase/race-harness/run.sh`, two overlapping transactions per race). Add a scenario there for each new race you fix.
+
+---
+
 ## 5. Verification Budget
 
 | Change | Default verification |

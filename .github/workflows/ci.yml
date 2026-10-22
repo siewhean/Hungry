@@ -68,6 +68,14 @@ jobs:
       - name: Supabase static audit
         run: npm run audit:supabase:static
 
+      - name: Race condition patterns
+        run: |
+          node --test scripts/__tests__/check_race_patterns.test.mjs
+          npm run audit:races
+
+      - name: Race condition harness (two-session Postgres checks)
+        run: npm run test:races
+
       - name: Link Supabase project
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}

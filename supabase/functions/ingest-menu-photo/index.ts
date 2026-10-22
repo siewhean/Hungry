@@ -314,6 +314,7 @@ Deno.serve(async (request) => {
   }
 
   const ocrJobId = crypto.randomUUID();
+  // race-ok: compare-and-set below, the UPDATE only matches the status and attempt count just read
   const { data: processingSubmission, error: claimError } = await client
     .from("menu_photo_submissions")
     .update({
@@ -325,6 +326,7 @@ Deno.serve(async (request) => {
     .eq("id", submissionId)
     .eq("submitted_by", callerUserId)
     .in("ocr_status", ["pending", "failed"])
+    .eq("ocr_attempts", Number(submission.ocr_attempts ?? 0))
     .lt("ocr_attempts", 3)
     .select(
       "id, venue_id, building_id, submitted_by, storage_bucket, storage_path, ocr_attempts, ocr_status",
@@ -384,17 +386,11 @@ Deno.serve(async (request) => {
       }
 
       if (bestMatch && bestScore > 0.9) {
-        await client
-          .from("dishes_draft")
-          .update({
-            extraction_confidence: Math.max(
-              Number(bestMatch.extraction_confidence ?? 0),
-              clampConfidence(dish.extraction_confidence),
-            ),
-            confidence_bumps: Number(bestMatch.confidence_bumps ?? 0) + 1,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", String(bestMatch.id));
+        // One UPDATE in the database: parallel photos of the same menu each add one bump.
+        await client.rpc("bump_dish_draft_confidence", {
+          p_draft_id: String(bestMatch.id),
+          p_confidence: clampConfidence(dish.extraction_confidence),
+        });
         continue;
       }
 
