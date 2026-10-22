@@ -2,6 +2,7 @@
 # Move prod from Seoul to Singapore, on sh's Mac.
 #   bash ~/move-to-singapore.sh bootstrap    # phase 1: build the empty Singapore project (about 35 min, safe any time)
 #   bash ~/move-to-singapore.sh functions    # deploy the 9 Edge Functions to Singapore (needs SUPABASE_ACCESS_TOKEN)
+#   bash ~/move-to-singapore.sh auth         # push Auth settings + email templates from supabase/config.toml, list secret names (needs SUPABASE_ACCESS_TOKEN)
 #   bash ~/move-to-singapore.sh cutover      # phase 2: copy rows + photos, create Vault secrets, verify
 # Seoul is only read. Needs, loaded first with `read -s` lines in zsh:
 #   SRC_PGPASSWORD   Seoul prod DB password
@@ -13,12 +14,21 @@ REPO="${HUNGRY_REPO:-/Users/Siew Hean/Documents/GitHub/Hungry}"
 BRANCH="claude/project-thread-chaz1d"
 SRC_REF=yrlxjeovwslirseajomz
 DST_REF=frluxwpqqyomiqmjzavd
-if [ "$PHASE" = functions ]; then
+if [ "$PHASE" = functions ] || [ "$PHASE" = auth ]; then
   [ -n "${SUPABASE_ACCESS_TOKEN:-}" ] || { echo "Load SUPABASE_ACCESS_TOKEN first (a token from the account that owns hungry-prod-sg)."; exit 1; }
   git -C "$REPO" fetch origin "$BRANCH"
   WT="$(mktemp -d)/fn"; git -C "$REPO" worktree add --detach "$WT" "origin/$BRANCH"
   trap 'git -C "$REPO" worktree remove --force "$WT" >/dev/null 2>&1 || true' EXIT
   cd "$WT"
+  if [ "$PHASE" = auth ]; then
+    # config.toml pins every Auth key this app relies on; the new project starts from defaults, so nothing is lost.
+    npx --yes supabase config push --project-ref "$DST_REF"
+    echo "Edge Function secret NAMES (values are write-only). Old project, then new project:"
+    npx --yes supabase secrets list --project-ref "$SRC_REF" | awk -F'|' 'NR>2 {gsub(/ /,"",$1); print "  old: " $1}'
+    npx --yes supabase secrets list --project-ref "$DST_REF" | awk -F'|' 'NR>2 {gsub(/ /,"",$1); print "  new: " $1}'
+    echo "AUTH_OK"
+    exit 0
+  fi
   npx --yes supabase functions deploy --project-ref "$DST_REF" --use-api
   npx --yes supabase functions list --project-ref "$DST_REF"
   echo "FUNCTIONS_OK"
