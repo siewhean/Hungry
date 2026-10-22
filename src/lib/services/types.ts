@@ -39,6 +39,7 @@ import type {
   PopularVisitorPin,
   Portfolio,
   PortfolioCollaborator,
+  PortfolioCollaboratorRole,
   PortfolioFlag,
   PortfolioFollow,
   PortfolioItem,
@@ -118,6 +119,17 @@ export interface PortfolioMutationOptions {
   portfolioId?: string;
 }
 
+/** Name, photo, stall and price of one list item, as get_portfolio_item_details returns it. */
+export interface PortfolioItemDetailRow {
+  dishId?: string;
+  stallId?: string;
+  /** Absent when the dish or stall is gone or not visible to this viewer. */
+  name?: string;
+  stallName?: string;
+  price?: number;
+  imageUrl?: string;
+}
+
 export interface DataRepository {
   getProfile(isAuthenticated: boolean, userId?: string | null): UserProfile;
   listBuildings(): BuildingSummary[];
@@ -160,7 +172,7 @@ export interface DataRepository {
   insertChecklistItem?(item: ChecklistItemCreateInput): Promise<ChecklistItem>;
   fetchChecklistItems?(checklistId: string): Promise<ChecklistItem[]>;
   updateChecklistItem?(id: string, updates: Partial<ChecklistItemCreateInput>): Promise<void>;
-  markChecklistItemTried?(id: string): Promise<void>;
+  markChecklistItemTried?(id: string, tried?: boolean): Promise<void>;
   deleteChecklistItem?(id: string): Promise<void>;
   reorderChecklistItems?(checklistId: string, itemIds: string[]): Promise<void>;
 
@@ -346,6 +358,9 @@ export interface Bite {
   tasteStamp: TasteStamp;
   cravingCount: number;
   savedCount: number;
+  /** Server comment and share totals, when the read returns them. */
+  commentCount?: number;
+  shareCount?: number;
   /** Server distance from the query point, when the read computed one. */
   distanceMeters?: number;
   /** The viewer's own like/save, when the read returns it (undefined = unknown). */
@@ -368,8 +383,11 @@ export interface BiteDraft {
   caption: string;
   tags?: string[];
   tasteStamp: TasteStamp;
+  /** The poster's own rating; 0 when they gave none (never the dish average). */
   rating: number;
   author?: Pick<UserProfile, "id" | "displayName" | "avatarUrl">;
+  /** Client-made post id reused across retries, so a retry resumes the post instead of duplicating it. */
+  clientPostId?: string;
 }
 
 // ─── AI / Recommendation Types ────────────────────────────────────────────────
@@ -496,6 +514,8 @@ export interface DiscoveryLocationFeedRequest {
   lng?: number;
   radiusMeters?: number;
   limit?: number;
+  /** The mall, hawker centre or food court the viewer is in: its stalls come first. */
+  buildingId?: string;
 }
 
 export interface DiscoveryLocationFeed {
@@ -540,6 +560,14 @@ export interface SubmitReviewInput {
   // TODO(api): include upload references (asset ids / signed urls) once media service is wired.
 }
 
+/** Fields an author may change on their own review; identity fields stay locked. */
+export interface UpdateReviewInput {
+  rating?: number;
+  text?: string;
+  tags?: string[];
+  wouldRecommend?: boolean;
+}
+
 export interface RecentReviewFeedEntry {
   review: DishDetail["reviews"][number];
   dishId: string;
@@ -548,9 +576,25 @@ export interface RecentReviewFeedEntry {
   venueName: string;
 }
 
+/** One page of the review feed, with the cursor taken from the raw rows read. */
+export interface RecentReviewFeedPage {
+  entries: RecentReviewFeedEntry[];
+  /**
+   * More rows exist after this page. Based on the raw row count, so reviews dropped from
+   * `entries` (for example a dish the viewer cannot read) never end the feed early.
+   */
+  hasMore: boolean;
+  /** Keyset cursor for the next page: the last raw row read, even when its entry was dropped. */
+  nextCursor?: { before: string; beforeId: string };
+}
+
+/** Keyset paging for one person's reviews (same cursor as the feed). */
+
 export interface ListRecentReviewsOptions {
   /** Page size (defaults to 50). */
   limit?: number;
+  /** Only reviews created at or after this ISO timestamp (what is newer than a loaded page). */
+  after?: string;
   /** Cursor: only return reviews created strictly before this ISO timestamp. */
   before?: string;
   /**
@@ -560,6 +604,8 @@ export interface ListRecentReviewsOptions {
   beforeId?: string;
   /** Only reviews of these dishes (for example one stall's menu). An empty list returns none. */
   dishIds?: string[];
+  /** Only reviews written for this stall (read by its indexed venue column, not a long dish-id list). */
+  venueId?: string;
 }
 
 export interface SubmitMenuPhotoInput {
@@ -569,6 +615,21 @@ export interface SubmitMenuPhotoInput {
   photoFileSizeBytes?: number;
   dishId?: string;
   reviewText?: string;
+}
+
+export type CatalogCorrectionKind =
+  | "closed"
+  | "wrong_price"
+  | "wrong_hours"
+  | "wrong_dish_info"
+  | "other";
+
+/** A diner's "Something wrong?" report on a stall or dish, queued for ops. */
+export interface SubmitCatalogCorrectionInput {
+  venueId: string;
+  dishId?: string;
+  kind: CatalogCorrectionKind;
+  note?: string;
 }
 
 /** PDPA access export. `categories` lists every key in `data`; nothing is silently skipped. */
@@ -586,6 +647,12 @@ export interface AccountDeletionRequest {
   /** The code from sendAccountDeletionCode; required with Supabase. */
   code?: string;
 }
+
+/**
+ * What `auth.signOut` revokes: this device only ("local", the default), every device
+ * ("global") or every device except this one ("others").
+ */
+export type AuthSignOutScope = "local" | "global" | "others";
 
 /** Account deletion runs after a grace period; until then the owner can cancel. */
 export const ACCOUNT_DELETION_GRACE_DAYS = 30;
@@ -612,6 +679,31 @@ export interface ContentReportRequest {
   reason: string;
 }
 
+export interface BitesFeedPage {
+  /** Rows per page (default 40). */
+  limit?: number;
+  /** Continue after this post; omit for the newest page. */
+  cursor?: { createdAt: string; postId: string };
+}
+
+export interface BlockedUserEntry {
+  blockedUserId: string;
+  displayName?: string;
+  avatarUrl?: string;
+  reason?: string;
+  createdAt: string;
+}
+
+export interface HiddenPostEntry {
+  postId: string;
+  caption?: string;
+  authorId?: string;
+  authorName?: string;
+  dishName?: string;
+  venueName?: string;
+  hiddenAt: string;
+}
+
 export interface BlockUserRequest {
   /** Auth user id (UUID) of the person being blocked. Never a display name. */
   blockedUserId: string;
@@ -636,6 +728,9 @@ export interface MerchantClaimSubmissionResult {
   claimId: string | null;
   status: "created" | "already_exists";
 }
+
+/** Where the signed-in user's claim for a stall stands, in diner-facing terms. */
+export type MerchantClaimStatus = "none" | "submitted" | "in_review" | "approved" | "rejected";
 
 export interface DraftDishRow {
   id: string;
@@ -748,7 +843,10 @@ export interface HungryService {
     signIn(email: string, password: string): Promise<Session>;
     signInWithGoogle(): Promise<Session>;
     signInWithApple(): Promise<Session>;
-    signOut(): Promise<void>;
+    /** Ends this device's session by default; "global" and "others" also revoke other devices. */
+    signOut(options?: { scope?: AuthSignOutScope }): Promise<void>;
+    /** Why this account cannot be deleted yet ("merchant_owner_must_transfer"), or null. */
+    getAccountDeletionBlocker(): Promise<"merchant_owner_must_transfer" | null>;
     /** Emails the signed-in user a one-time code to confirm account deletion. */
     sendAccountDeletionCode(): Promise<void>;
     /** Verifies `request.code`, then queues deletion; resolves with the server's scheduled date. */
@@ -769,6 +867,14 @@ export interface HungryService {
      * sent to the new inbox; until then the current email stays in effect.
      */
     requestEmailChange(newEmail: string): Promise<void>;
+    /**
+     * Stamps the signed-in account as having finished first-run onboarding, so a later
+     * sign-in (on another phone, hours after confirming elsewhere) is not taken for a
+     * sign-up. Safe to repeat; a no-op once stamped.
+     */
+    markOnboarded(): Promise<void>;
+    /** The new address of an email change still waiting for confirmation, or null. */
+    getPendingEmailChange(): Promise<string | null>;
     getCurrentSession(): Promise<Session | null>;
     refreshSession(): Promise<Session | null>;
   };
@@ -788,6 +894,13 @@ export interface HungryService {
     getVenue(id: string): Promise<VenueSummary | undefined>;
     listVenuesByBuilding(buildingId: string): Promise<VenueSummary[]>;
     getDish(id: string): Promise<DishDetail | undefined>;
+    /** Name, photo, stall and price for a set of dishes and stalls in one call. */
+    getItemDetails(input: {
+      dishIds: string[];
+      stallIds: string[];
+    }): Promise<PortfolioItemDetailRow[]>;
+    /** Stall summaries (hours, open flag, building) for a set of ids in one call; no menus. */
+    getVenuesByIds(ids: string[]): Promise<VenueSummary[]>;
     listActivePromotionsForTarget(input: {
       venueId: string;
       dishId?: string;
@@ -842,12 +955,27 @@ export interface HungryService {
   // Reviews
   reviews: {
     getReviewsForDish(dishId: string): Promise<DishDetail["reviews"]>;
-    getUserReviews(userId: string): Promise<DishDetail["reviews"]>;
+    /**
+     * One user's reviews for a profile list, newest first, without photos. Paged on the server
+     * (default 200).
+     */
+    getUserReviews(
+      userId: string,
+      page?: { limit?: number; offset?: number },
+    ): Promise<DishDetail["reviews"]>;
     submitReview(draft: SubmitReviewInput): Promise<void>;
     /** Newest-first review feed across all dishes, fetched as one paginated query. */
     listRecentReviews(options?: ListRecentReviewsOptions): Promise<RecentReviewFeedEntry[]>;
+    /** The same feed as listRecentReviews, with paging state that survives dropped rows. */
+    listRecentReviewsPage(options?: ListRecentReviewsOptions): Promise<RecentReviewFeedPage>;
+    /** One review with its dish and stall names (the shared review page); null when not visible. */
+    getReviewById(reviewId: string): Promise<RecentReviewFeedEntry | null>;
     /** Marks (helpful=true) or un-marks a review as helpful for the signed-in user. Idempotent. */
     setReviewHelpful(reviewId: string, helpful: boolean): Promise<void>;
+    /** Edits the signed-in author's own review. Throws when it is not theirs or the text is refused. */
+    updateReview(reviewId: string, patch: UpdateReviewInput): Promise<void>;
+    /** Deletes the signed-in author's own review and its photos; it stops counting in the dish rating. */
+    deleteReview(reviewId: string): Promise<void>;
   };
 
   // Profile
@@ -859,8 +987,15 @@ export interface HungryService {
     /** Every category of the signed-in user's own data. Throws instead of returning partial data. */
     exportMyData(): Promise<MyDataExport>;
     updateDietaryPreferences(flags: DietaryFlag[]): Promise<void>;
+    /** Saves the usual max price per dish (SGD); null clears it ("Any price"). */
+    updateMaxDishBudget(maxDishBudget: number | null): Promise<void>;
     getGuestProfile(): Promise<UserProfile>;
     toggleFavourite(dishId: string): Promise<boolean>;
+    /**
+     * Saves the dish "Tried" mark on the server and resolves to the updated Tried list.
+     * A dish the user reviewed stays in the list when un-ticked.
+     */
+    setDishTried(dishId: string, tried: boolean): Promise<string[]>;
     getFavouriteDishIds(): Promise<string[]>;
     /** Follow or unfollow a stall; followers get opt-in alerts when its menu changes. */
     setStallFollow(stallId: string, following: boolean): Promise<void>;
@@ -894,12 +1029,20 @@ export interface HungryService {
 
   // Social (Bites)
   social: {
-    getBitesFeed(lat?: number, lng?: number): Promise<Bite[]>;
+    /** Newest posts first. `page.cursor` is the last post of the previous page (createdAt + id). */
+    getBitesFeed(lat?: number, lng?: number, page?: BitesFeedPage): Promise<Bite[]>;
     /** One author's published posts, newest first, paged on the server (default 60). */
     listUserPosts(userId: string, page?: { limit?: number; offset?: number }): Promise<Bite[]>;
     postBite(draft: BiteDraft): Promise<Bite>;
     /** One readable post for shared links; null when missing or not visible. Works signed out. */
     getPostById(postId: string): Promise<Bite | null>;
+    /** Edits the caption of the signed-in user's own post. Throws when it is not theirs. */
+    updatePost(postId: string, patch: { caption: string }): Promise<void>;
+    /**
+     * Deletes the signed-in user's own post. Soft delete: it disappears from every
+     * read at once, and the row stays for moderation. Throws when it is not theirs.
+     */
+    deletePost(postId: string): Promise<void>;
     /** Idempotent: sets the viewer's like/save to `active` (never toggles server state). */
     reactToBite(biteId: string, reaction: "craving" | "save", active: boolean): Promise<void>;
     shareBite(
@@ -935,6 +1078,16 @@ export interface HungryService {
     /** One page of approved followees; `limit` defaults to 100 (max 500). */
     listFollowing(
       userId: string,
+      page?: { limit?: number; offset?: number },
+    ): Promise<{ userId: string; displayName: string; avatarUrl?: string }[]>;
+    /** Removes one of your approved followers. No-op when they do not follow you. */
+    removeFollower(userId: string): Promise<void>;
+    /**
+     * People search by display name (signed-in only; needs 2+ characters). Public accounts only,
+     * never yourself or a blocked pair.
+     */
+    searchProfiles(
+      query: string,
       page?: { limit?: number; offset?: number },
     ): Promise<{ userId: string; displayName: string; avatarUrl?: string }[]>;
     /** False when the viewer may not see this user's follower/following lists (private or blocked). */
@@ -1006,6 +1159,12 @@ export interface HungryService {
     hidePost(postId: string, reason?: string): Promise<void>;
     unhidePost(postId: string): Promise<void>;
     getBlockedUsers(): Promise<{ blockedUserId: string; reason?: string; createdAt: string }[]>;
+    /** Removes a block (the follows it removed do not come back). */
+    unblockUser(blockedUserId: string): Promise<void>;
+    /** The viewer's blocks with the blocked person's name, newest first. */
+    listBlockedUsers(): Promise<BlockedUserEntry[]>;
+    /** Posts the viewer hid, newest first. */
+    listHiddenPosts(): Promise<HiddenPostEntry[]>;
   };
 
   contributions: {
@@ -1098,6 +1257,8 @@ export interface HungryService {
     deleteDish(outletId: string, dishId: string): Promise<void>;
     /** Toggles sold out, or sets it when `soldOut` is given. Returns the new state. */
     toggleSoldOut(outletId: string, dishId: string, soldOut?: boolean): Promise<boolean>;
+    /** Sets or clears sold-out on many dishes in one call; resolves with the ids that changed. */
+    setDishesSoldOut(outletId: string, dishIds: string[], soldOut: boolean): Promise<string[]>;
     toggleFeatured(outletId: string, dishId: string): Promise<boolean>;
 
     // OCR Drafts
@@ -1107,18 +1268,35 @@ export interface HungryService {
      * that was already accepted returns its existing dish instead of inserting again.
      */
     acceptOCRDraft(draftId: string, edits?: Partial<DishDetail>): Promise<DishDetail>;
+    /**
+     * Accepts many drafts at once. The drafts, outlet and current menu are read once for the whole
+     * batch instead of once per draft; a draft that fails is reported and does not stop the rest.
+     */
+    acceptOCRDrafts(draftIds: string[]): Promise<{ acceptedIds: string[]; failedIds: string[] }>;
     rejectOCRDraft(draftId: string): Promise<void>;
 
     // Customer Inbox
     getInbox(
       outletId: string,
-      filters?: { type?: InteractionType; unrepliedOnly?: boolean; limit?: number },
+      filters?: {
+        type?: InteractionType;
+        unrepliedOnly?: boolean;
+        limit?: number;
+        /** Keyset page: only items created before this ISO timestamp. */
+        before?: string;
+      },
     ): Promise<CustomerInteraction[]>;
+    /** Posts a public reply, or replaces the existing one. */
     replyToInteraction(interactionId: string, text: string): Promise<void>;
+    /** Takes down the merchant's public reply. */
+    removeInteractionReply(interactionId: string): Promise<void>;
     reportInteraction(interactionId: string, reason: string): Promise<void>;
 
     // Featured Visitors
-    listPopularVisitorCandidates(outletId: string): Promise<PopularVisitorCandidate[]>;
+    listPopularVisitorCandidates(
+      outletId: string,
+      options?: { limit?: number; before?: string },
+    ): Promise<PopularVisitorCandidate[]>;
     listPopularVisitorPins(outletId: string): Promise<PopularVisitorPin[]>;
     pinPopularVisitor(outletId: string, reviewId: string): Promise<PopularVisitorPin>;
     unpinPopularVisitor(pinId: string): Promise<void>;
@@ -1146,8 +1324,6 @@ export interface HungryService {
     getDashboardSummary(outletId: string): Promise<MerchantDashboardSummary>;
     getWeeklySummaryStats(outletId: string): Promise<MerchantWeeklySummary>;
     getMerchantNotifications(merchantAccountId: string): Promise<MerchantNotification[]>;
-    syncLowRatingNotifications(outletId: string): Promise<MerchantNotification[]>;
-    sendWeeklySummaryNotifications(outletId: string): Promise<MerchantNotification[]>;
 
     // AI Tools
     generateDishDescription(dishName: string, ingredients?: string[]): Promise<string>;
@@ -1183,9 +1359,12 @@ export interface HungryService {
   // Supply priming (developer/ops-only)
   supply: {
     submitMenuPhoto(input: SubmitMenuPhotoInput): Promise<MenuPhotoSubmissionResult>;
+    submitCatalogCorrection(input: SubmitCatalogCorrectionInput): Promise<void>;
     submitMerchantClaimInterest(
       input: SubmitMerchantClaimInterestInput,
     ): Promise<MerchantClaimSubmissionResult>;
+    /** The caller's own claim for this stall ("none" when there is no claim or no session). */
+    getMerchantClaimStatus(venueId: string): Promise<MerchantClaimStatus>;
     listDraftDishesQueue(venueId?: string): Promise<DraftDishRow[]>;
     reviewDraftDish(
       draftDishId: string,
@@ -1205,7 +1384,8 @@ export interface HungryService {
     addChecklistItem(input: ChecklistItemCreateInput): Promise<ChecklistItem>;
     getChecklistItems(checklistId: string): Promise<ChecklistItem[]>;
     updateChecklistItem(id: string, updates: Partial<ChecklistItemCreateInput>): Promise<void>;
-    markChecklistItemTried(id: string): Promise<void>;
+    /** `tried` false undoes a mistaken tap (clears the tried date). */
+    markChecklistItemTried(id: string, tried?: boolean): Promise<void>;
     deleteChecklistItem(id: string): Promise<void>;
     reorderChecklistItems(checklistId: string, itemIds: string[]): Promise<void>;
   };
@@ -1217,6 +1397,8 @@ export interface HungryService {
       userId?: string;
       visibility?: string;
       type?: string;
+      /** Only these list ids (the Following and Shared tabs). */
+      ids?: string[];
     }): Promise<Portfolio[]>;
     getPortfolio(id: string): Promise<Portfolio>;
     /** A public list by id for anyone, signed in or not; null when private or missing. */
@@ -1234,6 +1416,8 @@ export interface HungryService {
       options?: PortfolioMutationOptions,
     ): Promise<PortfolioItem>;
     getPortfolioItems(portfolioId: string): Promise<PortfolioItem[]>;
+    /** Names, photos and prices for every item of a list in one call. */
+    getPortfolioItemDetails(portfolioId: string): Promise<PortfolioItemDetailRow[]>;
     updatePortfolioItem(
       id: string,
       updates: Partial<PortfolioItemCreateInput>,
@@ -1257,6 +1441,12 @@ export interface HungryService {
       userId: string,
       options?: PortfolioMutationOptions,
     ): Promise<void>;
+    updatePortfolioCollaboratorRole(
+      portfolioId: string,
+      userId: string,
+      role: "viewer" | "editor",
+      options?: PortfolioMutationOptions,
+    ): Promise<void>;
     getPortfolioCollaborators(portfolioId: string): Promise<PortfolioCollaborator[]>;
 
     followPortfolio(portfolioId: string): Promise<void>;
@@ -1265,6 +1455,11 @@ export interface HungryService {
     isFollowingPortfolio(portfolioId: string): Promise<boolean>;
     /** Ids of the lists the signed-in user follows (empty when signed out). */
     getFollowedPortfolioIds(): Promise<string[]>;
+    /**
+     * Ids of the lists the signed-in user collaborates on (empty when signed out);
+     * `role: "editor"` keeps only lists they may add items to.
+     */
+    getSharedPortfolioIds(options?: { role?: PortfolioCollaboratorRole }): Promise<string[]>;
 
     flagPortfolio(portfolioId: string, reason: string, details?: string): Promise<void>;
     getPortfolioFlags(filters?: { status?: string }): Promise<PortfolioFlag[]>;
@@ -1289,7 +1484,7 @@ export interface HungryService {
 
   // Notifications / Activity
   notifications: {
-    listActivityEvents(): Promise<
+    listActivityEvents(page?: { limit?: number; offset?: number }): Promise<
       {
         id: string;
         actorId: string;
@@ -1305,5 +1500,7 @@ export interface HungryService {
       }[]
     >;
     markActivityRead(eventId: string): Promise<void>;
+    /** Marks every unread update read in one call; resolves with how many changed. */
+    markAllActivityRead(): Promise<number>;
   };
 }

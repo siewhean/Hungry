@@ -25,7 +25,11 @@ test("your own profile never renders as a stranger's with Follow on yourself", (
 test("other profiles confirm unfollow, offer report/block, and title the active tab", () => {
   const content = read("src/app/screens/profile/UserProfileContent.tsx");
 
-  assert.match(content, /Alert\.alert\(`Unfollow \$\{authorName\}\?`/);
+  assert.match(content, /useFollowPress\(/);
+  assert.match(
+    read("src/features/profile/useFollowPress.ts"),
+    /Alert\.alert\(`Unfollow \$\{name\}\?`/,
+  );
   assert.match(content, /promptContentSafetyActions\(\{\s*targetType: "profile"/);
   assert.match(content, /accessibilityLabel=\{`More options for \$\{authorName\}`\}/);
   assert.match(content, /\{activeTab === "posts" \? "Posts" : "Reviews"\}/);

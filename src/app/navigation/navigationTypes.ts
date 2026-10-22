@@ -2,12 +2,28 @@ import type { NavigatorScreenParams } from "@react-navigation/native";
 import type { TasteVector } from "@/types/domain";
 
 export type AuthStackParamList = {
-  Login: undefined;
+  /**
+   * title: why the user is signing in ("Sign in to save Chicken Rice"), from the guest sheet.
+   * email: fills the email field (from the verify screen).
+   */
+  Login: { title?: string; email?: string } | undefined;
   SignUp: undefined;
   EmailVerification: { email?: string; completedOnboarding?: boolean; code?: string } | undefined;
+  /** The link a signed-in user opens to confirm a new sign-in email (hungry://auth/email-change). */
+  EmailChange: { code?: string } | undefined;
   ForgotPassword: undefined;
-  /** recoveryVerified: the emailed code was already verified (ForgotPassword). */
-  ResetPassword: { email?: string; code?: string; recoveryVerified?: boolean } | undefined;
+  /**
+   * recoveryVerified: the emailed code was already verified (ForgotPassword).
+   * linkError: the reset link came back with an error (expired, already used).
+   */
+  ResetPassword:
+    | {
+        email?: string;
+        code?: string;
+        recoveryVerified?: boolean;
+        linkError?: "expired" | "invalid";
+      }
+    | undefined;
   ResetPasswordSuccess: undefined;
 };
 
@@ -29,7 +45,8 @@ export type OnboardingStackParamList = {
   LocationPermission: undefined;
   /** mode "settings": change the location from Settings and go back, without onboarding. */
   ManualLocationPicker: { mode?: "settings" } | undefined;
-  OnboardingAuth: undefined;
+  /** dishName: the dish a guest tapped save on, so the headline can say what the account is for. */
+  OnboardingAuth: { dishName?: string } | undefined;
 };
 export type ProfileStackParamList = {
   ProfileHome: undefined;
@@ -46,6 +63,8 @@ export type ProfileStackParamList = {
   SocialPostDetail: { postId: string; type: "liked" | "saved" };
   EditProfile: undefined;
   AddStall: undefined;
+  /** Your submitted stalls and their review status. */
+  StallSubmissions: undefined;
   ReviewFlow: undefined;
   ChecklistsHome: undefined;
   ChecklistDetail: { checklistId: string };
@@ -113,28 +132,29 @@ export type RootStackParamList = {
         browseMode?: "dishes" | "stalls";
         initialQuery?: string;
         foodTypeTag?: string;
-        initialFilter?:
-          | "All"
-          | "Local"
-          | "Halal"
-          | "Japanese"
-          | "Western"
-          | "Noodles"
-          | "Rice"
-          | "Spicy";
+        /** Scopes the results to one mall, hawker centre or food court (a catalog building id). */
+        placeId?: string;
+        placeName?: string;
+        /** One chip or several, comma separated: "Halal", "Halal,Rice" or "Under S$6". */
+        initialFilter?: string;
+        /** Where the search came from; Discover chips already logged their own signal. */
+        source?: "discover_chip";
       }
     | undefined;
   BrowseDishes: undefined;
   BrowseStalls: undefined;
   DiscoverMap: undefined;
-  DecideForMeResult: { surface?: "home" | "discover" } | undefined;
+  DecideForMeResult: { surface?: "home" | "discover" | "push" } | undefined;
   MapZoomedIn: { buildingId: string };
-  BlogPost: { postId: string };
   ReviewStack: NavigatorScreenParams<ReviewStackParamList>;
   WheelStack: NavigatorScreenParams<WheelStackParamList>;
   ActivityInbox: { initialTab?: "messages" | "updates" } | undefined;
   ActivityPostDetail: { postId: string; updateId?: string };
+  /** One review on its own page; opened by review/:reviewId share links. */
+  ReviewDetail: { reviewId: string };
   FollowRequests: undefined;
+  /** People the viewer blocked and posts they hid, with Unblock and Unhide. */
+  BlockedAndHidden: undefined;
   /** Another user's follower/following lists, opened from their profile. */
   UserFollowers: { userId: string; userDisplayName?: string };
   UserFollowing: { userId: string; userDisplayName?: string };
@@ -175,9 +195,8 @@ export type RootStackParamList = {
   // Gamification
   PassportScreen: undefined;
   MissionsScreen: undefined;
-  // Checklist & Portfolio (root-level access)
-  ChecklistDetail: { checklistId: string };
-  PortfolioDetail: { portfolioId: string };
-  PortfolioPublicView: { portfolioId: string };
+  // Shared list (root-level access); list detail screens live in ProfileStack only.
+  // `follow` finishes the Save tap that sent a signed-out visitor to sign in.
+  PortfolioPublicView: { portfolioId: string; follow?: boolean };
   AdminPortfolioFlags: undefined;
 };

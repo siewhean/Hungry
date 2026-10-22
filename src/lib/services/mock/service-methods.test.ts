@@ -1022,21 +1022,13 @@ test("merchant analytics records explicit customer action events", async () => {
   assert.ok(after.topDishes.some((dish) => dish.dishId === menu[0].id && dish.saves >= 1));
 });
 
-test("merchant notifications sync low ratings and weekly summaries with dedupe", async () => {
+test("merchant weekly summary stats are read-only and notifications are deduped", async () => {
   const account = await hungryService.merchant.getMerchantAccount();
   assert.ok(account);
   const outletId = "outlet-wonton-mee";
 
-  const lowRatingNotifications = await hungryService.merchant.syncLowRatingNotifications(outletId);
-  assert.ok(lowRatingNotifications.length > 0);
-  assert.ok(lowRatingNotifications.every((notification) => notification.kind === "low_rating"));
-
   const weeklySummary = await hungryService.merchant.getWeeklySummaryStats(outletId);
   assert.ok(weeklySummary.totalViews >= weeklySummary.dishViews);
-
-  const weeklyNotifications = await hungryService.merchant.sendWeeklySummaryNotifications(outletId);
-  assert.ok(weeklyNotifications.length > 0);
-  assert.ok(weeklyNotifications.every((notification) => notification.kind === "weekly_summary"));
 
   const allNotifications = await hungryService.merchant.getMerchantNotifications(account.id);
   const dedupeKeys = new Set(allNotifications.map((notification) => notification.dedupeKey));

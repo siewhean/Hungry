@@ -76,7 +76,7 @@ test("animated brand imagery keeps explicit image semantics", () => {
 test("zoomable social media exposes actionable media and video controls to assistive tech", () => {
   const zoomableMedia = read("src/components/social/ZoomableMedia.tsx");
   const zoomableVideo = read("src/components/social/ZoomableVideo.tsx");
-  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
+  const home = read("src/components/social/FeedPostCard.tsx");
   const activityDetail = read("src/app/screens/home/ActivityPostDetailScreen.tsx");
   const socialDetail = read("src/app/screens/profile/SocialPostDetailScreen.tsx");
 
@@ -99,8 +99,9 @@ test("zoomable social media exposes actionable media and video controls to assis
   assert.match(zoomableVideo, /accessibilityState=\{\{ selected: !isMuted \}\}/);
 
   assert.match(home, /accessibilityLabel=\{`\$\{actionTargetName\} post image/);
-  assert.match(home, /accessibilityHint="Opens this media and supports double tap to like"/);
-  assert.match(activityDetail, /accessibilityLabel=\{`\$\{dishName \?\? venue\?\.name/);
+  assert.match(home, /accessibilityHint=\{mediaHint\}/);
+  // The detail screen renders the shared FeedPostCard, which labels the media.
+  assert.match(activityDetail, /<FeedPostCard/);
   assert.match(
     socialDetail,
     /accessibilityHint="Opens the linked customer detail page for this post"/,

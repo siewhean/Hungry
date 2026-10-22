@@ -2,7 +2,7 @@ import NetInfo from "@react-native-community/netinfo";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
-import { getAuthUserProvider, isFirstSignIn } from "@/features/auth/firstSignIn";
+import { getAuthUserProvider, isNewAccount } from "@/features/auth/firstSignIn";
 import { hydrateShareAttribution } from "@/features/share/shareAttribution";
 import { setAnalyticsSink, trackAnalyticsEvent } from "@/lib/analytics";
 import {
@@ -117,6 +117,29 @@ function isRetryableAuthError(error: unknown): boolean {
   if (!error || typeof error !== "object") return false;
   const { name, status } = error as { name?: unknown; status?: unknown };
   return name === "AuthRetryableFetchError" || status === 0;
+}
+
+// getSession() may try a token refresh, and offline that can hang long after Splash should
+// have moved on. After this long the restored state is kept as if the refresh had failed
+// for network reasons, and the auth listener corrects it when the answer arrives.
+const AUTH_RESTORE_TIMEOUT_MS = 5000;
+
+function getSessionWithTimeout(client: NonNullable<ReturnType<typeof getSupabaseClient>>) {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<{
+    data: { session: null };
+    error: { name: string; status: number };
+  }>((resolve) => {
+    timer = setTimeout(
+      () =>
+        resolve({
+          data: { session: null },
+          error: { name: "AuthRetryableFetchError", status: 0 },
+        }),
+      AUTH_RESTORE_TIMEOUT_MS,
+    );
+  });
+  return Promise.race([client.auth.getSession(), timeout]).finally(() => clearTimeout(timer));
 }
 
 function preserveRestoredAuthState(applyAuthStateFromSession: ApplyAuthStateFromSession): boolean {
@@ -301,10 +324,19 @@ export function useAppBootstrap() {
 
     let active = true;
 
-    void client.auth
-      .getSession()
+    // A sign-out the app was closed during is finished before any stored session
+    // is restored, so the user is not signed straight back in.
+    void useSessionStore
+      .getState()
+      .finishPendingSignOut()
+      .then(() => getSessionWithTimeout(client))
       .then(({ data, error }) => {
         if (!active) return;
+        if (useSessionStore.getState().signOutPending) {
+          // The stored session could not be cleared; stay signed out in the app.
+          applyAuthStateFromSession({ isAuthenticated: false, userId: null });
+          return;
+        }
         const user = data.session?.user;
         if (!user) {
           // No session is final (expired or revoked) unless the refresh only
@@ -349,22 +381,41 @@ export function useAppBootstrap() {
 
     const { data: subscription } = client.auth.onAuthStateChange((event, session) => {
       const user = session?.user;
+      // The session being signed out may still refresh; only a new sign-in counts.
+      if (user && event !== "SIGNED_IN" && useSessionStore.getState().signOutPending) {
+        return;
+      }
       if (!user) {
         // getSession() above settles the startup session (and keeps it on a
         // network failure); any later null session means signed out.
         if (event === "INITIAL_SESSION") {
           return;
         }
-        applyAuthStateFromSession({ isAuthenticated: false, userId: null });
+        // A sign-out the user did not start (the refresh token was revoked or expired)
+        // leaves the session store signed in; say so instead of quietly making a guest.
+        applyAuthStateFromSession({
+          isAuthenticated: false,
+          userId: null,
+          sessionExpired: event === "SIGNED_OUT",
+        });
         return;
       }
 
-      const isNewUser = event === "SIGNED_IN" && isFirstSignIn(user);
+      // A new account is one that has not finished onboarding (a fact stored on the account,
+      // not a clock window). A code reset also signs in, but only an existing account resets.
+      const isNewUser =
+        event === "SIGNED_IN" &&
+        !useSessionStore.getState().passwordRecoveryInProgress &&
+        isNewAccount(user);
       // Whether onboarding runs is decided here from the account, not by the
       // screen that started the sign-in: an existing account that signs in
       // skips first-run onboarding, a brand-new one goes through it. Only a
       // fresh sign-in counts, not a SIGNED_IN replayed for a restored session.
-      const isFreshSignIn = event === "SIGNED_IN" && !useSessionStore.getState().isAuthenticated;
+      // A reset link raises PASSWORD_RECOVERY instead of SIGNED_IN: the same existing
+      // account, so it must not be sent through onboarding afterwards.
+      const isFreshSignIn =
+        (event === "SIGNED_IN" || event === "PASSWORD_RECOVERY") &&
+        !useSessionStore.getState().isAuthenticated;
       applyAuthStateFromSession({
         isAuthenticated: true,
         userId: user.id,

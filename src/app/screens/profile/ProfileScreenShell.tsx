@@ -10,6 +10,8 @@ interface ProfileScreenShellProps {
   headerRight?: ReactNode;
   showBack?: boolean;
   testID?: string;
+  /** False when the body is its own virtualised list (it fills the screen under the header). */
+  scroll?: boolean;
 }
 
 export function ProfileScreenShell({
@@ -19,6 +21,7 @@ export function ProfileScreenShell({
   headerRight,
   showBack = true,
   testID,
+  scroll = true,
 }: PropsWithChildren<ProfileScreenShellProps>) {
   const { spacing } = useHungryTheme();
 
@@ -30,9 +33,9 @@ export function ProfileScreenShell({
       showBack={showBack}
       headerGap={spacing[3]}
       contentContainerStyle={{ paddingTop: 0 }}
-      scroll
+      scroll={scroll}
     >
-      <View testID={testID} style={{ gap: spacing[4] }}>
+      <View testID={testID} style={[{ gap: spacing[4] }, !scroll && { flex: 1 }]}>
         {children}
       </View>
     </Screen>

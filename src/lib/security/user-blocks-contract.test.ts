@@ -33,8 +33,11 @@ test("blocks are keyed by the author's user id, never the display name", () => {
   assert.match(helper, /communitySafety\.getBlockedUsers\(\)/);
 
   assert.match(supabase, /UUID_PATTERN\.test\(request\.blockedUserId\)/);
-  assert.match(supabase, /blocked_user_key: request\.blockedUserId\.toLowerCase\(\)/);
-  assert.match(supabase, /ignoreDuplicates: true/);
+  // Blocking goes through the block_user RPC, which also removes follows in both directions.
+  assert.match(
+    supabase,
+    /client\.rpc\("block_user", \{\s*p_blocked_user_id: request\.blockedUserId\.toLowerCase\(\)/,
+  );
   assert.match(supabase, /authorId: userId,/);
 });
 
@@ -55,8 +58,10 @@ test("feeds filter blocked authors by id and drop reported reviews", () => {
     reviewFeed,
     /isContentHiddenForSession\(\{ id: item\.review\.id, authorId: item\.review\.authorId \}\)/,
   );
-  assert.match(reviewFeed, /authorId: item\.review\.authorId,\s*onHidden: onSafetyHidden/);
-  assert.match(reviewFeed, /authorId: item\.review\.authorId,\s*onBlocked: onSafetyHidden/);
+  assert.match(reviewFeed, /authorId: review\.authorId,\s*onHidden: bumpSafetyFilter/);
+  assert.match(reviewFeed, /authorId: review\.authorId,\s*onBlocked: bumpSafetyFilter/);
+  // A guest is sent to sign in (or to email support) instead of a report that would fail.
+  assert.match(reviewFeed, /Sign in to report this review/);
 });
 
 test("migration makes server block checks match and filters review reads", () => {

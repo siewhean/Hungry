@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -15,7 +16,6 @@ export const REVIEW_MAX_PHOTOS = 5;
 interface ReviewDraftState {
   draft: ReviewDraft;
   isSubmitting: boolean;
-  failedPhotoUris: string[];
   /** Client review id reused across retries of the same draft so retries never duplicate it. */
   pendingReviewId?: string;
   ensurePendingReviewId: () => string;
@@ -26,8 +26,6 @@ interface ReviewDraftState {
   setText: (text: string) => void;
   addPhoto: (uri: string) => void;
   removePhoto: (uri: string) => void;
-  markPhotoFailed: (uri: string) => void;
-  clearFailedPhoto: (uri: string) => void;
   resetDraft: () => void;
   setSubmitting: (isSubmitting: boolean) => void;
   setVideoUri: (uri?: string) => void;
@@ -39,7 +37,6 @@ export const useReviewDraftStore = create<ReviewDraftState>()(
     (set, get) => ({
       draft: initialDraft,
       isSubmitting: false,
-      failedPhotoUris: [],
       pendingReviewId: undefined,
       ensurePendingReviewId: () => {
         const existing = get().pendingReviewId;
@@ -76,7 +73,6 @@ export const useReviewDraftStore = create<ReviewDraftState>()(
               selectedVenueId,
               selectedDishId,
             },
-            failedPhotoUris: [],
             pendingReviewId: undefined,
           };
         }),
@@ -124,19 +120,11 @@ export const useReviewDraftStore = create<ReviewDraftState>()(
             ...state.draft,
             photos: state.draft.photos.filter((photoUri) => photoUri !== uri),
           },
-          failedPhotoUris: state.failedPhotoUris.filter((value) => value !== uri),
-        })),
-      markPhotoFailed: (uri) =>
-        set((state) => ({ failedPhotoUris: [...state.failedPhotoUris, uri] })),
-      clearFailedPhoto: (uri) =>
-        set((state) => ({
-          failedPhotoUris: state.failedPhotoUris.filter((value) => value !== uri),
         })),
       resetDraft: () =>
         set({
           draft: createInitialReviewDraft(),
           isSubmitting: false,
-          failedPhotoUris: [],
           pendingReviewId: undefined,
         }),
       setSubmitting: (isSubmitting) => set({ isSubmitting }),
@@ -164,9 +152,21 @@ export const useReviewDraftStore = create<ReviewDraftState>()(
       },
       partialize: (state) => ({
         draft: state.draft,
-        failedPhotoUris: state.failedPhotoUris,
         pendingReviewId: state.pendingReviewId,
       }),
     },
   ),
 );
+
+/**
+ * True once the persisted draft has been read from storage. The store hydrates
+ * asynchronously, so a screen that acts on the draft (for example starting a review for a
+ * routed dish) must wait for this, or the saved draft lands on top of what it just did.
+ */
+export function useReviewDraftHydrated(): boolean {
+  return useSyncExternalStore(
+    (onChange) => useReviewDraftStore.persist.onFinishHydration(onChange),
+    () => useReviewDraftStore.persist.hasHydrated(),
+    () => false,
+  );
+}

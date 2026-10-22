@@ -48,7 +48,7 @@ test("primary user filter surfaces use shared chip primitives", () => {
   assertSourceIncludes(review, [/<FilterChipRail[\s\S]*options=\{FILTER_OPTIONS\}/], "Review");
   assertSourceIncludes(
     reviewComposer,
-    [/<ChipGroup[\s\S]*options=\{REVIEW_TAGS\.map/],
+    [/<ChipGroup[\s\S]*options=\{REVIEW_EDITOR_TAGS\.map/],
     "Review composer taste tags",
   );
   assertSourceIncludes(
@@ -68,7 +68,7 @@ test("primary user filter surfaces use shared chip primitives", () => {
   );
   assertSourceIncludes(
     homeMap,
-    [/<FilterChipRail[\s\S]*options=\{HOME_MAP_FILTER_OPTIONS\}/],
+    [/<FilterChipRail[\s\S]*options=\{filterOptions\}/],
     "Home Map filters",
   );
   assertSourceIncludes(

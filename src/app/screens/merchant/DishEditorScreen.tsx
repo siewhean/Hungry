@@ -1,6 +1,6 @@
 import React, { useCallback, useState, useEffect, useMemo } from "react";
-import { View, Alert, Pressable } from "react-native";
-import { Camera, Sparkles, X } from "lucide-react-native";
+import { View } from "react-native";
+import { Camera, X } from "lucide-react-native";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 
 import { MerchantImageField } from "@/components/merchant/MerchantImageField";
@@ -25,6 +25,8 @@ import {
 } from "@/features/merchant/menuSections";
 import { ALLERGEN_CHECK_DISCLAIMER } from "@/features/merchant/allergenKeywords";
 import { createMerchantDishId, trackMerchantEvent } from "@/features/merchant/merchantTracking";
+import { isVerificationCurrent } from "@/features/merchant/merchantGuards";
+import { useMerchantDialog } from "@/features/merchant/useMerchantDialog";
 import { useUnsavedChangesGuard } from "@/features/merchant/useUnsavedChangesGuard";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import type { DietaryFlag, DishDetail } from "@/types/domain";
@@ -32,7 +34,8 @@ import type { DietaryFlag, DishDetail } from "@/types/domain";
 type RouteProps = RouteProp<MerchantTabParamList, "DishEditor">;
 
 const DIETARY_OPTIONS: { label: string; value: DietaryFlag }[] = [
-  { label: "Halal", value: "halal" },
+  // Self-declared: there is no certificate check, so it must not read as MUIS halal certification.
+  { label: "Muslim-friendly (self-declared)", value: "halal" },
   { label: "Vegetarian", value: "vegetarian" },
   { label: "Vegan", value: "vegan" },
   { label: "Pork-free", value: "pork_free" },
@@ -67,8 +70,6 @@ function errorMessage(error: unknown, fallback: string): string {
   return error instanceof Error && error.message ? error.message : fallback;
 }
 
-const AI_LINK_HIT_SLOP = { top: 12, bottom: 12, left: 12, right: 12 };
-
 export function DishEditorScreen() {
   const { palette, spacing, radii } = useHungryTheme();
   const navigation = useNavigation();
@@ -77,14 +78,16 @@ export function DishEditorScreen() {
   // A menu-scan draft is only published when the merchant saves the editor.
   const ocrDraftId = dishId ? undefined : route.params?.ocrDraftId;
   const activeOutlet = useMerchantStore(getActiveOutlet);
+  const { showAlert, dialog } = useMerchantDialog();
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ name?: string; price?: string }>({});
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
-  // Ingredients only feed the AI suggestions and the allergen check; they are never saved.
+  // Ingredients only feed the allergen check; they are never saved.
   const [ingredients, setIngredients] = useState("");
   // Diner-facing tags, saved as the dish's taste tags.
   const [tags, setTags] = useState("");
@@ -180,19 +183,19 @@ export function DishEditorScreen() {
   }, [formSnapshot, isLoading, savedSnapshot]);
   const isDirty = savedSnapshot !== null && savedSnapshot !== formSnapshot && !isSaving;
   const leaveEditor = useCallback(() => navigation.goBack(), [navigation]);
-  const confirmLeave = useUnsavedChangesGuard(isDirty, leaveEditor);
+  const confirmLeave = useUnsavedChangesGuard(isDirty, leaveEditor, showAlert);
 
   const handleSave = async () => {
     if (!activeOutlet) return;
-    if (!name.trim()) {
-      Alert.alert("Validation", "Dish name is required.");
-      return;
-    }
     const parsedPrice = parsePrice(price);
-    if (parsedPrice === null) {
-      Alert.alert("Validation", "Enter a price between S$0.01 and S$9,999, e.g. 5.50.");
-      return;
-    }
+    // Shown on the fields themselves, not in an alert.
+    const nextErrors = {
+      name: name.trim() ? undefined : "Dish name is required.",
+      price:
+        parsedPrice === null ? "Enter a price between S$0.01 and S$9,999, e.g. 5.50." : undefined,
+    };
+    setFieldErrors(nextErrors);
+    if (nextErrors.name || parsedPrice === null) return;
 
     setIsSaving(true);
     try {
@@ -233,15 +236,15 @@ export function DishEditorScreen() {
       }
       setSavedSnapshot(formSnapshot);
 
-      Alert.alert(
+      showAlert(
         dishId ? "Dish updated" : "Dish added",
-        activeOutlet.verification?.status === "verified"
+        isVerificationCurrent(activeOutlet.verification)
           ? "Diners can see this change now."
           : "Saved. Diners will see your menu once Hungry verifies your stall.",
+        [{ text: "OK", onPress: () => navigation.goBack() }],
       );
-      navigation.goBack();
     } catch (e) {
-      Alert.alert("Could not save dish", errorMessage(e, "Please try again."));
+      showAlert("Could not save dish", errorMessage(e, "Please try again."));
     } finally {
       setIsSaving(false);
     }
@@ -249,91 +252,45 @@ export function DishEditorScreen() {
 
   const handleDelete = () => {
     if (!activeOutlet || !dishId) return;
-    Alert.alert("Delete Dish", `Are you sure you want to delete ${name || "this dish"}?`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          setIsSaving(true);
-          try {
-            await getHungryService().merchant.deleteDish(activeOutlet.id, dishId);
-            trackMerchantEvent("merchant_dish_deleted", activeOutlet.id);
-            navigation.goBack();
-          } catch (e) {
-            Alert.alert("Could not delete dish", errorMessage(e, "Please try again."));
-          } finally {
-            setIsSaving(false);
-          }
+    showAlert(
+      "Delete Dish",
+      `Remove ${name || "this dish"} from your menu? Diner reviews and saves are kept.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            setIsSaving(true);
+            try {
+              await getHungryService().merchant.deleteDish(activeOutlet.id, dishId);
+              trackMerchantEvent("merchant_dish_deleted", activeOutlet.id);
+              navigation.goBack();
+            } catch (e) {
+              showAlert("Could not delete dish", errorMessage(e, "Please try again."));
+            } finally {
+              setIsSaving(false);
+            }
+          },
         },
-      },
-    ]);
-  };
-
-  const handleGenerateDescription = async () => {
-    if (!name) {
-      Alert.alert("Notice", "Please enter a dish name first.");
-      return;
-    }
-    try {
-      const generated = await getHungryService().merchant.generateDishDescription(
-        name,
-        parseCommaSeparated(ingredients),
-      );
-      setDescription(generated);
-      trackMerchantEvent("merchant_ai_suggestion_used", activeOutlet?.id, { kind: "description" });
-    } catch (e) {
-      Alert.alert("Suggestion unavailable", errorMessage(e, "Please try again."));
-    }
-  };
-
-  const handleSuggestIngredients = async () => {
-    if (!name) {
-      Alert.alert("Notice", "Please enter a dish name first.");
-      return;
-    }
-    try {
-      const suggestions = await getHungryService().merchant.suggestIngredients(name);
-      setIngredients((current) =>
-        Array.from(new Set([...parseCommaSeparated(current), ...suggestions])).join(", "),
-      );
-      trackMerchantEvent("merchant_ai_suggestion_used", activeOutlet?.id, { kind: "ingredients" });
-    } catch (e) {
-      Alert.alert("Suggestion unavailable", errorMessage(e, "Please try again."));
-    }
-  };
-
-  const handleSuggestTags = async () => {
-    if (!name) {
-      Alert.alert("Notice", "Please enter a dish name first.");
-      return;
-    }
-    try {
-      const suggestions = await getHungryService().merchant.suggestTags(name, description);
-      // Merge rather than overwrite so typed tags are kept.
-      setTags((current) =>
-        Array.from(new Set([...parseCommaSeparated(current), ...suggestions])).join(", "),
-      );
-      trackMerchantEvent("merchant_ai_suggestion_used", activeOutlet?.id, { kind: "tags" });
-    } catch (e) {
-      Alert.alert("Suggestion unavailable", errorMessage(e, "Please try again."));
-    }
+      ],
+    );
   };
 
   const handleSuggestAllergens = async () => {
     const ingredientList = parseCommaSeparated(ingredients);
     if (ingredientList.length === 0) {
-      Alert.alert("Notice", "Add ingredients before running the allergen check.");
+      showAlert("Notice", "Add ingredients before running the allergen check.");
       return;
     }
     let allergens: string[];
     try {
       allergens = await getHungryService().merchant.suggestAllergens(ingredientList);
     } catch (e) {
-      Alert.alert("Check unavailable", errorMessage(e, "Please try again."));
+      showAlert("Check unavailable", errorMessage(e, "Please try again."));
       return;
     }
-    Alert.alert(
+    showAlert(
       "Ingredient check",
       allergens.length > 0
         ? `Possible allergens: ${allergens.join(", ")}. ${ALLERGEN_CHECK_DISCLAIMER}`
@@ -384,6 +341,8 @@ export function DishEditorScreen() {
             label="Dish Name *"
             value={name}
             onChangeText={setName}
+            errorText={fieldErrors.name}
+            error={Boolean(fieldErrors.name)}
             placeholder="e.g. Signature Wonton Mee"
           />
         </View>
@@ -393,6 +352,8 @@ export function DishEditorScreen() {
             label="Price (S$) *"
             value={price}
             onChangeText={setPrice}
+            errorText={fieldErrors.price}
+            error={Boolean(fieldErrors.price)}
             keyboardType="decimal-pad"
             placeholder="e.g. 5.50"
           />
@@ -427,30 +388,11 @@ export function DishEditorScreen() {
         </View>
 
         <View>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: spacing[2],
-            }}
-          >
-            <AppText variant="bodyBold">Ingredients</AppText>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Suggest ingredients"
-              hitSlop={AI_LINK_HIT_SLOP}
-              onPress={handleSuggestIngredients}
-              style={{ flexDirection: "row", alignItems: "center", gap: 4, minHeight: 44 }}
-            >
-              <Sparkles size={14} color={palette.orange} />
-              <AppText variant="micro" style={{ color: palette.orange, fontWeight: "bold" }}>
-                Suggest
-              </AppText>
-            </Pressable>
-          </View>
+          <AppText variant="bodyBold" style={{ marginBottom: spacing[2] }}>
+            Ingredients
+          </AppText>
           <AppText variant="bodySmall" tone="muted" style={{ marginBottom: spacing[2] }}>
-            Used for suggestions and the allergen check only. Not shown to diners.
+            Used for the allergen check only. Not shown to diners.
           </AppText>
           <Input
             accessibilityLabel="Ingredients"
@@ -482,13 +424,6 @@ export function DishEditorScreen() {
             placeholder="Comma separated (e.g. spicy, springy noodles)"
             multiline
           />
-          <Button
-            label="Suggest taste tags"
-            variant="secondary"
-            fullWidth={false}
-            onPress={handleSuggestTags}
-            style={{ marginTop: spacing[2] }}
-          />
         </View>
 
         <View>
@@ -496,7 +431,8 @@ export function DishEditorScreen() {
             Ingredient Indicators
           </AppText>
           <AppText variant="bodySmall" tone="muted" style={{ marginBottom: spacing[3] }}>
-            Choose customer-facing labels for dietary needs and ingredient exclusions.
+            Choose customer-facing labels for dietary needs and ingredient exclusions. These are
+            your own declarations, and Hungry does not check them against any certification.
           </AppText>
           <ChipGroup
             options={DIETARY_OPTIONS.map((option) => ({
@@ -509,29 +445,8 @@ export function DishEditorScreen() {
         </View>
 
         <View>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: spacing[2],
-            }}
-          >
-            <AppText variant="bodyBold">Description</AppText>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Draft description"
-              hitSlop={AI_LINK_HIT_SLOP}
-              onPress={handleGenerateDescription}
-              style={{ flexDirection: "row", alignItems: "center", gap: 4, minHeight: 44 }}
-            >
-              <Sparkles size={14} color={palette.orange} />
-              <AppText variant="micro" style={{ color: palette.orange, fontWeight: "bold" }}>
-                Draft description
-              </AppText>
-            </Pressable>
-          </View>
           <Input
+            label="Description"
             value={description}
             onChangeText={setDescription}
             multiline
@@ -572,6 +487,7 @@ export function DishEditorScreen() {
           />
         ) : null}
       </View>
+      {dialog}
     </Screen>
   );
 }

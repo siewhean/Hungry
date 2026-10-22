@@ -18,7 +18,9 @@ test("Decide For Me shows distance, Directions and Save, and respects the budget
   assert.match(screen, /trackAnalyticsEvent\("directions_opened"/);
   assert.match(screen, /openTrustedMapsUrl\(buildMapsSearchUrl\(stallAddress\)\)/);
   assert.match(screen, /toggleFavourite\(dish\)/);
-  assert.match(screen, /withinBudget\.length \? withinBudget : results/);
+  // Budget logic lives in the candidate helper.
+  const candidates = read("src/features/discovery/decideForMeCandidates.ts");
+  assert.match(candidates, /withinBudget\.length \? withinBudget : ranked/);
 });
 
 test("Decide For Me has no fake cart, routes back to Discover, and tracks its funnel", () => {
@@ -39,11 +41,10 @@ test("Decide For Me has no fake cart, routes back to Discover, and tracks its fu
   );
   assert.match(screen, /trackAnalyticsEvent\("decide_for_me_no_match"/);
   assert.match(screen, /trackAnalyticsEvent\("decide_for_me_radius_expanded"/);
-  // Guests are asked to sign in instead of the save silently doing nothing.
-  assert.match(
-    screen,
-    /if \(!isAuthenticated\) \{[\s\S]*navigate\("AuthStack", \{ screen: "Login" \}\)/,
-  );
+  // Guests get the shared sign-in sheet, which finishes the save after sign-in.
+  assert.match(screen, /requireAccount\(/);
+  assert.match(screen, /saveDishAfterSignIn\(dish\)/);
+  assert.doesNotMatch(screen, /navigate\("AuthStack"/);
 });
 
 test("taste quiz asks for a usual budget and saves it with dietary preferences", () => {

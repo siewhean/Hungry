@@ -98,7 +98,11 @@ test("Supabase social reactions use post engagement tables", () => {
   assert.match(shareBite, /share_channel: options\?\.channel \?\? "in_app"/);
   assert.match(getSavedBites, /from\("post_saves"\)/);
   assert.match(getLikedBites, /from\("post_likes"\)/);
-  assert.match(getSavedBites, /fetchPublishedPostBites\(client\)/);
+  // Saved posts are read by id (newest save first) so an older saved post still shows.
+  assert.match(
+    getSavedBites,
+    /fetchPublishedPostBites\(client, savedIds\.length, \{ ids: savedIds \}\)/,
+  );
   assert.match(getLikedBites, /fetchPublishedPostBites\(client\)/);
 });
 

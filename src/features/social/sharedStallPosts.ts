@@ -8,7 +8,7 @@ import {
   isContentHiddenForSession,
   loadBlockedAuthorsForSession,
 } from "@/lib/security/communitySafety";
-import type { DataRepository } from "@/lib/services/types";
+import type { Bite, DataRepository } from "@/lib/services/types";
 import type { StallPost } from "@/types/domain";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 
@@ -29,13 +29,53 @@ export function listSharedStallPostsSync(repository: DataRepository = getDataRep
   return mergeStallPosts(usePublishedPostStore.getState().posts, repository.listStallPosts());
 }
 
-export async function listSharedStallPosts(repository: DataRepository = getDataRepository()) {
+/** Posts per Home feed page. */
+export const FEED_PAGE_SIZE = 40;
+
+/** Where the next Home feed page starts: the oldest post of the page before it. */
+export interface SharedFeedCursor {
+  createdAt: string;
+  postId: string;
+}
+
+export interface SharedStallPostsPage {
+  posts: StallPost[];
+  /** Null when the feed has no more pages (always, outside Supabase mode). */
+  nextCursor: SharedFeedCursor | null;
+}
+
+function nextCursorAfter(bites: Bite[]): SharedFeedCursor | null {
+  if (getServiceProvider().mode !== "supabase" || bites.length < FEED_PAGE_SIZE) return null;
+  const last = bites[bites.length - 1];
+  return last ? { createdAt: last.createdAt, postId: last.id } : null;
+}
+
+/** One page of the Home feed. Pass the previous page's cursor to read the next one. */
+export async function listSharedStallPostsPage(
+  repository: DataRepository = getDataRepository(),
+  cursor?: SharedFeedCursor,
+): Promise<SharedStallPostsPage> {
   const service = getHungryService();
   let servicePosts: StallPost[] = [];
-  let bitePosts: StallPost[] = [];
+  let bites: Bite[] = [];
 
   // Saved blocks must apply after a restart, before any post is merged in.
   await loadBlockedAuthorsForSession();
+
+  if (cursor) {
+    // Later pages come from the feed read alone; only Supabase has more than one page.
+    if (getServiceProvider().mode !== "supabase") return { posts: [], nextCursor: null };
+    bites = await service.social.getBitesFeed(undefined, undefined, {
+      limit: FEED_PAGE_SIZE,
+      cursor,
+    });
+    return {
+      posts: mergeStallPosts(
+        bites.map((bite) => biteToStallPost(bite, { authorAvatarUrl: bite.authorAvatar })),
+      ),
+      nextCursor: nextCursorAfter(bites),
+    };
+  }
 
   try {
     servicePosts = await service.content.listStallPosts();
@@ -44,18 +84,23 @@ export async function listSharedStallPosts(repository: DataRepository = getDataR
   }
 
   try {
-    bitePosts = (await service.social.getBitesFeed()).map((bite) =>
-      biteToStallPost(bite, { authorAvatarUrl: bite.authorAvatar }),
-    );
+    bites = await service.social.getBitesFeed(undefined, undefined, { limit: FEED_PAGE_SIZE });
   } catch (error) {
     // The live feed is the only source in Supabase mode: an offline or backend
     // failure must reach the error state, not read as "No posts yet".
     if (getServiceProvider().mode === "supabase") throw error;
-    bitePosts = [];
+    bites = [];
   }
+  const bitePosts = bites.map((bite) =>
+    biteToStallPost(bite, { authorAvatarUrl: bite.authorAvatar }),
+  );
+  const nextCursor = nextCursorAfter(bites);
 
   if (getServiceProvider().mode === "supabase") {
-    return mergeStallPosts(bitePosts, servicePosts, repository.listStallPosts());
+    return {
+      posts: mergeStallPosts(bitePosts, servicePosts, repository.listStallPosts()),
+      nextCursor,
+    };
   }
 
   const localPublishedPosts = usePublishedPostStore.getState().posts;
@@ -63,5 +108,17 @@ export async function listSharedStallPosts(repository: DataRepository = getDataR
   bitePosts
     .filter((post) => !localPublishedIds.has(post.id))
     .forEach((post) => usePublishedPostStore.getState().upsertPost(post));
-  return mergeStallPosts(localPublishedPosts, bitePosts, servicePosts, repository.listStallPosts());
+  return {
+    posts: mergeStallPosts(
+      localPublishedPosts,
+      bitePosts,
+      servicePosts,
+      repository.listStallPosts(),
+    ),
+    nextCursor,
+  };
+}
+
+export async function listSharedStallPosts(repository: DataRepository = getDataRepository()) {
+  return (await listSharedStallPostsPage(repository)).posts;
 }

@@ -33,6 +33,7 @@ interface StallInteractionState {
 
   // Actions
   loadInteractions: (userId: string) => Promise<void>;
+  /** Rolls the optimistic write back and rethrows when the save is not stored. */
   toggleSaved: (userId: string, stallId: string) => Promise<void>;
   /**
    * Toggle `isTried` for a stall.
@@ -104,9 +105,16 @@ export const useStallInteractionStore = create<StallInteractionState>()((set, ge
       interactions: { ...state.interactions, [stallId]: updated },
     }));
 
-    const remoteUpdated = await getDataRepository().upsertStallInteraction?.(userId, stallId, {
-      isSaved: !wasSaved,
-    });
+    let remoteUpdated: StallInteraction | null | undefined;
+    try {
+      remoteUpdated = await getDataRepository().upsertStallInteraction?.(userId, stallId, {
+        isSaved: !wasSaved,
+      });
+    } catch (error) {
+      // Nothing was stored: put the button back instead of showing a state that is not real.
+      rollbackInteraction(stallId, updated, existing);
+      throw error;
+    }
     if (remoteUpdated) {
       set((state) => ({
         interactions: { ...state.interactions, [stallId]: remoteUpdated },
@@ -148,9 +156,15 @@ export const useStallInteractionStore = create<StallInteractionState>()((set, ge
       interactions: { ...state.interactions, [stallId]: updated },
     }));
 
-    const remoteUpdated = await getDataRepository().upsertStallInteraction?.(userId, stallId, {
-      isTried: !shouldUnmark,
-    });
+    let remoteUpdated: StallInteraction | null | undefined;
+    try {
+      remoteUpdated = await getDataRepository().upsertStallInteraction?.(userId, stallId, {
+        isTried: !shouldUnmark,
+      });
+    } catch (error) {
+      rollbackInteraction(stallId, updated, existing);
+      throw error;
+    }
     if (remoteUpdated) {
       set((state) => ({
         interactions: { ...state.interactions, [stallId]: remoteUpdated },
@@ -214,6 +228,21 @@ export const useStallInteractionStore = create<StallInteractionState>()((set, ge
 }));
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Restore the pre-tap state, unless something newer has replaced the optimistic write. */
+function rollbackInteraction(
+  stallId: string,
+  optimistic: StallInteraction,
+  previous: StallInteraction | undefined,
+): void {
+  if (useStallInteractionStore.getState().interactions[stallId] !== optimistic) return;
+  useStallInteractionStore.setState((state) => {
+    const next = { ...state.interactions };
+    if (previous) next[stallId] = previous;
+    else delete next[stallId];
+    return { interactions: next };
+  });
+}
 
 /** Returns true when an ISO timestamp falls within today (Singapore UTC+8). */
 function isToday(isoString: string): boolean {

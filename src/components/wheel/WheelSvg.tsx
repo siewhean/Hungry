@@ -5,7 +5,7 @@
  * Wrapped in an Animated.View so the caller can spin it
  * by rotating the View — no internal animation state here.
  *
- * Alternates between palette.orange and palette.bgSoft slices.
+ * Alternates between palette.orange and palette.surface slices (a third colour closes an odd count).
  * Labels sit along the arc midpoint at typography.micro size.
  * A static Hungry logo badge is overlaid at the centre.
  */
@@ -99,9 +99,18 @@ export function WheelSvg({ entries, size = 300 }: Props) {
             const startAngle = i * segmentAngle;
             const endAngle = startAngle + segmentAngle;
             const midAngle = startAngle + segmentAngle / 2;
-            const fill = i % 2 === 0 ? palette.orange : palette.surface;
+            // With an odd count the last slice would be orange next to the first one: use a
+            // third colour there so neighbouring slices always differ.
+            const isOddLast =
+              active.length % 2 === 1 && active.length > 1 && i === active.length - 1;
+            const isOrange = i % 2 === 0 && !isOddLast;
+            const fill = isOddLast
+              ? palette.orangeLight
+              : isOrange
+                ? palette.orange
+                : palette.surface;
             // Near-black on orange (white on orange measured 3.69:1).
-            const textFill = i % 2 === 0 ? palette.textOnOrange : palette.text;
+            const textFill = isOrange ? palette.textOnOrange : palette.text;
 
             const labelPt = polarToCartesian(cx, cy, labelRadius, midAngle);
             const labelAngle = midAngle - 90; // rotate text to sit along arc

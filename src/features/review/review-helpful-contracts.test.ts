@@ -92,7 +92,10 @@ test("review feed shows a Helpful button, gates guests and renames the A–Z chi
   assert.match(feed, /\{ id: "location", label: "A–Z stall" \}/);
   assert.doesNotMatch(feed, /By Dish|By Location/);
   assert.match(feed, /requireAccountForReviewAction\("Sign in to mark reviews helpful\."\)/);
-  assert.match(feed, /reviews\.setReviewHelpful\(reviewId, next\.helpful\)/);
+  // One request at a time per review, so quick taps cannot arrive out of order.
+  assert.match(feed, /createHelpfulVoteQueue\(/);
+  assert.match(feed, /reviews\.setReviewHelpful\(reviewId, helpful\)/);
+  assert.match(feed, /submitHelpfulVote\(reviewId, next\.helpful, previous\.helpful/);
   assert.match(feed, /<ThumbsUp/);
   const service = read("src/lib/services/supabase/supabaseService.ts");
   assert.match(service, /merchant_replied_at,helpful_count/);

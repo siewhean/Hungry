@@ -20,6 +20,11 @@ import type { MerchantTabParamList, RootStackParamList } from "@/app/navigation/
 const Tab = createBottomTabNavigator<MerchantTabParamList>();
 const verifiedOnlyScreens = new Set<string>(VERIFIED_ONLY_SCREENS);
 const MERCHANT_ACCOUNT_SYNC_TTL_MS = 5 * 60 * 1000;
+/**
+ * Editors with an unsaved-changes guard. The guard cannot intercept a tab press (these are
+ * hidden tabs, so beforeRemove never fires), so the tab bar is not shown on them at all.
+ */
+const EDITOR_ROUTES = new Set<string>(["BusinessProfileEditor", "DishEditor", "PromotionBuilder"]);
 
 type MerchantRouteName = keyof MerchantTabParamList;
 
@@ -30,7 +35,11 @@ function useMerchantAccessLevel() {
   const activeOutlet = useMerchantStore(getActiveOutlet);
   return developerMerchantMode
     ? "verified"
-    : resolveMerchantAccess(Boolean(account), activeOutlet?.verification.status);
+    : resolveMerchantAccess(
+        Boolean(account),
+        activeOutlet?.verification.status,
+        activeOutlet?.verification.expiresAt,
+      );
 }
 
 /** The single "not a merchant" screen, shared by the navigator and the per-screen gate. */
@@ -42,6 +51,7 @@ function MerchantSignInGate({
   const { spacing } = useHungryTheme();
   const setAccount = useMerchantStore((state) => state.setAccount);
   const completeAuth = useSessionStore((state) => state.completeAuth);
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const isMock = getServiceProvider().mode === "mock";
 
   const handleMockLogin = async () => {
@@ -58,14 +68,33 @@ function MerchantSignInGate({
     <Screen title="Merchant Centre" subtitle="Business tools are not available for this account">
       <View style={[styles.accessGate, { padding: spacing[5], gap: spacing[4] }]}>
         <AppText variant="body" tone="muted" style={{ textAlign: "center" }}>
-          Sign in with a merchant account to manage your menu, promotions, and analytics.
+          {isAuthenticated
+            ? "This login has no merchant account yet. Claim your stall from its page in customer mode to get started."
+            : "Sign in with a merchant account to manage your menu, promotions, and analytics."}
         </AppText>
         <View style={{ width: "100%", gap: spacing[2] }}>
-          <Button
-            label="Sign In"
-            onPress={() => rootNavigation?.navigate("AuthStack", { screen: "Login" })}
-            fullWidth
-          />
+          {/* Already signed in: the Login screen would be a dead end, so offer the way out instead. */}
+          {isAuthenticated ? (
+            <Button
+              label="Switch to Customer Mode"
+              onPress={() => {
+                useMerchantStore.getState().setMerchantModeActive(false);
+                rootNavigation?.dispatch(
+                  CommonActions.reset({
+                    index: 0,
+                    routes: [{ name: "MainTabs", params: { screen: "Home" } }],
+                  }),
+                );
+              }}
+              fullWidth
+            />
+          ) : (
+            <Button
+              label="Sign In"
+              onPress={() => rootNavigation?.navigate("AuthStack", { screen: "Login" })}
+              fullWidth
+            />
+          )}
           {isMock && (
             <Button
               label="Sign In as Mock Merchant"
@@ -166,117 +195,149 @@ function createGuardedScreen<Props extends object>(
   };
 }
 
-const loadMerchantDashboardScreen = () =>
+/**
+ * Build each guarded screen once. Navigators may call getComponent on every render; a new
+ * component type each time would remount the screen and drop its scroll and form state.
+ */
+function memoizeLoader<T>(load: () => T): () => T {
+  let loaded: { value: T } | undefined;
+  return () => {
+    loaded ??= { value: load() };
+    return loaded.value;
+  };
+}
+
+const loadMerchantDashboardScreen = memoizeLoader(() =>
   createGuardedScreen(
     "Dashboard",
     (
       require("@/app/screens/merchant/MerchantDashboardScreen") as typeof import("@/app/screens/merchant/MerchantDashboardScreen")
     ).MerchantDashboardScreen,
-  );
-const loadMerchantMenuScreen = () =>
+  ),
+);
+const loadMerchantMenuScreen = memoizeLoader(() =>
   createGuardedScreen(
     "Menu",
     (
       require("@/app/screens/merchant/MerchantMenuScreen") as typeof import("@/app/screens/merchant/MerchantMenuScreen")
     ).MerchantMenuScreen,
-  );
-const loadMerchantAnalyticsScreen = () =>
+  ),
+);
+const loadMerchantAnalyticsScreen = memoizeLoader(() =>
   createGuardedScreen(
     "Analytics",
     (
       require("@/app/screens/merchant/MerchantAnalyticsScreen") as typeof import("@/app/screens/merchant/MerchantAnalyticsScreen")
     ).MerchantAnalyticsScreen,
-  );
-const loadMerchantProfileScreen = () =>
+  ),
+);
+const loadMerchantProfileScreen = memoizeLoader(() =>
   createGuardedScreen(
     "Profile",
     (
       require("@/app/screens/merchant/MerchantProfileScreen") as typeof import("@/app/screens/merchant/MerchantProfileScreen")
     ).MerchantProfileScreen,
-  );
-const loadVerificationCentreScreen = () =>
+  ),
+);
+const loadVerificationCentreScreen = memoizeLoader(() =>
   createGuardedScreen(
     "VerificationCentre",
     (
       require("@/app/screens/merchant/VerificationCentreScreen") as typeof import("@/app/screens/merchant/VerificationCentreScreen")
     ).VerificationCentreScreen,
-  );
-const loadHomeBasedVerificationScreen = () =>
+  ),
+);
+const loadHomeBasedVerificationScreen = memoizeLoader(() =>
   createGuardedScreen(
     "HomeBasedVerification",
     (
       require("@/app/screens/merchant/HomeBasedVerificationScreen") as typeof import("@/app/screens/merchant/HomeBasedVerificationScreen")
     ).HomeBasedVerificationScreen,
-  );
-const loadCustomerInboxScreen = () =>
+  ),
+);
+const loadCustomerInboxScreen = memoizeLoader(() =>
   createGuardedScreen(
     "CustomerInbox",
     (
       require("@/app/screens/merchant/CustomerInboxScreen") as typeof import("@/app/screens/merchant/CustomerInboxScreen")
     ).CustomerInboxScreen,
-  );
-const loadFeaturedVisitorsScreen = () =>
+  ),
+);
+const loadFeaturedVisitorsScreen = memoizeLoader(() =>
   createGuardedScreen(
     "FeaturedVisitors",
     (
       require("@/app/screens/merchant/FeaturedVisitorsScreen") as typeof import("@/app/screens/merchant/FeaturedVisitorsScreen")
     ).FeaturedVisitorsScreen,
-  );
-const loadBusinessProfileEditorScreen = () =>
+  ),
+);
+const loadBusinessProfileEditorScreen = memoizeLoader(() =>
   createGuardedScreen(
     "BusinessProfileEditor",
     (
       require("@/app/screens/merchant/BusinessProfileEditorScreen") as typeof import("@/app/screens/merchant/BusinessProfileEditorScreen")
     ).BusinessProfileEditorScreen,
-  );
-const loadDishEditorScreen = () =>
+  ),
+);
+const loadDishEditorScreen = memoizeLoader(() =>
   createGuardedScreen(
     "DishEditor",
     (
       require("@/app/screens/merchant/DishEditorScreen") as typeof import("@/app/screens/merchant/DishEditorScreen")
     ).DishEditorScreen,
-  );
-const loadOCRDraftScreen = () =>
+  ),
+);
+const loadOCRDraftScreen = memoizeLoader(() =>
   createGuardedScreen(
     "OCRDrafts",
     (
       require("@/app/screens/merchant/OCRDraftScreen") as typeof import("@/app/screens/merchant/OCRDraftScreen")
     ).OCRDraftScreen,
-  );
-const loadPromotionListScreen = () =>
+  ),
+);
+const loadPromotionListScreen = memoizeLoader(() =>
   createGuardedScreen(
     "PromotionList",
     (
       require("@/app/screens/merchant/PromotionListScreen") as typeof import("@/app/screens/merchant/PromotionListScreen")
     ).PromotionListScreen,
-  );
-const loadPromotionBuilderScreen = () =>
+  ),
+);
+const loadPromotionBuilderScreen = memoizeLoader(() =>
   createGuardedScreen(
     "PromotionBuilder",
     (
       require("@/app/screens/merchant/PromotionBuilderScreen") as typeof import("@/app/screens/merchant/PromotionBuilderScreen")
     ).PromotionBuilderScreen,
-  );
-const loadAIAssistantScreen = () =>
+  ),
+);
+const loadAIAssistantScreen = memoizeLoader(() =>
   createGuardedScreen(
     "AIAssistant",
     (
       require("@/app/screens/merchant/AIAssistantScreen") as typeof import("@/app/screens/merchant/AIAssistantScreen")
     ).AIAssistantScreen,
-  );
-const loadMerchantSettingsScreen = () =>
+  ),
+);
+const loadMerchantSettingsScreen = memoizeLoader(() =>
   createGuardedScreen(
     "MerchantSettings",
     (
       require("@/app/screens/merchant/MerchantSettingsScreen") as typeof import("@/app/screens/merchant/MerchantSettingsScreen")
     ).MerchantSettingsScreen,
-  );
+  ),
+);
 
 function MerchantTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const { componentSizes, palette, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const account = useMerchantStore((storeState) => storeState.account);
   const activeOutlet = useMerchantStore(getActiveOutlet);
+
+  // Leaving an editor goes through its back button, which asks before discarding edits.
+  if (EDITOR_ROUTES.has(state.routes[state.index]?.name ?? "")) {
+    return null;
+  }
 
   return (
     <View
@@ -409,6 +470,9 @@ export function MerchantTabs() {
   }, [navigation, routeKey, setMerchantModeActive]);
 
   const [isSyncingAccount, setIsSyncingAccount] = useState(!account);
+  // A failed first load (offline, server error) is not "you are not a merchant": offer a retry.
+  const [syncFailed, setSyncFailed] = useState(false);
+  const [syncAttempt, setSyncAttempt] = useState(0);
   const access = useMerchantAccessLevel();
 
   useEffect(() => {
@@ -437,10 +501,12 @@ export function MerchantTabs() {
       try {
         const latestAccount = await getHungryService().merchant.getMerchantAccount();
         if (isMounted) {
+          setSyncFailed(false);
           setAccount(latestAccount);
         }
       } catch (error) {
         console.error("Failed to sync merchant account", error);
+        if (isMounted) setSyncFailed(true);
       } finally {
         if (isMounted) {
           setIsSyncingAccount(false);
@@ -461,7 +527,16 @@ export function MerchantTabs() {
       isMounted = false;
       deferredSync?.();
     };
-  }, [account, accountSyncedAt, activeOutlet, developerMerchantMode, setAccount, isAuthenticated]);
+    // syncAttempt re-runs the sync when the merchant taps Retry.
+  }, [
+    account,
+    accountSyncedAt,
+    activeOutlet,
+    developerMerchantMode,
+    setAccount,
+    isAuthenticated,
+    syncAttempt,
+  ]);
 
   if (isSyncingAccount) {
     return (
@@ -481,6 +556,43 @@ export function MerchantTabs() {
   }
 
   // ─── Access Gate ───────────────────────────────────────────────────────────
+
+  if (access === "none" && syncFailed) {
+    return (
+      <Screen title="Merchant Centre" subtitle="Could not load your merchant account">
+        <View style={[styles.accessGate, { padding: spacing[5], gap: spacing[4] }]}>
+          <AppText variant="body" tone="muted" style={{ textAlign: "center" }}>
+            Hungry could not be reached. Check your connection and try again.
+          </AppText>
+          <View style={{ width: "100%", gap: spacing[2] }}>
+            <Button
+              label="Retry"
+              onPress={() => {
+                setSyncFailed(false);
+                setIsSyncingAccount(true);
+                setSyncAttempt((attempt) => attempt + 1);
+              }}
+              fullWidth
+            />
+            <Button
+              label="Switch to Customer Mode"
+              variant="secondary"
+              onPress={() => {
+                setMerchantModeActive(false);
+                rootNavigation?.dispatch(
+                  CommonActions.reset({
+                    index: 0,
+                    routes: [{ name: "MainTabs", params: { screen: "Home" } }],
+                  }),
+                );
+              }}
+              fullWidth
+            />
+          </View>
+        </View>
+      </Screen>
+    );
+  }
 
   if (access === "none") {
     return <MerchantSignInGate rootNavigation={rootNavigation} />;

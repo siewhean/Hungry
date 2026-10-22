@@ -1,6 +1,6 @@
 import { memo, type ReactNode } from "react";
 import { Pressable, StyleSheet, View, Switch } from "react-native";
-import { ChevronRight } from "lucide-react-native";
+import { ChevronRight, ExternalLink } from "lucide-react-native";
 import { AppText } from "../ui";
 import { useHungryTheme } from "@/theme";
 
@@ -9,14 +9,19 @@ interface SettingsRowProps {
   description?: string;
   icon?: ReactNode;
   onPress?: () => void;
+  /** Press-and-hold action (for example copying the version); the row says so in `description`. */
+  onLongPress?: () => void;
   value?: string;
-  type?: "toggle" | "navigation" | "value";
+  /** "link" opens a website or mail app outside Hungry (announced as a link, with an external icon). */
+  type?: "toggle" | "navigation" | "value" | "link";
   isEnabled?: boolean;
   onToggle?: (value: boolean) => void;
   isLast?: boolean;
   destructive?: boolean;
   /** Marks a running action (announced as busy and not pressable). */
   busy?: boolean;
+  /** Fades the row when what it controls is currently unavailable. */
+  dimmed?: boolean;
 }
 
 export const SettingsRow = memo(function SettingsRow({
@@ -24,6 +29,7 @@ export const SettingsRow = memo(function SettingsRow({
   description,
   icon,
   onPress,
+  onLongPress,
   value,
   type = "navigation",
   isEnabled,
@@ -31,11 +37,13 @@ export const SettingsRow = memo(function SettingsRow({
   isLast = false,
   destructive = false,
   busy = false,
+  dimmed = false,
 }: SettingsRowProps) {
   const { palette, spacing } = useHungryTheme();
   const isToggle = type === "toggle";
+  const isLink = type === "link";
   // Rows without an action only show a value, so they are not buttons.
-  const isInteractive = isToggle ? Boolean(onToggle) : Boolean(onPress);
+  const isInteractive = isToggle ? Boolean(onToggle) : Boolean(onPress || onLongPress);
 
   // Handle row press even for toggle types
   const handlePress = () => {
@@ -55,6 +63,7 @@ export const SettingsRow = memo(function SettingsRow({
     paddingHorizontal: spacing[4],
     borderBottomWidth: isLast ? 0 : 1,
     borderBottomColor: palette.border,
+    opacity: dimmed ? 0.55 : 1,
   };
 
   const content = (
@@ -111,6 +120,21 @@ export const SettingsRow = memo(function SettingsRow({
           </View>
         ) : null}
 
+        {type === "link" ? (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            {value ? (
+              <AppText
+                tone="secondary"
+                style={[styles.valueText, styles.rightText]}
+                numberOfLines={1}
+              >
+                {value}
+              </AppText>
+            ) : null}
+            <ExternalLink size={18} color={palette.textMuted} />
+          </View>
+        ) : null}
+
         {type === "toggle" ? (
           <Switch
             value={isEnabled}
@@ -145,10 +169,13 @@ export const SettingsRow = memo(function SettingsRow({
   return (
     <Pressable
       onPress={handlePress}
+      onLongPress={onLongPress}
       disabled={busy}
-      accessibilityRole={isToggle ? "switch" : "button"}
+      accessibilityRole={isToggle ? "switch" : isLink ? "link" : "button"}
       accessibilityLabel={label}
-      accessibilityHint={description}
+      accessibilityHint={
+        isLink ? [description, "Opens in browser"].filter(Boolean).join(". ") : description
+      }
       accessibilityValue={!isToggle && value ? { text: value } : undefined}
       accessibilityState={
         isToggle ? { checked: Boolean(isEnabled), busy } : { busy, disabled: busy }

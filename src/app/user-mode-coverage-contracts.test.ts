@@ -25,11 +25,11 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
   assertSourceIncludes(
     types,
     [
-      /Login: undefined/,
+      /Login: \{ title\?: string; email\?: string \} \| undefined/,
       /SignUp: undefined/,
       /EmailVerification:\s*\|?\s*\{ email\?: string; completedOnboarding\?: boolean; code\?: string \}\s*\|\s*undefined/,
       /ForgotPassword: undefined/,
-      /ResetPassword: \{ email\?: string; code\?: string; recoveryVerified\?: boolean \} \| undefined/,
+      /ResetPassword:\s*\|\s*\{\s*email\?: string;\s*code\?: string;\s*recoveryVerified\?: boolean;\s*linkError\?: "expired" \| "invalid";\s*\}\s*\|\s*undefined/,
       /TasteQuiz: \{ mode\?: "onboarding" \| "profile"; initialPhase\?: "taste" \| "dietary" \} \| undefined/,
       /LocationPermission: undefined/,
       /ManualLocationPicker: \{ mode\?: "settings" \} \| undefined/,
@@ -64,7 +64,7 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
       /service\.auth\.signInWithGoogle\(/,
       /service\.auth\.signInWithApple\(/,
       // Email sign-in is an existing account; the quiz state is not overwritten.
-      /completeAuth\(\{ completedOnboarding: true \}\)/,
+      /completeAuth\(\{\s*completedOnboarding: getConfiguredDataSource\(\) !== "supabase"\s*\}\)/,
     ],
     "LoginScreen",
   );
@@ -116,21 +116,24 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
 });
 
 test("home feed post cards cover carousel media, captions, comments, reactions, and refresh", () => {
-  const home = readRepoFile("src/app/screens/home/HomeFeedScreen.tsx");
+  const home = [
+    readRepoFile("src/app/screens/home/HomeFeedScreen.tsx"),
+    readRepoFile("src/components/social/FeedPostCard.tsx"),
+  ].join("\n");
   const feed = readRepoFile("src/features/home/feed.ts");
   const socialStore = readRepoFile("src/store/useSocialStore.ts");
   const publishing = readRepoFile("src/features/post/publishing.ts");
 
   assertSourceIncludes(
     feed,
-    [/listSharedStallPosts\(repository\)/, /runRecommendationPipeline/, /getHomeFeedBundle/],
+    [/listSharedStallPostsPage\(repository\)/, /getHomeFeedBundle/, /getHomeFeedNextPage/],
     "home feed bundle",
   );
   assertSourceIncludes(
     home,
     [
       /RefreshControl/,
-      /preserveReadyOnError: true, showLoading: false/,
+      /force: true, showLoading: false/,
       /const mediaUrls =\s*item\.mediaType === "photo" && item\.mediaUrls\?\.length/,
       /horizontal[\s\S]*pagingEnabled[\s\S]*showsHorizontalScrollIndicator=\{false\}/,
       /numberOfLines=\{isCaptionExpanded \? undefined : 2\}/,
@@ -146,7 +149,7 @@ test("home feed post cards cover carousel media, captions, comments, reactions, 
       /togglePostSave/,
       /incrementPostShare/,
       /FloatingShareSendButton/,
-      /setCarouselIndexByPostId/,
+      /setCarouselIndex/,
       /const postAgeLabel = formatPostAge\(item\.createdAt\)/,
     ],
     "HomeFeedScreen interactions",
@@ -209,16 +212,16 @@ test("discover routes diners to details, opens the map from a toggle, and search
       /accessibilityLabel="Search dishes"/,
       /iconAlignment="right"/,
       /navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dishId \}\)/,
-      /accessibilityLabel=\{`Open \$\{activeSlide\.dishName\} at \$\{activeSlide\.venueName\}`\}/,
-      /\{activeSlide\.dishName\}/,
+      /accessibilityLabel=\{`Open \$\{item\.dishName\} at \$\{item\.venueName\}`\}/,
+      /\{item\.dishName\}/,
     ],
     "QuickBitesScreen search icon and card mapping",
   );
   assertSourceIncludes(
     searchResults,
     [
-      /navigation\.navigate\("CatalogRawDetail", \{\s*kind: mode === "dishes" \? "dish" : "venue",/,
-      /accessibilityLabel=\{`\$\{title\} image`\}/,
+      /navigation\.navigate\("CatalogRawDetail", \{\s*kind: openedMode === "dishes" \? "dish" : "venue",/,
+      /accessibilityLabel=\{cardAccessibilityLabel\(mode, item\)\}/,
       /type: "search_query"/,
       /type: "dish_result_click"/,
     ],
@@ -229,8 +232,8 @@ test("discover routes diners to details, opens the map from a toggle, and search
     searchResults.match(/const loadPage = useCallback\([\s\S]*?\n  \);/)?.[0] ?? "";
   assert.ok(loadPageBody, "loadPage should exist");
   assert.doesNotMatch(loadPageBody, /search_query/);
-  assert.match(searchResults, /onSubmitEditing=\{\(\) => recordCommittedQuery\(searchQuery\)\}/);
-  assert.match(searchResults, /recordCommittedQuery\(initialSearchQuery\)/);
+  assert.match(searchResults, /onSubmitEditing=\{\(\) =>\s*recordCommittedQuery\(searchText, \{/);
+  assert.match(searchResults, /recordCommittedQuery\(initialSearchQuery, \{/);
   assertSourceIncludes(
     rootNavigator,
     [/name="BrowseDishes"/, /name="BrowseStalls"/, /name="DecideForMeResult"/, /name="WheelStack"/],
@@ -261,11 +264,11 @@ test("dish and stall details expose correct detail surfaces without user-mode ma
   assertSourceIncludes(
     stallDetail,
     [
-      /height: screenWidth \* 0\.75/,
+      /height=\{screenWidth \* 0\.75\}/,
       /const stallAddress =/,
       /import \{ StallLogoMark \} from "@\/components\/stall\/StallLogoMark"/,
       /logoUrl=\{venue\.logoUrl\}/,
-      /<AppText variant="h2">Address<\/AppText>/,
+      /<AppText variant="bodyBold">Address<\/AppText>/,
       /\{stallAddress\}/,
       /Loading stall/,
       /<AppText variant="h2">Menu<\/AppText>/,
@@ -324,10 +327,10 @@ test("review tab covers loading state, review cards, and bite card icon/sheet bo
       /openCommentsSheet\(\)/,
       /accessibilityLabel="Open review comments"/,
       /const reviewReactionsEnabled = serviceProviderMode === "mock"/,
-      /accessibilityLabel=\{interaction\.liked \? "Unlike review" : "Like review"\}/,
+      /accessibilityLabel=\{liked \? "Unlike review" : "Like review"\}/,
       /"Remove saved dish"/,
       /"Save dish"/,
-      /saved: favouriteDishIds\.includes\(item\.dishId\)/,
+      /: favouriteDishIds\.includes\(item\.dishId\)/,
       /<Send[\s\S]*<Bookmark[\s\S]*<CommentIcon[\s\S]*<Heart/,
       /justifyContent: "flex-end"/,
     ],
@@ -468,7 +471,6 @@ test("profile surfaces keep own and other-user layouts linked while hiding taste
     [
       /profile\.avatarUrl \? \([\s\S]*<AccessibleImage[\s\S]*source=\{\{ uri: profile\.avatarUrl \}\}/,
       /avatarInitials/,
-      /<UserProfileContent[\s\S]*authorName=\{viewerAuthorName\}[\s\S]*authorAvatarUrl=\{viewerAuthorAvatarUrl\}/,
       /<AppText variant="h2">Taste Fingerprint<\/AppText>/,
       /label="Followers"/,
       /label="Following"/,
@@ -476,7 +478,7 @@ test("profile surfaces keep own and other-user layouts linked while hiding taste
       /label="Stalls"/,
       /label="Saved"/,
       /accessibilityLabel=\{menuOpen \? "Close quick access" : "Open quick access"\}/,
-      /accessibilityLabel="Edit profile"/,
+      /label="Edit profile"/,
       /accessibilityLabel="Share Taste Fingerprint"/,
       /<AppText\s+variant="h1"\s+numberOfLines=\{1\}\s+adjustsFontSizeToFit\s+minimumFontScale=\{0\.78\}[\s\S]*profile\.displayName/,
       /accessibilityLabel="Show profile posts"/,
@@ -498,7 +500,7 @@ test("profile surfaces keep own and other-user layouts linked while hiding taste
       /activeTab === "posts"/,
       /activeTab === "reviews"/,
       /post\.authorId === normalizedAuthorId/,
-      /reviews\.getUserReviews\(normalizedAuthorId\)/,
+      /reviews\.getUserReviews\(normalizedAuthorId as string, \{/,
       /rootNavigation\.navigate\(target, \{ userId: resolvedAuthorId/,
       /accessibilityState=\{\{ selected: activeTab === "posts" \}\}/,
       /accessibilityState=\{\{ selected: activeTab === "reviews" \}\}/,
@@ -547,8 +549,9 @@ test("profile surfaces keep own and other-user layouts linked while hiding taste
     settings,
     [
       /label="Profile visibility"/,
-      /onPress: \(\) => void changeProfileVisibility\("public"\)/,
-      /onPress: \(\) => void changeProfileVisibility\("private"\)/,
+      /value: "public" as const/,
+      /value: "private" as const/,
+      /void changeProfileVisibility\(visibility\)/,
       /const saved = await setProfileVisibility\(visibility\)/,
     ],
     "Settings profile visibility UI",

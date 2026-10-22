@@ -1,7 +1,9 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   Pressable,
+  Share,
   StyleSheet,
   TextInput,
   View,
@@ -10,61 +12,87 @@ import {
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { ArrowLeft, MapPinOff, X } from "lucide-react-native";
-import { FlashList } from "@shopify/flash-list";
+import type { BottomSheetModal } from "@gorhom/bottom-sheet";
+import {
+  ArrowLeft,
+  Check,
+  ChevronDown,
+  Info,
+  MapPin,
+  MapPinOff,
+  Share2,
+  Star,
+  X,
+} from "lucide-react-native";
+import { FlashList, type FlashListRef } from "@shopify/flash-list";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
   AccessibleImage,
   AppText,
+  BottomSheet,
   Button,
+  Chip,
   EmptyState,
   FilterChipRail,
   IconButton,
   Screen,
   Skeleton,
 } from "@/components/ui";
+import { StallLogoMark } from "@/components/stall/StallLogoMark";
+import {
+  BROWSE_ALL_FILTER,
+  BROWSE_FILTER_IDS,
+  BROWSE_SORT_OPTIONS,
+  buildBrowseRequest,
+  buildSearchShareUrl,
+  cardAccessibilityLabel,
+  cardSubtitle,
+  describeMatchCount,
+  formatBrowseDistance,
+  isTooShortQuery,
+  mergeStallOutlets,
+  normalizeQuery,
+  parseFilterIds,
+  ratingPillText,
+  toggleFilterId,
+  type BrowseFilterId,
+  type BrowseItem,
+  type BrowseMode,
+  type BrowseSortId,
+  type StallRow,
+} from "@/features/search/browseGrid";
 import { getCatalogRawService } from "@/lib/services/serviceProvider";
-import type {
-  CatalogPageRequest,
-  CatalogRawDishCard,
-  CatalogRawVenueCard,
+import {
+  CATALOG_QUERY_MAX_CHARS,
+  CATALOG_QUERY_MIN_CHARS,
+  CATALOG_SUGGEST_MIN_CHARS,
+  type CatalogPlace,
+  type CatalogRawDishCard,
+  type CatalogRawVenueCard,
 } from "@/lib/services/catalog";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { reportError } from "@/lib/monitoring/reportError";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useSearchStore } from "@/store/useSearchStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
 
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 type SearchResultsRoute = RouteProp<RootStackParamList, "SearchResults">;
-// "Open now" and the price cap map onto p_open_only / p_max_price in the catalog RPCs.
-const OPEN_NOW_FILTER = "Open now";
-const BUDGET_FILTER = "Under S$6";
-const BUDGET_MAX_PRICE = 6;
-const RAW_BROWSE_FILTER_OPTIONS = [
-  "All",
-  OPEN_NOW_FILTER,
-  BUDGET_FILTER,
-  "Halal",
-  "Japanese",
-  "Western",
-  "Noodles",
-  "Rice",
-].map((filter) => ({ id: filter, label: filter }));
+type SearchSource = "discover_chip" | "search_home";
 
-/** Maps a route/link filter or food-type tag onto one of the chips ("Local" was the old open-now chip). */
-function resolveInitialFilter(value?: string) {
-  if (!value) return undefined;
-  if (value.toLowerCase() === "local") return OPEN_NOW_FILTER;
-  return RAW_BROWSE_FILTER_OPTIONS.find((option) => option.id.toLowerCase() === value.toLowerCase())
-    ?.id;
-}
+const RAW_BROWSE_FILTER_OPTIONS = [BROWSE_ALL_FILTER, ...BROWSE_FILTER_IDS].map((filter) => ({
+  id: filter,
+  label: filter,
+}));
+/** "Search all Singapore" when the 3 km browse radius is empty: wide enough to cover the island. */
+const WIDE_RADIUS_METERS = 30_000;
 
-/** "120 m" under a kilometre, "2.4 km" above. */
-export function formatBrowseDistance(meters: number) {
-  return meters >= 1000 ? `${(meters / 1000).toFixed(1)} km` : `${Math.round(meters)} m`;
+/** Religious dietary choices are reported as "dietary", not by name (privacy, like onboarding). */
+function analyticsFilterName(filter: string) {
+  return filter === "Halal" ? "dietary" : filter;
 }
 
 /** ~100 m buckets, so a GPS refresh that barely moves does not reset the list. */
@@ -72,15 +100,9 @@ function roundCoordinate(value: number) {
   return Math.round(value * 1000) / 1000;
 }
 
-function BrowseGridLoadingState({
-  itemWidth,
-  mode,
-}: {
-  itemWidth: number;
-  mode: "dishes" | "stalls";
-}) {
+function BrowseGridLoadingState({ itemWidth, mode }: { itemWidth: number; mode: BrowseMode }) {
   const { palette, spacing } = useHungryTheme();
-  const loadingLabel = mode === "dishes" ? "Preparing dishes" : "Preparing stalls";
+  const loadingLabel = mode === "dishes" ? "Finding dishes" : "Finding stalls";
 
   return (
     <View accessibilityLabel={loadingLabel} accessibilityRole="progressbar">
@@ -106,56 +128,37 @@ function BrowseGridLoadingState({
   );
 }
 
-type RawCatalogItem = CatalogRawDishCard | CatalogRawVenueCard;
-
-function rawCatalogRequest(
-  mode: "dishes" | "stalls",
-  query: string,
-  selectedFilter: string,
-  coordinate: { latitude: number; longitude: number },
-  cursor?: string,
-): CatalogPageRequest {
-  const filter = selectedFilter.toLowerCase();
-  return {
-    query: query.trim() || undefined,
-    coordinate,
-    radiusMeters: query.trim() ? undefined : 3_000,
-    cursor,
-    limit: 24,
-    sort: query.trim() ? "relevance" : "nearby",
-    dietaryFlags: filter === "halal" ? ["halal"] : [],
-    cuisineTags: ["japanese", "western", "noodles", "rice"].includes(filter) ? [filter] : [],
-    openOnly: selectedFilter === OPEN_NOW_FILTER,
-    maxPrice: selectedFilter === BUDGET_FILTER ? BUDGET_MAX_PRICE : undefined,
-  };
-}
-
 const RawCatalogCard = memo(function RawCatalogCard({
+  index,
   item,
   itemWidth,
   mode,
-  onPress,
+  onOpen,
 }: {
-  item: RawCatalogItem;
+  index: number;
+  item: BrowseItem;
   itemWidth: number;
-  mode: "dishes" | "stalls";
-  onPress: () => void;
+  mode: BrowseMode;
+  onOpen: (item: BrowseItem, index: number) => void;
 }) {
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const isDish = mode === "dishes";
+  const dish = isDish ? (item as CatalogRawDishCard) : undefined;
+  const stall = isDish ? undefined : (item as StallRow);
   const imageUrl =
     item.imageUrl ?? ("representativeDish" in item ? item.representativeDish?.imageUrl : undefined);
-  const title = isDish ? (item as CatalogRawDishCard).name : (item as CatalogRawVenueCard).name;
-  const subtitle = isDish
-    ? (item as CatalogRawDishCard).venueName
-    : ((item as CatalogRawVenueCard).representativeDish?.name ?? "Menu details available");
-  const price = isDish ? (item as CatalogRawDishCard).price : undefined;
+  const title = item.name;
+  const stallName = dish ? dish.venueName : title;
+  const rating = dish ? ratingPillText(dish.rating, dish.reviewCount) : undefined;
+  const outlets = stall?.extraOutlets ?? 0;
+  const isVerified = item.verificationStatus === "approved";
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Open ${title}`}
-      onPress={onPress}
+      accessibilityLabel={cardAccessibilityLabel(mode, item)}
+      accessibilityHint={isDish ? "Opens the dish" : "Opens the stall"}
+      onPress={() => onOpen(item, index)}
       style={{ padding: spacing[1], width: itemWidth }}
     >
       <View
@@ -174,17 +177,16 @@ const RawCatalogCard = memo(function RawCatalogCard({
               source={{ uri: imageUrl }}
               style={StyleSheet.absoluteFill}
               contentFit="cover"
-              accessibilityLabel={`${title} image`}
+              decorative
             />
           ) : (
+            // Most catalog rows have no cleared photo; show the stall's initials, not a grey caption.
             <View style={{ alignItems: "center", flex: 1, justifyContent: "center" }}>
-              <AppText tone="muted" variant="micro">
-                Image unavailable
-              </AppText>
+              <StallLogoMark name={stallName} size={Math.round(itemWidth * 0.3)} />
             </View>
           )}
-          {/* Only positive verification is badged; most catalog rows are unverified. */}
-          {item.verificationStatus === "verified" || item.verificationStatus === "approved" ? (
+          {/* One badge only: approved rows are "Verified"; every other row carries no pill. */}
+          {isVerified ? (
             <View
               style={{
                 backgroundColor: palette.surface,
@@ -197,7 +199,24 @@ const RawCatalogCard = memo(function RawCatalogCard({
               }}
             >
               <AppText variant="micro" style={{ color: palette.textSecondary }}>
-                {item.verificationStatus === "approved" ? "Verified" : "Source verified"}
+                Verified
+              </AppText>
+            </View>
+          ) : null}
+          {outlets > 0 ? (
+            <View
+              style={{
+                backgroundColor: palette.surface,
+                borderRadius: radii.pill,
+                paddingHorizontal: spacing[2],
+                paddingVertical: spacing[1],
+                position: "absolute",
+                right: spacing[2],
+                top: spacing[2],
+              }}
+            >
+              <AppText variant="micro" style={{ color: palette.textSecondary }}>
+                {`+${outlets} ${outlets === 1 ? "outlet" : "outlets"}`}
               </AppText>
             </View>
           ) : null}
@@ -206,18 +225,30 @@ const RawCatalogCard = memo(function RawCatalogCard({
           <AppText numberOfLines={2} variant="bodyBold">
             {title}
           </AppText>
-          <AppText numberOfLines={1} tone="secondary" variant="micro">
-            {subtitle}
+          <AppText numberOfLines={2} tone="secondary" variant="micro">
+            {cardSubtitle(mode, item)}
           </AppText>
+          {rating ? (
+            <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
+              <Star color={palette.orange} fill={palette.orange} size={12} />
+              <AppText tone="secondary" variant="micro">
+                {rating}
+              </AppText>
+            </View>
+          ) : stall && stall.menuCount > 0 ? (
+            <AppText tone="secondary" variant="micro">
+              {`${stall.menuCount} ${stall.menuCount === 1 ? "dish" : "dishes"}`}
+            </AppText>
+          ) : null}
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
             <AppText tone="muted" variant="micro">
               {item.distanceMeters !== undefined
                 ? formatBrowseDistance(item.distanceMeters)
                 : "Singapore"}
             </AppText>
-            {price !== undefined ? (
+            {dish?.price !== undefined ? (
               <AppText style={{ color: palette.orange }} variant="price">
-                S${price.toFixed(2)}
+                S${dish.price.toFixed(2)}
               </AppText>
             ) : null}
           </View>
@@ -227,14 +258,24 @@ const RawCatalogCard = memo(function RawCatalogCard({
   );
 });
 
+const MODE_LABELS = { dishes: "Dishes", stalls: "Stalls" } as const;
+
+type BrowsePlace = { id: string; name: string };
+
 function RawCatalogBrowseGrid({
+  allowModeSwitch = false,
   initialFilter,
+  initialPlace,
   initialSearchQuery = "",
-  mode,
+  initialSource,
+  mode: initialMode,
 }: {
+  allowModeSwitch?: boolean;
   initialFilter?: string;
+  initialPlace?: BrowsePlace;
   initialSearchQuery?: string;
-  mode: "dishes" | "stalls";
+  initialSource?: SearchSource;
+  mode: BrowseMode;
 }) {
   const navigation = useNavigation<RootNavigation>();
   const { palette, spacing } = useHungryTheme();
@@ -244,30 +285,59 @@ function RawCatalogBrowseGrid({
   const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
-  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
-  const lastRecordedQueryRef = useRef("");
-  const [selectedFilter, setSelectedFilter] = useState(
-    () => resolveInitialFilter(initialFilter) ?? "All",
+  const rememberSearch = useSearchStore((state) => state.rememberSearch);
+  const [mode, setMode] = useState(initialMode);
+  const [searchText, setSearchText] = useState(initialSearchQuery);
+  // A picked mall, hawker centre or food court: only its stalls and dishes are listed.
+  const [place, setPlace] = useState<BrowsePlace | undefined>(initialPlace);
+  const initialPlaceId = initialPlace?.id;
+  const initialPlaceName = initialPlace?.name;
+  const [placeMatches, setPlaceMatches] = useState<{ query: string; items: CatalogPlace[] }>({
+    query: "",
+    items: [],
+  });
+  const [filters, setFilters] = useState<readonly BrowseFilterId[]>(() =>
+    parseFilterIds(initialFilter),
   );
-  const [items, setItems] = useState<RawCatalogItem[]>([]);
+  const [sort, setSort] = useState<BrowseSortId>("relevance");
+  const [widenRadius, setWidenRadius] = useState(false);
+  const [items, setItems] = useState<BrowseItem[]>([]);
+  const [matchCount, setMatchCount] = useState<number | undefined>();
   const [nextCursor, setNextCursor] = useState<string | undefined>();
-  const [releaseId, setReleaseId] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // A failed next page waits for a tap on Retry instead of re-firing on every scroll.
   const [loadMoreFailed, setLoadMoreFailed] = useState(false);
+  // The text of a submitted search (Enter, a suggestion, a link); only these are logged as zero results.
+  const [committedQuery, setCommittedQuery] = useState(() => normalizeQuery(initialSearchQuery));
+  // The request whose first page is on screen, so "no results" is never shown for a stale one.
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
+  const [didYouMean, setDidYouMean] = useState<{ query: string; label: string } | null>(null);
   const requestVersion = useRef(0);
   const releaseIdRef = useRef<string | undefined>(undefined);
+  const listRef = useRef<FlashListRef<BrowseItem>>(null);
+  const sortSheetRef = useRef<BottomSheetModal>(null);
+  const lastRecordedQueryRef = useRef("");
+  const loggedZeroKeyRef = useRef("");
   const service = getCatalogRawService();
   const itemWidth = width / 2;
 
+  const query = useMemo(() => normalizeQuery(searchText), [searchText]);
+  const tooShort = isTooShortQuery(query);
+
   // A link or a new navigation with other params replaces what the grid shows.
   useEffect(() => {
-    setSearchQuery(initialSearchQuery);
+    setMode(initialMode);
+  }, [initialMode]);
+  useEffect(() => {
+    setSearchText(initialSearchQuery);
   }, [initialSearchQuery]);
   useEffect(() => {
-    setSelectedFilter(resolveInitialFilter(initialFilter) ?? "All");
+    setPlace(initialPlaceId ? { id: initialPlaceId, name: initialPlaceName ?? "" } : undefined);
+  }, [initialPlaceId, initialPlaceName]);
+  useEffect(() => {
+    setFilters(parseFilterIds(initialFilter));
   }, [initialFilter]);
 
   // A picked area wins over GPS; without either the default point is used and disclosed below.
@@ -277,6 +347,11 @@ function RawCatalogBrowseGrid({
   const longitude = roundCoordinate(effectiveCoordinate.longitude);
   const coordinate = useMemo(() => ({ latitude, longitude }), [latitude, longitude]);
 
+  const requestKey = useMemo(
+    () => JSON.stringify([mode, query, filters, sort, latitude, longitude, widenRadius, place?.id]),
+    [filters, latitude, longitude, mode, place?.id, query, sort, widenRadius],
+  );
+
   const loadPage = useCallback(
     async (cursor?: string, append = false) => {
       const version = requestVersion.current;
@@ -285,23 +360,32 @@ function RawCatalogBrowseGrid({
       setError(null);
       setLoadMoreFailed(false);
       try {
-        const request = rawCatalogRequest(mode, searchQuery, selectedFilter, coordinate, cursor);
-        request.releaseId = cursor ? releaseIdRef.current : undefined;
+        const request = buildBrowseRequest({
+          query,
+          filters,
+          sort,
+          coordinate,
+          cursor,
+          releaseId: releaseIdRef.current,
+          buildingId: place?.id,
+        });
+        if (widenRadius && !query && !place) request.radiusMeters = WIDE_RADIUS_METERS;
         const page =
           mode === "dishes" ? await service.listDishes(request) : await service.listVenues(request);
         if (requestVersion.current !== version) return;
         setItems((current) => (append ? [...current, ...page.items] : page.items));
         setNextCursor(page.nextCursor);
         releaseIdRef.current = page.releaseId || undefined;
-        setReleaseId(releaseIdRef.current);
         if (append) {
           trackAnalyticsEvent("search_load_more", { mode, count: page.items.length });
-        } else if (page.items.length === 0) {
-          trackAnalyticsEvent("search_zero_results", {
-            mode,
-            filter: selectedFilter,
-            query_length: searchQuery.trim().length,
-          });
+        } else {
+          const count = page.matchCount ?? page.items.length;
+          setMatchCount(count);
+          setLoadedKey(requestKey);
+          // New results start at the top, not wherever the old list was scrolled to.
+          listRef.current?.scrollToOffset({ offset: 0, animated: false });
+          // Screen readers hear the result count when a new set lands.
+          AccessibilityInfo.announceForAccessibility(describeMatchCount(count, mode));
         }
       } catch (loadError) {
         if (requestVersion.current === version) {
@@ -322,55 +406,163 @@ function RawCatalogBrowseGrid({
         }
       }
     },
-    [coordinate, mode, searchQuery, selectedFilter, service],
+    [coordinate, filters, mode, place, query, requestKey, service, sort, widenRadius],
   );
 
-  // Only a submitted query is a committed search: one taste signal each, not one per typing pause.
+  // A search is committed by Enter, a suggestion or a link, not by typing pauses: one search
+  // event, one taste signal and one recent-search entry each, the same for guests and members.
   const recordCommittedQuery = useCallback(
-    (query: string) => {
-      const committedQuery = query.trim().toLowerCase();
-      if (!committedQuery || lastRecordedQueryRef.current === committedQuery) return;
-      lastRecordedQueryRef.current = committedQuery;
+    (
+      text: string,
+      options: { recordTaste: boolean; remember: boolean; source: SearchSource | "results" },
+    ) => {
+      const committed = normalizeQuery(text);
+      const key = committed.toLowerCase();
+      if (key.length < CATALOG_QUERY_MIN_CHARS) return;
+      setCommittedQuery(committed);
+      if (lastRecordedQueryRef.current === key) return;
+      lastRecordedQueryRef.current = key;
       trackAnalyticsEvent("search_query", {
         mode,
-        filter: selectedFilter,
-        query_length: committedQuery.length,
+        filter: filters.map(analyticsFilterName).join(",") || BROWSE_ALL_FILTER,
+        query_length: committed.length,
+        source: options.source,
       });
-      recordTasteInteraction({
-        type: "search_query",
-        surface: "search",
-        query: committedQuery,
-        chipId: selectedFilter === "All" ? undefined : selectedFilter,
-      });
+      if (options.remember) rememberSearch(committed);
+      if (options.recordTaste) {
+        recordTasteInteraction({
+          type: "search_query",
+          surface: "search",
+          query: key,
+          chipId: filters.length ? filters.join(",") : undefined,
+        });
+      }
     },
-    [mode, recordTasteInteraction, selectedFilter],
+    [filters, mode, recordTasteInteraction, rememberSearch],
   );
 
-  // A query sent from Search home was already submitted there.
+  // A query that arrives with the screen (Search home, a link, a Discover chip) is a submitted one.
+  // Discover chips already logged their taste signal and are not saved as recent searches.
   const initialQueryRecordedRef = useRef(false);
   useEffect(() => {
-    if (!isAuthenticated || initialQueryRecordedRef.current) return;
+    if (initialQueryRecordedRef.current) return;
     initialQueryRecordedRef.current = true;
-    recordCommittedQuery(initialSearchQuery);
-  }, [initialSearchQuery, isAuthenticated, recordCommittedQuery]);
+    const fromDiscoverChip = initialSource === "discover_chip";
+    recordCommittedQuery(initialSearchQuery, {
+      recordTaste: isAuthenticated && !fromDiscoverChip,
+      remember: !fromDiscoverChip,
+      source: initialSource ?? "search_home",
+    });
+  }, [initialSearchQuery, initialSource, isAuthenticated, recordCommittedQuery]);
 
   useEffect(() => {
     requestVersion.current += 1;
     releaseIdRef.current = undefined;
-    setReleaseId(undefined);
+    // One typed character matches most of the catalog and is not sent; the hint says why.
+    if (tooShort) {
+      setIsLoading(false);
+      return;
+    }
     const timer = setTimeout(
       () => {
         void loadPage();
       },
-      searchQuery.trim() ? 250 : 0,
+      query ? 250 : 0,
     );
     return () => clearTimeout(timer);
-  }, [loadPage]);
+  }, [loadPage, query, tooShort]);
+
+  // Typing a mall or hawker centre name offers the place itself, so its stalls can be listed
+  // without the fuzzy name matches from other buildings.
+  useEffect(() => {
+    if (place || tooShort || query.length < CATALOG_SUGGEST_MIN_CHARS) return;
+    let active = true;
+    const timer = setTimeout(() => {
+      service
+        .listPlaces({ query, coordinate, limit: 3 })
+        .then((matches) => {
+          if (active) setPlaceMatches({ query, items: matches });
+        })
+        .catch(() => undefined);
+    }, 300);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [coordinate, place, query, service, tooShort]);
+  const offeredPlaces =
+    !place && placeMatches.query === query && query.length >= CATALOG_SUGGEST_MIN_CHARS
+      ? placeMatches.items
+      : [];
+
+  const selectPlace = useCallback(
+    (next: BrowsePlace) => {
+      trackAnalyticsEvent("search_place_selected", { mode });
+      setItems([]);
+      setSearchText("");
+      setPlace(next);
+    },
+    [mode],
+  );
+  const clearPlace = useCallback(() => {
+    setItems([]);
+    setPlace(undefined);
+  }, []);
+
+  // Zero results are logged only for a submitted query, once, with the (capped) text so
+  // "what did people fail to find" can be answered. Partial typing is never logged.
+  const hasNoResults = loadedKey === requestKey && !isLoading && !error && items.length === 0;
+  useEffect(() => {
+    if (!hasNoResults || !committedQuery) return;
+    if (committedQuery.toLowerCase() !== query.toLowerCase()) return;
+    if (loggedZeroKeyRef.current === requestKey) return;
+    loggedZeroKeyRef.current = requestKey;
+    trackAnalyticsEvent("search_zero_results", {
+      mode,
+      filter: filters.map(analyticsFilterName).join(",") || BROWSE_ALL_FILTER,
+      query: committedQuery.slice(0, CATALOG_QUERY_MAX_CHARS),
+      query_length: committedQuery.length,
+    });
+  }, [committedQuery, filters, hasNoResults, mode, query, requestKey]);
+
+  // "Did you mean": the closest food type for a typed query with no results.
+  useEffect(() => {
+    if (!hasNoResults || query.length < CATALOG_QUERY_MIN_CHARS) return;
+    let active = true;
+    service
+      .suggest(query)
+      .then((suggestions) => {
+        const match = suggestions.find(
+          (suggestion) =>
+            suggestion.kind === "food_type" &&
+            suggestion.label.toLowerCase() !== query.toLowerCase(),
+        );
+        if (active && match) setDidYouMean({ query, label: match.label });
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [hasNoResults, query, service]);
 
   const handleSelectFilter = useCallback(
     (filter: string) => {
-      setSelectedFilter(filter);
-      trackAnalyticsEvent("search_filter_changed", { mode, filter });
+      const next = toggleFilterId(filters, filter);
+      setFilters(next);
+      trackAnalyticsEvent("search_filter_changed", {
+        mode,
+        filter: analyticsFilterName(filter),
+        selected: filter !== BROWSE_ALL_FILTER && next.some((id) => id === filter),
+      });
+    },
+    [filters, mode],
+  );
+
+  const handleSelectSort = useCallback(
+    (next: BrowseSortId) => {
+      setSort(next);
+      sortSheetRef.current?.dismiss();
+      trackAnalyticsEvent("search_sort_changed", { mode, sort: next });
     },
     [mode],
   );
@@ -384,33 +576,67 @@ function RawCatalogBrowseGrid({
     navigation.navigate("MainTabs", { screen: "Discover" });
   }, [navigation]);
 
+  const handleShare = useCallback(() => {
+    const url = buildSearchShareUrl({ query, filters, mode });
+    trackAnalyticsEvent("search_shared", { mode, filter_count: filters.length });
+    void Share.share({ message: `Search Hungry: ${url}`, url }).catch(() => undefined);
+  }, [filters, mode, query]);
+
+  // Cards get one stable press handler; the live query and release are read when a card is tapped.
+  const queryRef = useRef(query);
+  const modeRef = useRef(mode);
+  useEffect(() => {
+    queryRef.current = query;
+    modeRef.current = mode;
+  }, [mode, query]);
+  const handleOpen = useCallback(
+    (item: BrowseItem, index: number) => {
+      const openedMode = modeRef.current;
+      navigation.navigate("CatalogRawDetail", {
+        kind: openedMode === "dishes" ? "dish" : "venue",
+        id: item.id,
+        releaseId: releaseIdRef.current,
+      });
+      trackAnalyticsEvent("search_result_opened", { mode: openedMode, position: index });
+      if (openedMode === "dishes") {
+        recordTasteInteraction({
+          type: "dish_result_click",
+          surface: "search",
+          dishId: item.id,
+          query: queryRef.current || undefined,
+          buttonId: "search_result",
+        });
+      }
+    },
+    [navigation, recordTasteInteraction],
+  );
+
   const renderItem = useCallback(
-    ({ item, index }: { item: RawCatalogItem; index: number }) => (
+    ({ item, index }: { item: BrowseItem; index: number }) => (
       <RawCatalogCard
+        index={index}
         item={item}
         itemWidth={itemWidth}
         mode={mode}
-        onPress={() => {
-          navigation.navigate("CatalogRawDetail", {
-            kind: mode === "dishes" ? "dish" : "venue",
-            id: item.id,
-            releaseId,
-          });
-          trackAnalyticsEvent("search_result_opened", { mode, position: index });
-          if (mode === "dishes") {
-            recordTasteInteraction({
-              type: "dish_result_click",
-              surface: "search",
-              dishId: item.id,
-              query: searchQuery.trim() || undefined,
-              buttonId: "search_result",
-            });
-          }
-        }}
+        onOpen={handleOpen}
       />
     ),
-    [itemWidth, mode, navigation, recordTasteInteraction, releaseId, searchQuery],
+    [handleOpen, itemWidth, mode],
   );
+
+  // Chain outlets and duplicate records of one stall show as a single card.
+  const rows = useMemo<BrowseItem[]>(
+    () => (mode === "stalls" ? mergeStallOutlets(items as CatalogRawVenueCard[]) : items),
+    [items, mode],
+  );
+  const isRefreshing = isLoading && items.length > 0;
+  const summary =
+    matchCount !== undefined && !error && loadedKey === requestKey
+      ? `${describeMatchCount(matchCount, mode)}${query ? "" : widenRadius ? " in Singapore" : " within 3 km"}`
+      : undefined;
+  const sortLabel = BROWSE_SORT_OPTIONS.find((option) => option.id === sort)?.label ?? "Sort";
+  const suggestedQuery = didYouMean && didYouMean.query === query ? didYouMean.label : undefined;
+  const radiusInPlay = !query && !widenRadius;
 
   return (
     <Screen scroll={false} fullWidth style={{ backgroundColor: palette.bg }}>
@@ -429,9 +655,22 @@ function RawCatalogBrowseGrid({
               <TextInput
                 accessibilityLabel={`Search ${mode}`}
                 autoCorrect={false}
-                onChangeText={setSearchQuery}
-                onSubmitEditing={() => recordCommittedQuery(searchQuery)}
-                placeholder={mode === "dishes" ? "Search all dishes" : "Search all stalls"}
+                maxLength={CATALOG_QUERY_MAX_CHARS}
+                onChangeText={setSearchText}
+                onSubmitEditing={() =>
+                  recordCommittedQuery(searchText, {
+                    recordTaste: true,
+                    remember: true,
+                    source: "results",
+                  })
+                }
+                placeholder={
+                  place
+                    ? `Search ${mode} at ${place.name}`
+                    : mode === "dishes"
+                      ? "Search all dishes"
+                      : "Search all stalls"
+                }
                 placeholderTextColor={palette.textMuted}
                 returnKeyType="search"
                 testID="browse-results-search-input"
@@ -443,92 +682,308 @@ function RawCatalogBrowseGrid({
                     borderRadius: 18,
                     borderWidth: 1,
                     color: palette.text,
-                    height: 48,
+                    // minHeight, not height: the text must be able to grow with the system font size.
+                    minHeight: 48,
                     paddingLeft: spacing[3],
-                    paddingRight: searchQuery ? 48 : spacing[3],
+                    paddingRight: searchText ? 48 : spacing[3],
+                    paddingVertical: spacing[2],
                   },
                 ]}
-                value={searchQuery}
+                value={searchText}
               />
-              {searchQuery ? (
+              {searchText ? (
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="Clear search"
                   hitSlop={8}
-                  onPress={() => setSearchQuery("")}
+                  onPress={() => setSearchText("")}
                   style={browseStyles.clearButton}
                 >
                   <X color={palette.textMuted} size={18} />
                 </Pressable>
               ) : null}
             </View>
+            <IconButton
+              variant="ghost"
+              accessibilityLabel="Share this search"
+              onPress={handleShare}
+              icon={<Share2 color={palette.text} size={20} />}
+            />
           </View>
+          {tooShort ? (
+            <AppText tone="secondary" variant="micro">
+              {`Type at least ${CATALOG_QUERY_MIN_CHARS} letters to search.`}
+            </AppText>
+          ) : null}
+          {place ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Showing only ${place.name}. Tap to show everywhere`}
+              onPress={clearPlace}
+              style={{
+                alignItems: "center",
+                alignSelf: "flex-start",
+                backgroundColor: palette.surface,
+                borderColor: palette.orange,
+                borderRadius: 18,
+                borderWidth: 1,
+                flexDirection: "row",
+                gap: spacing[2],
+                minHeight: 36,
+                paddingHorizontal: spacing[3],
+              }}
+            >
+              <MapPin color={palette.orange} size={16} />
+              <AppText numberOfLines={1} variant="bodySmall" style={{ flexShrink: 1 }}>
+                {place.name}
+              </AppText>
+              <X color={palette.textMuted} size={16} />
+            </Pressable>
+          ) : null}
+          {offeredPlaces.length > 0 ? (
+            <View accessibilityLabel="Places" style={{ gap: spacing[1] }}>
+              <AppText tone="secondary" variant="micro">
+                Malls, hawker centres and food courts
+              </AppText>
+              {offeredPlaces.map((offered) => (
+                <Pressable
+                  key={offered.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Show stalls at ${offered.name}`}
+                  onPress={() => selectPlace({ id: offered.id, name: offered.name })}
+                  style={{
+                    alignItems: "center",
+                    flexDirection: "row",
+                    gap: spacing[2],
+                    minHeight: 44,
+                  }}
+                >
+                  <MapPin color={palette.orange} size={18} />
+                  <View style={{ flex: 1 }}>
+                    <AppText numberOfLines={1} variant="bodyBold">
+                      {offered.name}
+                    </AppText>
+                    <AppText tone="secondary" variant="micro">
+                      {`${offered.venueCount} stalls`}
+                      {offered.distanceMeters !== undefined
+                        ? ` · ${formatBrowseDistance(offered.distanceMeters)}`
+                        : ""}
+                    </AppText>
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
+          {allowModeSwitch ? (
+            <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: spacing[2] }}>
+              {(["dishes", "stalls"] as const).map((option) => (
+                <Chip
+                  key={option}
+                  label={MODE_LABELS[option]}
+                  accessibilityLabel={`Show ${MODE_LABELS[option].toLowerCase()}`}
+                  selected={mode === option}
+                  onPress={() => {
+                    if (option === mode) return;
+                    setItems([]);
+                    setMatchCount(undefined);
+                    setMode(option);
+                    trackAnalyticsEvent("search_mode_changed", { mode: option });
+                  }}
+                />
+              ))}
+            </View>
+          ) : null}
           <FilterChipRail
             options={RAW_BROWSE_FILTER_OPTIONS}
-            selectedId={selectedFilter}
+            selectedIds={filters.length ? filters : [BROWSE_ALL_FILTER]}
             onSelect={handleSelectFilter}
           />
-          {isUsingDefaultLocation ? (
+          {filters.includes("Halal") ? (
             <View
               accessibilityRole="text"
-              style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}
+              style={{ alignItems: "flex-start", flexDirection: "row", gap: spacing[2] }}
             >
-              <MapPinOff color={palette.textMuted} size={16} />
+              <Info color={palette.textMuted} size={16} />
               <AppText tone="secondary" variant="micro" style={{ flex: 1 }}>
-                Location is off, so distances are from central Singapore.
+                Halal tags come from stalls and public listings, and are not all MUIS-certified.
+                Check the stall&apos;s certificate if it matters to you.
               </AppText>
             </View>
           ) : null}
+          {isUsingDefaultLocation ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Location is off, so distances are from central Singapore. Choose your area"
+              onPress={() =>
+                navigation.navigate("OnboardingStack", { screen: "ManualLocationPicker" })
+              }
+              style={{ alignItems: "center", flexDirection: "row", gap: spacing[2], minHeight: 44 }}
+            >
+              <MapPinOff color={palette.textMuted} size={16} />
+              <AppText tone="secondary" variant="micro" style={{ flex: 1 }}>
+                Location is off, so distances are from central Singapore.{" "}
+                <AppText variant="micro" style={{ color: palette.orange }}>
+                  Choose your area
+                </AppText>
+              </AppText>
+            </Pressable>
+          ) : null}
+          <View
+            style={{
+              alignItems: "center",
+              flexDirection: "row",
+              gap: spacing[2],
+              justifyContent: "space-between",
+            }}
+          >
+            <AppText
+              accessibilityRole="text"
+              tone="secondary"
+              variant="bodySmall"
+              style={{ flex: 1 }}
+            >
+              {summary ?? " "}
+            </AppText>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Sort by, ${sortLabel}`}
+              onPress={() => sortSheetRef.current?.present()}
+              style={{ alignItems: "center", flexDirection: "row", gap: spacing[1], minHeight: 44 }}
+            >
+              <AppText variant="bodySmall">{sortLabel}</AppText>
+              <ChevronDown color={palette.textMuted} size={16} />
+            </Pressable>
+          </View>
         </View>
-        <FlashList
-          data={items}
-          // @ts-ignore FlashList v2 supports this runtime prop but its bundled type omits it.
-          estimatedItemSize={itemWidth * 1.25}
-          extraData={releaseId}
-          keyExtractor={(item) => item.id}
-          keyboardDismissMode="on-drag"
-          keyboardShouldPersistTaps="handled"
-          numColumns={2}
-          onEndReached={() => {
-            if (nextCursor && !isLoadingMore && !isLoading && !loadMoreFailed) {
-              void loadPage(nextCursor, true);
-            }
-          }}
-          onEndReachedThreshold={0.6}
-          renderItem={renderItem}
-          ListEmptyComponent={
-            isLoading ? (
-              <BrowseGridLoadingState itemWidth={itemWidth} mode={mode} />
-            ) : error ? (
-              <EmptyState
-                title="Catalog unavailable"
-                body="We couldn't load the catalog. Check your connection and try again."
-                errorMessage={error}
-                ctaLabel="Retry"
-                onPress={() => void loadPage()}
-              />
-            ) : (
-              <EmptyState title="No matches found" body="Try another search or filter." />
-            )
-          }
-          ListFooterComponent={
-            isLoadingMore ? (
-              <View style={{ paddingVertical: spacing[4] }}>
-                <ActivityIndicator color={palette.orange} />
-              </View>
-            ) : loadMoreFailed && nextCursor ? (
-              <View style={{ alignItems: "center", gap: spacing[2], paddingVertical: spacing[4] }}>
-                <AppText tone="secondary">{"Couldn't load more."}</AppText>
-                <Button
-                  label="Retry"
-                  variant="secondary"
-                  onPress={() => void loadPage(nextCursor, true)}
+        <View style={{ flex: 1, opacity: isRefreshing ? 0.45 : 1 }}>
+          <FlashList
+            ref={listRef}
+            data={rows}
+            keyExtractor={(item) => item.id}
+            keyboardDismissMode="on-drag"
+            keyboardShouldPersistTaps="handled"
+            numColumns={2}
+            onEndReached={() => {
+              if (nextCursor && !isLoadingMore && !isLoading && !loadMoreFailed) {
+                void loadPage(nextCursor, true);
+              }
+            }}
+            onEndReachedThreshold={0.6}
+            renderItem={renderItem}
+            ListEmptyComponent={
+              isLoading ? (
+                <BrowseGridLoadingState itemWidth={itemWidth} mode={mode} />
+              ) : error ? (
+                <EmptyState
+                  title="Catalog unavailable"
+                  body="We couldn't load the catalog. Check your connection and try again."
+                  errorMessage={error}
+                  ctaLabel="Retry"
+                  onPress={() => void loadPage()}
                 />
-              </View>
-            ) : null
-          }
-        />
+              ) : (
+                <View style={{ gap: spacing[2] }}>
+                  <EmptyState
+                    title="No matches found"
+                    body={
+                      filters.length
+                        ? "Try removing a filter or searching for something else."
+                        : "Try another search."
+                    }
+                  />
+                  <View style={{ alignItems: "center", gap: spacing[2] }}>
+                    {suggestedQuery ? (
+                      <Button
+                        label={`Did you mean "${suggestedQuery}"?`}
+                        onPress={() => {
+                          setSearchText(suggestedQuery);
+                          recordCommittedQuery(suggestedQuery, {
+                            recordTaste: true,
+                            remember: true,
+                            source: "results",
+                          });
+                        }}
+                      />
+                    ) : null}
+                    {filters.length ? (
+                      <Button
+                        label="Clear filters"
+                        variant="secondary"
+                        onPress={() => setFilters([])}
+                      />
+                    ) : null}
+                    {radiusInPlay ? (
+                      <Button
+                        label="Search all Singapore"
+                        variant="secondary"
+                        onPress={() => setWidenRadius(true)}
+                      />
+                    ) : null}
+                  </View>
+                </View>
+              )
+            }
+            ListFooterComponent={
+              isLoadingMore ? (
+                <View style={{ paddingVertical: spacing[4] }}>
+                  <ActivityIndicator color={palette.orange} />
+                </View>
+              ) : loadMoreFailed && nextCursor ? (
+                <View
+                  style={{ alignItems: "center", gap: spacing[2], paddingVertical: spacing[4] }}
+                >
+                  <AppText tone="secondary">{"Couldn't load more."}</AppText>
+                  <Button
+                    label="Retry"
+                    variant="secondary"
+                    onPress={() => void loadPage(nextCursor, true)}
+                  />
+                </View>
+              ) : null
+            }
+          />
+          {isRefreshing ? (
+            <View
+              accessibilityLabel="Updating results"
+              accessibilityRole="progressbar"
+              pointerEvents="none"
+              style={browseStyles.refreshIndicator}
+            >
+              <ActivityIndicator color={palette.orange} />
+            </View>
+          ) : null}
+        </View>
       </View>
+      <BottomSheet ref={sortSheetRef} accessibilityLabel="Sort by" snapPoints={["40%"]}>
+        <View style={{ gap: spacing[2] }}>
+          <AppText variant="h2">Sort by</AppText>
+          {BROWSE_SORT_OPTIONS.map((option) => {
+            const selected = option.id === sort;
+            return (
+              <Pressable
+                key={option.id}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                onPress={() => handleSelectSort(option.id)}
+                style={{
+                  alignItems: "center",
+                  borderBottomColor: palette.border,
+                  borderBottomWidth: 1,
+                  flexDirection: "row",
+                  gap: spacing[3],
+                  minHeight: 54,
+                  paddingVertical: spacing[3],
+                }}
+              >
+                <AppText variant="bodyBold" style={{ flex: 1 }}>
+                  {option.label}
+                </AppText>
+                {selected ? <Check size={18} color={palette.orange} /> : null}
+              </Pressable>
+            );
+          })}
+        </View>
+      </BottomSheet>
     </Screen>
   );
 }
@@ -540,11 +995,18 @@ const browseStyles = StyleSheet.create({
     justifyContent: "center",
     position: "absolute",
     right: 2,
+    top: 2,
     width: 44,
+  },
+  refreshIndicator: {
+    alignItems: "center",
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 16,
   },
   textInput: {
     fontSize: 16,
-    padding: 0,
     textAlignVertical: "center",
   },
 });
@@ -563,9 +1025,16 @@ export function SearchResultsScreen() {
   // Everything comes from route params, so a search never inherits an older persisted query.
   return (
     <RawCatalogBrowseGrid
+      allowModeSwitch
       mode={route.params?.browseMode ?? "dishes"}
       initialFilter={route.params?.initialFilter ?? route.params?.foodTypeTag}
+      initialPlace={
+        route.params?.placeId
+          ? { id: route.params.placeId, name: route.params.placeName ?? "this place" }
+          : undefined
+      }
       initialSearchQuery={route.params?.initialQuery ?? ""}
+      initialSource={route.params?.source}
     />
   );
 }

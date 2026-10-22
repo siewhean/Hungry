@@ -1,5 +1,6 @@
 // @ts-nocheck
 /* eslint-disable import/no-unresolved */
+import { reportFunctionError, serveWithSentry } from "../_shared/sentry.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
 import { timingSafeEqual } from "../_shared/timingSafeEqual.ts";
 
@@ -41,10 +42,9 @@ async function listStoragePaths(
   depth = 0,
 ): Promise<string[]> {
   const paths: string[] = [];
+  // n-plus-one-ok: paged storage listing, 1000 entries per call; folders recurse.
   for (let offset = 0; ; offset += 1000) {
-    const { data, error } = await client.storage
-      .from(bucket)
-      .list(prefix, { limit: 1000, offset });
+    const { data, error } = await client.storage.from(bucket).list(prefix, { limit: 1000, offset });
     if (error) throw error;
     const entries = Array.isArray(data) ? data : [];
     for (const entry of entries) {
@@ -64,6 +64,7 @@ async function removeUserMedia(
   let removed = 0;
   for (const bucket of USER_MEDIA_BUCKETS) {
     const paths = await listStoragePaths(client, bucket, userId);
+    // n-plus-one-ok: removes 100 paths per call, not one per file.
     for (let index = 0; index < paths.length; index += 100) {
       const chunk = paths.slice(index, index + 100);
       const { error } = await client.storage.from(bucket).remove(chunk);
@@ -98,7 +99,7 @@ async function markFailure(
   });
 }
 
-Deno.serve(async (request) => {
+serveWithSentry("process-account-deletions", async (request) => {
   if (request.method !== "POST") {
     return toJson(405, { error: "method_not_allowed" });
   }
@@ -130,6 +131,7 @@ Deno.serve(async (request) => {
   }
 
   const results: JsonObject[] = [];
+  // n-plus-one-ok: each account is deleted and can fail on its own; the auth admin API takes one user.
   for (const claim of Array.isArray(claims) ? claims : []) {
     const requestId = String(claim.request_id ?? "");
     const userId = String(claim.user_id ?? "");
@@ -172,6 +174,7 @@ Deno.serve(async (request) => {
 
       results.push({ requestId, userId, status: "completed", removedMedia });
     } catch (error) {
+      await reportFunctionError("process-account-deletions", error, { requestId });
       await markFailure(client, requestId, userId, workerId, error);
       results.push({
         requestId,

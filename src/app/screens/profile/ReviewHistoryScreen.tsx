@@ -1,7 +1,9 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useIsFocused } from "@react-navigation/native";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
 
+import { ReviewModerationNotice } from "@/components/review";
 import { AppText, Button, Card, EmptyState } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import {
@@ -9,13 +11,19 @@ import {
   getHungryService,
   getServiceProvider,
 } from "@/lib/services/serviceProvider";
+import { OwnReviewMenuButton, useOwnReviewEditor } from "@/features/profile/useOwnReviewEditor";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useUIStore } from "@/store/useUIStore";
 import type { Review } from "@/types/domain";
 import { isDishDetail } from "./profileGuards";
+import { ProfileReviewsSkeleton } from "./ProfileGridSkeleton";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import type { ProfileStackParamList } from "./ProfileStack";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "ReviewHistory">;
+
+/** Reviews per server page. */
+const REVIEW_HISTORY_PAGE_SIZE = 50;
 
 export function ReviewHistoryScreen({ navigation }: Props) {
   const profile = useProfileStore((state) => state.profile);
@@ -24,6 +32,22 @@ export function ReviewHistoryScreen({ navigation }: Props) {
   const serviceProviderMode = getServiceProvider().mode;
   const [remoteReviews, setRemoteReviews] = useState<Review[]>([]);
   const [remoteLoadFailed, setRemoteLoadFailed] = useState(false);
+  // False until the first read finishes, so "No reviews yet" never flashes while loading.
+  const [remoteLoaded, setRemoteLoaded] = useState(serviceProviderMode === "mock");
+  const [loadedRows, setLoadedRows] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  // Coming back from "Write another review" shows the new review without reopening the screen.
+  const isFocused = useIsFocused();
+  const ownReviewEditor = useOwnReviewEditor({
+    onUpdated: (updated) =>
+      setRemoteReviews((current) =>
+        current.map((review) => (review.id === updated.id ? updated : review)),
+      ),
+    onDeleted: (reviewId) =>
+      setRemoteReviews((current) => current.filter((review) => review.id !== reviewId)),
+  });
   const mockHistory = useMemo(
     () =>
       profile.reviewedDishIds.map((dishId) => repository.getDishById(dishId)).filter(isDishDetail),
@@ -39,38 +63,55 @@ export function ReviewHistoryScreen({ navigation }: Props) {
   );
 
   useEffect(() => {
+    if (!isFocused) return;
     let active = true;
     setRemoteLoadFailed(false);
 
-    if (serviceProviderMode === "mock") {
+    if (serviceProviderMode === "mock" || !profile.id || profile.id === "guest-user") {
       setRemoteReviews([]);
-      return () => {
-        active = false;
-      };
-    }
-
-    if (!profile.id || profile.id === "guest-user") {
-      setRemoteReviews([]);
+      setRemoteLoaded(true);
       return () => {
         active = false;
       };
     }
 
     void getHungryService()
-      .reviews.getUserReviews(profile.id)
+      .reviews.getUserReviews(profile.id, { limit: REVIEW_HISTORY_PAGE_SIZE, offset: 0 })
       .then((reviews) => {
-        if (active) setRemoteReviews(reviews);
+        if (!active) return;
+        setRemoteReviews(reviews);
+        setLoadedRows(reviews.length);
+        setHasMore(reviews.length === REVIEW_HISTORY_PAGE_SIZE);
+        setRemoteLoaded(true);
       })
       .catch(() => {
         if (!active) return;
-        setRemoteReviews([]);
+        // Keep what is already on screen on a failed refresh; only a first load shows the error.
         setRemoteLoadFailed(true);
+        setRemoteLoaded(true);
       });
 
     return () => {
       active = false;
     };
-  }, [profile.id, serviceProviderMode]);
+  }, [isFocused, profile.id, reloadKey, serviceProviderMode]);
+
+  const loadMore = () => {
+    if (isLoadingMore || !hasMore) return;
+    setIsLoadingMore(true);
+    void getHungryService()
+      .reviews.getUserReviews(profile.id, { limit: REVIEW_HISTORY_PAGE_SIZE, offset: loadedRows })
+      .then((reviews) => {
+        setRemoteReviews((current) => {
+          const seen = new Set(current.map((review) => review.id));
+          return [...current, ...reviews.filter((review) => !seen.has(review.id))];
+        });
+        setLoadedRows((current) => current + reviews.length);
+        setHasMore(reviews.length === REVIEW_HISTORY_PAGE_SIZE);
+      })
+      .catch(() => undefined)
+      .finally(() => setIsLoadingMore(false));
+  };
 
   const historyItems =
     serviceProviderMode === "supabase"
@@ -97,7 +138,9 @@ export function ReviewHistoryScreen({ navigation }: Props) {
       title="Review history"
       subtitle="Submitted reviews stay visible in your profile."
     >
-      {hasHistory ? (
+      {!remoteLoaded && !hasHistory ? (
+        <ProfileReviewsSkeleton />
+      ) : hasHistory ? (
         <>
           <Button label="Write another review" variant="secondary" onPress={openReviewFlow} />
           {historyItems.map(({ review, dish }, index) => {
@@ -106,17 +149,34 @@ export function ReviewHistoryScreen({ navigation }: Props) {
             const tagSummary = tags.length ? tags.join(" · ") : "";
             // Only the user's own rating: the dish average is never shown as theirs.
             const rating = review?.rating ?? entry?.rating;
-            const reviewText =
-              review?.text || entry?.text || "You submitted a quick review for this dish.";
+            const reviewText = review?.text || entry?.text || "No written notes";
             const dishId = review?.dishId ?? dish?.id;
             const dishName = dish?.name ?? "Reviewed dish";
-            const ratingLine = [rating ? `Rated ${rating}/5` : "", tagSummary]
+            const ratingLine = [
+              rating ? `Rated ${rating}/5` : "",
+              tagSummary,
+              review?.editedAt ? "Edited" : "",
+            ]
               .filter(Boolean)
               .join(" · ");
             const card = (
               <Card>
                 <View style={{ gap: 12 }}>
-                  <AppText variant="h3">{dishName}</AppText>
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                    <AppText variant="h3" style={{ flex: 1 }}>
+                      {dishName}
+                    </AppText>
+                    {review && ownReviewEditor.enabled ? (
+                      <OwnReviewMenuButton onPress={() => ownReviewEditor.openActions(review)} />
+                    ) : null}
+                  </View>
+                  {review?.moderationState ? (
+                    <ReviewModerationNotice
+                      state={review.moderationState}
+                      reviewId={review.id}
+                      dishName={dishName}
+                    />
+                  ) : null}
                   <AppText tone="secondary">{reviewText}</AppText>
                   {ratingLine ? (
                     <AppText variant="bodySmall" tone="secondary">
@@ -142,17 +202,27 @@ export function ReviewHistoryScreen({ navigation }: Props) {
               <View key={key}>{card}</View>
             );
           })}
+          {hasMore ? (
+            <Button
+              label="Load more"
+              variant="ghost"
+              size="sm"
+              loading={isLoadingMore}
+              onPress={loadMore}
+            />
+          ) : null}
+          {ownReviewEditor.dialog}
         </>
       ) : (
         <EmptyState
           title={remoteLoadFailed ? "Review history unavailable" : "No reviews yet"}
           body={
             remoteLoadFailed
-              ? "We could not load your submitted reviews. Please try again shortly."
+              ? "We could not load your submitted reviews. Check your connection and try again."
               : "Dishes you review will appear here with your own rating and notes."
           }
-          ctaLabel={remoteLoadFailed ? undefined : "Write a review"}
-          onPress={remoteLoadFailed ? undefined : openReviewFlow}
+          ctaLabel={remoteLoadFailed ? "Retry" : "Write a review"}
+          onPress={remoteLoadFailed ? () => setReloadKey((key) => key + 1) : openReviewFlow}
         />
       )}
     </ProfileScreenShell>

@@ -97,13 +97,14 @@ test("checklist and portfolio screens use reusable Phase 4 UI components", () =>
 
 test("dish and stall detail screens expose checklist and portfolio entry points", () => {
   const detailActions = read("src/features/checklistPortfolio/DetailSaveActions.tsx");
+  const saveToListOptions = read("src/features/checklistPortfolio/saveToListOptions.ts");
   const dishDetail = read("src/app/screens/detail/DishDetailScreenV2.tsx");
   const stallDetail = read("src/app/screens/detail/StallDetailScreen.tsx");
   const supabaseService = read("src/lib/services/supabase/supabaseService.ts");
   const migration = read("supabase/migrations/20260527103000_checklist_portfolio_passport.sql");
 
   assert.match(detailActions, /DEFAULT_CHECKLIST_NAME = "Want to Try"/);
-  assert.match(detailActions, /DEFAULT_PORTFOLIO_NAME = "Hungry Picks"/);
+  assert.match(saveToListOptions, /DEFAULT_PORTFOLIO_NAME = "Hungry Picks"/);
   assert.match(detailActions, /useChecklistStore\s*\n\s*\.getState\(\)\s*\n\s*\.addItem/);
   assert.match(detailActions, /usePortfolioStore\s*\n\s*\.getState\(\)\s*\n\s*\.addItem/);
   assert.doesNotMatch(
@@ -112,7 +113,7 @@ test("dish and stall detail screens expose checklist and portfolio entry points"
     "detail buttons should rely on the checklist/portfolio stores for analytics to avoid duplicate events",
   );
   assert.match(detailActions, /checklistContainsTarget/);
-  assert.match(detailActions, /portfolioContainsTarget/);
+  assert.match(detailActions, /findPortfolioTargetItem/);
   assert.match(detailActions, /navigation\.navigate\("AuthStack", \{ screen: "Login" \}\)/);
 
   assert.match(dishDetail, /useDetailSaveActions/);

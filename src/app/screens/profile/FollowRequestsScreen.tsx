@@ -4,6 +4,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Avatar, Button, Card, EmptyState } from "@/components/ui";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -103,6 +104,12 @@ export function FollowRequestsScreen({ navigation }: Props) {
         : service.declineFollowRequest(request.userId)
     )
       .then(() => {
+        trackAnalyticsEvent(
+          action === "approve" ? "follow_request_approved" : "follow_request_declined",
+          {
+            target_user_id: request.userId,
+          },
+        );
         setRequests((current) => current.filter((item) => item.userId !== request.userId));
         // The answered row left the server list, so the next page starts one earlier.
         setLoadedRowCount((current) => Math.max(0, current - 1));

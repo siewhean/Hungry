@@ -29,7 +29,7 @@ test("shared links carry a source tag that is credited on signup", () => {
 
   const linking = createRootLinking("hungry://");
   const state = linking.getStateFromPath("dish/dish-1?src=whatsapp");
-  assert.equal(state?.routes[0]?.name, "DishDetail");
+  assert.equal(state?.routes[1]?.name, "DishDetail");
   assert.deepEqual(getShareAttribution(), { source: "whatsapp", route: "DishDetail" });
 
   assert.match(
@@ -72,7 +72,10 @@ test("Decide For Me offers backup picks and a Not for me swap", () => {
   assert.match(source, /type: "dismissed"/);
   assert.match(source, /Other picks/);
   assert.match(source, /getOtherPicks\(candidates, resultIndex\)/);
-  assert.match(source, /buildPickReason\(profile\.tasteVector, pick, pickMatch\)/);
+  assert.match(
+    source,
+    /buildPickReason\(\s*profile\.tasteVector,\s*pick,\s*pickMatch,\s*hasTasteProfile\s*\)/,
+  );
 });
 
 test("dish pages can add to a list in production", () => {

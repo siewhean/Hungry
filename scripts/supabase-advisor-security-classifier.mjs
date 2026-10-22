@@ -136,27 +136,34 @@ const INTENDED_AUTHENTICATED_RPCS = [
   "catalog_raw_dish_detail",
   "catalog_raw_dishes_page",
   "catalog_raw_map_view",
+  "catalog_raw_places",
   "catalog_raw_venue_detail",
   "catalog_raw_venue_menu_page",
   "catalog_raw_venues_page",
+  "catalog_suggest",
   "mark_notification_opened",
   // Called by the merchant dish write guards (security invoker); returns a public verified flag.
   "merchant_venue_is_verified",
   // Records today's app open for auth.uid() only (retention lifecycle).
   "record_app_open",
   "register_push_token",
+  // Diner "Something wrong?" reports into the ops queue; checks auth.uid() and rate-limits itself.
+  "submit_catalog_correction",
   "unregister_push_token",
 ];
 
 // SECURITY DEFINER RPCs signed-out visitors are meant to call; each returns only public rows.
-// Guests browse the catalog (sh, 2026-10-19): the catalog_raw_* read RPCs are capped and read-only.
+// Guests browse the catalog (sh, 2026-10-19): the catalog_raw_* read RPCs are capped and read-only;
+// catalog_suggest is the same kind of guest read (search typeahead, 8 rows, active release only).
 const INTENDED_ANON_RPCS = [
   "catalog_raw_dish_detail",
   "catalog_raw_dishes_page",
   "catalog_raw_map_view",
+  "catalog_raw_places",
   "catalog_raw_venue_detail",
   "catalog_raw_venue_menu_page",
   "catalog_raw_venues_page",
+  "catalog_suggest",
   "get_public_merchant_profile",
   "get_public_portfolio",
 ];

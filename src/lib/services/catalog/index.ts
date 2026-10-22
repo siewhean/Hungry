@@ -1,7 +1,14 @@
 import { getSupabaseClient } from "@/lib/services/supabase/client";
 
 export type CatalogVerificationStatus = "raw" | "verified" | "approved";
-export type CatalogSort = "nearby" | "relevance" | "quality";
+/** "price" lists the cheapest first; dishes and stalls without a price come last. */
+export type CatalogSort = "nearby" | "relevance" | "quality" | "price";
+
+/** Typed text shorter than this is not searched (the RPCs return an empty page); longer is cut. */
+export const CATALOG_QUERY_MIN_CHARS = 2;
+export const CATALOG_QUERY_MAX_CHARS = 80;
+/** The server counts matches up to this many, so "100" means "100 or more". */
+export const CATALOG_MATCH_COUNT_CAP = 100;
 
 export interface CatalogCoordinate {
   latitude: number;
@@ -14,7 +21,11 @@ export interface CatalogPageRequest {
   radiusMeters?: number;
   cuisineTags?: string[];
   dietaryFlags?: string[];
+  /** Food-type or dish-name fragments, any of which may match (the Noodles and Rice chips). */
+  foodKeywords?: string[];
   buildingTypes?: string[];
+  /** Keeps only this building's stalls and dishes (a mall, hawker centre or food court). */
+  buildingId?: string;
   maxPrice?: number;
   openOnly?: boolean;
   sort?: CatalogSort;
@@ -27,6 +38,8 @@ export interface CatalogPage<T> {
   items: T[];
   nextCursor?: string;
   releaseId: string;
+  /** Matches for the request, capped at CATALOG_MATCH_COUNT_CAP; absent from local data. */
+  matchCount?: number;
   totals: {
     venues: number;
     dishes: number;
@@ -118,6 +131,7 @@ export type CatalogMapItem =
       latitude: number;
       longitude: number;
       verificationStatus: CatalogVerificationStatus;
+      buildingType?: string;
     };
 
 export interface CatalogMapRequest {
@@ -133,7 +147,51 @@ export interface CatalogMapRequest {
   cuisineTags?: string[];
   openOnly?: boolean;
   minRating?: number;
+  /** Keeps only pins for stalls matching this text (name, building, dish or food type). */
+  query?: string;
 }
+
+export type CatalogSuggestionKind = "food_type" | "place" | "stall";
+
+/** A Search home suggestion: a food type, a place (hawker centre or mall) or a stall name. */
+export interface CatalogSuggestion {
+  kind: CatalogSuggestionKind;
+  label: string;
+  /** Building id, on place suggestions. */
+  placeId?: string;
+}
+
+/** A mall, hawker centre, food court or other building with several stalls. */
+export interface CatalogPlace {
+  id: string;
+  name: string;
+  buildingType?: string;
+  /** Stalls in the building. */
+  venueCount: number;
+  latitude?: number;
+  longitude?: number;
+  /** From the viewer to the nearest stall in the building, when the request had a position. */
+  distanceMeters?: number;
+}
+
+export interface CatalogPlacesRequest {
+  /** Matches the start of the building name or of any word in it. */
+  query?: string;
+  coordinate?: CatalogCoordinate;
+  /** With a coordinate, keeps only places with a stall inside this radius. */
+  radiusMeters?: number;
+  limit?: number;
+  releaseId?: string;
+}
+
+/** A building needs this many stalls to count as a place (also enforced by the RPCs). */
+export const CATALOG_PLACE_MIN_STALLS = 3;
+/** Inside a place when a stall of it is within this many metres of the phone. */
+export const CATALOG_PLACE_ENTER_RADIUS_METERS = 100;
+
+/** Suggestions need at least this many characters; shorter text gets popular food types. */
+export const CATALOG_SUGGEST_MIN_CHARS = 2;
+export const CATALOG_SUGGEST_LIMIT = 8;
 
 type CacheEntry<T> = { expiresAt: number; value: T };
 const PAGE_TTL_MS = 60_000;
@@ -260,9 +318,41 @@ function mapMedia(value: unknown): CatalogRawMedia {
   };
 }
 
+function mapSuggestions(value: unknown): CatalogSuggestion[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item): CatalogSuggestion[] => {
+    const row = asRecord(item);
+    const label = asString(row.label);
+    const kind = row.kind;
+    if (!label || (kind !== "food_type" && kind !== "place" && kind !== "stall")) return [];
+    const placeId = kind === "place" ? asString(row.id) : undefined;
+    return [placeId ? { kind, label, placeId } : { kind, label }];
+  });
+}
+
+function mapPlace(value: unknown): CatalogPlace[] {
+  const row = asRecord(value);
+  const id = asString(row.id);
+  const name = asString(row.name);
+  if (!id || !name) return [];
+  return [
+    {
+      id,
+      name,
+      buildingType: asString(row.building_type),
+      venueCount: asNumber(row.venue_count) ?? 0,
+      latitude: asNumber(row.latitude),
+      longitude: asNumber(row.longitude),
+      distanceMeters: asNumber(row.distance_meters),
+    },
+  ];
+}
+
 function normaliseRequest(request: CatalogPageRequest): Record<string, unknown> {
   return {
-    p_query: request.query?.trim() || null,
+    // Sent only for a place, so every other read keeps working against the older signature.
+    ...(request.buildingId ? { p_building_id: request.buildingId } : {}),
+    p_query: request.query?.trim().slice(0, CATALOG_QUERY_MAX_CHARS) || null,
     p_lat: request.coordinate?.latitude ?? null,
     p_lng: request.coordinate?.longitude ?? null,
     p_radius_meters: request.radiusMeters ?? null,
@@ -276,6 +366,15 @@ function normaliseRequest(request: CatalogPageRequest): Record<string, unknown> 
     p_release_id: request.releaseId ?? null,
     p_limit: Math.max(1, Math.min(request.limit ?? 24, 50)),
   };
+}
+
+/** Only the two paged search RPCs take food keywords; sent only when there are some. */
+function withFoodKeywords(
+  args: Record<string, unknown>,
+  request: CatalogPageRequest,
+): Record<string, unknown> {
+  const keywords = request.foodKeywords?.filter((keyword) => keyword.trim()) ?? [];
+  return keywords.length ? { ...args, p_food_keywords: keywords } : args;
 }
 
 export function catalogRequestKey(prefix: string, value: Record<string, unknown>): string {
@@ -328,6 +427,7 @@ function mapPage<T>(value: unknown, mapItem: (item: unknown) => T): CatalogPage<
     items: Array.isArray(row.items) ? row.items.map(mapItem) : [],
     nextCursor: asString(row.next_cursor),
     releaseId: asString(row.release_id) ?? "",
+    matchCount: asNumber(row.match_count),
     totals: {
       venues: asNumber(totals.venues) ?? 0,
       dishes: asNumber(totals.dishes) ?? 0,
@@ -342,7 +442,7 @@ export const catalogRawService = {
   },
 
   async listDishes(request: CatalogPageRequest): Promise<CatalogPage<CatalogRawDishCard>> {
-    const args = normaliseRequest(request);
+    const args = withFoodKeywords(normaliseRequest(request), request);
     const key = catalogRequestKey("dishes", args);
     const cached = readCache<CatalogPage<CatalogRawDishCard>>(pageCache, key);
     if (cached) return cached;
@@ -351,12 +451,44 @@ export const catalogRawService = {
   },
 
   async listVenues(request: CatalogPageRequest): Promise<CatalogPage<CatalogRawVenueCard>> {
-    const args = normaliseRequest(request);
+    const args = withFoodKeywords(normaliseRequest(request), request);
     const key = catalogRequestKey("venues", args);
     const cached = readCache<CatalogPage<CatalogRawVenueCard>>(pageCache, key);
     if (cached) return cached;
     const page = mapPage(await callRawRpc("catalog_raw_venues_page", args), mapVenueCard);
     return writeCache(pageCache, key, page, PAGE_TTL_MS);
+  },
+
+  /** Typeahead for Search home; under two characters it returns popular food types. */
+  async suggest(prefix: string): Promise<CatalogSuggestion[]> {
+    const trimmed = prefix.trim().slice(0, 64);
+    const args = {
+      p_prefix: trimmed.length >= CATALOG_SUGGEST_MIN_CHARS ? trimmed : null,
+      p_limit: CATALOG_SUGGEST_LIMIT,
+    };
+    const key = catalogRequestKey("suggest", { p_prefix: args.p_prefix?.toLowerCase() ?? null });
+    const cached = readCache<CatalogSuggestion[]>(pageCache, key);
+    if (cached) return cached;
+    const items = mapSuggestions(await callRawRpc("catalog_suggest", args));
+    return writeCache(pageCache, key, items, PAGE_TTL_MS);
+  },
+
+  /** Malls, hawker centres and food courts by name and/or position. */
+  async listPlaces(request: CatalogPlacesRequest): Promise<CatalogPlace[]> {
+    const args = {
+      p_query: request.query?.trim().slice(0, 64) || null,
+      p_lat: request.coordinate?.latitude ?? null,
+      p_lng: request.coordinate?.longitude ?? null,
+      p_radius_meters: request.radiusMeters ?? null,
+      p_limit: Math.max(1, Math.min(request.limit ?? 8, 20)),
+      p_release_id: request.releaseId ?? null,
+    };
+    const key = catalogRequestKey("places", args);
+    const cached = readCache<CatalogPlace[]>(pageCache, key);
+    if (cached) return cached;
+    const rows = await callRawRpc<unknown>("catalog_raw_places", args);
+    const places = Array.isArray(rows) ? rows.flatMap(mapPlace) : [];
+    return writeCache(pageCache, key, places, PAGE_TTL_MS);
   },
 
   async getDish(id: string, releaseId?: string): Promise<CatalogRawDishDetail> {
@@ -424,6 +556,8 @@ export const catalogRawService = {
       p_cuisine_tags: request.cuisineTags ?? [],
       p_open_only: request.openOnly ?? false,
       p_min_rating: request.minRating ?? null,
+      // Only sent with a query, so the map still reads while the old signature is live.
+      ...(request.query?.trim() ? { p_query: request.query.trim() } : {}),
     };
     const key = catalogRequestKey("map", args);
     const cached = readCache<{ releaseId: string; items: CatalogMapItem[] }>(pageCache, key);
@@ -454,6 +588,7 @@ export const catalogRawService = {
               latitude,
               longitude,
               verificationStatus: verificationStatus(marker.verification_status),
+              buildingType: asString(marker.building_type),
             },
           ];
         })

@@ -26,7 +26,7 @@ const sections = [
   },
   {
     title: "6. Retention, Deletion, And Correction",
-    body: "Hungry keeps personal data only as long as needed for the feature, legal obligations, security, fraud prevention, moderation, or legitimate operational needs. You can request account deletion in the app under Settings or at usehungry.com/account/delete. Deletion is scheduled 30 days after the request, and signing back in before then cancels it. After that, account-associated personal data is removed or anonymized. Menu photos you uploaded stay on the stall's page without your name, because they help other diners. Some safety, fraud, legal, or audit records may be retained in minimized or anonymized form.",
+    body: "Hungry keeps personal data only as long as needed for the feature, legal obligations, security, fraud prevention, moderation, or legitimate operational needs. You can request account deletion in the app under Settings or at usehungry.com/account/delete. Deletion is scheduled 30 days after the request, and you can cancel it by signing back in before then and choosing Keep my account. After that, account-associated personal data is removed or anonymized. Menu photos you uploaded stay on the stall's page without your name, because they help other diners. Some safety, fraud, legal, or audit records may be retained in minimized or anonymized form.",
   },
   {
     title: "7. Singapore Privacy Rights",

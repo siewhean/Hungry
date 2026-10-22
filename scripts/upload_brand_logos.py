@@ -28,7 +28,7 @@ SHEET = ROOT / "data/stall_logos/stall-logo-candidates-foodpanda-first.xlsx"
 REPORT = ROOT / "data/stall_logos/brand_logo_upload_report.csv"
 VENUE_CSV = pathlib.Path("/tmp/brand_logo_venues.csv")
 BUCKET = "brand-logos"
-EXPECTED_REF = "yrlxjeovwslirseajomz"
+EXPECTED_REF = "frluxwpqqyomiqmjzavd"
 MAX_BYTES = 2 * 1024 * 1024
 UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Safari/605.1.15"
 

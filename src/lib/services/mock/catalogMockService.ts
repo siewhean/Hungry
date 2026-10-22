@@ -1,15 +1,22 @@
 import { calculateDistanceMeters } from "@/lib/geo/distance";
 import {
+  CATALOG_MATCH_COUNT_CAP,
+  CATALOG_PLACE_MIN_STALLS,
+  CATALOG_QUERY_MIN_CHARS,
+  CATALOG_SUGGEST_LIMIT,
+  CATALOG_SUGGEST_MIN_CHARS,
   CatalogAccessError,
   type CatalogMapItem,
   type CatalogMapRequest,
   type CatalogPage,
   type CatalogPageRequest,
+  type CatalogPlace,
   type CatalogRawDishCard,
   type CatalogRawDishDetail,
   type CatalogRawService,
   type CatalogRawVenueCard,
   type CatalogRawVenueDetail,
+  type CatalogSuggestion,
 } from "@/lib/services/catalog";
 import type { DataRepository } from "@/lib/services/types";
 import type { BuildingSummary, Coordinate, DishDetail, VenueSummary } from "@/types/domain";
@@ -122,8 +129,12 @@ function toVenueCard(entry: LocalVenue, coordinate?: Coordinate): CatalogRawVenu
 
 function matchesVenueFilters(
   entry: LocalVenue,
-  request: Pick<CatalogPageRequest, "buildingTypes" | "openOnly" | "coordinate" | "radiusMeters">,
+  request: Pick<
+    CatalogPageRequest,
+    "buildingId" | "buildingTypes" | "openOnly" | "coordinate" | "radiusMeters"
+  >,
 ) {
+  if (request.buildingId && entry.building.id !== request.buildingId) return false;
   if (request.buildingTypes?.length && !request.buildingTypes.includes(entry.building.type)) {
     return false;
   }
@@ -134,12 +145,12 @@ function matchesVenueFilters(
   return true;
 }
 
-function matchesDishFilters(dish: DishDetail, request: CatalogPageRequest) {
+function matchesDishFilters(dish: DishDetail, request: CatalogPageRequest, buildingName = "") {
   const query = request.query?.trim().toLowerCase();
   if (
     query &&
-    ![dish.name, dish.venueName, dish.description ?? "", ...dishTags(dish)].some((value) =>
-      value.toLowerCase().includes(query),
+    ![dish.name, dish.venueName, buildingName, dish.description ?? "", ...dishTags(dish)].some(
+      (value) => value.toLowerCase().includes(query),
     )
   ) {
     return false;
@@ -147,6 +158,12 @@ function matchesDishFilters(dish: DishDetail, request: CatalogPageRequest) {
   const tags = dishTags(dish);
   if (request.cuisineTags?.length && !request.cuisineTags.some((tag) => tags.includes(tag))) {
     return false;
+  }
+  if (request.foodKeywords?.length) {
+    const text = `${dish.name} ${dish.foodTypeTag ?? ""}`.toLowerCase();
+    if (!request.foodKeywords.some((keyword) => text.includes(keyword.trim().toLowerCase()))) {
+      return false;
+    }
   }
   if (
     request.dietaryFlags?.length &&
@@ -157,14 +174,25 @@ function matchesDishFilters(dish: DishDetail, request: CatalogPageRequest) {
   return request.maxPrice === undefined || dish.price <= request.maxPrice;
 }
 
+interface SortableCard {
+  name: string;
+  distanceMeters?: number;
+  rating?: number;
+  reviewCount?: number;
+  price?: number;
+}
+
 function compareCards(
   sort: CatalogPageRequest["sort"],
   query: string,
-  left: { name: string; distanceMeters?: number; rating?: number; reviewCount?: number },
-  right: { name: string; distanceMeters?: number; rating?: number; reviewCount?: number },
+  left: SortableCard,
+  right: SortableCard,
 ) {
   if (sort === "nearby") {
     return (left.distanceMeters ?? Infinity) - (right.distanceMeters ?? Infinity);
+  }
+  if (sort === "price") {
+    return (left.price ?? Infinity) - (right.price ?? Infinity);
   }
   if (sort === "relevance" && query) {
     const leftStarts = left.name.toLowerCase().startsWith(query) ? 0 : 1;
@@ -174,6 +202,14 @@ function compareCards(
   return (
     (right.rating ?? 0) - (left.rating ?? 0) || (right.reviewCount ?? 0) - (left.reviewCount ?? 0)
   );
+}
+
+function countStallsPerBuilding(catalog: LocalVenue[]) {
+  const counts = new Map<string, number>();
+  for (const entry of catalog) {
+    counts.set(entry.building.id, (counts.get(entry.building.id) ?? 0) + 1);
+  }
+  return counts;
 }
 
 function paginate<T>(
@@ -188,8 +224,15 @@ function paginate<T>(
     items: items.slice(offset, end),
     nextCursor: end < items.length ? String(end) : undefined,
     releaseId: MOCK_RELEASE_ID,
+    matchCount: Math.min(items.length, CATALOG_MATCH_COUNT_CAP),
     totals,
   };
+}
+
+/** Like the RPCs, text under the minimum length searches nothing. */
+function isTooShortQuery(request: CatalogPageRequest) {
+  const query = request.query?.trim() ?? "";
+  return query.length > 0 && query.length < CATALOG_QUERY_MIN_CHARS;
 }
 
 export function createLocalCatalogService(repository: DataRepository): CatalogRawService {
@@ -209,7 +252,7 @@ export function createLocalCatalogService(repository: DataRepository): CatalogRa
       .filter((entry) => matchesVenueFilters(entry, request))
       .flatMap((entry) =>
         entry.dishes
-          .filter((dish) => matchesDishFilters(dish, request))
+          .filter((dish) => matchesDishFilters(dish, request, entry.building.name))
           .map((dish) => toDishCard(dish, entry, request.coordinate)),
       )
       .sort((left, right) => compareCards(request.sort, query, left, right));
@@ -220,21 +263,30 @@ export function createLocalCatalogService(repository: DataRepository): CatalogRa
 
     async listDishes(request) {
       const catalog = loadCatalog(repository);
+      if (isTooShortQuery(request)) return paginate([], request, totals(catalog));
       return paginate(listDishCards(catalog, request), request, totals(catalog));
     },
 
     async listVenues(request) {
       const catalog = loadCatalog(repository);
+      if (isTooShortQuery(request)) return paginate([], request, totals(catalog));
       const query = request.query?.trim().toLowerCase() ?? "";
       const hasDishFilters = Boolean(
-        request.cuisineTags?.length || request.dietaryFlags?.length || request.maxPrice,
+        request.cuisineTags?.length ||
+        request.dietaryFlags?.length ||
+        request.foodKeywords?.length ||
+        request.maxPrice,
       );
       const cards = catalog
         .filter((entry) => matchesVenueFilters(entry, request))
         .filter((entry) => {
           if (!query && !hasDishFilters) return true;
-          // A stall matches by its own name, or by any dish that passes the filters.
-          const nameMatches = Boolean(query) && entry.venue.name.toLowerCase().includes(query);
+          // A stall matches by its own or its building's name, or by any dish that passes the filters.
+          const nameMatches =
+            Boolean(query) &&
+            [entry.venue.name, entry.building.name].some((value) =>
+              value.toLowerCase().includes(query),
+            );
           if (nameMatches && !hasDishFilters) return true;
           const dishRequest = nameMatches ? { ...request, query: undefined } : request;
           return entry.dishes.some((dish) => matchesDishFilters(dish, dishRequest));
@@ -249,11 +301,113 @@ export function createLocalCatalogService(repository: DataRepository): CatalogRa
               : undefined,
             rating: topDish?.rating,
             reviewCount: topDish?.reviewCount,
+            price: entry.dishes.length
+              ? Math.min(...entry.dishes.map((dish) => dish.price))
+              : undefined,
           };
         })
         .sort((left, right) => compareCards(request.sort, query, left, right))
         .map(({ card }) => card);
       return paginate(cards, request, totals(catalog));
+    },
+
+    async suggest(prefix) {
+      const catalog = loadCatalog(repository);
+      const text = prefix.trim().toLowerCase();
+      const counts = new Map<string, { suggestion: CatalogSuggestion; weight: number }>();
+      const add = (
+        kind: CatalogSuggestion["kind"],
+        label: string | undefined,
+        placeId?: string,
+      ) => {
+        if (!label) return;
+        const key = `${kind}:${label}`;
+        const current = counts.get(key);
+        if (current) current.weight += 1;
+        else
+          counts.set(key, {
+            suggestion: placeId ? { kind, label, placeId } : { kind, label },
+            weight: 1,
+          });
+      };
+      const stallsPerBuilding = countStallsPerBuilding(catalog);
+      for (const entry of catalog) {
+        if ((stallsPerBuilding.get(entry.building.id) ?? 0) >= CATALOG_PLACE_MIN_STALLS) {
+          add("place", entry.building.name, entry.building.id);
+        }
+        add("stall", entry.venue.name);
+        for (const dish of entry.dishes) add("food_type", dish.foodTypeTag);
+      }
+      const kindRank = { food_type: 0, place: 1, stall: 2 } as const;
+      const all = [...counts.values()];
+      if (text.length < CATALOG_SUGGEST_MIN_CHARS) {
+        return all
+          .filter(({ suggestion }) => suggestion.kind === "food_type")
+          .sort((left, right) => right.weight - left.weight)
+          .slice(0, CATALOG_SUGGEST_LIMIT)
+          .map(({ suggestion }) => suggestion);
+      }
+      const startsWith = (label: string) => label.toLowerCase().startsWith(text);
+      return (
+        all
+          // The start of the label or of any word in it, like the RPC.
+          .filter(({ suggestion }) => ` ${suggestion.label.toLowerCase()}`.includes(` ${text}`))
+          .sort(
+            (left, right) =>
+              Number(startsWith(right.suggestion.label)) -
+                Number(startsWith(left.suggestion.label)) ||
+              kindRank[left.suggestion.kind] - kindRank[right.suggestion.kind] ||
+              right.weight - left.weight,
+          )
+          .slice(0, CATALOG_SUGGEST_LIMIT)
+          .map(({ suggestion }) => suggestion)
+      );
+    },
+
+    async listPlaces(request) {
+      const catalog = loadCatalog(repository);
+      const stallsPerBuilding = countStallsPerBuilding(catalog);
+      const query = request.query?.trim().toLowerCase() ?? "";
+      const places = new Map<string, CatalogPlace>();
+      for (const entry of catalog) {
+        const { building } = entry;
+        if ((stallsPerBuilding.get(building.id) ?? 0) < CATALOG_PLACE_MIN_STALLS) continue;
+        if (query && !` ${building.name.toLowerCase()}`.includes(` ${query}`)) continue;
+        const distanceMeters = request.coordinate
+          ? calculateDistanceMeters(request.coordinate, entry.coordinate)
+          : undefined;
+        if (
+          request.coordinate &&
+          request.radiusMeters !== undefined &&
+          (distanceMeters ?? Infinity) > request.radiusMeters
+        ) {
+          continue;
+        }
+        const known = places.get(building.id);
+        places.set(building.id, {
+          id: building.id,
+          name: building.name,
+          buildingType: building.type,
+          venueCount: stallsPerBuilding.get(building.id) ?? 0,
+          latitude: building.coordinate.latitude,
+          longitude: building.coordinate.longitude,
+          distanceMeters:
+            known?.distanceMeters !== undefined && distanceMeters !== undefined
+              ? Math.min(known.distanceMeters, distanceMeters)
+              : (distanceMeters ?? known?.distanceMeters),
+        });
+      }
+      const startsWith = (place: CatalogPlace) =>
+        query && place.name.toLowerCase().startsWith(query) ? 0 : 1;
+      return [...places.values()]
+        .sort(
+          (left, right) =>
+            startsWith(left) - startsWith(right) ||
+            (left.distanceMeters ?? Infinity) - (right.distanceMeters ?? Infinity) ||
+            right.venueCount - left.venueCount ||
+            left.name.localeCompare(right.name),
+        )
+        .slice(0, Math.max(1, Math.min(request.limit ?? 8, 20)));
     },
 
     async getDish(id) {
@@ -307,6 +461,16 @@ export function createLocalCatalogService(repository: DataRepository): CatalogRa
           return false;
         }
         if (!matchesVenueFilters(entry, request)) return false;
+        const query = request.query?.trim().toLowerCase();
+        if (
+          query &&
+          ![entry.venue.name, entry.building.name].some((value) =>
+            value.toLowerCase().includes(query),
+          ) &&
+          !entry.dishes.some((dish) => matchesDishFilters(dish, { query }, entry.building.name))
+        ) {
+          return false;
+        }
         if (
           request.cuisineTags?.length &&
           !entry.dishes.some((dish) =>
@@ -346,6 +510,7 @@ export function createLocalCatalogService(repository: DataRepository): CatalogRa
           latitude: first.coordinate.latitude,
           longitude: first.coordinate.longitude,
           verificationStatus: verification(first.venue),
+          buildingType: first.building.type,
         };
       });
       return { releaseId: MOCK_RELEASE_ID, items };

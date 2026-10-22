@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ArrowLeft } from "lucide-react-native";
@@ -7,6 +7,11 @@ import { ArrowLeft } from "lucide-react-native";
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import { PortfolioTypeSelector, PortfolioVisibilitySelector } from "@/components/portfolio";
 import { AppText, Button, Card, Input } from "@/components/ui";
+import { listErrorMessage } from "@/features/checklistPortfolio/listLoadState";
+import {
+  PORTFOLIO_NAME_MAX_LENGTH,
+  PORTFOLIO_TEXT_MAX_LENGTH,
+} from "@/features/checklistPortfolio/listLabels";
 import { usePortfolioStore } from "@/store/usePortfolioStore";
 import { useHungryTheme } from "@/theme";
 import type { PortfolioType, PortfolioVisibility } from "@/types/domain";
@@ -29,12 +34,18 @@ export function PortfolioCreateScreen({ navigation }: Props) {
     setIsSaving(true);
     try {
       const portfolio = await createPortfolio({
-        name,
+        name: name.trim(),
         description: description.trim() || undefined,
         type,
         visibility,
       });
       navigation.replace("PortfolioDetail", { portfolioId: portfolio.id });
+    } catch (error) {
+      // A rate limit, being offline or a too-long title must not fail silently.
+      Alert.alert(
+        "Couldn't create the list",
+        listErrorMessage(error, "Check your connection and try again."),
+      );
     } finally {
       setIsSaving(false);
     }
@@ -55,7 +66,7 @@ export function PortfolioCreateScreen({ navigation }: Props) {
           <ArrowLeft color={palette.text} size={22} />
         </Pressable>
         <View style={{ flex: 1 }}>
-          <AppText variant="h1">Create portfolio</AppText>
+          <AppText variant="h1">Create list</AppText>
           <AppText variant="bodySmall" tone="secondary">
             Start with a private list and publish when it is ready.
           </AppText>
@@ -68,12 +79,14 @@ export function PortfolioCreateScreen({ navigation }: Props) {
           value={name}
           onChangeText={setName}
           placeholder="e.g. Best laksa nearby"
+          maxLength={PORTFOLIO_NAME_MAX_LENGTH}
         />
         <Input
           label="Description"
           value={description}
           onChangeText={setDescription}
           placeholder="What makes this list useful?"
+          maxLength={PORTFOLIO_TEXT_MAX_LENGTH}
           multiline
         />
       </Card>
@@ -88,7 +101,7 @@ export function PortfolioCreateScreen({ navigation }: Props) {
         <PortfolioVisibilitySelector value={visibility} onChange={setVisibility} />
       </Card>
 
-      <Button label="Create portfolio" loading={isSaving} disabled={!canSave} onPress={save} />
+      <Button label="Create list" loading={isSaving} disabled={!canSave} onPress={save} />
     </ScrollView>
   );
 }

@@ -12,7 +12,9 @@ import {
   trackAuthScreenViewed,
   trackPasswordResetRequested,
 } from "@/features/auth/authAnalytics";
+import { getAuthErrorKind, getAuthFailureMessage } from "@/features/auth/authErrors";
 import { EmailCodeField } from "@/features/auth/EmailCodeField";
+import { formatCooldown, useResendCooldown } from "@/features/auth/useResendCooldown";
 import { validateEmail } from "@/features/auth/validation";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
@@ -25,7 +27,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, "ForgotPassword">;
 type FormValues = { email: string };
 
 export function ForgotPasswordScreen({ navigation }: Props) {
-  const { colorScheme, palette, radii, spacing } = useHungryTheme();
+  const { palette, radii, spacing } = useHungryTheme();
   const showToast = useUIStore((state) => state.showToast);
   const setPasswordRecoveryInProgress = useSessionStore(
     (state) => state.setPasswordRecoveryInProgress,
@@ -33,6 +35,8 @@ export function ForgotPasswordScreen({ navigation }: Props) {
   const isSupabaseMode = getConfiguredDataSource() === "supabase";
   // After a send the screen becomes "Check your inbox" instead of bouncing to Login.
   const [sentTo, setSentTo] = useState<string | null>(null);
+  // Another reset email within the server's 60s limit only fails, so "Send again" waits.
+  const { seconds: resendSeconds, restart: restartResendCooldown } = useResendCooldown(false);
   const {
     control,
     handleSubmit,
@@ -65,9 +69,15 @@ export function ForgotPasswordScreen({ navigation }: Props) {
         trackPasswordResetRequested();
       }
       setSentTo(email.trim().toLowerCase());
+      restartResendCooldown();
     } catch (error) {
       trackAuthFailed("password_reset", "email", error);
-      showToast({ message: AUTH_COPY.forgotPassword.genericErrorToast, tone: "error" });
+      // A 429 means an email went out within the last minute: wait it out, don't retry.
+      if (getAuthErrorKind(error) === "rate_limited") restartResendCooldown();
+      showToast({
+        message: getAuthFailureMessage(error, AUTH_COPY.forgotPassword.genericErrorToast),
+        tone: "error",
+      });
     }
   });
 
@@ -80,7 +90,6 @@ export function ForgotPasswordScreen({ navigation }: Props) {
         title={AUTH_COPY.forgotPassword.title}
         subtitle={AUTH_COPY.forgotPassword.subtitle}
         compact
-        wordmarkColor={colorScheme === "dark" ? palette.white : palette.navy}
         footer={
           <Pressable
             accessible
@@ -137,24 +146,40 @@ export function ForgotPasswordScreen({ navigation }: Props) {
               </AppText>
             </View>
             <EmailCodeField onSubmit={handleResetCode} submitLabel="Reset password" />
-            {isSupabaseMode ? null : (
-              // Mock mode has no email; open the reset screen as the link would.
-              <Button
-                label="Open reset link (demo)"
-                onPress={() => navigation.navigate("ResetPassword", { email: sentTo })}
-              />
-            )}
-            <Button
-              label={AUTH_COPY.forgotPassword.resendButton}
-              variant="secondary"
-              loading={isSubmitting}
-              onPress={handleSend}
-            />
-            <Button
-              label={AUTH_COPY.forgotPassword.useDifferentEmail}
-              variant="ghost"
-              onPress={() => setSentTo(null)}
-            />
+            {/* The code is the one primary action; the rest are plain text links. */}
+            <View style={{ alignItems: "center", gap: spacing[1] }}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={
+                  resendSeconds > 0
+                    ? `Send again, available in ${formatCooldown(resendSeconds)}`
+                    : AUTH_COPY.forgotPassword.resendButton
+                }
+                accessibilityState={{ disabled: resendSeconds > 0 || isSubmitting }}
+                disabled={resendSeconds > 0 || isSubmitting}
+                onPress={handleSend}
+                hitSlop={8}
+                style={{ justifyContent: "center", minHeight: 44, paddingHorizontal: spacing[2] }}
+              >
+                <AppText tone={resendSeconds > 0 ? "muted" : "accent"}>
+                  {resendSeconds > 0
+                    ? AUTH_COPY.forgotPassword.resendInButton.replace(
+                        "{time}",
+                        formatCooldown(resendSeconds),
+                      )
+                    : AUTH_COPY.forgotPassword.resendButton}
+                </AppText>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={AUTH_COPY.forgotPassword.useDifferentEmail}
+                onPress={() => setSentTo(null)}
+                hitSlop={8}
+                style={{ justifyContent: "center", minHeight: 44, paddingHorizontal: spacing[2] }}
+              >
+                <AppText tone="accent">{AUTH_COPY.forgotPassword.useDifferentEmail}</AppText>
+              </Pressable>
+            </View>
           </View>
         ) : (
           <View style={{ gap: spacing[4] }}>
@@ -186,7 +211,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
                   autoComplete="email"
                   returnKeyType="send"
                   onSubmitEditing={() => void handleSend()}
-                  placeholder={AUTH_COPY.forgotPassword.emailPlaceholder}
+                  label={AUTH_COPY.forgotPassword.emailLabel}
                   value={value}
                   onChangeText={onChange}
                   leftIcon={<Mail color={palette.textMuted} size={16} />}

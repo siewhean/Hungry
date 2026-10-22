@@ -9,6 +9,7 @@ const authGuards = [
   /ACCOUNT_DELETION_WORKER_TOKEN/,
   /TASTE_TAGGING_WORKER_TOKEN/,
   /NOTIFICATION_WORKER_TOKEN/,
+  /ORPHAN_MEDIA_WORKER_TOKEN/,
   /GUEST_SESSION_API_KEY/,
   /app_can_make_ops_request/,
 ];
@@ -29,8 +30,9 @@ for (const entry of fs.readdirSync(functionsDir, { withFileTypes: true })) {
   }
 
   const source = fs.readFileSync(indexPath, "utf8");
-  if (!/Deno\.serve\s*\(/.test(source)) {
-    addFinding(indexPath, "missing Deno.serve handler");
+  // serveWithSentry wraps Deno.serve and reports errors to Sentry; see _shared/sentry.ts.
+  if (!/(Deno\.serve|serveWithSentry)\s*\(/.test(source)) {
+    addFinding(indexPath, "missing Deno.serve or serveWithSentry handler");
   }
 
   if (/SUPABASE_SERVICE_ROLE_KEY/.test(source) && !authGuards.some((guard) => guard.test(source))) {

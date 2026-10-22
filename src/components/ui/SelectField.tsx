@@ -18,6 +18,8 @@ interface SelectFieldProps<T extends string = string> {
   value: T;
   options: readonly SelectFieldOption<T>[];
   onChange: (value: T) => void;
+  /** Shows the value but does not open the list. */
+  disabled?: boolean;
 }
 
 export function SelectField<T extends string = string>({
@@ -25,6 +27,7 @@ export function SelectField<T extends string = string>({
   value,
   options,
   onChange,
+  disabled = false,
 }: SelectFieldProps<T>) {
   const sheetRef = useRef<BottomSheetModal>(null);
   const { componentCornerCurve, componentRadii, palette, spacing } = useHungryTheme();
@@ -38,9 +41,12 @@ export function SelectField<T extends string = string>({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${label}, ${selectedOption?.label ?? "not selected"}`}
+        accessibilityState={{ disabled }}
+        disabled={disabled}
         onPress={() => sheetRef.current?.present()}
         style={{
           alignItems: "center",
+          opacity: disabled ? 0.6 : 1,
           backgroundColor: palette.surface,
           borderColor: palette.border,
           borderCurve: componentCornerCurve.borderCurve,

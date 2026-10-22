@@ -22,6 +22,9 @@ test("review submission helpers persist reviewed dish and entry payload", () => 
   }));
 
   useProfileStore.getState().addReviewedDish(dish.id);
+  // A Tried mark alone is not a review (H29).
+  assert.equal(useProfileStore.getState().profile.stats.dishesReviewed, 0);
+  useProfileStore.getState().addReview(dish);
   useProfileStore.getState().recordReviewEntry(dish.id, {
     rating: 5,
     text: "Excellent",

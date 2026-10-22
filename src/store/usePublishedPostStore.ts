@@ -8,6 +8,8 @@ interface PublishedPostState {
   posts: StallPost[];
   version: number;
   upsertPost: (post: StallPost) => void;
+  /** Drops a post the user deleted (bumps version so Home reloads). */
+  removePost: (postId: string) => void;
   clearPosts: () => void;
   clearPostsForTest: () => void;
 }
@@ -37,6 +39,11 @@ export const usePublishedPostStore = create<PublishedPostState>()(
             version: state.version + 1,
           };
         }),
+      removePost: (postId) =>
+        set((state) => ({
+          posts: state.posts.filter((post) => post.id !== postId),
+          version: state.version + 1,
+        })),
       clearPostsForTest: () => set((state) => ({ posts: [], version: state.version + 1 })),
     }),
     {

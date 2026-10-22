@@ -83,7 +83,10 @@ export function ChecklistDetailScreen({ navigation, route }: Props) {
     if (!checklist) return;
     const nextName = draftName.trim();
     if (!nextName || nextName === checklist.name) return;
-    await updateChecklist(checklist.id, nextName);
+    const saved = await runListMutation(() => updateChecklist(checklist.id, nextName), {
+      failure: "Couldn't save the checklist name.",
+    });
+    if (!saved) setDraftName(checklist.name);
   }, [checklist, draftName, updateChecklist]);
 
   const moveItem = useCallback(
@@ -200,8 +203,8 @@ export function ChecklistDetailScreen({ navigation, route }: Props) {
             index={index}
             totalCount={checklistItems.length}
             onMarkTried={() =>
-              void runListMutation(() => markItemTried(item.id), {
-                failure: "Couldn't mark as tried.",
+              void runListMutation(() => markItemTried(item.id, !item.triedAt), {
+                failure: item.triedAt ? "Couldn't undo tried." : "Couldn't mark as tried.",
               })
             }
             onMoveUp={() => moveItem(item.id, -1)}

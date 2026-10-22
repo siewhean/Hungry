@@ -11,9 +11,9 @@ import {
   getDataRepository,
   getHungryService,
   getServiceProvider,
-  getSimilarityScore,
 } from "@/lib/services/serviceProvider";
 import type { ExplicitFeedbackInput } from "@/lib/services/types";
+import { tasteMatchPercent } from "@/features/detail/tasteMatch";
 import {
   applyAffinityEvent,
   deriveLocalFoodHistory,
@@ -130,11 +130,16 @@ interface ProfileState {
   setTasteVector: (tasteVector: TasteVector) => void;
   setTasteProfile: (tasteProfile: TasteProfile) => void;
   setDietaryPreferences: (dietaryPreferences: DietaryFlag[]) => void;
-  /** Local-only for now: profiles have no budget column on the backend yet. */
+  /** Saved on the account (user_profiles.max_dish_budget) when signed in; kept on the device for guests. */
   setMaxDishBudget: (maxDishBudget: number | undefined) => void;
   addReview: (dish: DishDetail) => void;
   addReviewedDish: (dishId: string) => void;
   removeReviewedDish: (dishId: string) => void;
+  /**
+   * The dish "Tried" button: updates the Tried list at once, saves it on the server and
+   * restores the old list when the save fails. Resolves false on failure.
+   */
+  setDishTried: (dishId: string, tried: boolean) => Promise<boolean>;
   recordReviewEntry: (
     dishId: string,
     entry: { rating: number; text: string; tags: string[] },
@@ -173,6 +178,19 @@ const FEEDBACK_CONFIDENCE_DELTAS: Record<ExplicitFeedbackEvent["type"], number> 
 
 const pendingFavouriteDishToggles = new Set<string>();
 const activatedProfileIds = new Set<string>();
+
+// supabase-js fires SIGNED_IN before signIn/verifyOtp return, so syncProfile swaps
+// the guest profile for the account's blank one before the screen can merge it.
+// Keep the guest's profile here so applySignedInProfile still sees the guest's
+// diet and taste.
+type GuestSnapshot = { userId: string; profile: UserProfile; tasteProfile: TasteProfile };
+let guestSnapshotBeforeSignIn: GuestSnapshot | null = null;
+
+export function takeGuestSnapshotForSignIn(userId: string) {
+  const snapshot = guestSnapshotBeforeSignIn;
+  guestSnapshotBeforeSignIn = null;
+  return snapshot && snapshot.userId === userId ? snapshot : null;
+}
 
 // "activated": a person's first Tried or first save. `previous` is the profile
 // before the action, so it fires only when nothing was saved or tried yet.
@@ -411,6 +429,8 @@ export const useProfileStore = create<ProfileState>()(
         const base = get().profile.tasteProfile ?? get().tasteProfile;
         const tasteProfile: TasteProfile = {
           ...base,
+          // profile.tasteVector is the source of truth; base.vector can lag behind the quiz.
+          vector: get().profile.tasteVector,
           foodOpenness: openness,
           neophiliaIndex: OPENNESS_NEOPHILIA_INDEX[openness],
         };
@@ -475,6 +495,10 @@ export const useProfileStore = create<ProfileState>()(
           return;
         }
 
+        guestSnapshotBeforeSignIn =
+          isAuthenticated && userId && currentProfile.id === "guest-user"
+            ? { userId, profile: currentProfile, tasteProfile: get().tasteProfile }
+            : null;
         set({
           profile: withNeutralTasteProfile(
             ensureSupabaseCompatibleProfile(
@@ -640,6 +664,9 @@ export const useProfileStore = create<ProfileState>()(
             profile: {
               ...state.profile,
               tasteVector,
+              tasteProfile: state.profile.tasteProfile
+                ? { ...state.profile.tasteProfile, vector: tasteVector }
+                : undefined,
               recommendationSignals: {
                 confidence: clampConfidence(
                   (state.profile.recommendationSignals?.confidence ?? 0) + 0.05,
@@ -718,8 +745,9 @@ export const useProfileStore = create<ProfileState>()(
       setDietaryPreferences: (dietaryPreferences) => {
         const previousProfile = get().profile;
         set((state) => {
+          // Religious and health diets are sensitive (PDPA): only how many were picked is sent.
           trackAnalyticsEvent("dietary_preferences_set", {
-            flags: dietaryPreferences,
+            flag_count: dietaryPreferences.length,
           });
           return {
             profile: {
@@ -742,7 +770,19 @@ export const useProfileStore = create<ProfileState>()(
       },
       setMaxDishBudget: (maxDishBudget) => {
         trackAnalyticsEvent("budget_preference_set", { max_dish_budget: maxDishBudget ?? null });
+        const previousProfile = get().profile;
         set((state) => ({ profile: { ...state.profile, maxDishBudget } }));
+        const optimisticProfile = get().profile;
+        if (!shouldSyncAuthenticatedProfile(optimisticProfile)) {
+          return;
+        }
+        void getHungryService()
+          .profile.updateMaxDishBudget(maxDishBudget ?? null)
+          .catch((error) => {
+            console.error("Failed to sync dish budget", error);
+            if (get().profile !== optimisticProfile) return;
+            set({ profile: previousProfile });
+          });
       },
       addReview: (dish) =>
         set((state) => {
@@ -756,7 +796,8 @@ export const useProfileStore = create<ProfileState>()(
               reviewedDishIds,
               stats: {
                 ...state.profile.stats,
-                dishesReviewed: reviewedDishIds.length,
+                // Each posted review counts; "Tried" taps never do.
+                dishesReviewed: state.profile.stats.dishesReviewed + 1,
               },
             },
           };
@@ -771,31 +812,29 @@ export const useProfileStore = create<ProfileState>()(
             trackActivationOnce(state.profile, "tried", dishId);
           }
 
-          return {
-            profile: {
-              ...state.profile,
-              reviewedDishIds,
-              stats: {
-                ...state.profile.stats,
-                dishesReviewed: reviewedDishIds.length,
-              },
-            },
-          };
+          // Tried is not a review: stats.dishesReviewed is left alone.
+          return { profile: { ...state.profile, reviewedDishIds } };
         }),
       removeReviewedDish: (dishId) =>
         set((state) => {
           const reviewedDishIds = state.profile.reviewedDishIds.filter((id) => id !== dishId);
-          return {
-            profile: {
-              ...state.profile,
-              reviewedDishIds,
-              stats: {
-                ...state.profile.stats,
-                dishesReviewed: reviewedDishIds.length,
-              },
-            },
-          };
+          return { profile: { ...state.profile, reviewedDishIds } };
         }),
+      setDishTried: async (dishId, tried) => {
+        const previousIds = get().profile.reviewedDishIds;
+        if (tried) get().addReviewedDish(dishId);
+        else get().removeReviewedDish(dishId);
+        if (!shouldSyncAuthenticatedProfile(get().profile)) return true;
+        try {
+          const savedIds = await getHungryService().profile.setDishTried(dishId, tried);
+          set((state) => ({ profile: { ...state.profile, reviewedDishIds: savedIds } }));
+          return true;
+        } catch (error) {
+          console.error("Failed to save the Tried mark", error);
+          set((state) => ({ profile: { ...state.profile, reviewedDishIds: previousIds } }));
+          return false;
+        }
+      },
       recordReviewEntry: (dishId, entry) => {
         let recordedEvent: TasteInteractionEvent | undefined;
         let interactionInput: RecordTasteInteractionInput | undefined;
@@ -1003,4 +1042,4 @@ export function selectFoodHistoryRows(
 }
 
 export const getTasteSimilarityWithDish = (profile: UserProfile, dish: DishDetail) =>
-  Math.round(getSimilarityScore(profile.tasteVector, dish.tasteVector) * 100);
+  tasteMatchPercent(profile.tasteVector, dish.tasteVector);

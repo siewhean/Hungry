@@ -1,12 +1,22 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ArrowLeft } from "lucide-react-native";
+import { useShallow } from "zustand/react/shallow";
 
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import { PortfolioTypeSelector, PortfolioVisibilitySelector } from "@/components/portfolio";
 import { AppText, Button, Card, Input } from "@/components/ui";
+import {
+  PORTFOLIO_NAME_MAX_LENGTH,
+  PORTFOLIO_TEXT_MAX_LENGTH,
+} from "@/features/checklistPortfolio/listLabels";
+import {
+  listErrorMessage,
+  listLoadStateForError,
+  type ListLoadState,
+} from "@/features/checklistPortfolio/listLoadState";
 import { usePortfolioStore } from "@/store/usePortfolioStore";
 import { useHungryTheme } from "@/theme";
 import type { PortfolioType, PortfolioVisibility } from "@/types/domain";
@@ -17,8 +27,16 @@ export function PortfolioEditScreen({ navigation, route }: Props) {
   const { palette, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const portfolioId = route.params.portfolioId;
-  const { portfolios, loadPortfolios, updatePortfolio, conflicts, clearConflict } =
-    usePortfolioStore();
+  const { portfolios, refreshPortfolio, updatePortfolio, conflicts, clearConflict } =
+    usePortfolioStore(
+      useShallow((state) => ({
+        portfolios: state.portfolios,
+        refreshPortfolio: state.refreshPortfolio,
+        updatePortfolio: state.updatePortfolio,
+        conflicts: state.conflicts,
+        clearConflict: state.clearConflict,
+      })),
+    );
   const portfolio = portfolios.find((entry) => entry.id === portfolioId);
   const conflict = conflicts[portfolioId];
   const [name, setName] = useState(portfolio?.name ?? "");
@@ -28,13 +46,28 @@ export function PortfolioEditScreen({ navigation, route }: Props) {
     portfolio?.visibility ?? "private",
   );
   const [isSaving, setIsSaving] = useState(false);
+  const [loadState, setLoadState] = useState<ListLoadState>(portfolio ? "ready" : "loading");
+  // The id the form was last filled from: a reload of the same list must not wipe typing.
+  const seededFor = useRef<string | null>(portfolio ? portfolio.id : null);
 
   useEffect(() => {
-    void loadPortfolios().catch((error) => console.error("Failed to load list:", error));
-  }, [loadPortfolios]);
+    let mounted = true;
+    // Load just this list: an unfiltered, capped read could miss it.
+    void refreshPortfolio(portfolioId)
+      .then(() => mounted && setLoadState("ready"))
+      .catch((error) => {
+        console.error("Failed to load list:", error);
+        if (mounted) setLoadState(listLoadStateForError(error));
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [portfolioId, refreshPortfolio]);
 
   useEffect(() => {
-    if (!portfolio) return;
+    // Fill the form once per list, when it first becomes available.
+    if (!portfolio || seededFor.current === portfolio.id) return;
+    seededFor.current = portfolio.id;
     setName(portfolio.name);
     setDescription(portfolio.description ?? "");
     setType(portfolio.type);
@@ -46,17 +79,14 @@ export function PortfolioEditScreen({ navigation, route }: Props) {
     setIsSaving(true);
     try {
       await updatePortfolio(portfolio.id, {
-        name,
+        name: name.trim(),
         description: description.trim() || undefined,
         type,
         visibility,
       });
       navigation.goBack();
     } catch (error) {
-      Alert.alert(
-        "Portfolio update failed",
-        error instanceof Error ? error.message : "Please refresh and try again.",
-      );
+      Alert.alert("List update failed", listErrorMessage(error, "Please refresh and try again."));
     } finally {
       setIsSaving(false);
     }
@@ -77,16 +107,36 @@ export function PortfolioEditScreen({ navigation, route }: Props) {
           <ArrowLeft color={palette.text} size={22} />
         </Pressable>
         <View style={{ flex: 1 }}>
-          <AppText variant="h1">Edit portfolio</AppText>
+          <AppText variant="h1">Edit list</AppText>
           <AppText variant="bodySmall" tone="secondary">
-            Update the title, type, and sharing level.
+            Update the title, type, and who can see it.
           </AppText>
         </View>
       </View>
 
       {!portfolio ? (
         <Card>
-          <AppText variant="h3">Portfolio not found</AppText>
+          <AppText variant="h3">
+            {loadState === "loading"
+              ? "Loading list…"
+              : loadState === "error"
+                ? "Couldn't load this list"
+                : "List not found"}
+          </AppText>
+          {loadState === "error" ? (
+            <Button
+              label="Retry"
+              variant="secondary"
+              size="sm"
+              fullWidth={false}
+              onPress={() => {
+                setLoadState("loading");
+                void refreshPortfolio(portfolioId)
+                  .then(() => setLoadState("ready"))
+                  .catch((error) => setLoadState(listLoadStateForError(error)));
+              }}
+            />
+          ) : null}
         </Card>
       ) : (
         <>
@@ -106,11 +156,17 @@ export function PortfolioEditScreen({ navigation, route }: Props) {
             </Card>
           ) : null}
           <Card>
-            <Input label="Title" value={name} onChangeText={setName} />
+            <Input
+              label="Title"
+              value={name}
+              onChangeText={setName}
+              maxLength={PORTFOLIO_NAME_MAX_LENGTH}
+            />
             <Input
               label="Description"
               value={description}
               onChangeText={setDescription}
+              maxLength={PORTFOLIO_TEXT_MAX_LENGTH}
               multiline
             />
           </Card>
@@ -119,7 +175,7 @@ export function PortfolioEditScreen({ navigation, route }: Props) {
             <PortfolioTypeSelector value={type} onChange={setType} />
           </Card>
           <Card>
-            <AppText variant="bodyBold">Visibility</AppText>
+            <AppText variant="bodyBold">Who can see it</AppText>
             <PortfolioVisibilitySelector value={visibility} onChange={setVisibility} />
           </Card>
           <Button label="Save changes" loading={isSaving} disabled={!name.trim()} onPress={save} />

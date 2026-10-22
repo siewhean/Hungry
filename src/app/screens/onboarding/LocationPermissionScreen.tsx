@@ -1,7 +1,7 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Linking, Pressable, View } from "react-native";
+import { Linking, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, Clock3, Compass, UtensilsCrossed } from "lucide-react-native";
+import { ArrowLeft, Compass, Star, UtensilsCrossed } from "lucide-react-native";
 import { useEffect, useState } from "react";
 
 import { AppText, Button, Card } from "@/components/ui";
@@ -41,12 +41,12 @@ const FEATURE_ROWS = [
     iconBgTone: "amberLight",
   },
   {
-    key: "wait",
+    key: "favourites",
     title: "Local Favourites",
     description: "See what diners near you rate highly right now.",
-    icon: Clock3,
-    iconTone: "error",
-    iconBgTone: "errorSoft",
+    icon: Star,
+    iconTone: "textSecondary",
+    iconBgTone: "bgSoft",
   },
 ] as const;
 
@@ -96,7 +96,15 @@ export function LocationPermissionScreen({ navigation }: Props) {
         pickAreaInstead("We couldn't get a GPS fix. Pick your area instead.");
         return;
       }
-      if (permission.canAskAgain === false) setPermissionBlocked(true);
+      if (permission.canAskAgain === false) {
+        // The phone will not ask again: stay here and offer Settings or an area, side by side.
+        setPermissionBlocked(true);
+        showToast({
+          message: "Location is off for Hungry. Turn it on in Settings, or pick your area.",
+          tone: "warning",
+        });
+        return;
+      }
       pickAreaInstead("No problem. Pick your area instead; you can turn location on anytime.");
     } catch {
       pickAreaInstead("We couldn't get your location. Pick your area instead.");
@@ -150,20 +158,22 @@ export function LocationPermissionScreen({ navigation }: Props) {
             style={{
               alignItems: "center",
               borderRadius: radii.pill,
-              height: 40,
+              height: 44,
               justifyContent: "center",
-              width: 40,
+              width: 44,
             }}
           >
             <ArrowLeft color={palette.text} size={22} />
           </Pressable>
           <WordmarkLogoV2 size={HUNGRY_LOGO_STANDARD_WORDMARK_SIZE} />
-          <View style={{ width: 40 }} />
+          <View style={{ width: 44 }} />
         </View>
 
-        <View
-          style={{
-            flex: 1,
+        {/* The content scrolls (large text sizes); the buttons stay pinned below it. */}
+        <ScrollView
+          style={{ flex: 1 }}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
             gap: spacing[3],
             paddingHorizontal: spacing[3],
             paddingTop: spacing[3],
@@ -175,7 +185,7 @@ export function LocationPermissionScreen({ navigation }: Props) {
             <AccessibleImage
               source={locationPermissionsGraphic}
               contentFit="contain"
-              accessibilityLabel="Location permission illustration"
+              decorative
               style={{
                 alignSelf: "center",
                 height: 96,
@@ -183,11 +193,11 @@ export function LocationPermissionScreen({ navigation }: Props) {
                 maxWidth: 230,
               }}
             />
-            <AppText variant="h2" style={{ textAlign: "center" }}>
+            <AppText variant="h2" accessibilityRole="header" style={{ textAlign: "center" }}>
               Discover the best bites{"\n"}around you.
             </AppText>
             <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
-              Allowing location helps Hungry curate{"\n"}the perfect experience for your palate.
+              We use your location to show stalls near you. You can change it anytime.
             </AppText>
           </View>
 
@@ -196,7 +206,7 @@ export function LocationPermissionScreen({ navigation }: Props) {
               <FeatureCard key={key} {...row} />
             ))}
           </View>
-        </View>
+        </ScrollView>
 
         <View
           style={{
@@ -216,7 +226,7 @@ export function LocationPermissionScreen({ navigation }: Props) {
             loading={isContinuing}
             style={shadows.floating}
           />
-          {permissionBlocked && !manualLocation ? (
+          {permissionBlocked ? (
             <Button
               label="Open Settings"
               variant="ghost"
@@ -252,8 +262,8 @@ function FeatureCard({
   description,
 }: {
   icon: typeof UtensilsCrossed;
-  iconTone: "orange" | "warning" | "error";
-  iconBgTone: "orangeLight" | "amberLight" | "errorSoft";
+  iconTone: "orange" | "warning" | "textSecondary";
+  iconBgTone: "orangeLight" | "amberLight" | "bgSoft";
   title: string;
   description: string;
 }) {

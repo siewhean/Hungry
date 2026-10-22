@@ -1,4 +1,4 @@
-import { getVenueOpenState } from "@/utils/operatingHours";
+import { getSingaporeMinutes, getVenueOpenState } from "@/utils/operatingHours";
 
 export type StallStatus = "open" | "closing_soon" | "closed" | "unknown";
 
@@ -30,7 +30,8 @@ export function computeStallStatus(
   const [openH, openM] = hours.open.split(":").map(Number);
   const [closeH, closeM] = hours.close.split(":").map(Number);
 
-  const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
+  // Singapore time, not the device zone: a stall is open when Singapore says so.
+  const currentTimeMinutes = getSingaporeMinutes(now);
   const openTimeMinutes = openH * 60 + openM;
   let closeTimeMinutes = closeH * 60 + closeM;
 

@@ -40,12 +40,12 @@ test("H20: listUserPosts pages one author's posts on the server", async () => {
 
 test("H22: another user's Reviews tab lists only that account's reviews", async () => {
   const content = read("src/app/screens/profile/UserProfileContent.tsx");
-  assert.match(content, /reviews\.getUserReviews\(normalizedAuthorId\)/);
+  assert.match(content, /reviews\.getUserReviews\(normalizedAuthorId as string, \{/);
   assert.doesNotMatch(content, /commentsByPostId/);
   assert.match(content, /title="Couldn't load reviews"/);
   assert.match(
     read("src/lib/services/supabase/supabaseService.ts"),
-    /async getUserReviews\(userId\) \{[\s\S]*?if \(error\) throw error;/,
+    /async getUserReviews\(userId, page\) \{[\s\S]*?if \(error\) throw error;/,
   );
   const otherUserId = "batch-b-other-user";
   const reviews = await hungryService.reviews.getUserReviews(otherUserId);
@@ -171,13 +171,16 @@ test("H32/H33/H34: list screens avoid render loops, show load errors and report 
   const checklistDetail = read("src/app/screens/checklist/ChecklistDetailScreen.tsx");
   const portfolioDetail = read("src/app/screens/portfolio/PortfolioDetailScreen.tsx");
   for (const source of [checklistDetail, portfolioDetail]) {
-    assert.match(source, /useItemLabels(State)?\(/);
+    assert.match(source, /useItem(Labels|Details)(State)?\(/);
     assert.doesNotMatch(source, /items\[(checklistId|portfolioId)\] \?\? \[\]/);
   }
   assert.match(read("src/app/screens/checklist/ChecklistsHomeScreen.tsx"), /label="Retry"/);
   assert.match(read("src/app/screens/portfolio/PortfoliosHomeScreen.tsx"), /label="Retry"/);
-  assert.match(checklistDetail, /runListMutation\(\(\) => markItemTried\(item\.id\)/);
-  assert.match(portfolioDetail, /portfolio\.visibility === "public" \? \(/);
+  assert.match(
+    checklistDetail,
+    /runListMutation\(\(\) => markItemTried\(item\.id, !item\.triedAt\)/,
+  );
+  assert.match(portfolioDetail, /isLive \? \(|portfolio\.visibility === "public" \? \(/);
   assert.match(
     read("src/app/screens/checklist/ChecklistItemPickerScreen.tsx"),
     /if \(added\) navigation\.goBack\(\);/,
@@ -201,7 +204,11 @@ test("H36: collaborators are picked from people you follow and shown by name", a
   assert.match(row, /collaborator\.displayName\?\.trim\(\) \|\| "Hungry member"/);
 
   assert.match(supabaseService, /client\.rpc\("list_portfolio_collaborators"/);
-  assert.doesNotMatch(supabaseService, /from\("portfolio_collaborators"\)\s*\.select/);
+  // Only the viewer's own list ids are read from the table (Shared with me tab).
+  assert.doesNotMatch(
+    supabaseService,
+    /from\("portfolio_collaborators"\)\s*\.select\("(?!portfolio_id")/,
+  );
   assert.match(
     migration,
     /function app_private\.list_portfolio_collaborators[\s\S]*security definer/,

@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import {
+  AppState,
+  Pressable,
+  StyleSheet,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native";
 import { Play, Volume2, VolumeX } from "lucide-react-native";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
@@ -30,7 +37,9 @@ export function ZoomableVideo({
   const { componentRadii, palette } = useHungryTheme();
   // The user's own play/pause choice; playback also needs the card to be active.
   const [isPlaying, setIsPlaying] = useState(true);
-  const shouldPlay = isPlaying && isActive;
+  // Backgrounding the app pauses the video; it resumes when the app is active again.
+  const [isAppActive, setIsAppActive] = useState(AppState.currentState !== "background");
+  const shouldPlay = isPlaying && isActive && isAppActive;
   const [isMuted, setIsMuted] = useState(true);
   const [isFastForwarding, setIsFastForwarding] = useState(false);
   const [videoWidth, setVideoWidth] = useState(0);
@@ -42,6 +51,13 @@ export function ZoomableVideo({
   useEffect(() => {
     player.loop = true;
   }, [player]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (state) => {
+      setIsAppActive(state === "active");
+    });
+    return () => subscription.remove();
+  }, []);
 
   useEffect(() => {
     player.muted = isMuted;

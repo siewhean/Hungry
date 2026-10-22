@@ -3,13 +3,33 @@ import { View } from "react-native";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "../ui";
 
+interface PinColors {
+  orange: string;
+  teal: string;
+  navy: string;
+  textMuted: string;
+}
+
+/** Pin colour by what the place is; the legend below draws the same mapping. */
+export function getBuildingPinColor(buildingType: string | undefined, palette: PinColors) {
+  if (buildingType === "hawker_centre") return palette.orange;
+  if (buildingType === "food_court") return palette.teal;
+  return palette.textMuted;
+}
+
+/** Zoomed-out groups of places are drawn in navy so no pin colour is reused for them. */
+export function getClusterPinColor(palette: PinColors) {
+  return palette.navy;
+}
+
 export function BuildingLegend() {
   const { palette, radii, spacing } = useHungryTheme();
 
   const items = [
-    { label: "Hawker centre", color: palette.orange },
-    { label: "Food court", color: palette.teal },
-    { label: "Restaurant", color: palette.textMuted },
+    { label: "Hawker centre", color: getBuildingPinColor("hawker_centre", palette) },
+    { label: "Food court", color: getBuildingPinColor("food_court", palette) },
+    { label: "Other places", color: getBuildingPinColor(undefined, palette) },
+    { label: "Group of places", color: getClusterPinColor(palette) },
   ];
 
   return (

@@ -101,7 +101,6 @@ test("production bottom sheet surfaces expose contextual modal labels", () => {
     "src/app/screens/home/HomeFeedScreen.tsx",
     "src/app/screens/profile/ProfileHomeScreen.tsx",
     "src/app/screens/review/ReviewShareSheet.tsx",
-    "src/components/social/BiteCommentsSheet.tsx",
     "src/components/social/ReviewCommentsSheet.tsx",
     "src/features/post/components/LocationSearchModal.tsx",
   ];
@@ -133,8 +132,7 @@ test("production bottom sheet surfaces expose contextual modal labels", () => {
 test("profile controls discovered in runtime hierarchy expose labels and selected state", () => {
   const source = read("src/app/screens/profile/ProfileHomeScreen.tsx");
 
-  assert.match(source, /accessibilityLabel="Edit profile"/);
-  assert.match(source, /accessibilityHint="Opens profile editing"/);
+  assert.match(source, /label="Edit profile"/);
   assert.match(source, /accessibilityLabel="Share Taste Fingerprint"/);
   assert.match(source, /accessibilityHint="Opens sharing options for your Taste Fingerprint"/);
   assert.match(source, /accessibilityLabel="Show profile posts"/);

@@ -1,6 +1,7 @@
 import { runRecommendationPipeline } from "@/lib/ai/tasteEngine";
 import { getDistanceMetersFromBuildingId } from "@/lib/geo/distance";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/services/supabase/client";
+import { validateOpeningSchedule } from "@/utils/openingSchedule";
 import type {
   BuildingDetail,
   DataRepository,
@@ -16,6 +17,7 @@ import type {
   DietaryFlag,
   FoodCredAction,
   MissionType,
+  OpeningSchedule,
   SearchFilters,
   StallInteraction,
   StallPost,
@@ -201,6 +203,24 @@ function getVenueByIdIndex(): Map<string, VenueSummary> {
   return venueByIdIndex.byId;
 }
 
+let venuesByBuildingIndex: {
+  source: VenueSummary[];
+  byBuilding: Map<string, VenueSummary[]>;
+} | null = null;
+
+function getVenuesByBuildingIndex(): Map<string, VenueSummary[]> {
+  if (!venuesByBuildingIndex || venuesByBuildingIndex.source !== cachedVenues) {
+    const byBuilding = new Map<string, VenueSummary[]>();
+    for (const venue of cachedVenues) {
+      const list = byBuilding.get(venue.buildingId);
+      if (list) list.push(venue);
+      else byBuilding.set(venue.buildingId, [venue]);
+    }
+    venuesByBuildingIndex = { source: cachedVenues, byBuilding };
+  }
+  return venuesByBuildingIndex.byBuilding;
+}
+
 function getDishByIdIndex(): Map<string, DishDetail> {
   if (!dishByIdIndex || dishByIdIndex.source !== cachedDishes) {
     dishByIdIndex = {
@@ -210,7 +230,6 @@ function getDishByIdIndex(): Map<string, DishDetail> {
   }
   return dishByIdIndex.byId;
 }
-let cachedBlogPosts: BlogPost[] = [];
 let cachedStallPosts: StallPost[] = [];
 
 const REFRESH_TTL_MS = 45_000;
@@ -328,6 +347,11 @@ function mapRpcDish(row: Row): DishDetail {
     gallery,
     dietaryFlags: toStringArray(row.dietary_flags) as DietaryFlag[],
     tasteVector: mapTasteVector(toRecord(row.taste_vector)),
+    // get_dish_detail returns null for seed/curated vectors (fully trusted).
+    tasteConfidence:
+      row.taste_confidence === null || row.taste_confidence === undefined
+        ? undefined
+        : toNumber(row.taste_confidence),
   };
   const dish = mapDish(
     {
@@ -340,6 +364,29 @@ function mapRpcDish(row: Row): DishDetail {
   );
   const reviews = mapReviewRows(row.reviews);
   return reviews.length > 0 ? { ...dish, reviews } : dish;
+}
+
+/** A weekly schedule from the venues.opening_schedule column; undefined when absent or malformed. */
+function toVenueOpeningSchedule(value: unknown): OpeningSchedule | undefined {
+  const record = toRecord(value);
+  if (!record.weekly || typeof record.weekly !== "object" || Array.isArray(record.weekly)) {
+    return undefined;
+  }
+  const schedule: OpeningSchedule = {
+    weekly: record.weekly as OpeningSchedule["weekly"],
+    special: Array.isArray(record.special) ? (record.special as OpeningSchedule["special"]) : [],
+  };
+  try {
+    return validateOpeningSchedule(schedule) ? undefined : schedule;
+  } catch {
+    return undefined;
+  }
+}
+
+function toOptionalCoordinate(value: unknown): number | undefined {
+  if (value === null || value === undefined || value === "") return undefined;
+  const number = Number(value);
+  return Number.isFinite(number) && number !== 0 ? number : undefined;
 }
 
 function mapRpcVenue(row: Row): VenueSummary {
@@ -363,11 +410,15 @@ function mapRpcVenue(row: Row): VenueSummary {
       affiliateEligible: toBool(delivery.affiliateEligible ?? delivery.affiliate_eligible),
     })),
     planningArea: toString(row.planning_area, toString(building.planningArea)) || undefined,
-    imageUrl: catalogDisplayImageUrl(row) || undefined,
+    // get_venue_detail sends the already-checked photo as display_image_url.
+    imageUrl: toString(row.display_image_url).trim() || catalogDisplayImageUrl(row) || undefined,
     logoUrl: toString(row.logo_url) || undefined,
     buildingName: toString(row.building_name, toString(building.name)) || undefined,
     address: toString(row.address, toString(building.address)) || undefined,
     postalCode: toString(row.postal_code, toString(building.postalCode)) || undefined,
+    openingSchedule: toVenueOpeningSchedule(row.opening_schedule),
+    latitude: toOptionalCoordinate(row.latitude),
+    longitude: toOptionalCoordinate(row.longitude),
   };
 }
 
@@ -391,7 +442,9 @@ function mapDiscoveryFeedVenue(row: Row): VenueSummary {
     isOpen: toBool(row.is_open, false),
     liveCrowd: undefined,
     topDishId: toString(row.top_dish_id),
-    operatingHours: "",
+    // Real hours (get_discovery_feed_by_location returns them), so open state is
+    // worked out in Singapore time instead of read from the stored is_open copy.
+    operatingHours: toString(row.operating_hours),
     closureNotice: undefined,
     deliveryLinks: [],
     planningArea: toString(row.planning_area) || undefined,
@@ -433,7 +486,8 @@ function mapDiscoveryFeedDish(row: Row, venue: VenueSummary): DishDetail | undef
       availability_flags: [],
     },
     venue,
-    { gallery, dietaryFlags: [] },
+    // Discover's Halal and Dietary Needs chips read these flags on the stall's top dish.
+    { gallery, dietaryFlags: toStringArray(row.top_dish_dietary_flags) as DietaryFlag[] },
   );
 }
 
@@ -497,20 +551,6 @@ function mapBuildingDetail(row: Row): BuildingDetail {
   };
 }
 
-function mapBlogPost(row: Row): BlogPost {
-  return {
-    id: toString(row.id),
-    title: toString(row.title),
-    excerpt: toString(row.excerpt),
-    area: toString(row.area),
-    sourceName: toString(row.source_name),
-    sourceLogo: toString(row.source_logo),
-    imageUrl: toString(row.image_url),
-    url: toString(row.url),
-    relatedVenueId: toString(row.related_venue_id) || undefined,
-  };
-}
-
 function mapStallPost(row: Row): StallPost {
   const mediaUrls = toStringArray(row.media_urls);
   const tags = toStringArray(row.tags);
@@ -550,9 +590,9 @@ function mapPostRowToStallPost(
   venue?: VenueSummary,
   building?: BuildingSummary,
   dish?: DishDetail,
+  author?: Row,
 ): StallPost {
   const meta = toRecord(row.generated_content);
-  const authorMeta = toRecord(meta.author);
   const dishMeta = toRecord(meta.dish);
   const venueMeta = toRecord(meta.venue);
   const mediaUrls = mediaRows
@@ -575,9 +615,9 @@ function mapPostRowToStallPost(
       venue?.buildingId ||
       dish?.buildingId ||
       toString(venueMeta.buildingId),
-    authorName: toString(authorMeta.displayName, "Hungry User"),
+    authorName: toString(author?.display_name) || "Hungry User",
     authorLocation: venue?.name || toString(venueMeta.name) || building?.name || "",
-    authorAvatarUrl: toString(authorMeta.avatarUrl) || mediaUrl,
+    authorAvatarUrl: toString(author?.avatar_url) || mediaUrl,
     mediaType,
     mediaUrl,
     mediaUrls: mediaUrls.length > 0 ? mediaUrls : mediaUrl ? [mediaUrl] : undefined,
@@ -701,7 +741,6 @@ async function refreshCache(force = false): Promise<void> {
         dishTasteVectorsResult,
         dishDietaryFlagsResult,
         dietaryFlagsResult,
-        blogResult,
         stallResult,
         postsResult,
         hiddenPostsResult,
@@ -718,7 +757,6 @@ async function refreshCache(force = false): Promise<void> {
         client.from("dish_taste_vectors").select("*"),
         client.from("dish_dietary_flags").select("dish_id,dietary_flag_id"),
         client.from("dietary_flags").select("id,slug"),
-        client.from("blog_posts").select("*"),
         client.from("stall_posts").select("*"),
         // Bounded: only the newest posts are cached for detail lookups. The Home
         // feed itself reads the paged RPC.
@@ -757,6 +795,23 @@ async function refreshCache(force = false): Promise<void> {
               .in("post_id", cachedPostIds)
               .order("sort_order", { ascending: true })
           : { data: [] as Row[], error: null };
+      // Post authors come from their profile, never from client-written generated_content.
+      const cachedAuthorIds = [
+        ...new Set(cachedPostRows.map((row) => toString(row.author_id)).filter(Boolean)),
+      ];
+      const postAuthorsResult =
+        cachedAuthorIds.length > 0
+          ? await client
+              .from("public_profiles")
+              .select("id,display_name,avatar_url")
+              .in("id", cachedAuthorIds)
+          : { data: [] as Row[], error: null };
+      const postAuthorById = new Map(
+        (Array.isArray(postAuthorsResult.data) && !postAuthorsResult.error
+          ? (postAuthorsResult.data as unknown as Row[])
+          : []
+        ).map((row) => [toString(row.id), row]),
+      );
 
       if (Array.isArray(buildingsResult.data) && !buildingsResult.error) {
         cachedBuildings = (buildingsResult.data as unknown as Row[]).map(mapBuilding);
@@ -800,9 +855,6 @@ async function refreshCache(force = false): Promise<void> {
             ),
           );
       }
-      if (Array.isArray(blogResult.data) && !blogResult.error) {
-        cachedBlogPosts = (blogResult.data as unknown as Row[]).map(mapBlogPost);
-      }
       const legacyStallPosts =
         Array.isArray(stallResult.data) && !stallResult.error
           ? (stallResult.data as unknown as Row[]).map(mapStallPost)
@@ -829,6 +881,7 @@ async function refreshCache(force = false): Promise<void> {
             venue,
             building,
             dish,
+            postAuthorById.get(toString(row.author_id)),
           );
         });
         const publishedIds = new Set(postStallPosts.map((post) => post.id));
@@ -955,7 +1008,11 @@ export async function searchDishesViaRpc(
     // Without a location the RPC would compare the radius against the stored
     // dishes.distance_meters column, which is not the distance from the user.
     // Text queries search everywhere; only location browsing is radius-bound.
-    p_radius_meters: hasLocation && !query ? filters.radius || null : null,
+    // p_radius_meters is a Postgres integer; a larger "no limit" radius means null.
+    p_radius_meters:
+      hasLocation && !query && filters.radius > 0 && filters.radius <= 2_147_483_647
+        ? Math.round(filters.radius)
+        : null,
     p_dietary_flags: filters.dietaryFlags,
     p_limit: 20,
     p_cursor_score: null,
@@ -982,6 +1039,8 @@ export async function listDiscoveryFeedByLocationViaRpc(
     p_lng: request.lng ?? null,
     p_radius_meters: request.radiusMeters ?? null,
     p_limit: request.limit ?? null,
+    // Sent only inside a place, so everyone else keeps working against the older signature.
+    ...(request.buildingId ? { p_building_id: request.buildingId } : {}),
   });
   if (!rows) return undefined;
 
@@ -1051,9 +1110,46 @@ function getVenueDetailRows(venueId: string): Promise<Row[] | undefined> {
   return rows;
 }
 
-export async function getVenueByIdViaRpc(venueId: string): Promise<VenueSummary | undefined> {
+/** Throws when the configured get_venue_detail RPC failed (offline, timeout). */
+async function getVenueDetailRowsOrThrow(venueId: string): Promise<Row[] | undefined> {
   const rows = await getVenueDetailRows(venueId);
+  if (!rows && isSupabaseConfigured() && getSupabaseClient()) {
+    throw new Error("Couldn't load this stall.");
+  }
+  return rows;
+}
+
+/**
+ * Undefined means "no such stall". Throws when the configured RPC failed, so a
+ * network error is never shown as "Stall not found".
+ */
+export async function getVenueByIdViaRpc(venueId: string): Promise<VenueSummary | undefined> {
+  const rows = await getVenueDetailRowsOrThrow(venueId);
   return rows?.[0] ? mapRpcVenue(rows[0]) : undefined;
+}
+
+/**
+ * Stall summaries for many ids in one get_venue_summaries call (no menus). Undefined when the
+ * RPC is unavailable, so the caller can fall back to one get_venue_detail per stall.
+ */
+export async function getVenuesByIdsViaRpc(
+  venueIds: string[],
+): Promise<VenueSummary[] | undefined> {
+  const ids = [...new Set(venueIds)].slice(0, 50);
+  if (ids.length === 0) return [];
+  const rows = await rpcRows("get_venue_summaries", { p_venue_ids: ids });
+  return rows?.map(mapRpcVenue);
+}
+
+/** Name, photo, stall and price for many dishes and stalls in one get_item_details call. */
+export async function getItemDetailsViaRpc(input: {
+  dishIds: string[];
+  stallIds: string[];
+}): Promise<Row[] | undefined> {
+  const dishIds = [...new Set(input.dishIds)].slice(0, 200);
+  const stallIds = [...new Set(input.stallIds)].slice(0, 200);
+  if (dishIds.length === 0 && stallIds.length === 0) return [];
+  return rpcRows("get_item_details", { p_dish_ids: dishIds, p_stall_ids: stallIds });
 }
 
 export async function listBuildingsViaRpc(
@@ -1125,8 +1221,23 @@ export async function listVenuesByBuildingViaRpc(
   return rows.map(mapRpcVenue);
 }
 
+/**
+ * search_dishes rows put the stall photo in image_url/gallery when the dish has
+ * none. A dish without its own photo shows NoDishPhoto, never the stall photo.
+ */
+function withoutVenuePhotoFallback(row: Row, venueImageUrl: string): Row {
+  if (!venueImageUrl) return row;
+  const gallery = toStringArray(row.gallery).filter((url) => url !== venueImageUrl);
+  return {
+    ...row,
+    image_url: toString(row.image_url) === venueImageUrl ? null : row.image_url,
+    gallery,
+  };
+}
+
+/** Throws when the configured RPC failed, so offline never reads as "No menu". */
 export async function listDishesByVenueViaRpc(venueId: string): Promise<DishDetail[] | undefined> {
-  const rows = await getVenueDetailRows(venueId);
+  const rows = await getVenueDetailRowsOrThrow(venueId);
   const venue = rows?.[0];
   if (!venue) return rows ? [] : undefined;
   // Copy: the venue row is shared with getVenue through the request cache.
@@ -1160,7 +1271,8 @@ export async function listDishesByVenueViaRpc(venueId: string): Promise<DishDeta
     dishRows.push(...fresh);
     lastPage = next;
   }
-  return dishRows.map(mapRpcDish);
+  const venueImageUrl = catalogDisplayImageUrl(venue);
+  return dishRows.map((row) => mapRpcDish(withoutVenuePhotoFallback(row, venueImageUrl)));
 }
 
 export async function listPopularNearbyViaRpc(
@@ -1231,7 +1343,7 @@ const supabaseRepositoryImpl: DataRepository = {
 
   listVenuesByBuilding(buildingId: string): VenueSummary[] {
     ensureHydrated();
-    return cachedVenues.filter((venue) => venue.buildingId === buildingId);
+    return [...(getVenuesByBuildingIndex().get(buildingId) ?? [])];
   },
 
   getVenueById(venueId: string): VenueSummary | undefined {
@@ -1326,9 +1438,9 @@ const supabaseRepositoryImpl: DataRepository = {
     return ranked[0] ? cachedDishes.find((dish) => dish.id === ranked[0]?.dishId) : undefined;
   },
 
+  /** Reads was removed; blog posts are no longer fetched on hydrate. */
   listBlogPosts(): BlogPost[] {
-    ensureHydrated();
-    return cachedBlogPosts;
+    return [];
   },
 
   listStallPosts(): StallPost[] {
@@ -1464,6 +1576,57 @@ export function invalidateSupabaseRepositoryCache(): void {
   hydrated = false;
   hydratedAt = 0;
   void refreshCache(true);
+}
+
+/**
+ * Reload only one venue's dishes into the cache. A merchant dish save changes that venue's menu
+ * and nothing else, so it does not need the whole catalog, posts and blog download again.
+ */
+export async function refreshSupabaseRepositoryVenueDishes(venueId: string): Promise<void> {
+  if (!venueId || !isSupabaseConfigured()) return;
+  // Nothing cached yet: the first full hydration will load this venue with everything else.
+  if (!hydrated) return;
+  const client = getSupabaseClient();
+  if (!client) return;
+  const dishesResult = await client.from("dishes").select("*").eq("venue_id", venueId);
+  if (dishesResult.error || !Array.isArray(dishesResult.data)) {
+    // Fall back to the full reload rather than leave a stale menu.
+    await refreshSupabaseRepositoryCache();
+    return;
+  }
+  const dishRows = (dishesResult.data as unknown as Row[]).filter(isCatalogMenuDisplayable);
+  const dishIds = dishRows.map((row) => toString(row.id)).filter(Boolean);
+  const [imagesResult, tasteResult, dishFlagsResult, flagsResult] =
+    dishIds.length > 0
+      ? await Promise.all([
+          client
+            .from("dish_images")
+            .select(
+              "dish_id,url,sort_order,media_approved_for_display,media_rights_status,media_source_url",
+            )
+            .in("dish_id", dishIds)
+            .order("sort_order"),
+          client.from("dish_taste_vectors").select("*").in("dish_id", dishIds),
+          client
+            .from("dish_dietary_flags")
+            .select("dish_id,dietary_flag_id")
+            .in("dish_id", dishIds),
+          client.from("dietary_flags").select("id,slug"),
+        ])
+      : [null, null, null, null];
+  const rowsOf = (result: { data: unknown; error: unknown } | null): Row[] =>
+    result && Array.isArray(result.data) && !result.error ? (result.data as unknown as Row[]) : [];
+  const presentationByDishId = buildDishPresentationMap(
+    rowsOf(imagesResult),
+    rowsOf(tasteResult),
+    rowsOf(dishFlagsResult),
+    rowsOf(flagsResult),
+  );
+  const venue = cachedVenues.find((candidate) => candidate.id === venueId);
+  const mapped = dishRows.map((row) =>
+    mapDish(row, venue, presentationByDishId.get(toString(row.id))),
+  );
+  cachedDishes = [...cachedDishes.filter((dish) => dish.venueId !== venueId), ...mapped];
 }
 
 export async function refreshSupabaseRepositoryCache(): Promise<void> {

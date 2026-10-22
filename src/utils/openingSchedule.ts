@@ -187,6 +187,15 @@ export function formatScheduleRows(schedule: OpeningSchedule): { label: string; 
   }));
 }
 
+/** Today's hours in Singapore from the schedule (a special day wins), e.g. "10am-8pm" or "Closed". */
+export function formatScheduleToday(schedule: OpeningSchedule, now: Date = new Date()): string {
+  const { dateKey, dayIndex } = getSingaporeClock(now);
+  const special = schedule.special?.find((day) => day.date === dateKey);
+  return formatRanges(
+    special ? special.ranges : (schedule.weekly[OPENING_DAY_KEYS[dayIndex]] ?? []),
+  );
+}
+
 /** The free-text line saved alongside the schedule; parseOperatingHours reads it back. */
 export function formatScheduleText(schedule: OpeningSchedule): string {
   if (!hasWeeklyHours(schedule)) return "";

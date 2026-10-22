@@ -26,9 +26,11 @@ test("Discover feed falls back to the radius search and ranks by computed distan
 test("Discover asks for an area instead of asserting the default location", () => {
   const screen = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
 
-  // No OS permission prompt on mount; onboarding and Settings own that.
-  assert.doesNotMatch(screen, /grantLocation/);
-  assert.match(screen, /needsDiscoverAreaChoice \? "WHERE ARE YOU\?" : "YOU ARE AT"/);
+  // No OS permission prompt on mount; only the "Use current location" press asks.
+  assert.doesNotMatch(screen, /useEffect\(\(\) => \{[^}]*grantLocation\(/);
+  assert.match(screen, /const handleUseCurrentLocation = useCallback\(async \(\) => \{/);
+  assert.match(screen, /needsDiscoverAreaChoice\s*\? "WHERE ARE YOU\?"/);
+  assert.match(screen, /: "YOU ARE AT"/);
   assert.match(
     screen,
     /navigation\.navigate\("OnboardingStack", \{ screen: "ManualLocationPicker" \}\)/,
@@ -53,7 +55,7 @@ test("Discover rails no longer claim prep times or curation they do not have", (
   const screen = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
 
   assert.doesNotMatch(screen, /&lt; 15 MIN|★ CURATED|MUST ORDER|Editor&apos;s Choice/);
-  assert.match(screen, /Most reviewed in \{discoverLocationLabel\}/);
+  assert.match(screen, /title=\{`Most reviewed \$\{trendingAreaPhrase\}`\}/);
   assert.match(screen, /Top rated/);
 });
 
@@ -64,7 +66,8 @@ test("Top rated rail never falls back to trending dishes under its 4.4+ label", 
 
   assert.ok(editorChoice, "unfilteredEditorChoiceCards should exist");
   assert.doesNotMatch(editorChoice, /trending/);
-  assert.match(screen, /bite\.rating > 0 \? \(/);
+  // A dish with no reviews shows no rating instead of "0.0".
+  assert.match(screen, /const hasRating = bite\.cravingCount > 0 && bite\.rating > 0;/);
 });
 
 test("Crave swipes act on the current card and record taste signals", () => {
@@ -142,10 +145,17 @@ test("Search hides empty sections and controls the backend ignores", () => {
   // noodles/rice into a cuisine filter, so the landing offers just those chips.
   assert.doesNotMatch(home, /suggestedDish|collections|TasteFilter|getSearchResultsAsync/);
   assert.match(home, /const CATALOG_CATEGORIES: SearchCategory\[\] = \["noodles", "rice"\]/);
-  assert.match(results, /radiusMeters: query\.trim\(\) \? undefined : 3_000/);
+  const browseGrid = readRepoFile("src/features/search/browseGrid.ts");
+  assert.match(
+    browseGrid,
+    /radiusMeters: query \|\| input\.buildingId \? undefined : BROWSE_RADIUS_METERS/,
+  );
+  assert.match(browseGrid, /BROWSE_RADIUS_METERS = 3_000/);
+  assert.doesNotMatch(results, /rawCatalogRequest/);
+  // Only location browsing is radius-bound, and never with a radius past Postgres int range.
   assert.match(
     repository,
-    /p_radius_meters: hasLocation && !query \? filters\.radius \|\| null : null/,
+    /p_radius_meters:\s*hasLocation && !query && filters\.radius > 0 && filters\.radius <= 2_147_483_647\s*\? Math\.round\(filters\.radius\)\s*: null/,
   );
 });
 
@@ -154,7 +164,10 @@ test("Search browse: guests can browse, chips never show everything, errors stay
 
   // The catalog is guest-readable, so there is no sign-in wall on browse.
   assert.doesNotMatch(results, /Sign in to browse the full directory/);
-  assert.match(results, /dietaryFlags: filter === "halal" \? \["halal"\] : \[\]/);
+  assert.match(
+    readRepoFile("src/features/search/browseGrid.ts"),
+    /dietaryFlags: input\.filters\.includes\("Halal"\) \? \["halal"\] : \[\]/,
+  );
   assert.doesNotMatch(results, /body=\{error\}/);
   assert.match(results, /errorMessage=\{error\}/);
   assert.match(results, /reportError\(loadError/);

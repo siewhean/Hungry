@@ -40,20 +40,20 @@ test("merchant FeaturedVisitors screen manages review-backed pins through servic
     screen,
     [
       /merchant\.listPopularVisitorPins\(activeOutlet\.id\)/,
-      /merchant\.listPopularVisitorCandidates\(activeOutlet\.id\)/,
+      /merchant\.listPopularVisitorCandidates\(activeOutlet\.id, \{ limit: CANDIDATE_PAGE_SIZE \}\)/,
       /merchant\.pinPopularVisitor\(\s*activeOutlet\.id,\s*candidate\.reviewId,?\s*\)/,
       /merchant\.unpinPopularVisitor\(pinId\)/,
       /merchant\.reorderPopularVisitorPins\(/,
       /pins\.length >= 6/,
       /setPins\(previousPins\)/,
-      /setError\(caughtError instanceof Error \? caughtError\.message : "Unable to pin visitor\."\)/,
+      /setActionError\(\s*caughtError instanceof Error \? caughtError\.message : "Unable to pin visitor\.",?\s*\)/,
     ],
     "FeaturedVisitorsScreen",
   );
   assertSourceIncludes(
     types,
     [
-      /listPopularVisitorCandidates\(outletId: string\): Promise<PopularVisitorCandidate\[\]>/,
+      /listPopularVisitorCandidates\(\s*outletId: string,\s*options\?: \{ limit\?: number; before\?: string \},?\s*\): Promise<PopularVisitorCandidate\[\]>/,
       /listPopularVisitorPins\(outletId: string\): Promise<PopularVisitorPin\[\]>/,
       /pinPopularVisitor\(outletId: string, reviewId: string\): Promise<PopularVisitorPin>/,
       /unpinPopularVisitor\(pinId: string\): Promise<void>/,
@@ -80,7 +80,7 @@ test("merchant FeaturedVisitors screen manages review-backed pins through servic
       /public_profiles/,
       /safeProfileId/,
       /onConflict: "outlet_id,review_id"/,
-      /failedUpdate\?\.error/,
+      /client\.rpc\("reorder_popular_visitor_pins"/,
     ],
     "Supabase popular visitor service",
   );

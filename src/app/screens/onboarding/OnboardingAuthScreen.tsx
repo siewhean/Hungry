@@ -20,7 +20,7 @@ import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
 import { trackAuthFailed, trackAuthScreenViewed } from "@/features/auth/authAnalytics";
-import { getMockSignUpFailure } from "@/features/auth/mockAuth";
+import { getAuthErrorCode, getAuthFailureMessage } from "@/features/auth/authErrors";
 import {
   isWeakPasswordError,
   PASSWORD_RULES,
@@ -35,6 +35,8 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { AuthProviderButton } from "../auth/AuthProviderButton";
+import { AUTH_EYE_BUTTON_STYLE } from "../auth/authEyeButton";
+import { AuthTermsNotice } from "../auth/AuthTermsNotice";
 import {
   AUTH_COPY,
   getProviderErrorMessage,
@@ -49,14 +51,18 @@ type Tab = "signup" | "login";
 type SignUpValues = { displayName: string; email: string; password: string };
 type LoginValues = { email: string; password: string };
 
-export function OnboardingAuthScreen({ navigation }: Props) {
-  const { palette, spacing } = useHungryTheme();
+export function OnboardingAuthScreen({ navigation, route }: Props) {
+  const dishName = route.params?.dishName;
+  const { componentRadii, palette, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const oauthEnabled = FEATURE_FLAGS.oauthProvidersEnabled;
 
   const [tab, setTab] = useState<Tab>("signup");
   const [showPassword, setShowPassword] = useState(false);
   const [providerInFlight, setProviderInFlight] = useState<AuthProvider | null>(null);
+  // Inline copy of the last server error (a toast alone passes before it can be read, and
+  // has no red border or screen-reader role), as on the shared sign-in screens.
+  const [formError, setFormError] = useState<string | null>(null);
   const signUpEmailRef = useRef<TextInput>(null);
   const signUpPasswordRef = useRef<TextInput>(null);
   const loginPasswordRef = useRef<TextInput>(null);
@@ -131,90 +137,72 @@ export function OnboardingAuthScreen({ navigation }: Props) {
 
   const handleSignUp = signUpForm.handleSubmit(async (values) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setFormError(null);
     try {
-      const dataSource = getConfiguredDataSource();
-      if (dataSource === "supabase") {
-        const session = await getHungryService().auth.signUp(
-          values.email,
-          values.password,
-          values.displayName,
-        );
-        if (!session) {
-          showToast({ message: AUTH_COPY.signUp.emailVerificationToast, tone: "success" });
-          navigation.getParent<NavigationProp<RootStackParamList>>()?.reset({
-            index: 0,
-            routes: [
-              {
-                name: "AuthStack",
-                params: {
-                  screen: "EmailVerification",
-                  params: { email: values.email, completedOnboarding: true },
-                },
+      const session = await getHungryService().auth.signUp(
+        values.email,
+        values.password,
+        values.displayName,
+      );
+      if (!session) {
+        showToast({ message: AUTH_COPY.signUp.emailVerificationToast, tone: "success" });
+        navigation.getParent<NavigationProp<RootStackParamList>>()?.reset({
+          index: 0,
+          routes: [
+            {
+              name: "AuthStack",
+              params: {
+                screen: "EmailVerification",
+                params: { email: values.email, completedOnboarding: true },
               },
-            ],
-          });
-          return;
-        }
-        await applySessionProfile(session);
-        completeAuth({ authProvider: "email", isNewUser: true });
-        finishOnboarding();
+            },
+          ],
+        });
         return;
       }
-      const failure = getMockSignUpFailure(values.email);
-      if (failure) {
-        showToast({ message: failure.message, tone: "error" });
-        return;
-      }
+      await applySessionProfile(session);
       completeAuth({ authProvider: "email", isNewUser: true });
       finishOnboarding();
     } catch (err) {
       trackAuthFailed("sign_up", "email", err);
-      const code =
-        (err as { error_code?: string; code?: string })?.error_code ??
-        (err as { error_code?: string; code?: string })?.code;
-      if (isWeakPasswordError(err)) {
-        showToast({ message: WEAK_PASSWORD_MESSAGE, tone: "error" });
-      } else if (code === "over_email_send_rate_limit") {
-        showToast({ message: AUTH_COPY.signUp.tooManyAttemptsToast, tone: "error" });
-      } else if (code === "email_address_invalid") {
-        showToast({ message: AUTH_COPY.signUp.invalidEmailToast, tone: "error" });
-      } else {
-        showToast({ message: AUTH_COPY.signUp.genericErrorToast, tone: "error" });
-      }
+      const code = getAuthErrorCode(err);
+      setFormError(
+        isWeakPasswordError(err)
+          ? WEAK_PASSWORD_MESSAGE
+          : code === "email_address_invalid"
+            ? AUTH_COPY.signUp.invalidEmailToast
+            : code === "user_already_exists" || code === "email_exists"
+              ? AUTH_COPY.signUp.emailTakenToast
+              : getAuthFailureMessage(err, AUTH_COPY.signUp.genericErrorToast),
+      );
     }
   });
 
   const handleLogin = loginForm.handleSubmit(async (values) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setFormError(null);
     try {
-      const dataSource = getConfiguredDataSource();
-      if (dataSource === "supabase") {
-        const session = await getHungryService().auth.signIn(values.email, values.password);
-        await applySessionProfile(session);
-        completeAuth({ authProvider: "email", trackSignInEvent: false });
-        finishOnboarding();
-        return;
-      }
+      const session = await getHungryService().auth.signIn(values.email, values.password);
+      await applySessionProfile(session);
       completeAuth({ authProvider: "email", trackSignInEvent: false });
       finishOnboarding();
     } catch (err) {
       trackAuthFailed("sign_in", "email", err);
-      const code =
-        (err as { error_code?: string; code?: string })?.error_code ??
-        (err as { error_code?: string; code?: string })?.code;
-      const message =
+      const code = getAuthErrorCode(err);
+      setFormError(
         code === "invalid_credentials"
           ? AUTH_COPY.login.invalidCredentialsToast
           : code === "email_not_confirmed"
             ? AUTH_COPY.login.emailNotConfirmedToast
-            : AUTH_COPY.login.genericErrorToast;
-      showToast({ message, tone: "error" });
+            : getAuthFailureMessage(err, AUTH_COPY.login.genericErrorToast),
+      );
     }
   });
 
   const handleProvider = async (provider: AuthProvider) => {
     if (isBusy) return;
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setFormError(null);
     setProviderInFlight(provider);
     try {
       if (getConfiguredDataSource() === "supabase") {
@@ -234,10 +222,12 @@ export function OnboardingAuthScreen({ navigation }: Props) {
         cancelled: AUTH_COPY.signUp.providerCancelledToast,
         failed: AUTH_COPY.signUp.genericErrorToast,
       });
-      showToast({
-        message,
-        tone: message === AUTH_COPY.signUp.providerCancelledToast ? "warning" : "error",
-      });
+      if (message === AUTH_COPY.signUp.providerCancelledToast) {
+        // Cancelling is not an error: a passing toast, no red banner.
+        showToast({ message, tone: "warning" });
+      } else {
+        setFormError(message);
+      }
     } finally {
       setProviderInFlight(null);
     }
@@ -274,10 +264,12 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                 accessibilityRole="header"
                 style={{ marginBottom: spacing[1] }}
               >
-                {"Save your\ntaste profile"}
+                {dishName ? `Sign in to save ${dishName}` : "Save your\ntaste profile"}
               </AppText>
               <AppText variant="bodySmall" tone="secondary">
-                Create an account to keep your preferences and discover more.
+                {dishName
+                  ? "Create an account or sign in, and we'll save it for you."
+                  : "Create an account to keep your preferences and discover more."}
               </AppText>
             </View>
 
@@ -294,7 +286,10 @@ export function OnboardingAuthScreen({ navigation }: Props) {
               {(["signup", "login"] as Tab[]).map((t) => (
                 <Pressable
                   key={t}
-                  onPress={() => setTab(t)}
+                  onPress={() => {
+                    setFormError(null);
+                    setTab(t);
+                  }}
                   accessibilityRole="tab"
                   accessibilityState={{ selected: tab === t }}
                   style={{
@@ -378,7 +373,8 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                     render={({ field: { onChange, value } }) => (
                       <View style={{ gap: spacing[1] }}>
                         <Input
-                          placeholder="Your name"
+                          label={AUTH_COPY.signUp.displayNameLabel}
+                          helperText={AUTH_COPY.signUp.displayNameHelper}
                           value={value}
                           onChangeText={onChange}
                           textContentType="name"
@@ -386,13 +382,10 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                           returnKeyType="next"
                           submitBehavior="submit"
                           onSubmitEditing={() => signUpEmailRef.current?.focus()}
+                          error={!!signUpErrors.displayName}
+                          errorText={signUpErrors.displayName?.message}
                           leftIcon={<User color={palette.textMuted} size={18} />}
                         />
-                        {signUpErrors.displayName ? (
-                          <AppText variant="bodySmall" style={{ color: palette.error }}>
-                            {signUpErrors.displayName.message}
-                          </AppText>
-                        ) : null}
                       </View>
                     )}
                   />
@@ -404,7 +397,7 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                       <View style={{ gap: spacing[1] }}>
                         <Input
                           ref={signUpEmailRef}
-                          placeholder="Email address"
+                          label={AUTH_COPY.login.emailLabel}
                           value={value}
                           onChangeText={onChange}
                           autoCapitalize="none"
@@ -415,13 +408,10 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                           returnKeyType="next"
                           submitBehavior="submit"
                           onSubmitEditing={() => signUpPasswordRef.current?.focus()}
+                          error={!!signUpErrors.email}
+                          errorText={signUpErrors.email?.message}
                           leftIcon={<Mail color={palette.textMuted} size={18} />}
                         />
-                        {signUpErrors.email ? (
-                          <AppText variant="bodySmall" style={{ color: palette.error }}>
-                            {signUpErrors.email.message}
-                          </AppText>
-                        ) : null}
                       </View>
                     )}
                   />
@@ -433,7 +423,8 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                       <View style={{ gap: spacing[1] }}>
                         <Input
                           ref={signUpPasswordRef}
-                          placeholder="Password"
+                          label={AUTH_COPY.signUp.passwordLabel}
+                          helperText={AUTH_COPY.signUp.passwordRules}
                           value={value}
                           onChangeText={onChange}
                           secureTextEntry={!showPassword}
@@ -442,6 +433,8 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                           passwordRules={PASSWORD_RULES}
                           returnKeyType="go"
                           onSubmitEditing={() => void handleSignUp()}
+                          error={!!signUpErrors.password}
+                          errorText={signUpErrors.password?.message}
                           leftIcon={<Lock color={palette.textMuted} size={18} />}
                           rightIcon={
                             <Pressable
@@ -449,6 +442,7 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                               accessibilityLabel={showPassword ? "Hide password" : "Show password"}
                               onPress={() => setShowPassword((p) => !p)}
                               hitSlop={8}
+                              style={AUTH_EYE_BUTTON_STYLE}
                             >
                               {showPassword ? (
                                 <EyeOff color={palette.textMuted} size={18} />
@@ -458,14 +452,25 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                             </Pressable>
                           }
                         />
-                        {signUpErrors.password ? (
-                          <AppText variant="bodySmall" style={{ color: palette.error }}>
-                            {signUpErrors.password.message}
-                          </AppText>
-                        ) : null}
                       </View>
                     )}
                   />
+                  {formError ? (
+                    <View
+                      accessible
+                      accessibilityRole="alert"
+                      accessibilityLiveRegion="polite"
+                      style={{
+                        backgroundColor: palette.errorSoft,
+                        borderRadius: componentRadii.card,
+                        padding: spacing[3],
+                      }}
+                    >
+                      <AppText variant="bodySmall" style={{ color: palette.error }}>
+                        {formError}
+                      </AppText>
+                    </View>
+                  ) : null}
                   <Button
                     label="Create account"
                     onPress={handleSignUp}
@@ -474,6 +479,7 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                     variant="primary"
                     style={{ marginTop: spacing[2] }}
                   />
+                  <AuthTermsNotice />
                 </>
               ) : (
                 <>
@@ -484,7 +490,7 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                     render={({ field: { onChange, value } }) => (
                       <View style={{ gap: spacing[1] }}>
                         <Input
-                          placeholder="Email address"
+                          label={AUTH_COPY.login.emailLabel}
                           value={value}
                           onChangeText={onChange}
                           autoCapitalize="none"
@@ -495,13 +501,10 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                           returnKeyType="next"
                           submitBehavior="submit"
                           onSubmitEditing={() => loginPasswordRef.current?.focus()}
+                          error={!!loginErrors.email}
+                          errorText={loginErrors.email?.message}
                           leftIcon={<Mail color={palette.textMuted} size={18} />}
                         />
-                        {loginErrors.email ? (
-                          <AppText variant="bodySmall" style={{ color: palette.error }}>
-                            {loginErrors.email.message}
-                          </AppText>
-                        ) : null}
                       </View>
                     )}
                   />
@@ -513,7 +516,7 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                       <View style={{ gap: spacing[1] }}>
                         <Input
                           ref={loginPasswordRef}
-                          placeholder="Password"
+                          label={AUTH_COPY.login.passwordLabel}
                           value={value}
                           onChangeText={onChange}
                           secureTextEntry={!showPassword}
@@ -521,6 +524,8 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                           autoComplete="current-password"
                           returnKeyType="go"
                           onSubmitEditing={() => void handleLogin()}
+                          error={!!loginErrors.password}
+                          errorText={loginErrors.password?.message}
                           leftIcon={<Lock color={palette.textMuted} size={18} />}
                           rightIcon={
                             <Pressable
@@ -528,6 +533,7 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                               accessibilityLabel={showPassword ? "Hide password" : "Show password"}
                               onPress={() => setShowPassword((p) => !p)}
                               hitSlop={8}
+                              style={AUTH_EYE_BUTTON_STYLE}
                             >
                               {showPassword ? (
                                 <EyeOff color={palette.textMuted} size={18} />
@@ -537,11 +543,6 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                             </Pressable>
                           }
                         />
-                        {loginErrors.password ? (
-                          <AppText variant="bodySmall" style={{ color: palette.error }}>
-                            {loginErrors.password.message}
-                          </AppText>
-                        ) : null}
                       </View>
                     )}
                   />
@@ -557,6 +558,22 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                       {AUTH_COPY.login.forgotPasswordLink}
                     </AppText>
                   </Pressable>
+                  {formError ? (
+                    <View
+                      accessible
+                      accessibilityRole="alert"
+                      accessibilityLiveRegion="polite"
+                      style={{
+                        backgroundColor: palette.errorSoft,
+                        borderRadius: componentRadii.card,
+                        padding: spacing[3],
+                      }}
+                    >
+                      <AppText variant="bodySmall" style={{ color: palette.error }}>
+                        {formError}
+                      </AppText>
+                    </View>
+                  ) : null}
                   <Button
                     label="Sign in"
                     onPress={handleLogin}

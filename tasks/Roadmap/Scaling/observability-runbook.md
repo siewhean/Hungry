@@ -38,6 +38,14 @@ Date: 2026-06-07
 5. If data integrity or security is involved, escalate as SEV-1 or SEV-2.
 6. Record incident timeline and follow-up tasks.
 
+## Error Tracking and Alerts (2026-10-22)
+
+- App: `react-native` Sentry project, `EXPO_PUBLIC_SENTRY_DSN`; `reportError` in `src/lib/monitoring/reportError.ts`.
+- Edge Functions: `edge-functions` Sentry project, DSN set as the Supabase function secret `SENTRY_DSN` (`supabase secrets set SENTRY_DSN=... --project-ref frluxwpqqyomiqmjzavd`), then redeploy the functions. Optional `APP_ENV` secret sets the Sentry environment (default `production`). Without the secret the wrapper does nothing.
+- Edge events carry only the error, stack, and tags (`function`, `region`, `execution_id`); request, user, tokens, and emails are stripped (`_shared/sentryScrub.ts`). 5xx responses are reported as `<function> responded <status>: <error code>`.
+- Alert: Sentry alert "New issue (app and Edge Functions) - email sh" emails on the first event of any new issue in either project. Sentry can only email members of the organisation, so it goes to the account owner's Sentry login, not the support inbox.
+- CI contract: `src/lib/monitoring/error-reporting-contracts.test.ts`.
+
 ## Remaining Proof
 
 - Production/staging Sentry DSN verification.

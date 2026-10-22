@@ -87,6 +87,42 @@ export function blendedMatchScore(user: TasteVector, dish: TasteVector): number 
   return 0.7 * cos + 0.3 * normDist;
 }
 
+const NEUTRAL_AXIS = 5;
+const TASTE_AXES: (keyof TasteVector)[] = ["sweet", "spicy", "sour", "salty", "rich", "aromatic"];
+
+/**
+ * True once a vector differs from the all-5s guest default, i.e. the person took
+ * the quiz or the app has learned something. A guest's "match" means nothing.
+ */
+export function hasPersonalTasteProfile(vector: TasteVector): boolean {
+  return TASTE_AXES.some((axis) => vector[axis] !== NEUTRAL_AXIS);
+}
+
+/**
+ * Match percent for display, 0-100. Both vectors are centred on the neutral 5
+ * before the cosine, so an all-positive 0-10 dish no longer looks close to
+ * everyone. 50 means no particular lean either way; opposite tastes go to 0.
+ * (The blended score above keeps ranking; this one is only for showing a number.)
+ */
+export function tasteMatchPercent(user: TasteVector, dish: TasteVector): number {
+  const centre = (vector: TasteVector): TasteVector => ({
+    sweet: vector.sweet - NEUTRAL_AXIS,
+    spicy: vector.spicy - NEUTRAL_AXIS,
+    sour: vector.sour - NEUTRAL_AXIS,
+    salty: vector.salty - NEUTRAL_AXIS,
+    rich: vector.rich - NEUTRAL_AXIS,
+    aromatic: vector.aromatic - NEUTRAL_AXIS,
+  });
+  const cos = cosineSimilarity(centre(user), centre(dish));
+  // cosineSimilarity returns 0 for a zero vector, which maps to the neutral 50.
+  return Math.round(((Math.max(-1, Math.min(1, cos)) + 1) / 2) * 100);
+}
+
+/** Per-axis match for the "Palate match" bars: a 5-point gap or more reads as 0. */
+export function tasteAxisMatchPercent(userValue: number, dishValue: number): number {
+  return Math.round(Math.max(0, 1 - Math.abs(userValue - dishValue) / 5) * 100);
+}
+
 // ─── Recommendation ───────────────────────────────────────────────────────────
 
 export interface ScoredDish {

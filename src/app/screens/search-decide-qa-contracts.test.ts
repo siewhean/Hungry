@@ -12,7 +12,7 @@ test("Decide for me measures its radius from the user's location", () => {
       /const currentLocation = useLocationStore\(\(state\) => state\.currentLocation\)/,
       /latitude: location\.latitude,\s*longitude: location\.longitude,/,
       /getEffectiveLocation\(\{ permission: locationPermission, currentLocation, manualCoordinate \}\)/,
-      /searchRadius,\s*effectiveLocation,\s*profile\.maxDishBudget,/,
+      /searchRadius,\s*\{ latitude: locationLatitude, longitude: locationLongitude \},\s*profile\.maxDishBudget,/,
     ],
     "DecideForMeResultScreen candidates",
   );

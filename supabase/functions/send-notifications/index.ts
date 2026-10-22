@@ -1,10 +1,12 @@
 // @ts-nocheck
 /* eslint-disable import/no-unresolved */
+import { reportFunctionError, serveWithSentry } from "../_shared/sentry.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
 import { timingSafeEqual } from "../_shared/timingSafeEqual.ts";
 
 // Drains public.notification_jobs (filled by the dishes trigger, the weekly
-// picks and meal-time crons and the merchant low-rating reviews trigger) and sends Expo
+// picks, meal-time and like-digest crons, the follow-request trigger and the merchant
+// low-rating reviews trigger) and sends Expo
 // pushes. Each job is rechecked before sending: the user (or, for low-rating
 // alerts, the merchant account) still opted in, the dish (if any) still exists
 // and is not sold out, the review (if any) is not hidden by moderation, outside
@@ -23,6 +25,8 @@ const DEFAULT_PREFERENCES = {
   stall_updates: false,
   weekly_picks: true,
   mealtime_suggestions: false,
+  // Likes, follows and follow requests: on by default, one switch.
+  social_activity: true,
   quiet_start_hour: 22,
   quiet_end_hour: 8,
   weekly_cap: 3,
@@ -38,6 +42,9 @@ const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
 const ANDROID_CHANNEL_ID = "stall-updates";
 const MERCHANT_LOW_RATING = "merchant_low_rating";
 const MEALTIME = "mealtime";
+// A follow request is something a person is waiting on, so it never counts toward the
+// weekly cap and is never held back by it. Like digests (one a day) do count.
+const SOCIAL_FOLLOW_REQUEST = "social_follow_request";
 
 function toJson(status: number, body: JsonObject): Response {
   return new Response(JSON.stringify(body), {
@@ -79,7 +86,7 @@ function isSoldOut(flags: unknown): boolean {
   );
 }
 
-Deno.serve(async (request) => {
+serveWithSentry("send-notifications", async (request) => {
   if (request.method !== "POST") {
     return toJson(405, { error: "method_not_allowed" });
   }
@@ -145,7 +152,7 @@ Deno.serve(async (request) => {
       .from("notification_jobs")
       .select("user_id")
       .eq("status", "sent")
-      .neq("category", MERCHANT_LOW_RATING)
+      .not("category", "in", `(${MERCHANT_LOW_RATING},${SOCIAL_FOLLOW_REQUEST})`)
       .gte("sent_at", new Date(now.getTime() - WEEK_MS).toISOString())
       .in("user_id", userIds),
     client.from("reviews").select("id").in("id", reviewIds),
@@ -194,11 +201,25 @@ Deno.serve(async (request) => {
       .eq("id", jobId);
   };
 
+  // Jobs that are skipped or deferred send nothing, so their status updates are grouped by
+  // identical fields and written once each after the loop instead of one UPDATE per job.
+  const queuedFinishes = new Map<string, { fields: JsonObject; jobIds: string[] }>();
+  // Tokens Expo reports as unregistered are removed together after the loop.
+  const deadTokensToRemove = new Set<string>();
+  const queueFinish = (jobId: string, fields: JsonObject) => {
+    const key = JSON.stringify(fields);
+    const group = queuedFinishes.get(key) ?? { fields, jobIds: [] };
+    group.jobIds.push(jobId);
+    queuedFinishes.set(key, group);
+  };
+
   for (const job of jobs) {
     const pref = { ...DEFAULT_PREFERENCES, ...(prefsByUser.get(job.user_id) ?? {}) };
     const isWeeklyPicks = job.category === "weekly_picks";
     const isLowRating = job.category === MERCHANT_LOW_RATING;
     const isMealtime = job.category === MEALTIME;
+    const isSocial = job.category.startsWith("social_");
+    const isFollowRequest = job.category === SOCIAL_FOLLOW_REQUEST;
     const dish = job.dish_id ? dishesById.get(job.dish_id) : null;
     let skipReason: string | null = null;
 
@@ -206,11 +227,13 @@ Deno.serve(async (request) => {
     else if (
       isLowRating
         ? lowRatingOffAccounts.has(job.merchant_account_id)
-        : isMealtime
-          ? !pref.mealtime_suggestions
-          : isWeeklyPicks
-            ? !pref.weekly_picks
-            : !pref.stall_updates
+        : isSocial
+          ? !pref.social_activity
+          : isMealtime
+            ? !pref.mealtime_suggestions
+            : isWeeklyPicks
+              ? !pref.weekly_picks
+              : !pref.stall_updates
     )
       skipReason = "opted_out";
     else if (
@@ -222,23 +245,30 @@ Deno.serve(async (request) => {
     else if (
       isLowRating
         ? !liveReviewIds.has(job.review_id)
-        : !isMealtime && !isWeeklyPicks && (!dish || isSoldOut(dish.availability_flags))
+        : !isMealtime &&
+          !isWeeklyPicks &&
+          !isSocial &&
+          (!dish || isSoldOut(dish.availability_flags))
     )
       skipReason = "no_longer_relevant";
-    else if (!isLowRating && (sentThisWeek.get(job.user_id) ?? 0) >= pref.weekly_cap)
+    else if (
+      !isLowRating &&
+      !isFollowRequest &&
+      (sentThisWeek.get(job.user_id) ?? 0) >= pref.weekly_cap
+    )
       skipReason = "weekly_cap";
     else if (!(tokensByUser.get(job.user_id) ?? []).length) skipReason = "no_device";
 
     if (skipReason) {
       results.skipped += 1;
-      await finish(job.id, { status: "skipped", skip_reason: skipReason });
+      queueFinish(job.id, { status: "skipped", skip_reason: skipReason });
       continue;
     }
 
     // Merchant Centre has no quiet-hours setting, so low-rating alerts are sent right away.
     if (!isLowRating && isQuietHour(hour, pref.quiet_start_hour, pref.quiet_end_hour)) {
       results.deferred += 1;
-      await finish(job.id, { status: "pending", attempts: Math.max(0, job.attempts - 1) });
+      queueFinish(job.id, { status: "pending", attempts: Math.max(0, job.attempts - 1) });
       continue;
     }
 
@@ -269,16 +299,16 @@ Deno.serve(async (request) => {
         if (ticket?.status === "ok") delivered = true;
         if (ticket?.details?.error === "DeviceNotRegistered") deadTokens.push(userTokens[index]);
       });
-      if (deadTokens.length) {
-        await client.from("user_push_tokens").delete().in("token", deadTokens);
-      }
-    } catch {
+      deadTokens.forEach((token) => deadTokensToRemove.add(token));
+    } catch (error) {
       delivered = false;
+      await reportFunctionError("send-notifications", error, { stage: "deliver_push" });
     }
 
     if (delivered) {
       results.sent += 1;
-      if (!isLowRating) sentThisWeek.set(job.user_id, (sentThisWeek.get(job.user_id) ?? 0) + 1);
+      if (!isLowRating && !isFollowRequest)
+        sentThisWeek.set(job.user_id, (sentThisWeek.get(job.user_id) ?? 0) + 1);
       await finish(job.id, { status: "sent", sent_at: new Date().toISOString() });
     } else {
       results.failed += 1;
@@ -288,6 +318,22 @@ Deno.serve(async (request) => {
       });
     }
   }
+
+  if (deadTokensToRemove.size > 0) {
+    await client
+      .from("user_push_tokens")
+      .delete()
+      .in("token", [...deadTokensToRemove]);
+  }
+  await Promise.all(
+    // n-plus-one-ok: one UPDATE per distinct set of fields, not per job.
+    [...queuedFinishes.values()].map(({ fields, jobIds }) =>
+      client
+        .from("notification_jobs")
+        .update({ locked_at: null, ...fields })
+        .in("id", jobIds),
+    ),
+  );
 
   return toJson(200, { claimed: jobs.length, ...results });
 });

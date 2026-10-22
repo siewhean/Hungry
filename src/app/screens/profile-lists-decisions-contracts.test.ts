@@ -49,6 +49,7 @@ test("19: user/:id links open UserProfile and share URLs use usehungry.com/user"
   assert.equal(screens.UserProfile, "user/:authorId");
   // Guests can open a shared profile; unsafe ids are dropped.
   assert.deepEqual(linking.getStateFromPath("user/11111111-2222-3333-4444-555555555555")?.routes, [
+    { name: "MainTabs", params: { screen: "Home" } },
     { name: "UserProfile", params: { authorId: "11111111-2222-3333-4444-555555555555" } },
   ]);
   assert.equal(linking.getStateFromPath("user/%3Cscript%3E"), undefined);
@@ -96,13 +97,13 @@ test("21: one Lists area, and Saved has Dishes, Stalls and Lists tabs", () => {
   assert.match(home, /label="Lists"/);
   assert.doesNotMatch(home, /label="My Checklists"|label="Hungry Portfolios"/);
   const lists = read("src/app/screens/profile/ListsHomeScreen.tsx");
-  assert.match(lists, /navigation\.navigate\("Favourites"\)/);
+  assert.match(lists, /navigation\.navigate\("Favourites", undefined, \{ pop: true \}\)/);
   assert.match(lists, /navigation\.navigate\("PortfoliosHome"\)/);
   assert.match(lists, /FEATURE_FLAGS\.collectionsEnabled \?/);
   const saved = read("src/app/screens/profile/FavouritesScreen.tsx");
-  assert.match(saved, /dishes: "Dishes",\s*stalls: "Stalls",\s*lists: "Lists"/);
+  assert.match(saved, /dishes: "Dishes",\s*stalls: "Stalls",\s*posts: "Posts",\s*lists: "Lists"/);
   assert.match(saved, /useStallFollowStore/);
-  assert.match(saved, /navigation\.navigate\("ListsHome"\)/);
+  assert.match(saved, /navigation\.navigate\("ListsHome", undefined, \{ pop: true \}\)/);
 });
 
 test("22: Surprise me picks among the closest stalls only when location is in use", () => {

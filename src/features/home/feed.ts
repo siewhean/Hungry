@@ -1,36 +1,27 @@
-import type { FoodHistory } from "@/lib/ai/foodHistory";
-import { runRecommendationPipeline } from "@/lib/ai/tasteEngine";
 import { getDataRepository } from "@/lib/services/serviceProvider";
-import { listSharedStallPosts } from "@/features/social/sharedStallPosts";
-import type {
-  DishDetail,
-  FoodOpenness,
-  StallPost,
-  UserProfile,
-  VenueSummary,
-} from "@/types/domain";
+import {
+  listSharedStallPostsPage,
+  type SharedFeedCursor,
+} from "@/features/social/sharedStallPosts";
+import type { DishDetail, StallPost, UserProfile, VenueSummary } from "@/types/domain";
+
+export type { SharedFeedCursor as HomeFeedCursor } from "@/features/social/sharedStallPosts";
 
 export interface HomeFeedItem extends StallPost {
   venue: VenueSummary;
   dishes: DishDetail[];
 }
 
-export interface HomeFeedSection {
-  title: string;
-  items: HomeFeedItem[];
-}
-
 export interface HomeFeedBundle {
-  sections: HomeFeedSection[];
   socialFeed: HomeFeedItem[];
+  /** Where the next page starts; null when the feed has no more pages. */
+  nextCursor: SharedFeedCursor | null;
 }
 
 export interface HomeFeedOptions {
   followedAuthors?: Record<string, boolean>;
   followedUserIds?: Record<string, boolean>;
   refreshSeed?: number;
-  /** What the user ate or liked before, and how open they are to new food */
-  personalisation?: { history: FoodHistory; openness: FoodOpenness };
 }
 
 const HOME_FEED_BUNDLE_CACHE_TTL_MS = 5_000;
@@ -58,67 +49,36 @@ function sortedEnabledKeys(record?: Record<string, boolean>) {
     .sort();
 }
 
-function getProfileTasteKey(profile: UserProfile) {
-  return Object.entries(profile.tasteVector)
-    .sort(([left], [right]) => left.localeCompare(right))
-    .map(([key, value]) => `${key}:${value}`)
-    .join("|");
-}
-
+/**
+ * The feed is the newest posts, followed authors first. Nothing about the viewer's
+ * taste changes which posts it holds or their order, so the key holds only the account,
+ * who they follow, and the refresh counter.
+ */
 export function getHomeFeedBundleCacheKey(
   profile: UserProfile,
   options?: HomeFeedOptions,
   repository = getDataRepository(),
 ) {
   return JSON.stringify({
-    dietary: [...profile.dietaryPreferences].sort(),
-    favourites: [...profile.favouriteDishIds].sort(),
     followedAuthors: sortedEnabledKeys(options?.followedAuthors),
     followedUserIds: sortedEnabledKeys(options?.followedUserIds),
     profileId: profile.id,
     repository: getRepositoryCacheId(repository),
     refreshSeed: options?.refreshSeed ?? 0,
-    taste: getProfileTasteKey(profile),
-    tasteProfile: profile.tasteProfile?.neophiliaIndex ?? null,
-    openness: options?.personalisation?.openness ?? null,
-    history: getFoodHistoryKey(options?.personalisation?.history),
   });
-}
-
-function getFoodHistoryKey(history: FoodHistory | undefined) {
-  if (!history) return null;
-  return [
-    [...history.likedDishIds].sort().join(","),
-    [...history.dismissedDishIds].sort().join(","),
-  ].join("|");
 }
 
 export function clearHomeFeedBundleCache() {
   homeFeedBundleCache.clear();
 }
 
-function rankHomeFeedItems(
-  items: HomeFeedItem[],
-  profile: UserProfile,
-  personalisation?: HomeFeedOptions["personalisation"],
-): HomeFeedItem[] {
-  const candidateDishes = items.map((item) => item.dishes[0]).filter(Boolean) as DishDetail[];
-  const ranked = runRecommendationPipeline(candidateDishes, {
-    userVector: profile.tasteVector,
-    dietaryFlags: profile.dietaryPreferences,
-    neophiliaIndex: profile.tasteProfile?.neophiliaIndex ?? 5,
-    radiusMeters: Number.MAX_SAFE_INTEGER,
-    likedDishIds: [...profile.favouriteDishIds, ...(profile.onboardingSelectedDishIds ?? [])],
-    history: personalisation?.history,
-    openness: personalisation?.openness,
-  });
-  const ranks = new Map(ranked.map((result, index) => [result.dishId, index]));
-
-  return [...items].sort((left, right) => {
-    const leftRank = ranks.get(left.dishes[0]?.id ?? "") ?? Number.MAX_SAFE_INTEGER;
-    const rightRank = ranks.get(right.dishes[0]?.id ?? "") ?? Number.MAX_SAFE_INTEGER;
-    return leftRank - rightRank;
-  });
+/** "Maxwell Food Centre · #01-23". Floor and unit are joined only when present. */
+export function formatVenueLine(venue: Pick<VenueSummary, "name" | "floor" | "unitNumber">) {
+  const unit = [venue.floor, venue.unitNumber]
+    .map((part) => part?.trim())
+    .filter(Boolean)
+    .join(" ");
+  return unit ? `${venue.name} · ${unit}` : venue.name;
 }
 
 function isFollowedPost(item: HomeFeedItem, options?: HomeFeedOptions) {
@@ -147,7 +107,7 @@ function orderHomeSocialFeed(
  * A post at a venue the local catalog has not loaded (a new merchant, or a cold
  * start) keeps its card: build the venue from the fields the feed read returned.
  */
-function venueFromPost(post: StallPost): VenueSummary | undefined {
+export function venueFromPost(post: StallPost): VenueSummary | undefined {
   const name = post.venueName?.trim();
   if (!post.venueId || !name) return undefined;
   return {
@@ -164,16 +124,12 @@ function venueFromPost(post: StallPost): VenueSummary | undefined {
   };
 }
 
-async function buildHomeFeedItems(
-  profile: UserProfile,
-  repository = getDataRepository(),
-  personalisation?: HomeFeedOptions["personalisation"],
-): Promise<HomeFeedItem[]> {
+function toHomeFeedItems(posts: StallPost[], repository = getDataRepository()): HomeFeedItem[] {
   const postsById = new Map<string, StallPost>();
-  for (const post of await listSharedStallPosts(repository)) {
+  for (const post of posts) {
     postsById.set(post.id, post);
   }
-  const items = [...postsById.values()]
+  return [...postsById.values()]
     .map((post) => {
       const venue = repository.getVenueById(post.venueId) ?? venueFromPost(post);
       const dishes = post.dishIds
@@ -189,8 +145,6 @@ async function buildHomeFeedItems(
       } satisfies HomeFeedItem;
     })
     .filter((p): p is HomeFeedItem => !!p);
-
-  return rankHomeFeedItems(items, profile, personalisation);
 }
 
 const RELATIVE_TIME_UNITS: Record<string, number> = {
@@ -241,10 +195,6 @@ export async function getHomeSocialFeed(
   return (await getHomeFeedBundle(profile, options)).socialFeed;
 }
 
-export async function getHomeFeed(profile: UserProfile): Promise<HomeFeedSection[]> {
-  return (await getHomeFeedBundle(profile)).sections;
-}
-
 export async function getHomeFeedBundle(
   profile: UserProfile,
   options?: HomeFeedOptions,
@@ -257,7 +207,7 @@ export async function getHomeFeedBundle(
     return cached.promise;
   }
 
-  const promise = buildHomeFeedBundle(profile, options, repository);
+  const promise = buildHomeFeedBundle(options, repository);
   homeFeedBundleCache.set(cacheKey, {
     createdAt: Date.now(),
     promise,
@@ -271,40 +221,26 @@ export async function getHomeFeedBundle(
   }
 }
 
+/** The page after `cursor`: newest first, followed authors first within the page. */
+export async function getHomeFeedNextPage(
+  cursor: SharedFeedCursor,
+  options?: HomeFeedOptions,
+): Promise<HomeFeedBundle> {
+  const repository = getDataRepository();
+  const page = await listSharedStallPostsPage(repository, cursor);
+  return {
+    socialFeed: orderHomeSocialFeed(toHomeFeedItems(page.posts, repository), Date.now(), options),
+    nextCursor: page.nextCursor,
+  };
+}
+
 async function buildHomeFeedBundle(
-  profile: UserProfile,
   options?: HomeFeedOptions,
   repository = getDataRepository(),
 ): Promise<HomeFeedBundle> {
-  const allPosts = await buildHomeFeedItems(profile, repository, options?.personalisation);
-  const now = Date.now();
-  const socialFeed = orderHomeSocialFeed(allPosts, now, options);
-
-  // 1. Nearby picks use the current repository order without implying live wait-time data.
-  const nearbyPicks = [...allPosts]
-    .sort((a, b) => a.venue.buildingId.localeCompare(b.venue.buildingId))
-    .slice(0, 5);
-
-  // 2. Comfort Food / Heavy Rich (Taste-based)
-  const comfort = allPosts
-    .filter((p) => {
-      const d = p.dishes[0];
-      if (!d) return false;
-      return d.tasteVector.rich > 7 || d.tasteVector.salty > 7 || d.tasteVector.sweet > 7;
-    })
-    .slice(0, 5);
-
-  // 3. Top Rated by the Community (Rating-based)
-  const topRated = [...allPosts]
-    .sort((a, b) => (b.dishes[0]?.rating ?? 0) - (a.dishes[0]?.rating ?? 0))
-    .slice(0, 5);
-
+  const page = await listSharedStallPostsPage(repository);
   return {
-    socialFeed,
-    sections: [
-      { title: "Nearby picks", items: nearbyPicks },
-      { title: "Comfort Food / Rich & Savory", items: comfort },
-      { title: "Top Rated by Community", items: topRated },
-    ],
+    socialFeed: orderHomeSocialFeed(toHomeFeedItems(page.posts, repository), Date.now(), options),
+    nextCursor: page.nextCursor,
   };
 }

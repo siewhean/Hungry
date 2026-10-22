@@ -42,6 +42,8 @@ export type SharedPortfolio = {
   name: string;
   description: string | null;
   ownerDisplayName: string | null;
+  /** "ranking" lists show each pick's number and score. */
+  type: string | null;
   updatedAt: string | null;
   items: {
     itemType: "dish" | "stall";
@@ -50,6 +52,7 @@ export type SharedPortfolio = {
     name: string | null;
     stallName: string | null;
     price: number | null;
+    score: number | null;
     publicNotes: string | null;
     imageUrl: string | null;
     mapsUrl: string | null;
@@ -195,6 +198,7 @@ type PortfolioRpcRow = {
   name: string;
   description: string | null;
   owner_display_name: string | null;
+  type?: string | null;
   updated_at: string | null;
   items: {
     item_type: "dish" | "stall";
@@ -203,6 +207,7 @@ type PortfolioRpcRow = {
     name: string | null;
     stall_name: string | null;
     price: number | string | null;
+    score?: number | null;
     public_notes: string | null;
     image_url?: string | null;
     map_query?: string | null;
@@ -223,6 +228,7 @@ export async function getSharedPortfolio(id: string): Promise<SharedPortfolio | 
       name: data.name,
       description: data.description,
       ownerDisplayName: data.owner_display_name,
+      type: data.type ?? null,
       updatedAt: data.updated_at,
       items: (data.items ?? []).map((item) => ({
         itemType: item.item_type,
@@ -231,6 +237,7 @@ export async function getSharedPortfolio(id: string): Promise<SharedPortfolio | 
         name: item.name,
         stallName: item.stall_name,
         price: item.price === null ? null : Number(item.price),
+        score: typeof item.score === "number" ? item.score : null,
         publicNotes: item.public_notes,
         imageUrl: item.image_url ?? null,
         mapsUrl: mapsSearchUrl(item.map_query),
@@ -239,6 +246,50 @@ export async function getSharedPortfolio(id: string): Promise<SharedPortfolio | 
   } catch {
     return null;
   }
+}
+
+export type SharedReview = {
+  id: string;
+  authorName: string;
+  rating: number;
+  text: string;
+  createdAt: string | null;
+  dish: { id: string; name: string; imageUrl: string | null } | null;
+  stall: SharedDish["stall"];
+};
+
+type ReviewRow = {
+  id: string;
+  dish_id: string | null;
+  author_name: string | null;
+  rating: number | string | null;
+  text: string | null;
+  created_at: string | null;
+};
+
+/**
+ * usehungry.com/review/:id. Reads with the anon key, so RLS hides a review that was
+ * hidden after reports or removed. The preview image is the dish's approved image: review
+ * photos live in a private bucket that a signed-out visitor cannot read.
+ */
+export async function getSharedReview(id: string): Promise<SharedReview | null> {
+  if (!UUID_PATTERN.test(id)) return null;
+  const [review] = await fetchRows<ReviewRow>("reviews", {
+    id: `eq.${id}`,
+    select: "id,dish_id,author_name,rating,text,created_at",
+    limit: "1",
+  });
+  if (!review) return null;
+  const dish = review.dish_id ? await getSharedDish(review.dish_id) : null;
+  return {
+    id: review.id,
+    authorName: review.author_name?.trim() || "A Hungry member",
+    rating: Math.min(5, Math.max(0, Math.round(Number(review.rating) || 0))),
+    text: review.text?.trim() ?? "",
+    createdAt: review.created_at,
+    dish: dish ? { id: dish.id, name: dish.name, imageUrl: dish.imageUrl } : null,
+    stall: dish?.stall ?? null,
+  };
 }
 
 export type SharedProfile = {

@@ -10,21 +10,18 @@ import {
 } from "react-native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
-import {
-  LocateFixed,
-  Map as MapIcon,
-  ChevronRight,
-  Star,
-  Filter,
-  Utensils,
-  Heart,
-  X,
-} from "lucide-react-native";
+import { LocateFixed, Map as MapIcon, ChevronRight, Utensils, X } from "lucide-react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "@/lib/haptics";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { MapSurface, type MapSurfaceMarker, BuildingLegend } from "@/components/map";
+import {
+  BuildingLegend,
+  MapSurface,
+  getBuildingPinColor,
+  getClusterPinColor,
+  type MapSurfaceMarker,
+} from "@/components/map";
 import {
   AccessibleImage,
   AppText,
@@ -37,6 +34,7 @@ import {
   getNearestBuildings,
   singaporeBuildings,
 } from "@/lib/geo/singaporeBuildings";
+import { calculateDistanceMeters } from "@/lib/geo/distance";
 import { getCatalogRawService } from "@/lib/services/serviceProvider";
 import type { CatalogMapItem, CatalogRawVenueCard } from "@/lib/services/catalog";
 import { DiscoverViewToggle } from "@/components/discover/DiscoverViewToggle";
@@ -44,15 +42,30 @@ import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { sanitizeSearchQuery } from "@/lib/security/inputSanitization";
 import { useHungryTheme } from "@/theme";
 
 const DEFAULT_BUILDING_ID = "hc-maxwell";
-type HomeMapFilterId = "nearMe" | "hawkerOnly" | "topRated" | "openNow";
+// "Open now" is not offered on the map: the catalog only carries a copy of the stored
+// open flag, which disagrees with the hours Discover shows (M11).
+type HomeMapFilterId = "nearMe" | "hawkerOnly" | "topRated";
 
 /** Camera moves settle before the catalog is read again. */
 const MAP_REFETCH_DEBOUNCE_MS = 350;
+/** "Near me" reads this radius around the diner's GPS position. */
+const NEAR_ME_RADIUS_METERS = 3_000;
+/** Moving the map centre further than this from the diner turns "Near me" off. */
+const NEAR_ME_PAN_TOLERANCE_METERS = 1_000;
+/** Roughly the metres in one degree of latitude; turns the viewport span into a card radius. */
+const METERS_PER_DEGREE = 111_000;
+/** A pan can return up to 500 pins; drawing each as a JS view is slow on mid-range phones. */
+const MAX_RENDERED_MARKERS = 150;
+const CARD_WIDTH = 320;
+/** The map is the only screen for this; keep it above this rating and review floor. */
+const TOP_RATED_MIN_RATING = 4.5;
 
-/** "Open · 450m · Maxwell Food Centre" from what the catalog card actually knows. */
+/** "450m · Maxwell Food Centre" from what the catalog card knows. No open or closed word: the
+ * card only has a stored flag, and Discover works the state out from hours (M11). */
 function formatVenueCardDetail(venue: CatalogRawVenueCard) {
   const distance =
     typeof venue.distanceMeters === "number"
@@ -60,13 +73,7 @@ function formatVenueCardDetail(venue: CatalogRawVenueCard) {
         ? `${(venue.distanceMeters / 1000).toFixed(1)}km`
         : `${Math.round(venue.distanceMeters)}m`
       : undefined;
-  return [
-    venue.isOpen === true ? "Open" : venue.isOpen === false ? "Closed" : undefined,
-    distance,
-    venue.buildingName,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  return [distance, venue.buildingName].filter(Boolean).join(" · ");
 }
 
 /** Representative dish name with its listed price (never rounded), or the menu size. */
@@ -82,7 +89,6 @@ const HOME_MAP_FILTER_OPTIONS: readonly { id: HomeMapFilterId; label: string }[]
   { id: "nearMe", label: "Near me" },
   { id: "hawkerOnly", label: "Hawker" },
   { id: "topRated", label: "Top Rated" },
-  { id: "openNow", label: "Open Now" },
 ];
 
 export function HomeMapScreen() {
@@ -91,9 +97,9 @@ export function HomeMapScreen() {
   // The map and its catalog pins are open to every diner, guests included.
   const insets = useSafeAreaInsets();
   const { componentRadii, palette, radii, shadows, spacing, zIndex } = useHungryTheme();
-  const { width: screenWidth } = useWindowDimensions();
-  const searchQuery = useSearchStore((state) => state.filters.query);
-  const updateSearchQuery = useSearchStore((state) => state.updateQuery);
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  // Raw text stays local so spaces survive typing; it is sanitised only on submit.
+  const [searchText, setSearchText] = useState("");
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
   const searchBarWidth = useMemo(
     () => Math.max(screenWidth - spacing[3] * 2 - 78, 240),
@@ -113,10 +119,31 @@ export function HomeMapScreen() {
   const selectedBuilding = useDiscoveryStore((state) => state.selectedBuilding);
   const highlightedStallVenueId = useDiscoveryStore((state) => state.highlightedStallVenueId);
   const setHighlightedStallVenueId = useDiscoveryStore((state) => state.setHighlightedStallVenueId);
-  // The highlight is a one-shot hand-off from Home: clear it when the map closes.
-  useEffect(() => () => setHighlightedStallVenueId(undefined), [setHighlightedStallVenueId]);
+  const setSelectedBuilding = useDiscoveryStore((state) => state.setSelectedBuilding);
+  // The highlight and the chosen building are one-shot hand-offs: clear both when the
+  // map closes so the next open starts on the diner, not on an old building (L1).
+  useEffect(
+    () => () => {
+      setHighlightedStallVenueId(undefined);
+      setSelectedBuilding(undefined);
+    },
+    [setHighlightedStallVenueId, setSelectedBuilding],
+  );
+  useEffect(() => {
+    trackAnalyticsEvent("map_opened", { has_location_fix: !isLocationApproximate });
+    // Once per open; the fix state is read as it was then.
+  }, []);
   const mapFilters = useDiscoveryStore((state) => state.mapFilters);
   const toggleMapFilter = useDiscoveryStore((state) => state.toggleMapFilter);
+  // "Near me" needs a real GPS fix; the built-in default point is not the diner.
+  const canUseNearMe = locationPermission === "granted" && !isLocationApproximate;
+  const filterOptions = useMemo(
+    () =>
+      canUseNearMe
+        ? HOME_MAP_FILTER_OPTIONS
+        : HOME_MAP_FILTER_OPTIONS.filter((option) => option.id !== "nearMe"),
+    [canUseNearMe],
+  );
 
   const activeBuildingRecord = useMemo(() => {
     const nameMatch = selectedBuilding?.name
@@ -136,13 +163,24 @@ export function HomeMapScreen() {
   const [showLegend, setShowLegend] = useState(false);
   const [rawMapItems, setRawMapItems] = useState<CatalogMapItem[]>([]);
   const [rawVenueCards, setRawVenueCards] = useState<CatalogRawVenueCard[]>([]);
-  const [rawReleaseId, setRawReleaseId] = useState<string | undefined>();
   const [mapLoadState, setMapLoadState] = useState<"idle" | "loading" | "error">("idle");
   const [mapReloadKey, setMapReloadKey] = useState(0);
+  // A search typed here stays on the map: it filters the pins and the cards (M19).
+  const [mapQuery, setMapQuery] = useState("");
+  // The pin and the card of the same stall light up together (M10).
+  const [selectedVenueId, setSelectedVenueId] = useState<string | undefined>();
+  const carouselRef = useRef<ScrollView>(null);
+  const listRef = useRef<ScrollView>(null);
+  const listRowYRef = useRef<Record<string, number>>({});
 
   const CAROUSEL_HEIGHT = 240;
   const MINIMIZED_HEIGHT = 60;
-  const FULL_HEIGHT = 620;
+  // Heights follow the screen: 620 pt covered a 667 pt phone, search row included (L11).
+  const FULL_HEIGHT = Math.min(620, Math.round(screenHeight * 0.7));
+  const LIST_HEIGHT = Math.min(FULL_HEIGHT, Math.round(screenHeight * 0.5));
+  const sheetHeightsRef = useRef({ full: FULL_HEIGHT, list: LIST_HEIGHT });
+  sheetHeightsRef.current = { full: FULL_HEIGHT, list: LIST_HEIGHT };
+  const listLevelRef = useRef<"list" | "full" | "min">("list");
 
   const animatedHeight = useRef(new Animated.Value(CAROUSEL_HEIGHT)).current;
   const isMinimized = useRef(false);
@@ -160,11 +198,36 @@ export function HomeMapScreen() {
     setMapCenter(activeBuildingRecord.coordinate);
   }, [selectedBuilding?.name]);
 
+  // "Near me" only holds while the map sits on the diner. Panning to another
+  // district (or losing the GPS fix) switches it off so that area's pins show.
+  const nearMeActive =
+    mapFilters.nearMe &&
+    canUseNearMe &&
+    calculateDistanceMeters(mapCenter, currentLocation) <= NEAR_ME_PAN_TOLERANCE_METERS;
+  useEffect(() => {
+    if (mapFilters.nearMe && !nearMeActive) toggleMapFilter("nearMe");
+  }, [mapFilters.nearMe, nearMeActive, toggleMapFilter]);
+
+  const handleFilterSelect = useCallback(
+    (filter: HomeMapFilterId) => {
+      // Turning "Near me" on brings the map back to the diner.
+      if (filter === "nearMe" && !mapFilters.nearMe) setMapCenter(currentLocation);
+      trackAnalyticsEvent("map_filter_toggled", { filter, enabled: !mapFilters[filter] });
+      toggleMapFilter(filter);
+    },
+    [currentLocation, mapFilters, toggleMapFilter],
+  );
+
   useEffect(() => {
     let active = true;
     const span = currentZoom >= 15 ? 0.018 : currentZoom >= 13 ? 0.08 : 0.3;
     const buildingTypes = mapFilters.hawkerOnly ? ["hawker_centre"] : [];
-    const nearCoordinate = mapFilters.nearMe ? currentLocation : undefined;
+    const nearCoordinate = nearMeActive ? currentLocation : undefined;
+    const query = mapQuery || undefined;
+    // The cards read the same region as the pins, not the 24 nearest places anywhere.
+    const cardRadiusMeters = nearCoordinate
+      ? NEAR_ME_RADIUS_METERS
+      : Math.round(span * METERS_PER_DEGREE);
     // Debounced so a pan or pinch reads once it settles; both reads run together.
     const timer = setTimeout(() => {
       setMapLoadState("loading");
@@ -176,17 +239,17 @@ export function HomeMapScreen() {
           maxLongitude: mapCenter.longitude + span,
           zoom: currentZoom,
           coordinate: nearCoordinate,
-          radiusMeters: nearCoordinate ? 3_000 : undefined,
+          radiusMeters: nearCoordinate ? NEAR_ME_RADIUS_METERS : undefined,
           buildingTypes,
-          openOnly: mapFilters.openNow,
-          minRating: mapFilters.topRated ? 4.5 : undefined,
+          minRating: mapFilters.topRated ? TOP_RATED_MIN_RATING : undefined,
+          query,
         }),
         catalogRawService.listVenues({
           coordinate: nearCoordinate ?? mapCenter,
           limit: 24,
-          radiusMeters: nearCoordinate ? 3_000 : undefined,
+          radiusMeters: cardRadiusMeters,
           buildingTypes,
-          openOnly: mapFilters.openNow,
+          query,
           sort: mapFilters.topRated ? "quality" : "nearby",
         }),
       ])
@@ -194,7 +257,6 @@ export function HomeMapScreen() {
           if (!active) return;
           setRawMapItems(mapPage.items);
           setRawVenueCards(venuePage.items);
-          setRawReleaseId(mapPage.releaseId);
           setMapLoadState("idle");
         })
         .catch(() => {
@@ -206,7 +268,30 @@ export function HomeMapScreen() {
       active = false;
       clearTimeout(timer);
     };
-  }, [catalogRawService, currentLocation, currentZoom, mapCenter, mapFilters, mapReloadKey]);
+  }, [
+    catalogRawService,
+    currentLocation,
+    currentZoom,
+    mapCenter,
+    mapFilters,
+    mapQuery,
+    mapReloadKey,
+    nearMeActive,
+  ]);
+
+  // Top Rated and a search narrow the pins on the server. Once pins are individual stalls,
+  // the cards keep only those stalls so a card never names a place the map hides.
+  const venueCards = useMemo(() => {
+    if (currentZoom < 14 || !(mapFilters.topRated || mapQuery)) return rawVenueCards;
+    const pinIds = new Set(rawMapItems.flatMap((item) => (item.kind === "venue" ? [item.id] : [])));
+    return rawVenueCards.filter((card) => pinIds.has(card.id));
+  }, [currentZoom, mapFilters.topRated, mapQuery, rawMapItems, rawVenueCards]);
+  const emptyMessage =
+    mapLoadState === "idle" && venueCards.length === 0
+      ? mapQuery
+        ? `No places match "${mapQuery}" here. Zoom out or clear the search.`
+        : "No places here. Zoom out or clear filters."
+      : undefined;
 
   const snapTo = (height: number) => {
     Animated.spring(animatedHeight, {
@@ -216,6 +301,11 @@ export function HomeMapScreen() {
       friction: 8,
     }).start();
   };
+
+  const openStall = useCallback(
+    (venueId: string) => navigation.navigate("StallDetail", { venueId }),
+    [navigation],
+  );
 
   const handleRawMarkerPress = useCallback(
     (markerId: string) => {
@@ -230,22 +320,42 @@ export function HomeMapScreen() {
         setCurrentZoom((zoom) => Math.max(14, zoom + 1.5));
         return;
       }
-      navigation.navigate("CatalogRawDetail", {
-        kind: "venue",
-        id: item.id,
-        releaseId: rawReleaseId,
-      });
+      // First tap selects the pin's card and brings it into view; a second tap (or a pin
+      // with no card) opens the stall. Catalog venue ids are venues.id.
+      const cardIndex = venueCards.findIndex((card) => card.id === item.id);
+      if (cardIndex >= 0 && selectedVenueId !== item.id) {
+        setSelectedVenueId(item.id);
+        if (displayMode === "carousel") {
+          if (isMinimized.current) {
+            snapTo(CAROUSEL_HEIGHT);
+            isMinimized.current = false;
+          }
+          carouselRef.current?.scrollTo({
+            x: cardIndex * (CARD_WIDTH + spacing[4]),
+            animated: true,
+          });
+        } else {
+          listRef.current?.scrollTo({ y: listRowYRef.current[item.id] ?? 0, animated: true });
+        }
+        return;
+      }
+      openStall(item.id);
     },
-    [navigation, rawMapItems, rawReleaseId],
+    [displayMode, openStall, rawMapItems, selectedVenueId, spacing, venueCards],
   );
 
   const submitSearch = useCallback(() => {
-    const trimmed = searchQuery.trim();
-    if (trimmed) {
-      rememberSearch(trimmed);
+    const query = sanitizeSearchQuery(searchText);
+    if (query) {
+      rememberSearch(query);
     }
-    navigation.navigate("SearchHome");
-  }, [navigation, rememberSearch, searchQuery]);
+    trackAnalyticsEvent("map_filter_toggled", { filter: "search", enabled: Boolean(query) });
+    setMapQuery(query);
+  }, [rememberSearch, searchText]);
+  const clearMapSearch = useCallback(() => {
+    setSearchText("");
+    setMapQuery("");
+  }, []);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -253,8 +363,15 @@ export function HomeMapScreen() {
       onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 10,
       onPanResponderRelease: (_, gestureState) => {
         if (displayModeRef.current === "list") {
-          if (gestureState.dy > 100) snapTo(CAROUSEL_HEIGHT);
-          else if (gestureState.dy < -100) snapTo(FULL_HEIGHT);
+          const { full, list } = sheetHeightsRef.current;
+          if (gestureState.dy < -100) {
+            snapTo(full);
+            listLevelRef.current = "full";
+          } else if (gestureState.dy > 100) {
+            const next = listLevelRef.current === "full" ? "list" : "min";
+            snapTo(next === "list" ? list : MINIMIZED_HEIGHT);
+            listLevelRef.current = next;
+          }
           return;
         }
 
@@ -291,24 +408,29 @@ export function HomeMapScreen() {
   );
 
   useEffect(() => {
-    snapTo(CAROUSEL_HEIGHT);
+    // The list opens half-way so it shows several rows, not one.
+    listLevelRef.current = "list";
+    isMinimized.current = false;
+    snapTo(displayMode === "list" ? sheetHeightsRef.current.list : CAROUSEL_HEIGHT);
   }, [displayMode]);
 
   const markers = useMemo<MapSurfaceMarker[]>(
     () =>
-      rawMapItems.map((item) =>
+      rawMapItems.slice(0, MAX_RENDERED_MARKERS).map((item) =>
         item.kind === "cluster"
           ? {
               id: `cluster-${item.id}`,
               label: `${item.count} venues`,
+              accessibilityLabel: `${item.count} venues. Double tap to zoom in.`,
               coordinate: { latitude: item.latitude, longitude: item.longitude },
-              accent: palette.teal,
+              accent: getClusterPinColor(palette),
             }
           : {
               id: `stall-${item.id}`,
               label: item.label,
               coordinate: { latitude: item.latitude, longitude: item.longitude },
-              accent: item.verificationStatus === "approved" ? palette.orange : palette.teal,
+              // Colour is the building type, as the legend says.
+              accent: getBuildingPinColor(item.buildingType, palette),
             },
       ),
     [palette, rawMapItems],
@@ -339,8 +461,8 @@ export function HomeMapScreen() {
           zoomLevel={currentZoom}
           markers={markers}
           cameraPadding={cameraPadding}
-          onMapPress={(coordinate) => {
-            setMapCenter(coordinate);
+          onMapPress={() => {
+            // A tap only folds the sheet. The camera stays where the diner left it.
             if (displayMode === "carousel") {
               snapTo(isMinimized.current ? CAROUSEL_HEIGHT : MINIMIZED_HEIGHT);
               isMinimized.current = !isMinimized.current;
@@ -358,7 +480,9 @@ export function HomeMapScreen() {
           }}
           onMarkerPress={handleRawMarkerPress}
           selectedMarkerId={
-            highlightedStallVenueId ? `stall-${highlightedStallVenueId}` : undefined
+            selectedVenueId || highlightedStallVenueId
+              ? `stall-${selectedVenueId ?? highlightedStallVenueId}`
+              : undefined
           }
         />
       </FeedErrorBoundary>
@@ -389,10 +513,10 @@ export function HomeMapScreen() {
             }}
           >
             <ExpandableSearchLauncher
-              query={searchQuery}
-              onQueryChange={updateSearchQuery}
+              query={searchText}
+              onQueryChange={setSearchText}
               onSubmit={submitSearch}
-              onClear={() => updateSearchQuery("")}
+              onClear={clearMapSearch}
               placeholder="Search dishes or stalls..."
               expandedWidth={searchBarWidth}
               iconAlignment="left"
@@ -432,11 +556,11 @@ export function HomeMapScreen() {
             </Pressable>
           </View>
           <FilterChipRail
-            options={HOME_MAP_FILTER_OPTIONS}
-            selectedIds={HOME_MAP_FILTER_OPTIONS.filter((option) => mapFilters[option.id]).map(
-              (option) => option.id,
-            )}
-            onSelect={toggleMapFilter}
+            options={filterOptions}
+            selectedIds={filterOptions
+              .filter((option) => (option.id === "nearMe" ? nearMeActive : mapFilters[option.id]))
+              .map((option) => option.id)}
+            onSelect={handleFilterSelect}
             gap={spacing[2]}
             renderLeftIcon={(option, selected) =>
               option.id === "nearMe" ? (
@@ -444,6 +568,43 @@ export function HomeMapScreen() {
               ) : null
             }
           />
+          {mapQuery ? (
+            <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Clear search ${mapQuery}`}
+                hitSlop={8}
+                onPress={clearMapSearch}
+                style={{
+                  alignItems: "center",
+                  backgroundColor: palette.surface,
+                  borderColor: palette.orange,
+                  borderRadius: radii.pill,
+                  borderWidth: 1,
+                  flexDirection: "row",
+                  gap: spacing[1],
+                  minHeight: 32,
+                  paddingHorizontal: spacing[3],
+                  ...shadows.floating,
+                }}
+              >
+                <AppText variant="micro" numberOfLines={1} style={{ maxWidth: 200 }}>
+                  {`"${mapQuery}"`}
+                </AppText>
+                <X color={palette.textMuted} size={14} />
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`See all results for ${mapQuery}`}
+                hitSlop={8}
+                onPress={() => navigation.navigate("SearchResults", { initialQuery: mapQuery })}
+              >
+                <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
+                  SEE ALL RESULTS
+                </AppText>
+              </Pressable>
+            </View>
+          ) : null}
           {mapLoadState === "idle" ? null : (
             <Pressable
               accessibilityRole={mapLoadState === "error" ? "button" : "text"}
@@ -476,10 +637,20 @@ export function HomeMapScreen() {
       </SafeAreaView>
 
       {/* Floating Buttons & Legend */}
-      <View
+      <Animated.View
         style={{
           position: "absolute",
-          bottom: CAROUSEL_HEIGHT + spacing[4],
+          // Rides on top of the sheet, and fades once the list is stretched over the map.
+          bottom: animatedHeight.interpolate({
+            inputRange: [MINIMIZED_HEIGHT, FULL_HEIGHT],
+            outputRange: [MINIMIZED_HEIGHT + spacing[4], FULL_HEIGHT + spacing[4]],
+            extrapolate: "clamp",
+          }),
+          opacity: animatedHeight.interpolate({
+            inputRange: [LIST_HEIGHT, FULL_HEIGHT],
+            outputRange: [1, 0],
+            extrapolate: "clamp",
+          }),
           left: spacing[4],
           right: spacing[4],
           zIndex: zIndex.overlay,
@@ -544,7 +715,7 @@ export function HomeMapScreen() {
         >
           <LocateFixed color={palette.orange} size={24} />
         </Pressable>
-      </View>
+      </Animated.View>
 
       {/* Bottom UI Container */}
       <Animated.View
@@ -569,6 +740,7 @@ export function HomeMapScreen() {
 
         {displayMode === "list" ? (
           <ScrollView
+            ref={listRef}
             contentContainerStyle={{
               paddingHorizontal: spacing[3],
               gap: spacing[4],
@@ -578,18 +750,21 @@ export function HomeMapScreen() {
             <AppText variant="h2" style={{ marginBottom: spacing[2] }}>
               Nearby Stalls
             </AppText>
-            {rawVenueCards.map((venue) => (
+            {emptyMessage ? (
+              <AppText tone="secondary" accessibilityLiveRegion="polite">
+                {emptyMessage}
+              </AppText>
+            ) : null}
+            {venueCards.map((venue) => (
               <Pressable
                 key={venue.id}
                 accessibilityRole="button"
-                accessibilityLabel={`Open ${venue.name} catalog details`}
-                onPress={() =>
-                  navigation.navigate("CatalogRawDetail", {
-                    kind: "venue",
-                    id: venue.id,
-                    releaseId: rawReleaseId,
-                  })
-                }
+                accessibilityLabel={`Open ${venue.name}`}
+                accessibilityState={{ selected: venue.id === selectedVenueId }}
+                onLayout={(event) => {
+                  listRowYRef.current[venue.id] = event.nativeEvent.layout.y;
+                }}
+                onPress={() => openStall(venue.id)}
                 style={{
                   backgroundColor: palette.bgSoft,
                   borderRadius: radii.md,
@@ -597,8 +772,8 @@ export function HomeMapScreen() {
                   flexDirection: "row",
                   alignItems: "center",
                   gap: spacing[3],
-                  borderWidth: 1,
-                  borderColor: palette.border,
+                  borderWidth: venue.id === selectedVenueId ? 2 : 1,
+                  borderColor: venue.id === selectedVenueId ? palette.orange : palette.border,
                 }}
               >
                 <View style={{ flex: 1, gap: spacing[1] }}>
@@ -632,32 +807,50 @@ export function HomeMapScreen() {
               ],
             }}
           >
+            {emptyMessage ? (
+              <AppText
+                tone="secondary"
+                accessibilityLiveRegion="polite"
+                style={{ paddingHorizontal: spacing[4] }}
+              >
+                {emptyMessage}
+              </AppText>
+            ) : null}
             <ScrollView
+              ref={carouselRef}
               horizontal
               showsHorizontalScrollIndicator={false}
+              decelerationRate="fast"
+              snapToInterval={CARD_WIDTH + spacing[4]}
+              snapToAlignment="start"
+              // Swiping to a card lights up its pin.
+              onMomentumScrollEnd={(event) => {
+                const index = Math.round(
+                  event.nativeEvent.contentOffset.x / (CARD_WIDTH + spacing[4]),
+                );
+                const card = venueCards[index];
+                if (card && card.id !== selectedVenueId) setSelectedVenueId(card.id);
+              }}
               contentContainerStyle={{
                 gap: spacing[4],
                 paddingHorizontal: spacing[4],
               }}
             >
-              {rawVenueCards.map((venue) => (
+              {venueCards.map((venue) => (
                 <Pressable
                   key={venue.id}
                   accessibilityRole="button"
-                  accessibilityLabel={`Preview ${venue.name}`}
-                  onPress={() =>
-                    navigation.navigate("CatalogRawDetail", {
-                      kind: "venue",
-                      id: venue.id,
-                      releaseId: rawReleaseId,
-                    })
-                  }
+                  accessibilityLabel={`Open ${venue.name}`}
+                  accessibilityState={{ selected: venue.id === selectedVenueId }}
+                  onPress={() => openStall(venue.id)}
                   style={[
                     {
                       backgroundColor: palette.surface,
+                      borderColor: venue.id === selectedVenueId ? palette.orange : "transparent",
                       borderRadius: componentRadii.card,
+                      borderWidth: 2,
                       overflow: "hidden",
-                      width: 320,
+                      width: CARD_WIDTH,
                     },
                     shadows.floating,
                   ]}

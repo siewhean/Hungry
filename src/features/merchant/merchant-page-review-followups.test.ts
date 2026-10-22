@@ -136,10 +136,8 @@ test("dashboard counts come from one summary RPC and reviews are indexed by venu
     dashboard,
     /merchant\.getMenu\(|merchant\.getInbox\(|syncLowRatingNotifications/,
   );
-  assert.match(
-    read("src/features/navigation/prefetch.ts"),
-    /merchant\.getAnalytics\(outletId, "today"\)/,
-  );
+  // R2 (M13): merchant tab prefetching no longer fires requests whose results were discarded.
+  assert.doesNotMatch(read("src/features/navigation/prefetch.ts"), /merchant\.getAnalytics\(/);
 });
 
 test("sold-out is an inline optimistic switch with rollback and a bulk reset", () => {

@@ -8,6 +8,7 @@ import type {
   MerchantOutlet,
   VerificationStatus,
 } from "@/types/domain";
+import { isVerificationCurrent } from "@/features/merchant/merchantGuards";
 import { hungryPersistStorage } from "./persistStorage";
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -76,6 +77,20 @@ const INITIAL_STATE: MerchantState = {
   merchantModeActive: false,
   merchantModeRestore: "none",
 };
+
+/** The account without the owner's email or any outlet contact details. */
+function toPersistedAccount(account: MerchantAccount | null): MerchantAccount | null {
+  if (!account) return null;
+  return {
+    ...account,
+    email: "",
+    outlets: account.outlets.map((outlet) => ({
+      ...outlet,
+      contactEmail: undefined,
+      contactPhone: undefined,
+    })),
+  };
+}
 
 // Set when the store is cleared (sign-out, account switch) before the async rehydrate lands, so
 // the late merge cannot bring back the previous user's account or remembered Merchant mode.
@@ -168,8 +183,9 @@ export const useMerchantStore = create<MerchantState & MerchantActions>()(
       name: "hungry-merchant-v1",
       storage: hungryPersistStorage,
       partialize: (state) => ({
-        account: state.account,
-        accountSyncedAt: state.accountSyncedAt,
+        // Ids, names and verification status only: contact details and the account email are
+        // refetched. Leaving the sync time out marks the cached account stale on next launch.
+        account: toPersistedAccount(state.account),
         activeOutletId: state.activeOutletId,
         notificationPreferences: state.notificationPreferences,
         // Keep remembering Merchant mode until the launch route has opened the Merchant Centre.
@@ -209,7 +225,7 @@ export function getActiveOutlet(state: MerchantState): MerchantOutlet | undefine
 /** Check if the active outlet is verified */
 export function isActiveOutletVerified(state: MerchantState): boolean {
   const outlet = getActiveOutlet(state);
-  return outlet?.verification.status === "verified";
+  return isVerificationCurrent(outlet?.verification);
 }
 
 /** Check if the user has a merchant account */

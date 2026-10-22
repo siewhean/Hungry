@@ -189,3 +189,35 @@ export const EXTENDED_REVIEW_TAGS = [
   "Shiok",
   "Sedap",
 ];
+
+/** Value tags that matter most for hawker reviews. */
+export const REVIEW_VALUE_TAGS = ["Worth the queue", "Good value"];
+
+/**
+ * Tags the review editor offers: a short, hawker-flavoured set. The basic English tags and the
+ * rest of the extended list stay valid on existing reviews.
+ */
+export const REVIEW_EDITOR_TAGS = [
+  "Spicy",
+  "Savoury",
+  "Rich",
+  "Crispy",
+  "Wok Hei",
+  "Lemak",
+  "QQ",
+  "Jelak",
+  "Shiok",
+  ...REVIEW_VALUE_TAGS,
+];
+
+/** Most tags one review can carry. Mirrors the server check (reviews_validate_tags). */
+export const REVIEW_MAX_TAGS = 8;
+
+/**
+ * Every tag a review may store. Mirrors the server list in
+ * 20261022060000_review_integrity_and_moderation_notice.sql: change both together.
+ */
+export const ALLOWED_REVIEW_TAGS: readonly string[] = [
+  ...EXTENDED_REVIEW_TAGS,
+  ...REVIEW_VALUE_TAGS,
+];

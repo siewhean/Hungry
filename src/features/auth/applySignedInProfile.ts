@@ -1,9 +1,10 @@
 import { NEUTRAL_TASTE_PROFILE, NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
 import type { TasteKey, TasteProfile, TasteVector, UserProfile } from "@/types/domain";
-import { useProfileStore } from "@/store/useProfileStore";
+import { takeGuestSnapshotForSignIn, useProfileStore } from "@/store/useProfileStore";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import { flushPendingQuizResponse } from "@/features/profile/pendingQuizResponse";
+import { flushPendingDishSave } from "./pendingDishSave";
 
 const TASTE_KEYS: TasteKey[] = ["sweet", "spicy", "sour", "salty", "rich", "aromatic"];
 
@@ -50,20 +51,36 @@ function hasNoSavedDietaryPreferences(profile: UserProfile) {
   return profile.dietaryPreferences.length === 0;
 }
 
+// A guest's budget answer is kept like the dietary flags: it fills an account with no budget.
+function hasMeaningfulGuestBudget(profile: UserProfile) {
+  return profile.id === "guest-user" && profile.maxDishBudget !== undefined;
+}
+
 export function applySignedInProfile(
   sessionProfile: UserProfile,
   options: { onSyncWarning?: () => void; profileReady?: Promise<UserProfile> } = {},
 ) {
   const profileState = useProfileStore.getState();
-  const guestProfile = profileState.profile;
-  const guestTasteProfile = guestProfile.tasteProfile ?? profileState.tasteProfile;
+  // The auth listener may already have replaced the guest profile; use the
+  // guest profile it set aside for this account.
+  const guestSnapshot = takeGuestSnapshotForSignIn(sessionProfile.id);
+  const guestProfile = guestSnapshot?.profile ?? profileState.profile;
+  // The quiz updates profile.tasteVector; take the vector from there so a stale
+  // tasteProfile.vector never overwrites the guest's answers on the server.
+  const guestTasteProfile = {
+    ...(guestProfile.tasteProfile ?? guestSnapshot?.tasteProfile ?? profileState.tasteProfile),
+    vector: guestProfile.tasteVector,
+  };
   const shouldMergeTaste =
     hasMeaningfulGuestTaste(guestProfile, guestTasteProfile) && hasNoSavedTaste(sessionProfile);
   const shouldMergeDietary =
     hasMeaningfulGuestDietaryPreferences(guestProfile) &&
     hasNoSavedDietaryPreferences(sessionProfile);
+  const shouldMergeBudget =
+    hasMeaningfulGuestBudget(guestProfile) && sessionProfile.maxDishBudget === undefined;
   const mergedProfile: UserProfile = {
     ...sessionProfile,
+    maxDishBudget: shouldMergeBudget ? guestProfile.maxDishBudget : sessionProfile.maxDishBudget,
     tasteVector: shouldMergeTaste ? guestProfile.tasteVector : sessionProfile.tasteVector,
     tasteProfile: shouldMergeTaste ? guestTasteProfile : sessionProfile.tasteProfile,
     dietaryPreferences: shouldMergeDietary
@@ -89,12 +106,16 @@ export function applySignedInProfile(
         .then((serverProfile) => {
           const mergeTaste = shouldMergeTaste && hasNoSavedTaste(serverProfile);
           const mergeDietary = shouldMergeDietary && hasNoSavedDietaryPreferences(serverProfile);
+          const mergeBudget = shouldMergeBudget && serverProfile.maxDishBudget === undefined;
           return Promise.all([
             mergeTaste
               ? getHungryService().profile.updateTasteProfile(guestTasteProfile)
               : Promise.resolve(),
             mergeDietary
               ? getHungryService().profile.updateDietaryPreferences(guestProfile.dietaryPreferences)
+              : Promise.resolve(),
+            mergeBudget && guestProfile.maxDishBudget !== undefined
+              ? getHungryService().profile.updateMaxDishBudget(guestProfile.maxDishBudget)
               : Promise.resolve(),
           ]).catch(() => options.onSyncWarning?.());
         })
@@ -104,7 +125,9 @@ export function applySignedInProfile(
             useProfileStore.getState().applyProfile(profile);
           }
         })
-        .catch(() => undefined);
+        .catch(() => undefined)
+        // After the account's profile is in place, so the reload cannot drop the save.
+        .then(() => flushPendingDishSave());
     },
     { fallbackDelayMs: 0 },
   );

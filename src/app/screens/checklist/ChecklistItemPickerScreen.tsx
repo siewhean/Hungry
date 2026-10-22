@@ -8,6 +8,7 @@ import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { AppText, Button, Card, Input } from "@/components/ui";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { PICKER_MAX_RESULTS, searchPickerVenues } from "@/features/checklistPortfolio/pickerSearch";
 import { runListMutation } from "@/features/checklistPortfolio/runListMutation";
 import { useChecklistStore } from "@/store/useChecklistStore";
 import { useHungryTheme } from "@/theme";
@@ -81,16 +82,8 @@ export function ChecklistItemPickerScreen({ navigation, route }: Props) {
         return;
       }
 
-      const buildings = await service.discovery.listBuildings();
-      const venueLists = await Promise.all(
-        buildings
-          .slice(0, 6)
-          .map((building) => service.discovery.listVenuesByBuilding(building.id)),
-      );
-      const nextVenues = venueLists
-        .flat()
-        .filter((venue) => venue.name.toLowerCase().includes(query.trim().toLowerCase()))
-        .slice(0, 16);
+      // Whole catalog via the venue search RPC, not the first few buildings.
+      const nextVenues = await searchPickerVenues(query, PICKER_MAX_RESULTS);
       if (mounted) setVenues(nextVenues);
     }
 

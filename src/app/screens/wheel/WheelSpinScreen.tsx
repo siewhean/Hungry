@@ -24,12 +24,16 @@ import { LinearGradient } from "expo-linear-gradient";
 import { AppText, Badge, Button, Card } from "@/components/ui";
 import { MemberAvatarRow } from "@/components/wheel/MemberAvatarRow";
 import { WheelSvg } from "@/components/wheel/WheelSvg";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { getSpinWinnerIndex, selectActiveWheelEntries, useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
 import type { WheelStackParamList } from "./WheelStack";
 
 type Props = NativeStackScreenProps<WheelStackParamList, "WheelSpin">;
+
+// Without parties (production) the wheel is solo and always classic.
+const PARTY_ENABLED = FEATURE_FLAGS.wheelPartyEnabled;
 
 const WHEEL_SIZE = 300;
 /** Minimum gap between segment-crossing haptics, so a fast spin isn't one long buzz. */
@@ -347,15 +351,35 @@ export function WheelSpinScreen({ navigation }: Props) {
           paddingBottom: spacing[6],
         }}
       >
-        <Badge
-          label={
-            party.spinMode === "classic" ? "Classic" : `Elimination — Round ${party.currentRound}`
-          }
-          tone="orange"
-        />
+        {PARTY_ENABLED || party.spinMode !== "classic" ? (
+          <Badge
+            label={
+              party.spinMode === "classic" ? "Classic" : `Elimination — Round ${party.currentRound}`
+            }
+            tone="orange"
+          />
+        ) : null}
         <AppText variant="micro" tone="secondary">
           {activeEntries.length} options active
         </AppText>
+      </View>
+
+      {/* Slice labels are cut short on a busy wheel, so the full names are listed here. */}
+      <View
+        style={{
+          flexDirection: "row",
+          flexWrap: "wrap",
+          justifyContent: "center",
+          gap: spacing[2],
+          paddingHorizontal: spacing[3],
+          paddingBottom: spacing[3],
+        }}
+      >
+        {activeEntries.map((entry) => (
+          <AppText key={entry.id} variant="micro" tone="secondary">
+            {entry.label}
+          </AppText>
+        ))}
       </View>
 
       {/* Controls */}
@@ -368,6 +392,9 @@ export function WheelSpinScreen({ navigation }: Props) {
       >
         {isHost ? (
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={spinning ? "Spinning" : "Spin the wheel"}
+            accessibilityState={{ disabled: !canSpin, busy: spinning }}
             onPress={triggerSpin}
             disabled={!canSpin}
             style={({ pressed }) => [

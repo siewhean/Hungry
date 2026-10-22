@@ -32,6 +32,14 @@ interface LocationState {
 
 const defaultLocation = { latitude: 1.2813, longitude: 103.8458 };
 
+/** True when the coordinate is the built-in Maxwell default, not a real fix or pick. */
+export function isDefaultLocation(coordinate: Coordinate) {
+  return (
+    coordinate.latitude === defaultLocation.latitude &&
+    coordinate.longitude === defaultLocation.longitude
+  );
+}
+
 export const LOCATION_REFRESH_MAX_AGE_MS = 10 * 60 * 1000;
 export const LOCATION_FIX_TIMEOUT_MS = 10 * 1000;
 
@@ -91,6 +99,8 @@ export function getDeniedLocationState(manualLocation?: string) {
  * The location every "nearby" surface should use: a manual pick wins over GPS.
  * `isApproximate` is true when there is neither a GPS fix nor a manual pick, so
  * the coordinate is only the built-in default and must not be shown as "you".
+ * Permission granted but still sitting on the default point (a cleared pick with
+ * no fresh fix yet) counts as having no fix.
  */
 export function getEffectiveLocation(
   state: Pick<LocationState, "permission" | "currentLocation" | "manualCoordinate">,
@@ -98,7 +108,10 @@ export function getEffectiveLocation(
   if (state.manualCoordinate) {
     return { coordinate: state.manualCoordinate, isApproximate: false };
   }
-  return { coordinate: state.currentLocation, isApproximate: state.permission !== "granted" };
+  return {
+    coordinate: state.currentLocation,
+    isApproximate: state.permission !== "granted" || isDefaultLocation(state.currentLocation),
+  };
 }
 
 let refreshInFlight: Promise<boolean> | null = null;
@@ -146,7 +159,8 @@ export const useLocationStore = create<LocationState>()(
               latitude: result.coords.latitude,
               longitude: result.coords.longitude,
             }),
-            manualLocation: normalizeManualLocationLabel(options?.manualLocation),
+            // A GPS fix replaces any manual pick, so the old area label goes with its coordinate.
+            manualLocation: undefined,
             manualCoordinate: undefined,
             lastLocationFixAt: Date.now(),
           });

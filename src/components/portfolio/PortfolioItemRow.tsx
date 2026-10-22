@@ -5,37 +5,53 @@ import {
   ChevronUp,
   Eye,
   GripVertical,
+  Pencil,
   Star,
   Trash2,
   Users,
 } from "lucide-react-native";
 
-import { AppText, Card } from "@/components/ui";
+import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
+import { AccessibleImage, AppText, Card } from "@/components/ui";
+import type { ItemDetail } from "@/features/checklistPortfolio/useItemLabels";
 import { useHungryTheme } from "@/theme";
 import type { PortfolioItem } from "@/types/domain";
 
 interface PortfolioItemRowProps {
   item: PortfolioItem;
   label: string;
+  /** Photo, stall and price once loaded. */
+  detail?: ItemDetail;
   index: number;
   totalCount: number;
-  isOwner: boolean;
+  /** Ranking lists show "#1", "#2"... before the name. */
+  showRank?: boolean;
+  /** Owner or editor collaborator: shows reorder and remove. */
+  canEdit: boolean;
+  /** Opens the dish or stall page. */
+  onOpen: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
+  /** Opens the score and notes editor. */
+  onEdit?: () => void;
   onDelete: () => void;
 }
 
 export function PortfolioItemRow({
   item,
   label,
+  detail,
   index,
   totalCount,
-  isOwner,
+  showRank = false,
+  canEdit,
+  onOpen,
   onMoveUp,
   onMoveDown,
+  onEdit,
   onDelete,
 }: PortfolioItemRowProps) {
-  const { palette } = useHungryTheme();
+  const { palette, radii } = useHungryTheme();
   const isFirst = index === 0;
   const isLast = index === totalCount - 1;
   const dragPanResponder = useMemo(
@@ -57,13 +73,46 @@ export function PortfolioItemRow({
     [isFirst, isLast, onMoveDown, onMoveUp],
   );
 
+  const title = showRank ? `#${index + 1} ${label}` : label;
+  const subtitle =
+    item.itemType === "dish"
+      ? [
+          "Dish",
+          detail?.stallName,
+          detail?.price !== undefined ? `S$${detail.price.toFixed(2)}` : null,
+        ]
+          .filter(Boolean)
+          .join(" · ")
+      : "Stall";
+  const thumbStyle = { borderRadius: radii.sm, height: 56, width: 56 };
+
   return (
     <Card>
-      <View style={styles.itemHeader}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Open ${label}`}
+        accessibilityHint={
+          item.itemType === "dish" ? "Opens the dish page" : "Opens the stall page"
+        }
+        onPress={onOpen}
+        style={styles.itemHeader}
+      >
+        {detail?.imageUrl ? (
+          <AccessibleImage
+            source={{ uri: detail.imageUrl }}
+            style={thumbStyle}
+            contentFit="cover"
+            decorative
+          />
+        ) : (
+          <NoDishPhoto dishName={label} style={thumbStyle} iconSize={20} />
+        )}
         <View style={styles.copy}>
-          <AppText variant="bodyBold">{label}</AppText>
-          <AppText variant="bodySmall" tone="secondary">
-            {item.itemType === "dish" ? "Dish" : "Stall"}
+          <AppText variant="bodyBold" numberOfLines={2}>
+            {title}
+          </AppText>
+          <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
+            {subtitle}
           </AppText>
         </View>
         {typeof item.score === "number" ? (
@@ -72,7 +121,7 @@ export function PortfolioItemRow({
             <AppText variant="bodySmallBold">{item.score}/10</AppText>
           </View>
         ) : null}
-      </View>
+      </Pressable>
       {item.publicNotes ? (
         <View style={styles.noteRow}>
           <Eye color={palette.textMuted} size={15} />
@@ -90,17 +139,17 @@ export function PortfolioItemRow({
           </AppText>
         </View>
       ) : null}
-      {isOwner ? (
+      {canEdit ? (
         <View style={styles.actionRow}>
           <View
             {...dragPanResponder.panHandlers}
             accessible
             accessibilityRole="adjustable"
-            accessibilityLabel="Drag to reorder portfolio item"
+            accessibilityLabel="Drag to reorder list item"
             accessibilityHint="Swipe up or down on this handle to move the item"
             accessibilityActions={[
-              { name: "decrement", label: "Move portfolio item up" },
-              { name: "increment", label: "Move portfolio item down" },
+              { name: "decrement", label: "Move list item up" },
+              { name: "increment", label: "Move list item down" },
             ]}
             onAccessibilityAction={(event) => {
               if (event.nativeEvent.actionName === "decrement" && !isFirst) {
@@ -116,7 +165,7 @@ export function PortfolioItemRow({
           </View>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Move portfolio item up"
+            accessibilityLabel="Move list item up"
             disabled={isFirst}
             onPress={onMoveUp}
             style={[styles.iconButton, { opacity: isFirst ? 0.35 : 1 }]}
@@ -125,16 +174,26 @@ export function PortfolioItemRow({
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Move portfolio item down"
+            accessibilityLabel="Move list item down"
             disabled={isLast}
             onPress={onMoveDown}
             style={[styles.iconButton, { opacity: isLast ? 0.35 : 1 }]}
           >
             <ChevronDown color={palette.text} size={18} />
           </Pressable>
+          {onEdit ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Edit score and notes for ${label}`}
+              onPress={onEdit}
+              style={styles.iconButton}
+            >
+              <Pencil color={palette.text} size={18} />
+            </Pressable>
+          ) : null}
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Delete portfolio item"
+            accessibilityLabel="Delete list item"
             onPress={onDelete}
             style={styles.iconButton}
           >

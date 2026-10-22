@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ArrowLeft, Search } from "lucide-react-native";
+import { useShallow } from "zustand/react/shallow";
 
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import { CollaboratorRow, collaboratorName } from "@/components/portfolio";
@@ -12,7 +13,7 @@ import { getHungryService } from "@/lib/services/serviceProvider";
 import { usePortfolioStore } from "@/store/usePortfolioStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
-import type { PortfolioCollaboratorRole } from "@/types/domain";
+import type { PortfolioCollaborator, PortfolioCollaboratorRole } from "@/types/domain";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "PortfolioCollaborators">;
 
@@ -26,8 +27,21 @@ export function PortfolioCollaboratorsScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const portfolioId = route.params.portfolioId;
   const profileId = useProfileStore((state) => state.profile.id);
-  const { collaborators, loadPortfolioCollaborators, addCollaborator, removeCollaborator } =
-    usePortfolioStore();
+  const {
+    collaborators,
+    loadPortfolioCollaborators,
+    addCollaborator,
+    updateCollaboratorRole,
+    removeCollaborator,
+  } = usePortfolioStore(
+    useShallow((state) => ({
+      collaborators: state.collaborators,
+      loadPortfolioCollaborators: state.loadPortfolioCollaborators,
+      addCollaborator: state.addCollaborator,
+      updateCollaboratorRole: state.updateCollaboratorRole,
+      removeCollaborator: state.removeCollaborator,
+    })),
+  );
   const portfolioCollaborators = collaborators[portfolioId] ?? [];
 
   const [collaboratorsState, setCollaboratorsState] = useState<"loading" | "ready" | "error">(
@@ -92,12 +106,24 @@ export function PortfolioCollaboratorsScreen({ navigation, route }: Props) {
     setAddingUserId(null);
   };
 
-  return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: palette.bg, paddingTop: Math.max(insets.top, spacing[4]) }}
-      contentContainerStyle={[styles.content, { gap: spacing[4], padding: spacing[4] }]}
-      keyboardShouldPersistTaps="handled"
-    >
+  const confirmRemove = (collaborator: PortfolioCollaborator) => {
+    const name = collaboratorName(collaborator);
+    Alert.alert(`Remove ${name}?`, "They will no longer see or edit this list.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Remove",
+        style: "destructive",
+        onPress: () =>
+          void runListMutation(() => removeCollaborator(portfolioId, collaborator.userId), {
+            success: "Collaborator removed",
+            failure: "Couldn't remove the collaborator.",
+          }),
+      },
+    ]);
+  };
+
+  const header = (
+    <View style={{ gap: spacing[4] }}>
       <View style={styles.header}>
         <Pressable
           accessibilityRole="button"
@@ -141,12 +167,18 @@ export function PortfolioCollaboratorsScreen({ navigation, route }: Props) {
           <CollaboratorRow
             key={collaborator.id}
             collaborator={collaborator}
-            onRemove={() =>
-              void runListMutation(() => removeCollaborator(portfolioId, collaborator.userId), {
-                success: "Collaborator removed",
-                failure: "Couldn't remove the collaborator.",
-              })
+            onChangeRole={(nextRole) =>
+              void runListMutation(
+                () => updateCollaboratorRole(portfolioId, collaborator.userId, nextRole),
+                {
+                  success: `${collaboratorName(collaborator)} can now ${
+                    nextRole === "editor" ? "edit" : "view"
+                  } this list`,
+                  failure: "Couldn't change the role.",
+                },
+              )
             }
+            onRemove={() => confirmRemove(collaborator)}
           />
         ))
       )}
@@ -202,41 +234,52 @@ export function PortfolioCollaboratorsScreen({ navigation, route }: Props) {
                   : "No one you follow matches that name."}
               </AppText>
             </Card>
-          ) : (
-            matches.map((person) => {
-              const name = collaboratorName(person);
-              const isAdded = collaboratorIds.has(person.userId);
-              return (
-                <Card key={person.userId}>
-                  <View style={styles.personRow}>
-                    <Avatar name={name} uri={person.avatarUrl} size={40} />
-                    <AppText variant="bodyBold" style={{ flex: 1 }} numberOfLines={1}>
-                      {name}
-                    </AppText>
-                    {isAdded ? (
-                      <AppText variant="bodySmall" tone="secondary">
-                        Added
-                      </AppText>
-                    ) : (
-                      <Button
-                        label="Add"
-                        accessibilityLabel={`Add ${name} as ${role}`}
-                        variant="secondary"
-                        size="sm"
-                        fullWidth={false}
-                        loading={addingUserId === person.userId}
-                        disabled={addingUserId !== null}
-                        onPress={() => void handleAdd(person)}
-                      />
-                    )}
-                  </View>
-                </Card>
-              );
-            })
-          )}
+          ) : null}
         </View>
       ) : null}
-    </ScrollView>
+    </View>
+  );
+
+  return (
+    // One virtualized list: up to 500 followed people must not all render at once.
+    <FlatList
+      style={{ flex: 1, backgroundColor: palette.bg, paddingTop: Math.max(insets.top, spacing[4]) }}
+      contentContainerStyle={[styles.content, { gap: spacing[3], padding: spacing[4] }]}
+      keyboardShouldPersistTaps="handled"
+      ListHeaderComponent={header}
+      data={collaboratorsState === "ready" && followingState === "ready" ? matches : []}
+      keyExtractor={(person) => person.userId}
+      renderItem={({ item: person }) => {
+        const name = collaboratorName(person);
+        const isAdded = collaboratorIds.has(person.userId);
+        return (
+          <Card>
+            <View style={styles.personRow}>
+              <Avatar name={name} uri={person.avatarUrl} size={40} />
+              <AppText variant="bodyBold" style={{ flex: 1 }} numberOfLines={1}>
+                {name}
+              </AppText>
+              {isAdded ? (
+                <AppText variant="bodySmall" tone="secondary">
+                  Added
+                </AppText>
+              ) : (
+                <Button
+                  label="Add"
+                  accessibilityLabel={`Add ${name} as ${role}`}
+                  variant="secondary"
+                  size="sm"
+                  fullWidth={false}
+                  loading={addingUserId === person.userId}
+                  disabled={addingUserId !== null}
+                  onPress={() => void handleAdd(person)}
+                />
+              )}
+            </View>
+          </Card>
+        );
+      }}
+    />
   );
 }
 

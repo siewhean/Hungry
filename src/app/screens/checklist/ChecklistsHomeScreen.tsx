@@ -1,17 +1,20 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, FlatList, StyleSheet } from "react-native";
+import { View, FlatList, Pressable, StyleSheet } from "react-native";
+import { ArrowLeft } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ChecklistCard } from "@/components/checklist";
 import { useShallow } from "zustand/react/shallow";
 import { resolveListItemCount } from "@/features/checklistPortfolio/listLabels";
+import { runListMutation } from "@/features/checklistPortfolio/runListMutation";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { useChecklistStore } from "@/store/useChecklistStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { AppText, Button } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
+import type { Checklist } from "@/types/domain";
 
 type NavigationProp = NativeStackNavigationProp<ProfileStackParamList, "ChecklistsHome">;
 
@@ -60,14 +63,16 @@ export function ChecklistsHomeScreen() {
 
   const handleCreateChecklist = async () => {
     setIsCreating(true);
-    try {
-      const checklist = await createChecklist("New Checklist");
-      navigation.navigate("ChecklistDetail", { checklistId: checklist.id });
-    } catch (error) {
-      console.error("Failed to create checklist:", error);
-    } finally {
-      setIsCreating(false);
-    }
+    // Opens the new checklist right away so it can be named there; a failure is shown.
+    let created: Checklist | undefined;
+    const ok = await runListMutation(
+      async () => {
+        created = await createChecklist("New Checklist");
+      },
+      { failure: "Couldn't create the checklist." },
+    );
+    setIsCreating(false);
+    if (ok && created) navigation.navigate("ChecklistDetail", { checklistId: created.id });
   };
 
   if (!isAuthenticated) {
@@ -109,7 +114,17 @@ export function ChecklistsHomeScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.palette.bg, paddingTop: topSpacing }]}>
       <View style={styles.header}>
-        <AppText variant="h2">My Checklists</AppText>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
+          <ArrowLeft color={theme.palette.text} size={22} />
+        </Pressable>
+        <AppText variant="h2" style={{ flex: 1 }}>
+          My Checklists
+        </AppText>
         <Button
           label="Create"
           onPress={handleCreateChecklist}
@@ -163,7 +178,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: 8,
     padding: 16,
+  },
+  backButton: {
+    minHeight: 44,
+    minWidth: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
   emptyState: {
     flex: 1,
