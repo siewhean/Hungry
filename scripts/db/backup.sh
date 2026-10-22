@@ -28,7 +28,7 @@ done
 say "dumping data ($ENV_NAME, $DB_REF)"
 pg_dump "$DB_URL" -Fc --no-owner -f "$OUT/data.dump" "${SCHEMA_ARGS[@]}"
 pg_dump "$DB_URL" --schema-only --no-owner -f "$OUT/schema.sql" -n public $(psql_db -At -c "select '-n app_private' where exists (select 1 from pg_namespace where nspname = 'app_private')")
-psql_db -X -At -F $'\t' -f "$DB_DIR/sql/rowstats.sql" -c "select tbl, n, h from pg_temp.hungry_rowstats(true) order by 1" >"$OUT/rowstats.tsv"
+psql_db -1 -X -At -F $'\t' -f "$DB_DIR/sql/rowstats.sql" -c "select tbl, n, h from pg_temp.hungry_rowstats(true) order by 1" >"$OUT/rowstats.tsv"
 pg_restore --list "$OUT/data.dump" >"$OUT/toc.txt"
 [ -s "$OUT/toc.txt" ] || die "backup is empty or unreadable: $OUT"
 (cd "$OUT" && for f in data.dump schema.sql rowstats.tsv toc.txt; do echo "$(sha256_of "$f")  $f"; done >MANIFEST)
