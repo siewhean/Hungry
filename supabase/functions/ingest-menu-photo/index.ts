@@ -364,6 +364,11 @@ Deno.serve(async (request) => {
 
     const existing = Array.isArray(existingRows) ? existingRows : [];
 
+    // Matches against existing drafts are collected and written in one statement, and the new
+    // drafts in one insert, instead of one round trip per extracted dish.
+    const matches = new Map<string, { confidence: number; bumps: number }>();
+    const newDrafts: JsonObject[] = [];
+
     for (const dish of extracted) {
       const normalizedName = normalizeName(dish.name);
       if (!normalizedName) continue;
@@ -384,21 +389,19 @@ Deno.serve(async (request) => {
       }
 
       if (bestMatch && bestScore > 0.9) {
-        await client
-          .from("dishes_draft")
-          .update({
-            extraction_confidence: Math.max(
-              Number(bestMatch.extraction_confidence ?? 0),
-              clampConfidence(dish.extraction_confidence),
-            ),
-            confidence_bumps: Number(bestMatch.confidence_bumps ?? 0) + 1,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", String(bestMatch.id));
+        const matchId = String(bestMatch.id);
+        const previous = matches.get(matchId);
+        matches.set(matchId, {
+          confidence: Math.max(
+            previous?.confidence ?? Number(bestMatch.extraction_confidence ?? 0),
+            clampConfidence(dish.extraction_confidence),
+          ),
+          bumps: (previous?.bumps ?? 0) + 1,
+        });
         continue;
       }
 
-      await client.from("dishes_draft").insert({
+      newDrafts.push({
         venue_id: processingSubmission.venue_id,
         building_id: processingSubmission.building_id,
         source_photo_id: processingSubmission.id,
@@ -410,6 +413,17 @@ Deno.serve(async (request) => {
         extraction_confidence: clampConfidence(dish.extraction_confidence),
         review_status: "pending",
       });
+    }
+
+    if (matches.size > 0) {
+      const { error: matchError } = await client.rpc("apply_menu_draft_matches", {
+        p_matches: [...matches].map(([id, match]) => ({ id, ...match })),
+      });
+      if (matchError) throw matchError;
+    }
+    if (newDrafts.length > 0) {
+      const { error: insertError } = await client.from("dishes_draft").insert(newDrafts);
+      if (insertError) throw insertError;
     }
 
     await client

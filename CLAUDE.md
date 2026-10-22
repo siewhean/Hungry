@@ -93,6 +93,7 @@ Treat these as high blast-radius. Read before editing, patch narrowly, and run a
 6. Append a short line to `tasks/session-log.md` after focused task work.
 7. Update `tasks/lessons.md` only after a correction or repeated mistake.
 8. Keep final responses short: what changed, what passed, what remains.
+10. Never query inside a loop. A database, RPC, service or storage-signing call inside `for`/`while`/`.map`/`.forEach` is an N+1: fetch the whole set once (`.in("id", ids)`, a join, or a batched RPC such as `get_item_details`, `get_venue_summaries`) and look rows up from a `Map`. If one call per item is truly required (a file upload, a cursor-paged read, one transaction per row), add `// n-plus-one-ok: <reason>` on or just above the call. CI runs `npm run check:n-plus-one`; `scripts/n-plus-one-baseline.json` may only shrink.
 
 ---
 

@@ -195,15 +195,8 @@ async function loadCandidates(
     { tasteVector, dietaryFlags, radiusMeters: radius, maxDishBudget },
   );
   const venueIds = [...new Set(ranked.map((dish) => dish.venueId))].slice(0, MAX_OPEN_STATE_VENUES);
-  const venues = await Promise.all(
-    venueIds.map(async (venueId) => {
-      const venue =
-        repository.getVenueById(venueId) ??
-        (await service.discovery.getVenue(venueId).catch(() => undefined));
-      return [venueId, venue] as const;
-    }),
-  );
-  return preferOpenStalls(ranked, new Map(venues));
+  const venues = await service.discovery.getVenuesByIds(venueIds).catch(() => []);
+  return preferOpenStalls(ranked, new Map(venues.map((venue) => [venue.id, venue])));
 }
 
 function formatDistance(distanceMeters: number) {

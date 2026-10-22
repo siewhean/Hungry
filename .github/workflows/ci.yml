@@ -35,6 +35,11 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: No queries inside loops (N+1)
+        run: |
+          npm run test:n-plus-one
+          npm run check:n-plus-one
+
       - name: Format check
         run: npm run format:check
 

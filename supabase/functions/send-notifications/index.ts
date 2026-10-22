@@ -200,6 +200,18 @@ Deno.serve(async (request) => {
       .eq("id", jobId);
   };
 
+  // Jobs that are skipped or deferred send nothing, so their status updates are grouped by
+  // identical fields and written once each after the loop instead of one UPDATE per job.
+  const queuedFinishes = new Map<string, { fields: JsonObject; jobIds: string[] }>();
+  // Tokens Expo reports as unregistered are removed together after the loop.
+  const deadTokensToRemove = new Set<string>();
+  const queueFinish = (jobId: string, fields: JsonObject) => {
+    const key = JSON.stringify(fields);
+    const group = queuedFinishes.get(key) ?? { fields, jobIds: [] };
+    group.jobIds.push(jobId);
+    queuedFinishes.set(key, group);
+  };
+
   for (const job of jobs) {
     const pref = { ...DEFAULT_PREFERENCES, ...(prefsByUser.get(job.user_id) ?? {}) };
     const isWeeklyPicks = job.category === "weekly_picks";
@@ -248,14 +260,14 @@ Deno.serve(async (request) => {
 
     if (skipReason) {
       results.skipped += 1;
-      await finish(job.id, { status: "skipped", skip_reason: skipReason });
+      queueFinish(job.id, { status: "skipped", skip_reason: skipReason });
       continue;
     }
 
     // Merchant Centre has no quiet-hours setting, so low-rating alerts are sent right away.
     if (!isLowRating && isQuietHour(hour, pref.quiet_start_hour, pref.quiet_end_hour)) {
       results.deferred += 1;
-      await finish(job.id, { status: "pending", attempts: Math.max(0, job.attempts - 1) });
+      queueFinish(job.id, { status: "pending", attempts: Math.max(0, job.attempts - 1) });
       continue;
     }
 
@@ -286,9 +298,7 @@ Deno.serve(async (request) => {
         if (ticket?.status === "ok") delivered = true;
         if (ticket?.details?.error === "DeviceNotRegistered") deadTokens.push(userTokens[index]);
       });
-      if (deadTokens.length) {
-        await client.from("user_push_tokens").delete().in("token", deadTokens);
-      }
+      deadTokens.forEach((token) => deadTokensToRemove.add(token));
     } catch {
       delivered = false;
     }
@@ -306,6 +316,22 @@ Deno.serve(async (request) => {
       });
     }
   }
+
+  if (deadTokensToRemove.size > 0) {
+    await client
+      .from("user_push_tokens")
+      .delete()
+      .in("token", [...deadTokensToRemove]);
+  }
+  await Promise.all(
+    // n-plus-one-ok: one UPDATE per distinct set of fields, not per job.
+    [...queuedFinishes.values()].map(({ fields, jobIds }) =>
+      client
+        .from("notification_jobs")
+        .update({ locked_at: null, ...fields })
+        .in("id", jobIds),
+    ),
+  );
 
   return toJson(200, { claimed: jobs.length, ...results });
 });

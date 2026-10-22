@@ -119,10 +119,23 @@ export function OCRDraftScreen() {
       {
         text: "Accept All",
         onPress: async () => {
-          let failed = 0;
-          for (const draft of drafts) {
-            if (!(await handleAccept(draft.id, { silent: true }))) failed += 1;
+          const draftIds = drafts
+            .map((draft) => draft.id)
+            .filter((id) => !busyDraftIds.current.has(id));
+          let acceptedIds: string[] = [];
+          let failed = drafts.length;
+          draftIds.forEach((id) => busyDraftIds.current.add(id));
+          try {
+            const result = await getHungryService().merchant.acceptOCRDrafts(draftIds);
+            acceptedIds = result.acceptedIds;
+            failed = drafts.length - acceptedIds.length;
+          } catch {
+            // Every draft stays listed so the merchant can try again.
+          } finally {
+            draftIds.forEach((id) => busyDraftIds.current.delete(id));
           }
+          const accepted = new Set(acceptedIds);
+          setDrafts((prev) => prev.filter((d) => !accepted.has(d.id)));
           const added = drafts.length - failed;
           if (failed === 0) {
             showAlert("Success", `${added} ${added === 1 ? "dish" : "dishes"} added to your menu.`);
