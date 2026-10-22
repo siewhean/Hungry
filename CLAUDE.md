@@ -93,7 +93,8 @@ Treat these as high blast-radius. Read before editing, patch narrowly, and run a
 6. Append a short line to `tasks/session-log.md` after focused task work.
 7. Update `tasks/lessons.md` only after a correction or repeated mistake.
 8. Keep final responses short: what changed, what passed, what remains.
-9. Error tracking is mandatory (enforced by `src/lib/monitoring/error-reporting-contracts.test.ts` in CI): every Edge Function is served with `serveWithSentry("<name>", handler)` from `supabase/functions/_shared/sentry.ts` (never bare `Deno.serve`), handled failures call `reportFunctionError`, and screens that catch errors call `reportError` from `@/lib/monitoring/reportError`. Do not add a screen to `screen-error-reporting-baseline.json`; the list only shrinks.
+
+10. Error tracking is mandatory (enforced by `src/lib/monitoring/error-reporting-contracts.test.ts` in CI): every Edge Function is served with `serveWithSentry("<name>", handler)` from `supabase/functions/_shared/sentry.ts` (never bare `Deno.serve`), handled failures call `reportFunctionError`, and screens that catch errors call `reportError` from `@/lib/monitoring/reportError`. Do not add a screen to `screen-error-reporting-baseline.json`; the list only shrinks.
 
 ---
 
