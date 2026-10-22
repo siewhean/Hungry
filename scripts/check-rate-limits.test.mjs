@@ -142,3 +142,50 @@ test("Edge Functions need a limiter, a worker token, or an allowlist entry", () 
   assert.match(problems[0], /Edge Function open/);
   assert.deepEqual(run(p, { edgeFunctions: { open: "static health check" } }), []);
 });
+
+test("a rate rule on a STABLE or IMMUTABLE RPC is refused until it is made VOLATILE", () => {
+  const rule =
+    "insert into app_private.request_rate_rules (route, anon_per_minute, user_per_minute, note) values ('rpc/list_things', 30, 60, 'x');";
+  const stableAfterBody = project({
+    "001_hook.sql": HOOK,
+    "002_fn.sql":
+      "create function public.list_things() returns int as $$ select 1 $$ language sql stable;",
+    "003_rule.sql": rule,
+  });
+  assert.match(run(stableAfterBody).join("\n"), /list_things.*STABLE or IMMUTABLE/);
+
+  const stableBeforeBody = project({
+    "001_hook.sql": HOOK,
+    "002_fn.sql":
+      "create function public.list_things() returns int language sql immutable as $$ select 1 $$;",
+    "003_rule.sql": rule,
+  });
+  assert.match(run(stableBeforeBody).join("\n"), /list_things.*STABLE or IMMUTABLE/);
+
+  const fixed = project({
+    "001_hook.sql": HOOK,
+    "002_fn.sql":
+      "create function public.list_things() returns int as $$ select 1 $$ language sql stable;",
+    "003_rule.sql": rule,
+    "004_vol.sql": "alter function public.list_things() volatile;",
+  });
+  assert.deepEqual(run(fixed), []);
+
+  const recreatedStable = project({
+    "001_hook.sql": HOOK,
+    "002_fn.sql":
+      "create function public.list_things() returns int language sql as $$ select 1 $$;",
+    "003_rule.sql": rule,
+    "004_replace.sql":
+      "create or replace function public.list_things() returns int language sql stable as $$ select 2 $$;",
+  });
+  assert.equal(run(recreatedStable).length, 1);
+
+  const volatileDefault = project({
+    "001_hook.sql": HOOK,
+    "002_fn.sql":
+      "create function public.list_things() returns int language plpgsql as $$ begin return 1; end $$;",
+    "003_rule.sql": rule,
+  });
+  assert.deepEqual(run(volatileDefault), []);
+});
