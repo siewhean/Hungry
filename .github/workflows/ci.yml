@@ -89,6 +89,9 @@ jobs:
       - name: Edge Function static check
         run: npm run check:edge-functions
 
+      - name: Rate-limit contract
+        run: npm run check:rate-limits
+
       - name: Supabase migration dry run
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
