@@ -1,5 +1,6 @@
 -- Down for 20261022140000_batched_reads_for_n_plus_one.
 -- down-loses-data: only the four rate-limit rule rows this migration added (configuration, not user data).
+-- expect-row-loss: app_private.request_rate_rules
 -- The functions are new helpers that own no data. The app falls back to per-stall reads where it can
 -- (getVenuesByIds); older builds never call them.
 delete from app_private.request_rate_rules
