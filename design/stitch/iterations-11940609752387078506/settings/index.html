@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500&amp;family=Nunito:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#fff8f2;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-secondary-fixed": "#061d32", "primary": "#a93100", "teal": "#14B8A6", "inverse-primary": "#ffb59e", "on-tertiary": "#ffffff", "surface-container": "#f4ede4", "on-surface-variant": "#5a4139", "tertiary-container": "#a16900", "surface-container-lowest": "#ffffff", "on-secondary-fixed-variant": "#35485f", "on-background": "#1e1b16", "surface-dim": "#e0d9d0", "surface-container-highest": "#e9e1d9", "primary-container": "#d1430b", "primary-fixed-dim": "#ffb59e", "surface-container-low": "#faf2e9", "inverse-surface": "#33302a", "outline": "#8e7067", "on-tertiary-fixed": "#291800", "russian-red": "#CD0302", "on-tertiary-fixed-variant": "#633f00", "on-primary": "#ffffff", "tertiary-fixed": "#ffddb4", "background": "#fff8f2", "on-primary-fixed-variant": "#842500", "secondary-container": "#cde1fe", "on-tertiary-container": "#fffbff", "paper-warm": "#FFF7EE", "surface-container-high": "#efe7de", "inverse-on-surface": "#f7f0e7", "error": "#ba1a1a", "hawker-amber": "#F5A623", "on-error-container": "#93000a", "secondary": "#4c6078", "tertiary": "#805200", "primary-fixed": "#ffdbd0", "surface-variant": "#e9e1d9", "on-secondary": "#ffffff", "on-surface": "#1e1b16", "hungry-orange": "#E8531E", "on-primary-fixed": "#3a0b00", "secondary-fixed": "#d1e4ff", "surface-tint": "#ad3200", "deep-navy": "#1A2E44", "on-secondary-container": "#51647d", "surface": "#fff8f2", "on-primary-container": "#fffbff", "outline-variant": "#e3bfb4", "surface-bright": "#fff8f2", "error-container": "#ffdad6", "on-error": "#ffffff", "autumn-green": "#4F7E17", "line": "#E7DED4", "secondary-fixed-dim": "#b4c8e4", "tertiary-fixed-dim": "#ffb955" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-xs": "0.25rem", "space-lg": "1.5rem", "space-xl": "2rem", "space-md": "1rem", "margin": "1rem", "gutter": "1rem", "space-sm": "0.5rem" }, fontFamily: { "micro": ["Nunito"], "price": ["DM Mono"], "body": ["Nunito"], "h2": ["Nunito"], "bodySmall": ["Nunito"], "h3": ["Nunito"], "display": ["Nunito"], "bodyLarge": ["Nunito"], "h1": ["Nunito"] }, fontSize: { "micro": ["11px", { "lineHeight": "14px", "fontWeight": "500" }], "price": ["15px", { "lineHeight": "22px", "fontWeight": "400" }], "body": ["15px", { "lineHeight": "22px", "fontWeight": "400" }], "h2": ["20px", { "lineHeight": "26px", "fontWeight": "600" }], "bodySmall": ["13px", { "lineHeight": "18px", "fontWeight": "400" }], "h3": ["17px", { "lineHeight": "22px", "fontWeight": "600" }], "display": ["32px", { "lineHeight": "38px", "fontWeight": "700" }], "bodyLarge": ["17px", { "lineHeight": "24px", "fontWeight": "400" }], "h1": ["24px", { "lineHeight": "30px", "fontWeight": "700" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-paper-warm font-body text-body text-deep-navy flex flex-col min-h-screen selection:bg-hungry-orange selection:text-white"><header class="fixed top-0 w-full z-50 bg-paper-warm/80 backdrop-blur-xl pt-safe shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-14 px-margin flex items-center justify-between"><div class="flex items-center gap-space-xs"><button aria-label="Go back" class="min-w-[44px] min-h-[44px] -ml-2 flex items-center justify-center text-deep-navy hover:text-hungry-orange transition-colors" onclick="history.back()"><span class="material-symbols-outlined text-[20px]">arrow_back</span></button><h1 class="font-h2 text-h2 text-deep-navy font-semibold truncate">Settings</h1></div><div class="flex items-center gap-space-xs"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex flex-col relative w-full pt-14 pb-safe bg-paper-warm"><div class="flex flex-col w-full pb-10">
+<!-- Interactive Toast Notification Container -->
+<div class="fixed top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300 transform -translate-y-2 flex items-center gap-space-xs bg-deep-navy text-surface-container-lowest px-4 py-2.5 rounded-full shadow-lg" id="toast">
+<span class="material-symbols-outlined text-[18px] text-hungry-orange" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-bodySmall text-bodySmall" id="toast-text">Preferences saved</span>
+</div>
+<div class="px-margin flex flex-col gap-space-lg pt-4">
+<!-- Section 1: Dining Preferences -->
+<section class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between px-1">
+<h2 class="font-h3 text-h3 text-deep-navy">Dining Preferences</h2>
+<span class="font-micro text-micro text-hungry-orange font-semibold uppercase tracking-wider">Flavour Profile</span>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-md">
+<!-- Dietary Restrictions Tag Cloud -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-bodySmall text-bodySmall text-on-surface-variant font-medium">Dietary flags</label>
+<div class="flex flex-wrap gap-2 pt-1" id="dietary-chips">
+<button class="diet-chip flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container text-deep-navy font-micro text-micro transition-colors active:scale-95" onclick="toggleChip(this)" type="button">
+<span class="material-symbols-outlined text-[15px] text-autumn-green" style="font-variation-settings: 'FILL' 1;">eco</span>
+<span>Halal Only</span>
+</button>
+<button class="diet-chip flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary-fixed text-hungry-orange font-micro text-micro transition-colors active:scale-95" onclick="toggleChip(this)" type="button">
+<span class="material-symbols-outlined text-[15px]" style="font-variation-settings: 'FILL' 1;">spa</span>
+<span class="font-bold">Vegetarian</span>
+</button>
+<button class="diet-chip flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container text-deep-navy font-micro text-micro transition-colors active:scale-95" onclick="toggleChip(this)" type="button">
+<span class="material-symbols-outlined text-[15px] text-russian-red" style="font-variation-settings: 'FILL' 1;">warning</span>
+<span>No Peanuts / Nuts</span>
+</button>
+<button class="diet-chip flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container text-deep-navy font-micro text-micro transition-colors active:scale-95" onclick="toggleChip(this)" type="button">
+<span class="material-symbols-outlined text-[15px] text-tertiary" style="font-variation-settings: 'FILL' 1;">egg_alt</span>
+<span>No Shellfish</span>
+</button>
+</div>
+</div>
+<div class="h-px bg-surface-container"></div>
+<!-- Spice Tolerance Selector -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<label class="font-bodySmall text-bodySmall text-on-surface-variant font-medium">Spice tolerance</label>
+<span class="font-bodySmall text-bodySmall text-primary font-semibold" id="spice-level-label">Level 2: Pedas Manis</span>
+</div>
+<div class="grid grid-cols-4 gap-2 pt-1" id="spice-buttons">
+<button class="spice-btn py-2 px-1 rounded-lg bg-surface-container text-center flex flex-col items-center gap-1 transition-all" onclick="setSpice(0, 'Non-spicy / Clear soup')" type="button">
+<span class="material-symbols-outlined text-[18px] text-secondary">icecream</span>
+<span class="font-micro text-micro font-medium text-deep-navy">None</span>
+</button>
+<button class="spice-btn py-2 px-1 rounded-lg bg-surface-container text-center flex flex-col items-center gap-1 transition-all" onclick="setSpice(1, 'Level 1: Mild Chilli Kick')" type="button">
+<span class="material-symbols-outlined text-[18px] text-hawker-amber" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+<span class="font-micro text-micro font-medium text-deep-navy">Mild</span>
+</button>
+<button class="spice-btn py-2 px-1 rounded-lg bg-hungry-orange text-surface-container-lowest text-center flex flex-col items-center gap-1 transition-all shadow-sm" onclick="setSpice(2, 'Level 2: Pedas Manis')" type="button">
+<span class="material-symbols-outlined text-[18px] text-surface-container-lowest" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+<span class="font-micro text-micro font-bold">Standard</span>
+</button>
+<button class="spice-btn py-2 px-1 rounded-lg bg-surface-container text-center flex flex-col items-center gap-1 transition-all" onclick="setSpice(3, 'Level 3: Extra Sambal Power')" type="button">
+<span class="material-symbols-outlined text-[18px] text-russian-red" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+<span class="font-micro text-micro font-medium text-deep-navy">Fiery</span>
+</button>
+</div>
+</div>
+<div class="h-px bg-surface-container"></div>
+<!-- Default Budget Filter -->
+<div class="flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-body text-body text-deep-navy font-semibold">Target meal budget</span>
+<span class="font-bodySmall text-bodySmall text-on-surface-variant">Default hawker pricing range</span>
+</div>
+<div class="flex items-center gap-1 bg-surface-container px-3 py-1.5 rounded-lg">
+<span class="font-micro text-micro text-on-surface-variant font-bold">SGD</span>
+<span class="font-price text-price text-deep-navy font-medium">S$4 – S$8</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 2: Location & Notifications -->
+<section class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between px-1">
+<h2 class="font-h3 text-h3 text-deep-navy">Location &amp; Notifications</h2>
+<span class="font-micro text-micro text-on-surface-variant">Near Maxwell &amp; Amoy</span>
+</div>
+<div class="bg-surface-container-lowest rounded-xl shadow-sm divide-y divide-surface-container">
+<!-- GPS Toggle -->
+<div class="p-space-md flex items-center justify-between">
+<div class="flex items-center gap-space-sm pr-2">
+<div class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px] text-hungry-orange">near_me</span>
+</div>
+<div class="flex flex-col">
+<span class="font-body text-body text-deep-navy font-semibold">GPS auto-detect</span>
+<span class="font-bodySmall text-bodySmall text-on-surface-variant">Auto-switch centre as you step in</span>
+</div>
+</div>
+<button aria-checked="true" class="w-12 h-7 bg-hungry-orange rounded-full p-1 transition-colors relative shrink-0" onclick="toggleSwitch(this)" role="switch" type="button">
+<div class="w-5 h-5 bg-surface-container-lowest rounded-full shadow-sm transform translate-x-5 transition-transform"></div>
+</button>
+</div>
+<!-- Queue-wait Alerts -->
+<div class="p-space-md flex items-center justify-between">
+<div class="flex items-center gap-space-sm pr-2">
+<div class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px] text-hawker-amber">hourglass_top</span>
+</div>
+<div class="flex flex-col">
+<span class="font-body text-body text-deep-navy font-semibold">Queue-wait alerts</span>
+<span class="font-bodySmall text-bodySmall text-on-surface-variant">Notify when line drops under 10m</span>
+</div>
+</div>
+<button aria-checked="true" class="w-12 h-7 bg-hungry-orange rounded-full p-1 transition-colors relative shrink-0" onclick="toggleSwitch(this)" role="switch" type="button">
+<div class="w-5 h-5 bg-surface-container-lowest rounded-full shadow-sm transform translate-x-5 transition-transform"></div>
+</button>
+</div>
+<!-- Stall Spotlights -->
+<div class="p-space-md flex items-center justify-between">
+<div class="flex items-center gap-space-sm pr-2">
+<div class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px] text-autumn-green">storefront</span>
+</div>
+<div class="flex flex-col">
+<span class="font-body text-body text-deep-navy font-semibold">Fresh stall discoveries</span>
+<span class="font-bodySmall text-bodySmall text-on-surface-variant">Weekly gems from Maxwell &amp; Tanjong Pagar</span>
+</div>
+</div>
+<button aria-checked="false" class="w-12 h-7 bg-surface-container-highest rounded-full p-1 transition-colors relative shrink-0" onclick="toggleSwitch(this)" role="switch" type="button">
+<div class="w-5 h-5 bg-surface-container-lowest rounded-full shadow-sm transform translate-x-0 transition-transform"></div>
+</button>
+</div>
+</div>
+</section>
+<!-- Section 3: Account & Sync -->
+<section class="flex flex-col gap-space-xs">
+<div class="flex items-center px-1">
+<h2 class="font-h3 text-h3 text-deep-navy">Account &amp; Sync</h2>
+</div>
+<div class="bg-surface-container-lowest rounded-xl shadow-sm divide-y divide-surface-container">
+<!-- Email Row -->
+<div class="p-space-md flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px] text-secondary">alternate_email</span>
+</div>
+<div class="flex flex-col">
+<span class="font-body text-body text-deep-navy font-semibold">Email Account</span>
+<span class="font-bodySmall text-bodySmall text-on-surface-variant">kopilover99@singnet.com.sg</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-[20px] text-on-surface-variant">chevron_right</span>
+</div>
+<!-- Connected Accounts -->
+<div class="p-space-md flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px] text-secondary">hub</span>
+</div>
+<div class="flex flex-col">
+<span class="font-body text-body text-deep-navy font-semibold">Connected Services</span>
+<div class="flex items-center gap-1.5 pt-0.5">
+<span class="font-micro text-micro bg-surface-container text-deep-navy px-1.5 py-0.5 rounded">Apple ID</span>
+<span class="font-micro text-micro bg-surface-container text-on-surface-variant px-1.5 py-0.5 rounded">Google</span>
+</div>
+</div>
+</div>
+<span class="font-bodySmall text-bodySmall text-hungry-orange font-semibold">Manage</span>
+</div>
+<!-- Offline Cache -->
+<div class="p-space-md flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px] text-secondary">offline_pin</span>
+</div>
+<div class="flex flex-col">
+<span class="font-body text-body text-deep-navy font-semibold">Offline Hawker Menu Cache</span>
+<span class="font-bodySmall text-bodySmall text-on-surface-variant">114 centres saved (42.8 MB)</span>
+</div>
+</div>
+<button class="bg-surface-container text-deep-navy px-2.5 py-1 rounded font-micro text-micro font-semibold active:bg-surface-container-highest transition-colors" onclick="clearCache(this)" type="button">
+            Clear
+          </button>
+</div>
+</div>
+</section>
+<!-- Section 4: Data & Privacy -->
+<section class="flex flex-col gap-space-xs">
+<div class="flex items-center px-1">
+<h2 class="font-h3 text-h3 text-deep-navy">Data &amp; Privacy</h2>
+</div>
+<div class="bg-surface-container-lowest rounded-xl shadow-sm divide-y divide-surface-container">
+<!-- Taste Vector Sharing -->
+<div class="p-space-md flex items-center justify-between">
+<div class="flex items-center gap-space-sm pr-2">
+<div class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px] text-tertiary">tune</span>
+</div>
+<div class="flex flex-col">
+<span class="font-body text-body text-deep-navy font-semibold">Taste vector sharing</span>
+<span class="font-bodySmall text-bodySmall text-on-surface-variant">Contribute anonymised dish likes</span>
+</div>
+</div>
+<button aria-checked="true" class="w-12 h-7 bg-hungry-orange rounded-full p-1 transition-colors relative shrink-0" onclick="toggleSwitch(this)" role="switch" type="button">
+<div class="w-5 h-5 bg-surface-container-lowest rounded-full shadow-sm transform translate-x-5 transition-transform"></div>
+</button>
+</div>
+<!-- Download Food Diary -->
+<button class="w-full p-space-md flex items-center justify-between text-left hover:bg-surface-container/30 transition-colors" onclick="triggerToast('Downloading hawker history...')" type="button">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px] text-secondary">download_for_offline</span>
+</div>
+<div class="flex flex-col">
+<span class="font-body text-body text-deep-navy font-semibold">Download Food Diary</span>
+<span class="font-bodySmall text-bodySmall text-on-surface-variant">Export reviews &amp; check-in history as JSON</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-[20px] text-on-surface-variant">arrow_forward</span>
+</button>
+<!-- Privacy Policy -->
+<button class="w-full p-space-md flex items-center justify-between text-left hover:bg-surface-container/30 transition-colors" onclick="triggerToast('Opening SG Personal Data policy...')" type="button">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px] text-secondary">verified_user</span>
+</div>
+<div class="flex flex-col">
+<span class="font-body text-body text-deep-navy font-semibold">Privacy Policy &amp; Hawker PDPA</span>
+<span class="font-bodySmall text-bodySmall text-on-surface-variant">Last updated February 2025</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-[20px] text-on-surface-variant">open_in_new</span>
+</button>
+</div>
+</section>
+<!-- Section 5: Logout & Destructive Zone -->
+<section class="flex flex-col gap-space-md pt-2 pb-6">
+<button class="w-full min-h-[48px] rounded-xl bg-surface-container text-deep-navy font-h3 text-h3 flex items-center justify-center gap-space-xs shadow-sm hover:bg-surface-container-highest active:scale-[0.99] transition-all" onclick="triggerToast('Logged out securely')" type="button">
+<span class="material-symbols-outlined text-[20px]">logout</span>
+<span>Log Out</span>
+</button>
+<div class="flex flex-col items-center gap-space-xs text-center pt-2">
+<button class="text-russian-red font-bodySmall text-bodySmall font-medium underline underline-offset-4 hover:opacity-80 transition-opacity" onclick="triggerToast('Request sent to delete record')" type="button">
+          Delete Hungry Account and Purge Taste Data
+        </button>
+<span class="font-micro text-micro text-on-surface-variant">Hungry App build v3.8.4 • Crafted with passion for hawkers</span>
+</div>
+</section>
+</div>
+</div>
+<script>
+  function triggerToast(message) {
+    const toast = document.getElementById('toast');
+    const toastText = document.getElementById('toast-text');
+    if (!toast || !toastText) return;
+    toastText.innerText = message;
+    toast.classList.remove('opacity-0', '-translate-y-2');
+    toast.classList.add('opacity-100', 'translate-y-0');
+
+    setTimeout(() => {
+      toast.classList.remove('opacity-100', 'translate-y-0');
+      toast.classList.add('opacity-0', '-translate-y-2');
+    }, 2400);
+  }
+
+  function toggleSwitch(btn) {
+    const isChecked = btn.getAttribute('aria-checked') === 'true';
+    const knob = btn.querySelector('div');
+    if (isChecked) {
+      btn.setAttribute('aria-checked', 'false');
+      btn.classList.remove('bg-hungry-orange');
+      btn.classList.add('bg-surface-container-highest');
+      knob.classList.remove('translate-x-5');
+      knob.classList.add('translate-x-0');
+      triggerToast('Notification disabled');
+    } else {
+      btn.setAttribute('aria-checked', 'true');
+      btn.classList.remove('bg-surface-container-highest');
+      btn.classList.add('bg-hungry-orange');
+      knob.classList.remove('translate-x-0');
+      knob.classList.add('translate-x-5');
+      triggerToast('Notification enabled');
+    }
+  }
+
+  function toggleChip(chip) {
+    const isSelected = chip.classList.contains('bg-primary-fixed');
+    if (isSelected) {
+      chip.classList.remove('bg-primary-fixed', 'text-hungry-orange');
+      chip.classList.add('bg-surface-container', 'text-deep-navy');
+      const textSpan = chip.querySelector('span:last-child');
+      if (textSpan) textSpan.classList.remove('font-bold');
+      triggerToast('Dietary filter removed');
+    } else {
+      chip.classList.remove('bg-surface-container', 'text-deep-navy');
+      chip.classList.add('bg-primary-fixed', 'text-hungry-orange');
+      const textSpan = chip.querySelector('span:last-child');
+      if (textSpan) textSpan.classList.add('font-bold');
+      triggerToast('Dietary preference updated');
+    }
+  }
+
+  function setSpice(index, label) {
+    const buttons = document.querySelectorAll('.spice-btn');
+    const spiceLabel = document.getElementById('spice-level-label');
+    if (spiceLabel) spiceLabel.innerText = label;
+
+    buttons.forEach((btn, idx) => {
+      const icon = btn.querySelector('.material-symbols-outlined');
+      const text = btn.querySelector('span:last-child');
+
+      if (idx === index) {
+        btn.className = 'spice-btn py-2 px-1 rounded-lg bg-hungry-orange text-surface-container-lowest text-center flex flex-col items-center gap-1 transition-all shadow-sm';
+        if (icon) {
+          icon.className = 'material-symbols-outlined text-[18px] text-surface-container-lowest';
+          icon.style.fontVariationSettings = "'FILL' 1";
+        }
+        if (text) text.className = 'font-micro text-micro font-bold text-surface-container-lowest';
+      } else {
+        btn.className = 'spice-btn py-2 px-1 rounded-lg bg-surface-container text-center flex flex-col items-center gap-1 transition-all';
+        if (icon) {
+          let iconColor = 'text-secondary';
+          if (idx === 1) iconColor = 'text-hawker-amber';
+          if (idx === 3) iconColor = 'text-russian-red';
+          icon.className = 'material-symbols-outlined text-[18px] ' + iconColor;
+          icon.style.fontVariationSettings = "'FILL' 1";
+        }
+        if (text) text.className = 'font-micro text-micro font-medium text-deep-navy';
+      }
+    });
+
+    triggerToast('Spice preference set to: ' + label);
+  }
+
+  function clearCache(button) {
+    button.innerText = 'Cleared!';
+    button.classList.add('text-autumn-green');
+    triggerToast('Menu cache purged (0 MB)');
+    setTimeout(() => {
+      button.innerText = 'Clear';
+      button.classList.remove('text-autumn-green');
+    }, 2000);
+  }
+</script></main></body></html>

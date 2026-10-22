@@ -2,9 +2,10 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useIsFocused } from "@react-navigation/native";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
+import { Star, Store } from "lucide-react-native";
 
 import { ReviewModerationNotice } from "@/components/review";
-import { AppText, Button, Card, EmptyState } from "@/components/ui";
+import { AccessibleImage, AppText, Button, EmptyState } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import {
   getDataRepository,
@@ -13,7 +14,7 @@ import {
 } from "@/lib/services/serviceProvider";
 import { OwnReviewMenuButton, useOwnReviewEditor } from "@/features/profile/useOwnReviewEditor";
 import { useProfileStore } from "@/store/useProfileStore";
-import { useUIStore } from "@/store/useUIStore";
+import { useHungryTheme } from "@/theme";
 import type { Review } from "@/types/domain";
 import { isDishDetail } from "./profileGuards";
 import { ProfileReviewsSkeleton } from "./ProfileGridSkeleton";
@@ -26,6 +27,7 @@ type Props = NativeStackScreenProps<ProfileStackParamList, "ReviewHistory">;
 const REVIEW_HISTORY_PAGE_SIZE = 50;
 
 export function ReviewHistoryScreen({ navigation }: Props) {
+  const { palette, spacing, radii, componentRadii, shadows } = useHungryTheme();
   const profile = useProfileStore((state) => state.profile);
   const reviewEntries = useProfileStore((state) => state.reviewEntries);
   const repository = getDataRepository();
@@ -123,6 +125,14 @@ export function ReviewHistoryScreen({ navigation }: Props) {
             review: undefined,
           }));
   const hasHistory = historyItems.length > 0;
+  const ownRatings = historyItems
+    .map(
+      ({ review, dish }) => review?.rating ?? (dish ? reviewEntries[dish.id]?.rating : undefined),
+    )
+    .filter((rating): rating is number => typeof rating === "number" && rating > 0);
+  const averageRating = ownRatings.length
+    ? (ownRatings.reduce((total, rating) => total + rating, 0) / ownRatings.length).toFixed(1)
+    : undefined;
 
   const openReviewFlow = () => {
     const rootNavigation = getRootNavigation(navigation as any);
@@ -134,15 +144,61 @@ export function ReviewHistoryScreen({ navigation }: Props) {
   };
 
   return (
-    <ProfileScreenShell
-      title="Review history"
-      subtitle="Submitted reviews stay visible in your profile."
-    >
+    <ProfileScreenShell title="Reviews">
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+        <View>
+          <AppText variant="bodySmall" tone="secondary">
+            Taste Journal
+          </AppText>
+          <AppText variant="h2">Foodie Footprint</AppText>
+        </View>
+        <Button
+          label="Write another review"
+          accessibilityLabel="Write Review"
+          leftIcon={<Star size={14} color={palette.textOnPrimary} />}
+          variant="primary"
+          size="sm"
+          fullWidth={false}
+          onPress={openReviewFlow}
+        />
+      </View>
+      {hasHistory ? (
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-around",
+            padding: spacing[3],
+            backgroundColor: palette.surfaceRaised,
+            borderRadius: componentRadii.card,
+          }}
+        >
+          <View style={{ alignItems: "center", gap: spacing[1] }}>
+            <AppText variant="h1">{ownRatings.length}</AppText>
+            <AppText variant="micro" tone="secondary">
+              REVIEWED
+            </AppText>
+          </View>
+          {averageRating ? (
+            <>
+              <View style={{ width: 1, height: spacing[8], backgroundColor: palette.border }} />
+              <View style={{ alignItems: "center", gap: spacing[1] }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
+                  <Star size={18} color={palette.ratingStar} fill={palette.ratingStar} />
+                  <AppText variant="h1">{averageRating}</AppText>
+                </View>
+                <AppText variant="micro" tone="secondary">
+                  YOUR AVG SCORE
+                </AppText>
+              </View>
+            </>
+          ) : null}
+        </View>
+      ) : null}
       {!remoteLoaded && !hasHistory ? (
         <ProfileReviewsSkeleton />
       ) : hasHistory ? (
         <>
-          <Button label="Write another review" variant="secondary" onPress={openReviewFlow} />
           {historyItems.map(({ review, dish }, index) => {
             const entry = dish ? reviewEntries[dish.id] : undefined;
             const tags = review?.tags ?? entry?.tags ?? [];
@@ -152,24 +208,90 @@ export function ReviewHistoryScreen({ navigation }: Props) {
             const reviewText = review?.text || entry?.text || "No written notes";
             const dishId = review?.dishId ?? dish?.id;
             const dishName = dish?.name ?? "Reviewed dish";
-            const ratingLine = [
-              rating ? `Rated ${rating}/5` : "",
-              tagSummary,
-              review?.editedAt ? "Edited" : "",
-            ]
-              .filter(Boolean)
-              .join(" · ");
+            const venue = dish ? repository.getVenueById(dish.venueId) : undefined;
+            const imageUrl = review?.photos[0] ?? dish?.imageUrl;
             const card = (
-              <Card>
-                <View style={{ gap: 12 }}>
-                  <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-                    <AppText variant="h3" style={{ flex: 1 }}>
-                      {dishName}
-                    </AppText>
-                    {review && ownReviewEditor.enabled ? (
-                      <OwnReviewMenuButton onPress={() => ownReviewEditor.openActions(review)} />
+              <View
+                style={[
+                  shadows.card,
+                  {
+                    backgroundColor: palette.surface,
+                    borderRadius: componentRadii.card,
+                    overflow: "hidden",
+                    borderWidth: 1,
+                    borderColor: palette.border,
+                    marginBottom: spacing[4],
+                  },
+                ]}
+              >
+                {imageUrl ? (
+                  <View style={{ height: 210 }}>
+                    <AccessibleImage
+                      source={{ uri: imageUrl }}
+                      decorative
+                      contentFit="cover"
+                      style={{ width: "100%", height: "100%" }}
+                    />
+                    {dish ? (
+                      <View
+                        style={{
+                          position: "absolute",
+                          top: spacing[3],
+                          right: spacing[3],
+                          backgroundColor: palette.imageLabelSurface,
+                          borderRadius: radii.pill,
+                          paddingHorizontal: spacing[3],
+                          paddingVertical: spacing[1],
+                        }}
+                      >
+                        <AppText variant="price" tone="inverse">
+                          S${dish.price.toFixed(2)}
+                        </AppText>
+                      </View>
                     ) : null}
                   </View>
+                ) : null}
+                <View style={{ padding: spacing[4], gap: spacing[2] }}>
+                  <View style={{ alignItems: "flex-start", flexDirection: "row", gap: spacing[2] }}>
+                    <AppText variant="h2" style={{ flex: 1 }}>
+                      {dishName}
+                    </AppText>
+                    {rating ? (
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: spacing[1],
+                          backgroundColor: palette.surfaceRaised,
+                          borderRadius: componentRadii.card,
+                          paddingHorizontal: spacing[2],
+                        }}
+                      >
+                        <Star size={14} color={palette.ratingStar} fill={palette.ratingStar} />
+                        <AppText variant="bodySmallBold">{rating.toFixed(1)}</AppText>
+                      </View>
+                    ) : null}
+                  </View>
+                  {venue ? (
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
+                      <Store size={15} color={palette.orange} />
+                      <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
+                        {venue.name}
+                        {venue.unitNumber ? ` · ${venue.unitNumber}` : ""}
+                      </AppText>
+                    </View>
+                  ) : null}
+                  {rating ? (
+                    <AppText variant="bodySmall" style={{ color: palette.ratingStar }}>
+                      {"★".repeat(Math.round(rating))}
+                      {"☆".repeat(5 - Math.round(rating))}
+                    </AppText>
+                  ) : null}
+                  {tagSummary ? (
+                    <AppText variant="bodySmall" tone="secondary">
+                      {tagSummary}
+                    </AppText>
+                  ) : null}
                   {review?.moderationState ? (
                     <ReviewModerationNotice
                       state={review.moderationState}
@@ -177,14 +299,30 @@ export function ReviewHistoryScreen({ navigation }: Props) {
                       dishName={dishName}
                     />
                   ) : null}
-                  <AppText tone="secondary">{reviewText}</AppText>
-                  {ratingLine ? (
-                    <AppText variant="bodySmall" tone="secondary">
-                      {ratingLine}
+                  <View
+                    style={{
+                      backgroundColor: palette.surfaceRaised,
+                      borderRadius: componentRadii.card,
+                      padding: spacing[3],
+                    }}
+                  >
+                    <AppText variant="bodySmall" tone="secondary" numberOfLines={4}>
+                      {reviewText}
+                    </AppText>
+                  </View>
+                  {review?.createdAt ? (
+                    <AppText variant="micro" tone="secondary">
+                      {new Date(review.createdAt).toLocaleDateString()}
+                      {review.editedAt ? " · Edited" : ""}
                     </AppText>
                   ) : null}
+                  {review && ownReviewEditor.enabled ? (
+                    <View style={{ alignSelf: "flex-end" }}>
+                      <OwnReviewMenuButton onPress={() => ownReviewEditor.openActions(review)} />
+                    </View>
+                  ) : null}
                 </View>
-              </Card>
+              </View>
             );
             const key = review?.id ?? dish?.id ?? `review-history-entry-${index}`;
 

@@ -106,6 +106,12 @@ To override these locally, you can use `.env.development` or modify the constant
 
 ## Project Status
 
+Stitch screen iteration (23 October 2026): eight Search, Profile, Achievements,
+Settings, Reviews, Saved Dishes, Stall, and Dish design exports are saved in
+[`design/stitch/iterations-11940609752387078506/`](design/stitch/iterations-11940609752387078506/README.md).
+The corresponding React Native screens are updated on `codex/stitch-eight-screens`;
+focused contracts pass 30/30. PR CI and native visual acceptance remain pending.
+
 | Area                                | Status                                                                                     |
 | ----------------------------------- | ------------------------------------------------------------------------------------------ |
 | Expo scaffold                       | Done                                                                                       |

@@ -1,7 +1,7 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
-import { BellRing, Bookmark, Star } from "lucide-react-native";
+import { BellRing, Bookmark, CircleCheck, Navigation, Star, Store } from "lucide-react-native";
 
 import { PortfolioCard } from "@/components/portfolio";
 import { AccessibleImage, AppText, Button, Card, Chip, EmptyState } from "@/components/ui";
@@ -9,8 +9,14 @@ import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { resolveListItemCount } from "@/features/checklistPortfolio/listLabels";
 import { prefetchDishDetail, preloadRoute } from "@/features/navigation/prefetch";
+import {
+  buildMapsSearchUrl,
+  formatFullStallAddress,
+  getStallPin,
+} from "@/features/detail/stallLocation";
 import { useRetryableLoad } from "@/features/profile/useRetryableLoad";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
 import { usePortfolioStore } from "@/store/usePortfolioStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -45,10 +51,13 @@ export function FavouritesScreen({ navigation }: Props) {
   const rootNavigation = getRootNavigation(navigation as any);
 
   return (
-    <ProfileScreenShell
-      title="Saved"
-      subtitle="Dishes, stalls, posts and lists you've kept for later."
-    >
+    <ProfileScreenShell title="Saved">
+      <View style={{ gap: spacing[1] }}>
+        <AppText variant="h1">Saved Dishes</AppText>
+        <AppText variant="bodySmall" tone="secondary">
+          {profile.favouriteDishIds.length} cravings saved for later
+        </AppText>
+      </View>
       <View
         accessibilityRole="tablist"
         style={{ flexDirection: "row", gap: spacing[2], marginBottom: spacing[3] }}
@@ -91,30 +100,22 @@ export function FavouritesScreen({ navigation }: Props) {
             />
           </View>
           {dishes.length ? (
-            <View
-              style={{
-                flexDirection: "row",
-                flexWrap: "wrap",
-                justifyContent: "space-between",
-                gap: spacing[4],
-              }}
-            >
+            <View style={{ gap: spacing[4] }}>
               {dishes.map((dish) => {
                 const venue = repository.getVenueById(dish.venueId);
+                const destination =
+                  venue &&
+                  formatFullStallAddress(venue, {
+                    name: venue.buildingName,
+                    address: venue.address,
+                    postalCode: venue.postalCode,
+                  });
                 return (
-                  <Pressable
+                  <View
                     key={dish.id}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Open ${dish.name}${venue?.name ? ` at ${venue.name}` : ""}`}
-                    onPressIn={() => {
-                      prefetchDishDetail(dish.id, repository);
-                      preloadRoute(rootNavigation, "DishDetail", { dishId: dish.id });
-                    }}
-                    onPress={() => rootNavigation.navigate("DishDetail", { dishId: dish.id })}
                     style={[
                       shadows.card,
                       {
-                        width: "47%",
                         backgroundColor: palette.surface,
                         borderRadius: componentRadii.card,
                         overflow: "hidden",
@@ -123,13 +124,24 @@ export function FavouritesScreen({ navigation }: Props) {
                       },
                     ]}
                   >
-                    <View style={{ height: 120, width: "100%", position: "relative" }}>
-                      <AccessibleImage
-                        source={{ uri: dish.imageUrl }}
+                    <View style={{ height: 180, width: "100%", position: "relative" }}>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Open ${dish.name}${venue?.name ? ` at ${venue.name}` : ""}`}
+                        onPressIn={() => {
+                          prefetchDishDetail(dish.id, repository);
+                          preloadRoute(rootNavigation, "DishDetail", { dishId: dish.id });
+                        }}
+                        onPress={() => rootNavigation.navigate("DishDetail", { dishId: dish.id })}
                         style={{ width: "100%", height: "100%" }}
-                        contentFit="cover"
-                        decorative
-                      />
+                      >
+                        <AccessibleImage
+                          source={{ uri: dish.imageUrl }}
+                          style={{ width: "100%", height: "100%" }}
+                          contentFit="cover"
+                          decorative
+                        />
+                      </Pressable>
                       {tab === "want" ? (
                         <Pressable
                           accessibilityRole="button"
@@ -152,45 +164,78 @@ export function FavouritesScreen({ navigation }: Props) {
                         </Pressable>
                       ) : null}
                     </View>
-                    <View style={{ padding: spacing[3], gap: spacing[1] }}>
-                      <AppText variant="bodyBold" numberOfLines={1}>
-                        {dish.name}
-                      </AppText>
-                      <AppText variant="micro" tone="secondary" numberOfLines={1}>
-                        {venue?.name}
-                      </AppText>
+                    <View style={{ padding: spacing[4], gap: spacing[3] }}>
                       <View
                         style={{
                           flexDirection: "row",
                           justifyContent: "space-between",
-                          alignItems: "center",
-                          marginTop: spacing[1],
+                          gap: spacing[2],
                         }}
                       >
-                        <AppText
-                          style={{
-                            color: palette.orange,
-                            fontWeight: "800",
-                            fontSize: 13,
-                          }}
-                        >
+                        <AppText variant="h2" style={{ flex: 1 }} numberOfLines={2}>
+                          {dish.name}
+                        </AppText>
+                        <AppText variant="price" style={{ color: palette.orange }}>
                           S${dish.price.toFixed(2)}
                         </AppText>
+                      </View>
+                      {venue ? (
                         <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            gap: spacing[1],
-                          }}
+                          style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
                         >
-                          <Star color={palette.amber} fill={palette.amber} size={10} />
-                          <AppText variant="micro" style={{ fontWeight: "700" }}>
-                            {dish.rating.toFixed(1)}
+                          <Store color={palette.orange} size={15} />
+                          <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
+                            {venue.buildingName ?? venue.name}
+                            {venue.unitNumber ? ` · ${venue.unitNumber}` : ""}
                           </AppText>
                         </View>
-                      </View>
+                      ) : null}
+                      {dish.reviewCount > 0 ? (
+                        <View
+                          style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
+                        >
+                          <Star color={palette.ratingStar} fill={palette.ratingStar} size={15} />
+                          <AppText variant="bodySmallBold">{dish.rating.toFixed(1)}</AppText>
+                          <AppText variant="bodySmall" tone="secondary">
+                            ({dish.reviewCount})
+                          </AppText>
+                        </View>
+                      ) : null}
+                      {destination ? (
+                        <Button
+                          label="Get Directions"
+                          leftIcon={<Navigation size={18} color={palette.textOnPrimary} />}
+                          onPress={() =>
+                            void openTrustedMapsUrl(
+                              buildMapsSearchUrl(destination, getStallPin(venue)),
+                            )
+                          }
+                        />
+                      ) : (
+                        <Button
+                          label="View dish"
+                          onPress={() => rootNavigation.navigate("DishDetail", { dishId: dish.id })}
+                        />
+                      )}
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Open ${dish.name} to mark as eaten or add a review`}
+                        onPress={() => rootNavigation.navigate("DishDetail", { dishId: dish.id })}
+                        style={{
+                          alignSelf: "center",
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: spacing[1],
+                          padding: spacing[1],
+                        }}
+                      >
+                        <CircleCheck color={palette.textSecondary} size={15} />
+                        <AppText variant="bodySmallBold" tone="secondary">
+                          View dish to mark as eaten or review
+                        </AppText>
+                      </Pressable>
                     </View>
-                  </Pressable>
+                  </View>
                 );
               })}
             </View>

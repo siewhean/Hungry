@@ -6,6 +6,16 @@
 
 ## Current Focus
 
+- `STITCH-8-SCREENS-01` — Implemented on `codex/stitch-eight-screens` from
+  `main` `ec847ec30126698b876355cba1ef30883ac239aa`. Eight Stitch HTML exports
+  and full-resolution screenshots are in `design/stitch/iterations-11940609752387078506/`.
+  Search, Profile, Achievements/Passport, Settings, Reviews, Saved Dishes, Stall,
+  and Dish screens now use the design hierarchy with service-backed data and
+  supported actions. Focused screen contracts pass 30/30. Local typecheck is
+  blocked by the worktree's reused `node_modules` missing declared
+  `expo-clipboard`; independent QA passed 28/28 focused contracts, export
+  integrity, formatting, and diff checks. CI and native visual smoke remain pending.
+
 - `CATALOG-RAW-READS-01` — Linked Supabase release active for the reconciled
   `119,232 / 156,351` raw snapshot. Adds versioned full-catalog projections and authenticated,
   cursor-paged dish/venue/detail/menu/map RPCs. 2026-10-19 (sh calls #6/#8): this is now the only

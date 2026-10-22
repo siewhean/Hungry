@@ -189,6 +189,6 @@ test("detail-L15/L22/L23: copy and dead ends", () => {
   assert.doesNotMatch(offline, /queued|will be sent when/i);
   assert.match(raw, /goBackOrHome/);
   assert.match(raw, /Open stall page/);
-  assert.match(dish, /<AppText variant="h2">Reviews<\/AppText>/);
-  assert.match(stall, /<AppText variant="h2">Reviews<\/AppText>/);
+  assert.match(dish, /<AppText variant="h2">Community Palate Feedback<\/AppText>/);
+  assert.match(stall, /<AppText variant="h2">Community Highlights<\/AppText>/);
 });

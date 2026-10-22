@@ -251,8 +251,7 @@ function StallMenuDishCard({
   const photo = useMemo(() => getStallDishPhotos(dish)[0], [dish]);
   const imageStyle = {
     width: "100%" as const,
-    height: 120,
-    borderRadius: componentRadii.card,
+    height: width * 0.7,
   };
 
   return (
@@ -261,9 +260,16 @@ function StallMenuDishCard({
       accessibilityLabel={menuDishAccessibilityLabel(dish)}
       accessibilityHint="Opens this dish detail page"
       onPress={() => onPress(dish)}
-      style={{ width }}
+      style={{
+        width,
+        backgroundColor: palette.surface,
+        borderRadius: componentRadii.card,
+        overflow: "hidden",
+        borderWidth: 1,
+        borderColor: palette.border,
+      }}
     >
-      <View style={{ gap: spacing[2] }}>
+      <View>
         {photo ? (
           <AccessibleImage
             source={{ uri: photo }}
@@ -276,10 +282,20 @@ function StallMenuDishCard({
         ) : (
           <NoDishPhoto dishName={dish.name} style={imageStyle} />
         )}
-        <View style={{ gap: spacing[1] }}>
-          <AppText variant="bodyBold" numberOfLines={1}>
+        <View style={{ gap: spacing[1], padding: spacing[3] }}>
+          {dish.mustOrder ? (
+            <AppText variant="micro" style={{ color: palette.orangeText }}>
+              MUST ORDER
+            </AppText>
+          ) : null}
+          <AppText variant="bodyBold" numberOfLines={2}>
             {dish.name}
           </AppText>
+          {dish.description?.trim() ? (
+            <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
+              {dish.description}
+            </AppText>
+          ) : null}
           {isSoldOut(dish.availabilityFlags) ? (
             <AppText variant="bodySmallBold" style={{ color: palette.error }}>
               Sold out today
@@ -289,6 +305,11 @@ function StallMenuDishCard({
               {formatDishPrice(dish)}
             </AppText>
           )}
+          {dish.reviewCount > 0 ? (
+            <AppText variant="micro" tone="secondary">
+              ★ {dish.rating.toFixed(1)}
+            </AppText>
+          ) : null}
         </View>
       </View>
     </Pressable>
@@ -838,18 +859,6 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const operatingStatusLabel = openInfo.statusLabel;
   const merchantWebLinks = (merchantProfile?.socialLinks ?? []).slice(0, 5);
   const hoursRows = openInfo.weekRows;
-  const headerSummary = [
-    ratingSummary
-      ? `${ratingSummary.rating.toFixed(1)} rating (${ratingSummary.reviewCount} ${
-          ratingSummary.reviewCount === 1 ? "review" : "reviews"
-        })`
-      : undefined,
-    priceBand,
-    operatingStatusLabel,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-
   const reviewedDishIds = profile.reviewedDishIds;
   const hasReviewedDishAtVenue = dishes.some((dish) => reviewedDishIds.includes(dish.id));
   const nextUnreviewedDish = dishes.find((dish) => !reviewedDishIds.includes(dish.id));
@@ -1043,11 +1052,12 @@ export function StallDetailScreen({ navigation, route }: Props) {
             style={[
               styles.topNav,
               {
-                backgroundColor: "transparent",
+                backgroundColor: palette.surface,
                 height: insets.top + 56,
                 paddingTop: insets.top,
                 paddingHorizontal: spacing[3],
-                borderBottomWidth: 0,
+                borderBottomWidth: 1,
+                borderBottomColor: palette.border,
                 zIndex: zIndex.overlay,
               },
             ]}
@@ -1059,6 +1069,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
               icon={<ChevronLeft color={palette.text} size={24} />}
               style={{ backgroundColor: headerButtonColor, borderColor: headerButtonBorderColor }}
             />
+            <AppText variant="h3" style={{ marginLeft: spacing[2] }}>
+              Stall Profile
+            </AppText>
             <View style={{ flex: 1 }} />
             <View style={{ flexDirection: "row", gap: spacing[2] }}>
               <IconButton
@@ -1078,14 +1091,17 @@ export function StallDetailScreen({ navigation, route }: Props) {
             showsVerticalScrollIndicator={false}
             onScroll={handleScroll}
             scrollEventThrottle={120}
-            contentContainerStyle={{ paddingBottom: insets.bottom + spacing[8] }}
+            contentContainerStyle={{
+              paddingTop: insets.top + 56,
+              paddingBottom: insets.bottom + spacing[8],
+            }}
           >
             {/* Hero: swipeable photos (owner cover, stall, dishes, reviews), else a short branded header */}
             {heroPhotos.length > 0 ? (
               <PhotoPager
                 photos={heroPhotos}
                 width={screenWidth}
-                height={screenWidth * 0.75}
+                height={screenWidth * 0.72}
                 subject={venue.name}
               />
             ) : (
@@ -1095,7 +1111,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                 style={{
                   alignItems: "center",
                   backgroundColor: palette.surfaceRaised,
-                  height: insets.top + 56 + spacing[16],
+                  height: screenWidth * 0.72,
                   justifyContent: "flex-end",
                   paddingBottom: spacing[4],
                   width: screenWidth,
@@ -1114,14 +1130,14 @@ export function StallDetailScreen({ navigation, route }: Props) {
               }}
             >
               {/* Header Content */}
-              <Card style={{ gap: spacing[3], padding: spacing[3] }}>
+              <View style={{ gap: spacing[3] }}>
                 <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[3] }}>
-                  <StallLogoMark logoUrl={venue.logoUrl} name={venue.name} />
+                  {venue.logoUrl ? (
+                    <StallLogoMark logoUrl={venue.logoUrl} name={venue.name} />
+                  ) : null}
                   <View style={{ flex: 1, gap: spacing[1] }}>
-                    <AppText variant="h2" numberOfLines={1}>
-                      {venue.name}
-                    </AppText>
-                    <AppText variant="bodyLarge" tone="secondary" numberOfLines={1}>
+                    <AppText variant="h1">{venue.name}</AppText>
+                    <AppText variant="body" tone="secondary">
                       {/* Centre · unit · distance; the full address lives in the Address card. */}
                       {[buildingLocation.name, venue.unitNumber?.trim(), distanceLabel]
                         .filter(Boolean)
@@ -1129,9 +1145,50 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     </AppText>
                   </View>
                 </View>
-                <AppText variant="bodySmall" tone="secondary">
-                  {headerSummary}
-                </AppText>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+                  {ratingSummary ? (
+                    <View
+                      style={{
+                        backgroundColor: palette.bgSoft,
+                        borderRadius: radii.pill,
+                        paddingHorizontal: spacing[3],
+                        paddingVertical: spacing[1],
+                      }}
+                    >
+                      <AppText variant="bodySmallBold">
+                        ★ {ratingSummary.rating.toFixed(1)}{" "}
+                        <AppText variant="bodySmall" tone="secondary">
+                          ({ratingSummary.reviewCount} reviews)
+                        </AppText>
+                      </AppText>
+                    </View>
+                  ) : null}
+                  <View
+                    style={{
+                      backgroundColor: palette.bgSoft,
+                      borderRadius: radii.pill,
+                      paddingHorizontal: spacing[3],
+                      paddingVertical: spacing[1],
+                    }}
+                  >
+                    <AppText
+                      variant="bodySmallBold"
+                      tone={openInfo.isOpen ? "success" : "secondary"}
+                    >
+                      {operatingStatusLabel}
+                    </AppText>
+                  </View>
+                  {priceBand ? (
+                    <AppText variant="bodySmall" tone="secondary">
+                      {priceBand}
+                    </AppText>
+                  ) : null}
+                </View>
+                {openInfo.closureNotice ? (
+                  <AppText variant="bodySmall" tone="secondary">
+                    {openInfo.closureNotice}
+                  </AppText>
+                ) : null}
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
                   {stallAddress || stallPin ? (
                     <Chip
@@ -1164,7 +1221,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     ))}
                   </View>
                 ) : null}
-              </Card>
+              </View>
 
               {/* Save / Visited / Add-to-List: the same row for guests and signed-in users */}
               <StallInteractionBar
@@ -1215,7 +1272,20 @@ export function StallDetailScreen({ navigation, route }: Props) {
               {/* Menu */}
               <View onLayout={handleMenuSectionLayout} style={{ gap: spacing[4] }}>
                 <View style={{ gap: spacing[1] }}>
-                  <AppText variant="h2">Menu</AppText>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <AppText variant="h2">Signature Dishes</AppText>
+                    {menuStatus === "ready" ? (
+                      <AppText variant="bodySmallBold" tone="accent">
+                        {dishes.length} items
+                      </AppText>
+                    ) : null}
+                  </View>
                   {filteredMenuDishes.length > 0 ? (
                     <AppText variant="bodySmall" tone="secondary">
                       Showing {visibleMenuDishes.length} of {filteredMenuDishes.length} items
@@ -1494,7 +1564,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     justifyContent: "space-between",
                   }}
                 >
-                  <AppText variant="h2">Reviews</AppText>
+                  <AppText variant="h2">Community Highlights</AppText>
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`Write a review for ${venue.name}`}
@@ -1538,9 +1608,11 @@ export function StallDetailScreen({ navigation, route }: Props) {
                       <View
                         key={review.id}
                         style={{
-                          paddingVertical: spacing[3],
-                          borderBottomWidth: 1,
-                          borderBottomColor: palette.border,
+                          padding: spacing[4],
+                          borderRadius: componentRadii.card,
+                          backgroundColor: palette.surface,
+                          borderWidth: 1,
+                          borderColor: palette.border,
                         }}
                       >
                         <View

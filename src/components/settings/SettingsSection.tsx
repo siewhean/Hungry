@@ -7,11 +7,13 @@ import { componentRadii } from "@/theme/tokens";
 interface SettingsSectionProps {
   title?: string;
   description?: string;
+  editorial?: boolean;
 }
 
 export function SettingsSection({
   title,
   description,
+  editorial = false,
   children,
 }: PropsWithChildren<SettingsSectionProps>) {
   const { componentRadii, spacing, palette } = useHungryTheme();
@@ -19,13 +21,24 @@ export function SettingsSection({
   return (
     <View style={{ marginBottom: spacing[6] }}>
       {title ? (
-        <AppText variant="micro" tone="secondary" accessibilityRole="header" style={styles.title}>
+        <AppText
+          variant={editorial ? "h2" : "micro"}
+          accessibilityRole="header"
+          style={editorial ? { marginBottom: spacing[2], color: palette.text } : styles.title}
+        >
           {title}
         </AppText>
       ) : null}
 
       <View
-        style={[styles.content, { backgroundColor: palette.surface, borderColor: palette.border }]}
+        style={[
+          styles.content,
+          {
+            backgroundColor: palette.surface,
+            borderColor: editorial ? palette.surface : palette.border,
+            borderRadius: componentRadii.card,
+          },
+        ]}
       >
         {children}
       </View>

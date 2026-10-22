@@ -1,5 +1,7 @@
 # Lessons
 
+- When a Stitch screen replaces a root-level page whose native header is hidden, preserve an explicit back control and test its fallback destination; a visual reference without a back icon does not prove the app has another exit path.
+
 - Figma is the visual source of truth for any screen that already exists there; do not preserve an older in-app layout when it conflicts with the approved design.
 - Do not leave guest browsing branches in the runtime once product direction changes to auth-first; remove them from the session model, soft-gate copy, and debug presets together.
 - Avoid colored pills and emoji-driven UI copy in Hungry. Use warm neutral surfaces, restrained semantic color, and icon/text hierarchy instead.
