@@ -1,3 +1,5 @@
+// @ts-nocheck
+/* eslint-disable import/no-unresolved */
 import { Webhook } from "npm:standardwebhooks@^1";
 import { reportFunctionError, serveWithSentry } from "../_shared/sentry.ts";
 
