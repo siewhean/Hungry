@@ -1,5 +1,6 @@
 // @ts-nocheck
 /* eslint-disable import/no-unresolved */
+import { reportFunctionError, serveWithSentry } from "../_shared/sentry.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
 import { timingSafeEqual } from "../_shared/timingSafeEqual.ts";
 
@@ -85,7 +86,7 @@ function isSoldOut(flags: unknown): boolean {
   );
 }
 
-Deno.serve(async (request) => {
+serveWithSentry("send-notifications", async (request) => {
   if (request.method !== "POST") {
     return toJson(405, { error: "method_not_allowed" });
   }
@@ -289,8 +290,9 @@ Deno.serve(async (request) => {
       if (deadTokens.length) {
         await client.from("user_push_tokens").delete().in("token", deadTokens);
       }
-    } catch {
+    } catch (error) {
       delivered = false;
+      await reportFunctionError("send-notifications", error, { stage: "deliver_push" });
     }
 
     if (delivered) {
