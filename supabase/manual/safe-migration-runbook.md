@@ -72,7 +72,7 @@ scripts/db/ship.sh <version>
 #    - prints the backup folder and the undo command
 ```
 
-`rehearse.sh` leaves staging with the migration applied, which is what prod will look like after `ship.sh`.
+`rehearse.sh` first applies to staging any migration that prod already has (read from prod's ledger, read-only), then rehearses, then runs the down once more so staging ends at prod's state (`KEEP_APPLIED=1` skips that last step). That makes rehearsals independent: two PRs can each be rehearsed without waiting for the other to ship. If prod has a migration your branch lacks, it stops and tells you to merge `origin/main` first.
 
 ## Undoing
 
