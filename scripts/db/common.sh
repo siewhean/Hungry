@@ -10,7 +10,7 @@ set -euo pipefail
 
 DB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$DB_DIR/../.." && pwd)"
-PROD_REF="${HUNGRY_PROD_REF:-yrlxjeovwslirseajomz}"
+PROD_REF="${HUNGRY_PROD_REF:-frluxwpqqyomiqmjzavd}"
 BACKUP_ROOT="${HUNGRY_BACKUP_DIR:-$HOME/hungry-backups}"
 export PAGER=cat
 export PGOPTIONS="${PGOPTIONS:--c statement_timeout=0}"
