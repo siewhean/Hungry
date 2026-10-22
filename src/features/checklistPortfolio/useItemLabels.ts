@@ -51,38 +51,34 @@ export function useItemLabelsState(items: readonly LabelTarget[]): {
   return { labels, isLoaded };
 }
 
-/** Looks each id up on its own (checklists, which have no batch read). */
+/** One get_item_details call for all dishes and stalls (checklists, which have no portfolio id). */
 async function fetchDetailsById(
   targets: string[],
 ): Promise<{ details: Record<string, ItemDetail>; failedIds: Set<string> }> {
-  const service = getHungryService();
-  const details: Record<string, ItemDetail> = {};
-  const failedIds = new Set<string>();
-  await Promise.all(
-    targets.map(async (target) => {
-      const id = target.slice(2);
-      try {
-        if (target.startsWith("d:")) {
-          const dish = await service.discovery.getDish(id);
-          if (dish) {
-            details[id] = {
-              name: dish.name,
-              imageUrl: dish.imageUrl || undefined,
-              stallName: dish.venueName || undefined,
-              price: Number.isFinite(dish.price) ? dish.price : undefined,
-            };
-          }
-        } else {
-          const venue = await service.discovery.getVenue(id);
-          if (venue) details[id] = { name: venue.name, imageUrl: venue.imageUrl };
-        }
-      } catch {
-        // A failed lookup is not a deleted row: the caller offers a retry.
-        failedIds.add(id);
-      }
-    }),
-  );
-  return { details, failedIds };
+  const dishIds = targets
+    .filter((target) => target.startsWith("d:"))
+    .map((target) => target.slice(2));
+  const stallIds = targets
+    .filter((target) => target.startsWith("s:"))
+    .map((target) => target.slice(2));
+  try {
+    const rows = await getHungryService().discovery.getItemDetails({ dishIds, stallIds });
+    const details: Record<string, ItemDetail> = {};
+    rows.forEach((row) => {
+      const id = row.dishId ?? row.stallId;
+      if (!id || !row.name) return;
+      details[id] = {
+        name: row.name,
+        imageUrl: row.imageUrl || undefined,
+        stallName: row.dishId ? row.stallName : undefined,
+        price: row.dishId && Number.isFinite(row.price) ? row.price : undefined,
+      };
+    });
+    return { details, failedIds: new Set() };
+  } catch {
+    // A failed lookup is not a deleted row: the caller offers a retry.
+    return { details: {}, failedIds: new Set(targets.map((target) => target.slice(2))) };
+  }
 }
 
 /** One call for a whole portfolio (get_portfolio_item_details). */

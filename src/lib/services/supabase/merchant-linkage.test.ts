@@ -281,5 +281,5 @@ test("Supabase popular visitor pins are review-backed, merchant-managed, and pub
   assert.match(service, /async pinPopularVisitor/);
   assert.match(service, /const safeProfileId = profile \? profileId : undefined/);
   assert.match(service, /async reorderPopularVisitorPins/);
-  assert.match(service, /failedUpdate\?\.error/);
+  assert.match(service, /client\.rpc\("reorder_popular_visitor_pins"/);
 });

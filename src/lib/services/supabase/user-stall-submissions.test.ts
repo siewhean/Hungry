@@ -85,5 +85,5 @@ test("user stall submissions support ordered photo galleries", () => {
   assert.match(galleryMigration, /gallery_images,/i);
   assert.match(service, /imageUris = Array\.from\(\s*new Set/);
   assert.match(service, /p_gallery_images: galleryImages/);
-  assert.match(service, /galleryImageUrls: await mapSubmissionGalleryUrls/);
+  assert.match(service, /galleryImageUrls: mapSubmissionGalleryUrls\(/);
 });

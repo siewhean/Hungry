@@ -23,7 +23,9 @@ import {
   countVenuesInAreaViaRpc,
   getDishByIdViaRpc,
   getBuildingDetailViaRpc,
+  getItemDetailsViaRpc,
   getVenueByIdViaRpc,
+  getVenuesByIdsViaRpc,
   listBuildingsViaRpc,
   listDiscoveryFeedByLocationViaRpc,
   listDishesByVenueViaRpc,
@@ -413,24 +415,54 @@ function mapSubmissionDeliveryLinks(value: unknown): UserStallSubmissionDelivery
     .filter((item): item is UserStallSubmissionDeliveryLink => item !== null);
 }
 
-async function mapSubmissionGalleryUrls(
+type PresignedSubmissionUrls = ReadonlyMap<string, string>;
+
+/** Signed URLs for every photo in a list of submissions: one signing call per bucket, not per photo. */
+async function presignSubmissionPhotos(
   client: SupabaseClient,
-  value: unknown,
-  fallbackUrl: string,
-): Promise<string[]> {
-  if (!Array.isArray(value)) return fallbackUrl ? [fallbackUrl] : [];
-  const urls = await Promise.all(
-    value.map(async (item) => {
-      if (!item || typeof item !== "object") return undefined;
-      const row = item as Row;
-      const bucket = asString(row.bucket) ?? asString(row.storageBucket);
-      const path = asString(row.path) ?? asString(row.storagePath);
-      if (bucket && path) {
-        return (await createSignedStorageUrl(client, bucket, path)) ?? asString(row.url);
-      }
-      return asString(row.url);
+  rows: Row[],
+): Promise<PresignedSubmissionUrls> {
+  const pathsByBucket = new Map<string, string[]>();
+  const add = (bucket: string | undefined, path: string | undefined) => {
+    if (!bucket || !path) return;
+    pathsByBucket.set(bucket, [...(pathsByBucket.get(bucket) ?? []), path]);
+  };
+  for (const row of rows) {
+    add(asString(row.image_storage_bucket), asString(row.image_storage_path));
+    for (const item of Array.isArray(row.gallery_images) ? row.gallery_images : []) {
+      const photo = asRecord(item);
+      add(
+        asString(photo.bucket) ?? asString(photo.storageBucket),
+        asString(photo.path) ?? asString(photo.storagePath),
+      );
+    }
+  }
+  const signed = new Map<string, string>();
+  await Promise.all(
+    [...pathsByBucket].map(async ([bucket, paths]) => {
+      const urls = await createSignedStorageUrls(client, bucket, paths);
+      urls.forEach((url, path) => signed.set(`${bucket}/${path}`, url));
     }),
   );
+  return signed;
+}
+
+function mapSubmissionGalleryUrls(
+  value: unknown,
+  fallbackUrl: string,
+  presigned: PresignedSubmissionUrls,
+): string[] {
+  if (!Array.isArray(value)) return fallbackUrl ? [fallbackUrl] : [];
+  const urls = value.map((item) => {
+    if (!item || typeof item !== "object") return undefined;
+    const row = item as Row;
+    const bucket = asString(row.bucket) ?? asString(row.storageBucket);
+    const path = asString(row.path) ?? asString(row.storagePath);
+    if (bucket && path) {
+      return presigned.get(`${bucket}/${path}`) ?? asString(row.url);
+    }
+    return asString(row.url);
+  });
   const cleaned = urls.filter((url): url is string => Boolean(url));
   return cleaned.length > 0 ? cleaned : fallbackUrl ? [fallbackUrl] : [];
 }
@@ -438,17 +470,20 @@ async function mapSubmissionGalleryUrls(
 async function mapUserStallSubmission(
   client: SupabaseClient,
   row: Row,
+  presignedUrls?: PresignedSubmissionUrls,
 ): Promise<UserStallSubmission> {
+  // A list passes URLs signed together; a single row signs its own photos in one call per bucket.
+  const presigned = presignedUrls ?? (await presignSubmissionPhotos(client, [row]));
   const bucket = asString(row.image_storage_bucket);
   const path = asString(row.image_storage_path);
-  const signedUrl = bucket && path ? await createSignedStorageUrl(client, bucket, path) : undefined;
+  const signedUrl = bucket && path ? presigned.get(`${bucket}/${path}`) : undefined;
   const imageUrl = signedUrl ?? asString(row.image_url) ?? "";
   return {
     id: String(row.id ?? ""),
     userId: String(row.user_id ?? ""),
     stallName: asString(row.stall_name) ?? "",
     imageUrl,
-    galleryImageUrls: await mapSubmissionGalleryUrls(client, row.gallery_images, imageUrl),
+    galleryImageUrls: mapSubmissionGalleryUrls(row.gallery_images, imageUrl, presigned),
     imageStorageBucket: bucket,
     imageStoragePath: path,
     imageMimeType: asString(row.image_mime_type),
@@ -1473,7 +1508,7 @@ async function buildPostMediaRows(
   canonicalMediaType: Bite["mediaType"];
 }> {
   const rows: Row[] = [];
-  const displayUrls: string[] = [];
+  const uploadedForDisplay: { path: string; publicUrl: string }[] = [];
   let hasVideo = false;
 
   for (let index = 0; index < mediaUrls.length; index += 1) {
@@ -1485,6 +1520,7 @@ async function buildPostMediaRows(
     if (isLocalUri(uri)) {
       const extension = extensionFromUri(uri);
       const storagePath = `${userId}/${postId}/media-${index}-${Date.now()}.${extension}`;
+      // n-plus-one-ok: each file is its own upload; the display URLs are signed together below.
       const uploaded = await uploadPostMediaFromUri({
         client,
         bucket: "post-media",
@@ -1502,14 +1538,21 @@ async function buildPostMediaRows(
         size_bytes: uploaded.sizeBytes ?? null,
         sort_order: index,
       });
-      displayUrls.push(
-        (await createSignedStorageUrl(client, "post-media", uploaded.path)) ?? uploaded.publicUrl,
-      );
+      uploadedForDisplay.push({ path: uploaded.path, publicUrl: uploaded.publicUrl });
       continue;
     }
 
     throw new Error("Post media must be uploaded from local device files.");
   }
+
+  const signedByPath = await createSignedStorageUrls(
+    client,
+    "post-media",
+    uploadedForDisplay.map((entry) => entry.path),
+  );
+  const displayUrls = uploadedForDisplay.map(
+    (entry) => signedByPath.get(entry.path) ?? entry.publicUrl,
+  );
 
   return {
     rows,
@@ -1677,6 +1720,7 @@ async function fetchPublishedPostBites(
         "";
       const buildingRow = buildingById.get(buildingId);
       const mediaForPost = mediaByPostId.get(postId) ?? [];
+      // n-plus-one-ok: presignPostMediaRows signed every path in one call above; this reads the cache.
       const mediaUrls = (
         await Promise.all(
           mediaForPost.map((mediaRow) => resolvePostMediaDisplayUrl(client, mediaRow)),
@@ -1728,6 +1772,7 @@ async function mapFeedRpcRowToBite(client: SupabaseClient, row: Row): Promise<Bi
   const dishMeta = asRecord(meta.dish);
   const venueMeta = asRecord(meta.venue);
   const mediaRows = asRowArray(row.media);
+  // n-plus-one-ok: the caller presigned every path in one call (presignPostMediaRows); this reads the cache.
   const mediaUrls = (
     await Promise.all(mediaRows.map((mediaRow) => resolvePostMediaDisplayUrl(client, mediaRow)))
   ).filter((url): url is string => url.length > 0);
@@ -3796,6 +3841,43 @@ export const supabaseService: HungryService = {
         if (cached) return cached;
         throw error;
       }
+    },
+
+    async getVenuesByIds(ids) {
+      const unique = [...new Set(ids)];
+      const cached = new Map<string, VenueSummary>();
+      const missing: string[] = [];
+      for (const id of unique) {
+        const venue = supabaseRepository.getVenueById(id);
+        if (venue) cached.set(id, venue);
+        else missing.push(id);
+      }
+      if (missing.length > 0) {
+        const fetched = await getVenuesByIdsViaRpc(missing);
+        if (fetched) {
+          fetched.forEach((venue) => cached.set(venue.id, venue));
+        } else {
+          // RPC not deployed yet: one detail read per stall, as before.
+          const singles = await Promise.all(
+            missing.map((id) => this.getVenue(id).catch(() => undefined)),
+          );
+          singles.forEach((venue) => venue && cached.set(venue.id, venue));
+        }
+      }
+      return unique.flatMap((id) => cached.get(id) ?? []);
+    },
+
+    async getItemDetails({ dishIds, stallIds }) {
+      const rows = await getItemDetailsViaRpc({ dishIds, stallIds });
+      if (!rows) throw new Error("Couldn't load item details.");
+      return rows.map((row) => ({
+        dishId: typeof row.dish_id === "string" ? row.dish_id : undefined,
+        stallId: typeof row.stall_id === "string" ? row.stall_id : undefined,
+        name: typeof row.name === "string" ? row.name : undefined,
+        stallName: typeof row.stall_name === "string" ? row.stall_name : undefined,
+        price: row.price === null || row.price === undefined ? undefined : Number(row.price),
+        imageUrl: typeof row.image_url === "string" ? row.image_url : undefined,
+      }));
     },
 
     async listVenuesByBuilding(buildingId) {
@@ -6134,11 +6216,9 @@ export const supabaseService: HungryService = {
         .order("created_at", { ascending: false })
         .limit(20);
       if (error) throw error;
-      return Promise.all(
-        (Array.isArray(data) ? (data as Row[]) : []).map((row) =>
-          mapUserStallSubmission(client, row),
-        ),
-      );
+      const rows = Array.isArray(data) ? (data as Row[]) : [];
+      const presigned = await presignSubmissionPhotos(client, rows);
+      return Promise.all(rows.map((row) => mapUserStallSubmission(client, row, presigned)));
     },
   },
 
@@ -6615,6 +6695,21 @@ export const supabaseService: HungryService = {
       return setMerchantDishFlag(client, outlet, dishId, "sold_out", soldOut);
     },
 
+    async setDishesSoldOut(outletId, dishIds, soldOut) {
+      const client = requireSupabaseClient();
+      const outlet = await requireLinkedMerchantOutlet(client, outletId);
+      if (dishIds.length === 0) return [];
+      // One UPDATE for the whole list; a dish the caller cannot edit is simply left out.
+      const { data, error } = await client.rpc("merchant_set_dishes_availability_flag", {
+        p_dish_ids: dishIds,
+        p_venue_id: asString(outlet.venue_id) ?? "",
+        p_flag: "sold_out",
+        p_enabled: soldOut,
+      });
+      if (error) throw error;
+      return Array.isArray(data) ? data.filter((id): id is string => typeof id === "string") : [];
+    },
+
     async toggleFeatured(outletId, dishId) {
       const client = requireSupabaseClient();
       const outlet = await requireLinkedMerchantOutlet(client, outletId);
@@ -6703,6 +6798,91 @@ export const supabaseService: HungryService = {
         .eq("id", draftId);
       if (updateError) throw updateError;
       return dish;
+    },
+
+    async acceptOCRDrafts(draftIds) {
+      const client = requireSupabaseClient();
+      const ids = [...new Set(draftIds)];
+      const acceptedIds: string[] = [];
+      const failedIds: string[] = [];
+      if (ids.length === 0) return { acceptedIds, failedIds };
+
+      // One read for every draft, one for the outlets and one menu read per outlet, instead of
+      // repeating all three inside each accept.
+      const { data: draftData, error: draftError } = await client
+        .from("dishes_draft")
+        .select("*")
+        .in("id", ids);
+      if (draftError) throw draftError;
+      const draftById = new Map(
+        (Array.isArray(draftData) ? (draftData as Row[]) : []).map((row) => [
+          asString(row.id) ?? "",
+          row,
+        ]),
+      );
+      const venueIds = [
+        ...new Set([...draftById.values()].map((row) => asString(row.venue_id) ?? "")),
+      ].filter(Boolean);
+      const { data: outletData, error: outletError } = await client
+        .from("merchant_outlets")
+        .select("*")
+        .in("venue_id", venueIds);
+      if (outletError) throw outletError;
+      const outletIdByVenueId = new Map<string, string>();
+      for (const row of Array.isArray(outletData) ? (outletData as Row[]) : []) {
+        const venueId = asString(row.venue_id) ?? "";
+        if (venueId && !outletIdByVenueId.has(venueId)) {
+          outletIdByVenueId.set(venueId, asString(row.id) ?? "");
+        }
+      }
+      const menuByOutletId = new Map<string, Map<string, DishDetail>>();
+      await Promise.all(
+        [...new Set(outletIdByVenueId.values())].map(async (outletId) => {
+          const menu = await this.getMenu(outletId);
+          menuByOutletId.set(outletId, new Map(menu.map((dish) => [dish.id, dish])));
+        }),
+      );
+
+      const newlyAcceptedIds: string[] = [];
+      for (const draftId of ids) {
+        const draft = draftById.get(draftId);
+        const outletId = outletIdByVenueId.get(asString(draft?.venue_id) ?? "");
+        const menu = outletId ? menuByOutletId.get(outletId) : undefined;
+        const reviewStatus = asString(draft?.review_status);
+        if (!draft || !outletId || !menu || reviewStatus === "rejected") {
+          failedIds.push(draftId);
+          continue;
+        }
+        const dishId = asString(draft.promoted_dish_id) ?? `dish-from-${draftId}`;
+        if ((reviewStatus === "accepted" || reviewStatus === "promoted") && menu.has(dishId)) {
+          acceptedIds.push(draftId);
+          continue;
+        }
+        try {
+          // n-plus-one-ok: each dish saves through merchant_save_dish, one transaction per dish.
+          const dish = await this.addDish(outletId, {
+            name: asString(draft.name) ?? "New dish",
+            price: asNumber(draft.price_cents) ? (asNumber(draft.price_cents) ?? 0) / 100 : 0,
+            tasteTags: [],
+            id: dishId,
+          });
+          menu.set(dish.id, dish);
+          acceptedIds.push(draftId);
+          newlyAcceptedIds.push(draftId);
+        } catch {
+          // The draft stays listed so the merchant can try it again.
+          failedIds.push(draftId);
+        }
+      }
+
+      if (newlyAcceptedIds.length > 0) {
+        const { error: updateError } = await client
+          .from("dishes_draft")
+          .update({ review_status: "accepted" })
+          .in("id", newlyAcceptedIds);
+        if (updateError) console.warn("Could not mark photo drafts accepted", updateError.message);
+      }
+      return { acceptedIds, failedIds };
     },
 
     async rejectOCRDraft(draftId) {
@@ -6971,18 +7151,12 @@ export const supabaseService: HungryService = {
         ...activePins.map((pin) => pin.id).filter((pinId) => !uniqueOrderedIds.includes(pinId)),
       ];
 
-      const updateResults = await Promise.all(
-        finalOrder.map((pinId, index) =>
-          client
-            .from("merchant_popular_visitor_pins")
-            .update({ sort_order: index })
-            .eq("id", pinId)
-            .eq("outlet_id", resolvedOutletId)
-            .eq("is_active", true),
-        ),
-      );
-      const failedUpdate = updateResults.find((result) => result.error);
-      if (failedUpdate?.error) throw failedUpdate.error;
+      // One UPDATE sets every pin's position.
+      const { error: reorderError } = await client.rpc("reorder_popular_visitor_pins", {
+        p_outlet_id: resolvedOutletId,
+        p_pin_ids: finalOrder,
+      });
+      if (reorderError) throw reorderError;
       return listSupabasePopularVisitorPinsForOutlet(client, resolvedOutletId);
     },
 

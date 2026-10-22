@@ -60,6 +60,7 @@ async function listUserObjectPaths(
   const folders = [userId];
   while (folders.length > 0) {
     const folder = folders.pop() as string;
+    // n-plus-one-ok: paged storage listing, one call per page of a folder; folders are walked.
     for (let offset = 0; ; offset += STORAGE_LIST_PAGE_SIZE) {
       const { data, error } = await client.storage
         .from(bucket)
@@ -91,6 +92,7 @@ async function deleteUserStorageObjects(
     const paths = (await listUserObjectPaths(client, bucket, userId)).filter(
       (path) => !retained.has(`${bucket}/${path}`),
     );
+    // n-plus-one-ok: removes a chunk of paths per call, not one per file.
     for (let index = 0; index < paths.length; index += STORAGE_REMOVE_CHUNK_SIZE) {
       const { error } = await client.storage
         .from(bucket)
@@ -170,6 +172,7 @@ serveWithSentry("process-account-deletions", async (request) => {
   }
 
   const results: JsonObject[] = [];
+  // n-plus-one-ok: each account is deleted and can fail on its own; the auth admin API takes one user.
   for (const claim of Array.isArray(claims) ? claims : []) {
     const requestId = String(claim.request_id ?? "");
     const userId = String(claim.user_id ?? "");

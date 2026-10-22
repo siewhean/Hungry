@@ -80,7 +80,7 @@ test("merchant FeaturedVisitors screen manages review-backed pins through servic
       /public_profiles/,
       /safeProfileId/,
       /onConflict: "outlet_id,review_id"/,
-      /failedUpdate\?\.error/,
+      /client\.rpc\("reorder_popular_visitor_pins"/,
     ],
     "Supabase popular visitor service",
   );

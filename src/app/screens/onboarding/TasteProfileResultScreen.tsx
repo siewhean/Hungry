@@ -49,6 +49,7 @@ async function loadTastePicks(): Promise<DishDetail[]> {
   const { coordinate, isApproximate } = getEffectiveLocation(useLocationStore.getState());
   const location = isApproximate ? undefined : coordinate;
   let picks: DishDetail[] = [];
+  // n-plus-one-ok: widens the radius step by step and stops at the first slate that is full enough.
   for (const radiusMeters of location ? TASTE_PICK_RADII_METERS : [undefined]) {
     const slate = await getHungryService().recommendations.getSlate({
       surface: "home",

@@ -60,6 +60,7 @@ serveWithSentry("purge-orphan-media", async (request) => {
   }
 
   const removed: Record<string, number> = {};
+  // n-plus-one-ok: one orphan listing per bucket (a handful), then removal in chunks of 100.
   for (const bucket of BUCKETS) {
     const { data, error } = await client.rpc("list_orphan_media_objects", {
       p_bucket: bucket,

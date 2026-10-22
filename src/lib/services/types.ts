@@ -894,6 +894,13 @@ export interface HungryService {
     getVenue(id: string): Promise<VenueSummary | undefined>;
     listVenuesByBuilding(buildingId: string): Promise<VenueSummary[]>;
     getDish(id: string): Promise<DishDetail | undefined>;
+    /** Name, photo, stall and price for a set of dishes and stalls in one call. */
+    getItemDetails(input: {
+      dishIds: string[];
+      stallIds: string[];
+    }): Promise<PortfolioItemDetailRow[]>;
+    /** Stall summaries (hours, open flag, building) for a set of ids in one call; no menus. */
+    getVenuesByIds(ids: string[]): Promise<VenueSummary[]>;
     listActivePromotionsForTarget(input: {
       venueId: string;
       dishId?: string;
@@ -1254,6 +1261,8 @@ export interface HungryService {
     deleteDish(outletId: string, dishId: string): Promise<void>;
     /** Toggles sold out, or sets it when `soldOut` is given. Returns the new state. */
     toggleSoldOut(outletId: string, dishId: string, soldOut?: boolean): Promise<boolean>;
+    /** Sets or clears sold-out on many dishes in one call; resolves with the ids that changed. */
+    setDishesSoldOut(outletId: string, dishIds: string[], soldOut: boolean): Promise<string[]>;
     toggleFeatured(outletId: string, dishId: string): Promise<boolean>;
 
     // OCR Drafts
@@ -1263,6 +1272,11 @@ export interface HungryService {
      * that was already accepted returns its existing dish instead of inserting again.
      */
     acceptOCRDraft(draftId: string, edits?: Partial<DishDetail>): Promise<DishDetail>;
+    /**
+     * Accepts many drafts at once. The drafts, outlet and current menu are read once for the whole
+     * batch instead of once per draft; a draft that fails is reported and does not stop the rest.
+     */
+    acceptOCRDrafts(draftIds: string[]): Promise<{ acceptedIds: string[]; failedIds: string[] }>;
     rejectOCRDraft(draftId: string): Promise<void>;
 
     // Customer Inbox
