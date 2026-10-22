@@ -1,0 +1,14 @@
+{
+  "version": "20261022140000",
+  "name": "20261022140000_batched_reads_for_n_plus_one",
+  "result": "pass",
+  "rehearsed_at": "2026-10-22T06:57:21Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "0c5c00e85141647b12cd40aa82fb8165555331d3",
+  "up_sha256": "27ea55242f6335e46a2026d1fae6fdbc2e385a32f58b32182047e074dfe1ede6",
+  "down_sha256": "aa9c290bbc0a65fac685dd10276c57db83960346f114ba18761ca0ae93564a59",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/n_plus_one_batched_reads.sql"]
+}
